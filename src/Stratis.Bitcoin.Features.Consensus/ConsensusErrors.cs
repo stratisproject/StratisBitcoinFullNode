@@ -16,29 +16,35 @@ namespace Stratis.Bitcoin.Features.Consensus
             private set;
         }
     }
+
+    /// <summary>
+    /// A consensus error used to specify different types of reasons a block does not confirm to the consensus rules.
+    /// </summary>
     public class ConsensusError
     {
-        private readonly string _Code;
-        public string Code
-        {
-            get
-            {
-                return this._Code;
-            }
-        }
+        /// <summary>
+        /// The code representing this consensus error.
+        /// </summary>
+        public string Code { get; }
 
-        private readonly string _Message;
-        public string Message
-        {
-            get
-            {
-                return this._Message;
-            }
-        }
+        /// <summary>
+        /// A friendly message to describe this error.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        /// And indicator weather this error is permanent.
+        /// </summary>
+        public bool ViolatesConsensus { get; }
 
         public void Throw()
         {
             throw new ConsensusErrorException(this);
+        }
+
+        public ConsensusError(string code, string message, bool violatesConsensus) : this(code, message)
+        {
+            this.ViolatesConsensus = violatesConsensus;
         }
 
         public ConsensusError(string code, string message)
@@ -46,23 +52,26 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotEmpty(code, nameof(code));
             Guard.NotEmpty(message, nameof(message));
             
-            this._Code = code;
-            this._Message = message;
+            this.Code = code;
+            this.Message = message;
+            this.ViolatesConsensus = true;
         }
 
         public override bool Equals(object obj)
         {
             ConsensusError item = obj as ConsensusError;
-            if(item == null)
-                return false;
-            return this.Code.Equals(item.Code);
+
+            return (item != null) && (this.Code.Equals(item.Code));
         }
+
         public static bool operator ==(ConsensusError a, ConsensusError b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(object.ReferenceEquals(a, b))
                 return true;
-            if(((object)a == null) || ((object)b == null))
+
+            if ((a == null) || (b == null))
                 return false;
+
             return a.Code == b.Code;
         }
 
@@ -78,76 +87,77 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public override string ToString()
         {
-            return this._Code + ": " + this._Message;
+            return $"{this.Code}: {this.Message}";
         }
     }
+
     public static class ConsensusErrors
     {
-        public readonly static ConsensusError InvalidPrevTip = new ConsensusError("invalid-prev-tip", "invalid previous tip");
-        public readonly static ConsensusError HighHash = new ConsensusError("high-hash", "proof of work failed");
-        public readonly static ConsensusError BadCoinbaseHeight = new ConsensusError("bad-cb-height", "block height mismatch in coinbase");
-        public readonly static ConsensusError BadTransactionNonFinal = new ConsensusError("bad-txns-nonfinal", "non-final transaction");
-        public readonly static ConsensusError BadWitnessNonceSize = new ConsensusError("bad-witness-nonce-size", "invalid witness nonce size");
-        public readonly static ConsensusError BadWitnessMerkleMatch = new ConsensusError("bad-witness-merkle-match", "witness merkle commitment mismatch");
-        public readonly static ConsensusError UnexpectedWitness = new ConsensusError("unexpected-witness", "unexpected witness data found");
-        public readonly static ConsensusError BadBlockWeight = new ConsensusError("bad-blk-weight", "weight limit failed");
-        public readonly static ConsensusError BadDiffBits = new ConsensusError("bad-diffbits", "incorrect proof of work");
-        public readonly static ConsensusError TimeTooOld = new ConsensusError("time-too-old", "block's timestamp is too early");
-        public readonly static ConsensusError TimeTooNew = new ConsensusError("time-too-new", "block timestamp too far in the future");
-        public readonly static ConsensusError BadVersion = new ConsensusError("bad-version", "block version rejected");
-        public readonly static ConsensusError BadMerkleRoot = new ConsensusError("bad-txnmrklroot", "hashMerkleRoot mismatch");        
-        public readonly static ConsensusError BadBlockLength = new ConsensusError("bad-blk-length", "size limits failed");
-        public readonly static ConsensusError BadCoinbaseMissing = new ConsensusError("bad-cb-missing", "first tx is not coinbase");
-        public readonly static ConsensusError BadCoinbaseSize = new ConsensusError("bad-cb-length", "invalid coinbase size");
-        public readonly static ConsensusError BadMultipleCoinbase = new ConsensusError("bad-cb-multiple", "more than one coinbase");
-        public readonly static ConsensusError BadMultipleCoinstake = new ConsensusError("bad-cs-multiple", "more than one coinstake");
+        public static readonly ConsensusError InvalidPrevTip = new ConsensusError("invalid-prev-tip", "invalid previous tip", false);
+        public static readonly ConsensusError HighHash = new ConsensusError("high-hash", "proof of work failed");
+        public static readonly ConsensusError BadCoinbaseHeight = new ConsensusError("bad-cb-height", "block height mismatch in coinbase");
+        public static readonly ConsensusError BadTransactionNonFinal = new ConsensusError("bad-txns-nonfinal", "non-final transaction");
+        public static readonly ConsensusError BadWitnessNonceSize = new ConsensusError("bad-witness-nonce-size", "invalid witness nonce size");
+        public static readonly ConsensusError BadWitnessMerkleMatch = new ConsensusError("bad-witness-merkle-match", "witness merkle commitment mismatch");
+        public static readonly ConsensusError UnexpectedWitness = new ConsensusError("unexpected-witness", "unexpected witness data found");
+        public static readonly ConsensusError BadBlockWeight = new ConsensusError("bad-blk-weight", "weight limit failed");
+        public static readonly ConsensusError BadDiffBits = new ConsensusError("bad-diffbits", "incorrect proof of work");
+        public static readonly ConsensusError TimeTooOld = new ConsensusError("time-too-old", "block's timestamp is too early");
+        public static readonly ConsensusError TimeTooNew = new ConsensusError("time-too-new", "block timestamp too far in the future");
+        public static readonly ConsensusError BadVersion = new ConsensusError("bad-version", "block version rejected");
+        public static readonly ConsensusError BadMerkleRoot = new ConsensusError("bad-txnmrklroot", "hashMerkleRoot mismatch");
+        public static readonly ConsensusError BadBlockLength = new ConsensusError("bad-blk-length", "size limits failed");
+        public static readonly ConsensusError BadCoinbaseMissing = new ConsensusError("bad-cb-missing", "first tx is not coinbase");
+        public static readonly ConsensusError BadCoinbaseSize = new ConsensusError("bad-cb-length", "invalid coinbase size");
+        public static readonly ConsensusError BadMultipleCoinbase = new ConsensusError("bad-cb-multiple", "more than one coinbase");
+        public static readonly ConsensusError BadMultipleCoinstake = new ConsensusError("bad-cs-multiple", "more than one coinstake");
 
-        public readonly static ConsensusError BadBlockSigOps = new ConsensusError("bad-blk-sigops", "out-of-bounds SigOpCount");
+        public static readonly ConsensusError BadBlockSigOps = new ConsensusError("bad-blk-sigops", "out-of-bounds SigOpCount");
 
-        public readonly static ConsensusError BadTransactionDuplicate = new ConsensusError("bad-txns-duplicate", "duplicate transaction");
-        public readonly static ConsensusError BadTransactionNoInput = new ConsensusError("bad-txns-vin-empty", "no input in the transaction");
-        public readonly static ConsensusError BadTransactionNoOutput = new ConsensusError("bad-txns-vout-empty", "no output in the transaction");
-        public readonly static ConsensusError BadTransactionOversize = new ConsensusError("bad-txns-oversize", "oversized transaction");
-        public readonly static ConsensusError BadTransactionNegativeOutput = new ConsensusError("bad-txns-vout-negative", "the transaction contains a negative value output");
-        public readonly static ConsensusError BadTransactionTooLargeOutput = new ConsensusError("bad-txns-vout-toolarge", "the transaction contains a too large value output");
-        public readonly static ConsensusError BadTransactionTooLargeTotalOutput = new ConsensusError("bad-txns-txouttotal-toolarge", "the sum of outputs'value is too large for this transaction");
-        public readonly static ConsensusError BadTransactionDuplicateInputs = new ConsensusError("bad-txns-inputs-duplicate", "duplicate inputs");
-        public readonly static ConsensusError BadTransactionNullPrevout = new ConsensusError("bad-txns-prevout-null", "this transaction contains a null prevout");
-        public readonly static ConsensusError BadTransactionBIP30 = new ConsensusError("bad-txns-BIP30", "tried to overwrite transaction");
-        public readonly static ConsensusError BadTransactionMissingInput = new ConsensusError("bad-txns-inputs-missingorspent", "input missing/spent");
+        public static readonly ConsensusError BadTransactionDuplicate = new ConsensusError("bad-txns-duplicate", "duplicate transaction");
+        public static readonly ConsensusError BadTransactionNoInput = new ConsensusError("bad-txns-vin-empty", "no input in the transaction");
+        public static readonly ConsensusError BadTransactionNoOutput = new ConsensusError("bad-txns-vout-empty", "no output in the transaction");
+        public static readonly ConsensusError BadTransactionOversize = new ConsensusError("bad-txns-oversize", "oversized transaction");
+        public static readonly ConsensusError BadTransactionNegativeOutput = new ConsensusError("bad-txns-vout-negative", "the transaction contains a negative value output");
+        public static readonly ConsensusError BadTransactionTooLargeOutput = new ConsensusError("bad-txns-vout-toolarge", "the transaction contains a too large value output");
+        public static readonly ConsensusError BadTransactionTooLargeTotalOutput = new ConsensusError("bad-txns-txouttotal-toolarge", "the sum of outputs'value is too large for this transaction");
+        public static readonly ConsensusError BadTransactionDuplicateInputs = new ConsensusError("bad-txns-inputs-duplicate", "duplicate inputs");
+        public static readonly ConsensusError BadTransactionNullPrevout = new ConsensusError("bad-txns-prevout-null", "this transaction contains a null prevout");
+        public static readonly ConsensusError BadTransactionBIP30 = new ConsensusError("bad-txns-BIP30", "tried to overwrite transaction");
+        public static readonly ConsensusError BadTransactionMissingInput = new ConsensusError("bad-txns-inputs-missingorspent", "input missing/spent");
 
-        public readonly static ConsensusError BadCoinbaseAmount = new ConsensusError("bad-cb-amount", "coinbase pays too much");
-        public readonly static ConsensusError BadCoinstakeAmount = new ConsensusError("bad-cs-amount", "coinstake pays too much");
+        public static readonly ConsensusError BadCoinbaseAmount = new ConsensusError("bad-cb-amount", "coinbase pays too much");
+        public static readonly ConsensusError BadCoinstakeAmount = new ConsensusError("bad-cs-amount", "coinstake pays too much");
 
-        public readonly static ConsensusError BadTransactionPrematureCoinbaseSpending = new ConsensusError("bad-txns-premature-spend-of-coinbase", "tried to spend coinbase before maturity");
-        public readonly static ConsensusError BadTransactionPrematureCoinstakeSpending = new ConsensusError("bad-txns-premature-spend-of-coinstake", "tried to spend coinstake before maturity");
+        public static readonly ConsensusError BadTransactionPrematureCoinbaseSpending = new ConsensusError("bad-txns-premature-spend-of-coinbase", "tried to spend coinbase before maturity");
+        public static readonly ConsensusError BadTransactionPrematureCoinstakeSpending = new ConsensusError("bad-txns-premature-spend-of-coinstake", "tried to spend coinstake before maturity");
 
-        public readonly static ConsensusError BadTransactionInputValueOutOfRange = new ConsensusError("bad-txns-inputvalues-outofrange", "input value out of range");
-        public readonly static ConsensusError BadTransactionInBelowOut = new ConsensusError("bad-txns-in-belowout", "input value below output value");
-        public readonly static ConsensusError BadTransactionNegativeFee = new ConsensusError("bad-txns-fee-negative", "negative fee");
-        public readonly static ConsensusError BadTransactionFeeOutOfRange = new ConsensusError("bad-txns-fee-outofrange", "fee out of range");
+        public static readonly ConsensusError BadTransactionInputValueOutOfRange = new ConsensusError("bad-txns-inputvalues-outofrange", "input value out of range");
+        public static readonly ConsensusError BadTransactionInBelowOut = new ConsensusError("bad-txns-in-belowout", "input value below output value");
+        public static readonly ConsensusError BadTransactionNegativeFee = new ConsensusError("bad-txns-fee-negative", "negative fee");
+        public static readonly ConsensusError BadTransactionFeeOutOfRange = new ConsensusError("bad-txns-fee-outofrange", "fee out of range");
 
-        public readonly static ConsensusError BadTransactionScriptError = new ConsensusError("bad-txns-script-failed", "a script failed");
+        public static readonly ConsensusError BadTransactionScriptError = new ConsensusError("bad-txns-script-failed", "a script failed");
 
-        public readonly static ConsensusError NonCoinstake = new ConsensusError("non-coinstake", "non-coinstake");
-        public readonly static ConsensusError ReadTxPrevFailed = new ConsensusError("read-txPrev-failed", "read txPrev failed");
-        public readonly static ConsensusError InvalidStakeDepth = new ConsensusError("invalid-stake-depth", "tried to stake at depth");
-        public readonly static ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
-        public readonly static ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
-        public readonly static ConsensusError PrevStakeNull = new ConsensusError("prev-stake-null", "previous stake is not found");
-        public readonly static ConsensusError StakeHashInvalidTarget = new ConsensusError("proof-of-stake-hash-invalid-target", "proof-of-stake hash did not meet target protocol");
+        public static readonly ConsensusError NonCoinstake = new ConsensusError("non-coinstake", "non-coinstake");
+        public static readonly ConsensusError ReadTxPrevFailed = new ConsensusError("read-txPrev-failed", "read txPrev failed");
+        public static readonly ConsensusError InvalidStakeDepth = new ConsensusError("invalid-stake-depth", "tried to stake at depth");
+        public static readonly ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
+        public static readonly ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
+        public static readonly ConsensusError PrevStakeNull = new ConsensusError("prev-stake-null", "previous stake is not found");
+        public static readonly ConsensusError StakeHashInvalidTarget = new ConsensusError("proof-of-stake-hash-invalid-target", "proof-of-stake hash did not meet target protocol");
 
-        public readonly static ConsensusError ModifierNotFound = new ConsensusError("modifier-not-found", "unable to get last modifier");
-        public readonly static ConsensusError FailedSelectBlock = new ConsensusError("failed-select-block", "unable to select block at round");
+        public static readonly ConsensusError ModifierNotFound = new ConsensusError("modifier-not-found", "unable to get last modifier");
+        public static readonly ConsensusError FailedSelectBlock = new ConsensusError("failed-select-block", "unable to select block at round");
 
-        public readonly static ConsensusError SetStakeEntropyBitFailed = new ConsensusError("set-stake-entropy-bit-failed", "failed to set stake entropy bit");
-        public readonly static ConsensusError CoinstakeVerifySignatureFailed = new ConsensusError("verify-signature-failed-on-coinstake", "verify signature failed on coinstake");
-        public readonly static ConsensusError BlockTimestampTooFar = new ConsensusError("block-timestamp-to-far", "block timestamp too far in the future");
-        public readonly static ConsensusError BlockTimestampTooEarly = new ConsensusError("block-timestamp-to-early", "block timestamp too early");
-        public readonly static ConsensusError BadBlockSignature = new ConsensusError("bad-block-signature", "bad block signature");
-        public readonly static ConsensusError BlockTimeBeforeTrx = new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
-        public readonly static ConsensusError ProofOfWorkTooHeigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too heigh");
+        public static readonly ConsensusError SetStakeEntropyBitFailed = new ConsensusError("set-stake-entropy-bit-failed", "failed to set stake entropy bit");
+        public static readonly ConsensusError CoinstakeVerifySignatureFailed = new ConsensusError("verify-signature-failed-on-coinstake", "verify signature failed on coinstake");
+        public static readonly ConsensusError BlockTimestampTooFar = new ConsensusError("block-timestamp-to-far", "block timestamp too far in the future");
+        public static readonly ConsensusError BlockTimestampTooEarly = new ConsensusError("block-timestamp-to-early", "block timestamp too early");
+        public static readonly ConsensusError BadBlockSignature = new ConsensusError("bad-block-signature", "bad block signature");
+        public static readonly ConsensusError BlockTimeBeforeTrx = new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
+        public static readonly ConsensusError ProofOfWorkTooHeigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too heigh");
 
-        public readonly static ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
+        public static readonly ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
     }
 }

@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
-                    if (blockValidationContext.Peer != null)
+                    if ((blockValidationContext.Peer != null) && (blockValidationContext.Error.ViolatesConsensus))
                         this.peerBanning.BanPeer(blockValidationContext.Peer);
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
