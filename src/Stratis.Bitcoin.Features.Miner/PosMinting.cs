@@ -192,7 +192,9 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         private IAsyncLoop mining;
-        private Money reserveBalance;
+        /// <summary>Target reserved balance that will not participate in staking.
+        /// It is possible that less than this amount will be reserved.</summary>
+        private Money targetReserveBalance;
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
@@ -270,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.minerSleep = 500; // GetArg("-minersleep", 500);
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
-            this.reserveBalance = 0; // TOOD:settings.ReserveBalance
+            this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
             this.minimumInputValue = 0;
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
@@ -591,17 +593,17 @@ namespace Stratis.Bitcoin.Features.Miner
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
             long balance = this.GetMatureBalance(utxoStakeDescriptions).Satoshi;
-            if (balance <= this.reserveBalance)
+            if (balance <= this.targetReserveBalance)
             {
                 this.rpcGetStakingInfoModel.Staking = false;
 
-                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is less than or equal to reserve balance {1}.", balance, this.reserveBalance);
+                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is less than or equal to reserve balance {1}.", balance, this.targetReserveBalance);
                 this.logger.LogTrace("(-)[BELOW_RESERVE]:false");
                 return false;
             }
 
             // Select UTXOs with suitable depth.
-            List<UtxoStakeDescription> stakingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, balance - this.reserveBalance);
+            List<UtxoStakeDescription> stakingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, balance - this.targetReserveBalance);
             if (!stakingUtxoDescriptions.Any())
             {
                 this.rpcGetStakingInfoModel.Staking = false;
@@ -909,15 +911,16 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXO descriptions that are candidates for being used for staking.</param>
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
-        /// <param name="maxValue">Maximal amount of UTXOs that can be used for staking.</param>
+        /// <param name="targetValue">Target money amount for staking.</param>
         /// <returns>List of UTXO descriptions that meet the requirements for staking.</returns>
-        private List<UtxoStakeDescription> GetUtxoStakeDescriptionsSuitableForStaking(List<UtxoStakeDescription> utxoStakeDescriptions, uint spendTime, long maxValue)
+        private List<UtxoStakeDescription> GetUtxoStakeDescriptionsSuitableForStaking(List<UtxoStakeDescription> utxoStakeDescriptions, uint spendTime, long targetValue)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(spendTime), spendTime, nameof(maxValue), maxValue);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(spendTime), spendTime, nameof(targetValue), targetValue);
             var res = new List<UtxoStakeDescription>();
 
+            long currentValue = 0;
             long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
-            foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions)
+            foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = this.GetDepthInMainChain(utxoStakeDescription);
                 this.logger.LogTrace("Checking if UTXO '{0}' value {1} can be added, its depth is {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.TxOut.Value, depth);
@@ -953,14 +956,13 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                if (utxoStakeDescription.TxOut.Value > maxValue)
-                {
-                    this.logger.LogTrace("UTXO '{0}' can't be added because its value {1} is greater than required maximal value {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.TxOut.Value, maxValue);
-                    continue;
-                }
+                currentValue += utxoStakeDescription.TxOut.Value;
 
                 this.logger.LogTrace("UTXO '{0}' accepted.", utxoStakeDescription.OutPoint);
                 res.Add(utxoStakeDescription);
+
+                if (currentValue >= targetValue)
+                    break;
             }
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
