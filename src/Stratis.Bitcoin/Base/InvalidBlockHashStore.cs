@@ -45,15 +45,15 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Lock object to protect access to <see cref="invalidBlockHashes"/> and <see cref="orderedHashList"/>.</summary>
+        /// <summary>Lock object to protect access to <see cref="invalidBlockHashesExpirations"/> and <see cref="orderedHashList"/>.</summary>
         private readonly object lockObject = new object();
 
         /// <summary>
-        /// Collection of blocks that are to be considered invalid. If the value of the entry is not <c>null</c>, 
+        /// Collection of block header hashes that are to be considered invalid. If the value of the entry is not <c>null</c>, 
         /// the entry is considered invalid only for a certain amount of time.
         /// </summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private readonly Dictionary<uint256, DateTime?> invalidBlockHashes;
+        private readonly Dictionary<uint256, DateTime?> invalidBlockHashesExpirations;
 
         /// <summary>Circular array of block header hash entries to allow quick removal of the oldest entry once the capacity is reached.</summary>
         /// <remarks>
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.dateTimeProvider = dateTimeProvider;
 
-            this.invalidBlockHashes = new Dictionary<uint256, DateTime?>(capacity);
+            this.invalidBlockHashesExpirations = new Dictionary<uint256, DateTime?>(capacity);
             this.orderedHashList = new CircularArray<uint256>(capacity);
         }
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Base
             {
                 // First check if the entry exists.
                 DateTime? expirationTime;
-                if (this.invalidBlockHashes.TryGetValue(hashBlock, out expirationTime))
+                if (this.invalidBlockHashesExpirations.TryGetValue(hashBlock, out expirationTime))
                 {
                     // The block is banned forever if the expiration date was not set,
                     // or it is banned temporarily if it was set.
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Base
                         // If the expiration date is not in the future anymore, remove the record from the list.
                         // Note that this will leave entry in the orderedHashList, but that is OK, 
                         // that entry will be removed later.
-                        if (!res) this.invalidBlockHashes.Remove(hashBlock);
+                        if (!res) this.invalidBlockHashesExpirations.Remove(hashBlock);
                     }
                     else res = true;
                 }
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Base
             lock (this.lockObject)
             {
                 DateTime? expirationTime;
-                bool existsAlready = this.invalidBlockHashes.TryGetValue(hashBlock, out expirationTime);
+                bool existsAlready = this.invalidBlockHashesExpirations.TryGetValue(hashBlock, out expirationTime);
                 if (existsAlready)
                 {
                     // Entry is existing already, only replace its value if the ban is stronger.
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Base
                     // or if the existing ban is not forever and the rejectedUntil value is greater 
                     // than existing expiration time.
                     bool strongerBan = (rejectedUntil == null) || ((expirationTime != null) && (rejectedUntil.Value > expirationTime.Value));
-                    if (strongerBan) this.invalidBlockHashes[hashBlock] = rejectedUntil;
+                    if (strongerBan) this.invalidBlockHashesExpirations[hashBlock] = rejectedUntil;
                 }
                 else
                 {
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Base
                         // and we check the dictionary again. We repeat this until we find 
                         // an existing entry or until we removed everything from the queue except 
                         // for the entry we just added.
-                        while (!this.invalidBlockHashes.Remove(oldestEntry))
+                        while (!this.invalidBlockHashesExpirations.Remove(oldestEntry))
                         {
                             if (this.orderedHashList.Count == 1)
                                 break;
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Base
                         }
                     }
 
-                    this.invalidBlockHashes.Add(hashBlock, rejectedUntil);
+                    this.invalidBlockHashesExpirations.Add(hashBlock, rejectedUntil);
                 }
             }
         }
