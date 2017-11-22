@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Net;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Concurrent;
-using System.Net;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -120,11 +120,14 @@ namespace Stratis.Bitcoin.Connection
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    banPeer = false;
                     this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason ?? "unknown");
                     peer.DisconnectAsync($"The peer was banned, reason: {reason}");
                 }
-                else this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
+                else
+                {
+                    banPeer = false;
+                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
+                }
             }
 
             if (banPeer)

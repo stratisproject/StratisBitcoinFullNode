@@ -428,6 +428,12 @@ namespace NBitcoin.Protocol
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
+        public Node()
+        {
+            // this constructor is used for testing untill the Node class has an interface and can be mocked.
+            this.Behaviors = new NodeBehaviorsCollection(this);
+        }
+
         internal Node(NetworkAddress peer, Network network, NodeConnectionParameters parameters)
         {
             parameters = parameters ?? new NodeConnectionParameters();
