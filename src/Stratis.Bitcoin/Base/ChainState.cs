@@ -23,14 +23,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdLastResult;
 
-        /// <summary>A collection of blocks that have been found to be invalid.</summary>
-        private readonly ConcurrentHashSet<uint256> invalidBlocks;
-
-        /// <summary>Collection of blocks that are to be considered invalid only for a certain amount of time.</summary>
-        private readonly ConcurrentDictionary<uint256, DateTime> invalidBlocksWithExpiration;
-
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Store of block header hashes that are to be considered invalid.</summary>
+        private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         public ChainedBlock ConsensusTip { get; set; }
@@ -43,12 +40,12 @@ namespace Stratis.Bitcoin.Base
         /// Initialize instance of the object.
         /// </summary>
         /// <param name="fullNode">The full node using this feature.</param>
-        public ChainState(IFullNode fullNode)
+        /// <param name="invalidBlockHashStore">Store of block header hashes that are to be considered invalid.</param>
+        public ChainState(IFullNode fullNode, IInvalidBlockHashStore invalidBlockHashStore)
         {
             this.fullNode = fullNode;
             this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
-            this.invalidBlocks = new ConcurrentHashSet<uint256>();
-            this.invalidBlocksWithExpiration = new ConcurrentDictionary<uint256, DateTime>();
+            this.invalidBlockHashStore = invalidBlockHashStore;
         }
 
         /// <summary>
@@ -58,35 +55,17 @@ namespace Stratis.Bitcoin.Base
         /// <returns><c>true</c> if the block is marked as invalid.</returns>
         public bool IsMarkedInvalid(uint256 hashBlock)
         {
-            // First check if the block is permantently banned.
-            bool res = this.invalidBlocks.Contains(hashBlock);
-            if (!res)
-            {
-                // If it is not permantently banned, it could be temporarily banned,
-                // so try to find expiration time of this ban, if it exists.
-                DateTime expirationTime;
-                if (this.invalidBlocksWithExpiration.TryGetValue(hashBlock, out expirationTime))
-                {
-                    // The block is invalid now if the expiration date is still in the future.
-                    res = expirationTime > this.dateTimeProvider.GetUtcNow();
-
-                    // If the expiration date is not in the future, remove the record from the list.
-                    if (!res) this.invalidBlocksWithExpiration.TryRemove(hashBlock, out expirationTime);
-                }
-            }
-
-            return res;
+            return this.invalidBlockHashStore.IsInvalid(hashBlock);
         }
 
         /// <summary>
-        /// Mark blocks as invalid to be processed by the node, this is used to prevent DOS attacks.
+        /// Marks a block as invalid. This is used to prevent DOS attacks as the next time the block is seen, it is not processed again.
         /// </summary>
         /// <param name="hashBlock">The block hash to mark as invalid.</param>
         /// <param name="rejectedUntil">Time in UTC after which the block is no longer considered as invalid, or <c>null</c> if the block is to be considered invalid forever.</param>
         public void MarkBlockInvalid(uint256 hashBlock, DateTime? rejectedUntil = null)
         {
-            if (rejectedUntil != null) this.invalidBlocksWithExpiration.TryAdd(hashBlock, rejectedUntil.Value);
-            else this.invalidBlocks.Add(hashBlock);
+            this.invalidBlockHashStore.MarkInvalid(hashBlock, rejectedUntil);
         }
 
         /// <summary>
