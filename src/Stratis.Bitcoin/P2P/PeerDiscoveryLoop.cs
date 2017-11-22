@@ -10,9 +10,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
-    /// <summary>
-    /// Async loop that discovers new peers to connect to.
-    /// </summary>
+    /// <summary> Async loop that discovers new peers to connect to.</summary>
     public sealed class PeerDiscoveryLoop : IDisposable
     {
         /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
@@ -29,7 +27,10 @@ namespace Stratis.Bitcoin.P2P
         /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
+        /// <summary> The amount of peers to find.</summary>
         private readonly int peersToFind;
+
+        /// <summary> The network the node is running on.</summary>
         private readonly Network network;
 
         public PeerDiscoveryLoop(
@@ -49,6 +50,10 @@ namespace Stratis.Bitcoin.P2P
             this.nodeLifetime = nodeLifetime;
         }
 
+        /// <summary>
+        /// Starts an asynchronous loop that periodicly tries to discover new peers to add to the 
+        /// <see cref="PeerAddressManager"/>.
+        /// </summary>
         public void Start()
         {
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.StartAsync), async token =>
@@ -57,9 +62,12 @@ namespace Stratis.Bitcoin.P2P
                     await this.StartAsync();
             },
             this.nodeLifetime.ApplicationStopping,
-            TimeSpans.Second);
+            TimeSpans.Minute);
         }
 
+        /// <summary>
+        /// See <see cref="Start"/>
+        /// </summary>
         private Task StartAsync()
         {
             var peersToDiscover = new List<NetworkAddress>();

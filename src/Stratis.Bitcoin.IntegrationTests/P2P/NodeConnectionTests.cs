@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
     public sealed class NodeConnectionTests
     {
         [Fact]
-        public void CanConnectToRandomNode()
+        public void CanDiscoverAndConnectToPeersOnTheNetwork()
         {
             var parameters = new NodeConnectionParameters();
 

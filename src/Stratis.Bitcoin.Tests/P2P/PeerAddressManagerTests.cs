@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
 
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(networkAddress, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(networkAddress, IPAddress.Loopback, PeerIntroductionType.Discover);
 
             addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeOffset.Now);
             addressManager.PeerConnected(networkAddress.Endpoint, DateTimeOffset.Now);
@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(DateTimeOffset.Now.Date, savedPeer.NetworkAddress.Time.Date);
             Assert.Equal(80, savedPeer.NetworkAddress.Endpoint.Port);
             Assert.Equal(0, savedPeer.ConnectionAttempts);
+            Assert.Equal(PeerIntroductionType.Discover, savedPeer.PeerIntroductionType);
             Assert.Equal(DateTime.Today.Date, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Null(savedPeer.LastConnectionHandshake);
             Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());

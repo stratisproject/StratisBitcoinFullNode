@@ -117,6 +117,7 @@ namespace Stratis.Bitcoin.P2P
             var peers = fileStorage.WithConverters(new[] { new IPEndpointConverter() }).LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
+                peer.PeerIntroductionType = PeerIntroductionType.Discover;
                 this.Peers.TryAdd(peer.NetworkAddress.Endpoint, peer);
             });
         }

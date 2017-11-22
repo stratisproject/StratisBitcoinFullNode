@@ -20,15 +20,15 @@ namespace Stratis.Bitcoin.Connection
     public interface IConnectionManager : IDisposable
     {
         /// <summary> The <see cref="PeerConnector"/> that is used when we use the -addnode argument when running the node.</summary>
-        PeerConnector AddPeerConnector { get; }
+        PeerConnector AddNodePeerConnector { get; }
 
         IReadOnlyNodesCollection ConnectedNodes { get; }
 
         /// <summary> The <see cref="PeerConnector"/> that is used when we use the -connect argument when running the node.</summary>
-        PeerConnector ConnectPeerConnector { get; }
+        PeerConnector ConnectNodePeerConnector { get; }
 
-        /// <summary> The  <see cref="PeerConnector"/>that is used to discover new peers to connect to. </summary>
-        PeerConnector DiscoveryPeerConnector { get; }
+        /// <summary> The  <see cref="PeerConnector"/> that is used to discover new peers to connect to.</summary>
+        PeerConnector DiscoverNodesPeerConnector { get; }
 
         Network Network { get; }
         NodeSettings NodeSettings { get; }
@@ -92,13 +92,13 @@ namespace Stratis.Bitcoin.Connection
         public List<NodeServer> Servers { get; }
 
         /// <inheritdoc/>
-        public PeerConnector AddPeerConnector { get; private set; }
+        public PeerConnector AddNodePeerConnector { get; private set; }
 
         /// <inheritdoc/>
-        public PeerConnector ConnectPeerConnector { get; private set; }
+        public PeerConnector ConnectNodePeerConnector { get; private set; }
 
         /// <inheritdoc/>
-        public PeerConnector DiscoveryPeerConnector { get; private set; }
+        public PeerConnector DiscoverNodesPeerConnector { get; private set; }
 
         public ConnectionManager(
             Network network,
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Connection
                     this.peerDiscoveryLoop.Start();
                 }
 
-                this.DiscoveryPeerConnector = CreatePeerConnector(clonedParameters, this.discoveredNodeRequiredService, WellKnownPeerConnectorSelectors.ByNetwork, PeerIntroductionType.Discover);
+                this.DiscoverNodesPeerConnector = CreatePeerConnector(clonedParameters, this.discoveredNodeRequiredService, WellKnownPeerConnectorSelectors.ByNetwork, PeerIntroductionType.Discover);
             }
             else
             {
@@ -158,8 +158,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Connect);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
 
-                this.ConnectPeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect);
-                this.ConnectPeerConnector.MaximumNodeConnections = this.connectionManagerSettings.Connect.Count;
+                this.ConnectNodePeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect, this.connectionManagerSettings.Connect.Count);
             }
 
             {
@@ -168,21 +167,20 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Add);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
 
-                this.AddPeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Add);
-                this.AddPeerConnector.MaximumNodeConnections = this.connectionManagerSettings.AddNode.Count;
+                this.AddNodePeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Add, this.connectionManagerSettings.AddNode.Count);
             }
 
             // Relate the peer connectors to each other to prevent duplicate connections.
             var relatedPeerConnectors = new RelatedPeerConnectors();
-            relatedPeerConnectors.Register("Discovery", this.DiscoveryPeerConnector);
-            relatedPeerConnectors.Register("Connect", this.ConnectPeerConnector);
-            relatedPeerConnectors.Register("AddNode", this.AddPeerConnector);
+            relatedPeerConnectors.Register("Discovery", this.DiscoverNodesPeerConnector);
+            relatedPeerConnectors.Register("Connect", this.ConnectNodePeerConnector);
+            relatedPeerConnectors.Register("AddNode", this.AddNodePeerConnector);
 
-            this.DiscoveryPeerConnector?.StartConnectAsync();
-            this.ConnectPeerConnector?.StartConnectAsync();
-            this.AddPeerConnector?.StartConnectAsync();
+            this.DiscoverNodesPeerConnector?.StartConnectAsync();
+            this.ConnectNodePeerConnector?.StartConnectAsync();
+            this.AddNodePeerConnector?.StartConnectAsync();
 
-            StartNodeServer();
+            this.StartNodeServer();
 
             this.logger.LogTrace("(-)");
         }
@@ -226,7 +224,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.discoveredNodeRequiredService |= services;
 
-            PeerConnector peerConnector = this.DiscoveryPeerConnector;
+            PeerConnector peerConnector = this.DiscoverNodesPeerConnector;
             if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
             {
                 peerConnector.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
@@ -311,7 +309,8 @@ namespace Stratis.Bitcoin.Connection
             NodeConnectionParameters parameters,
             NodeServices requiredServices,
             Func<IPEndPoint, byte[]> peerSelector,
-            PeerIntroductionType peerIntroductionType)
+            PeerIntroductionType peerIntroductionType,
+            int? maximumNodeConnections = 8)
         {
             this.logger.LogTrace("({0}:{1})", nameof(requiredServices), requiredServices);
 
@@ -321,7 +320,10 @@ namespace Stratis.Bitcoin.Connection
                 RequiredServices = requiredServices,
             };
 
-            var peerConnector = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, peerSelector, this.asyncLoopFactory, this.peerAddressManager, peerIntroductionType);
+            var peerConnector = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, peerSelector, this.asyncLoopFactory, this.peerAddressManager, peerIntroductionType)
+            {
+                MaximumNodeConnections = maximumNodeConnections.Value
+            };
 
             this.logger.LogTrace("(-)");
 
@@ -341,9 +343,9 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogInformation("Stopping peer discovery...");
             this.peerDiscoveryLoop?.Dispose();
 
-            this.DiscoveryPeerConnector?.Dispose();
-            this.ConnectPeerConnector?.Dispose();
-            this.AddPeerConnector?.Dispose();
+            this.DiscoverNodesPeerConnector?.Dispose();
+            this.ConnectNodePeerConnector?.Dispose();
+            this.AddNodePeerConnector?.Dispose();
 
             foreach (NodeServer server in this.Servers)
                 server.Dispose();
@@ -393,7 +395,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.peerAddressManager.AddPeer(new NetworkAddress(endpoint), IPAddress.Loopback, PeerIntroductionType.Add);
 
-            this.AddPeerConnector.MaximumNodeConnections++;
+            this.AddNodePeerConnector.MaximumNodeConnections++;
 
             this.logger.LogTrace("(-)");
         }

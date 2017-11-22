@@ -6,6 +6,9 @@ using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.P2P
 {
+    /// <summary>
+    /// A class which holds data on a peer's (IPEndpoint) attempts, connections and successful hand shake events.
+    /// </summary>
     [JsonObject]
     public sealed class PeerAddress
     {
@@ -16,12 +19,15 @@ namespace Stratis.Bitcoin.P2P
 
         #region Address Data
 
+        /// <summary> Endpoint for this peer.</summary>
         [JsonProperty]
         private IPEndPoint endPoint;
 
+        /// <summary> Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
         [JsonProperty]
         private DateTimeOffset? addressTime;
 
+        /// <summary> The <see cref="NetworkAddress"/> for this peer.</summary>
         [JsonIgnore]
         public NetworkAddress NetworkAddress
         {
@@ -38,6 +44,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
+        /// <summary> The source for this peer.</summary>
         [JsonProperty]
         private string loopback;
         [JsonIgnore]
@@ -55,8 +62,20 @@ namespace Stratis.Bitcoin.P2P
 
         #region Connection Data
 
+        /// <summary>
+        /// The amount of connection attempts.
+        /// <para>
+        /// This gets reset when a connection was successful.</para>
+        /// </summary>
         [JsonProperty]
         public int ConnectionAttempts { get; private set; }
+
+        /// <summary>
+        /// The last successful version handshake.
+        /// <para>
+        /// This is set when the connection attempt was successful and a handshake was done.
+        /// </para>
+        /// </summary>
         [JsonProperty]
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
@@ -72,8 +91,21 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
+        /// <summary>
+        /// The last connection attempt.
+        /// <para>
+        /// This is set regardless of whether or not the connection attempt was successful or not.
+        /// </para>
+        /// </summary>
         [JsonProperty]
         public DateTimeOffset? LastConnectionAttempt { get; private set; }
+
+        /// <summary>
+        /// The last successful connection attempt.
+        /// <para>
+        /// This is set when the connection attempt was successful (but not necessarily handshaked).
+        /// </para>
+        /// </summary>
         [JsonProperty]
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
@@ -81,6 +113,9 @@ namespace Stratis.Bitcoin.P2P
 
         #region Connection Methods
 
+        /// <summary>
+        /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
+        /// </summary>
         internal void Attempted(DateTimeOffset peerAttemptedAt)
         {
             this.ConnectionAttempts += 1;
@@ -88,8 +123,14 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
+        /// Sets the <see cref="LastConnectionSuccess"/>, <see cref="addressTime"/> and <see cref="NetworkAddress.Time"/> properties.
+        /// <para>
+        /// Resets <see cref="ConnectionAttempts"/> and <see cref="LastConnectionAttempt"/>.
+        /// </para>
+        /// <para>
         /// [NBitcoin] Do we need to throttle the update of lastSuccessfulConnect?
         /// https://github.com/stratisproject/NStratis/blob/2b0fbc3f6b809d92aaf43a8ee12f8baa724e5ccf/NBitcoin/Protocol/AddressManager.cs#L1014
+        /// </para>
         /// </summary>
         internal void SetConnected(DateTimeOffset peerConnectedAt)
         {
@@ -102,9 +143,7 @@ namespace Stratis.Bitcoin.P2P
             this.LastConnectionSuccess = peerConnectedAt;
         }
 
-        /// <summary>
-        /// [NBitcoin] This replaces Good() method
-        /// </summary>
+        /// <summary> Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
             this.LastConnectionHandshake = peerHandshakedAt;
@@ -180,7 +219,7 @@ namespace Stratis.Bitcoin.P2P
         #endregion
 
         [JsonIgnore]
-        public PeerIntroductionType PeerIntroductionType { get; set; }
+        public PeerIntroductionType? PeerIntroductionType { get; set; }
 
         /// <summary>
         /// Calculates the relative chance this peer should be given when selecting nodes to connect to.

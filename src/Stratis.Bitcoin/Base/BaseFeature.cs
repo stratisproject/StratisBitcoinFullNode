@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Base
     /// </list>
     /// </para>
     /// </summary>
-    public class BaseFeature : FullNodeFeature, INodeStats
+    public sealed class BaseFeature : FullNodeFeature, INodeStats
     {
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -171,12 +171,16 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning));
 
-            StartAddressManager(connectionParameters);
+            this.StartAddressManager(connectionParameters);
 
             if (this.nodeSettings.SyncTimeEnabled)
+            {
                 connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
+            }
             else
+            {
                 this.logger.LogDebug("Time synchronization with peers is disabled.");
+            }
 
             this.disposableResources.Add(this.timeSyncBehaviorState);
             this.disposableResources.Add(this.chainRepository);
