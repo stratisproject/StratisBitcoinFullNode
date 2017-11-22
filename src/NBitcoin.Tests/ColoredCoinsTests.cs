@@ -17,7 +17,15 @@ namespace NBitcoin.Tests
 	//https://github.com/OpenAssets/open-assets-protocol/blob/master/specification.mediawiki
 	public class ColoredCoinsTests
 	{
-		class ColoredCoinTester
+        public ColoredCoinsTests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        class ColoredCoinTester
 		{
 			public ColoredCoinTester([CallerMemberName]string test = null)
 			{

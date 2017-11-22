@@ -21,7 +21,15 @@ namespace NBitcoin.Tests
 	//Their examples are broken
 	public class PaymentTests
 	{
-		[Fact]
+        public PaymentTests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        [Fact]
 		[Trait("UnitTest", "UnitTest")]
 		public void CanParsePaymentUrl()
 		{
