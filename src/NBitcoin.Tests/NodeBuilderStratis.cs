@@ -109,8 +109,6 @@ namespace NBitcoin.Tests
 			//}
 			var node = new CoreNodeStratis(child, this);
 			Nodes.Add(node);
-			if(start)
-				node.Start();
 			return node;
 		}
 
@@ -156,16 +154,7 @@ namespace NBitcoin.Tests
 			}
 		}
 
-		public string Config
-		{
-			get
-			{
-				return _Config;
-			}
-		}
-
 		private readonly NodeConfigParameters _ConfigParameters = new NodeConfigParameters();
-		private string _Config;
 
 		public NodeConfigParameters ConfigParameters
 		{
@@ -234,12 +223,7 @@ namespace NBitcoin.Tests
 				return ports[0];
 			}
 		}
-		public void Start()
-		{
-			StartAsync().Wait();
-		}
 
-		readonly NetworkCredential creds;
 		public RPCClient CreateRPCClient()
 		{
 			//return new RPCClient(creds, new Uri("http://127.0.0.1:" + ports[1].ToString() + "/"), Network.RegTest);
@@ -263,44 +247,7 @@ namespace NBitcoin.Tests
 		}
 #endif
 
-		public async Task StartAsync()
-		{
-			NodeConfigParameters config = new NodeConfigParameters();
-			config.Add("regtest", "1");
-			config.Add("rest", "1");
-			config.Add("server", "1");
-			config.Add("txindex", "1");
-			config.Add("rpcuser", creds.UserName);
-			config.Add("rpcpassword", creds.Password);
-			config.Add("port", ports[0].ToString());
-			config.Add("rpcport", ports[1].ToString());
-			config.Add("printtoconsole", "1");
-			config.Add("keypool", "10");
-			config.Import(ConfigParameters);
-			File.WriteAllText(_Config, config.ToString());
-			lock(l)
-			{
-				_Process = Process.Start(new FileInfo(this._Builder.BitcoinD).FullName, "-conf=bitcoin.conf" + " -datadir=" + dataDir + " -debug=net");
-				_State = CoreNodeState.Starting;
-			}
-			while(true)
-			{
-				try
-				{
-					await CreateRPCClient().GetBlockHashAsync(0).ConfigureAwait(false);
-					_State = CoreNodeState.Running;
-					break;
-				}
-				catch { }
-				if(_Process == null || _Process.HasExited)
-					break;
-			}
-		}
-
-
-
 		Process _Process;
-		private readonly string dataDir;
 
 		private void FindPorts(int[] ports)
 		{
