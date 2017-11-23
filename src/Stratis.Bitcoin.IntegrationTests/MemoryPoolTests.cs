@@ -927,13 +927,14 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class TestMemPoolEntryHelper
     {
         // Default values
-        Money nFee = Money.Zero;
-        long nTime = 0;
-        double dPriority = 0.0;
-        int nHeight = 1;
-        bool spendsCoinbase = false;
-        long sigOpCost = 4;
-        LockPoints lp = new LockPoints();
+        private Money nFee = Money.Zero;
+
+        private long nTime = 0;
+        private double dPriority = 0.0;
+        private int nHeight = 1;
+        private bool spendsCoinbase = false;
+        private long sigOpCost = 4;
+        private LockPoints lp = new LockPoints();
 
 
         public TxMempoolEntry FromTx(Transaction tx, TxMempool pool = null)

@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         public void Given_NoExceptionIsThrown_When_GetWatchOnlyWalletIsCalled_Then_WatchOnlyWalletModelIsReturned()
         {
             var mockWalletManager = new Mock<IWatchOnlyWalletManager>();
-            mockWalletManager.Setup(wallet => wallet.GetWatchOnlyWallet()).Returns(new Features.WatchOnlyWallet.WatchOnlyWallet());
+            mockWalletManager.Setup(wallet => wallet.GetWatchOnlyWallet()).Returns(new WatchOnlyWallet());
 
             var controller = new WatchOnlyWalletController(mockWalletManager.Object);
 

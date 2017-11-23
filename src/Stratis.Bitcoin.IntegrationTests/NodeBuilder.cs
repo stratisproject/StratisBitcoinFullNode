@@ -32,7 +32,7 @@ using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    static class FullNodeExt
+    internal static class FullNodeExt
     {
         public static WalletManager WalletManager(this FullNode fullNode)
         {
@@ -536,7 +536,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 disposable.Dispose();
         }
 
-        List<IDisposable> disposables = new List<IDisposable>();
+        private List<IDisposable> disposables = new List<IDisposable>();
 
         internal void AddDisposable(IDisposable group)
         {

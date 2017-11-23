@@ -168,8 +168,8 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        static TxIn CoinbaseTxIn = TxIn.CreateCoinbase(0);
-        static TxIn NonCoinbaseTxIn = new TxIn(new OutPoint(uint256.One, 0));
+        private static TxIn CoinbaseTxIn = TxIn.CreateCoinbase(0);
+        private static TxIn NonCoinbaseTxIn = new TxIn(new OutPoint(uint256.One, 0));
         public Coins ToCoins()
         {
             var coins = new Coins

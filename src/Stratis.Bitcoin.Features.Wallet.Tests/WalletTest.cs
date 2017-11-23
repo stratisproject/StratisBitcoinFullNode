@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAccountsByCoinTypeReturnsAccountsFromWalletByCoinType()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
             wallet.AccountsRoot.Add(CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis));
             wallet.AccountsRoot.Add(CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin));
             wallet.AccountsRoot.Add(CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis));
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAccountsByCoinTypeWithoutAccountsReturnsEmptyList()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
 
             var result = wallet.GetAccountsByCoinType(CoinType.Stratis);
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAllTransactionsByCoinTypeReturnsTransactionsFromWalletByCoinType()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
             var stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
             var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
             var stratisAccountRoot2 = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis);
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAllTransactionsByCoinTypeWithoutMatchingAccountReturnsEmptyList()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
             var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
 
             var transaction1 = CreateTransaction(new uint256(3), new Money(32145), 1);
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAllTransactionsByCoinTypeWithoutAccountRootReturnsEmptyList()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
 
             var result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
 
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAllPubKeysByCoinTypeReturnsPubkeysFromWalletByCoinType()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
             var stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
             var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
             var stratisAccountRoot2 = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis);
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAllPubKeysByCoinTypeWithoutMatchingCoinTypeReturnsEmptyList()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();
+            var wallet = new Wallet();
             var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
             wallet.AccountsRoot.Add(bitcoinAccountRoot);
 
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAllPubKeysByCoinTypeWithoutAccountRootsReturnsEmptyList()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();            
+            var wallet = new Wallet();            
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 

@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Converters
 
         public override string ToString()
         {
-            return $"{nameof(Amount)}: {Amount}";
+            return $"{nameof(this.Amount)}: {this.Amount}";
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
     public class GetInfoModelTest : BaseRPCModelTest
     {
-        static readonly string[] AllPropertyNames = new string[] {
+        private static readonly string[] AllPropertyNames = new string[] {
                 "version",
                 "protocolversion",
                 "walletversion",

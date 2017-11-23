@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalObserverTest : LogsTestBase
     {
-        SignalObserver<Block> observer;               
+        private SignalObserver<Block> observer;               
 
         public SignalObserverTest() : base()
         {

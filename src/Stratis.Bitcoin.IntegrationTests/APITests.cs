@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class APITests:IDisposable
     {
-        static HttpClient client = null;
+        private static HttpClient client = null;
 
         public void Dispose()
         {

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class MinerTests
     {
-        static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
+        private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
         public static PowBlockAssembler AssemblerForTest(TestContext testContext)
         {

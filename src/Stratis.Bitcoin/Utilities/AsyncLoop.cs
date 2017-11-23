@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Application defined task that will be called and awaited in the async loop.
         /// The task is given a cancellation token that allows it to recognize that the caller wishes to cancel it.
         /// </summary>
-        readonly Func<CancellationToken, Task> loopAsync;
+        private readonly Func<CancellationToken, Task> loopAsync;
 
         /// <inheritdoc />
         public string Name { get; }

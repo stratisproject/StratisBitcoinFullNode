@@ -637,7 +637,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             public void SetWalletTip(ChainedBlock tip)
             {
-                base.walletTip = tip;
+                this.walletTip = tip;
             }
         }
     }

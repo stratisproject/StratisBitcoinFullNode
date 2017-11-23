@@ -13,8 +13,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
-        List<IDisposable> _CleanList = new List<IDisposable>();
-        TestDirectory _TestDirectory;
+        private List<IDisposable> _CleanList = new List<IDisposable>();
+        private TestDirectory _TestDirectory;
         public NodeContext(string name, Network network, bool clean)
         {
             network = network ?? Network.RegTest;
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        DBreezeCoinView _PersistentCoinView;
+        private DBreezeCoinView _PersistentCoinView;
         public DBreezeCoinView PersistentCoinView
         {
             get
