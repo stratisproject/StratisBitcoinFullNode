@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
         {
             var parameters = new NodeConnectionParameters();
 
-            var testFolder = TestDirectory.Create("CanConnectToRandomNode");
+            var testFolder = TestDirectory.Create("CanDiscoverAndConnectToPeersOnTheNetwork");
 
             var nodeSettings = new NodeSettings
             {
@@ -40,12 +40,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new NodeLifetime(),
                 addressManager);
 
-            peerDiscoveryLoop.Start();
+            peerDiscoveryLoop.DiscoverPeers();
 
             //Wait until we have discovered 3 peers
             while (addressManager.Peers.Count < 3)
             {
-                Task.Delay(TimeSpans.Second);
+                Task.Delay(TimeSpans.Second).GetAwaiter().GetResult();
             }
 
             var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);

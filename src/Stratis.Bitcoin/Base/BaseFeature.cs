@@ -233,13 +233,13 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
-           {
-               this.peerAddressManager.SavePeers();
-               return Task.CompletedTask;
-           },
-           this.nodeLifetime.ApplicationStopping,
-           repeatEvery: TimeSpan.FromMinutes(5.0),
-           startAfter: TimeSpan.FromMinutes(5.0));
+            {
+                this.peerAddressManager.SavePeers();
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromMinutes(5.0),
+            startAfter: TimeSpan.FromMinutes(5.0));
         }
 
         /// <inheritdoc />

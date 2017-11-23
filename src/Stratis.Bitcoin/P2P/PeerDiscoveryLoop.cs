@@ -54,21 +54,21 @@ namespace Stratis.Bitcoin.P2P
         /// Starts an asynchronous loop that periodicly tries to discover new peers to add to the 
         /// <see cref="PeerAddressManager"/>.
         /// </summary>
-        public void Start()
+        public void DiscoverPeers()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.StartAsync), async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.DiscoverPeersAsync), async token =>
             {
                 if (this.peerAddressManager.Peers.Count < this.peersToFind)
-                    await this.StartAsync();
+                    await this.DiscoverPeersAsync();
             },
             this.nodeLifetime.ApplicationStopping,
             TimeSpans.Minute);
         }
 
         /// <summary>
-        /// See <see cref="Start"/>
+        /// See <see cref="DiscoverPeers"/>
         /// </summary>
-        private Task StartAsync()
+        private Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<NetworkAddress>();
             peersToDiscover.AddRange(this.peerAddressManager.SelectPeersToConnectTo());

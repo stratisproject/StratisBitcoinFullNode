@@ -9,43 +9,43 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
-    /// <summary> Connects to peers asynchronously.</summary>
+    /// <summary>Connects to peers asynchronously.</summary>
     public sealed class PeerConnector : IDisposable
     {
-        /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
+        /// <summary>The async loop we need to wait upon before we can shut down this connector.</summary>
         private IAsyncLoop asyncLoop;
 
-        /// <summary> Factory for creating background async loop tasks.</summary>
+        /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary> The collection of peers the node is currently connected to.</summary>
+        /// <summary>The collection of peers the node is currently connected to.</summary>
         internal readonly NodesCollection ConnectedPeers;
 
-        /// <summary> The cloned parameters used to connect to peers. </summary>
+        /// <summary>The cloned parameters used to connect to peers. </summary>
         private readonly NodeConnectionParameters currentParameters;
 
-        /// <summary> How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
+        /// <summary>How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
         private readonly Func<IPEndPoint, byte[]> groupSelector;
 
-        /// <summary> The maximum amount of peers the node can connect to (defaults to 8).</summary>
+        /// <summary>The maximum amount of peers the node can connect to (defaults to 8).</summary>
         internal int MaximumNodeConnections { get; set; }
 
-        /// <summary> Global application life cycle control - triggers when application shuts down.</summary>
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         private Network network;
 
         internal NodeConnectionParameters ParentParameters { get; private set; }
 
-        /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
-        /// <summary> What peer types (by <see cref="PeerIntroductionType"/> this connector should find and connect to.</summary>
+        /// <summary>What peer types (by <see cref="PeerIntroductionType"/> this connector should find and connect to.</summary>
         private readonly PeerIntroductionType peerIntroductionType;
 
         internal RelatedPeerConnectors RelatedPeerConnector { get; set; }
 
-        /// <summary> Specification of requirements the <see cref="PeerConnector"/> has when connect to other peers.</summary>
+        /// <summary>Specification of requirements the <see cref="PeerConnector"/> has when connect to other peers.</summary>
         internal readonly NodeRequirement Requirements;
 
         internal PeerConnector(Network network,

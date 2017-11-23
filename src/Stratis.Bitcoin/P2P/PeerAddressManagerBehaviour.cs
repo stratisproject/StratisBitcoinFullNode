@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.P2P
         public int PeersToDiscover { get; set; }
         public PeerAddressManagerBehaviourMode Mode { get; set; }
 
-        /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
         protected override void AttachCore()

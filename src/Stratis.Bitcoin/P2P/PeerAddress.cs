@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// A class which holds data on a peer's (IPEndpoint) attempts, connections and successful hand shake events.
+    /// A class which holds data on a peer's (IPEndPoint) attempts, connections and successful handshake events.
     /// </summary>
     [JsonObject]
     public sealed class PeerAddress
@@ -19,15 +19,15 @@ namespace Stratis.Bitcoin.P2P
 
         #region Address Data
 
-        /// <summary> Endpoint for this peer.</summary>
+        /// <summary>EndPoint of this peer.</summary>
         [JsonProperty]
         private IPEndPoint endPoint;
 
-        /// <summary> Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
+        /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
         [JsonProperty]
         private DateTimeOffset? addressTime;
 
-        /// <summary> The <see cref="NetworkAddress"/> for this peer.</summary>
+        /// <summary>The <see cref="NetworkAddress"/> of this peer.</summary>
         [JsonIgnore]
         public NetworkAddress NetworkAddress
         {
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        /// <summary> The source for this peer.</summary>
+        /// <summary>The source address of this peer.</summary>
         [JsonProperty]
         private string loopback;
         [JsonIgnore]
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.P2P
             this.LastConnectionSuccess = peerConnectedAt;
         }
 
-        /// <summary> Sets the <see cref="LastConnectionHandshake"/> date.</summary>
+        /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
             this.LastConnectionHandshake = peerHandshakedAt;
@@ -154,11 +154,10 @@ namespace Stratis.Bitcoin.P2P
         #region Peer Preference
 
         /// <summary>
-        /// Determines whether the peer will be selected by <see cref="PeerConnector"/> when connecting.
-        /// <para>
-        /// <see cref="PeerHasNeverBeenConnectedTo"/> and <see cref="PeerHasBeenConnectedTo"/>.
-        /// </para>
+        /// Determines whether the peer will be selected by the <see cref="PeerConnector"/> when connecting.
         /// </summary>
+        /// <seealso cref="PeerHasNeverBeenConnectedTo"/>
+        /// <seealso cref="PeerHasBeenConnectedTo"/>
         [JsonIgnore]
         public bool Preferred
         {
@@ -174,9 +173,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Preference condition if the peer has never been connected to.
         /// <list>
-        ///     <item>1: Prefer the peer if it is new (never attempted and never connected to).</item>
-        ///     <item>2: The last connection attempt was more than 60 seconds ago.</item>
-        ///     <item>3: The maximum number of retries has not been reached.</item>
+        /// <item>1: Prefer the peer if it is new (never attempted and never connected to).</item>
+        /// <item>2: The last connection attempt was more than 60 seconds ago.</item>
+        /// <item>3: The maximum number of retries has not been reached.</item>
         /// </list>
         /// </summary>
         [JsonIgnore]
@@ -193,13 +192,12 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-
         /// <summary>
         /// Preference condition if the peer has been connected to.
         /// <list>
-        ///     <item>1: The peer has been seen in the last 30 days..</item>
-        ///     <item>2: The last connection successful connection was less than a week ago.</item>
-        ///     <item>3: The maximum number of failures has not been reached.</item>
+        /// <item>1: The peer has been seen in the last 30 days..</item>
+        /// <item>2: The last connection successful connection was less than a week ago.</item>
+        /// <item>3: The maximum number of failures has not been reached.</item>
         /// </list>
         /// </summary>
         [JsonIgnore]
@@ -280,10 +278,22 @@ namespace Stratis.Bitcoin.P2P
         }
     }
 
+    /// <summary>
+    /// These flags are used to show how a peer was added to the <see cref="PeerAddressManager"/>'s peer
+    /// collection.
+    /// </summary>
     public enum PeerIntroductionType
     {
+        /// <summary>
+        /// Used when nodes are discovered via <see cref="PeerDiscoveryLoop"/>. This is also
+        /// the default state when loading the peers from disk.
+        /// </summary>
         Discover,
+
+        /// <summary>Used when nodes are added via the -addnode argument when starting up the node.</summary>
         Add,
+
+        /// <summary>Used when nodes are added via the -connect argument when starting up the node.</summary>
         Connect
     }
 
@@ -291,7 +301,7 @@ namespace Stratis.Bitcoin.P2P
     /// Converter used to convert <see cref="IPEndPoint"/> to and from JSON.
     /// </summary>
     /// <seealso cref="Newtonsoft.Json.JsonConverter" />
-    public sealed class IPEndpointConverter : JsonConverter
+    public sealed class IPEndPointConverter : JsonConverter
     {
         /// <inheritdoc />
         public override bool CanConvert(Type objectType)

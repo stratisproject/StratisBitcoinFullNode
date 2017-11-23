@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.P2P
     }
 
     /// <summary>
-    /// The AddressManager keeps a set of peers discovered on the network in cache and on disk.
+    /// This manager keeps a set of peers discovered on the network in cache and on disk.
     /// <para>
     /// The manager updates their states according to how recent they have been connected to.
     /// </para>
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P
         public void LoadPeers()
         {
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath);
-            var peers = fileStorage.WithConverters(new[] { new IPEndpointConverter() }).LoadByFileName(PeerFileName);
+            var peers = fileStorage.WithConverters(new[] { new IPEndPointConverter() }).LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
                 peer.PeerIntroductionType = PeerIntroductionType.Discover;
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath);
-            fileStorage.WithConverters(new[] { new IPEndpointConverter() }).SaveToFile(this.Peers.Select(p => p.Value).ToList(), PeerFileName);
+            fileStorage.WithConverters(new[] { new IPEndPointConverter() }).SaveToFile(this.Peers.Select(p => p.Value).ToList(), PeerFileName);
         }
 
         /// <inheritdoc/>
@@ -214,6 +214,7 @@ namespace Stratis.Bitcoin.P2P
             return (int)(RandomUtils.GetUInt32() % (uint)max);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.SavePeers();

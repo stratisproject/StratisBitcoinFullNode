@@ -19,15 +19,15 @@ namespace Stratis.Bitcoin.Connection
 {
     public interface IConnectionManager : IDisposable
     {
-        /// <summary> The <see cref="PeerConnector"/> that is used when we use the -addnode argument when running the node.</summary>
+        /// <summary>Used when the -addnode argument is passed when running the node.</summary>
         PeerConnector AddNodePeerConnector { get; }
 
         IReadOnlyNodesCollection ConnectedNodes { get; }
 
-        /// <summary> The <see cref="PeerConnector"/> that is used when we use the -connect argument when running the node.</summary>
+        /// <summary>Used when the -connect argument is passed when running the node.</summary>
         PeerConnector ConnectNodePeerConnector { get; }
 
-        /// <summary> The  <see cref="PeerConnector"/> that is used to discover new peers to connect to.</summary>
+        /// <summary>Used when peer discovery takes place.</summary>
         PeerConnector DiscoverNodesPeerConnector { get; }
 
         Network Network { get; }
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Connection
 
     public sealed class ConnectionManager : IConnectionManager
     {
-        /// <summary> Factory for creating background async loop tasks.</summary>
+        /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Loop that discovers peers to connect to.</summary>
@@ -58,10 +58,10 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary> Manager class that handle peers and their respective states.</summary>
+        /// <summary>Manager class that handle peers and their respective states.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
-        // The maximum number of entries in an 'inv' protocol message.
+        /// <summary>The maximum number of entries in an 'inv' protocol message.</summary>
         public const int MaxInventorySize = 50000;
 
         /// <summary>Logger factory to create loggers.</summary>
@@ -146,10 +146,10 @@ namespace Stratis.Bitcoin.Connection
                     this.logger.LogInformation("Starting peer discovery...");
 
                     this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.network, clonedParameters, this.nodeLifetime, this.peerAddressManager);
-                    this.peerDiscoveryLoop.Start();
+                    this.peerDiscoveryLoop.DiscoverPeers();
                 }
 
-                this.DiscoverNodesPeerConnector = CreatePeerConnector(clonedParameters, this.discoveredNodeRequiredService, WellKnownPeerConnectorSelectors.ByNetwork, PeerIntroductionType.Discover);
+                this.DiscoverNodesPeerConnector = this.CreatePeerConnector(clonedParameters, this.discoveredNodeRequiredService, WellKnownPeerConnectorSelectors.ByNetwork, PeerIntroductionType.Discover);
             }
             else
             {
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Connect);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
 
-                this.ConnectNodePeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect, this.connectionManagerSettings.Connect.Count);
+                this.ConnectNodePeerConnector = this.CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect, this.connectionManagerSettings.Connect.Count);
             }
 
             {
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Add);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
 
-                this.AddNodePeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Add, this.connectionManagerSettings.AddNode.Count);
+                this.AddNodePeerConnector = this.CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Add, this.connectionManagerSettings.AddNode.Count);
             }
 
             // Relate the peer connectors to each other to prevent duplicate connections.
