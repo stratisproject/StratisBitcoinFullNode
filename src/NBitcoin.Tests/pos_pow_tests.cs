@@ -6,8 +6,15 @@ using Xunit;
 
 namespace NBitcoin.Tests
 {
-	public class pos_pow_tests
-	{
+    public class pos_pow_tests
+    {
+        public pos_pow_tests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
