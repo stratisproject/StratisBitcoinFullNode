@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -579,29 +580,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 var transaction = new Transaction(request.Hex);
-
-                WalletSendTransactionModel model = new WalletSendTransactionModel
-                {
-                    TransactionId = transaction.GetHash(),
-                    Outputs = new List<TransactionOutputModel>()
-                };
-                
-                foreach (var output in transaction.Outputs)
-                {
-                    model.Outputs.Add(new TransactionOutputModel
-                    {
-                        Address = output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
-                        Amount = output.Value,
-                    });
-                }
-                
                 var result = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
                 if (result == Bitcoin.Broadcasting.Success.Yes)
                 {
-                    return this.Json(model);
+                    return this.Ok();
                 }
-
-                if (result == Bitcoin.Broadcasting.Success.DontKnow)
+                else if (result == Bitcoin.Broadcasting.Success.DontKnow)
                 {
                     // wait for propagation
                     var waited = TimeSpan.Zero;
@@ -612,7 +596,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         var transactionEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
                         if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
                         {
-                            return this.Json(model);
+                            return this.Ok();
                         }
                         await Task.Delay(period).ConfigureAwait(false);
                         waited += period;

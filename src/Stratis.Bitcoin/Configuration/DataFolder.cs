@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Configuration
         {
             string path = settings.DataDir;
             this.CoinViewPath = Path.Combine(path, "coinview");
-            this.AddrManFile = Path.Combine(path, "addrman.dat");
+            this.AddressManagerFilePath = path;
             this.ChainPath = Path.Combine(path, "chain");
             this.BlockPath = Path.Combine(path, "blocks");
             this.IndexPath = Path.Combine(path, "index");
@@ -31,8 +31,8 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>Address manager's database of peers.</summary>
-        /// <seealso cref="NBitcoin.Protocol.AddressManager.LoadPeerFile"/>
-        public string AddrManFile { get; set; } 
+        /// <seealso cref="Protocol.PeerAddressManager.SavePeers(string, string)"/>
+        public string AddressManagerFilePath { get; private set; }
 
         /// <summary>Path to the folder with coinview database files.</summary>
         /// <seealso cref="Features.Consensus.CoinViews.DBreezeCoinView.DBreezeCoinView"/>

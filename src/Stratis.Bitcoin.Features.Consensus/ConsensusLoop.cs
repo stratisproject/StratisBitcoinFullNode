@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Information holding POS data chained.</summary>
         public StakeChain StakeChain { get; }
-        
+
         /// <summary>A puller that can pull blocks from peers on demand.</summary>
         public LookaheadBlockPuller Puller { get; }
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
-        /// <summary>Contain information about the life time of the node, its used on startup and shutdown.</summary>
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Holds state related to the block chain.</summary>
@@ -129,10 +129,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             IAsyncLoopFactory asyncLoopFactory,
             PowConsensusValidator validator,
             INodeLifetime nodeLifetime,
-            ConcurrentChain chain, 
-            CoinView utxoSet, 
-            LookaheadBlockPuller puller, 
-            NodeDeployments nodeDeployments, 
+            ConcurrentChain chain,
+            CoinView utxoSet,
+            LookaheadBlockPuller puller,
+            NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ChainState chainState,
             IConnectionManager connectionManager,
@@ -200,8 +200,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async (token) =>
             {
                 await this.PullerLoopAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-            }, 
-            this.nodeLifetime.ApplicationStopping, 
+            },
+            this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.RunOnce);
 
             this.logger.LogTrace("(-)");
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
                 // Check whether to use checkpoint to skip block validation.
-                context.BlockValidationContext.SkipValidation = false; 
+                context.BlockValidationContext.SkipValidation = false;
                 if (this.settings.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();

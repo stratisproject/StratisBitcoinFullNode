@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests
     public class TestBase
     {
         /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        public readonly ILoggerFactory loggerFactory;
 
         /// <summary>
         /// Initializes logger factory for inherited tests.

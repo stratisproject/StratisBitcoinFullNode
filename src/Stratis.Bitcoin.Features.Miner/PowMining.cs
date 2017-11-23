@@ -51,7 +51,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IBlockRepository blockRepository;
         private readonly ChainState chainState;
         private readonly Signals.Signals signals;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private uint256 hashPrevBlock;
         private IAsyncLoop mining;
