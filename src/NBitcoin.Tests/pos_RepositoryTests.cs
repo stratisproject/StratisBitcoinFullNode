@@ -17,10 +17,10 @@ namespace NBitcoin.Tests
 	{
         public pos_RepositoryTests()
         {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         public class RawData : IBitcoinSerializable

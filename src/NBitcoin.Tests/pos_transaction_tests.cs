@@ -20,10 +20,10 @@ namespace NBitcoin.Tests
 	{
         public pos_transaction_tests()
         {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         [Fact]

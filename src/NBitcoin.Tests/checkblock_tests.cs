@@ -14,6 +14,13 @@ namespace NBitcoin.Tests
 {
 	public class checkblock_tests
 	{
+        public checkblock_tests()
+        {
+            // The tests are related to Bitcoin.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]

@@ -11,8 +11,16 @@ namespace NBitcoin.Tests
 {
 	public class pos_addrman_tests
 	{
+        public pos_addrman_tests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
+
 #if !NOFILEIO
-		[Fact]
+        [Fact]
 		[Trait("UnitTest", "UnitTest")]
 		public void CanSerializeDeserializePeerTable()
 		{
