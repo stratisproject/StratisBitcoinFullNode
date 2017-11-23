@@ -32,6 +32,30 @@ The general rules:
 `public int X { get; private set; }`  
 17. Avoid initializing instance properties outside of constructor.  
 `public int MaxItems { get; set; } = 100000;`  
+18. Always provide a blank line after a curly brace that is not followed by a another curly brace.  
+
+   Therefore this is correct:
+   ```
+      if ()
+      {
+          block
+      }
+      [EMPTY LINE HERE]
+      //more code here...
+   ```   
+
+   And this is correct:
+   ```
+      if ()
+      {
+         foreach ()
+         {
+           block
+         }      
+      }
+      [EMPTY LINE HERE]
+      //more code here...
+   ```   
 
 We have provided a Visual Studio 2017 EditorConfig file (`.editorconfig`) at the root of the full node repository, enabling C# auto-formatting and warnings conforming to some of the above guidelines.
 
