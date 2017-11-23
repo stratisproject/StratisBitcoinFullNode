@@ -293,6 +293,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
                     services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
+                    services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<ChainState>();
                     services.AddSingleton<ChainRepository>();
                     services.AddSingleton<TimeSyncBehaviorState>();

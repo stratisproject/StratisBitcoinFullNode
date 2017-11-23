@@ -1,5 +1,5 @@
 ﻿using System;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests

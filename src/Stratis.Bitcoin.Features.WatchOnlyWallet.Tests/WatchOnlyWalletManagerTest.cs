@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
@@ -18,8 +18,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         [Trait("Module", "WatchOnlyWalletManager")]
         public void Given_AWalletIsPresent_When_GetWatchOnlyWalletIsCalled_ThenthewalletIsreturned()
         {
-            string dir = AssureEmptyDir("TestData/WatchOnlyWalletManagerTest/Given_AWalletIsPresent_When_GetWatchOnlyWalletIsCalled_ThenthewalletIsreturned");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
             
             var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
@@ -36,8 +35,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         [Trait("Module", "WatchOnlyWalletManager")]
         public void Given_AnAddressIsPassed_When_WatchAddressIsCalled_ThenAnAddressIsAddedToTheWatchList()
         {
-            string dir = AssureEmptyDir("TestData/WatchOnlyWalletManagerTest/Given_AnAddressIsPassed_When_WatchAddressIsCalled_ThenAnAddressIsAddedToTheWatchList");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
             var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
@@ -58,8 +56,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         public void Given_AWatchedAddress_When_ATransactionIsReceived_ThenTransactionDataIsAddedToTheAddress()
         {
             // Arrange.
-            string dir = AssureEmptyDir("TestData/WatchOnlyWalletManagerTest/Given_AWatchedAddress_When_ATransactionIsReceived_ThenTransactionDataIsAddedToTheAddress");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
 
             // Create the wallet to watch.
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
@@ -98,8 +95,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         public void Given_AWatchedAddress_When_ATransactionIsReceivedInABlock_ThenTransactionDataIsAddedToTheAddress()
         {
             // Arrange.
-            string dir = AssureEmptyDir("TestData/WatchOnlyWalletManagerTest/Given_AWatchedAddress_When_ATransactionIsReceivedInABlock_ThenTransactionDataIsAddedToTheAddress");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
 
             // Create the wallet to watch.
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);

@@ -277,7 +277,7 @@ namespace NBitcoin
 		}
 
 		// Check kernel hash target and coinstake signature
-		public static bool CheckProofOfStake(IBlockRepository blockStore, ITransactionRepository trasnactionStore, IBlockTransactionMapStore mapStore,
+		public static bool CheckProofOfStake(INBitcoinBlockRepository blockStore, ITransactionRepository trasnactionStore, IBlockTransactionMapStore mapStore,
 			ChainedBlock pindexPrev, BlockStake prevBlockStake, Transaction tx, uint nBits, out uint256 hashProofOfStake, out uint256 targetProofOfStake)
 		{
 			targetProofOfStake = null; hashProofOfStake = null;
@@ -331,7 +331,7 @@ namespace NBitcoin
 		public const uint StakeMinAge = 60; // 8 hours
 		public const uint ModifierInterval = 10 * 60; // time to elapse before new modifier is computed
 
-		public static bool CheckAndComputeStake(IBlockRepository blockStore, ITransactionRepository trasnactionStore, IBlockTransactionMapStore mapStore, StakeChain stakeChain,
+		public static bool CheckAndComputeStake(INBitcoinBlockRepository blockStore, ITransactionRepository trasnactionStore, IBlockTransactionMapStore mapStore, StakeChain stakeChain,
 			ChainBase chainIndex, ChainedBlock pindex, Block block, out BlockStake blockStake)
 		{
 			if (block.GetHash() != pindex.HashBlock)
@@ -376,7 +376,7 @@ namespace NBitcoin
 			return ComputeStakeModifier(chainIndex, pindex, blockStake, stakeChain);
 		}
 
-		private static bool IsConfirmedInNPrevBlocks(IBlockRepository blockStore, Transaction txPrev, ChainedBlock pindexFrom, int maxDepth, ref int actualDepth)
+		private static bool IsConfirmedInNPrevBlocks(INBitcoinBlockRepository blockStore, Transaction txPrev, ChainedBlock pindexFrom, int maxDepth, ref int actualDepth)
 		{
 			// note: this method can be optimized by ensuring that blockstore keeps 
 			// in memory at least maxDepth blocks twards genesis
@@ -570,7 +570,7 @@ namespace NBitcoin
 				return (nTimeBlock == nTimeTx);
 		}
 
-		public static bool CheckKernel(IBlockRepository blockStore, ITransactionRepository trasnactionStore,
+		public static bool CheckKernel(INBitcoinBlockRepository blockStore, ITransactionRepository trasnactionStore,
 			IBlockTransactionMapStore mapStore, StakeChain stakeChain,
 			ChainedBlock pindexPrev, uint nBits, long nTime, OutPoint prevout, ref long pBlockTime)
 		{
@@ -864,7 +864,7 @@ namespace NBitcoin
 		// guaranteed to be in main chain by sync-checkpoint. This rule is
 		// introduced to help nodes establish a consistent view of the coin
 		// age (trust score) of competing branches.
-		public static bool GetCoinAge(IBlockRepository blockStore, ITransactionRepository trasnactionStore, IBlockTransactionMapStore mapStore,
+		public static bool GetCoinAge(INBitcoinBlockRepository blockStore, ITransactionRepository trasnactionStore, IBlockTransactionMapStore mapStore,
 			Transaction trx, ChainedBlock pindexPrev, out ulong nCoinAge)
 		{
 
