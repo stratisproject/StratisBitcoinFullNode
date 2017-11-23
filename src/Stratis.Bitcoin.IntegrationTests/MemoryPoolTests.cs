@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             sortedOrder.Insert(2, tx1.GetHash().ToString()); // 10000
             sortedOrder.Insert(3, tx4.GetHash().ToString()); // 15000
             sortedOrder.Insert(4, tx2.GetHash().ToString()); // 20000
-            CheckSort(pool,  pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool,  pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             /* low fee but with high fee child */
             /* tx6 -> tx7 -> tx8, tx9 -> tx10 */
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // Check that at this point, tx6 is sorted low
             sortedOrder.Insert(0, tx6.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
 
             TxMempool.SetEntries setAncestors = new TxMempool.SetEntries();
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             sortedOrder.RemoveAt(0);
             sortedOrder.Add(tx6.GetHash().ToString());
             sortedOrder.Add(tx7.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             /* low fee child of tx7 */
             Transaction tx8 = new Transaction();
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // Now tx8 should be sorted low, but tx6/tx both high
             sortedOrder.Insert(0, tx8.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             /* low fee child of tx7 */
             Transaction tx9 = new Transaction();
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.Equal(9, pool.Size);
 
             sortedOrder.Insert(0, tx9.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             List<string>  snapshotOrder = sortedOrder.ToList();
 
@@ -248,14 +248,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             sortedOrder.Insert( 5, tx9.GetHash().ToString());
             sortedOrder.Insert( 6, tx8.GetHash().ToString());
             sortedOrder.Insert( 7, tx10.GetHash().ToString()); // tx10 is just before tx6
-            CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             // there should be 10 transactions in the mempool
             Assert.Equal(10, pool.Size);
 
             // Now try removing tx10 and verify the sort order returns to normal
             pool.RemoveRecursive(pool.MapTx.TryGet(tx10.GetHash()).Transaction);
-            CheckSort(pool, pool.MapTx.DescendantScore.ToList(), snapshotOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), snapshotOrder);
 
             pool.RemoveRecursive(pool.MapTx.TryGet(tx9.GetHash()).Transaction);
             pool.RemoveRecursive(pool.MapTx.TryGet(tx8.GetHash()).Transaction);
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 sortedOrder.Add(tx3.GetHash().ToString());
                 sortedOrder.Add(tx6.GetHash().ToString());
             }
-            CheckSort(pool, pool.MapTx.MiningScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.MiningScore.ToList(), sortedOrder);
         }
 
         [Fact]
@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 sortedOrder.Insert(3, tx1.GetHash().ToString());
             }
             sortedOrder.Insert(4, tx3.GetHash().ToString()); // 0
-            CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 
             /* low fee parent with high fee child */
             /* tx6 (0) -> tx7 (high) */
@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 sortedOrder.Add(tx6.GetHash().ToString());
             else
                 sortedOrder.Insert(sortedOrder.Count - 1, tx6.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 
             Transaction tx7 = new Transaction();
             tx7.AddInput(new TxIn(new OutPoint(tx6.GetHash(), 0), new Script(OpcodeType.OP_11)));
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             pool.AddUnchecked(tx7.GetHash(), entry.Fee(fee).FromTx(tx7));
             Assert.Equal(7, pool.Size);
             sortedOrder.Insert(1, tx7.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 
             /* after tx6 is mined, tx7 should move up in the sort */
             List<Transaction> vtx = new List<Transaction>(new[] {tx6});
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             else
                 sortedOrder.RemoveAt(sortedOrder.Count - 2);
             sortedOrder.Insert(0, tx7.GetHash().ToString());
-            CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
         }
 
         [Fact]

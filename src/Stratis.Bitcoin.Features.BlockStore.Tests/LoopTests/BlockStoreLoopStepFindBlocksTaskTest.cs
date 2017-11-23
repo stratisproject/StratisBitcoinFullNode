@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepFindBlocks_WithBlocksFound_AddToDownloadStack()
         {
-            var blocks = CreateBlocks(10);
+            var blocks = this.CreateBlocks(10);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_DownloadStackSizeReached()
         {
-            var blocks = CreateBlocks(55);
+            var blocks = this.CreateBlocks(55);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 55 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(54).ToList());
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(54).ToList());
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
         {
-            var blocks = CreateBlocks(3);
+            var blocks = this.CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
         {
-            var blocks = CreateBlocks(3);
+            var blocks = this.CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
         {
-            var blocks = CreateBlocks(3);
+            var blocks = this.CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 fluent.Create(chain);

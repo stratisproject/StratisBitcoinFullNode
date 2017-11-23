@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
         public static bool operator ==(ConsensusError a, ConsensusError b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;

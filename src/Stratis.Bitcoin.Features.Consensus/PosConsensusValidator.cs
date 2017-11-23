@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check proof-of-stake block signature.
-            if (!CheckBlockSignature(block))
+            if (!this.CheckBlockSignature(block))
             {
                 this.logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private long FutureDrift(long time)
         {
-            return IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
+            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
 
         public bool CheckBlockSignature(Block block)

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ProcessPendingStorage_PushToRepo_NotIBD_InMemory()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = this.CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Add chained blocks 5 - 9 to PendingStorage
                 for (int i = 5; i <= 9; i++)
                 {
-                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                    this.AddBlockToPendingStorage(fluent.Loop, blocks[i]);
                 }
 
                 //Start processing pending blocks from block 5
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ProcessPendingStorage_PushToRepo_IBD_InMemory()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = this.CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Add chained blocks 5 - 14 to PendingStorage
                 for (int i = 5; i <= 14; i++)
                 {
-                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                    this.AddBlockToPendingStorage(fluent.Loop, blocks[i]);
                 }
 
                 //Start processing pending blocks from block 5
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ProcessPendingStorage_PushToRepo_IBD_MaxPendingInsertBlockSize_InMemory()
         {
-            var blocks = CreateBlocks(2500, true);
+            var blocks = this.CreateBlocks(2500, true);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 2500 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(2499));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2499));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Add chained blocks 5 - 2499 to PendingStorage
                 for (int i = 5; i <= 2499; i++)
                 {
-                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                    this.AddBlockToPendingStorage(fluent.Loop, blocks[i]);
                 }
 
                 //Start processing pending blocks from block 5
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ProcessPendingStorage_PushToRepo_Disposing_InMemory()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = this.CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Add chained blocks 5 - 14 to PendingStorage
                 for (int i = 5; i <= 14; i++)
                 {
-                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                    this.AddBlockToPendingStorage(fluent.Loop, blocks[i]);
                 }
 
                 //Start processing pending blocks from block 5

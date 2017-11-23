@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks_InMemory()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = this.CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create the last 5 chained blocks without appending to the chain
                 var block9 = chain.GetBlock(blocks[9].Header.GetHash());

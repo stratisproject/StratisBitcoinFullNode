@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.HIGHFEE).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             Assert.True(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
-            Assert.True(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
+            Assert.True(!this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
             Assert.True(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
-            Assert.True(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
+            Assert.True(!this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
         }
 
         [Fact]
@@ -564,7 +564,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
             Assert.True(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
-            Assert.True(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
+            Assert.True(this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast(), context.chain.Tip.Height + 2)); // Locktime passes on 2nd block
@@ -596,7 +596,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
             Assert.True(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
-            Assert.True(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
+            Assert.True(this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast().AddMinutes(2), context.chain.Tip.Height + 2)); // Locktime passes 2 min later

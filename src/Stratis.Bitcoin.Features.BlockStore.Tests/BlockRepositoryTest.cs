@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
         {
             string dir = CreateTestDir(this);
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
             }
 
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
             }
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxAsync(uint256.Zero);
                 task.Wait();
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxAsync(new uint256(65));
                 task.Wait();
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxAsync(trans.GetHash());
                 task.Wait();
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.PutAsync(nextBlockHash, blocks);
                 task.Wait();
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.SetTxIndexAsync(false);
                 task.Wait();
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.SetBlockHashAsync(new uint256(56));
                 task.Wait();
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetAsync(block.GetHash());
                 task.Wait();
@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             string dir = CreateTestDir(this);
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetAsync(new uint256());
                 task.Wait();
@@ -369,7 +369,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.ExistAsync(block.GetHash());
                 task.Wait();
@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             string dir = CreateTestDir(this);
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.ExistAsync(new uint256());
                 task.Wait();
@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = this.SetupRepository(Network.Main, dir))
             {
                 var task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
                 task.Wait();

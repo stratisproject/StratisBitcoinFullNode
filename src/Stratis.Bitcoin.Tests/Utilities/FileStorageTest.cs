@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void Given_ConstructorIsCalled_TheSpecifiedFolderShouldBeCreated()
         {
             // Arrange
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
 
             // Act
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void Given_SaveToFileIsCalled_TheObjectIsSavedProperly()
         {
             // Arrange
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
 
             // Act
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             // Arrange
             TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
             
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenExistsIsCalled_WhenTheFileDoesntExist_ThenFalseIsreturned()
         {
             // Arrange
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             
             // Act
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenLoadByFileNameIsCalled_WhenNoFileWithTheNameExist_ThenFileNotFoundExceptionIsThrown()
         {
             // Arrange
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             
             // Act
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
 
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             TestObject testObject2 = new TestObject { Property1 = "prop3", Property2 = "prop4" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             TestObject testObject2 = new TestObject { Property1 = "prop3", Property2 = "prop4" };
-            string dir = GetFolderPathForTestExecution();
+            string dir = this.GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.txt");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.txt");

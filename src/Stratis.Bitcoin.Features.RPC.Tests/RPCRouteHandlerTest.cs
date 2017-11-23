@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         {
             var request = new HttpRequestFeature();
             SetupRequestBody(request, "{\"method\": \"GET\"}");
-            var context = new RouteContext(PrepareDefaultHttpContext(request));
+            var context = new RouteContext(this.PrepareDefaultHttpContext(request));
             RouteContext callback = null;
             this.inner.Setup(i => i.RouteAsync(It.IsAny<RouteContext>()))
                 .Callback<RouteContext>((r) => { callback = r; })
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         {
             var request = new HttpRequestFeature();
             SetupRequestBody(request, "{\"method\": \"GET\"}");
-            var context = new RouteContext(PrepareDefaultHttpContext(request));
+            var context = new RouteContext(this.PrepareDefaultHttpContext(request));
             RouteContext callback = null;
             this.inner.Setup(i => i.RouteAsync(It.IsAny<RouteContext>()))
                 .Callback<RouteContext>((r) => { callback = r; })

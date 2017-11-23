@@ -84,13 +84,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
             for (int i = 0; i < taskCount; i += 2)
             {
                 // Start one task that will use the lock in async environment.
-                tasks[i] = Task.Run(async () => { await LockAndLockAsync_PreventConcurrentExecution_TaskProcAsync(context); });
+                tasks[i] = Task.Run(async () => { await this.LockAndLockAsync_PreventConcurrentExecution_TaskProcAsync(context); });
 
                 int delay = context.Rng.Next(500);
                 Thread.Sleep(delay);
 
                 // Start one task that will use the lock in non-async environment.
-                tasks[i + 1] = Task.Run(() => LockAndLockAsync_PreventConcurrentExecution_TaskProc(context));
+                tasks[i + 1] = Task.Run(() => this.LockAndLockAsync_PreventConcurrentExecution_TaskProc(context));
 
                 delay = context.Rng.Next(200);
                 Thread.Sleep(delay);
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             using (await workerContext.Lock.LockAsync())
             {
-                await CriticalSectionLockedAsync(workerContext);
+                await this.CriticalSectionLockedAsync(workerContext);
             }
         }
 
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             using (workerContext.Lock.Lock())
             {
-                CriticalSectionLocked(workerContext);
+                this.CriticalSectionLocked(workerContext);
             }
         }
 
@@ -144,13 +144,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
             for (int i = 0; i < taskCount; i += 2)
             {
                 // Start one task that will use the lock in async environment.
-                tasks[i] = Task.Run(async () => { await LockAndLockAsync_WithCancellationToken_PreventConcurrentExecution_TaskProcAsync(context); });
+                tasks[i] = Task.Run(async () => { await this.LockAndLockAsync_WithCancellationToken_PreventConcurrentExecution_TaskProcAsync(context); });
 
                 int delay = context.Rng.Next(500);
                 Thread.Sleep(delay);
 
                 // Start one task that will use the lock in non-async environment.
-                tasks[i + 1] = Task.Run(() => LockAndLockAsync_WithCancellationToken_PreventConcurrentExecution_TaskProc(context));
+                tasks[i + 1] = Task.Run(() => this.LockAndLockAsync_WithCancellationToken_PreventConcurrentExecution_TaskProc(context));
 
                 delay = context.Rng.Next(200);
                 Thread.Sleep(delay);
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             {
                 using (await workerContext.Lock.LockAsync(workerContext.Cancellation.Token))
                 {
-                    await CriticalSectionLockedAsync(workerContext);
+                    await this.CriticalSectionLockedAsync(workerContext);
                 }
             }
             catch (OperationCanceledException)
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             {
                 using (workerContext.Lock.Lock(workerContext.Cancellation.Token))
                 {
-                    CriticalSectionLocked(workerContext);
+                    this.CriticalSectionLocked(workerContext);
                 }
             }
             catch (OperationCanceledException)

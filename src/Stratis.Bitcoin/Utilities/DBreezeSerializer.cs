@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Utilities
                 int itemIndex = 0;
                 foreach (object arrayObject in arr)
                 {
-                    byte[] serializedObject = Serializer(arrayObject);
+                    byte[] serializedObject = this.Serializer(arrayObject);
                     serializedItems[itemIndex] = serializedObject;
                     itemIndex++;
                 }

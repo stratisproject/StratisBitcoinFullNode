@@ -470,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.Set = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.UTXOSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 context.Set.SetCoins(coins.UnspentOutputs);
             }
@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 Block nextBlock = this.Puller.TryGetLookahead(0);
                 if (nextBlock != null)
-                    await this.UTXOSet.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
+                    await this.UTXOSet.FetchCoinsAsync(this.GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
