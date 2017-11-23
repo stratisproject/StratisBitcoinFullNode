@@ -237,7 +237,9 @@ namespace NBitcoin.Tests
 		[Fact]
 		public void CanConnectToRandomNode()
 		{
-			Stopwatch watch = new Stopwatch();
+            if (pos_RPCClientTests.noClient) return;
+
+            Stopwatch watch = new Stopwatch();
 			NodeConnectionParameters parameters = new NodeConnectionParameters();
 			var addrman = GetCachedAddrMan("addrmancache.dat");
 			parameters.TemplateBehaviors.Add(new AddressManagerBehavior(addrman));
