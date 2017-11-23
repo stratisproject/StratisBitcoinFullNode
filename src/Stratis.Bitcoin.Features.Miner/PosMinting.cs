@@ -768,7 +768,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="block">Template of the block that we are trying to mine.</param>
         /// <param name="minimalAllowedTime">Minimal valid timestamp for new coinstake transaction.</param>
         /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
-        /// <returns></returns>
         private void CoinstakeWorker(CoinstakeWorkerContext context, ChainedBlock chainTip, Block block, long minimalAllowedTime, long searchInterval)
         {
             context.Logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(chainTip), chainTip, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
@@ -919,7 +918,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions)
             {
                 // Must wait until coinbase is safely deep enough in the chain before valuing it.
-                if ((utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake) && (this.GetBlocksToMaturity(utxoStakeDescription) > 0))
+                if ((utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake) && (this.GetBlocksCountToMaturity(utxoStakeDescription) > 0))
                     continue;
 
                 money += utxoStakeDescription.TxOut.Value;
@@ -969,7 +968,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                int toMaturity = this.GetBlocksToMaturity(utxoStakeDescription);
+                int toMaturity = this.GetBlocksCountToMaturity(utxoStakeDescription);
                 if (toMaturity > 0)
                 {
                     this.logger.LogTrace("UTXO '{0}' can't be added because it is not mature, {1} blocks to maturity left.", utxoStakeDescription.OutPoint, toMaturity);
@@ -996,7 +995,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return res;
         }
 
-        private int GetBlocksToMaturity(UtxoStakeDescription utxoStakeDescription)
+        /// <summary>
+        /// Calculates blocks count till UTXO is considered mature for staking.
+        /// </summary>
+        /// <param name="utxoStakeDescription">The utxo stake description.</param>
+        /// <returns>How many blocks are left till UTXO is considered mature for staking.</returns>
+        private int GetBlocksCountToMaturity(UtxoStakeDescription utxoStakeDescription)
         {
             if (!(utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake))
                 return 0;
@@ -1004,10 +1008,15 @@ namespace Stratis.Bitcoin.Features.Miner
             return Math.Max(0, (int)this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity + 1 - this.GetDepthInMainChain(utxoStakeDescription));
         }
 
-        // Return depth of transaction in blockchain:
-        // -1  : not in blockchain, and not in memory pool (conflicted transaction),
-        //  0  : in memory pool, waiting to be included in a block,
-        // >=1 : this many blocks deep in the main chain.
+        /// <summary>
+        /// Gets depth of transaction in blockchain.
+        /// </summary>
+        /// <param name="utxoStakeDescription">The utxo stake description.</param>
+        /// <returns>
+        /// <c>-1</c> if not in blockchain, and not in memory pool (conflicted transaction).
+        /// <c>0</c> if in memory pool, waiting to be included in a block.
+        /// <c>>=1</c> if included in a block. Shows how many blocks deep in the main chain.
+        /// </returns>
         private int GetDepthInMainChain(UtxoStakeDescription utxoStakeDescription)
         {
             ChainedBlock chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
