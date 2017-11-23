@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -164,7 +165,16 @@ namespace Stratis.Bitcoin.Connection
                 });
 
                 server.InboundNodeConnectionParameters = cloneParameters;
-                server.Listen();
+                try
+                {
+                    server.Listen();
+                }
+                catch (SocketException e)
+                {
+                    logger.LogCritical("P2P port " + listen.Endpoint.Port + " is being used. Please use a different port by running the node with '-port=[differentPort]'.");
+                    logs.Append("Can't start listening on port: " + listen.Endpoint.Port);
+                    throw e;
+                }
 
                 logs.Append(listen.Endpoint.Address + ":" + listen.Endpoint.Port);
                 if (listen.Whitelisted)
