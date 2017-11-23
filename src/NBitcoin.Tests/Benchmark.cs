@@ -16,14 +16,26 @@ namespace NBitcoin.Tests
 {
 	public class Benchmark
 	{
-		[Fact]
+        public string BlockStoreFolder { get; private set; }
+
+        public Benchmark()
+        {
+            this.BlockStoreFolder = System.IO.Path.Combine("data", "blocks");
+
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        [Fact]
 		[Trait("Benchmark", "Benchmark")]
 		public void BlockDirectoryScanSpeed()
 		{
 			//TestUtils.EnsureNew("BlockDirectoryScanSpeed");
 			var completeScan = Bench(() =>
 			{
-				BlockStore store = new BlockStore(@"Z:\Bitcoin\blocks", Network.Main);
+				BlockStore store = new BlockStore(this.BlockStoreFolder, Network.Main);
 				//BlockStore other = new BlockStore(@"BlockDirectoryScanSpeed", Network.Main);
 				foreach(var block in store.Enumerate(false))
 				{
@@ -118,7 +130,7 @@ namespace NBitcoin.Tests
 		{
 			Stopwatch watch = new Stopwatch();
 			watch.Start();
-			BlockStore store = new BlockStore(@"E:\Bitcoin\blocks\", Network.Main);
+			BlockStore store = new BlockStore(this.BlockStoreFolder, Network.Main);
 			IndexedBlockStore indexed = new IndexedBlockStore(new InMemoryNoSqlRepository(), store);
 			indexed.ReIndex();
 			watch.Stop();
@@ -137,7 +149,7 @@ namespace NBitcoin.Tests
 		[Trait("Benchmark", "Benchmark")]
 		public void BenchmarkCreateChainFromBlocks()
 		{
-			BlockStore store = new BlockStore(@"E:\Bitcoin\blocks\", Network.Main);
+			BlockStore store = new BlockStore(this.BlockStoreFolder, Network.Main);
 			ConcurrentChain chain = null;
 			var fullBuild = Bench(() =>
 			{
@@ -148,7 +160,7 @@ namespace NBitcoin.Tests
 		{
 			Stopwatch watch = new Stopwatch();
 			watch.Start();
-			BlockStore store = new BlockStore(@"E:\Bitcoin\blocks\", Network.Main);
+			BlockStore store = new BlockStore(this.BlockStoreFolder, Network.Main);
 			foreach(var txout in store.EnumerateFolder().Take(150000).SelectMany(o => o.Item.Transactions.SelectMany(t => t.Outputs)))
 			{
 				act(txout);

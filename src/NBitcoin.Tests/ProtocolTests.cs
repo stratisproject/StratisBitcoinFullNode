@@ -131,7 +131,15 @@ namespace NBitcoin.Tests
 	}
 	public class ProtocolTests
 	{
-		[Fact]
+        public ProtocolTests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        [Fact]
 		[Trait("UnitTest", "UnitTest")]
 		//Copied from https://en.bitcoin.it/wiki/Protocol_specification (19/04/2014)
 		public void CanParseMessages()

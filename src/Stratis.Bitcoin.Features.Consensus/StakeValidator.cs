@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
-        
+
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
 
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}',{5}:{6})", nameof(utxoSet), utxoSet.TransactionId, utxoSet.Height, nameof(pindexFrom), pindexFrom, nameof(maxDepth), maxDepth);
-            
+
             int actualDepth = pindexFrom.Height - (int)utxoSet.Height;
             bool res = actualDepth < maxDepth;
 
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             BlockStake prevBlockStake, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}',{15}:{16})",
-                nameof(prevChainedBlock), prevChainedBlock.HashBlock, prevChainedBlock.Height, nameof(headerBits), headerBits, nameof(prevBlockTime), prevBlockTime, 
+                nameof(prevChainedBlock), prevChainedBlock.HashBlock, prevChainedBlock.Height, nameof(headerBits), headerBits, nameof(prevBlockTime), prevBlockTime,
                 nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(stakingCoins), stakingCoins.TransactionId, stakingCoins.Height,
                 nameof(prevout), prevout, nameof(transactionTime), transactionTime);
 
@@ -246,10 +246,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void CheckKernel(ContextInformation context, ChainedBlock pindexPrev, uint nBits, long nTime, OutPoint prevout, ref long pBlockTime)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:0x{3:X},{4}:{5},{6}:'{7}.{8}')", nameof(pindexPrev), pindexPrev, 
+            this.logger.LogTrace("({0}:'{1}',{2}:0x{3:X},{4}:{5},{6}:'{7}.{8}')", nameof(pindexPrev), pindexPrev,
                 nameof(nBits), nBits, nameof(nTime), nTime, nameof(prevout), prevout.Hash, prevout.N);
 
-            // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/397
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
             {
@@ -313,13 +312,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="proofOfStake"><c>true</c> for calculation of PoS difficulty target, <c>false</c> for calculation of PoW difficulty target.</param>
         /// <returns>The difficulty target for the next block after <paramref name="chainedBlock"/>.</returns>
         /// <remarks>
-        /// The calculation of the next target is based on the last target value and the block time (aka spacing) of <paramref name="chainedBlock"/> 
-        /// (i.e. difference in time stamp of this block and its immediate predecessor). The target changes every block and it is adjusted 
+        /// The calculation of the next target is based on the last target value and the block time (aka spacing) of <paramref name="chainedBlock"/>
+        /// (i.e. difference in time stamp of this block and its immediate predecessor). The target changes every block and it is adjusted
         /// down (i.e. towards harder to reach, or more difficult) if the time to mine last block was lower than the target block time.
-        /// And it is adjusted up if it took longer than the target block time. The adjustments are done in a way the target is moving towards 
+        /// And it is adjusted up if it took longer than the target block time. The adjustments are done in a way the target is moving towards
         /// the target spacing exponentially, so even a big change in the mining power on the network will be fixed by retargeting relatively quickly.
         /// <para>
-        /// Over <see cref="RetargetIntervalMinutes"/> minutes there are certain number (say <c>N</c>) of blocks expected to be mined if the target block time 
+        /// Over <see cref="RetargetIntervalMinutes"/> minutes there are certain number (say <c>N</c>) of blocks expected to be mined if the target block time
         /// of <see cref="TargetSpacingSeconds"/> was reached every time. Then the next target is calculated as follows:</para>
         /// <code>
         /// NewTarget = PrevTarget * ((N - 1) * TargetSpacingSeconds + 2 * LastBlockTime) / ((N + 1) * TargetSpacingSeconds)
@@ -340,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return consensus.PowLimit;
             }
 
-            // Find the last two blocks that correspond to the mining algo 
+            // Find the last two blocks that correspond to the mining algo
             // (i.e if this is a POS block we need to find the last two POS blocks).
             BigInteger targetLimit = proofOfStake
                 ? consensus.ProofOfStakeLimitV2

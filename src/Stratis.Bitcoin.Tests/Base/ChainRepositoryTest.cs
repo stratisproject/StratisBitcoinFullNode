@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public void SaveWritesChainToDisk()
         {
-            string dir = AssureEmptyDir("TestData/ChainRepository/SaveWritesChainToDisk");
+            string dir = CreateTestDir(this);
             var chain = new ConcurrentChain(Network.RegTest);
             this.AppendBlock(chain);
 
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public void GetChainReturnsConcurrentChainFromDisk()
         {
-            string dir = AssureEmptyDir("TestData/ChainRepository/GetChainReturnsConcurrentChainFromDisk");
+            string dir = CreateTestDir(this);
             var chain = new ConcurrentChain(Network.RegTest);
             var tip = this.AppendBlock(chain);
 

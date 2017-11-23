@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public class NoSqlBlockRepository : IBlockRepository
+	public class NoSqlBlockRepository : INBitcoinBlockRepository
 	{
 		readonly NoSqlRepository repository;
 

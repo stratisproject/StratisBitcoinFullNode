@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <item>Coinstake transaction's kernel (first) input MUST not be created within last <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks,
     /// i.e. it MUST have that many confirmation at least.</item>
     /// <item>Coinstake transaction's kernel must meet the staking target using this formula:
-    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) target * weight</code>
+    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) &lt; target * weight</code>
     /// <para>
     /// where 'stakingCoins' is the coinstake's kernel UTXO, 'prevout' is the kernel's output in that transaction,
     /// 'prevout.Hash' is the hash of that transaction; 'transactionTime' is coinstake's transaction time; 'target' is the target as
@@ -135,6 +135,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Check timestamp.
             if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
             {
+                // The block can be valid only after its time minus the future drift.
+                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.FutureDrift(0)).UtcDateTime;
                 this.logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
@@ -404,8 +406,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
             BlockStake blockStake = context.Stake.BlockStake;
 
-            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
-
             // Verify hash target and signature of coinstake tx.
             if (BlockStake.IsProofOfStake(block))
             {
@@ -415,12 +415,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (prevBlockStake == null)
                     ConsensusErrors.PrevStakeNull.Throw();
 
-                // Only do proof of stake validation for blocks after last checkpoint.
-                if (chainedBlock.Height > lastCheckpointHeight)
+                // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
+                if (!context.BlockValidationContext.SkipValidation)
                 {
                     this.stakeValidator.CheckProofOfStake(context, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
                 }
-                else this.logger.LogTrace("POS validation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
+                else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedBlock.Height);
             }
 
             // PoW is checked in CheckBlock().
@@ -437,6 +437,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Record proof hash value.
             blockStake.HashProof = context.Stake.HashProofOfStake;
 
+            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
             if (chainedBlock.Height > lastCheckpointHeight)
             {
                 // Compute stake modifier.
