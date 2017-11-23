@@ -56,19 +56,19 @@ namespace Stratis.Bitcoin.Features.Miner
         public class UtxoStakeDescription
         {
             /// <summary>Block's hash.</summary>
-            public uint256 HashBlock;
+            public uint256 HashBlock { get; set; }
             /// <summary>UTXO.</summary>
-            public TxOut TxOut;
+            public TxOut TxOut { get; set; }
             /// <summary>Information about transaction id and index.</summary>
-            public OutPoint OutPoint;
+            public OutPoint OutPoint { get; set; }
             /// <summary>Transaction's address.</summary>
-            public HdAddress Address;
+            public HdAddress Address { get; set; }
             /// <summary>Utxo set.</summary>
-            public UnspentOutputs UtxoSet;
+            public UnspentOutputs UtxoSet { get; set; }
             /// <summary><see cref="WalletSecret"/></summary>
-            public WalletSecret Secret;
+            public WalletSecret Secret { get; set; }
             /// <summary>Private key.</summary>
-            public Key Key;
+            public Key Key { get; set; }
         }
 
         /// <summary>
@@ -76,10 +76,10 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         public class WalletSecret
         {
-            /// <summary> Wallet's password that is needed for getting wallet's private key which is used for signing generated blocks.</summary>
-            public string WalletPassword;
-            /// <summary> Name of the wallet which UTXOs are used for staking.</summary>
-            public string WalletName;
+            /// <summary>Wallet's password that is needed for getting wallet's private key which is used for signing generated blocks.</summary>
+            public string WalletPassword { get; set; }
+            /// <summary>Name of the wallet which UTXOs are used for staking.</summary>
+            public string WalletName { get; set; }
         }
 
         /// <summary>
@@ -175,45 +175,64 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>Responsible for downloading and validating blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
+
         /// <summary>Chain of headers from genesis.</summary>
         private readonly ConcurrentChain chain;
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+
         /// <summary>Used to verify that node is connected to network before we start staking.</summary>
         private readonly IConnectionManager connection;
+
         /// <summary>Used to verify that node is not in a state of IBD (Initial Block Download).</summary>
         private readonly ChainState chainState;
+
         /// <summary>Provides date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>Used for creating block template.</summary>
         private readonly AssemblerFactory blockAssemblerFactory;
+
         /// <summary>Allows consumers to perform cleanup during a graceful shutdown.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         /// <summary>Used to fetch UTXOs.</summary>
         private readonly CoinView coinView;
+
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
+
         /// <summary>Used for creating <see cref="mining"/> loop.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
         /// <summary>A manager providing operations on wallets.</summary>
         private readonly WalletManager walletManager;
+
         /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
         private readonly PosConsensusValidator posConsensusValidator;
+
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
         /// <summary>Mining loop.</summary>
         private IAsyncLoop mining;
+
         /// <summary>Balance that shouldn't participate in taking.</summary>
         private Money reserveBalance;
+
         /// <summary>UTXO's value threshold for being selected for staking.</summary>
         private readonly int minimumInputValue;
+
         /// <summary>Time in milliseconds between attempts to generate PoS blocks.</summary>
         private readonly int minerSleep;
 
-        /// <summary>Used for asynchronously calling <see cref="mempool"/>.</summary>
+        /// <summary>Used for managing asynchronous access to <see cref="mempool"/>.</summary>
         protected readonly MempoolSchedulerLock mempoolLock;
+
         /// <summary>Used for populating <see cref="rpcGetStakingInfoModel"/> with pooled transactions.</summary>
         protected readonly TxMempool mempool;
 
@@ -811,11 +830,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     try
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
-                        long nBlockTime = 0;
 
                         var contextInformation = new ContextInformation(new BlockValidationContext { Block = block }, this.network.Consensus);
                         contextInformation.SetStake();
-                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
+                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, out _);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
