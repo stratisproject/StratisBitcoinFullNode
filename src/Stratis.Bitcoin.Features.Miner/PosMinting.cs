@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
-        private readonly Miner.Models.GetStakingInfoModel rpcGetStakingInfoModel;
+        private readonly Models.GetStakingInfoModel rpcGetStakingInfoModel;
 
         /// <summary>Estimation of the total staking weight of all nodes on the network.</summary>
         private long networkWeight;
@@ -277,7 +277,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
 
-            this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
+            this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
         }
 
         /// <summary>
@@ -1100,9 +1100,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Constructs model for RPC "getstakinginfo" call.
         /// </summary>
         /// <returns>Staking information RPC response.</returns>
-        public Miner.Models.GetStakingInfoModel GetGetStakingInfoModel()
+        public Models.GetStakingInfoModel GetGetStakingInfoModel()
         {
-            return (Miner.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
+            return (Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
         }
 
         /// <summary>

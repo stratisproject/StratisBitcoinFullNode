@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             Guard.NotNull(nextChainedBlock, nameof(nextChainedBlock));
 
             this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;

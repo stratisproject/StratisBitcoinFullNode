@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         {
             this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
             {
-                await Notify(this.nodeLifetime.ApplicationStopping);
+                await this.Notify(this.nodeLifetime.ApplicationStopping);
             },
             this.nodeLifetime.ApplicationStopping);
         }

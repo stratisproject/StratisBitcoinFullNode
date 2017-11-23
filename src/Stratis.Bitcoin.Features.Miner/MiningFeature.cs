@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.minerSettings.Stake)
             {
-                StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
+                this.StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
             }
         }
 

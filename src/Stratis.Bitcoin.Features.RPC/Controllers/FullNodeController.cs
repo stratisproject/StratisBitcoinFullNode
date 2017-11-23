@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (!isJsonFormat)
             {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(GetBlockHeader));
+                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetBlockHeader));
                 throw new NotImplementedException();
             }
 

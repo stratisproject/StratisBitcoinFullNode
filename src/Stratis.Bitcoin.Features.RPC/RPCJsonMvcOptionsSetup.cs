@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public RPCJsonMvcOptionsSetup(ILoggerFactory loggerFactory, IOptions<MvcJsonOptions> jsonOptions, ArrayPool<char> charPool, ObjectPoolProvider objectPoolProvider)
             : base(delegate (MvcOptions options)
             {
-                RPCJsonMvcOptionsSetup.ConfigureMvc(options, jsonOptions.Value.SerializerSettings, loggerFactory, charPool, objectPoolProvider);
+                ConfigureMvc(options, jsonOptions.Value.SerializerSettings, loggerFactory, charPool, objectPoolProvider);
             })
         {
         }

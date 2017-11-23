@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (!isJsonFormat)
             {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(GetStakingInfo));
+                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetStakingInfo));
                 throw new NotImplementedException();
             }
 

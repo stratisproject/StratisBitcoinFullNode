@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState = chainState;
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
 
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
             {
-                await DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
+                await this.DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,

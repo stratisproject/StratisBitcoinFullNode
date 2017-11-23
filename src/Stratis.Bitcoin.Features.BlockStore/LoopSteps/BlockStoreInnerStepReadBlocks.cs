@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public BlockStoreInnerStepReadBlocks(ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>

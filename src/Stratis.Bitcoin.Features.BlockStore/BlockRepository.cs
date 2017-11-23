@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
 
-            this.PerformanceCounter = PerformanceCounterFactory();
+            this.PerformanceCounter = this.PerformanceCounterFactory();
         }
 
         public virtual BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()

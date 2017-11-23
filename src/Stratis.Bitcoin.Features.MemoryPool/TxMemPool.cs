@@ -480,9 +480,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Guard.NotNull(entry, nameof(entry));
 
-            Utilities.Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
+            Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
-            Utilities.Guard.Assert(it != null);
+            Guard.Assert(it != null);
             return it.Parents;
         }
 
@@ -495,9 +495,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Guard.NotNull(entry, nameof(entry));
             
-            Utilities.Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
+            Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
-            Utilities.Guard.Assert(it != null);
+            Guard.Assert(it != null);
             return it.Children;
         }
 
@@ -687,7 +687,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     if (it == null)
                         continue;
                     TxMempoolEntry nextit = this.MapTx.TryGet(it.Transaction.GetHash());
-                    Utilities.Guard.Assert(nextit != null);
+                    Guard.Assert(nextit != null);
                     txToRemove.Add(nextit);
                 }
             }

@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.RPC
                         }
                     }
                 })
-                .UseStartup<RPC.Startup>()
+                .UseStartup<Startup>()
                 .Build();
 
                 this.fullNode.RPCHost.Start();

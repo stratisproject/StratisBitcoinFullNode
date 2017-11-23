@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.connection = connection;
             this.name = name;
             this.nodeLifetime = nodeLifetime;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
         }
 

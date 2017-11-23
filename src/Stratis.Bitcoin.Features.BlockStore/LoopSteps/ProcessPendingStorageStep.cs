@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
             : base(blockStoreLoop, loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public BlockStoreInnerStepFindBlocks(ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             while (batchList.Count < batchSize)
             {
-                if (await ShouldStopFindingBlocksAsync(context))
+                if (await this.ShouldStopFindingBlocksAsync(context))
                 {
                     context.StopFindingBlocks();
                     break;

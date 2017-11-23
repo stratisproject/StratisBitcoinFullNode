@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
     {
         public TransactionModel(Network network = null) { }
 
-        public TransactionModel(NBitcoin.Transaction trx)
+        public TransactionModel(Transaction trx)
         {
             this.hex = trx?.ToHex();
         }
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
     public class TransactionBriefModel : TransactionModel
     {
         public TransactionBriefModel() { }
-        public TransactionBriefModel(NBitcoin.Transaction trx) : base(trx) { }
+        public TransactionBriefModel(Transaction trx) : base(trx) { }
     }
 
     public class TransactionVerboseModel : TransactionModel
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public TransactionVerboseModel() { }
 
-        public TransactionVerboseModel(NBitcoin.Transaction trx, Network network, NBitcoin.ChainedBlock block = null, ChainedBlock tip = null) : base(trx)
+        public TransactionVerboseModel(Transaction trx, Network network, ChainedBlock block = null, ChainedBlock tip = null) : base(trx)
         {
             if (trx != null)
             {
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
     {
         public Vin() { }
 
-        public Vin(NBitcoin.OutPoint prevOut, NBitcoin.Sequence sequence, NBitcoin.Script scriptSig)
+        public Vin(OutPoint prevOut, Sequence sequence, NBitcoin.Script scriptSig)
         {
 
             if (prevOut.Hash == uint256.Zero)
