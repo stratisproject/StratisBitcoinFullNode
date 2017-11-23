@@ -32,7 +32,7 @@ The general rules:
 `public int X { get; private set; }`  
 17. Avoid initializing instance properties outside of constructor.  
 `public int MaxItems { get; set; } = 100000;`  
-18. Always provide a blank line after a curly brace that is not followed by a another curly brace.  
+18. Always provide a blank line after a curly brace that is not followed by another curly brace.  
 
    Therefore this is correct:
    ```
