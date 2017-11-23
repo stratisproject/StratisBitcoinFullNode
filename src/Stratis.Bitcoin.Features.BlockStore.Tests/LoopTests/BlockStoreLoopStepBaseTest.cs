@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     {
         private IAsyncLoopFactory asyncLoopFactory;
         private StoreBlockPuller blockPuller;
-        internal BlockStore.IBlockRepository BlockRepository { get; private set; }
+        internal IBlockRepository BlockRepository { get; private set; }
         private Mock<ChainState> chainState;
         private Mock<IConnectionManager> connectionManager;
         private DataFolder dataFolder;
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
-            this.chainState = new Mock<ChainState>(fullNode);
+            this.chainState = new Mock<ChainState>(fullNode, new InvalidBlockHashStore(fullNode.DateTimeProvider));
             this.chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
             this.nodeLifeTime = new Mock<INodeLifetime>();

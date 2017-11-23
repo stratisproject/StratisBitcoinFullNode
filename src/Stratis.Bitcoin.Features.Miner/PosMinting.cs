@@ -8,7 +8,6 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -16,7 +15,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -194,7 +192,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Used for creating block template.</summary>
         private readonly AssemblerFactory blockAssemblerFactory;
 
-        /// <summary>Allows consumers to perform cleanup during a graceful shutdown.</summary>
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Used to fetch UTXOs.</summary>
@@ -681,8 +679,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 };
 
                 int stakingUtxoCount = Math.Min(stakingUtxoDescriptions.Count - coinIndex, UtxoStakeDescriptionsPerCoinstakeWorker);
-                cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount ));
-                coinIndex += stakingUtxoCount ;
+                cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount));
+                coinIndex += stakingUtxoCount;
                 workerContexts[workerIndex] = cwc;
 
                 workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));

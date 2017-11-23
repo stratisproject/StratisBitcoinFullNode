@@ -7,7 +7,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <Version>4.0.0.33</Version>
+    <Version>4.0.0.34</Version>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -25,6 +25,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE;NETSTANDARD1_6;NETCORE;NOSTRNORMALIZE;NOCUSTOMSSLVALIDATION;</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Protocol\AddressManager.cs" />
+    <Compile Remove="Protocol\Behaviors\AddressManagerBehavior.cs" />
+    <Compile Remove="Protocol\Behaviors\NodesGroupBehavior.cs" />
+    <Compile Remove="Protocol\NodesGroup.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="BitcoinStream.Partial.tt" />

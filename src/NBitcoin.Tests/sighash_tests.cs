@@ -10,8 +10,15 @@ namespace NBitcoin.Tests
 {
 	public class sighash_tests
 	{
-
 		static Random rand = new Random();
+
+        public sighash_tests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
 
 		static Script RandomScript()
 		{

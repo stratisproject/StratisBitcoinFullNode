@@ -32,9 +32,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private readonly IConnectionManager connection;
 
-        /// <summary>
-        /// Node lifetime injected dependency.
-        /// </summary>
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>

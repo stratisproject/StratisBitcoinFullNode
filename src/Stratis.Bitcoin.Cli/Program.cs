@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.Cli
                     blockchain = "stratis";
                     apiPort = 37221;
                     // hack until static flags are removed.
-                    var s = Network.StratisMain;
-                    var st = Network.StratisTest;
+                    Network s = Network.StratisMain;
+                    Network st = Network.StratisTest;
                 }
 
                 // The first argument is the network name.
