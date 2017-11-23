@@ -30,7 +30,9 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Used when peer discovery takes place.</summary>
         PeerConnector DiscoverNodesPeerConnector { get; }
 
+        /// <summary>The network the node is running on.</summary>
         Network Network { get; }
+
         NodeSettings NodeSettings { get; }
         NodeConnectionParameters Parameters { get; }
         List<NodeServer> Servers { get; }
@@ -52,14 +54,14 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>Loop that discovers peers to connect to.</summary>
-        private PeerDiscoveryLoop peerDiscoveryLoop;
-
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Manager class that handle peers and their respective states.</summary>
         private readonly IPeerAddressManager peerAddressManager;
+
+        /// <summary>Loop that discovers peers to connect to.</summary>
+        private PeerDiscoveryLoop peerDiscoveryLoop;
 
         /// <summary>The maximum number of entries in an 'inv' protocol message.</summary>
         public const int MaxInventorySize = 50000;
@@ -81,6 +83,7 @@ namespace Stratis.Bitcoin.Connection
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
         private readonly Network network;
+        /// <inheritdoc/>
         public Network Network { get { return this.network; } }
 
         private readonly NodeConnectionParameters parameters;

@@ -79,6 +79,10 @@ namespace Stratis.Bitcoin.P2P
         [JsonProperty]
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
+        /// <summary>
+        /// <c>True</c> if <see cref="LastConnectionAttempt"/>, <see cref="LastConnectionSuccess"/> and
+        /// <see cref="LastConnectionHandshake"/> is null.
+        /// </summary>
         [JsonIgnore]
         public bool IsNew
         {
@@ -128,7 +132,7 @@ namespace Stratis.Bitcoin.P2P
         /// Resets <see cref="ConnectionAttempts"/> and <see cref="LastConnectionAttempt"/>.
         /// </para>
         /// <para>
-        /// [NBitcoin] Do we need to throttle the update of lastSuccessfulConnect?
+        /// TODO: [NBitcoin] Do we need to throttle the update of lastSuccessfulConnect?
         /// https://github.com/stratisproject/NStratis/blob/2b0fbc3f6b809d92aaf43a8ee12f8baa724e5ccf/NBitcoin/Protocol/AddressManager.cs#L1014
         /// </para>
         /// </summary>
@@ -216,6 +220,7 @@ namespace Stratis.Bitcoin.P2P
 
         #endregion
 
+        /// <summary>Refer to <see cref="PeerIntroductionType"/> for what the individual types mean.</summary>
         [JsonIgnore]
         public PeerIntroductionType? PeerIntroductionType { get; set; }
 
@@ -254,6 +259,11 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
+        /// <summary>
+        /// Creates a new peer address instance.
+        /// </summary>
+        /// <param name="address">The network address of the peer.</param>
+        /// <param name="peerIntroductionType">How the peer will be introduced to the address manager.</param>
         public static PeerAddress Create(NetworkAddress address, PeerIntroductionType peerIntroductionType)
         {
             return new PeerAddress
@@ -265,13 +275,20 @@ namespace Stratis.Bitcoin.P2P
             };
         }
 
-        public static PeerAddress Create(NetworkAddress address, IPAddress source, PeerIntroductionType peerIntroductionType)
+        /// <summary>
+        /// Creates a new peer address instance and sets the loopback address (source).
+        /// </summary>
+        /// <param name="address">The network address of the peer.</param>
+        /// <param name="loopback">The loopback (source) of the peer.</param>
+        /// <param name="peerIntroductionType">How the peer will be introduced to the address manager.</param>
+        public static PeerAddress Create(NetworkAddress address, IPAddress loopback, PeerIntroductionType peerIntroductionType)
         {
             var peer = Create(address, peerIntroductionType);
-            peer.loopback = source.ToString();
+            peer.loopback = loopback.ToString();
             return peer;
         }
 
+        /// <summary>Match the peer with another by IP and port.</summary>
         public bool Match(IPEndPoint endPoint)
         {
             return this.endPoint.Address.ToString() == endPoint.Address.ToString() && this.endPoint.Port == endPoint.Port;

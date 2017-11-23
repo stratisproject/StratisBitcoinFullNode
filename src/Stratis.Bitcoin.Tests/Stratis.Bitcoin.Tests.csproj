@@ -52,8 +52,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="P2P\" />
-  </ItemGroup>
-
 </Project>

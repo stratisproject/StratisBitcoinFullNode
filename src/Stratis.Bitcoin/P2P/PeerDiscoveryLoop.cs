@@ -10,13 +10,13 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
-    /// <summary> Async loop that discovers new peers to connect to.</summary>
+    /// <summary>Async loop that discovers new peers to connect to.</summary>
     public sealed class PeerDiscoveryLoop : IDisposable
     {
-        /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
+        /// <summary>The async loop we need to wait upon before we can shut down this connector.</summary>
         private IAsyncLoop asyncLoop;
 
-        /// <summary> Factory for creating background async loop tasks.</summary>
+        /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
@@ -24,10 +24,10 @@ namespace Stratis.Bitcoin.P2P
 
         private readonly NodeConnectionParameters parameters;
 
-        /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
-        /// <summary> The amount of peers to find.</summary>
+        /// <summary>The amount of peers to find.</summary>
         private readonly int peersToFind;
 
         /// <summary> The network the node is running on.</summary>

@@ -10,13 +10,13 @@ using Stratis.Bitcoin.Utilities.FileStorage;
 
 namespace Stratis.Bitcoin.P2P
 {
-    /// <summary> Contract for <see cref="PeerAddressManager"/>.</summary>
+    /// <summary>Contract for <see cref="PeerAddressManager"/>.</summary>
     public interface IPeerAddressManager : IDisposable
     {
-        /// <summary> Data folder of where the json peer file is located.</summary>
+        /// <summary>Data folder of where the json peer file is located.</summary>
         DataFolder PeerFilePath { get; set; }
 
-        /// <summary> Key value store that indexes all discovered peers by their end point.</summary>
+        /// <summary>Key value store that indexes all discovered peers by their end point.</summary>
         ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; }
 
         /// <summary>
@@ -38,10 +38,10 @@ namespace Stratis.Bitcoin.P2P
         /// <summary> Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);
 
-        /// <summary> Loads peers from a json formatted file on disk.</summary>
+        /// <summary>Loads peers from a json formatted file on disk.</summary>
         void LoadPeers();
 
-        /// <summary> Persist peers to disk in json format.</summary>
+        /// <summary>Persist peers to disk in json format.</summary>
         void SavePeers();
 
         /// <summary>
@@ -223,6 +223,9 @@ namespace Stratis.Bitcoin.P2P
 
     public static class PeerAddressExtensions
     {
+        /// <summary>
+        /// Return peers where they have never have had a connection attempt or have been connected to.
+        /// </summary>
         public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers, PeerIntroductionType peerIntroductionType)
         {
             var isNew = peers.Skip(0)
@@ -231,6 +234,9 @@ namespace Stratis.Bitcoin.P2P
             return isNew;
         }
 
+        /// <summary>
+        /// Return peers where they have have had connection attempts, successful or not.
+        /// </summary>
         public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers, PeerIntroductionType peerIntroductionType)
         {
             var tried = peers.Skip(0)
@@ -240,10 +246,10 @@ namespace Stratis.Bitcoin.P2P
             return tried;
         }
 
+        /// <summary>Return a random peer from a given set of peers.</summary>
         public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
         {
-            //Using "Chance" from NBitcoin-----------------
-            double chanceFactor = 1.0;
+            var chanceFactor = 1.0;
             while (true)
             {
                 if (peers.Count() == 1)
@@ -257,7 +263,6 @@ namespace Stratis.Bitcoin.P2P
 
                 chanceFactor *= 1.2;
             }
-            //---------------------------------------------
         }
     }
 }

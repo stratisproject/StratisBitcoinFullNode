@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
+        /// <summary>The network the node is running on.</summary>
         private Network network;
 
         internal NodeConnectionParameters ParentParameters { get; private set; }
@@ -47,6 +48,19 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>Specification of requirements the <see cref="PeerConnector"/> has when connect to other peers.</summary>
         internal readonly NodeRequirement Requirements;
+
+        /// <summary>Constructor used for unit testing.</summary>
+        internal PeerConnector(
+            IPeerAddressManager peerAddressManager,
+            PeerIntroductionType peerIntroductionType)
+        {
+            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+
+            this.nodeLifetime = new NodeLifetime();
+            this.peerAddressManager = peerAddressManager;
+            this.peerIntroductionType = peerIntroductionType;
+            this.RelatedPeerConnector = new RelatedPeerConnectors();
+        }
 
         internal PeerConnector(Network network,
             INodeLifetime nodeLifeTime,
@@ -82,7 +96,7 @@ namespace Stratis.Bitcoin.P2P
 
         internal void StartConnectAsync()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.ConnectAsync), async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 if (this.ConnectedPeers.Count < this.MaximumNodeConnections)
                     await ConnectAsync();
@@ -135,7 +149,7 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectedPeers.Remove(node);
         }
 
-        private NetworkAddress FindPeerToConnectTo()
+        internal NetworkAddress FindPeerToConnectTo()
         {
             int groupFail = 0;
 
