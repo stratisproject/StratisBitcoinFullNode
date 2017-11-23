@@ -209,12 +209,12 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
 
-            this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
-            this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
-
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
             this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            this.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
+            this.ApiUri = config.GetOrDefault("apiuri", (this.Network == Network.StratisMain || this.Network == Network.StratisTest || this.Network == Network.StratisRegTest) ? new Uri("http://localhost:37221") : new Uri("http://localhost:37220"));
+
+            this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
+            this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
 
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
