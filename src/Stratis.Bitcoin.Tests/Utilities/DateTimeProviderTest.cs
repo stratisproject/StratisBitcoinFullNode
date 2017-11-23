@@ -1,9 +1,9 @@
 ﻿using System;
-using NBitcoin;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Base
+namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class DateTimeProviderTest
     {

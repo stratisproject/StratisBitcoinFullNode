@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static ChainedBlock HighestPersistedBlock(this FullNode fullNode)
         {
-            return (fullNode.NodeService<Features.BlockStore.IBlockRepository>() as BlockRepository).HighestPersistedBlock;
+            return (fullNode.NodeService<IBlockRepository>() as BlockRepository).HighestPersistedBlock;
         }
     }
 
@@ -110,9 +110,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Start(string dataDir)
         {
-            var args = NodeSettings.FromArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, "stratis", InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION);
+            NodeSettings nodeSettings = new NodeSettings("stratis", InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir });
 
-            var node = BuildFullNode(args, this.callback);
+            var node = BuildFullNode(nodeSettings, this.callback);
 
             this.FullNode = node;
             this.FullNode.Start();
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// but all the features required for it are enabled.</remarks>
         public static IFullNode BuildStakingNode(string dir, bool staking = true)
         {
-            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
+            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseStratisConsensus()
@@ -249,9 +249,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void Start(string dataDir)
         {
 
-            var args = NodeSettings.FromArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
+            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
 
-            var node = BuildFullNode(args, this.callback);
+            var node = BuildFullNode(nodeSettings, this.callback);
 
             this.FullNode = node;
             this.FullNode.Start();
@@ -560,7 +560,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
 
-        public string Folder { get { return this.folder; } }        
+        public string Folder { get { return this.folder; } }
 
         /// <summary>Location of the data directory for the node.</summary>
         public string DataFolder { get { return this.dataDir; } }
@@ -595,10 +595,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             get
             {
-                if(this.runner is StratisBitcoinPosRunner)
-                   return ((StratisBitcoinPosRunner)this.runner).FullNode;
+                if (this.runner is StratisBitcoinPosRunner)
+                    return ((StratisBitcoinPosRunner)this.runner).FullNode;
 
-                return ((StratisBitcoinPowRunner) this.runner).FullNode;
+                return ((StratisBitcoinPowRunner)this.runner).FullNode;
             }
         }
 

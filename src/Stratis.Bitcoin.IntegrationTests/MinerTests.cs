@@ -112,9 +112,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             public int baseheight;
             public CachedCoinView cachedCoinView;
 
+            private bool useCheckpoints = true;
+
             public TestContext()
             {
-
             }
 
             public async Task InitializeAsync()
@@ -138,13 +139,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
 
                 LoggerFactory loggerFactory = new LoggerFactory();
+
                 var nodeSettings = NodeSettings.Default();
-                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, nodeSettings), dateTimeProvider, loggerFactory);
+                var consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory)
+                {
+                    UseCheckpoints = this.useCheckpoints
+                };
+
+                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, consensusSettings), dateTimeProvider, loggerFactory);
 
                 ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
 
-                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, nodeSettings));
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings);
                 await this.consensus.StartAsync();
 
                 this.entry.Fee(11);
@@ -196,6 +203,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Just to make sure we can still make simple blocks
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
+            }
+
+            internal TestContext WithoutCheckpoints()
+            {
+                this.useCheckpoints = false;
+                return this;
             }
         }
 
@@ -319,7 +332,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public async Task MinerCreateBlockSigopsLimit1000Async()
         {
             var context = new TestContext();
-            await context.InitializeAsync();
+            await context.WithoutCheckpoints().InitializeAsync();
 
             // block sigops > limit: 1000 CHECKMULTISIG + 1
             var tx = new Transaction();
@@ -426,7 +439,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public async Task MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
         {
             var context = new TestContext();
-            await context.InitializeAsync();
+            await context.WithoutCheckpoints().InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());

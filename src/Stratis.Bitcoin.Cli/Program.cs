@@ -81,7 +81,6 @@ namespace Stratis.Bitcoin.Cli
                     return;
                 }
 
-
                 // Determine API port.
                 string blockchain = "";
                 int defaultRestApiPort = 0;
@@ -111,6 +110,7 @@ namespace Stratis.Bitcoin.Cli
                         Network network = Network.GetNetwork(networkName);
 
                         NodeSettings nodeSettings = NodeSettings.FromArguments(options.ToArray(), blockchain, network);
+
                         var rpcSettings = new RpcSettings();
                         // read the values from the configuration file
                         rpcSettings.Load(nodeSettings);
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Cli
                             // Get the response.
                             Console.WriteLine($"Sending API command to {url}...");
                             var response = client.GetStringAsync(url).GetAwaiter().GetResult();
-                            
+
                             // Format and return the result as a string to the console.
                             Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
                         }

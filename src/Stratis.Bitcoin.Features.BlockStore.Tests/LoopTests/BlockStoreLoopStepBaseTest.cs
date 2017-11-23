@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     {
         private IAsyncLoopFactory asyncLoopFactory;
         private StoreBlockPuller blockPuller;
-        internal BlockStore.IBlockRepository BlockRepository { get; private set; }
+        internal IBlockRepository BlockRepository { get; private set; }
         private Mock<ChainState> chainState;
         private Mock<IConnectionManager> connectionManager;
         private DataFolder dataFolder;
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
-            this.chainState = new Mock<ChainState>(fullNode);
+            this.chainState = new Mock<ChainState>(fullNode, new InvalidBlockHashStore(fullNode.DateTimeProvider));
             this.chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
             this.nodeLifeTime = new Mock<INodeLifetime>();
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             this.connectionManager = new Mock<IConnectionManager>();
             this.connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            this.connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.FromArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
+            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
             this.connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
         }
 
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     null,
                     chain,
                     this.chainState.Object,
-                    new StoreSettings(NodeSettings.FromArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
+                    new StoreSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
                     DateTimeProvider.Default);

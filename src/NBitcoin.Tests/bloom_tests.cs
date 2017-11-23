@@ -11,7 +11,15 @@ namespace NBitcoin.Tests
 {
 	public class bloom_tests
 	{
-		[Fact]
+        public bloom_tests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        [Fact]
 		[Trait("Core", "Core")]
 		public void bloom_create_insert_serialize()
 		{

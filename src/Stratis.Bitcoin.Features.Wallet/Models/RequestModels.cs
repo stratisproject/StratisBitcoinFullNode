@@ -127,6 +127,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string FeeType { get; set; }
 
         public bool AllowUnconfirmed { get; set; }
+
+        public bool? ShuffleOutputs { get; set; }
     }
 
     public class BuildTransactionRequest : TxFeeEstimateRequest

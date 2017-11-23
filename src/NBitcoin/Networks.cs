@@ -13,9 +13,17 @@ namespace NBitcoin
         static Network()
         {
             // initialize the networks
+            bool saveTS = Transaction.TimeStamp;
+            bool saveSig = Block.BlockSignature;
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+
             Network main = Network.Main;
             Network testNet = Network.TestNet;
             Network regTest = Network.RegTest;
+
+            Transaction.TimeStamp = saveTS;
+            Block.BlockSignature = saveSig;
         }
 
         public static Network Main => Network.GetNetwork("Main") ?? InitMain();
@@ -60,6 +68,8 @@ namespace NBitcoin
             consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, 0);
 
             consensus.CoinType = 0;
+
+            consensus.DefaultAssumeValid = new uint256("0x0000000000000000003b9ce759c2a087d52abc4266f8f4ebd6d768b89defa50a"); // 477890
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -151,6 +161,8 @@ namespace NBitcoin
 
             network.consensus.CoinType = 1;
 
+            network.consensus.DefaultAssumeValid = new uint256("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); // 1135275 
+
             network.magic = 0x0709110B;
 
             network.alertPubKeyArray = DataEncoders.Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
@@ -226,6 +238,8 @@ namespace NBitcoin
             network.DefaultPort = 18444;
             network.RPCPort = 18332;
 
+            network.consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+
             Assert(network.consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
             network.seeds.Clear();  // Regtest mode doesn't have any DNS seeds.
@@ -284,6 +298,8 @@ namespace NBitcoin
             consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
 
             consensus.CoinType = 105;
+
+            consensus.DefaultAssumeValid = new uint256("0x5acb513b96dcb727fbe85c7d50a1266e6414cdd4c3ae66d01313c34a81b466a2"); // 602240
 
             Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             consensus.HashGenesisBlock = genesis.GetHash();
@@ -380,6 +396,8 @@ namespace NBitcoin
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
+            consensus.DefaultAssumeValid = new uint256("0x74427b2f85b5d9658ee81f7e73526441311122f2b23702b794be557ba43ca43e"); // 184096
+
             var builder = new NetworkBuilder()
                 .SetName("StratisTest")
                 .SetConsensus(consensus)
@@ -438,6 +456,8 @@ namespace NBitcoin
             consensus.HashGenesisBlock = genesis.GetHash();
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
+
+            consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
             var builder = new NetworkBuilder()
                 .SetName("StratisRegTest")

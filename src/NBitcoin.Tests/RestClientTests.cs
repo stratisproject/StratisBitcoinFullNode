@@ -10,8 +10,16 @@ namespace NBitcoin.Tests
 	//"bitcoin-qt.exe" -testnet -server -rest 
 	[Trait("RestClient", "RestClient")]
 	public class RestClientTests
-	{
+	{    
 		private static readonly Block RegNetGenesisBlock = Network.RegTest.GetGenesis();
+
+        public RestClientTests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
 
 		[Fact]
 		public void CanGetChainInfo()

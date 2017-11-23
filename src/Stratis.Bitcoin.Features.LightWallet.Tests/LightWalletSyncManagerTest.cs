@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             var asyncLoop = new Mock<IAsyncLoop>();
             this.asyncLoopFactory.Setup(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromHeight",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromHeight",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromHeight",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -412,7 +412,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                            a => a.RunUntil(
-                               "WalletFeature.DownloadChain",
+                               "LightWalletSyncManager.SyncFromDate",
                                It.IsAny<CancellationToken>(),
                                It.IsAny<Func<bool>>(),
                                It.IsAny<Action>(),
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromDate",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),

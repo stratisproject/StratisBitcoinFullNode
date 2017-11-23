@@ -17,6 +17,14 @@ namespace NBitcoin.Tests
 {
 	public class pos_ProtocolTests
 	{
+        public pos_ProtocolTests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
+
 		public static bool noClient = !Process.GetProcesses().Any(p => p.ProcessName.Contains("stratis"));
 
 		[Fact]
@@ -229,7 +237,9 @@ namespace NBitcoin.Tests
 		[Fact]
 		public void CanConnectToRandomNode()
 		{
-			Stopwatch watch = new Stopwatch();
+            if (pos_RPCClientTests.noClient) return;
+
+            Stopwatch watch = new Stopwatch();
 			NodeConnectionParameters parameters = new NodeConnectionParameters();
 			var addrman = GetCachedAddrMan("addrmancache.dat");
 			parameters.TemplateBehaviors.Add(new AddressManagerBehavior(addrman));

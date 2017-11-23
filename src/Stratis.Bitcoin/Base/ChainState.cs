@@ -1,10 +1,17 @@
 using System;
+using System.Collections.Concurrent;
 using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {
+    /// <summary>
+    /// Chain state holds various information related to the status of the chain and its validation.
+    /// The data are provided by different components and the chaine state is a mechanism that allows 
+    /// these components to share that data without creating extra dependencies.
+    /// </summary>
     public class ChainState
     {
         /// <summary>The fullnode interface.</summary>
@@ -16,11 +23,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdLastResult;
 
-        /// <summary>A collection of blocks that have been found to be invalid.</summary>
-        private readonly ConcurrentHashSet<uint256> invalidBlocks;
-
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Store of block header hashes that are to be considered invalid.</summary>
+        private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         public ChainedBlock ConsensusTip { get; set; }
@@ -29,30 +36,36 @@ namespace Stratis.Bitcoin.Base
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
         public uint MaxReorgLength { get; set; }
 
-        public ChainState(IFullNode fullNode)
+        /// <summary>
+        /// Initialize instance of the object.
+        /// </summary>
+        /// <param name="fullNode">The full node using this feature.</param>
+        /// <param name="invalidBlockHashStore">Store of block header hashes that are to be considered invalid.</param>
+        public ChainState(IFullNode fullNode, IInvalidBlockHashStore invalidBlockHashStore)
         {
             this.fullNode = fullNode;
             this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
-            this.invalidBlocks = new ConcurrentHashSet<uint256>();
+            this.invalidBlockHashStore = invalidBlockHashStore;
         }
 
         /// <summary>
         /// Check if a block is marked as invalid.
         /// </summary>
         /// <param name="hashBlock">The block hash to check.</param>
-        /// <returns>True if the block is marked as invalid.</returns>
+        /// <returns><c>true</c> if the block is marked as invalid.</returns>
         public bool IsMarkedInvalid(uint256 hashBlock)
         {
-            return this.invalidBlocks.Contains(hashBlock);
+            return this.invalidBlockHashStore.IsInvalid(hashBlock);
         }
 
         /// <summary>
-        /// Mark blocks as invalid to be processed by the node, this is used to prevent DOS attacks.
+        /// Marks a block as invalid. This is used to prevent DOS attacks as the next time the block is seen, it is not processed again.
         /// </summary>
         /// <param name="hashBlock">The block hash to mark as invalid.</param>
-        public void MarkBlockInvalid(uint256 hashBlock)
+        /// <param name="rejectedUntil">Time in UTC after which the block is no longer considered as invalid, or <c>null</c> if the block is to be considered invalid forever.</param>
+        public void MarkBlockInvalid(uint256 hashBlock, DateTime? rejectedUntil = null)
         {
-            this.invalidBlocks.Add(hashBlock);
+            this.invalidBlockHashStore.MarkInvalid(hashBlock, rejectedUntil);
         }
 
         /// <summary>
@@ -71,6 +84,7 @@ namespace Stratis.Bitcoin.Base
                     IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
                     this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }
+
                 return this.ibdLastResult;
             }
         }

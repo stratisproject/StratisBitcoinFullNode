@@ -13,6 +13,14 @@ namespace NBitcoin.Tests
 	[Trait("Core", "Core")]
 	public class base58_tests
 	{
+        public base58_tests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
 		public static IEnumerable<object[]> DataSet
 		{
 			get

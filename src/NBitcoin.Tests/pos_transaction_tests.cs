@@ -18,7 +18,15 @@ namespace NBitcoin.Tests
 {
 	public class pos_transaction_tests
 	{
-		[Fact]
+        public pos_transaction_tests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
+
+        [Fact]
 		[Trait("UnitTest", "UnitTest")]
 		public void CanParseOutpoint()
 		{
@@ -1855,22 +1863,22 @@ namespace NBitcoin.Tests
 		public void CanParseWitTransaction()
 		{
 			Transaction.TimeStamp = true;
-			var hex = "01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000";
-			Transaction tx = new Transaction(hex);
-			var bytes = tx.ToBytes();
-			Assert.Equal(Encoders.Hex.EncodeData(bytes), hex);
+            var hex = "01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000";
+            Transaction tx = new Transaction(hex);
+            var bytes = tx.ToBytes();
+            Assert.Equal(Encoders.Hex.EncodeData(bytes), hex);
 
-			Assert.Equal("0d66186b23359c2ea9e4f87f0d5784c23025be8f077c4c87a34454c115afeaac", tx.GetHash().ToString());
-			Assert.Equal("fee5cfa83e2fe1e516788963b00412667d70c1667609fa73f3bfe9dc6254689d", tx.GetWitHash().ToString());
+            Assert.Equal("0d66186b23359c2ea9e4f87f0d5784c23025be8f077c4c87a34454c115afeaac", tx.GetHash().ToString());
+            Assert.Equal("fee5cfa83e2fe1e516788963b00412667d70c1667609fa73f3bfe9dc6254689d", tx.GetWitHash().ToString());
 
-			var noWit = tx.WithOptions(TransactionOptions.None);
-			Assert.True(noWit.GetSerializedSize() < tx.GetSerializedSize());
+            var noWit = tx.WithOptions(TransactionOptions.None);
+            Assert.True(noWit.GetSerializedSize() < tx.GetSerializedSize());
 
-			tx = new Transaction("01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0200000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b02483045022100d3edd272c4ff247c36a1af34a2394859ece319f61ee85f759b94ec0ecd61912402206dbdc7c6ca8f7279405464d2d935b5e171dfd76656872f76399dbf333c0ac3a001fd08020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000");
+            tx = new Transaction("01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0200000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b02483045022100d3edd272c4ff247c36a1af34a2394859ece319f61ee85f759b94ec0ecd61912402206dbdc7c6ca8f7279405464d2d935b5e171dfd76656872f76399dbf333c0ac3a001fd08020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000");
 
-			ScriptError error;
-			Assert.False(tx.Inputs.AsIndexedInputs().First().VerifyScript(new Script("0 b7854eb547106248b136ca2bf48d8df2f1167588"), out error));
-			Assert.Equal(ScriptError.EqualVerify, error);
+            ScriptError error;
+            Assert.False(tx.Inputs.AsIndexedInputs().First().VerifyScript(new Script("0 b7854eb547106248b136ca2bf48d8df2f1167588"), out error));
+            Assert.Equal(ScriptError.EqualVerify, error);
 		}
 
 		//[Fact]
@@ -1907,40 +1915,40 @@ namespace NBitcoin.Tests
 		public void CanParseTransaction()
 		{
 			Transaction.TimeStamp = true;
-			var tests = TestCase.read_json(TestDataLocations.DataFolder(@"can_parse_transaction.json"));
+            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"can_parse_transaction.json"));
 
-			foreach (var test in tests.Select(t => t.GetDynamic(0)))
-			{
-				string raw = test.Raw;
-				Transaction tx = Transaction.Parse(raw);
-				Assert.Equal((int)test.JSON.vin_sz, tx.Inputs.Count);
-				Assert.Equal((int)test.JSON.vout_sz, tx.Outputs.Count);
-				Assert.Equal((uint)test.JSON.lock_time, (uint)tx.LockTime);
+            foreach (var test in tests.Select(t => t.GetDynamic(0)))
+            {
+                string raw = test.Raw;
+                Transaction tx = Transaction.Parse(raw);
+                Assert.Equal((int)test.JSON.vin_sz, tx.Inputs.Count);
+                Assert.Equal((int)test.JSON.vout_sz, tx.Outputs.Count);
+                Assert.Equal((uint)test.JSON.lock_time, (uint)tx.LockTime);
 
-				for (int i = 0; i < tx.Inputs.Count; i++)
-				{
-					var actualVIn = tx.Inputs[i];
-					var expectedVIn = test.JSON.@in[i];
-					Assert.Equal(uint256.Parse((string)expectedVIn.prev_out.hash), actualVIn.PrevOut.Hash);
-					Assert.Equal((uint)expectedVIn.prev_out.n, actualVIn.PrevOut.N);
-					if (expectedVIn.sequence != null)
-						Assert.Equal((uint)expectedVIn.sequence, (uint)actualVIn.Sequence);
-					Assert.Equal((string)expectedVIn.scriptSig, actualVIn.ScriptSig.ToString());
-					//Can parse the string
-					Assert.Equal((string)expectedVIn.scriptSig, (string)expectedVIn.scriptSig.ToString());
-				}
+                for (int i = 0; i < tx.Inputs.Count; i++)
+                {
+                    var actualVIn = tx.Inputs[i];
+                    var expectedVIn = test.JSON.@in[i];
+                    Assert.Equal(uint256.Parse((string)expectedVIn.prev_out.hash), actualVIn.PrevOut.Hash);
+                    Assert.Equal((uint)expectedVIn.prev_out.n, actualVIn.PrevOut.N);
+                    if (expectedVIn.sequence != null)
+                        Assert.Equal((uint)expectedVIn.sequence, (uint)actualVIn.Sequence);
+                    Assert.Equal((string)expectedVIn.scriptSig, actualVIn.ScriptSig.ToString());
+                    //Can parse the string
+                    Assert.Equal((string)expectedVIn.scriptSig, (string)expectedVIn.scriptSig.ToString());
+                }
 
-				for (int i = 0; i < tx.Outputs.Count; i++)
-				{
-					var actualVOut = tx.Outputs[i];
-					var expectedVOut = test.JSON.@out[i];
-					Assert.Equal((string)expectedVOut.scriptPubKey, actualVOut.ScriptPubKey.ToString());
-					Assert.Equal(Money.Parse((string)expectedVOut.value), actualVOut.Value);
-				}
-				var hash = (string)test.JSON.hash;
-				var expectedHash = new uint256(Encoders.Hex.DecodeData(hash), false);
-				Assert.Equal(expectedHash, tx.GetHash());
-			}
+                for (int i = 0; i < tx.Outputs.Count; i++)
+                {
+                    var actualVOut = tx.Outputs[i];
+                    var expectedVOut = test.JSON.@out[i];
+                    Assert.Equal((string)expectedVOut.scriptPubKey, actualVOut.ScriptPubKey.ToString());
+                    Assert.Equal(Money.Parse((string)expectedVOut.value), actualVOut.Value);
+                }
+                var hash = (string)test.JSON.hash;
+                var expectedHash = new uint256(Encoders.Hex.DecodeData(hash), false);
+                Assert.Equal(expectedHash, tx.GetHash());
+            }
 		}
 
 		//[Fact]
