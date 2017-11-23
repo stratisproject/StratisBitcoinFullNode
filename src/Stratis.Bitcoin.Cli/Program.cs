@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Cli
                         // TODO: NetworksContainer doesn't contain the Stratis networks, so the default port number will be not retrieved here
                         Network network = Network.GetNetwork(networkName);
 
-                        NodeSettings nodeSettings = NodeSettings.FromArguments(options.ToArray(), blockchain, network);
+                        NodeSettings nodeSettings = new NodeSettings(blockchain, network).LoadArguments(options);
 
                         var rpcSettings = new RpcSettings();
                         // read the values from the configuration file
