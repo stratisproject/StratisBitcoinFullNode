@@ -192,8 +192,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         private IAsyncLoop mining;
-        /// <summary>Target reserved balance that will not participate in staking.
-        /// It is possible that less than this amount will be reserved.</summary>
+        /// <summary>
+        /// Target reserved balance that will not participate in staking.
+        /// It is possible that less than this amount will be reserved.
+        /// </summary>
         private Money targetReserveBalance;
         private readonly int minimumInputValue;
         private readonly int minerSleep;
