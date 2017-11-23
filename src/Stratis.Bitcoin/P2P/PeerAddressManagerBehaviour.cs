@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.P2P
             this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
-        void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.P2P
         //if (node.State == NodeState.Connected)
         //which is more intuitive.
         //This happens in PeerDiscovery as well where we connect and then disconnect straight after.
-        void AttachedNode_StateChanged(Node node, NodeState previousState)
+        private void AttachedNode_StateChanged(Node node, NodeState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {

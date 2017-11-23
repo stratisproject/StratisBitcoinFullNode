@@ -75,8 +75,8 @@ namespace Stratis.Bitcoin.P2P
 
             if (peersToDiscover.Count == 0)
             {
-                PopulateTableWithDNSNodes(peersToDiscover);
-                PopulateTableWithHardNodes(peersToDiscover);
+                this.PopulateTableWithDNSNodes(peersToDiscover);
+                this.PopulateTableWithHardNodes(peersToDiscover);
 
                 peersToDiscover = new List<NetworkAddress>(peersToDiscover.OrderBy(a => RandomUtils.GetInt32()));
                 if (peersToDiscover.Count == 0)

@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerAttempted(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt)
         {
-            var peer = FindPeer(endpoint);
+            var peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerConnected(IPEndPoint endpoint, DateTimeOffset peerConnectedAt)
         {
-            var peer = FindPeer(endpoint);
+            var peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerHandshakedAt)
         {
-            var peer = FindPeer(endpoint);
+            var peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 

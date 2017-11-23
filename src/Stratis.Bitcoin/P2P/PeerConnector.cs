@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.P2P
 
             try
             {
-                var peer = FindPeerToConnectTo();
+                var peer = this.FindPeerToConnectTo();
                 if (peer == null)
                     return Task.CompletedTask;
 
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.P2P
         public void Dispose()
         {
             this.asyncLoop?.Dispose();
-            Disconnect();
+            this.Disconnect();
         }
 
         #endregion

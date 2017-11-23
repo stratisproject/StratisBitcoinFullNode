@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Net;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Concurrent;
-using System.Net;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -101,7 +100,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
-            this.banStore =  new MemoryBanStore();// banStore;
+            this.banStore = new MemoryBanStore();
             this.dateTimeProvider = dateTimeProvider;
             this.connectionManagerSettings = nodeSettings.ConnectionManager;
         }

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.P2P
             this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
         }
 
-        void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
             if (node.State == NodeState.HandShaked)
                 this.peerConnector.AddNode(node);
