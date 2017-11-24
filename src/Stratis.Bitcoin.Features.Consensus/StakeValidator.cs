@@ -39,6 +39,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly PosConsensusOptions consensusOptions;
 
         /// <inheritdoc />
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
+        /// <param name="chain">Chain of headers.</param>
+        /// <param name="coinView">Used for getting UTXOs.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public StakeValidator(Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

@@ -271,6 +271,25 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private uint256 lastCoinStakeSearchPrevBlockHash;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PosMinting"/> class.
+        /// </summary>
+        /// <param name="consensusLoop">Responsible for downloading and validating blocks.</param>
+        /// <param name="chain">Chain of headers from genesis.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="connection">Used to verify that node is connected to network before we start staking.</param>
+        /// <param name="dateTimeProvider">Provides date time functionality.</param>
+        /// <param name="blockAssemblerFactory">Used for creating block template.</param>
+        /// <param name="chainState">Used to verify that node is not in a state of IBD (Initial Block Download).</param>
+        /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
+        /// <param name="coinView">Used to fetch UTXOs.</param>
+        /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
+        /// <param name="stakeValidator">Provides functionality for checking validity of PoS blocks.</param>
+        /// <param name="mempoolLock">Used for managing asynchronous access to <see cref="mempool"/>.</param>
+        /// <param name="mempool">Used for populating <see cref="rpcGetStakingInfoModel"/> with pooled transactions.</param>
+        /// <param name="wallet">A manager providing operations on wallets.</param>
+        /// <param name="asyncLoopFactory">Used for creating <see cref="mining"/> loop.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             ConsensusLoop consensusLoop,
             ConcurrentChain chain,
