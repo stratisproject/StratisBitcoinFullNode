@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// TODO
+    /// Provides functionality to verify if block is a valid PoS block.
     /// </summary>
     /// <remarks>
     /// These are the criteria for a new block to be accepted as a valid POS block at version 3 of the protocol,
@@ -57,11 +57,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
-        private readonly ConcurrentChain chain;
-        private readonly CoinView coinView;
         private readonly PosConsensusOptions consensusOptions;
 
-        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));
@@ -69,8 +67,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeValidator = stakeValidator;
             this.stakeChain = stakeChain;
-            this.chain = chain;
-            this.coinView = coinView;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
 
@@ -111,6 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
+        /// <remarks>Also does additional checks related to PoS.</remarks>
         public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
         {
             this.logger.LogTrace("()");
@@ -292,7 +289,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check coinstake timestamp.
             if (context.Stake.BlockStake.IsProofOfStake()
-                && !this.CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
+                && !this.CheckCoinStakeTimestamp(chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
             {
                 this.logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
@@ -308,8 +305,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
-        // Check whether the coinstake timestamp meets protocol.
-        public bool CheckCoinStakeTimestamp(int height, long blockTime, long transactionTime)
+        /// <summary>
+        /// Check whether the coinstake timestamp meets protocol.
+        /// </summary>
+        /// <param name="blockTime">The block time.</param>
+        /// <param name="transactionTime">The transaction time.</param>
+        /// <returns><c>true</c> if block timestamp is equal to transaction timestamp. Otherwise: <c>false</c>.</returns>
+        public bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
             return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
@@ -324,6 +326,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             return IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
 
+        /// <summary>
+        /// Checks if block signature is valid.
+        /// </summary>
+        /// <param name="block">The block.</param>
+        /// <returns><c>true</c> if the signature is valid. Otherwise: <c>false</c>.</returns>
         public bool CheckBlockSignature(Block block)
         {
             this.logger.LogTrace("()");
@@ -406,6 +413,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
+        /// <summary>
+        /// Checks and computes stake.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
+        /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
         public void CheckAndComputeStake(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -474,7 +487,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             return this.ConsensusOptions.ProofOfWorkReward;
         }
 
-        // Miner's coin stake reward.
+        /// <summary>
+        /// Gets miner's coin stake reward.
+        /// </summary>
+        /// <param name="height">Target block height.</param>
+        /// <returns>Miner's coin stake reward.</returns>
         public Money GetProofOfStakeReward(int height)
         {
             if (this.IsPremine(height))
@@ -483,6 +500,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             return this.consensusOptions.ProofOfStakeReward;
         }
 
+        /// <summary>
+        /// Determines whether the block with specified height is premined.
+        /// </summary>
+        /// <param name="height">Block's height.</param>
+        /// <returns><c>true</c> if the block with provided height is premined; otherwise, <c>false</c>.</returns>
         private bool IsPremine(int height)
         {
             return (this.consensusOptions.PremineHeight > 0) &&
