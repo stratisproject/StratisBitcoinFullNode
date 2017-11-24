@@ -171,8 +171,7 @@ namespace Stratis.Bitcoin.Connection
                 }
                 catch (SocketException e)
                 {
-                    logger.LogCritical("P2P port " + listen.Endpoint.Port + " is being used. Please use a different port by running the node with '-port=[differentPort]'.");
-                    logs.Append("Can't start listening on port: " + listen.Endpoint.Port);
+                    this.logger.LogCritical($"P2P port {listen.Endpoint.Port} is being used. Please use a different port by running the node with '-port=[differentPort]'.");
                     throw e;
                 }
 
