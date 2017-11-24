@@ -24,7 +24,9 @@ namespace Stratis.Bitcoin.Connection
         private readonly ILogger logger;
 
         private readonly ConcurrentChain chain;
+
         private readonly IConnectionManager connection;
+
         private readonly decimal dropThreshold;
 
         public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)

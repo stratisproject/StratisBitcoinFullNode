@@ -27,7 +27,9 @@ namespace Stratis.Bitcoin.P2P
         }
 
         private readonly IDateTimeProvider dateTimeProvider;
+
         public int PeersToDiscover { get; set; }
+
         public PeerAddressManagerBehaviourMode Mode { get; set; }
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
@@ -76,8 +78,6 @@ namespace Stratis.Bitcoin.P2P
             this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
-        #region ICloneable Members
-
         public override object Clone()
         {
             return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager)
@@ -86,8 +86,6 @@ namespace Stratis.Bitcoin.P2P
                 Mode = this.Mode
             };
         }
-
-        #endregion
     }
 
     [Flags]
@@ -95,13 +93,10 @@ namespace Stratis.Bitcoin.P2P
     {
         /// <summary>Do not advertise nor discover new peers.</summary>
         None = 0,
-
         /// <summary>Only advertise known peers.</summary>
         Advertise = 1,
-
         /// <summary>Only discover peers.</summary>
         Discover = 2,
-
         /// <summary>Advertise known peer and discover peer.</summary>
         AdvertiseDiscover = 3,
     }

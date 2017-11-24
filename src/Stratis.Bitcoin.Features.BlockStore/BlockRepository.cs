@@ -7,7 +7,6 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -16,16 +15,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public interface IBlockRepository : IDisposable
     {
         Task InitializeAsync();
+
         Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
+
         Task<Block> GetAsync(uint256 hash);
+
         Task<Transaction> GetTrxAsync(uint256 trxid);
+
         Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
+
         Task<bool> ExistAsync(uint256 hash);
+
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
+
         Task SetBlockHashAsync(uint256 nextBlockHash);
+
         Task SetTxIndexAsync(bool txIndex);
+
         uint256 BlockHash { get; }
+
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
+
         bool TxIndex { get; }
     }
 
@@ -36,13 +46,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Access to DBreeze database.</summary>
         protected readonly DBreezeEngine DBreeze;
+
         protected readonly Network network;
 
         protected static readonly byte[] BlockHashKey = new byte[0];
+
         protected static readonly byte[] TxIndexKey = new byte[1];
 
         public uint256 BlockHash { get; private set; }
+
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
+
         public bool TxIndex { get; private set; }
 
         /// <summary>Provider of time functions.</summary>

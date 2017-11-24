@@ -37,16 +37,24 @@ namespace Stratis.Bitcoin.BlockPulling
         /// It is used during component shutdown.
         /// </summary>
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
         /// <summary>
         /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
-        public CancellationTokenSource CancellationTokenSource { get { return this.cancellationToken; } }
+        public CancellationTokenSource CancellationTokenSource
+        {
+            get { return this.cancellationToken; }
+        }
 
         /// <summary>Reference to the parent block puller.</summary>
         private readonly BlockPuller puller;
+
         /// <summary>Reference to the parent block puller.</summary>
-        public BlockPuller Puller { get { return this.puller; } }
+        public BlockPuller Puller
+        {
+            get { return this.puller; }
+        }
 
         /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
         public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }

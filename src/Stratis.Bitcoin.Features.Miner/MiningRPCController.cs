@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.fullNode.NodeFeature<MiningFeature>(true).StartStaking(walletName, walletPassword);
-       
+
             return true;
         }
 

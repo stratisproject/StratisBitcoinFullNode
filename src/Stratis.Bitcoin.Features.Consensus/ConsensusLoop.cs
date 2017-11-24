@@ -14,9 +14,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
+
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
-
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>

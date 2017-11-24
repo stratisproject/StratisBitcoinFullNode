@@ -21,16 +21,22 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         private readonly IWalletManager walletManager;
+
         private readonly ConcurrentChain chain;
+
         private readonly IBlockNotification blockNotification;
+
         private readonly ILogger logger;
+
         private readonly ISignals signals;
+
         protected ChainedBlock walletTip;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         private IDisposable sub;
+
         private IDisposable txSub;
 
         public ChainedBlock WalletTip => this.walletTip;

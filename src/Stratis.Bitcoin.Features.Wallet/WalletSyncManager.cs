@@ -13,13 +13,16 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletSyncManager : IWalletSyncManager
     {
         protected readonly IWalletManager walletManager;
+
         protected readonly ConcurrentChain chain;
+
         protected readonly CoinType coinType;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         private readonly IBlockStoreCache blockStoreCache;
+
         private readonly StoreSettings storeSettings;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>

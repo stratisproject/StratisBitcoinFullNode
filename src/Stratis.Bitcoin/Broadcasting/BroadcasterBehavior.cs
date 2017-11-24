@@ -29,7 +29,6 @@ namespace Stratis.Bitcoin.Broadcasting
             ILoggerFactory loggerFactory)
             : this(manager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
         {
-
         }
 
         /// <inheritdoc />

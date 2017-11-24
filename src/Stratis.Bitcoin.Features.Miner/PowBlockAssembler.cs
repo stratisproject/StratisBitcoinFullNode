@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -23,17 +22,26 @@ namespace Stratis.Bitcoin.Features.Miner
     public class AssemblerOptions
     {
         public long BlockMaxWeight = PowMining.DefaultBlockMaxWeight;
+
         public long BlockMaxSize = PowMining.DefaultBlockMaxSize;
+
         public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
+
         public bool IsProofOfStake = false;
-    };
+    }
+
+;
 
     public class BlockTemplate
     {
         public Block Block;
+
         public List<Money> VTxFees;
+
         public List<long> TxSigOpsCost;
+
         public string CoinbaseCommitment;
+
         public Money TotalFee;
 
         public BlockTemplate()
@@ -42,7 +50,9 @@ namespace Stratis.Bitcoin.Features.Miner
             this.VTxFees = new List<Money>();
             this.TxSigOpsCost = new List<long>();
         }
-    };
+    }
+
+;
 
     public class PowBlockAssembler : BlockAssembler
     {
@@ -59,10 +69,15 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             public TxMempoolEntry iter;
+
             public long SizeWithAncestors;
+
             public Money ModFeesWithAncestors;
+
             public long SigOpCostWithAncestors;
-        };
+        }
+
+;
 
         // This matches the calculation in CompareTxMemPoolEntryByAncestorFee,
         // except operating on CTxMemPoolModifiedEntry.
@@ -96,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         private const long TicksPerMicrosecond = 10;
-        
+
         // Limit the number of attempts to add transactions to the block when it is
         // close to full; this is just a simple heuristic to finish quickly if the
         // mempool has a lot of entries.
@@ -106,45 +121,64 @@ namespace Stratis.Bitcoin.Features.Miner
         // transactions in the memory pool. When we select transactions from the
         // pool, we select by highest fee rate of a transaction combined with all
         // its ancestors.
-
         private static long lastBlockTx = 0;
+
         private static long lastBlockSize = 0;
+
         private static long lastBlockWeight = 0;
+
         private static long medianTimePast;
 
         protected readonly ConsensusLoop consensusLoop;
+
         protected readonly MempoolSchedulerLock mempoolLock;
+
         protected readonly TxMempool mempool;
+
         protected readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         protected readonly AssemblerOptions options;
+
         // The constructed block template.
         protected readonly BlockTemplate pblocktemplate;
+
         // A convenience pointer that always refers to the CBlock in pblocktemplate.
         protected Block pblock;
 
         // Configuration parameters for the block size.
         private bool fIncludeWitness;
+
         private uint blockMaxWeight, blockMaxSize;
+
         private bool needSizeAccounting;
+
         private FeeRate blockMinFeeRate;
 
         // Information on the current status of the block.
         private long blockWeight;
+
         private long blockSize;
+
         private long blockTx;
+
         private long blockSigOpsCost;
+
         public Money fees;
+
         private TxMempool.SetEntries inBlock;
+
         protected Transaction coinbase;
 
         // Chain context for the block.
         protected int height;
+
         private long lockTimeCutoff;
+
         protected Network network;
+
         protected Script scriptPubKeyIn;
 
         public PowBlockAssembler(
@@ -161,13 +195,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
             options = options ?? new AssemblerOptions();
             this.blockMinFeeRate = options.BlockMinFeeRate;
-            
+
             // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
             this.blockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
-            
+
             // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
             this.blockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, options.BlockMaxSize));
-            
+
             // Whether we need to account for byte usage (in addition to weight usage).
             this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
 
@@ -299,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected virtual void UpdateHeaders()
         {
             this.logger.LogTrace("()");
-            
+
             // Fill in header.
             this.pblock.Header.HashPrevBlock = this.ChainTip.HashBlock;
             this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.ChainTip);
@@ -371,7 +405,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected virtual void AddTransactions(int nPackagesSelected, int nDescendantsUpdated)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
-            
+
             // mapModifiedTx will store sorted packages after they are modified
             // because some of their txs are already in the block.
             var mapModifiedTx = new Dictionary<uint256, TxMemPoolModifiedEntry>();
@@ -533,7 +567,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-)");
         }
 
-        // Remove confirmed (inBlock) entries from given set 
+        // Remove confirmed (inBlock) entries from given set
         private void OnlyUnconfirmed(TxMempool.SetEntries testSet)
         {
             foreach (var setEntry in testSet.ToList())
@@ -590,7 +624,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         // Add descendants of given transactions to mapModifiedTx with ancestor
         // state updated assuming given transactions are inBlock. Returns number
-        // of updated descendants. 
+        // of updated descendants.
         private int UpdatePackagesForAdded(TxMempool.SetEntries alreadyAdded, Dictionary<uint256, TxMemPoolModifiedEntry> mapModifiedTx)
         {
             int descendantsUpdated = 0;

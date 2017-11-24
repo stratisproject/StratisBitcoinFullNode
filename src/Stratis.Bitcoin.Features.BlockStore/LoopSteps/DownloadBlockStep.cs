@@ -70,12 +70,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
     /// <summary>
     /// The result that is returned from executing each inner step.
-    /// </summary>   
+    /// </summary>
     public enum InnerStepResult
     {
         /// <summary>Execute the next line of code in the loop.</summary>
         Next,
-
         /// <summary>Break out of the loop.</summary>
         Stop
     }

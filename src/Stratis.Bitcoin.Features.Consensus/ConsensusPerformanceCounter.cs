@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         private readonly long _TotalBlockFetchingTime;
+
         public TimeSpan TotalBlockFetchingTime
         {
             get
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         private readonly long _TotalBlockValidationTime;
+
         public TimeSpan TotalBlockValidationTime
         {
             get
@@ -36,8 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-
         private readonly long _TotalUTXOFetchingTime;
+
         public TimeSpan TotalUTXOFetchingTime
         {
             get
@@ -47,6 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         private readonly long _TotalProcessedBlocks;
+
         public long TotalProcessedBlocks
         {
             get
@@ -56,6 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         private readonly long _TotalProcessedTransactions;
+
         public long TotalProcessedTransactions
         {
             get
@@ -64,7 +68,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-        long _TotalProcessedInputs;
+        internal long _TotalProcessedInputs;
+
         public long TotalProcessedInputs
         {
             get
@@ -76,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this._TotalProcessedInputs = value;
             }
         }
+
         public TimeSpan Elapsed
         {
             get
@@ -91,6 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return (ulong)((double)this.TotalProcessedBlocks / this.TotalBlockValidationTime.TotalSeconds);
             }
         }
+
         public ulong ProcessedInputsPerSecond
         {
             get
@@ -98,6 +105,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return (ulong)((double)this.TotalProcessedInputs / this.TotalBlockValidationTime.TotalSeconds);
             }
         }
+
         public ulong ProcessedTransactionsPerSecond
         {
             get
@@ -105,6 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return (ulong)((double)this.TotalProcessedTransactions / this.TotalBlockValidationTime.TotalSeconds);
             }
         }
+
 
         public static ConsensusPerformanceSnapshot operator -(ConsensusPerformanceSnapshot end, ConsensusPerformanceSnapshot start)
         {
@@ -127,7 +136,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 Taken = end.Taken
             };
         }
-
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
@@ -175,17 +183,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             return count + "/s";
         }
 
-        public DateTime Start
-        {
-            get;
-            set;
-        }
+        public DateTime Start { get; set; }
 
-        public DateTime Taken
-        {
-            get;
-            set;
-        }
+        public DateTime Taken { get; set; }
     }
 
     public class ConsensusPerformanceCounter
@@ -203,7 +203,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this._Start = this.dateTimeProvider.GetUtcNow();
         }
 
-        long _ProcessedTransactions;
+        internal long _ProcessedTransactions;
+
         public long ProcessedTransactions
         {
             get
@@ -216,21 +217,24 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             Interlocked.Add(ref this._ProcessedTransactions, count);
         }
+
         public void AddProcessedInputs(long count)
         {
             Interlocked.Add(ref this._ProcessedInputs, count);
         }
+
         public void AddProcessedBlocks(long count)
         {
             Interlocked.Add(ref this._ProcessedBlocks, count);
         }
 
-
         public void AddUTXOFetchingTime(long count)
         {
             Interlocked.Add(ref this._UTXOFetchingTime, count);
         }
+
         private long _UTXOFetchingTime;
+
         public TimeSpan UTXOFetchingTime
         {
             get
@@ -243,7 +247,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             Interlocked.Add(ref this._BlockProcessingTime, count);
         }
+
         private long _BlockProcessingTime;
+
         public TimeSpan BlockProcessingTime
         {
             get
@@ -256,7 +262,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             Interlocked.Add(ref this._BlockFetchingTime, count);
         }
+
         private long _BlockFetchingTime;
+
         public TimeSpan BlockFetchingTime
         {
             get
@@ -265,7 +273,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-        long _ProcessedInputs;
+        internal long _ProcessedInputs;
+
         public long ProcessedInputs
         {
             get
@@ -274,7 +283,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-        long _ProcessedBlocks;
+        internal long _ProcessedBlocks;
+
         public long ProcessedBlocks
         {
             get
@@ -293,7 +303,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             return snap;
         }
 
-        DateTime _Start;
+        internal DateTime _Start;
+
         public DateTime Start
         {
             get
@@ -301,6 +312,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return this._Start;
             }
         }
+
         public TimeSpan Elapsed
         {
             get

@@ -18,9 +18,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private IAsyncLoop asyncLoop;
 
         private readonly IBlockRepository blockRepository;
+
         private readonly BlockStoreLoop blockStoreLoop;
+
         private readonly ConcurrentChain chain;
+
         private readonly ChainState chainState;
+
         private readonly IConnectionManager connection;
 
         /// <summary>Instance logger.</summary>
@@ -33,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
-        private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
+        private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce;// maybe replace with a task scheduler
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,

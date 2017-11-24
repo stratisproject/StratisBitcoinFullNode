@@ -78,7 +78,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
         public ICollection<TransactionVerboseModel> Transactions { get; set; }
-
     }
 
     /// <summary>

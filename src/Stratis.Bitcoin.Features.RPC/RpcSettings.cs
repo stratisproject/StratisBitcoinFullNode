@@ -48,11 +48,11 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         public RpcSettings(Action<RpcSettings> callback)
-            :this()
+            : this()
         {
             this.callback = callback;
         }
-        
+
         /// <summary>
         /// Loads the rpc settings from the application configuration.
         /// </summary>

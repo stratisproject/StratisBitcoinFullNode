@@ -8,8 +8,8 @@ namespace Stratis.Bitcoin.Utilities
     {
         public UnspentOutputs()
         {
-
         }
+
         public UnspentOutputs(uint height, Transaction tx)
         {
             Guard.NotNull(tx, nameof(tx));
@@ -56,8 +56,8 @@ namespace Stratis.Bitcoin.Utilities
 
         public TxOut[] _Outputs;
 
-
         private uint256 _TransactionId;
+
         public uint256 TransactionId
         {
             get
@@ -66,8 +66,8 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-
         private uint _Version;
+
         public uint Version
         {
             get
@@ -77,6 +77,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         private bool _IsCoinbase;
+
         public bool IsCoinbase
         {
             get
@@ -86,6 +87,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         private bool _IsCoinstake;
+
         public bool IsCoinstake
         {
             get
@@ -95,6 +97,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         private uint _Time;
+
         public uint Time
         {
             get
@@ -104,6 +107,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         private uint _Height;
+
         public uint Height
         {
             get
@@ -169,7 +173,9 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         private static TxIn CoinbaseTxIn = TxIn.CreateCoinbase(0);
+
         private static TxIn NonCoinbaseTxIn = new TxIn(new OutPoint(uint256.One, 0));
+
         public Coins ToCoins()
         {
             var coins = new Coins

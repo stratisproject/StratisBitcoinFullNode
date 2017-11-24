@@ -37,8 +37,6 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         [JsonProperty(Order = 15)]
         public string errors { get; set; }
 
-        #region TODO: Wallet 
-
         [JsonProperty(Order = 2, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public uint? walletversion { get; set; }
 
@@ -56,8 +54,6 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         [JsonProperty(Order = 13, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal? paytxfee { get; set; }
-        
-        #endregion
     }
 }
 #pragma warning restore IDE1006 // Naming Styles

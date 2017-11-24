@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Memory pool coin view.
     /// Provides coin view representation of memory pool transactions via a backed coin view.
     /// </summary>
-    public class MempoolCoinView : CoinView , IBackedCoinView
+    public class MempoolCoinView : CoinView, IBackedCoinView
     {
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="mempoolLock"/>.</remarks>
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (!coins.IsAvailable(txInput.PrevOut.N)) continue;
                 if (coins.Height <= nHeight)
                 {
-                    dResult += (double) coins._Outputs[txInput.PrevOut.N].Value.Satoshi*(nHeight - coins.Height);
+                    dResult += (double)coins._Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - coins.Height);
                     inChainInputValue += coins._Outputs[txInput.PrevOut.N].Value;
 
                 }
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             nTxSize = MempoolValidator.CalculateModifiedSize(nTxSize, trx, this.mempoolValidator.ConsensusOptions);
             if (nTxSize == 0) return 0.0;
 
-            return dPriorityInputs/nTxSize;
+            return dPriorityInputs / nTxSize;
         }
 
         /// <summary>

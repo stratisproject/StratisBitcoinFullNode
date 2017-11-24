@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 
         /// <summary>
         /// Saves all the loaded wallets into the file system.
-        /// </summary>        
+        /// </summary>
         void SaveWallets();
 
         /// <summary>
@@ -200,7 +200,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to get.</param>
         /// <returns>A wallet or null if it doesn't exist</returns>
         Wallet GetWalletByName(string walletName);
-
 
         /// <summary>
         /// Gets the block locator of the first loaded wallet.

@@ -105,7 +105,6 @@ namespace Stratis.Bitcoin.Utilities
             get { return this.items[i]; }
             set { this.items[i] = value; }
         }
-        
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator()
         {

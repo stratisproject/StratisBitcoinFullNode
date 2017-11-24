@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>Maximum value for tracking feerates.</summary>
         private const double MaxFeeRate = 1e7;
 
-         /// <summary>
+        /// <summary>
         /// Spacing of FeeRate buckets.
         /// </summary>
         /// <remarks>
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             }
 
             // Feerates are stored and reported as BTC-per-kb:
-            FeeRate feeRate = new FeeRate(entry.Fee, (int) entry.GetTxSize());
+            FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
             this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
             return true;
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.trackedTxs++;
 
             // Feerates are stored and reported as BTC-per-kb:
-            FeeRate feeRate = new FeeRate(entry.Fee, (int) entry.GetTxSize());
+            FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
             this.mapMemPoolTxs.Add(hash, new TxStatsInfo());
             this.mapMemPoolTxs[hash].blockHeight = txHeight;
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             if (median < 0)
                 return new FeeRate(0);
 
-            return new FeeRate(new Money((int) median));
+            return new FeeRate(new Money((int)median));
         }
 
         /// <summary>
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             if (median < 0)
                 return new FeeRate(0);
 
-            return new FeeRate((int) median);
+            return new FeeRate((int)median);
         }
 
         /// <summary>

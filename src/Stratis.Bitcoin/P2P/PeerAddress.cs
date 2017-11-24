@@ -13,11 +13,12 @@ namespace Stratis.Bitcoin.P2P
     public sealed class PeerAddress
     {
         private const int PeerAddressLastSeen = 30;
-        private const int PeerMinimumFailDays = 7;
-        private const int PeerMaximumWeeklyAttempts = 10;
-        private const int PeerMaximumConnectionRetries = 3;
 
-        #region Address Data
+        private const int PeerMinimumFailDays = 7;
+
+        private const int PeerMaximumWeeklyAttempts = 10;
+
+        private const int PeerMaximumConnectionRetries = 3;
 
         /// <summary>EndPoint of this peer.</summary>
         [JsonProperty]
@@ -47,6 +48,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The source address of this peer.</summary>
         [JsonProperty]
         private string loopback;
+
         [JsonIgnore]
         public IPAddress Loopback
         {
@@ -57,10 +59,6 @@ namespace Stratis.Bitcoin.P2P
                 return IPAddress.Parse(this.loopback);
             }
         }
-
-        #endregion
-
-        #region Connection Data
 
         /// <summary>
         /// The amount of connection attempts.
@@ -113,10 +111,6 @@ namespace Stratis.Bitcoin.P2P
         [JsonProperty]
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
-        #endregion
-
-        #region Connection Methods
-
         /// <summary>
         /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
         /// </summary>
@@ -152,10 +146,6 @@ namespace Stratis.Bitcoin.P2P
         {
             this.LastConnectionHandshake = peerHandshakedAt;
         }
-
-        #endregion
-
-        #region Peer Preference
 
         /// <summary>
         /// Determines whether the peer will be selected by the <see cref="PeerConnector"/> when connecting.
@@ -217,8 +207,6 @@ namespace Stratis.Bitcoin.P2P
                     this.ConnectionAttempts < PeerMaximumWeeklyAttempts;
             }
         }
-
-        #endregion
 
         /// <summary>Refer to <see cref="PeerIntroductionType"/> for what the individual types mean.</summary>
         [JsonIgnore]
@@ -306,10 +294,8 @@ namespace Stratis.Bitcoin.P2P
         /// the default state when loading the peers from disk.
         /// </summary>
         Discover,
-
         /// <summary>Used when nodes are added via the -addnode argument when starting up the node.</summary>
         Add,
-
         /// <summary>Used when nodes are added via the -connect argument when starting up the node.</summary>
         Connect
     }

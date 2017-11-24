@@ -11,12 +11,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Slow.
         /// </summary>
         Low = 0,
-
         /// <summary>
         /// Avarage.
         /// </summary>
         Medium = 1,
-
         /// <summary>
         /// Fast.
         /// </summary>
@@ -29,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             bool isParsed = Enum.TryParse<FeeType>(value, true, out var result);
             if (!isParsed)
-            {                
+            {
                 throw new FormatException($"FeeType {value} is not a valid FeeType");
             }
 

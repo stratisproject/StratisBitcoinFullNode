@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -15,8 +12,8 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Interfaces;
 
-[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>

@@ -24,7 +24,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private IAsyncLoop asyncLoop;
 
         public StoreBlockPuller BlockPuller { get; }
+
         public IBlockRepository BlockRepository { get; }
+
         private readonly BlockStoreStats blockStoreStats;
 
         /// <summary> Best chain of block headers.</summary>
@@ -59,7 +61,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
-        public virtual string StoreName { get { return "BlockStore"; } }
+        public virtual string StoreName
+        {
+            get { return "BlockStore"; }
+        }
 
         private readonly StoreSettings storeSettings;
 

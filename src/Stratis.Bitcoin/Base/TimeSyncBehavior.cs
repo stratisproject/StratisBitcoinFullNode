@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Base
 
                         // If SwitchedOffLimitReached is set, timeOffset is set to zero,
                         // so we need to check both conditions here.
-                        if (!this.WarningLoopStarted 
+                        if (!this.WarningLoopStarted
                             && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Base
                         TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, node.Inbound);
                     }
-                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);                    
+                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);
                 }
                 else this.logger.LogTrace("Message received from unknown node's address.");
             }

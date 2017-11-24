@@ -89,8 +89,8 @@ namespace Stratis.Bitcoin.Utilities
         public SchedulerLock(CancellationTokenSource cancellation = null, int maxItemsPerTask = 5)
         {
             this.cancellation = cancellation ?? new CancellationTokenSource();
-            int defaultMaxConcurrencyLevel = Environment.ProcessorCount; 
-            int defaultMaxItemsPerTask = maxItemsPerTask; 
+            int defaultMaxConcurrencyLevel = Environment.ProcessorCount;
+            int defaultMaxItemsPerTask = maxItemsPerTask;
             var schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxItemsPerTask);
             this.concurrentFactory = new TaskFactory(schedulerPair.ConcurrentScheduler);
             this.exclusiveFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);

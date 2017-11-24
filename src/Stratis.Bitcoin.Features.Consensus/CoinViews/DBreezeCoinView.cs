@@ -7,7 +7,6 @@ using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -35,8 +34,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         private readonly BackendPerformanceCounter performanceCounter;
+
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
+        public BackendPerformanceCounter PerformanceCounter
+        {
+            get { return this.performanceCounter; }
+        }
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
@@ -93,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (this.GetCurrentHash(transaction) == null)
                     {
                         this.SetBlockHash(transaction, genesis.GetHash());
-                        
+
                         // Genesis coin is unspendable so do not add the coins.
                         transaction.Commit();
                     }

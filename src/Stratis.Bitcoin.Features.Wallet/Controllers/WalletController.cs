@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -27,18 +26,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     public class WalletController : Controller
     {
         private readonly IWalletManager walletManager;
+
         private readonly IWalletTransactionHandler walletTransactionHandler;
+
         private readonly IWalletSyncManager walletSyncManager;
+
         private readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         private readonly IConnectionManager connectionManager;
+
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
         private readonly IBroadcasterManager broadcasterManager;
 
         /// <summary>Provider of date time functionality.</summary>

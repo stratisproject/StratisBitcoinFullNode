@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -19,7 +17,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>The last time the <see cref="ibdLastResult"/> was updated.</summary>
         private long ibdLastUpdate;
-        
+
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdLastResult;
 
@@ -81,7 +79,7 @@ namespace Stratis.Bitcoin.Base
                     this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
-                    IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
+                    IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
                     this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }
 

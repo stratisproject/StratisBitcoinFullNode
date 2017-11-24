@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
@@ -160,21 +159,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
-            TxMempool memPool, 
+            TxMempool memPool,
             MempoolSchedulerLock mempoolLock,
-            PowConsensusValidator consensusValidator, 
-            IDateTimeProvider dateTimeProvider, 
+            PowConsensusValidator consensusValidator,
+            IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
-            ConcurrentChain chain, 
+            ConcurrentChain chain,
             CoinView coinView,
-            ILoggerFactory loggerFactory, 
+            ILoggerFactory loggerFactory,
             NodeSettings nodeSettings)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
             this.consensusValidator = consensusValidator;
             this.dateTimeProvider = dateTimeProvider;
-            this.mempoolSettings = mempoolSettings;;
+            this.mempoolSettings = mempoolSettings; ;
             this.chain = chain;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -212,10 +211,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 state.Error = new MempoolError(consensusError.ConsensusError);
                 return false;
             }
-
-            // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
-            //ValidationState stateDummy;
-            //FlushStateToDisk(stateDummy, FLUSH_STATE_PERIODIC);
         }
 
         /// <inheritdoc />
@@ -230,8 +225,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.mempoolLock.ReadAsync(() => this.memPool.Check(this.coinView));
         }
-
-        #region Static Operations
 
         /// <summary>
         /// Validates that the transaction is the final transaction."/>
@@ -411,8 +404,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return nTxSize;
         }
 
-        #endregion
-
         /// <summary>
         /// Validates and then adds a transaction to memory pool.
         /// </summary>
@@ -430,7 +421,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             await context.View.LoadViewAsync(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
-             // use the sequential scheduler for that.
+            // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
                 // is it already in the memory pool?
@@ -451,11 +442,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CheckAncestors(context);
                 this.CheckReplacment(context);
                 this.CheckAllInputs(context);
-            
+
                 // Remove conflicting transactions from the mempool
                 foreach (var it in context.AllConflicting)
                     this.logger.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
-                
+
                 this.memPool.RemoveStaged(context.AllConflicting, false);
 
                 // This transaction should only count for fee estimation if
@@ -900,24 +891,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // TODO: sort this logic
             return;
-
-            // Continuously rate-limit free (really, very-low-fee) transactions
-            // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
-            // be annoying or make others' transactions take longer to confirm.
-            //if (limitFree && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize))
-            //{
-            //  var nNow = this.dateTimeProvider.GetTime();
-            //  // Use an exponentially decaying ~10-minute window:
-            //  this.freeLimiter.FreeCount *= Math.Pow(1.0 - 1.0 / 600.0, (double)(nNow - this.freeLimiter.LastTime));
-            //  this.freeLimiter.LastTime = nNow;
-            //  // -limitfreerelay unit is thousand-bytes-per-minute
-            //  // At default rate it would take over a month to fill 1GB
-            //  if (this.freeLimiter.FreeCount + context.EntrySize >= this.nodeArgs.Mempool.LimitFreeRelay * 10 * 1000)
-            //      context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "rate limited free transaction")).Throw();
-            //  this.logger.LogInformation(
-            //      $"Rate limit dFreeCount: {this.freeLimiter.FreeCount} => {this.freeLimiter.FreeCount + context.EntrySize}");
-            //  this.freeLimiter.FreeCount += context.EntrySize;
-            //}
         }
 
         /// <summary>
@@ -938,7 +911,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
                 nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
             {
-                context.State.Fail( MempoolErrors.TooLongMempoolChain, errString).Throw();
+                context.State.Fail(MempoolErrors.TooLongMempoolChain, errString).Throw();
             }
 
             // A transaction that spends outputs that would be replaced by it is invalid. Now
@@ -971,9 +944,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             List<uint256> vNoSpendsRemaining = new List<uint256>();
             this.memPool.TrimToSize(limit, vNoSpendsRemaining);
-
-            //foreach(var removed in vNoSpendsRemaining)
-            //  pcoinsTip->Uncache(removed);
         }
 
         /// <summary>
@@ -1070,7 +1040,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     if (this.consensusValidator.UseConsensusLib)
                     {
                         Script.BitcoinConsensusError error;
-                        return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint) iiIntput, scriptVerify, out error);
+                        return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)iiIntput, scriptVerify, out error);
                     }
                     else
                     {

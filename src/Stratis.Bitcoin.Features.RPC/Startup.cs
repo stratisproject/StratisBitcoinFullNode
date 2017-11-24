@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.RPC
     {
         public void Validate(ActionContext actionContext, ValidationStateDictionary validationState, string prefix, object model)
         {
-
         }
     }
 }

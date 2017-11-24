@@ -34,18 +34,29 @@ namespace Stratis.Bitcoin.Connection
         Network Network { get; }
 
         NodeSettings NodeSettings { get; }
+
         NodeConnectionParameters Parameters { get; }
+
         List<NodeServer> Servers { get; }
 
         void AddDiscoveredNodesRequirement(NodeServices services);
+
         void AddNodeAddress(IPEndPoint endpoint);
+
         Node Connect(IPEndPoint endpoint);
+
         Node FindLocalNode();
+
         Node FindNodeByEndpoint(IPEndPoint endpoint);
+
         Node FindNodeByIp(IPAddress ip);
+
         string GetNodeStats();
+
         string GetStats();
+
         void RemoveNodeAddress(IPEndPoint endpoint);
+
         void Start();
     }
 
@@ -76,21 +87,39 @@ namespace Stratis.Bitcoin.Connection
         private readonly INodeLifetime nodeLifetime;
 
         private readonly NodesCollection connectedNodes = new NodesCollection();
-        public IReadOnlyNodesCollection ConnectedNodes { get { return this.connectedNodes; } }
+
+        public IReadOnlyNodesCollection ConnectedNodes
+        {
+            get { return this.connectedNodes; }
+        }
 
         private readonly Dictionary<Node, PerformanceSnapshot> downloads = new Dictionary<Node, PerformanceSnapshot>();
+
         private NodeServices discoveredNodeRequiredService = NodeServices.Network;
+
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
         private readonly Network network;
+
         /// <inheritdoc/>
-        public Network Network { get { return this.network; } }
+        public Network Network
+        {
+            get { return this.network; }
+        }
 
         private readonly NodeConnectionParameters parameters;
-        public NodeConnectionParameters Parameters { get { return this.parameters; } }
+
+        public NodeConnectionParameters Parameters
+        {
+            get { return this.parameters; }
+        }
 
         private readonly NodeSettings nodeSettings;
-        public NodeSettings NodeSettings { get { return this.nodeSettings; } }
+
+        public NodeSettings NodeSettings
+        {
+            get { return this.nodeSettings; }
+        }
 
         public List<NodeServer> Servers { get; }
 

@@ -9,11 +9,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreRepositoryPerformanceCounter
     {
         private long repositoryInsertCount;
+
         private long repositoryDeleteCount;
+
         private long repositoryHitCount;
+
         private long repositoryMissCount;
+
         public string Name { get; private set; }
-        public DateTime Start {get; private set; }
+
+        public DateTime Start { get; private set; }
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -104,11 +109,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreRepositoryPerformanceSnapshot
     {
         private readonly long repositoryHitCount;
+
         private readonly long repositoryMissCount;
+
         private readonly long repositoryDeleteCount;
+
         private readonly long repositoryInsertCount;
+
         public string Name { get; private set; }
-        public DateTime Start { get; set; }    
+
+        public DateTime Start { get; set; }
+
         public DateTime Taken { get; set; }
 
         public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount, string name = "BlockStore")
@@ -160,6 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
+
         public static BlockStoreRepositoryPerformanceSnapshot operator -(BlockStoreRepositoryPerformanceSnapshot end, BlockStoreRepositoryPerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -179,7 +191,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 Taken = end.Taken
             };
         }
-
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();

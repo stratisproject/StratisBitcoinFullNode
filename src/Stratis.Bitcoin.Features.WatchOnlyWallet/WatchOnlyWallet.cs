@@ -93,7 +93,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "transactions")]
         [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
         public ConcurrentDictionary<string, TransactionData> Transactions { get; set; }
-
     }
 
     /// <summary>
@@ -134,8 +133,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonConverter(typeof(BitcoinSerializableJsonConverter))]
         public PartialMerkleTree MerkleProof { get; set; }
     }
-
-    #region Json Converters
 
     /// <summary>
     /// Converter used to convert a <see cref="ConcurrentDictionary{TKey,TValue}"/> (where TKey is <see cref="string"/> and TValue is <see cref="WatchedAddress"/>) to and from a collection of its values.
@@ -206,6 +203,4 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             serializer.Serialize(writer, transactionsDictionary.Values);
         }
     }
-
-    #endregion    
 }

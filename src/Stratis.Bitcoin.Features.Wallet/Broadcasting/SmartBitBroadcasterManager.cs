@@ -13,7 +13,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
     public class SmartBitBroadcasterManager : BroadcasterManagerBase
     {
         private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(3, 3);
+
         private HttpClient HttpClient;
+
         private string BaseUrl
         {
             get

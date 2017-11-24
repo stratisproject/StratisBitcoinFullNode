@@ -15,23 +15,34 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature, IBlockStore, INodeStats
     {
         protected readonly ConcurrentChain chain;
+
         protected readonly Signals.Signals signals;
+
         protected readonly IBlockRepository blockRepository;
+
         protected readonly IBlockStoreCache blockStoreCache;
+
         protected readonly StoreBlockPuller blockPuller;
+
         protected readonly BlockStoreLoop blockStoreLoop;
+
         protected readonly BlockStoreManager blockStoreManager;
+
         protected readonly BlockStoreSignaled blockStoreSignaled;
+
         protected readonly INodeLifetime nodeLifetime;
+
         protected readonly IConnectionManager connectionManager;
+
         protected readonly NodeSettings nodeSettings;
+
         protected readonly StoreSettings storeSettings;
 
         /// <summary>Instance logger.</summary>

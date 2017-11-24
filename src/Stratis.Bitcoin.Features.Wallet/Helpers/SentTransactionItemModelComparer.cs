@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
         /// </summary>
         /// <param name="x">The first object of type TransactionItemModel to compare.</param>
         /// <param name="y">The second object of type TransactionItemModel to compare.</param>
-        /// <returns>true if the specified objects are equal; otherwise, false.</returns>  
+        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
         public bool Equals(TransactionItemModel x, TransactionItemModel y)
         {
             if (x == null && y == null)

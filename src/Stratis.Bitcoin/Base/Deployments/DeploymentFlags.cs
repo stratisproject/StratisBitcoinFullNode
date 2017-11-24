@@ -7,12 +7,13 @@ namespace Stratis.Bitcoin.Base.Deployments
         public Transaction.LockTimeFlags LockTimeFlags { get; set; }
 
         public bool EnforceBIP30 { get; set; }
+
         public bool EnforceBIP34 { get; set; }
+
         public ScriptVerify ScriptFlags { get; set; }
 
         public DeploymentFlags()
         {
-
         }
 
         public DeploymentFlags(ChainedBlock nextBlock, ThresholdState[] prevBlockStates, NBitcoin.Consensus chainparams, ConcurrentChain chain)
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             // two in the chain that violate it. This prevents exploiting the issue against nodes during their
             // initial block download.
             this.EnforceBIP30 = (nextBlock.HashBlock == null) // Enforce on CreateNewBlock invocations which don't have a hash.
-                || !((nextBlock.Height == 91842 && nextBlock.HashBlock == new uint256("00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")) 
+                || !((nextBlock.Height == 91842 && nextBlock.HashBlock == new uint256("00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec"))
                 || (nextBlock.Height == 91880 && nextBlock.HashBlock == new uint256("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")));
 
             // Once BIP34 activated it was not possible to create new duplicate coinbases and thus other than starting
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             // duplicate transactions descending from the known pairs either.
             // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
             ChainedBlock bip34HeightChainedBlock = chain.GetBlock(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
-            
+
             //Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
             this.EnforceBIP30 = this.EnforceBIP30 && ((bip34HeightChainedBlock == null) || !(bip34HeightChainedBlock.HashBlock == chainparams.BIP34Hash));
 
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             }
 
             // Start enforcing BIP68 (sequence locks), BIP112 (CHECKSEQUENCEVERIFY) and BIP113 (Median Time Past) using versionbits logic.
-            if (prevBlockStates[(int)NBitcoin.BIP9Deployments.CSV] == ThresholdState.Active)
+            if (prevBlockStates[(int)BIP9Deployments.CSV] == ThresholdState.Active)
             {
                 this.ScriptFlags |= ScriptVerify.CheckSequenceVerify;
                 this.LockTimeFlags |= Transaction.LockTimeFlags.VerifySequence;
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             }
 
             // Start enforcing WITNESS rules using versionbits logic.
-            if (prevBlockStates[(int)NBitcoin.BIP9Deployments.Segwit] ==  ThresholdState.Active)
+            if (prevBlockStates[(int)BIP9Deployments.Segwit] == ThresholdState.Active)
             {
                 this.ScriptFlags |= ScriptVerify.Witness;
             }

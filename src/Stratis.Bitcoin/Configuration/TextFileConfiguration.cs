@@ -1,8 +1,8 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Configuration
                     destination.Add(kv.Key, v);
             }
         }
-        
+
         /// <summary>
         /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
         /// </summary>
@@ -202,27 +202,5 @@ namespace Stratis.Bitcoin.Configuration
 
             throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
         }
-
-        // TODO: Can we delete these?
-
-        //public static String CreateDefaultConfiguration(Network network)
-        //{
-        //    StringBuilder builder = new StringBuilder();
-        //    builder.AppendLine("#rpc.url=http://localhost:" + network.RPCPort + "/");
-        //    builder.AppendLine("#rpc.user=bitcoinuser");
-        //    builder.AppendLine("#rpc.password=bitcoinpassword");
-        //    builder.AppendLine("#rpc.cookiefile=yourbitcoinfolder/.cookie");
-        //    return builder.ToString();
-        //}
-
-        //public static String CreateClientDefaultConfiguration(Network network)
-        //{
-        //    StringBuilder builder = new StringBuilder();
-        //    builder.AppendLine("#rpc.url=http://localhost:" + network.RPCPort + "/");
-        //    builder.AppendLine("#rpc.user=bitcoinuser");
-        //    builder.AppendLine("#rpc.password=bitcoinpassword");
-        //    builder.AppendLine("#rpc.cookiefile=yourbitcoinfolder/.cookie");
-        //    return builder.ToString();
-        //}
     }
 }

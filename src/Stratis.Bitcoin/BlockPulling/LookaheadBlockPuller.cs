@@ -113,6 +113,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         private int actualLookahead;
+
         /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         public int ActualLookahead
         {
@@ -163,6 +164,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Event that signals when a downloaded block is consumed.</summary>
         private readonly AutoResetEvent consumed = new AutoResetEvent(false);
+
         /// <summary>Event that signals when a new block is pushed to the list of downloaded blocks.</summary>
         private readonly AutoResetEvent pushed = new AutoResetEvent(false);
 

@@ -63,8 +63,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             
             // Short Names
             { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
-            { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
-
+            { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" }
         };
 
         public static void RegisterFeatureNamespace<T>(string key)

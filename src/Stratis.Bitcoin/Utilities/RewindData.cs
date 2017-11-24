@@ -11,6 +11,7 @@ namespace Stratis.Bitcoin.Utilities
     {
         /// <summary>Hash of the block header of the tip of the previous state of the coinview.</summary>
         private uint256 previousBlockHash;
+
         /// <summary>Hash of the block header of the tip of the previous state of the coinview.</summary>
         public uint256 PreviousBlockHash
         {
@@ -26,6 +27,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>List of transaction IDs that needs to be removed when rewinding to the previous state as they haven't existed in the previous state.</summary>
         private List<uint256> transactionsToRemove = new List<uint256>();
+
         /// <summary>List of transaction IDs that needs to be removed when rewinding to the previous state as they haven't existed in the previous state.</summary>
         public List<uint256> TransactionsToRemove
         {
@@ -41,6 +43,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>List of unspent output transaction information that needs to be restored when rewinding to the previous state as they were fully spent in the current view.</summary>
         private List<UnspentOutputs> outputsToRestore = new List<UnspentOutputs>();
+
         /// <summary>List of unspent output transaction information that needs to be restored when rewinding to the previous state as they were fully spent in the current view.</summary>
         public List<UnspentOutputs> OutputsToRestore
         {

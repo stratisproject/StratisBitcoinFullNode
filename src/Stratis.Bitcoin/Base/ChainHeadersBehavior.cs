@@ -1,13 +1,14 @@
 ﻿#if !NOSOCKET
+
+using System;
+using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Linq;
-using System.Threading;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <remarks>It might be different than concurrent's chain tip, in the rare event of large fork > 2000 blocks.</remarks>
         private ChainedBlock pendingTip;
+
         /// <summary>Information about the peer's announcement of its tip using "headers" message.</summary>
         public ChainedBlock PendingTip
         {
@@ -61,6 +63,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private ConcurrentChain chain;
+
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         public ConcurrentChain Chain
         {
@@ -76,6 +79,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         private bool invalidHeaderReceived;
+
         public bool InvalidHeaderReceived
         {
             get
@@ -150,7 +154,7 @@ namespace Stratis.Bitcoin.Base
                 if (inv.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.Chain.Contains(i.Hash)))
                 {
                     // No need of periodical refresh, the peer is notifying us.
-                    this.refreshTimer.Dispose(); 
+                    this.refreshTimer.Dispose();
                     if (this.AutoSync)
                         this.TrySync();
                 }
@@ -166,10 +170,10 @@ namespace Stratis.Bitcoin.Base
 
             // Ignoring "getheaders" from peers because node is in initial block download.
             var getheaders = message.Message.Payload as GetHeadersPayload;
-            if ((getheaders != null) 
+            if ((getheaders != null)
                 && this.CanRespondToGetHeaders
                 // If not in IBD whitelisted won't be checked.
-                && (!this.chainState.IsInitialBlockDownload || this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted)) 
+                && (!this.chainState.IsInitialBlockDownload || this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted))
             {
                 HeadersPayload headers = new HeadersPayload();
                 ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -181,7 +185,7 @@ namespace Stratis.Bitcoin.Base
                     if ((consensusTip == null) || (fork.Height > consensusTip.Height))
                     {
                         // Fork not yet validated.
-                        fork = null; 
+                        fork = null;
                     }
 
                     if (fork != null)
@@ -275,7 +279,7 @@ namespace Stratis.Bitcoin.Base
                 if (chainedPendingTip != null)
                 {
                     // This allows garbage collection to collect the duplicated pendingTip and ancestors.
-                    this.pendingTip = chainedPendingTip; 
+                    this.pendingTip = chainedPendingTip;
                 }
 
                 if ((!this.invalidHeaderReceived) && (newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
@@ -345,8 +349,6 @@ namespace Stratis.Bitcoin.Base
             return this.pendingTip;
         }
 
-        #region ICloneable Members
-
         public override object Clone()
         {
             var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.loggerFactory)
@@ -357,8 +359,6 @@ namespace Stratis.Bitcoin.Base
             };
             return clone;
         }
-
-        #endregion
     }
 }
 #endif

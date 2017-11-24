@@ -14,8 +14,11 @@ namespace Stratis.Bitcoin.Features.RPC
     public class RPCMiddleware
     {
         private readonly RequestDelegate next;
+
         private readonly IRPCAuthorization authorization;
+
         private readonly ILogger logger;
+
         public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(next, nameof(next));
@@ -30,7 +33,7 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             Guard.NotNull(httpContext, nameof(httpContext));
 
-            if(!this.Authorized(httpContext))
+            if (!this.Authorized(httpContext))
             {
                 httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return;
@@ -40,7 +43,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 await this.next.Invoke(httpContext);
             }
-            catch(Exception exx)
+            catch (Exception exx)
             {
                 ex = exx;
             }
@@ -51,26 +54,26 @@ namespace Stratis.Bitcoin.Features.RPC
                 httpContext.Response.ContentType = "application/json";
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
-            else if(ex is RPCServerException)
+            else if (ex is RPCServerException)
             {
                 var rpcEx = (RPCServerException)ex;
                 JObject response = CreateError(rpcEx.ErrorCode, ex.Message);
                 httpContext.Response.ContentType = "application/json";
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
-            else if(httpContext.Response?.StatusCode == 404)
+            else if (httpContext.Response?.StatusCode == 404)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
                 httpContext.Response.ContentType = "application/json";
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
-            else if(this.IsDependencyFailure(ex))
+            else if (this.IsDependencyFailure(ex))
             {
                 JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.Message);
                 httpContext.Response.ContentType = "application/json";
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
-            else if(httpContext.Response?.StatusCode == 500 || ex != null)
+            else if (httpContext.Response?.StatusCode == 500 || ex != null)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, "Internal error");
                 httpContext.Response.ContentType = "application/json";
@@ -82,27 +85,27 @@ namespace Stratis.Bitcoin.Features.RPC
         private bool IsDependencyFailure(Exception ex)
         {
             var invalidOp = ex as InvalidOperationException;
-            if(invalidOp == null)
+            if (invalidOp == null)
                 return false;
             return invalidOp.Source.Equals("Microsoft.Extensions.DependencyInjection.Abstractions", StringComparison.Ordinal);
         }
 
         private bool Authorized(HttpContext httpContext)
         {
-            if(!this.authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
+            if (!this.authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
                 return false;
             StringValues auth;
-            if(!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
+            if (!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
                 return false;
             var splittedAuth = auth[0].Split(' ');
-            if(splittedAuth.Length != 2 ||
+            if (splittedAuth.Length != 2 ||
                splittedAuth[0] != "Basic")
                 return false;
 
             try
             {
                 var user = Encoders.ASCII.EncodeData(Encoders.Base64.DecodeData(splittedAuth[1]));
-                if(!this.authorization.IsAuthorized(user))
+                if (!this.authorization.IsAuthorized(user))
                     return false;
             }
             catch

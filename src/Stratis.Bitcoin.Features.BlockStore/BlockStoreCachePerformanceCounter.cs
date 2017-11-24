@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private long cacheMissCount;
 
         public string Name { get; private set; }
+
         public DateTime Start { get; private set; }
 
         /// <summary>Provider of date time functionality.</summary>
@@ -108,11 +109,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreCachePerformanceSnapshot
     {
         private readonly long cacheHitCount;
+
         private readonly long cacheMissCount;
+
         private readonly long cacheRemoveCount;
+
         private readonly long cacheSetCount;
+
         public string Name { get; private set; }
+
         public DateTime Start { get; set; }
+
         public DateTime Taken { get; set; }
 
         public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount, string name = "BlockStore")
@@ -164,6 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
+
         public static BlockStoreCachePerformanceSnapshot operator -(BlockStoreCachePerformanceSnapshot end, BlockStoreCachePerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -183,7 +191,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 Taken = end.Taken
             };
         }
-
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private readonly RpcSettings rpcSettings;
 
         /// <summary>ControllerActionDescriptor dictionary.</summary>
-        private Dictionary<string, ControllerActionDescriptor> ActionDescriptors {get; set;}
+        private Dictionary<string, ControllerActionDescriptor> ActionDescriptors { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -91,11 +91,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
                 var paramInfo = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
                 object[] param = new object[paramInfo.Count];
-                for (int i = 0; i <  paramInfo.Count; i++)
-                {                    
+                for (int i = 0; i < paramInfo.Count; i++)
+                {
                     var pInfo = paramInfo[i];
                     var stringValues = this.Request.Query.FirstOrDefault(p => p.Key.ToLower() == pInfo.Name.ToLower());
-                    param[i] = (stringValues.Key == null)?pInfo.ParameterInfo.HasDefaultValue?pInfo.ParameterInfo.DefaultValue.ToString():null:stringValues.Value[0];
+                    param[i] = (stringValues.Key == null) ? pInfo.ParameterInfo.HasDefaultValue ? pInfo.ParameterInfo.DefaultValue.ToString() : null : stringValues.Value[0];
                 }
 
                 // Build RPC request object.
@@ -156,5 +156,5 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-     }
+    }
 }

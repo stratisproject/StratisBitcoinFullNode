@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Features.RPC
     public interface IRPCJsonOutputFormatter
     {
         void WriteObject(TextWriter writer, object value);
+
         Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding);
     }
 
@@ -30,10 +31,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Any modifications to the <see cref="T:Newtonsoft.Json.JsonSerializerSettings" /> object after this
         /// <see cref="T:Microsoft.AspNetCore.Mvc.Formatters.JsonOutputFormatter" /> has been used will have no effect.
         /// </remarks>
-        protected JsonSerializerSettings SerializerSettings
-        {
-            get; set;
-        }
+        protected JsonSerializerSettings SerializerSettings { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="T:Microsoft.AspNetCore.Mvc.Formatters.JsonOutputFormatter" /> instance.

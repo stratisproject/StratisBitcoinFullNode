@@ -177,14 +177,10 @@ namespace Stratis.Bitcoin.P2P
             return peer;
         }
 
-        #region IDisposable Members
-
         public void Dispose()
         {
             this.asyncLoop?.Dispose();
             this.Disconnect();
         }
-
-        #endregion
     }
 }

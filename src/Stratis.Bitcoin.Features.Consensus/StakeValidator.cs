@@ -32,7 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly StakeChain stakeChain;
 
         private readonly ConcurrentChain chain;
+
         private readonly CoinView coinView;
+
         private readonly PosConsensusOptions consensusOptions;
 
         static StakeValidator()

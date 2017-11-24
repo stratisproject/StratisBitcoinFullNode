@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Notifications
         /// </summary>
         /// <param name="block">The new block</param>
         protected override void OnNextCore(Block block)
-        {            
+        {
             this.walletSyncManager.ProcessBlock(block);
         }
     }

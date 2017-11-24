@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
-#if !NOASSEMBLYCONTEXT
-using System.Runtime.Loader;
-#endif
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -87,7 +85,7 @@ namespace Stratis.Bitcoin.Utilities
                     var tcs = (TaskCompletionSource<object>)obj;
                     tcs.TrySetResult(null);
                 }, waitForStop);
-                
+
                 await waitForStop.Task.ConfigureAwait(false);
 
                 node.Stop();

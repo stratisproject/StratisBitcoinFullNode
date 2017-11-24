@@ -24,7 +24,9 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly INodeLifetime nodeLifetime;
 
         private readonly ILogger logger;
+
         private readonly ISignals signals;
+
         private ChainedBlock tip;
 
         public BlockNotification(
@@ -51,8 +53,11 @@ namespace Stratis.Bitcoin.Features.Notifications
         }
 
         public ConcurrentChain Chain { get; }
+
         public ILookaheadBlockPuller Puller { get; }
+
         public virtual bool ReSync { get; private set; }
+
         public virtual uint256 StartHash { get; private set; }
 
         /// <inheritdoc/>

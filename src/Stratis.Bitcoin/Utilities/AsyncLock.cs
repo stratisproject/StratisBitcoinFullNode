@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Utilities
         public Task<IDisposable> LockAsync(CancellationToken cancel = default(CancellationToken))
         {
             Task wait = this.semaphore.WaitAsync(cancel);
-            
+
             // If the lock is available, quickly return.
             if (wait.IsCompleted)
             {
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Utilities
 
             // If the lock is not available, we wait until it is available 
             // or the wait is cancelled.
-            return wait.ContinueWith((task, state) => 
+            return wait.ContinueWith((task, state) =>
             {
                 // We only hold the lock if the task was completed successfully.
                 // If the task was cancelled, we don't hold the lock and we need to throw.

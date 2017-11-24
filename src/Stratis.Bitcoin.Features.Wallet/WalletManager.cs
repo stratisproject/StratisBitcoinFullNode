@@ -7,13 +7,13 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
+
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
@@ -98,7 +98,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         // TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
-
         internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
@@ -244,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.UpdateWhenChainDownloaded(wallet, DateTime.Now);
             }
-            
+
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
@@ -335,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.UpdateWhenChainDownloaded(wallet, creationTime);
             }
-            
+
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
@@ -1218,7 +1217,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             return this.Wallets.Min(w => w.CreationTime);
         }
-        
+
         /// <summary>
         /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
         /// </summary>

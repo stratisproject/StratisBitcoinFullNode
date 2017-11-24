@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
@@ -49,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki"/>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki"/>
-        private static readonly uint256[] duplicateTransactions = new[] 
+        private static readonly uint256[] duplicateTransactions = new[]
         {
             new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"),
             new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
@@ -84,8 +83,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Coin view at one layer below this implementaiton.</summary>
         private readonly CoinView inner;
+
         /// <inheritdoc />
-        public CoinView Inner { get { return this.inner; } }
+        public CoinView Inner
+        {
+            get { return this.inner; }
+        }
 
         /// <summary>Storage of POS block information.</summary>
         private readonly StakeChainStore stakeChainStore;
@@ -96,10 +99,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Number of items in the cache.</summary>
         /// <remarks>The getter violates the lock contract on <see cref="unspents"/>, but the lock here is unnecessary as the <see cref="unspents"/> is marked as readonly.</remarks>
-        public int CacheEntryCount { get { return this.unspents.Count; } }
+        public int CacheEntryCount
+        {
+            get { return this.unspents.Count; }
+        }
 
         /// <summary>Task that handles persisting of unsaved changes to the underlaying coinview. Used for synchronization.</summary>
         private Task flushingTask = Task.CompletedTask;
+
         /// <summary>Task that handles rewinding of the the underlaying coinview. Used for synchronization.</summary>
         private Task rewindingTask = Task.CompletedTask;
 

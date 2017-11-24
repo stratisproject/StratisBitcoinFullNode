@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;
 
-                this.logger.LogInformation("Transaction ID '{0}' accepted to memory pool from peer '{1}' (poolsz {2} txn, {3} kb).", trxHash, node.RemoteSocketEndpoint, mmsize, memdyn/1000);
+                this.logger.LogInformation("Transaction ID '{0}' accepted to memory pool from peer '{1}' (poolsz {2} txn, {3} kb).", trxHash, node.RemoteSocketEndpoint, mmsize, memdyn / 1000);
 
                 await this.orphans.ProcessesOrphansAsync(this, trx);
             }
@@ -523,7 +523,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
                 }
             });
-
         }
 
         /// <summary>

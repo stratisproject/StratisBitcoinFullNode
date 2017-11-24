@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.BlockPulling
     {
         /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const double MinScore = 1.0;
+
         /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const double MaxScore = 150.0;
 
@@ -102,7 +103,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 PeerSample oldSample;
                 if (this.samples.Add(newSample, out oldSample))
-                { 
+                {
                     // If we reached the maximum number of samples, we need to remove oldest sample.
                     this.samplesSum -= oldSample.timePerKb;
                     this.peerReferenceCounter[oldSample.peer]--;
