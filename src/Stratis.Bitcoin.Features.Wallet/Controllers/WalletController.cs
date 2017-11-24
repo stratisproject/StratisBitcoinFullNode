@@ -9,8 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -31,14 +29,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IWalletSyncManager walletSyncManager;
         private readonly CoinType coinType;
-        
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
-        private readonly DataFolder dataFolder;
-        
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
         private readonly IBroadcasterManager broadcasterManager;
@@ -54,7 +51,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            DataFolder dataFolder,
             IBroadcasterManager broadcasterManager,
             IDateTimeProvider dateTimeProvider)
         {
@@ -65,7 +61,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-            this.dataFolder = dataFolder;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -480,7 +475,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets a transaction fee estimate.
         /// Fee can be estimated by creating a <see cref="TransactionBuildContext"/> with no password
-        /// and then building the transaction and retreiving the fee from the context.
+        /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
         /// <returns>The estimated fee for the transaction.</returns>
@@ -532,7 +527,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 return BuildErrorResponse(this.ModelState);
             }
-            
+
             try
             {
                 var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
@@ -543,7 +538,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = true
+                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
                 };
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
@@ -584,12 +579,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 var transaction = new Transaction(request.Hex);
+
+                WalletSendTransactionModel model = new WalletSendTransactionModel
+                {
+                    TransactionId = transaction.GetHash(),
+                    Outputs = new List<TransactionOutputModel>()
+                };
+                
+                foreach (var output in transaction.Outputs)
+                {
+                    model.Outputs.Add(new TransactionOutputModel
+                    {
+                        Address = output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Amount = output.Value,
+                    });
+                }
+                
                 var result = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
                 if (result == Bitcoin.Broadcasting.Success.Yes)
                 {
-                    return this.Ok();
+                    return this.Json(model);
                 }
-                else if (result == Bitcoin.Broadcasting.Success.DontKnow)
+
+                if (result == Bitcoin.Broadcasting.Success.DontKnow)
                 {
                     // wait for propagation
                     var waited = TimeSpan.Zero;
@@ -600,7 +612,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         var transactionEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
                         if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
                         {
-                            return this.Ok();
+                            return this.Json(model);
                         }
                         await Task.Delay(period).ConfigureAwait(false);
                         waited += period;
@@ -781,8 +793,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
             return ErrorHelpers.BuildErrorResponse(
-                HttpStatusCode.BadRequest, 
-                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)), 
+                HttpStatusCode.BadRequest,
+                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
                 string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
         }
     }

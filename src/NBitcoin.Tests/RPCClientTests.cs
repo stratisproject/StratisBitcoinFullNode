@@ -21,7 +21,15 @@ namespace NBitcoin.Tests
 	[Trait("RPCClient", "RPCClient")]
 	public class RPCClientTests
 	{
-		const string TestAccount = "NBitcoin.RPCClientTests";
+        public RPCClientTests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        const string TestAccount = "NBitcoin.RPCClientTests";
 		[Fact]
 		public void InvalidCommandSendRPCException()
 		{
@@ -305,7 +313,6 @@ namespace NBitcoin.Tests
 		[Fact]
 		public void CanDecodeAndEncodeRawTransaction()
 		{
-			var a = new Protocol.AddressManager().Select();
 			var tests = TestCase.read_json("data/tx_raw.json");
 			foreach(var test in tests)
 			{

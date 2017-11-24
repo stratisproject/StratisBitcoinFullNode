@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public WatchOnlyWallet()
         {
             this.WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>();
+            this.WatchedTransactions = new ConcurrentDictionary<string, TransactionData>();
         }
 
         /// <summary>
@@ -48,6 +49,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "watchedAddresses")]
         [JsonConverter(typeof(WatchedAddressesConcurrentDictionaryConverter))]
         public ConcurrentDictionary<string, WatchedAddress> WatchedAddresses { get; set; }
+
+        /// <summary>
+        /// The list of transactions being watched.
+        /// </summary>
+        [JsonProperty(PropertyName = "watchedTransactions")]
+        [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
+        public ConcurrentDictionary<string, TransactionData> WatchedTransactions { get; set; }
     }
 
     /// <summary>

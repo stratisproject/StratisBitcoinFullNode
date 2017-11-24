@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using NBitcoin;
@@ -11,7 +10,6 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using NBitcoin.DataEncoders;
-using System.Net.Sockets;
 using NBitcoin.Protocol.Behaviors;
 using System.Diagnostics;
 
@@ -131,7 +129,15 @@ namespace NBitcoin.Tests
 	}
 	public class ProtocolTests
 	{
-		[Fact]
+        public ProtocolTests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        [Fact]
 		[Trait("UnitTest", "UnitTest")]
 		//Copied from https://en.bitcoin.it/wiki/Protocol_specification (19/04/2014)
 		public void CanParseMessages()
@@ -357,44 +363,6 @@ namespace NBitcoin.Tests
 				Assert.True(transactions.Length == 1);
 			}
 		}
-
-#if !NOFILEIO
-		[Fact]
-		public void CanConnectToRandomNode()
-		{
-			var watch = new Stopwatch();
-			var parameters = new NodeConnectionParameters();
-
-			var addrman = GetCachedAddrMan("addrmancache.dat");
-			parameters.TemplateBehaviors.Add(new AddressManagerBehavior(addrman)
-			{
-				PeersToDiscover = 50
-			});
-
-			watch.Start();
-
-			Node node = Node.Connect(Network.Main, parameters);
-			TimeSpan timeToFind = watch.Elapsed;
-			node.VersionHandshake();
-			node.Disconnect();
-
-			watch.Restart();
-			Node node2 = Node.Connect(Network.Main, parameters);
-			TimeSpan timeToFind2 = watch.Elapsed;
-			node.Disconnect();
-
-			addrman.SavePeerFile("addrmancache.dat", Network.Main);
-		}
-
-		public static AddressManager GetCachedAddrMan(string file)
-		{
-			if(File.Exists(file))
-			{
-				return AddressManager.LoadPeerFile(file);
-			}
-			return new AddressManager();
-		}
-#endif
 
 		[Fact]
 		[Trait("Protocol", "Protocol")]

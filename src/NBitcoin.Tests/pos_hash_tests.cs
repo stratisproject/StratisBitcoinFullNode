@@ -11,8 +11,15 @@ namespace NBitcoin.Tests
 
     public class pos_hash_tests
 	{
+        public pos_hash_tests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
 
-		[Fact]
+        [Fact]
 		[Trait("Core", "Core")]
 		public void murmurhash3()
 		{

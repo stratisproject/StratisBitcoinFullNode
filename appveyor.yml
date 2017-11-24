@@ -76,7 +76,7 @@ test_script:
             Push-Location $testFolder
 
             Write-Host "[$env:configuration] Running tests in $testFolder" -foregroundcolor "magenta"
-            dotnet test -c $env:configuration
+            dotnet test -c $env:configuration --no-build
             
             if ($LastExitCode -ne 0) { 
                 $anyFailures = $TRUE

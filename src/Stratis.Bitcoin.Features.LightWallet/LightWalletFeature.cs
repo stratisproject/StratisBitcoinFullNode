@@ -45,7 +45,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeDeployments nodeDeployments;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly BroadcasterBehavior broadcasterBehavior;
 
@@ -184,7 +187,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 features
                     .AddFeature<LightWalletFeature>()
                     .DependOn<BlockNotificationFeature>()
-                    .DependOn<WalletFeature>()
+                    .DependOn<TransactionNotificationFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();

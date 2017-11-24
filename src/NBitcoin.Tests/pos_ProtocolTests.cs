@@ -17,6 +17,14 @@ namespace NBitcoin.Tests
 {
 	public class pos_ProtocolTests
 	{
+        public pos_ProtocolTests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
+
 		public static bool noClient = !Process.GetProcesses().Any(p => p.ProcessName.Contains("stratis"));
 
 		[Fact]
@@ -224,40 +232,6 @@ namespace NBitcoin.Tests
 				Assert.NotNull(transactions);//.True(transactions.Length == 1);
 			}
 		}
-
-#if !NOFILEIO
-		[Fact]
-		public void CanConnectToRandomNode()
-		{
-			Stopwatch watch = new Stopwatch();
-			NodeConnectionParameters parameters = new NodeConnectionParameters();
-			var addrman = GetCachedAddrMan("addrmancache.dat");
-			parameters.TemplateBehaviors.Add(new AddressManagerBehavior(addrman));
-			watch.Start();
-			IPEndPoint[] connectedEndpoints = null;
-			using (var node = Node.Connect(Network.StratisMain, parameters, connectedEndpoints))
-			{
-				var timeToFind = watch.Elapsed;
-				node.VersionHandshake();
-				node.Dispose();
-				watch.Restart();
-				using (var node2 = Node.Connect(Network.StratisMain, parameters, connectedEndpoints))
-				{
-					var timeToFind2 = watch.Elapsed;
-				}
-			}
-			addrman.SavePeerFile("addrmancache.dat", Network.StratisMain);
-		}
-
-		public static AddressManager GetCachedAddrMan(string file)
-		{
-			if (File.Exists(file))
-			{
-				return AddressManager.LoadPeerFile(file);
-			}
-			return new AddressManager();
-		}
-#endif
 
 		[Fact]
 		[Trait("Protocol", "Protocol")]

@@ -15,7 +15,15 @@ namespace NBitcoin.Tests
 {
 	public class pos_RepositoryTests
 	{
-		public class RawData : IBitcoinSerializable
+        public pos_RepositoryTests()
+        {
+            // These tests should be using the Stratis network.
+            // Set these expected values accordingly.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
+
+        public class RawData : IBitcoinSerializable
 		{
 			public RawData()
 			{
@@ -89,7 +97,7 @@ namespace NBitcoin.Tests
 		//The last block is off by 1 byte + lots of padding zero at the end
 		public void CanEnumerateIncompleteBlk()
 		{
-			Assert.Equal(300, StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("incompleteblk.dat"),network:Network.StratisMain).Count());
+            Assert.Equal(300, StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("incompleteblk.dat"),network:Network.StratisMain).Count());
 		}
 
 		[Fact]
@@ -106,15 +114,15 @@ namespace NBitcoin.Tests
 		[Trait("UnitTest", "UnitTest")]
 		public void CanIndexBlock()
 		{
-			var index = CreateIndexedStore();
-			foreach(var block in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network:Network.StratisMain).Take(50))
-			{
-				index.Put(block.Item);
-			}
-			var genesis = index.Get(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
-			Assert.NotNull(genesis);
-			var invalidBlock = index.Get(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972ae"));
-			Assert.Null(invalidBlock);
+            var index = CreateIndexedStore();
+            foreach(var block in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network:Network.StratisMain).Take(50))
+            {
+                index.Put(block.Item);
+            }
+            var genesis = index.Get(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
+            Assert.NotNull(genesis);
+            var invalidBlock = index.Get(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972ae"));
+            Assert.Null(invalidBlock);
 		}
 
 
@@ -515,8 +523,8 @@ namespace NBitcoin.Tests
         {
             var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
 
-			// use the synchronize chain method to load all blocks and look for the tip (currently block 100k)
-			var block100K = uint256.Parse("af380a53467b70bc5d1ee61441586398a0a5907bb4fad7855442575483effa54");
+            // use the synchronize chain method to load all blocks and look for the tip (currently block 100k)
+            var block100K = uint256.Parse("af380a53467b70bc5d1ee61441586398a0a5907bb4fad7855442575483effa54");
             var chain = store.GetStratisChain();
             var lastblk = chain.GetBlock(block100K);
             Assert.Equal(block100K, lastblk.Header.GetHash());

@@ -27,7 +27,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ILogger logger;
 
         private readonly string name;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly StoreSettings storeSettings;
 
         private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler

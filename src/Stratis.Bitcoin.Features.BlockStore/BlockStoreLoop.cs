@@ -47,6 +47,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>

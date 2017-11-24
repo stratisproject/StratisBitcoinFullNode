@@ -171,13 +171,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
-            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
-            bool doFullValidation = index.Height > lastCheckpointHeight;
-
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
-            if (doFullValidation)
+            if (!context.BlockValidationContext.SkipValidation)
             {
                 if (flags.EnforceBIP30)
                 {
@@ -201,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
-                if (doFullValidation)
+                if (!context.BlockValidationContext.SkipValidation)
                 {
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
@@ -274,7 +271,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.UpdateCoinView(context, tx);
             }
 
-            if (doFullValidation)
+            if (!context.BlockValidationContext.SkipValidation)
             {
                 this.CheckBlockReward(context, nFees, index, block);
 
@@ -285,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }
             }
-            else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for checkpointed block at height {0}.", index.Height);
+            else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             this.logger.LogTrace("(-)");
         }

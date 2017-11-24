@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <summary>
         /// Memory pool validator interface;
         /// </summary>
-        IMempoolValidator MempoolValidator { get;  }
+        IMempoolValidator MempoolValidator { get; }
 
         /// <summary>
         /// List of the source transactions in the test chain.
@@ -45,10 +46,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public List<Transaction> SrcTxs { get; set; }
     }
 
-   /// <summary>
-   /// Factory for creating the test chain.
-   /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
-   /// </summary>
+    /// <summary>
+    /// Factory for creating the test chain.
+    /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
+    /// </summary>
     internal class TestChainFactory
     {
         /// <summary>
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <returns>Context object representing the test chain.</returns>
         public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dataDir}" }, network.Name, network);
+            NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" });
             if (dataDir != null)
             {
                 nodeSettings.DataDir = dataDir;
@@ -69,14 +70,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network, nodeSettings), dateTimeProvider, loggerFactory);
+            ConsensusSettings consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network, consensusSettings), dateTimeProvider, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
 
-            ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
+            var connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider);
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
-            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, nodeSettings));
+            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings);
             await consensus.StartAsync();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
