@@ -74,9 +74,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
 
-        public override void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
+        /// <inheritdoc />
+        public override void CheckBlockReward(ContextInformation context, Money fees, ChainedBlock chainedBlock, Block block)
         {
-            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(nFees), nFees, nameof(chainedBlock), chainedBlock);
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(chainedBlock), chainedBlock);
 
             if (BlockStake.IsProofOfStake(block))
             {
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // reward does not exceed the consensus rules
 
                 Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
-                Money calcStakeReward = nFees + this.GetProofOfStakeReward(chainedBlock.Height);
+                Money calcStakeReward = fees + this.GetProofOfStakeReward(chainedBlock.Height);
 
                 this.logger.LogTrace("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
                 if (stakeReward > calcStakeReward)
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             else
             {
-                Money blockReward = nFees + this.GetProofOfWorkReward(chainedBlock.Height);
+                Money blockReward = fees + this.GetProofOfWorkReward(chainedBlock.Height);
                 this.logger.LogTrace("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
                 if (block.Transactions[0].TotalOut > blockReward)
                 {
@@ -109,6 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
         {
             this.logger.LogTrace("()");
@@ -124,6 +126,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public override void CheckBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -186,6 +189,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
+        /// <inheritdoc />
         protected override void UpdateCoinView(ContextInformation context, Transaction tx)
         {
             this.logger.LogTrace("()");
@@ -200,17 +204,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        protected override void CheckMaturity(UnspentOutputs coins, int nSpendHeight)
+        /// <inheritdoc />
+        protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(nSpendHeight), nSpendHeight);
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
-            base.CheckMaturity(coins, nSpendHeight);
+            base.CheckMaturity(coins, spendHeight);
 
             if (coins.IsCoinstake)
             {
-                if ((nSpendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
+                if ((spendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
                 {
-                    this.logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, nSpendHeight, this.consensusOptions.CoinbaseMaturity);
+                    this.logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensusOptions.CoinbaseMaturity);
                     this.logger.LogTrace("(-)[COINSTAKE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
@@ -219,6 +224,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public override void ContextualCheckBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -256,6 +262,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
+        /// <inheritdoc />
         public override void ContextualCheckBlockHeader(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -378,6 +385,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return verifyRes;
         }
 
+        /// <inheritdoc />
         public override void CheckBlockHeader(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -457,6 +465,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
+        /// <inheritdoc />
         public override Money GetProofOfWorkReward(int height)
         {
             if (this.IsPremine(height))
