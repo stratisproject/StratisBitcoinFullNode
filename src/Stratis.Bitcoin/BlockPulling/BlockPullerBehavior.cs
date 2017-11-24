@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += Node_MessageReceived;
+            this.AttachedNode.MessageReceived += this.Node_MessageReceived;
             this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-            AssignPendingVector();
+            this.AssignPendingVector();
 
             this.logger.LogTrace("(-)");
         }
@@ -211,8 +211,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedNode.MessageReceived -= Node_MessageReceived;
-            ReleaseAll(true);
+            this.AttachedNode.MessageReceived -= this.Node_MessageReceived;
+            this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");
         }

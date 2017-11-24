@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Configuration
 
             if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
             {
-                var defaults = NodeSettings.Default();
+                var defaults = Default();
 
                 var builder = new StringBuilder();
                 builder.AppendLine("Usage:");

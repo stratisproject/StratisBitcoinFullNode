@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "libevent", "" },
             //{ "lock", "" },
             //{ "mempoolrej", "" },
-            { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" },
+            { "net", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Connection)}.*" },
             //{ "proxy", "" },
             //{ "prune", "" },
             //{ "rand", "" },
@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "zmq", "" },
 
             // Short Names
-            { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
-            { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" }
+            { "configuration", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Configuration)}.*" },
+            { "fullnode", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(FullNode)}" }
         };
 
         public static void RegisterFeatureNamespace<T>(string key)
@@ -147,14 +147,14 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LogManager.Configuration.AddTarget(mainTarget);
 
             // Default logging level is Info for all components.
-            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
+            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
 
             if (settings.DebugArgs.Any())
             {
                 if (settings.DebugArgs[0] == "1")
                 {
                     // Increase all logging to Debug level.
-                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Debug, mainTarget);
+                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", NLog.LogLevel.Debug, mainTarget);
                 }
                 else
                 {
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     if (settings.DebugArgs[0] == "1")
                     {
                         // Increase all logging to Debug.
-                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Debug);
+                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Debug);
                     }
                     else
                     {

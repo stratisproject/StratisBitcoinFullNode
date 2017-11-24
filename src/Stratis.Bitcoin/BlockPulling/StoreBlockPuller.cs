@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadRequests), nameof(downloadRequests.Length), downloadRequests.Length);
 
-            base.AskBlocks(downloadRequests);
+            this.AskBlocks(downloadRequests);
 
             this.logger.LogTrace("(-)");
         }
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
 
-            if (TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
+            if (this.TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
             {
                 this.logger.LogTrace("(-):true");
                 return true;

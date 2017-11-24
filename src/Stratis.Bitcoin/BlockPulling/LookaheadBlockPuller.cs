@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.AskBlocks();
             }
 
-            Block block = NextBlockCore(cancellationToken);
+            Block block = this.NextBlockCore(cancellationToken);
             if (block != null)
             {
                 if ((this.lookaheadLocation.Height - this.location.Height) <= this.ActualLookahead)
@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 return null;
             }
 
-            DownloadedBlock block = GetDownloadedBlock(chainedBlock.HashBlock);
+            DownloadedBlock block = this.GetDownloadedBlock(chainedBlock.HashBlock);
             if (block == null)
             {
                 this.logger.LogTrace("(-)[NOT_AVAILABLE]");
@@ -509,10 +509,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 bool isDownloading = false;
                 bool isReady = false;
-                if (header != null) CheckBlockStatus(header.HashBlock, out isDownloading, out isReady);
+                if (header != null) this.CheckBlockStatus(header.HashBlock, out isDownloading, out isReady);
 
                 // If block has been downloaded and is ready to be consumed, then remove it from the list of downloaded blocks and consume it.
-                if (isReady && TryRemoveDownloadedBlock(header.HashBlock, out block))
+                if (isReady && this.TryRemoveDownloadedBlock(header.HashBlock, out block))
                 {
                     this.logger.LogTrace("Consuming block '{0}'.", header.HashBlock);
 
