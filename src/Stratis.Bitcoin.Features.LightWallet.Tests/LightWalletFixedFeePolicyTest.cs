@@ -50,17 +50,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void GetMinimumFee_Result_IsMinTxFee()
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
-            const int txSizeBytes = 5000;
-            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes, 6));
-            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes, 6, new Money(1)));
+            const int TxSizeBytes = 5000;
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(TxSizeBytes), policy.GetMinimumFee(TxSizeBytes, 6));
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(TxSizeBytes), policy.GetMinimumFee(TxSizeBytes, 6, new Money(1)));
         }
 
         [Fact]
         public void GetRequiredFee_Result_IsMinTxFee()
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
-            const int txSizeBytes = 5000;
-            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetRequiredFee(txSizeBytes));
+            const int TxSizeBytes = 5000;
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(TxSizeBytes), policy.GetRequiredFee(TxSizeBytes));
         }
 
         [Fact]
