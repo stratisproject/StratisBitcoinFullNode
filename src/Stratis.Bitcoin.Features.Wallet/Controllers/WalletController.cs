@@ -589,12 +589,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 var transaction = new Transaction(request.Hex);
+
+                WalletSendTransactionModel model = new WalletSendTransactionModel
+                {
+                    TransactionId = transaction.GetHash(),
+                    Outputs = new List<TransactionOutputModel>()
+                };
+                
+                foreach (var output in transaction.Outputs)
+                {
+                    model.Outputs.Add(new TransactionOutputModel
+                    {
+                        Address = output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Amount = output.Value,
+                    });
+                }
+                
                 var result = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
                 if (result == Bitcoin.Broadcasting.Success.Yes)
                 {
-                    return this.Ok();
+                    return this.Json(model);
                 }
-                else if (result == Bitcoin.Broadcasting.Success.DontKnow)
+
+                if (result == Bitcoin.Broadcasting.Success.DontKnow)
                 {
                     // wait for propagation
                     var waited = TimeSpan.Zero;
@@ -605,7 +622,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         var transactionEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
                         if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
                         {
-                            return this.Ok();
+                            return this.Json(model);
                         }
                         await Task.Delay(period).ConfigureAwait(false);
                         waited += period;
