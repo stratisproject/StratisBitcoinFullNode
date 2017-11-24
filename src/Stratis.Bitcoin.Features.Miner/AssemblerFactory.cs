@@ -63,6 +63,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
+        private readonly StakeValidator stakeValidator;
+
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
@@ -71,6 +74,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             MempoolSchedulerLock mempoolScheduler,
             TxMempool mempool,
+            StakeValidator stakeValidator,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             StakeChain stakeChain = null)
@@ -79,6 +83,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.network = network;
             this.mempoolScheduler = mempoolScheduler;
             this.mempool = mempool;
+            this.stakeValidator = stakeValidator;
             this.dateTimeProvider = dateTimeProvider;
             this.stakeChain = stakeChain;
             this.loggerFactory = loggerFactory;
@@ -88,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public override BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
         {
             return new PosBlockAssembler(this.consensusLoop, this.network, this.mempoolScheduler, this.mempool,
-                this.dateTimeProvider, this.stakeChain, chainTip, this.loggerFactory, options);
+                this.dateTimeProvider, this.stakeChain, this.stakeValidator, chainTip, this.loggerFactory, options);
         }
     }
 }
