@@ -11,6 +11,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -45,6 +46,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// then this is set to a time until which the block should be marked as invalid. Otherwise it is <c>null</c>.
         /// </summary>
         public DateTime? RejectUntil { get; set; }
+
+        /// <summary>
+        /// If the block validation failed with a <see cref="ConsensusError"/> that is considered malicious the peer will get banned.
+        /// The ban, unless specified otherwise, will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
+        /// </summary>
+        /// <remarks>
+        /// Setting this value to be smaller or equal to 0 will disable the ban.
+        /// Leaving the value as <c>null</c> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>
+        /// </remarks>
+        public int? BanDurationSeconds { get; set; }
 
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
@@ -369,8 +380,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
-                    if ((blockValidationContext.Peer != null) && (blockValidationContext.Error.ViolatesConsensus))
-                        this.peerBanning.BanPeer(blockValidationContext.Peer);
+                    if ((blockValidationContext.Peer != null) && !(blockValidationContext.BanDurationSeconds <= 0))
+                    {
+                        this.peerBanning.BanPeer(blockValidationContext.Peer, blockValidationContext.BanDurationSeconds);
+                    }
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                     this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, blockValidationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", blockValidationContext.RejectUntil.Value) : "");

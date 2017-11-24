@@ -19,11 +19,12 @@ namespace Stratis.Bitcoin.Connection
     public interface IPeerBanning
     {
         /// <summary>
-        /// Set a peer as banned.
+        /// Set a peer as banned, if<see cref="banTimeSeconds"/> is <c>null</c> the default ban time is <see cref="ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds"/>.
         /// </summary>
         /// <param name="endpoint">The endpoint to set that it was banned.</param>
+        /// <param name="banTimeSeconds">The time in seconds this peer should be banned.</param>
         /// <param name="reason">An optional reason for the ban, the 'reason' is only use for tracing.</param>
-        void BanPeer(IPEndPoint endpoint, string reason = null);
+        void BanPeer(IPEndPoint endpoint, int? banTimeSeconds = null, string reason = null);
 
         /// <summary>
         /// Check if a peer is banned.
@@ -107,7 +108,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        public void BanPeer(IPEndPoint endpoint, string reason = null)
+        public void BanPeer(IPEndPoint endpoint, int? banTimeSeconds = null, string reason = null)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (banPeer)
             {
-                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(this.connectionManagerSettings.BanTimeSeconds));
+                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds ?? this.connectionManagerSettings.BanTimeSeconds));
             }
 
             this.logger.LogTrace("(-)");

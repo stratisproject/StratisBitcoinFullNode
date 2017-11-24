@@ -3,18 +3,22 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
+    /// <summary>
+    /// An exception that is used when consensus breaking errors are found.
+    /// </summary>
     public class ConsensusErrorException : Exception
     {
+        /// <summary>
+        /// Initialize a new instance of <see cref="ConsensusErrorException"/>.
+        /// </summary>
+        /// <param name="error">The error that triggered this exception.</param>
         public ConsensusErrorException(ConsensusError error) : base(error.Message)
         {
             this.ConsensusError = error;
         }
 
-        public ConsensusError ConsensusError
-        {
-            get;
-            private set;
-        }
+        /// <summary>The error that triggered this exception. </summary>
+        public ConsensusError ConsensusError { get; private set; }
     }
 
     /// <summary>
@@ -28,25 +32,23 @@ namespace Stratis.Bitcoin.Features.Consensus
         public string Code { get; }
 
         /// <summary>
-        /// A friendly message to describe this error.
+        /// A user friendly message to describe this error.
         /// </summary>
         public string Message { get; }
 
         /// <summary>
-        /// And indicator weather this error is permanent.
+        /// A method that will throw a <see cref="ConsensusErrorException"/> with the current consensus error.
         /// </summary>
-        public bool ViolatesConsensus { get; }
-
         public void Throw()
         {
             throw new ConsensusErrorException(this);
         }
 
-        public ConsensusError(string code, string message, bool violatesConsensus) : this(code, message)
-        {
-            this.ViolatesConsensus = violatesConsensus;
-        }
-
+        /// <summary>
+        /// Initialize a new instance of <see cref="ConsensusErrorException"/>.
+        /// </summary>
+        /// <param name="code">The error code that represents the current consensus breaking error.</param>
+        /// <param name="message">A user friendly message to describe this error.</param>
         public ConsensusError(string code, string message)
         {
             Guard.NotEmpty(code, nameof(code));
@@ -54,9 +56,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             
             this.Code = code;
             this.Message = message;
-            this.ViolatesConsensus = true;
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             ConsensusError item = obj as ConsensusError;
@@ -64,36 +66,50 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (item != null) && (this.Code.Equals(item.Code));
         }
 
+        /// <summary>
+        /// Compare two instances of <see cref="ConsensusError"/> are the same.
+        /// </summary>
+        /// <param name="a">first instance to compare.</param>
+        /// <param name="b">Second instance to compare.</param>
+        /// <returns><c>true</c> if bother instances are the same.</returns>
         public static bool operator ==(ConsensusError a, ConsensusError b)
         {
-            if(object.ReferenceEquals(a, b))
+            if(Object.ReferenceEquals(a, b))
                 return true;
 
-            if ((a == null) || (b == null))
+            if (((object)a == null) || ((object)b == null))
                 return false;
 
             return a.Code == b.Code;
         }
 
+        /// <summary>
+        /// Compare two instances of <see cref="ConsensusError"/> are not teh same.
+        /// </summary>
         public static bool operator !=(ConsensusError a, ConsensusError b)
         {
             return !(a == b);
         }
-
+        
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return this.Code.GetHashCode();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{this.Code}: {this.Message}";
         }
     }
 
+    /// <summary>
+    /// A class that holds consensus errors.
+    /// </summary>
     public static class ConsensusErrors
     {
-        public static readonly ConsensusError InvalidPrevTip = new ConsensusError("invalid-prev-tip", "invalid previous tip", false);
+        public static readonly ConsensusError InvalidPrevTip = new ConsensusError("invalid-prev-tip", "invalid previous tip");
         public static readonly ConsensusError HighHash = new ConsensusError("high-hash", "proof of work failed");
         public static readonly ConsensusError BadCoinbaseHeight = new ConsensusError("bad-cb-height", "block height mismatch in coinbase");
         public static readonly ConsensusError BadTransactionNonFinal = new ConsensusError("bad-txns-nonfinal", "non-final transaction");
