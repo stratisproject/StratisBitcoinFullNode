@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
-            Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);            
+            Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
         }
 
         [Fact]

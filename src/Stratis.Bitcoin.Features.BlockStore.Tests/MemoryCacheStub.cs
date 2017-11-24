@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public TimeSpan? AbsoluteExpirationRelativeToNow
         {
-            get;set;
+            get; set;
         }
 
         public IList<IChangeToken> ExpirationTokens
@@ -79,6 +79,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
         }
     }
+
     internal class MemoryCacheStub : IMemoryCache
     {
         public IDictionary<object, object> internalDict;
@@ -98,14 +99,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.lastCreateCalled = null;
             this.internalDict = dict;
         }
-        
+
         public ICacheEntry CreateEntry(object key)
         {
             this.lastCreateCalled = key;
             this.internalDict.Add(key, null);
             return new CacheEntryStub(key, null);
         }
-        
+
         public void Dispose()
         {
         }

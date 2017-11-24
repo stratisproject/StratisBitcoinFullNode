@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             get;
             private set;
         }
+
         private void CleanDirectory()
         {
             try

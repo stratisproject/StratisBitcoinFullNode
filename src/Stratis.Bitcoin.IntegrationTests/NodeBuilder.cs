@@ -83,6 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         bool HasExited { get; }
 
         void Kill();
+
         void Start(string dataDir);
     }
 
@@ -248,7 +249,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Start(string dataDir)
         {
-
             NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
 
             var node = BuildFullNode(nodeSettings, this.callback);
@@ -459,14 +459,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             get { return this.bitcoinD; }
         }
 
-
         private readonly List<CoreNode> nodes = new List<CoreNode>();
 
         public List<CoreNode> Nodes
         {
             get { return this.nodes; }
         }
-
 
         private readonly NodeConfigParameters configParameters = new NodeConfigParameters();
 
@@ -608,6 +606,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
 #if !NOSOCKET
+
         public void Sync(CoreNode node, bool keepConnection = false)
         {
             var rpc = this.CreateRPCClient();
@@ -620,7 +619,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             if (!keepConnection)
                 rpc.RemoveNode(node.Endpoint);
         }
+
 #endif
+
         public CoreNodeState State
         {
             get { return this.state; }
@@ -653,6 +654,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
 #if !NOSOCKET
+
         public Node CreateNodeClient()
         {
             return Node.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString());
@@ -662,6 +664,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             return Node.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters);
         }
+
 #endif
 
         public async Task StartAsync()
@@ -751,10 +754,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 this.locked.Remove(outpoint);
             }
-
         }
 
 #if !NOSOCKET
+
         public void Broadcast(Transaction transaction)
         {
             using (var node = this.CreateNodeClient())
@@ -765,6 +768,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 node.PingPong();
             }
         }
+
 #else
         public void Broadcast(Transaction transaction)
         {
@@ -836,7 +840,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 #if !NOSOCKET
             using (var node = this.CreateNodeClient())
             {
-
                 node.VersionHandshake();
                 chain = bestBlock == node.Network.GenesisHash ? new ConcurrentChain(node.Network) : node.GetChain();
                 for (int i = 0; i < blockCount; i++)
@@ -919,11 +922,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     //try
                     //{
-
-
                     //    var blockResult = new BlockResult { Block = block };
                     //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
-
 
                     //    // similar logic to what's in the full node code
                     //    if (blockResult.Error == null)

@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             return !(a == b);
         }
+
         public override int GetHashCode()
         {
             return this.GetId().GetHashCode();

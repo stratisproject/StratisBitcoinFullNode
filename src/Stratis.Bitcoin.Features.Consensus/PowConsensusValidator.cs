@@ -823,7 +823,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     levell++;
                 }
             }
-            // Return result.            
+            // Return result.
             pmutated = mutated;
             root = hh;
         }

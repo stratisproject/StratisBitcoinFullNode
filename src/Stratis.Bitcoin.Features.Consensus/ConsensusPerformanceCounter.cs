@@ -114,7 +114,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-
         public static ConsensusPerformanceSnapshot operator -(ConsensusPerformanceSnapshot end, ConsensusPerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -136,6 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 Taken = end.Taken
             };
         }
+
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();

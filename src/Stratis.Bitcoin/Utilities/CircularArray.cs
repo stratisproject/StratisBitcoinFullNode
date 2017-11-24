@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Generic circular array is a fixed length array which stores collection 
-    /// of items. Once the array is full, adding a new item removes the oldest entry. 
+    /// Generic circular array is a fixed length array which stores collection
+    /// of items. Once the array is full, adding a new item removes the oldest entry.
     /// </summary>
     /// <typeparam name="T">Type of the items stored in the array.</typeparam>
     /// <remarks>
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="capacity">Maximal number of items that can be stored in the circular array.</param>
-        /// <param name="preinitializeItems">If set to <c>true</c>, all items in the array will be initialized using their default constructor. 
+        /// <param name="preinitializeItems">If set to <c>true</c>, all items in the array will be initialized using their default constructor.
         /// This can be used to prevent further allocations when the structure is used.</param>
         public CircularArray(int capacity, bool preinitializeItems = true)
         {
@@ -105,6 +105,7 @@ namespace Stratis.Bitcoin.Utilities
             get { return this.items[i]; }
             set { this.items[i] = value; }
         }
+
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator()
         {

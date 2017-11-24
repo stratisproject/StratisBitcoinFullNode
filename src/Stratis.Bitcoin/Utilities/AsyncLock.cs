@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// An async synchronization primitive that allows the caller to await inside the critical section.
     /// <para>
-    /// The lock is disposable, which allows the caller to use the convenient <c>using</c> statement 
+    /// The lock is disposable, which allows the caller to use the convenient <c>using</c> statement
     /// and avoid caring about releasing the lock.
     /// </para>
     /// </summary>
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Utilities
     /// }
     /// </code>
     /// <para>
-    /// or it can be used in non-async environment: 
+    /// or it can be used in non-async environment:
     /// </para>
     /// <code>
     /// using (asyncLock.Lock(cancellationToken))
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Utilities
     {
         /// <summary>
         /// Disposable mechanism that is attached to the parent lock and releases it when it is disposed.
-        /// This allows the user of the lock to use the convenient <c>using</c> statement and avoid 
+        /// This allows the user of the lock to use the convenient <c>using</c> statement and avoid
         /// caring about manual releasing of the lock.
         /// </summary>
         private sealed class Releaser : IDisposable
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Utilities
                 return this.releaser;
             }
 
-            // If the lock is not available, we wait until it is available 
+            // If the lock is not available, we wait until it is available
             // or the wait is cancelled.
             return wait.ContinueWith((task, state) =>
             {

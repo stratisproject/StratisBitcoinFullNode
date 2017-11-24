@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -13,17 +14,16 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Xunit;
-using System.IO;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class APITests:IDisposable
+    public class APITests : IDisposable
     {
         private static HttpClient client = null;
 
         public void Dispose()
         {
-            // This is needed here because of the fact that the Stratis network, when initialized, sets the 
+            // This is needed here because of the fact that the Stratis network, when initialized, sets the
             // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
             // for proof-of-stake to work.
             // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,

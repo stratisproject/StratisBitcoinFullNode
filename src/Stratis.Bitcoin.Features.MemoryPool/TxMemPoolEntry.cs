@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// values that would be necessary to satisfy all relative locktime
     /// raints (BIP68) of this tx given our view of block chain history.
     /// </remarks>
-    public class LockPoints // todo: replace with SequenceLock 
+    public class LockPoints // todo: replace with SequenceLock
     {
         /// <summary>Block chain height.</summary>
         public int Height;
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Gets the transaction weight of the transaction in the entry in the memory pool.
         /// </summary>
         /// <remarks>
-        /// Cached to avoid recomputing transaction weight. 
+        /// Cached to avoid recomputing transaction weight.
         /// Also used for GetTxSize().
         /// </remarks>
         public long TxWeight { get; private set; }

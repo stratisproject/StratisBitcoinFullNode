@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private ConcurrentChain _Chain = new ConcurrentChain();
         private Network _Network;
+
         public ChainBuilder(Network network)
         {
             Guard.NotNull(network, nameof(network));
@@ -105,6 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         internal Dictionary<uint256, Block> _Blocks = new Dictionary<uint256, Block>();
         private List<Transaction> _Transactions = new List<Transaction>();
+
         public void Broadcast(Transaction tx)
         {
             this._Transactions.Add(tx);

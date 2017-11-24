@@ -4,8 +4,8 @@ using System.Diagnostics;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Replacement for the <see cref="System.Diagnostics.Stopwatch"/> class that allows the caller 
-    /// to use a convenient way of calling the watch with the <c>using</c> statement due to 
+    /// Replacement for the <see cref="System.Diagnostics.Stopwatch"/> class that allows the caller
+    /// to use a convenient way of calling the watch with the <c>using</c> statement due to
     /// the implementation of <see cref="IDisposable"/> interface.
     /// </summary>
     /// <remarks>
@@ -26,9 +26,9 @@ namespace Stratis.Bitcoin.Utilities
         private readonly System.Diagnostics.Stopwatch watch;
 
         /// <summary>
-        /// Action to execute when the measurement is done. 
+        /// Action to execute when the measurement is done.
         /// <para>
-        /// This is usually a performance counter. 
+        /// This is usually a performance counter.
         /// The argument of the action is the number of elapsed ticks of the code block.
         /// </para>
         /// </summary>

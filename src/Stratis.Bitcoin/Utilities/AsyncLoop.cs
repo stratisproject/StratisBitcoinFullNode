@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Starts an application defined task inside the async loop.
         /// </summary>
-        /// <param name="repeatEvery">Interval between each execution of the task. 
-        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
+        /// <param name="repeatEvery">Interval between each execution of the task.
+        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         IAsyncLoop Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
@@ -26,14 +26,14 @@ namespace Stratis.Bitcoin.Utilities
         /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
-        /// <param name="repeatEvery">Interval between each execution of the task. 
-        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
+        /// <param name="repeatEvery">Interval between each execution of the task.
+        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         IAsyncLoop Run(CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
-        /// The task representing the loop being executed. 
+        /// The task representing the loop being executed.
         /// </summary>
         Task RunningTask { get; }
     }
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Utilities
     /// Allows running application defined in a loop with specific timing.
     /// <para>
     /// It is possible to specify a startup delay, which will cause the first execution of the task to be delayed.
-    /// It is also possible to specify a delay between two executions of the task. And finally, it is possible 
+    /// It is also possible to specify a delay between two executions of the task. And finally, it is possible
     /// to make the task run only once. Running the task for other than one or infinite number of times is not supported.
     /// </para>
     /// </summary>
@@ -99,8 +99,8 @@ namespace Stratis.Bitcoin.Utilities
         /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
-        /// <param name="refreshRate">Interval between each execution of the task. 
-        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
+        /// <param name="refreshRate">Interval between each execution of the task.
+        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="delayStart">Delay before the first run of the task, or null if no startup delay is required.</param>
         private Task StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)

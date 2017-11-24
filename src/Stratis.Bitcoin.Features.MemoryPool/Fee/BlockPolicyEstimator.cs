@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         }
 
         /// <summary>
-        /// Return a feerate estimate 
+        /// Return a feerate estimate
         /// </summary>
         /// <param name="confTarget">The desired number of confirmations to be included in a block.</param>
         public FeeRate EstimateFee(int confTarget)

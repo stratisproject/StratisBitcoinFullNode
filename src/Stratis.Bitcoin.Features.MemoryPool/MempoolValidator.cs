@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx);
 
         /// <summary>
-        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>. 
+        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>.
         /// </summary>
         Task SanityCheck();
     }
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int DefaultDescendantLimit = 25;
 
         /// <summary>
-        /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants. 
+        /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants.
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
         public const int DefaultDescendantSizeLimit = 101;
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
 
-        // TODO: Implement Later with CheckRateLimit() 
+        // TODO: Implement Later with CheckRateLimit()
         //private readonly FreeLimiterSection freeLimiter;
 
         //private class FreeLimiterSection
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Validates that the transaction is the final transaction."/>
         /// Validated by comparing the transaction vs chain tip.
-        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then 
+        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then
         /// use the block time at the end of the block chain for validation.
         /// Otherwise use the current time for the block time.
         /// </summary>
@@ -467,7 +467,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 // do this here inside the exclusive scheduler for better accuracy
-                // and to avoid springing more concurrent tasks later 
+                // and to avoid springing more concurrent tasks later
                 state.MempoolSize = this.memPool.Size;
                 state.MempoolDynamicSize = this.memPool.DynamicMemoryUsage();
 
@@ -529,7 +529,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Checks that are done before touching the memory pool.
-        /// These checks don't need to run under the memory pool lock. 
+        /// These checks don't need to run under the memory pool lock.
         /// </summary>
         /// <param name="context">Current validation context.</param>
         private void PreMempoolChecks(MempoolValidationContext context)
@@ -618,7 +618,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (script.Type == TxOutType.TX_NULL_DATA)
                     dataOut++;
                 // TODO: fIsBareMultisigStd
-                //else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd)) 
+                //else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd))
                 //{
                 //  context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
                 //}

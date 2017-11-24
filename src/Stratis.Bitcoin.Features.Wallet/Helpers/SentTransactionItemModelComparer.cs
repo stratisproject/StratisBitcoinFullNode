@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             foreach (var payment in x.Payments)
             {
-                // Make sure all payments in x have their equivalent in y. 
+                // Make sure all payments in x have their equivalent in y.
                 // Because we check the counts are equal there is no need to check from both sides.
                 if (!y.Payments.Any(w => w.Amount == payment.Amount && w.DestinationAddress == payment.DestinationAddress))
                 {

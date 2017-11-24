@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
-        /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay. 
+        /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay.
         /// </summary>
         private const int InventoryBroadcastInterval = 5;
 
@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
-                // TODO: check if we need to add support for "not found" 
+                // TODO: check if we need to add support for "not found"
 
                 TxMempoolInfo trxInfo = await this.manager.InfoAsync(item.Hash).ConfigureAwait(false);
 
@@ -462,7 +462,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 if (!trx.HasWitness && state.CorruptionPossible)
                 {
-
                 }
 
                 // TODO: Implement Processes whitelistforcerelay
@@ -510,7 +509,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return Task.CompletedTask;
             }
 
-            // find all behaviours then start an exclusive task 
+            // find all behaviours then start an exclusive task
             // to add the hash to each local collection
             IEnumerable<MempoolBehavior> behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
             this.logger.LogTrace("(-)");
@@ -538,7 +537,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            // before locking an exclusive task 
+            // before locking an exclusive task
             // check if there is anything to processes
             if (!await this.manager.MempoolLock.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
             {

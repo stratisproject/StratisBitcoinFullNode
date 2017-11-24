@@ -124,13 +124,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
-            Assert.Empty(result);            
+            Assert.Empty(result);
         }
 
         [Fact]
         public void GetAllPubKeysByCoinTypeWithoutAccountRootsReturnsEmptyList()
         {
-            var wallet = new Wallet();            
+            var wallet = new Wallet();
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 

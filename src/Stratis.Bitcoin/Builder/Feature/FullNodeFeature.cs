@@ -17,7 +17,7 @@
         void Stop();
 
         /// <summary>
-        /// Validates the feature's required dependencies are all present. 
+        /// Validates the feature's required dependencies are all present.
         /// </summary>
         /// <exception cref="MissingDependencyException">should be thrown if dependency is missing</exception>
         /// <param name="services">Services and features registered to node.</param>

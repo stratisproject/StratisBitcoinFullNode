@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.Logging
             this.mockLoggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))
                .Returns(this.fullNodeLogger.Object)
                .Verifiable();
-            /* 
+            /*
             // TODO: Re-factor by moving to Stratis.Bitcoin.Features.RPC.Tests or Stratis.Bitcoin.IntegrationTests
             this.mockLoggerFactory.Setup(l => l.CreateLogger(typeof(RPCFeature).FullName))
                 .Returns(this.rpcLogger.Object)
@@ -93,6 +93,7 @@ namespace Stratis.Bitcoin.Tests.Logging
                 null,
                 It.IsAny<Func<object, Exception, string>>()));
         }
+
         /* TODO: Re-factor
         protected void AssertLog(Mock<ILogger<RPCMiddleware>> logger, LogLevel logLevel, string message)
         {
@@ -103,6 +104,7 @@ namespace Stratis.Bitcoin.Tests.Logging
                 It.IsAny<Func<object, Exception, string>>()));
         }
         */
+
         protected void AssertLog(Mock<ILogger<FullNode>> logger, LogLevel logLevel, string message)
         {
             logger.Verify(f => f.Log<Object>(logLevel,
@@ -111,6 +113,5 @@ namespace Stratis.Bitcoin.Tests.Logging
                 null,
                 It.IsAny<Func<object, Exception, string>>()));
         }
-
     }
 }

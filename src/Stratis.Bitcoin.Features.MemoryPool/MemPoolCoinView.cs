@@ -139,7 +139,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     dResult += (double)coins._Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - coins.Height);
                     inChainInputValue += coins._Outputs[txInput.PrevOut.N].Value;
-
                 }
             }
             return (this.ComputePriority(tx, dResult), inChainInputValue);

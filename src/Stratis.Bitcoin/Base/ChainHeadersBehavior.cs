@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>
         /// Information about the peer's announcement of its tip using "headers" message.
         /// <para>
-        /// The announced tip is accepted if it seems to be valid. Validation is only done on headers 
+        /// The announced tip is accepted if it seems to be valid. Validation is only done on headers
         /// and so the announced tip may refer to invalid block.
         /// </para>
         /// </summary>
@@ -161,10 +161,10 @@ namespace Stratis.Bitcoin.Base
             }
 
             // == GetHeadersPayload ==
-            // Represents our height from the peer's point of view. 
-            // It is sent from the peer on first connect, in response to Inv(Block) 
+            // Represents our height from the peer's point of view.
+            // It is sent from the peer on first connect, in response to Inv(Block)
             // or in response to HeaderPayload until an empty array is returned.
-            // This payload notifies peers of our current best validated height. 
+            // This payload notifies peers of our current best validated height.
             // Use the ChainState.ConsensusTip property (not Chain.Tip)
             // if the peer is behind/equal to our best height an empty array is sent back.
 
@@ -207,11 +207,11 @@ namespace Stratis.Bitcoin.Base
 
             // == HeadersPayload ==
             // Represents the peers height from our point view.
-            // This updates the pending tip parameter which is 
+            // This updates the pending tip parameter which is
             // the peers current best validated height.
-            // If the peer's height is higher Chain.Tip is updated to have 
+            // If the peer's height is higher Chain.Tip is updated to have
             // the most PoW header.
-            // It is sent in response to GetHeadersPayload or is solicited by the 
+            // It is sent in response to GetHeadersPayload or is solicited by the
             // peer when a new block is validated (and not in IBD).
 
             var newHeaders = message.Message.Payload as HeadersPayload;
@@ -361,4 +361,5 @@ namespace Stratis.Bitcoin.Base
         }
     }
 }
+
 #endif

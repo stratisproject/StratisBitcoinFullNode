@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             List<ulong> setMisbehaving = new List<ulong>();
             while (vWorkQueue.Any())
             {
-                // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection 
+                // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection
                 // of orphans as this collection may be modifed later by anotehr thread
                 List<OrphanTx> itByPrev = await this.MempoolLock.ReadAsync(() => this.mapOrphanTransactionsByPrev.TryGet(vWorkQueue.Dequeue())?.ToList());
                 if (itByPrev == null)

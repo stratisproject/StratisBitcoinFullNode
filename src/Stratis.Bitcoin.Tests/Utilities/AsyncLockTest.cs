@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             /// <summary>
             /// Initializes default values and objects.
             /// </summary>
-            /// <param name="cancelAfterMaxMs">Maximal number of milliseconds after which the cancellation triggers (the actual number will be picked at random), 
+            /// <param name="cancelAfterMaxMs">Maximal number of milliseconds after which the cancellation triggers (the actual number will be picked at random),
             /// or <c>0</c> if no cancellation is required.</param>
             public WorkerContext(int cancelAfterMaxMs = 0)
             {
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 this.workerId = 0;
 
                 if (cancelAfterMaxMs != 0)
-                  this.Cancellation = new CancellationTokenSource(this.Rng.Next(cancelAfterMaxMs));
+                    this.Cancellation = new CancellationTokenSource(this.Rng.Next(cancelAfterMaxMs));
             }
 
             /// <summary>
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// 10 tasks are testing the lock in an async environment and the other 10 tasks in non-async environment.
         /// <para>
         /// The test is passed if the critical section is always correctly executed by only one thread.
-        /// The violations are detected using a shared value that each worker tries to set to its own unique 
+        /// The violations are detected using a shared value that each worker tries to set to its own unique
         /// value and the value should not be rewritten by other thread while the worker is in the critical section.
         /// </para>
         /// </summary>
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Procedure for testing the lock in non-async environment.
         /// <para>
         /// The worker periodically sets the shared value to its ID and waits.
-        /// If another thread enters the critical section, the shared value will be modified 
+        /// If another thread enters the critical section, the shared value will be modified
         /// and the worker reports an error.
         /// </para>
         /// </summary>
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// This is very similar test to <see cref="LockAndLockAsync_PreventConcurrentExecution"/> except that it 
+        /// This is very similar test to <see cref="LockAndLockAsync_PreventConcurrentExecution"/> except that it
         /// introduces a cancellation token to the mix.
         /// </summary>
         [Fact]
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Procedure for testing the lock in non-async environment.
         /// <para>
         /// The worker periodically sets the shared value to its ID and waits.
-        /// If another thread enters the critical section, the shared value will be modified 
+        /// If another thread enters the critical section, the shared value will be modified
         /// and the worker reports an error.
         /// </para>
         /// </summary>
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Body of critical section for async environment.
         /// <para>
         /// The worker periodically sets the shared value to its ID and waits.
-        /// If another thread enters the critical section, the shared value will be modified 
+        /// If another thread enters the critical section, the shared value will be modified
         /// and the worker reports an error.
         /// </para>
         /// </summary>
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Body of critical section for non-async environment.
         /// <para>
         /// The worker periodically sets the shared value to its ID and waits.
-        /// If another thread enters the critical section, the shared value will be modified 
+        /// If another thread enters the critical section, the shared value will be modified
         /// and the worker reports an error.
         /// </para>
         /// </summary>

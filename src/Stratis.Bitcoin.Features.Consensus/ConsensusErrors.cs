@@ -70,6 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             return !(a == b);
         }
+
         public override int GetHashCode()
         {
             return this.Code.GetHashCode();

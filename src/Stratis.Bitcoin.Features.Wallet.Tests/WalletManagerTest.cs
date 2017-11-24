@@ -20,7 +20,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletManagerTest : LogsTestBase, IDisposable
     {
-
         public void Dispose()
         {
             // This is needed here because of the fact that the Stratis network, when initialized, sets the
@@ -317,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
-            
+
             File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
@@ -813,7 +812,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(result.Address);
         }
-
 
         [Fact]
         public void GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet()
@@ -1442,7 +1440,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(data.wallet);
 
-
             var result = data.wallet.GetExtendedPrivateKeyForAddress("password", address);
 
             Assert.Equal(data.key.Derive(new KeyPath("m/44'/0'/0'/0/0")).GetWif(data.wallet.Network), result);
@@ -2007,7 +2004,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                     var nodeCollection = new NodesCollection();
                     nodeCollection.Add(node);
-                  
+
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
                         dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                     walletManager.Wallets.Add(wallet);
@@ -2117,7 +2114,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                     var nodeCollection = new NodesCollection();
                     nodeCollection.Add(node);
-                    
+
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
                         dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                     walletManager.Wallets.Add(wallet);
@@ -2230,7 +2227,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                     var nodeCollection = new NodesCollection();
                     nodeCollection.Add(node);
-                   
+
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
                         dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                     walletManager.Wallets.Add(wallet);

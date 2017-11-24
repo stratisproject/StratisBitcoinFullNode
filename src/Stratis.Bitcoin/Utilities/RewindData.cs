@@ -4,7 +4,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Information about a previous state of the coinview that contains all information 
+    /// Information about a previous state of the coinview that contains all information
     /// needed to rewind the coinview from the current state to the previous state.
     /// </summary>
     public class RewindData : IBitcoinSerializable

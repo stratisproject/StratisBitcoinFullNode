@@ -10,8 +10,8 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 
-
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Notifications.Tests")]
+
 namespace Stratis.Bitcoin.Features.Notifications
 {
     /// <summary>

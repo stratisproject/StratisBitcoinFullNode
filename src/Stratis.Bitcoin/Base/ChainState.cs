@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Base
 {
     /// <summary>
     /// Chain state holds various information related to the status of the chain and its validation.
-    /// The data are provided by different components and the chaine state is a mechanism that allows 
+    /// The data are provided by different components and the chaine state is a mechanism that allows
     /// these components to share that data without creating extra dependencies.
     /// </summary>
     public class ChainState
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Base
                     // Sample every minute.
                     this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
-                    // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
+                    // If consensus is not present IBD has no meaning. Set to false to match legacy code.
                     IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
                     this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }

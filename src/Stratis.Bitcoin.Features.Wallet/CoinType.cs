@@ -10,10 +10,12 @@
         /// Bitcoin
         /// </summary>
         Bitcoin = 0,
+
         /// <summary>
         /// Testnet (all coins)
         /// </summary>
         Testnet = 1,
+
         /// <summary>
         /// Stratis
         /// </summary>

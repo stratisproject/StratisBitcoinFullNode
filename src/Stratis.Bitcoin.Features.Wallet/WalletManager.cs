@@ -14,8 +14,8 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 
-
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
+
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // If the chain is downloaded, we set the height of the newly created wallet to it.
-            // However, if the chain is still downloading when the user creates a wallet, 
+            // However, if the chain is still downloading when the user creates a wallet,
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet will be the height of the chain at that moment.
             if (this.chain.IsDownloaded())
             {
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
-            // However, if the chain is still downloading when the user restores a wallet, 
+            // However, if the chain is still downloading when the user restores a wallet,
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
             if (this.chain.IsDownloaded())
             {
@@ -1236,7 +1236,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 },
                 (ex) =>
                 {
-                    // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and 
+                    // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
                     // sync from the current height.
                     this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
                     this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);

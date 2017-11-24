@@ -244,7 +244,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             List<HdAddress> addresses = new List<HdAddress>();
             for (int i = 0; i < count; i++)
             {
-
                 HdAddress address = new HdAddress
                 {
                     ScriptPubKey = new Key().ScriptPubKey

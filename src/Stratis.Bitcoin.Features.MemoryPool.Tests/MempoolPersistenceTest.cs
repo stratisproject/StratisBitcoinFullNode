@@ -281,6 +281,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory);
         }
-
     }
 }

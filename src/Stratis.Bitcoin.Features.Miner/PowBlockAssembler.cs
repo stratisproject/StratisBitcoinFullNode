@@ -247,6 +247,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /** Construct a new block template with coinbase to scriptPubKeyIn */
+
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
@@ -256,7 +257,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
-
 
             // TODO: MineBlocksOnDemand
             // -regtest only: allow overriding block.nVersion with
@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.Features.Miner
         // Methods for how to add transactions to a block.
         // Add transactions based on feerate including unconfirmed ancestors
         // Increments nPackagesSelected / nDescendantsUpdated with corresponding
-        // statistics from the package selection (for logging statistics). 
+        // statistics from the package selection (for logging statistics).
         // This transaction selection algorithm orders the mempool based
         // on feerate of a transaction including all unconfirmed ancestors.
         // Since we don't remove transactions from the mempool as we select them

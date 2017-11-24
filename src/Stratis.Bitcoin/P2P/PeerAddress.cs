@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.P2P
         /// <para>
         /// We effectively "deprioritize" the peer away after each failed attempt,
         /// making it harder for the peer to be able to be selected by the
-        /// address manager. But at most no more than 1/28th to avoid the search taking forever 
+        /// address manager. But at most no more than 1/28th to avoid the search taking forever
         /// or overly penalizing outages.
         /// </para>
         /// </summary>
@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.P2P
                 if (timeSinceLastAttempt < TimeSpan.FromMinutes(10))
                     selectability *= 0.01;
 
-                // Deprioritize 66% after each failed attempt, but at most 1/28th 
+                // Deprioritize 66% after each failed attempt, but at most 1/28th
                 // to avoid the search taking forever or overly penalizing outages.
                 selectability *= Math.Pow(0.66, Math.Min(this.ConnectionAttempts, 8));
 
@@ -294,8 +294,10 @@ namespace Stratis.Bitcoin.P2P
         /// the default state when loading the peers from disk.
         /// </summary>
         Discover,
+
         /// <summary>Used when nodes are added via the -addnode argument when starting up the node.</summary>
         Add,
+
         /// <summary>Used when nodes are added via the -connect argument when starting up the node.</summary>
         Connect
     }

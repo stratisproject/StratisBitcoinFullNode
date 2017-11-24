@@ -111,7 +111,6 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public Vin(OutPoint prevOut, Sequence sequence, NBitcoin.Script scriptSig)
         {
-
             if (prevOut.Hash == uint256.Zero)
             {
                 this.coinbase = Encoders.Hex.EncodeData(scriptSig.ToBytes());
@@ -233,12 +232,16 @@ namespace Stratis.Bitcoin.Features.RPC.Models
             {
                 case TxOutType.TX_PUBKEY:
                     return "pubkey";
+
                 case TxOutType.TX_PUBKEYHASH:
                     return "pubkeyhash";
+
                 case TxOutType.TX_SCRIPTHASH:
                     return "scripthash";
+
                 case TxOutType.TX_MULTISIG:
                     return "multisig";
+
                 case TxOutType.TX_NULL_DATA:
                     return "nulldata";
             }
@@ -246,4 +249,5 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         }
     }
 }
+
 #pragma warning restore IDE1006 // Naming Styles

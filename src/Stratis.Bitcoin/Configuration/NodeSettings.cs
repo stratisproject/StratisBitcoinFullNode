@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args)
         {
-            // By default, we look for a file named '<network>.conf' in the network's data directory, 
+            // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
             this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            // Find out if we need to run on testnet or regtest from the config file. 
+            // Find out if we need to run on testnet or regtest from the config file.
             if (this.ConfigurationFile != null)
             {
                 AssertConfigFileExists(this.ConfigurationFile);
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.Configuration
                 }
             }
 
-            // Create the data directories if they don't exist. 
+            // Create the data directories if they don't exist.
             Directory.CreateDirectory(directoryPath);
             directoryPath = Path.Combine(directoryPath, network.Name);
             Directory.CreateDirectory(directoryPath);

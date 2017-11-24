@@ -13,14 +13,14 @@ using Xunit;
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 {
     public class WatchOnlyWalletManagerTest : LogsTestBase
-    {        
+    {
         [Fact]
         [Trait("Module", "WatchOnlyWalletManager")]
         public void Given_AWalletIsPresent_When_GetWatchOnlyWalletIsCalled_ThenthewalletIsreturned()
         {
             DataFolder dataFolder = CreateDataFolder(this);
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
-            
+
             var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
             walletManager.Initialize();
 
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             // Create a transaction to be received.
             string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
             Transaction transaction = new Transaction(transactionHex);
-            
+
             // Act.
             var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
             walletManager.Initialize();

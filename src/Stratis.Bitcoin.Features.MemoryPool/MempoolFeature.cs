@@ -12,8 +12,8 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Interfaces;
 
-
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
+
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>

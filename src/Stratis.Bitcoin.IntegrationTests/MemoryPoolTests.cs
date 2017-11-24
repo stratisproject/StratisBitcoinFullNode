@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
@@ -153,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             sortedOrder.Insert(2, tx1.GetHash().ToString()); // 10000
             sortedOrder.Insert(3, tx4.GetHash().ToString()); // 15000
             sortedOrder.Insert(4, tx2.GetHash().ToString()); // 20000
-            this.CheckSort(pool,  pool.MapTx.DescendantScore.ToList(), sortedOrder);
+            this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             /* low fee but with high fee child */
             /* tx6 -> tx7 -> tx8, tx9 -> tx10 */
@@ -167,7 +166,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             // Check that at this point, tx6 is sorted low
             sortedOrder.Insert(0, tx6.GetHash().ToString());
             this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
-
 
             TxMempool.SetEntries setAncestors = new TxMempool.SetEntries();
             setAncestors.Add(pool.MapTx.TryGet(tx6.GetHash()));
@@ -213,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             sortedOrder.Insert(0, tx9.GetHash().ToString());
             this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
-            List<string>  snapshotOrder = sortedOrder.ToList();
+            List<string> snapshotOrder = sortedOrder.ToList();
 
             setAncestors.Add(pool.MapTx.TryGet(tx8.GetHash()));
             setAncestors.Add(pool.MapTx.TryGet(tx9.GetHash()));
@@ -245,9 +243,9 @@ namespace Stratis.Bitcoin.IntegrationTests
              *  tx7 = 2.2M (4 txs)
              */
             sortedOrder.RemoveRange(0, 2); // take out tx9, tx8 from the beginning
-            sortedOrder.Insert( 5, tx9.GetHash().ToString());
-            sortedOrder.Insert( 6, tx8.GetHash().ToString());
-            sortedOrder.Insert( 7, tx10.GetHash().ToString()); // tx10 is just before tx6
+            sortedOrder.Insert(5, tx9.GetHash().ToString());
+            sortedOrder.Insert(6, tx8.GetHash().ToString());
+            sortedOrder.Insert(7, tx10.GetHash().ToString()); // tx10 is just before tx6
             this.CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
             // there should be 10 transactions in the mempool
@@ -341,8 +339,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             // hash comes first.
             if (tx1.GetHash() < tx5.GetHash())
             {
-                sortedOrder.Insert(2, tx1.GetHash().ToString()); 
-                sortedOrder.Insert(3, tx5.GetHash().ToString()); 
+                sortedOrder.Insert(2, tx1.GetHash().ToString());
+                sortedOrder.Insert(3, tx5.GetHash().ToString());
             }
             else
             {
@@ -377,7 +375,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 
             /* after tx6 is mined, tx7 should move up in the sort */
-            List<Transaction> vtx = new List<Transaction>(new[] {tx6});
+            List<Transaction> vtx = new List<Transaction>(new[] { tx6 });
             pool.RemoveForBlock(vtx, 1);
 
             sortedOrder.RemoveAt(1);
@@ -434,7 +432,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.True(!pool.Exists(tx3.GetHash()));
 
             FeeRate maxFeeRateRemoved = new FeeRate(25000, tx3.GetVirtualSize() + tx2.GetVirtualSize());
-            Assert.Equal(pool.GetMinFee(1).FeePerK, maxFeeRateRemoved.FeePerK + 1000); 
+            Assert.Equal(pool.GetMinFee(1).FeePerK, maxFeeRateRemoved.FeePerK + 1000);
 
             Transaction tx4 = new Transaction();
             tx4.AddInput(new TxIn(new Script(OpcodeType.OP_4)));
@@ -459,7 +457,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx7.AddInput(new TxIn(new OutPoint(tx6.GetHash(), 0), new Script(OpcodeType.OP_6)));
             tx7.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_7, OpcodeType.OP_EQUAL)));
             tx7.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_7, OpcodeType.OP_EQUAL)));
-
 
             pool.AddUnchecked(tx4.GetHash(), entry.Fee(7000L).FromTx(tx4, pool));
             pool.AddUnchecked(tx5.GetHash(), entry.Fee(1000L).FromTx(tx5, pool));
@@ -486,11 +483,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
 
             List<Transaction> vtx = new List<Transaction>();
-            dateTimeSet.time = 42 + TxMempool.RollingFeeHalflife ;
+            dateTimeSet.time = 42 + TxMempool.RollingFeeHalflife;
             Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, maxFeeRateRemoved.FeePerK.Satoshi + 1000);
             // ... we should keep the same min fee until we get a block
             pool.RemoveForBlock(vtx, 1);
-            dateTimeSet.time = 42 + 2*+TxMempool.RollingFeeHalflife;
+            dateTimeSet.time = 42 + 2 * +TxMempool.RollingFeeHalflife;
             Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 2);
             // ... then feerate should drop 1/2 each halflife
 
@@ -498,15 +495,15 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 5 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 4);
             // ... with a 1/2 halflife when mempool is < 1/2 its target size
 
-            dateTimeSet.time = 42 + 2*TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife/2 + TxMempool.RollingFeeHalflife/4 ;
+            dateTimeSet.time = 42 + 2 * TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife / 2 + TxMempool.RollingFeeHalflife / 4;
             Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 9 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 8);
             // ... with a 1/4 halflife when mempool is < 1/4 its target size
 
-            dateTimeSet.time = 42 + 7* TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife/2 + TxMempool.RollingFeeHalflife/4 ;
+            dateTimeSet.time = 42 + 7 * TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife / 2 + TxMempool.RollingFeeHalflife / 4;
             Assert.Equal(1000, pool.GetMinFee(1).FeePerK.Satoshi);
             // ... but feerate should never drop below 1000
 
-            dateTimeSet.time = 42 + 8* TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife/2 + TxMempool.RollingFeeHalflife/4 ;
+            dateTimeSet.time = 42 + 8 * TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife / 2 + TxMempool.RollingFeeHalflife / 4;
             Assert.Equal(0, pool.GetMinFee(1).FeePerK);
             // ... unless it has gone all the way to 0 (after getting past 1000/2)
         }
@@ -546,7 +543,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
 
             List<Task> tasks = new List<Task>();
-            var options = new ParallelOptions {MaxDegreeOfParallelism = 10};
+            var options = new ParallelOptions { MaxDegreeOfParallelism = 10 };
             Parallel.ForEach(txs, options, transaction =>
             {
                 var entry = new TxMempoolEntry(transaction, new Money(rand.Next(100)), 0, 0.0, 1, transaction.TotalOut, false, 4, new LockPoints(), new PowConsensusOptions());
@@ -616,7 +613,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // mine the transactions in the mempool
                 stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager().InfoAllAsync().Result.Select(s => s.Trx).ToList());
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
-                
+
                 //create a new trx spending both outputs
                 Transaction tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(parentTx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(dest1.PubKey)));
@@ -757,8 +754,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     Transaction tx = new Transaction();
                     tx.AddInput(new TxIn(new OutPoint(randHash(), 0), new Script(OpcodeType.OP_1)));
-                    tx.AddOutput(new TxOut(new Money(1*Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
-                    
+                    tx.AddOutput(new TxOut(new Money(1 * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
+
                     stratisNode.FullNode.MempoolManager().Orphans.AddOrphanTx(i, tx).Wait();
                 }
 
@@ -916,7 +913,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 
                 // wait for block and mempool to change
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash()); 
+                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
                 TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
                 TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 0);
                 TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
@@ -936,7 +933,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         private long sigOpCost = 4;
         private LockPoints lp = new LockPoints();
 
-
         public TxMempoolEntry FromTx(Transaction tx, TxMempool pool = null)
         {
             Money inChainValue = (pool != null && pool.HasNoInputsOf(tx)) ? tx.TotalOut : 0;
@@ -947,11 +943,30 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         // Change the default value
         public TestMemPoolEntryHelper Fee(Money _fee) { this.nFee = _fee; return this; }
-        public TestMemPoolEntryHelper Time(long _time) { this.nTime = _time; return this; }
-        public TestMemPoolEntryHelper Priority(double _priority) { this.dPriority = _priority; return this; }
-        public TestMemPoolEntryHelper Height(int _height) { this.nHeight = _height; return this; }
-        public TestMemPoolEntryHelper SpendsCoinbase(bool _flag) { this.spendsCoinbase = _flag; return this; }
-        public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost) { this.sigOpCost = _sigopsCost; return this; }
 
+        public TestMemPoolEntryHelper Time(long _time)
+        {
+            this.nTime = _time; return this;
+        }
+
+        public TestMemPoolEntryHelper Priority(double _priority)
+        {
+            this.dPriority = _priority; return this;
+        }
+
+        public TestMemPoolEntryHelper Height(int _height)
+        {
+            this.nHeight = _height; return this;
+        }
+
+        public TestMemPoolEntryHelper SpendsCoinbase(bool _flag)
+        {
+            this.spendsCoinbase = _flag; return this;
+        }
+
+        public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost)
+        {
+            this.sigOpCost = _sigopsCost; return this;
+        }
     }
 }

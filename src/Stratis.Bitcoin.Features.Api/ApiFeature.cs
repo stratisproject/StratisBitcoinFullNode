@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Api
 
         /// <summary>
         /// A KeepaliveMonitor when enabled will shutdown the
-        /// node if no one is calling the keepalive endpoint 
+        /// node if no one is calling the keepalive endpoint
         /// during a certain trashold window
         /// </summary>
         public void TryStartKeepaliveMonitor()

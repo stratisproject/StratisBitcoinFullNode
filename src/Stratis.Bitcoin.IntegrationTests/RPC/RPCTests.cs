@@ -1,8 +1,8 @@
-﻿using NBitcoin;
+﻿using System;
+using System.IO;
+using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
-using System;
-using System.IO;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -50,7 +50,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 {
                     Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
                 }
-
             }
         }
 

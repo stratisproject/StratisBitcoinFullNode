@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 this.ActionDescriptors = new Dictionary<string, ControllerActionDescriptor>();
                 var actionDescriptorProvider = (this.fullNode as FullNode)?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
-                // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors 
+                // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors
                 // that RPC would normally act on subject to the method name matching the "ActionName".
                 foreach (var actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
                     this.ActionDescriptors[actionDescriptor.ActionName] = actionDescriptor;
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Processes a RPCRequest. 
+        /// Processes a RPCRequest.
         /// </summary>
         /// <param name="request">The request to process.</param>
         /// <returns></returns>

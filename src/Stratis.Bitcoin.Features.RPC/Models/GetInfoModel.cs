@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Features.RPC.Converters;
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
 #pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
+
     public class GetInfoModel
     {
         [JsonProperty(Order = 0)]
@@ -56,4 +57,5 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         public decimal? paytxfee { get; set; }
     }
 }
+
 #pragma warning restore IDE1006 // Naming Styles

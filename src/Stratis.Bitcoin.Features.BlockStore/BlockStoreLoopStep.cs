@@ -76,8 +76,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         /// <summary>Continue execution of the loop.</summary>
         Continue,
+
         /// <summary>Execute the next line of code in the loop.</summary>
         Next,
+
         /// <summary>Break out of the loop.</summary>
         Stop,
     }

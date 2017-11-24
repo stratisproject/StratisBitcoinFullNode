@@ -171,7 +171,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
-
         public static BlockStoreCachePerformanceSnapshot operator -(BlockStoreCachePerformanceSnapshot end, BlockStoreCachePerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -191,6 +190,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 Taken = end.Taken
             };
         }
+
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     public class CachedCoinView : CoinView, IBackedCoinView
     {
         /// <summary>
-        /// Item of the coinview cache that holds information about the unspent outputs 
+        /// Item of the coinview cache that holds information about the unspent outputs
         /// as well as the status of the item in relation to the underlaying storage.
         /// </summary>
         private class CacheItem
@@ -36,10 +36,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Hashes of transactions that have been put into multiple blocks before fully spent.
         /// <para>
-        /// Historically, these two transactions violated rules that are currently applied 
-        /// in Bitcoin consensus. This was only possible for coinbase transactions when the miner 
-        /// used the same target address to receive the reward. Miners were not required to add 
-        /// an additional entropy (block height) to the coinbase transaction, which could result 
+        /// Historically, these two transactions violated rules that are currently applied
+        /// in Bitcoin consensus. This was only possible for coinbase transactions when the miner
+        /// used the same target address to receive the reward. Miners were not required to add
+        /// an additional entropy (block height) to the coinbase transaction, which could result
         /// in the same hash output.
         /// </para>
         /// <para>
@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <summary>
-        /// Deletes some items from the cache to free space for new items. 
+        /// Deletes some items from the cache to free space for new items.
         /// Only items that are persisted in the underlaying storage can be deleted from the cache.
         /// </summary>
         private void Evict()
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Wait until flushing and rewinding task complete if any is in progress.
         /// </summary>
-        /// <remarks>TODO: This is blocking call and is used in async methods, which quite 
+        /// <remarks>TODO: This is blocking call and is used in async methods, which quite
         /// strongly erases the goals of using async in those methods.</remarks>
         private void WaitOngoingTasks()
         {

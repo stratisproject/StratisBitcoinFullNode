@@ -11,10 +11,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Slow.
         /// </summary>
         Low = 0,
+
         /// <summary>
         /// Avarage.
         /// </summary>
         Medium = 1,
+
         /// <summary>
         /// Fast.
         /// </summary>
@@ -43,11 +45,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 case FeeType.Low:
                     return 50;
+
                 case FeeType.Medium:
                     return 20;
+
                 case FeeType.High:
                     return 5;
-
             }
 
             throw new WalletException("Invalid fee");

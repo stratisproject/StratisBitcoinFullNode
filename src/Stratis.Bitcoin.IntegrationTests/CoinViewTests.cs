@@ -83,7 +83,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().Result);
                 //Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
-
                 //var previous = chained;
                 //chained = MakeNext(MakeNext(genesisChainedBlock));
                 //chained = MakeNext(MakeNext(genesisChainedBlock));
@@ -132,7 +131,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
 
-
                 tester.Spend(coins[2]);
                 tester.Spend(coin[0]);
                 //2
@@ -145,7 +143,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(h1 == tester.Rewind());
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
-
 
                 var coins2 = tester.CreateCoins(7);
                 tester.Spend(coins2[0]);
@@ -229,18 +226,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                     };
                     Array.Sort(data, new UInt256Comparer());
 
-                    using(var tx = engine.GetTransaction())
+                    using (var tx = engine.GetTransaction())
                     {
-                        foreach(var d in data)
+                        foreach (var d in data)
                             tx.Insert("Table", d.ToBytes(false), d.ToBytes());
                         tx.Commit();
                     }
 
                     var data2 = new uint256[data.Length];
-                    using(var tx = engine.GetTransaction())
+                    using (var tx = engine.GetTransaction())
                     {
                         int i = 0;
-                        foreach(var row in tx.SelectForward<byte[], byte[]>("Table"))
+                        foreach (var row in tx.SelectForward<byte[], byte[]>("Table"))
                         {
                             data2[i++] = new uint256(row.Key, false);
                         }
@@ -294,7 +291,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
-                if(!chain.TrySetTip(block.Header, out last))
+                if (!chain.TrySetTip(block.Header, out last))
                     throw new InvalidOperationException("Previous not existing");
             }
             return last;
@@ -309,7 +306,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private byte[] GetFile(string fileName, string url)
         {
             fileName = Path.Combine("TestData", fileName);
-            if(File.Exists(fileName))
+            if (File.Exists(fileName))
                 return File.ReadAllBytes(fileName);
 
             HttpClient client = new HttpClient();

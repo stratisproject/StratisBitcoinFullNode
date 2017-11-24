@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -45,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         {
         }
 
-        #endregion
+        #endregion Mock Features
 
         #region Tests
 
@@ -92,6 +91,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 builder.Build();
             });
         }
-        #endregion
+
+        #endregion Tests
     }
 }

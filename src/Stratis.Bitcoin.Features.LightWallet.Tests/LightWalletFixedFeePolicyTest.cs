@@ -13,7 +13,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
     {
         /// <summary>Constructs a fixed fee policy using default node settings.</summary>
         private LightWalletFixedFeePolicy PolicyForDefaultSettings
-        {  get
+        {
+            get
             {
                 ILoggerFactory loggerFactory = new LoggerFactory();
                 NodeSettings settings = NodeSettings.Default();
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
             const int txSizeBytes = 5000;
-            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes,6));
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes, 6));
             Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes, 6, new Money(1)));
         }
 

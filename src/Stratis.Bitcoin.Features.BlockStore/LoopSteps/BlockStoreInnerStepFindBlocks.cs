@@ -9,14 +9,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Find blocks to download by asking the BlockPuller.
     /// <para>
-    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains 
+    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains
     /// <see cref="BlockStoreInnerStepContext.DownloadStackThreshold"/> blocks.
     /// </para>
     /// <para>
     /// If a stop condition is found <see cref="ShouldStopFindingBlocksAsync"/> and
     /// there are still blocks to download, stop finding new blocks and only execute
     /// the read blocks inner step <see cref="BlockStoreInnerStepReadBlocks"/>.
-    /// </para> 
+    /// </para>
     /// </summary>
     public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {

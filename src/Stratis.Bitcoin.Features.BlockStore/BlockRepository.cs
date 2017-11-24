@@ -155,7 +155,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (res != null) this.PerformanceCounter.AddRepositoryHitCount(1);
                     else this.PerformanceCounter.AddRepositoryMissCount(1);
-
                 }
 
                 this.logger.LogTrace("(-):{0}", res);

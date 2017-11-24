@@ -15,13 +15,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     ///     <item>1: <see cref="BlockStoreInnerStepFindBlocks"/> to ask the block puller to download the blocks.</item>
     ///     <item>2: <see cref="BlockStoreInnerStepReadBlocks"/> to persist the blocks in a batch to the <see cref="BlockRepository"/>.</item>
     /// </list>
-    /// </para> 
+    /// </para>
     /// <para>
     /// After a "Stop" condition is found the <see cref="BlockStoreInnerStepFindBlocks"/> will be removed from
-    /// <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
-    /// <see cref="BlockStoreInnerStepReadBlocks"/> task will continue to execute 
+    /// <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the
+    /// <see cref="BlockStoreInnerStepReadBlocks"/> task will continue to execute
     /// until the <see cref="BlockStoreInnerStepContext.DownloadStack"/> is empty.
-    /// </para>   
+    /// </para>
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
     {
@@ -75,6 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     {
         /// <summary>Execute the next line of code in the loop.</summary>
         Next,
+
         /// <summary>Break out of the loop.</summary>
         Stop
     }

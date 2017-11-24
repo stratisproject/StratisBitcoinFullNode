@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
-    /// Subscribes to state change events from <see cref="Node"/> and relays connection and handshake attempts to 
+    /// Subscribes to state change events from <see cref="Node"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
@@ -93,10 +93,13 @@ namespace Stratis.Bitcoin.P2P
     {
         /// <summary>Do not advertise nor discover new peers.</summary>
         None = 0,
+
         /// <summary>Only advertise known peers.</summary>
         Advertise = 1,
+
         /// <summary>Only discover peers.</summary>
         Discover = 2,
+
         /// <summary>Advertise known peer and discover peer.</summary>
         AdvertiseDiscover = 3,
     }

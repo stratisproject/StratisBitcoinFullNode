@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
         /// <returns>Order number of the last saved rewind state, or <c>-1</c> if no rewind state is found in the database.</returns>
-        /// <remarks>TODO: Using <c>-1</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist 
+        /// <remarks>TODO: Using <c>-1</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist
         /// the order number of the first rewind data is -1 + 1 = 0.</remarks>
         private int GetRewindIndex(DBreeze.Transactions.Transaction transaction)
         {

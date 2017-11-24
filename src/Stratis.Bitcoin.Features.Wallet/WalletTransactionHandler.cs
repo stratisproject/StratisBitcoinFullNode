@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             try
             {
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
-                // When the transaction builder throws an exception informing us that we have insufficient funds, 
+                // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
                 var context = new TransactionBuildContext(accountReference, recipients, null)
                 {
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>. 
+        /// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>.
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
@@ -271,8 +271,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (context.SelectedInputs.Any())
             {
-                // 'SelectedInputs' are inputs that must be included in the 
-                // current transaction. At this point we check the given 
+                // 'SelectedInputs' are inputs that must be included in the
+                // current transaction. At this point we check the given
                 // input is part of the UTXO set and filter out UTXOs that are not
                 // in the initial list if 'context.AllowOtherInputs' is false.
 
@@ -298,18 +298,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 sum += item.Transaction.Amount;
                 index++;
 
-                // If threshold is reached and the total value is above the target 
+                // If threshold is reached and the total value is above the target
                 // then its safe to stop adding UTXOs to the coin list.
-                // The primery goal is to reduce the time it takes to build a trx 
+                // The primery goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
                 if (index > SendCountThresholdLimit && sum > totalToSend)
                     break;
             }
 
             // All the UTXOs are added to the builder without filtering.
-            // The builder then has its own coin selection mechanism 
+            // The builder then has its own coin selection mechanism
             // to select the best UTXO set for the corresponding amount.
-            // To add a custom implementation of a coin selection override 
+            // To add a custom implementation of a coin selection override
             // the builder using builder.SetCoinSelection().
 
             context.TransactionBuilder.AddCoins(coins);
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// An indicator to estimate how much fee to spend on a transaction.
         /// </summary>
         /// <remarks>
-        /// The higher the fee the faster a transaction will get in to a block. 
+        /// The higher the fee the faster a transaction will get in to a block.
         /// </remarks>
         public FeeType FeeType { get; set; }
 
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The change address, where any remaining funds will be sent to.
         /// </summary>
         /// <remarks>
-        /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target 
+        /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target
         /// the rest of the coins go in to a change address that is under the senders control.
         /// </remarks>
         public HdAddress ChangeAddress { get; set; }
@@ -470,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     }
 
     /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/> 
+    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>
     /// </summary>
     public class Recipient
     {

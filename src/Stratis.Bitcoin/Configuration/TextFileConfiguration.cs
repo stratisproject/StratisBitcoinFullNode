@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Configuration
     /// Handling of application configuration.
     /// <para>
     /// This class provides the primary source of configuration for the application.
-    /// It is used to include both the arguments from the command line as well as 
+    /// It is used to include both the arguments from the command line as well as
     /// settings loaded from the configuration file.
     /// </para>
     /// </summary>

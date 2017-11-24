@@ -144,7 +144,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 paytxfee = null
             };
 
-
             return model;
         }
 

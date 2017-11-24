@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </list>
     /// </para>
     /// <para>
-    /// If the store/repository does not require reorganising the step will 
-    /// return Next which will cause the <see cref="BlockStoreLoop" /> to 
-    /// execute the next step <see cref="CheckNextChainedBlockExistStep"/>. 
+    /// If the store/repository does not require reorganising the step will
+    /// return Next which will cause the <see cref="BlockStoreLoop" /> to
+    /// execute the next step <see cref="CheckNextChainedBlockExistStep"/>.
     /// If not the step will cause the <see cref="BlockStoreLoop" /> to break execution and start again.
     /// </para>
     /// </summary>

@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
-    /// Performance statistics used to measure the time it takes for the DBreeze backend 
+    /// Performance statistics used to measure the time it takes for the DBreeze backend
     /// to perform database operations.
     /// </summary>
     public class BackendPerformanceCounter
@@ -214,11 +214,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.totalQueriedEntities = queriedEntities;
         }
 
-
         /// <summary>
         /// Creates a snapshot based on difference of two performance counter snapshots.
         /// <para>
-        /// This is used to obtain statistic information about performance of the backend 
+        /// This is used to obtain statistic information about performance of the backend
         /// during certain period.</para>
         /// </summary>
         /// <param name="end">Newer performance counter snapshot.</param>
@@ -246,6 +245,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             return snapshot;
         }
+
         /// <inheritdoc />
         public override string ToString()
         {

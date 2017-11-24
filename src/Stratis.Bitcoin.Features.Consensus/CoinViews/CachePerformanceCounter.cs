@@ -143,11 +143,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.hitCount = hitCount;
         }
 
-
         /// <summary>
         /// Creates a snapshot based on difference of two performance counter snapshots.
         /// <para>
-        /// This is used to obtain statistic information about performance of the cache 
+        /// This is used to obtain statistic information about performance of the cache
         /// during certain period.</para>
         /// </summary>
         /// <param name="end">Newer performance counter snapshot.</param>
@@ -171,6 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 Taken = end.Taken
             };
         }
+
         /// <inheritdoc />
         public override string ToString()
         {

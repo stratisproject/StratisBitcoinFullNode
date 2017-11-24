@@ -19,13 +19,13 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <summary>
-    /// Implements logic of evaluation of quality of node network peers based on 
+    /// Implements logic of evaluation of quality of node network peers based on
     /// the recent past experience with them with respect to other node's network peers.
     /// </summary>
     /// <remarks>
-    /// Each peer is assigned with a quality score, which is a floating point number between 
-    /// <see cref="MinScore"/> and <see cref="MaxScore"/> inclusive. Each peer starts with 
-    /// the score in the middle of the score interval. The higher the score, the better the peer 
+    /// Each peer is assigned with a quality score, which is a floating point number between
+    /// <see cref="MinScore"/> and <see cref="MaxScore"/> inclusive. Each peer starts with
+    /// the score in the middle of the score interval. The higher the score, the better the peer
     /// and the better chance for the peer to get more work assigned.
     /// </remarks>
     public class QualityScore
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("Average time per KB is {0} ms, this sample is {1} ms/KB.", avgTimePerKb, timePerKb);
 
             // If the block was received with better speed than is 2x average of the recent history we keep
-            // then we reward the peer for downloading it quickly. Otherwise, we penalize the peer for downloading 
+            // then we reward the peer for downloading it quickly. Otherwise, we penalize the peer for downloading
             // the block too slowly. If we have no history, then we give a small reward no matter what.
             double res = 0.1;
             if (timePerKb < 2 * avgTimePerKb) res = avgTimePerKb / timePerKb;

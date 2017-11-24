@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
 
         /// <summary>
-        /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated 
+        /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated
         /// every time <see cref="BlockNotification.SyncFrom(uint256)"/> gets called.
         /// </summary>
         [Fact]

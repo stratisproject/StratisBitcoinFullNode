@@ -166,6 +166,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             Assert.Equal(0, actualLastNdx);
             Assert.Equal(4294967295, actualLastSequence);
             Assert.Equal(expectedPropertyNameOrder, actualPropertyNameOrder);
-        }      
+        }
     }
 }

@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <remarks>
     /// TODO: Currently this is not compatible with logging to the console.
     /// This means that if you use a prefix logger for logging in a class,
-    /// the logging output will not go to the console even if the logging 
+    /// the logging output will not go to the console even if the logging
     /// level is at or above the minimum logging level for the console.
     /// </remarks>
     public class PrefixLogger : ILogger

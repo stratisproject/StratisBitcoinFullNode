@@ -57,9 +57,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.logger.LogTrace("()");
 
-            // When a node is pruned it impossible to catch up 
+            // When a node is pruned it impossible to catch up
             // if the wallet falls behind the block puller.
-            // To support pruning the wallet will need to be 
+            // To support pruning the wallet will need to be
             // able to download blocks from peers to catch up.
             if (this.storeSettings.Prune)
                 throw new WalletException("Wallet can not yet run on a pruned node");
@@ -71,11 +71,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // The wallet tip was not found in the main chain.
                 // this can happen if the node crashes unexpectedly.
-                // To recover we need to find the first common fork 
-                // with the best chain. As the wallet does not have a  
-                // list of chain headers, we use a BlockLocator and persist 
-                // that in the wallet. The block locator will help finding 
-                // a common fork and bringing the wallet back to a good 
+                // To recover we need to find the first common fork
+                // with the best chain. As the wallet does not have a
+                // list of chain headers, we use a BlockLocator and persist
+                // that in the wallet. The block locator will help finding
+                // a common fork and bringing the wallet back to a good
                 // state (behind the best chain).
                 ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
                 BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
@@ -108,11 +108,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
-            // If the new block's previous hash is the same as the 
-            // wallet hash then just pass the block to the manager. 
+            // If the new block's previous hash is the same as the
+            // wallet hash then just pass the block to the manager.
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
-                // If previous block does not match there might have 
+                // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
                 ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)

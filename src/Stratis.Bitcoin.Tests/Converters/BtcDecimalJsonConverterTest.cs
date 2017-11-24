@@ -78,7 +78,6 @@ namespace Stratis.Bitcoin.Tests.Converters
 
     public class TestClassForConverter
     {
-
         [JsonConverter(typeof(BtcDecimalJsonConverter))]
         public decimal Amount { get; set; }
 

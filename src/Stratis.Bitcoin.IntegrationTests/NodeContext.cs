@@ -15,6 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private List<IDisposable> _CleanList = new List<IDisposable>();
         private TestDirectory _TestDirectory;
+
         public NodeContext(string name, Network network, bool clean)
         {
             network = network ?? Network.RegTest;
@@ -26,8 +27,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             this._CleanList.Add(this._PersistentCoinView);
         }
 
-
         private readonly Network _Network;
+
         public Network Network
         {
             get
@@ -36,8 +37,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-
         private ChainBuilder _ChainBuilder;
+
         public ChainBuilder ChainBuilder
         {
             get
@@ -47,6 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         private DBreezeCoinView _PersistentCoinView;
+
         public DBreezeCoinView PersistentCoinView
         {
             get

@@ -110,6 +110,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.Dispose(true);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

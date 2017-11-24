@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="blockCount">Number of blocks to mine.</param>
         /// <returns>List of block header hashes of newly mined blocks.</returns>
-        /// <remarks>It is possible that less than the required number of blocks will be mined because the generating function only 
+        /// <remarks>It is possible that less than the required number of blocks will be mined because the generating function only
         /// tries all possible header nonces values.</remarks>
         [ActionName("generate")]
         [ActionDescription("Tries to mine a given number of blocks and returns a list of block header hashes.")]

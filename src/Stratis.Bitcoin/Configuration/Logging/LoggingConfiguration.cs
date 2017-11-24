@@ -47,20 +47,20 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "alert", "" },
             //{ "cmpctblock", "" }
             //{ "coindb", "" },
-            //{ "http", "" }, 
-            //{ "libevent", "" }, 
-            //{ "lock", "" }, 
-            //{ "mempoolrej", "" }, 
-            { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" }, 
-            //{ "proxy", "" }, 
-            //{ "prune", "" }, 
-            //{ "rand", "" }, 
-            //{ "reindex", "" }, 
+            //{ "http", "" },
+            //{ "libevent", "" },
+            //{ "lock", "" },
+            //{ "mempoolrej", "" },
+            { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" },
+            //{ "proxy", "" },
+            //{ "prune", "" },
+            //{ "rand", "" },
+            //{ "reindex", "" },
             //{ "qt", "" },
-            //{ "selectcoins", "" }, 
-            //{ "tor", "" }, 
-            //{ "zmq", "" }, 
-            
+            //{ "selectcoins", "" },
+            //{ "tor", "" },
+            //{ "zmq", "" },
+
             // Short Names
             { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
             { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" }

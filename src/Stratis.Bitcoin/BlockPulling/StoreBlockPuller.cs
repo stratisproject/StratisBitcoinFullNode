@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly ILogger logger;
 
         /// <summary>
-        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes. 
+        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes.
         /// </summary>
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="nodes">Network peers of the node.</param>

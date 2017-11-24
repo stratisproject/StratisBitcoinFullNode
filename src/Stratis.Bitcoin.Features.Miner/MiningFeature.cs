@@ -169,7 +169,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-
                     });
             });
 

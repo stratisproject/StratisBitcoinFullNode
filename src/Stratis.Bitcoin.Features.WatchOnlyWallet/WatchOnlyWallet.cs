@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
     /// <summary>
-    /// Represents a watch-only wallet. 
+    /// Represents a watch-only wallet.
     /// </summary>
     public class WatchOnlyWallet
     {

@@ -15,8 +15,8 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
+
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature, IBlockStore, INodeStats

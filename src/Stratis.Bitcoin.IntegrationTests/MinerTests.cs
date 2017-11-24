@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
         }
+
         public class Blockinfo
         {
             public int extranonce;
@@ -600,7 +601,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast().AddMinutes(2), context.chain.Tip.Height + 2)); // Locktime passes 2 min later
-
         }
 
         //NOTE: These tests rely on CreateNewBlock doing its own self-validation!
@@ -738,7 +738,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    chainActive.Tip().Height--;
             //    SetMockTime(0);
             //    mempool.clear();
-
         }
     }
 }
