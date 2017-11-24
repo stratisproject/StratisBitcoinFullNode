@@ -297,6 +297,9 @@ namespace NBitcoin.Tests
 		[Fact]
 		public void CanGetPeersInfo()
 		{
+        /*
+         * TODO: Consider importing to FN.
+
 			if (pos_RPCClientTests.noClient) return;
 
 			using (var builder = NodeBuilderStratis.Create())
@@ -311,7 +314,8 @@ namespace NBitcoin.Tests
 					Assert.NotEmpty(peers);
 				}
 			}
-		}
+            */
+    }
 #endif
 #if !NOSOCKET
 		[Fact]

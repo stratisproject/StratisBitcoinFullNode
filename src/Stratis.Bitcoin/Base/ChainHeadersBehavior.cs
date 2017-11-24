@@ -1,13 +1,14 @@
-﻿#if !NOSOCKET
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Linq;
 using System.Threading;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.P2P.Protocol;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -361,4 +362,3 @@ namespace Stratis.Bitcoin.Base
         #endregion
     }
 }
-#endif

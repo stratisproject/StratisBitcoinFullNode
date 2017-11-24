@@ -19,6 +19,8 @@ namespace NBitcoin.Tests
             Block.BlockSignature = false;
         }
 
+        /*
+         * TODO: Consider importing to FN.
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
 		public void CanParseAlertAndChangeUpdatePayloadAndSignature()
@@ -96,5 +98,6 @@ namespace NBitcoin.Tests
 			}
 			return alerts.ToArray();
 		}
-	}
+        */
+    }
 }

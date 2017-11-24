@@ -326,7 +326,7 @@ namespace NBitcoin
 	public class Utils
 	{
 
-		internal static void SafeSet(ManualResetEvent ar)
+		public static void SafeSet(ManualResetEvent ar)
 		{
 			try
 			{
@@ -590,7 +590,7 @@ namespace NBitcoin
 
 
 #if !NOSOCKET
-		internal static void SafeCloseSocket(System.Net.Sockets.Socket socket)
+		public static void SafeCloseSocket(System.Net.Sockets.Socket socket)
 		{
 			try
 			{

@@ -1,9 +1,9 @@
 ﻿using NBitcoin;
-using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using System;
 using System.IO;
 using Xunit;
+using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
