@@ -20,7 +20,9 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly ILogger logger;
         private readonly ISignals signals;
         private ChainedBlock tip;
@@ -87,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             },
             this.nodeLifetime.ApplicationStopping);
         }
-        
+
         /// <inheritdoc/>
         public void Stop()
         {

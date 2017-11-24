@@ -26,7 +26,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly ILogger logger;
         private readonly ISignals signals;
         protected ChainedBlock walletTip;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private IDisposable sub;
         private IDisposable txSub;
 

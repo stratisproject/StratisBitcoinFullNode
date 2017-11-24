@@ -30,7 +30,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly CoinView coinView;
         private readonly ChainState chainState;
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly Signals.Signals signals;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
