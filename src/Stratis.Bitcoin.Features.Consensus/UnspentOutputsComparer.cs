@@ -5,15 +5,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class UnspentOutputsComparer : IComparer<UnspentOutputs>
     {
-        private static readonly UnspentOutputsComparer _Instance = new UnspentOutputsComparer();
-
-        public static UnspentOutputsComparer Instance
-        {
-            get
-            {
-                return _Instance;
-            }
-        }
+        public static UnspentOutputsComparer Instance { get; } = new UnspentOutputsComparer();
 
         private readonly UInt256Comparer Comparer = new UInt256Comparer();
 

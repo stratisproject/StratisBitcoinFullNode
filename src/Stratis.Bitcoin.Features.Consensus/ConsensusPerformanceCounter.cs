@@ -10,9 +10,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         public ConsensusPerformanceSnapshot(long processedInputs, long processedTransactions, long processedBlocks, long blockFetchingTime, long blockProcessingTime, long utxoFetchingTime)
         {
-            this._TotalProcessedTransactions = processedTransactions;
+            this.TotalProcessedTransactions = processedTransactions;
             this._TotalProcessedInputs = processedInputs;
-            this._TotalProcessedBlocks = processedBlocks;
+            this.TotalProcessedBlocks = processedBlocks;
             this._TotalBlockFetchingTime = blockFetchingTime;
             this._TotalBlockValidationTime = blockProcessingTime;
             this._TotalUTXOFetchingTime = utxoFetchingTime;
@@ -48,25 +48,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-        private readonly long _TotalProcessedBlocks;
+        public long TotalProcessedBlocks { get; }
 
-        public long TotalProcessedBlocks
-        {
-            get
-            {
-                return this._TotalProcessedBlocks;
-            }
-        }
-
-        private readonly long _TotalProcessedTransactions;
-
-        public long TotalProcessedTransactions
-        {
-            get
-            {
-                return this._TotalProcessedTransactions;
-            }
-        }
+        public long TotalProcessedTransactions { get; }
 
         internal long _TotalProcessedInputs;
 

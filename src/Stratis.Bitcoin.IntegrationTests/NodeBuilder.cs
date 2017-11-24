@@ -446,37 +446,23 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private int last = 0;
         private string root;
-        private string bitcoinD;
 
         public NodeBuilder(string root, string bitcoindPath)
         {
             this.root = root;
-            this.bitcoinD = bitcoindPath;
+            this.BitcoinD = bitcoindPath;
         }
 
-        public string BitcoinD
-        {
-            get { return this.bitcoinD; }
-        }
+        public string BitcoinD { get; }
 
-        private readonly List<CoreNode> nodes = new List<CoreNode>();
+        public List<CoreNode> Nodes { get; } = new List<CoreNode>();
 
-        public List<CoreNode> Nodes
-        {
-            get { return this.nodes; }
-        }
-
-        private readonly NodeConfigParameters configParameters = new NodeConfigParameters();
-
-        public NodeConfigParameters ConfigParameters
-        {
-            get { return this.configParameters; }
-        }
+        public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
         public CoreNode CreateNode(bool start = false)
         {
             string child = this.CreateNewEmptyFolder();
-            var node = new CoreNode(child, new BitcoinCoreRunner(this.bitcoinD), this);
+            var node = new CoreNode(child, new BitcoinCoreRunner(this.BitcoinD), this);
             this.Nodes.Add(node);
             if (start)
                 node.Start();
@@ -545,44 +531,39 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class CoreNode
     {
         private readonly NodeBuilder builder;
-        private string folder;
-        private readonly NodeConfigParameters configParameters = new NodeConfigParameters();
-        private string config;
-        private CoreNodeState state;
         private int[] ports;
         private INodeRunner runner;
-        private readonly string dataDir;
         private readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
 
-        public string Folder { get { return this.folder; } }
+        public string Folder { get; }
 
         /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder { get { return this.dataDir; } }
+        public string DataFolder { get; }
 
         public IPEndPoint Endpoint { get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ports[0]); } }
 
-        public string Config { get { return this.config; } }
+        public string Config { get; }
 
-        public NodeConfigParameters ConfigParameters { get { return this.configParameters; } }
+        public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
         public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, bool cleanfolders = true, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
             this.builder = builder;
-            this.folder = folder;
-            this.state = CoreNodeState.Stopped;
+            this.Folder = folder;
+            this.State = CoreNodeState.Stopped;
             if (cleanfolders)
                 this.CleanFolder();
             Directory.CreateDirectory(folder);
-            this.dataDir = Path.Combine(folder, "data");
-            Directory.CreateDirectory(this.dataDir);
+            this.DataFolder = Path.Combine(folder, "data");
+            Directory.CreateDirectory(this.DataFolder);
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
-            this.config = Path.Combine(this.dataDir, configfile);
+            this.Config = Path.Combine(this.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
             this.FindPorts(this.ports);
@@ -602,7 +583,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private void CleanFolder()
         {
-            NodeBuilder.CleanupTestFolder(this.folder);
+            NodeBuilder.CleanupTestFolder(this.Folder);
         }
 
 #if !NOSOCKET
@@ -622,10 +603,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 #endif
 
-        public CoreNodeState State
-        {
-            get { return this.state; }
-        }
+        public CoreNodeState State { get; private set; }
 
         public int ProtocolPort
         {
@@ -681,18 +659,18 @@ namespace Stratis.Bitcoin.IntegrationTests
             config.Add("printtoconsole", "1");
             config.Add("keypool", "10");
             config.Import(this.ConfigParameters);
-            File.WriteAllText(this.config, config.ToString());
+            File.WriteAllText(this.Config, config.ToString());
             lock (this.lockObject)
             {
-                this.runner.Start(this.dataDir);
-                this.state = CoreNodeState.Starting;
+                this.runner.Start(this.DataFolder);
+                this.State = CoreNodeState.Starting;
             }
             while (true)
             {
                 try
                 {
                     await this.CreateRPCClient().GetBlockHashAsync(0);
-                    this.state = CoreNodeState.Running;
+                    this.State = CoreNodeState.Running;
                     break;
                 }
                 catch
@@ -808,7 +786,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             lock (this.lockObject)
             {
                 this.runner.Kill();
-                this.state = CoreNodeState.Killed;
+                this.State = CoreNodeState.Killed;
                 if (cleanFolder)
                     this.CleanFolder();
             }

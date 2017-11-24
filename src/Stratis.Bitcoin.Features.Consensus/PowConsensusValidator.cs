@@ -22,19 +22,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of block header hash checkpoints.</summary>
         protected readonly ICheckpoints Checkpoints;
 
-        private readonly NBitcoin.Consensus consensusParams;
+        public NBitcoin.Consensus ConsensusParams { get; }
 
-        public NBitcoin.Consensus ConsensusParams
-        {
-            get { return this.consensusParams; }
-        }
-
-        private readonly PowConsensusOptions consensusOptions;
-
-        public PowConsensusOptions ConsensusOptions
-        {
-            get { return this.consensusOptions; }
-        }
+        public PowConsensusOptions ConsensusOptions { get; }
 
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
@@ -49,8 +39,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.consensusParams = network.Consensus;
-            this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
+            this.ConsensusParams = network.Consensus;
+            this.ConsensusOptions = network.Consensus.Option<PowConsensusOptions>();
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.dateTimeProvider);
             this.Checkpoints = checkpoints;
@@ -160,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (this.GetBlockWeight(block) > this.consensusOptions.MaxBlockWeight)
+            if (this.GetBlockWeight(block) > this.ConsensusOptions.MaxBlockWeight)
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
@@ -238,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
                     nSigOpsCost += this.GetTransactionSigOpCost(tx, view, flags);
-                    if (nSigOpsCost > this.consensusOptions.MaxBlockSigopsCost)
+                    if (nSigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                         ConsensusErrors.BadBlockSigOps.Throw();
 
                     // TODO: Simplify this condition.
@@ -327,9 +317,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
-                if ((nSpendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
+                if ((nSpendHeight - coins.Height) < this.ConsensusOptions.CoinbaseMaturity)
                 {
-                    this.logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, nSpendHeight, this.consensusOptions.CoinbaseMaturity);
+                    this.logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, nSpendHeight, this.ConsensusOptions.CoinbaseMaturity);
                     this.logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }
@@ -389,12 +379,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public virtual Money GetProofOfWorkReward(int nHeight)
         {
-            int halvings = nHeight / this.consensusParams.SubsidyHalvingInterval;
+            int halvings = nHeight / this.ConsensusParams.SubsidyHalvingInterval;
             // Force block reward to zero when right shift is undefined.
             if (halvings >= 64)
                 return 0;
 
-            Money nSubsidy = this.consensusOptions.ProofOfWorkReward;
+            Money nSubsidy = this.ConsensusOptions.ProofOfWorkReward;
             // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
             nSubsidy >>= halvings;
             return nSubsidy;
@@ -402,14 +392,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public long GetTransactionSigOpCost(Transaction tx, UnspentOutputSet inputs, DeploymentFlags flags)
         {
-            long nSigOps = this.GetLegacySigOpCount(tx) * this.consensusOptions.WitnessScaleFactor;
+            long nSigOps = this.GetLegacySigOpCount(tx) * this.ConsensusOptions.WitnessScaleFactor;
 
             if (tx.IsCoinBase)
                 return nSigOps;
 
             if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
             {
-                nSigOps += this.GetP2SHSigOpCount(tx, inputs) * this.consensusOptions.WitnessScaleFactor;
+                nSigOps += this.GetP2SHSigOpCount(tx, inputs) * this.ConsensusOptions.WitnessScaleFactor;
             }
 
             for (int i = 0; i < tx.Inputs.Count; i++)
@@ -508,7 +498,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // checks that use witness data may be performed here.
 
             // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.consensusOptions.MaxBlockBaseSize) || (this.GetSize(block, TransactionOptions.None) > this.consensusOptions.MaxBlockBaseSize))
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) || (this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -538,7 +528,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (Transaction tx in block.Transactions)
                 nSigOps += this.GetLegacySigOpCount(tx);
 
-            if ((nSigOps * this.consensusOptions.WitnessScaleFactor) > this.consensusOptions.MaxBlockSigopsCost)
+            if ((nSigOps * this.ConsensusOptions.WitnessScaleFactor) > this.ConsensusOptions.MaxBlockSigopsCost)
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
                 ConsensusErrors.BadBlockSigOps.Throw();
@@ -577,7 +567,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(tx, TransactionOptions.None) > this.consensusOptions.MaxBlockBaseSize)
+            if (this.GetSize(tx, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
@@ -593,7 +583,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.BadTransactionNegativeOutput.Throw();
                 }
 
-                if (txout.Value.Satoshi > this.consensusOptions.MaxMoney)
+                if (txout.Value.Satoshi > this.ConsensusOptions.MaxMoney)
                 {
                     this.logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeOutput.Throw();
@@ -645,7 +635,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private bool MoneyRange(long nValue)
         {
-            return ((nValue >= 0) && (nValue <= this.consensusOptions.MaxMoney));
+            return ((nValue >= 0) && (nValue <= this.ConsensusOptions.MaxMoney));
         }
 
         public long GetBlockWeight(Block block)
@@ -654,7 +644,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
             // weight = (stripped_size * 3) + total_size.
-            return this.GetSize(block, TransactionOptions.None) * (this.consensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, TransactionOptions.Witness);
+            return this.GetSize(block, TransactionOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, TransactionOptions.Witness);
         }
 
         public int GetSize(IBitcoinSerializable data, TransactionOptions options)
@@ -894,9 +884,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.
-            if (((header.Version < 2) && (nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
-               ((header.Version < 3) && (nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
-               ((header.Version < 4) && (nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
+            if (((header.Version < 2) && (nHeight >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
+               ((header.Version < 3) && (nHeight >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
+               ((header.Version < 4) && (nHeight >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
             {
                 this.logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();

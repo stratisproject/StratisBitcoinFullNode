@@ -16,11 +16,11 @@ namespace Stratis.Bitcoin.Utilities
 
             this._Outputs = tx.Outputs.ToArray();
             this._TransactionId = tx.GetHash();
-            this._Height = height;
-            this._Version = tx.Version;
-            this._IsCoinbase = tx.IsCoinBase;
-            this._IsCoinstake = tx.IsCoinStake;
-            this._Time = tx.Time;
+            this.Height = height;
+            this.Version = tx.Version;
+            this.IsCoinbase = tx.IsCoinBase;
+            this.IsCoinstake = tx.IsCoinStake;
+            this.Time = tx.Time;
         }
 
         public UnspentOutputs(uint256 txId, Coins coins)
@@ -31,11 +31,11 @@ namespace Stratis.Bitcoin.Utilities
 
         private void SetCoins(Coins coins)
         {
-            this._IsCoinbase = coins.CoinBase;
-            this._IsCoinstake = coins.CoinStake;
-            this._Time = coins.Time;
-            this._Height = coins.Height;
-            this._Version = coins.Version;
+            this.IsCoinbase = coins.CoinBase;
+            this.IsCoinstake = coins.CoinStake;
+            this.Time = coins.Time;
+            this.Height = coins.Height;
+            this.Version = coins.Version;
             this._Outputs = new TxOut[coins.Outputs.Count];
             for (uint i = 0; i < this._Outputs.Length; i++)
             {
@@ -46,11 +46,11 @@ namespace Stratis.Bitcoin.Utilities
         public UnspentOutputs(UnspentOutputs unspent)
         {
             this._TransactionId = unspent.TransactionId;
-            this._IsCoinbase = unspent.IsCoinbase;
-            this._IsCoinstake = unspent.IsCoinstake;
-            this._Time = unspent.Time;
-            this._Height = unspent.Height;
-            this._Version = unspent.Version;
+            this.IsCoinbase = unspent.IsCoinbase;
+            this.IsCoinstake = unspent.IsCoinstake;
+            this.Time = unspent.Time;
+            this.Height = unspent.Height;
+            this.Version = unspent.Version;
             this._Outputs = unspent._Outputs.ToArray();
         }
 
@@ -66,55 +66,15 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        private uint _Version;
+        public uint Version { get; private set; }
 
-        public uint Version
-        {
-            get
-            {
-                return this._Version;
-            }
-        }
+        public bool IsCoinbase { get; private set; }
 
-        private bool _IsCoinbase;
+        public bool IsCoinstake { get; private set; }
 
-        public bool IsCoinbase
-        {
-            get
-            {
-                return this._IsCoinbase;
-            }
-        }
+        public uint Time { get; private set; }
 
-        private bool _IsCoinstake;
-
-        public bool IsCoinstake
-        {
-            get
-            {
-                return this._IsCoinstake;
-            }
-        }
-
-        private uint _Time;
-
-        public uint Time
-        {
-            get
-            {
-                return this._Time;
-            }
-        }
-
-        private uint _Height;
-
-        public uint Height
-        {
-            get
-            {
-                return this._Height;
-            }
-        }
+        public uint Height { get; private set; }
 
         public bool IsPrunable
         {

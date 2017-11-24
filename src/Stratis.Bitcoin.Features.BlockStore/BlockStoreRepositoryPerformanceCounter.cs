@@ -108,13 +108,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     public class BlockStoreRepositoryPerformanceSnapshot
     {
-        private readonly long repositoryHitCount;
+        public long TotalRepositoryHitCount { get; }
 
-        private readonly long repositoryMissCount;
+        public long TotalRepositoryMissCount { get; }
 
-        private readonly long repositoryDeleteCount;
+        public long TotalRepositoryDeleteCount { get; }
 
-        private readonly long repositoryInsertCount;
+        public long TotalRepositoryInsertCount { get; }
 
         public string Name { get; private set; }
 
@@ -124,43 +124,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount, string name = "BlockStore")
         {
-            this.repositoryHitCount = repositoryHitCount;
-            this.repositoryMissCount = repositoryMissCount;
-            this.repositoryDeleteCount = repositoryDeleteCount;
-            this.repositoryInsertCount = repositoryInsertCount;
+            this.TotalRepositoryHitCount = repositoryHitCount;
+            this.TotalRepositoryMissCount = repositoryMissCount;
+            this.TotalRepositoryDeleteCount = repositoryDeleteCount;
+            this.TotalRepositoryInsertCount = repositoryInsertCount;
             this.Name = name;
-        }
-
-        public long TotalRepositoryHitCount
-        {
-            get
-            {
-                return this.repositoryHitCount;
-            }
-        }
-
-        public long TotalRepositoryMissCount
-        {
-            get
-            {
-                return this.repositoryMissCount;
-            }
-        }
-
-        public long TotalRepositoryDeleteCount
-        {
-            get
-            {
-                return this.repositoryDeleteCount;
-            }
-        }
-
-        public long TotalRepositoryInsertCount
-        {
-            get
-            {
-                return this.repositoryInsertCount;
-            }
         }
 
         public TimeSpan Elapsed

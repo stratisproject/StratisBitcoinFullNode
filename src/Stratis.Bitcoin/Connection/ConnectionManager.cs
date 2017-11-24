@@ -99,27 +99,12 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
-        private readonly Network network;
-
         /// <inheritdoc/>
-        public Network Network
-        {
-            get { return this.network; }
-        }
+        public Network Network { get; }
 
-        private readonly NodeConnectionParameters parameters;
+        public NodeConnectionParameters Parameters { get; }
 
-        public NodeConnectionParameters Parameters
-        {
-            get { return this.parameters; }
-        }
-
-        private readonly NodeSettings nodeSettings;
-
-        public NodeSettings NodeSettings
-        {
-            get { return this.nodeSettings; }
-        }
+        public NodeSettings NodeSettings { get; }
 
         public List<NodeServer> Servers { get; }
 
@@ -143,12 +128,12 @@ namespace Stratis.Bitcoin.Connection
             IDateTimeProvider dateTimeProvider)
         {
             this.dateTimeProvider = dateTimeProvider;
-            this.network = network;
-            this.nodeSettings = nodeSettings;
+            this.Network = network;
+            this.NodeSettings = nodeSettings;
             this.nodeLifetime = nodeLifetime;
             this.connectionManagerSettings = nodeSettings.ConnectionManager;
-            this.parameters = parameters;
-            this.parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+            this.Parameters = parameters;
+            this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
 
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -164,20 +149,20 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
-            this.parameters.Version = this.NodeSettings.ProtocolVersion;
+            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
+            this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
-            NodeConnectionParameters clonedParameters = this.parameters.Clone();
+            NodeConnectionParameters clonedParameters = this.Parameters.Clone();
             clonedParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
 
             // Don't start peer discovery if we have specified any nodes using the -connect arg.
             if (!this.connectionManagerSettings.Connect.Any())
             {
-                if (this.parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+                if (this.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 {
                     this.logger.LogInformation("Starting peer discovery...");
 
-                    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.network, clonedParameters, this.nodeLifetime, this.peerAddressManager);
+                    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.Network, clonedParameters, this.nodeLifetime, this.peerAddressManager);
                     this.peerDiscoveryLoop.DiscoverPeers();
                 }
 
@@ -224,7 +209,7 @@ namespace Stratis.Bitcoin.Connection
 
             foreach (NodeServerEndpoint listen in this.connectionManagerSettings.Listen)
             {
-                NodeConnectionParameters cloneParameters = this.parameters.Clone();
+                NodeConnectionParameters cloneParameters = this.Parameters.Clone();
                 var server = new NodeServer(this.Network)
                 {
                     LocalEndpoint = listen.Endpoint,
@@ -446,7 +431,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
-            NodeConnectionParameters cloneParameters = this.parameters.Clone();
+            NodeConnectionParameters cloneParameters = this.Parameters.Clone();
             cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory)
             {
                 OneTry = true

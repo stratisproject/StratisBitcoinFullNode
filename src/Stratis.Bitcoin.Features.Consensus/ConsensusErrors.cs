@@ -15,25 +15,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
     public class ConsensusError
     {
-        private readonly string _Code;
+        public string Code { get; }
 
-        public string Code
-        {
-            get
-            {
-                return this._Code;
-            }
-        }
-
-        private readonly string _Message;
-
-        public string Message
-        {
-            get
-            {
-                return this._Message;
-            }
-        }
+        public string Message { get; }
 
         public void Throw()
         {
@@ -45,8 +29,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotEmpty(code, nameof(code));
             Guard.NotEmpty(message, nameof(message));
 
-            this._Code = code;
-            this._Message = message;
+            this.Code = code;
+            this.Message = message;
         }
 
         public override bool Equals(object obj)
@@ -78,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public override string ToString()
         {
-            return this._Code + ": " + this._Message;
+            return this.Code + ": " + this.Message;
         }
     }
 
