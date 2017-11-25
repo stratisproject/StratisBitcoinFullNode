@@ -137,8 +137,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (!coins.IsAvailable(txInput.PrevOut.N)) continue;
                 if (coins.Height <= nHeight)
                 {
-                    dResult += (double)coins._Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - coins.Height);
-                    inChainInputValue += coins._Outputs[txInput.PrevOut.N].Value;
+                    dResult += (double)coins.Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - coins.Height);
+                    inChainInputValue += coins.Outputs[txInput.PrevOut.N].Value;
                 }
             }
             return (this.ComputePriority(tx, dResult), inChainInputValue);

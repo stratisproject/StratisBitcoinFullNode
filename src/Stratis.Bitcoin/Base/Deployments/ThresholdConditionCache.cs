@@ -9,16 +9,16 @@ namespace Stratis.Bitcoin.Base.Deployments
     public class ThresholdConditionCache
     {
         /** What block version to use for new blocks (pre versionbits) */
-        public static int VERSIONBITS_LAST_OLD_BLOCK_VERSION = 4;
+        public static int VersionbitsLastOldBlockVersion = 4;
 
         /** What bits to set in version for versionbits blocks */
-        public static uint VERSIONBITS_TOP_BITS = 0x20000000;
+        public static uint VersionbitsTopBits = 0x20000000;
 
         /** What bitmask determines whether versionbits is in use */
-        public static uint VERSIONBITS_TOP_MASK = 0xE0000000;
+        public static uint VersionbitsTopMask = 0xE0000000;
 
         /** Total bits available for versionbits */
-        public static int VERSIONBITS_NUM_BITS = 29;
+        public static int VersionbitsNumBits = 29;
 
         public static readonly int ArraySize;
 
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
         }
 
-        private Consensus _Consensus;
+        private Consensus consensus;
 
         private
         Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
             Guard.NotNull(consensus, nameof(consensus));
 
-            this._Consensus = consensus;
+            this.consensus = consensus;
         }
 
         public ThresholdState[] GetStates(ChainedBlock pindexPrev)
@@ -49,10 +49,10 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public ThresholdState GetState(ChainedBlock pindexPrev, BIP9Deployments deployment)
         {
-            int nPeriod = this._Consensus.MinerConfirmationWindow;
-            int nThreshold = this._Consensus.RuleChangeActivationThreshold;
-            var nTimeStart = this._Consensus.BIP9Deployments[deployment]?.StartTime;
-            var nTimeTimeout = this._Consensus.BIP9Deployments[deployment]?.Timeout;
+            int nPeriod = this.consensus.MinerConfirmationWindow;
+            int nThreshold = this.consensus.RuleChangeActivationThreshold;
+            var nTimeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
+            var nTimeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
 
             // A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
             if (pindexPrev != null)
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 pindexPrev = pindexPrev.GetAncestor(pindexPrev.Height - nPeriod);
             }
             // At this point, cache[pindexPrev] is known
-            this.assert(this.ContainsKey(pindexPrev?.HashBlock, deployment));
+            this.Assert(this.ContainsKey(pindexPrev?.HashBlock, deployment));
             ThresholdState state = this.Get(pindexPrev?.HashBlock, deployment);
 
             // Now walk forward and compute the state of descendants of pindexPrev
@@ -178,15 +178,15 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         private bool Condition(ChainedBlock pindex, BIP9Deployments deployment)
         {
-            return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & this.Mask(deployment)) != 0);
+            return (((pindex.Header.Version & VersionbitsTopMask) == VersionbitsTopBits) && (pindex.Header.Version & this.Mask(deployment)) != 0);
         }
 
         public uint Mask(BIP9Deployments deployment)
         {
-            return ((uint)1) << this._Consensus.BIP9Deployments[deployment].Bit;
+            return ((uint)1) << this.consensus.BIP9Deployments[deployment].Bit;
         }
 
-        private void assert(bool v)
+        private void Assert(bool v)
         {
             if (!v)
                 throw new Exception("Assertion failed");

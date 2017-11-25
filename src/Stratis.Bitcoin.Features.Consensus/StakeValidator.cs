@@ -111,13 +111,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             TxIn input = txTo.Inputs[txToInN];
 
-            if (input.PrevOut.N >= txFrom._Outputs.Length)
+            if (input.PrevOut.N >= txFrom.Outputs.Length)
                 return false;
 
             if (input.PrevOut.Hash != txFrom.TransactionId)
                 return false;
 
-            TxOut output = txFrom._Outputs[input.PrevOut.N];
+            TxOut output = txFrom.Outputs[input.PrevOut.N];
 
             var txData = new PrecomputedTransactionData(txTo);
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // the max weight should not exceed the max uint256 array size (array size = 32).
 
             // Weighted target.
-            long valueIn = stakingCoins._Outputs[prevout.N].Value.Satoshi;
+            long valueIn = stakingCoins.Outputs[prevout.N].Value.Satoshi;
             BigInteger weight = BigInteger.ValueOf(valueIn);
             BigInteger weightedTarget = target.Multiply(weight);
 

@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
         {
-            uint nVersion = ThresholdConditionCache.VERSIONBITS_TOP_BITS;
+            uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
 
             IEnumerable<BIP9Deployments> deploymensts = Enum.GetValues(typeof(BIP9Deployments))

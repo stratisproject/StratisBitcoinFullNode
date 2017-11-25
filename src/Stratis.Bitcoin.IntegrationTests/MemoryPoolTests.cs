@@ -942,31 +942,31 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         // Change the default value
-        public TestMemPoolEntryHelper Fee(Money _fee) { this.nFee = _fee; return this; }
+        public TestMemPoolEntryHelper Fee(Money fee) { this.nFee = fee; return this; }
 
-        public TestMemPoolEntryHelper Time(long _time)
+        public TestMemPoolEntryHelper Time(long time)
         {
-            this.nTime = _time; return this;
+            this.nTime = time; return this;
         }
 
-        public TestMemPoolEntryHelper Priority(double _priority)
+        public TestMemPoolEntryHelper Priority(double priority)
         {
-            this.dPriority = _priority; return this;
+            this.dPriority = priority; return this;
         }
 
-        public TestMemPoolEntryHelper Height(int _height)
+        public TestMemPoolEntryHelper Height(int height)
         {
-            this.nHeight = _height; return this;
+            this.nHeight = height; return this;
         }
 
-        public TestMemPoolEntryHelper SpendsCoinbase(bool _flag)
+        public TestMemPoolEntryHelper SpendsCoinbase(bool flag)
         {
-            this.spendsCoinbase = _flag; return this;
+            this.spendsCoinbase = flag; return this;
         }
 
-        public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost)
+        public TestMemPoolEntryHelper SigOpsCost(long sigopsCost)
         {
-            this.sigOpCost = _sigopsCost; return this;
+            this.sigOpCost = sigopsCost; return this;
         }
     }
 }

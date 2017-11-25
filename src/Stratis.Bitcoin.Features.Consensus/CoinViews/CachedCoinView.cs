@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
                     cache.UnspentOutputs = unspent;
-                    cache.OriginalOutputs = unspent?._Outputs.ToArray();
+                    cache.OriginalOutputs = unspent?.Outputs.ToArray();
                     this.unspents.TryAdd(txIds[index], cache);
                 }
                 result = new FetchCoinsResponse(outputs, this.blockHash);
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     u.Value.IsDirty = false;
                     u.Value.ExistInInner = true;
-                    u.Value.OriginalOutputs = u.Value.UnspentOutputs?._Outputs.ToArray();
+                    u.Value.OriginalOutputs = u.Value.UnspentOutputs?.Outputs.ToArray();
                 }
 
                 this.flushingTask = this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash);

@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Utilities
         {
             Guard.NotNull(tx, nameof(tx));
 
-            this._Outputs = tx.Outputs.ToArray();
-            this._TransactionId = tx.GetHash();
+            this.Outputs = tx.Outputs.ToArray();
+            this.transactionId = tx.GetHash();
             this.Height = height;
             this.Version = tx.Version;
             this.IsCoinbase = tx.IsCoinBase;
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
 
         public UnspentOutputs(uint256 txId, Coins coins)
         {
-            this._TransactionId = txId;
+            this.transactionId = txId;
             this.SetCoins(coins);
         }
 
@@ -36,33 +36,33 @@ namespace Stratis.Bitcoin.Utilities
             this.Time = coins.Time;
             this.Height = coins.Height;
             this.Version = coins.Version;
-            this._Outputs = new TxOut[coins.Outputs.Count];
-            for (uint i = 0; i < this._Outputs.Length; i++)
+            this.Outputs = new TxOut[coins.Outputs.Count];
+            for (uint i = 0; i < this.Outputs.Length; i++)
             {
-                this._Outputs[i] = coins.TryGetOutput(i);
+                this.Outputs[i] = coins.TryGetOutput(i);
             }
         }
 
         public UnspentOutputs(UnspentOutputs unspent)
         {
-            this._TransactionId = unspent.TransactionId;
+            this.transactionId = unspent.TransactionId;
             this.IsCoinbase = unspent.IsCoinbase;
             this.IsCoinstake = unspent.IsCoinstake;
             this.Time = unspent.Time;
             this.Height = unspent.Height;
             this.Version = unspent.Version;
-            this._Outputs = unspent._Outputs.ToArray();
+            this.Outputs = unspent.Outputs.ToArray();
         }
 
-        public TxOut[] _Outputs;
+        public TxOut[] Outputs;
 
-        private uint256 _TransactionId;
+        private uint256 transactionId;
 
         public uint256 TransactionId
         {
             get
             {
-                return this._TransactionId;
+                return this.transactionId;
             }
         }
 
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                return this._Outputs.All(o => o == null ||
+                return this.Outputs.All(o => o == null ||
                                     (o.ScriptPubKey.Length > 0 && o.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN));
             }
         }
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                return this._Outputs.All(o => o != null);
+                return this.Outputs.All(o => o != null);
             }
         }
 
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                return this._Outputs.Count(o => o != null);
+                return this.Outputs.Count(o => o != null);
             }
         }
 
@@ -108,27 +108,27 @@ namespace Stratis.Bitcoin.Utilities
 
         public TxOut TryGetOutput(uint outputIndex)
         {
-            if (outputIndex >= this._Outputs.Length)
+            if (outputIndex >= this.Outputs.Length)
                 return null;
-            return this._Outputs[outputIndex];
+            return this.Outputs[outputIndex];
         }
 
         public bool Spend(uint outputIndex)
         {
-            if (outputIndex >= this._Outputs.Length)
+            if (outputIndex >= this.Outputs.Length)
                 return false;
-            if (this._Outputs[outputIndex] == null)
+            if (this.Outputs[outputIndex] == null)
                 return false;
-            this._Outputs[outputIndex] = null;
+            this.Outputs[outputIndex] = null;
             return true;
         }
 
         public void Spend(UnspentOutputs c)
         {
-            for (int i = 0; i < this._Outputs.Length; i++)
+            for (int i = 0; i < this.Outputs.Length; i++)
             {
-                if (c._Outputs[i] == null)
-                    this._Outputs[i] = null;
+                if (c.Outputs[i] == null)
+                    this.Outputs[i] = null;
             }
         }
 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Utilities
                 CoinStake = this.IsCoinstake,
                 Time = this.Time
             };
-            foreach (var output in this._Outputs)
+            foreach (var output in this.Outputs)
             {
                 coins.Outputs.Add(output == null ? Coins.NullTxOut : output);
             }
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Utilities
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref this._TransactionId);
+            stream.ReadWrite(ref this.transactionId);
             if (stream.Serializing)
             {
                 var c = this.ToCoins();

@@ -13,29 +13,29 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
-        private List<IDisposable> _CleanList = new List<IDisposable>();
-        private TestDirectory _TestDirectory;
+        private List<IDisposable> cleanList = new List<IDisposable>();
+        private TestDirectory testDirectory;
 
         public NodeContext(string name, Network network, bool clean)
         {
             network = network ?? Network.RegTest;
             this.loggerFactory = new LoggerFactory();
             this.Network = network;
-            this._TestDirectory = TestDirectory.Create(name, clean);
-            this.PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
+            this.testDirectory = TestDirectory.Create(name, clean);
+            this.PersistentCoinView = new DBreezeCoinView(network, this.testDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
             this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
-            this._CleanList.Add(this.PersistentCoinView);
+            this.cleanList.Add(this.PersistentCoinView);
         }
 
         public Network Network { get; }
 
-        private ChainBuilder _ChainBuilder;
+        private ChainBuilder chainBuilder;
 
         public ChainBuilder ChainBuilder
         {
             get
             {
-                return this._ChainBuilder = this._ChainBuilder ?? new ChainBuilder(this.Network);
+                return this.chainBuilder = this.chainBuilder ?? new ChainBuilder(this.Network);
             }
         }
 
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             get
             {
-                return this._TestDirectory.FolderName;
+                return this.testDirectory.FolderName;
             }
         }
 
@@ -56,18 +56,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Dispose()
         {
-            foreach (var item in this._CleanList)
+            foreach (var item in this.cleanList)
                 item.Dispose();
-            this._TestDirectory.Dispose(); //Not into cleanlist because it must run last
+            this.testDirectory.Dispose(); //Not into cleanlist because it must run last
         }
 
         public void ReloadPersistentCoinView()
         {
             this.PersistentCoinView.Dispose();
-            this._CleanList.Remove(this.PersistentCoinView);
-            this.PersistentCoinView = new DBreezeCoinView(this.Network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
+            this.cleanList.Remove(this.PersistentCoinView);
+            this.PersistentCoinView = new DBreezeCoinView(this.Network, this.testDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
             this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
-            this._CleanList.Add(this.PersistentCoinView);
+            this.cleanList.Add(this.PersistentCoinView);
         }
     }
 }
