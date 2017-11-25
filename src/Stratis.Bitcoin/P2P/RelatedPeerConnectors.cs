@@ -4,9 +4,9 @@ using System.Net;
 
 namespace Stratis.Bitcoin.P2P
 {
-    public sealed class RelatedPeerConnectors : Dictionary<string, PeerConnector>
+    public sealed class RelatedPeerConnectors : Dictionary<string, IPeerConnector>
     {
-        public void Register(string name, PeerConnector connector)
+        public void Register(string name, IPeerConnector connector)
         {
             if (connector != null)
             {

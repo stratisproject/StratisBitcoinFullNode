@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.P2P
         #region Peer Preference
 
         /// <summary>
-        /// Determines whether the peer will be selected by the <see cref="PeerConnector"/> when connecting.
+        /// Determines whether the peer will be selected by the <see cref="IPeerConnector"/> when connecting.
         /// </summary>
         /// <seealso cref="PeerHasNeverBeenConnectedTo"/>
         /// <seealso cref="PeerHasBeenConnectedTo"/>
