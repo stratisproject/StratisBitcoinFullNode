@@ -32,8 +32,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public ChainedBlock MaxInputBlock;
     }
 
-;
-
     /// <summary>
     /// A transaction entry in the memory pool.
     /// </summary>

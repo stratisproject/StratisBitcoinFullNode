@@ -52,8 +52,6 @@ namespace Stratis.Bitcoin.Features.Miner
         }
     }
 
-;
-
     public class PowBlockAssembler : BlockAssembler
     {
         // Container for tracking updates to ancestor feerate as we include (parent)
@@ -76,8 +74,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             public long SigOpCostWithAncestors;
         }
-
-;
 
         // This matches the calculation in CompareTxMemPoolEntryByAncestorFee,
         // except operating on CTxMemPoolModifiedEntry.
