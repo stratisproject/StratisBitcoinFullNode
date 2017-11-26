@@ -209,8 +209,8 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
 
-            this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
-            this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
+            this.Logger.LogDebug("Data directory set to '{0}'.", this.DataDir);
+            this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
 
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
             this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
@@ -351,12 +351,12 @@ namespace Stratis.Bitcoin.Configuration
         private string CreateDefaultConfigurationFile()
         {
             string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
-            this.Logger.LogInformation("Configuration file set to '{0}'.", configFilePath);
+            this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
 
             // Create a config file if none exist.
             if (!File.Exists(configFilePath))
             {
-                this.Logger.LogInformation("Creating configuration file...");
+                this.Logger.LogDebug("Creating configuration file...");
 
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("####RPC Settings####");
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Configuration
                 var home = Environment.GetEnvironmentVariable("HOME");
                 if (!string.IsNullOrEmpty(home))
                 {
-                    this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
+                    this.Logger.LogDebug("Using HOME environment variable for initializing application data.");
                     directoryPath = Path.Combine(home, "." + appName.ToLowerInvariant());
                 }
                 else
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Configuration
                 var localAppData = Environment.GetEnvironmentVariable("APPDATA");
                 if (!string.IsNullOrEmpty(localAppData))
                 {
-                    this.Logger.LogInformation("Using APPDATA environment variable for initializing application data.");
+                    this.Logger.LogDebug("Using APPDATA environment variable for initializing application data.");
                     directoryPath = Path.Combine(localAppData, appName);
                 }
                 else
@@ -428,7 +428,7 @@ namespace Stratis.Bitcoin.Configuration
             directoryPath = Path.Combine(directoryPath, network.Name);
             Directory.CreateDirectory(directoryPath);
 
-            this.Logger.LogInformation("Data directory initialized with path {0}.", directoryPath);
+            this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
             return directoryPath;
         }
 
