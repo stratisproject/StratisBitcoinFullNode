@@ -20,12 +20,19 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class ConsensusFeature : FullNodeFeature, INodeStats
     {
         private readonly DBreezeCoinView dBreezeCoinView;
+
         private readonly Network network;
+
         private readonly ConcurrentChain chain;
+
         private readonly PowConsensusValidator consensusValidator;
+
         private readonly LookaheadBlockPuller blockPuller;
+
         private readonly CoinView coinView;
+
         private readonly ChainState chainState;
+
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
@@ -35,8 +42,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
+
         private readonly NodeSettings nodeSettings;
+
         private readonly NodeDeployments nodeDeployments;
+
         private readonly StakeChainStore stakeChain;
 
         /// <summary>Consensus settings from configuration.</summary>

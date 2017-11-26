@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// values that would be necessary to satisfy all relative locktime
     /// raints (BIP68) of this tx given our view of block chain history.
     /// </remarks>
-    public class LockPoints // todo: replace with SequenceLock 
+    public class LockPoints // todo: replace with SequenceLock
     {
         /// <summary>Block chain height.</summary>
         public int Height;
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// values are still valid even after a reorg.
         /// </remarks>
         public ChainedBlock MaxInputBlock;
-    };
+    }
 
     /// <summary>
     /// A transaction entry in the memory pool.
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Gets the transaction weight of the transaction in the entry in the memory pool.
         /// </summary>
         /// <remarks>
-        /// Cached to avoid recomputing transaction weight. 
+        /// Cached to avoid recomputing transaction weight.
         /// Also used for GetTxSize().
         /// </remarks>
         public long TxWeight { get; private set; }
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </remarks>
         public double GetPriority(int currentHeight)
         {
-            double deltaPriority = ((double) (currentHeight - this.EntryHeight)* this.InChainInputValue.Satoshi)/ this.nModSize;
+            double deltaPriority = ((double)(currentHeight - this.EntryHeight) * this.InChainInputValue.Satoshi) / this.nModSize;
             double dResult = this.entryPriority + deltaPriority;
             if (dResult < 0) // This should only happen if it was called with a height below entry height
                 dResult = 0;
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The transaction size.</returns>
         public long GetTxSize()
         {
-            return (long) this.Transaction.GetVirtualSize();
+            return (long)this.Transaction.GetVirtualSize();
         }
 
         /// <summary>

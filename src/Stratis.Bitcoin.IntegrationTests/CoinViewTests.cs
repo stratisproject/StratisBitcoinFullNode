@@ -44,14 +44,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
-                var chained = MakeNext(genesisChainedBlock);
+                var chained = this.MakeNext(genesisChainedBlock);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
                 var previous = chained;
-                chained = MakeNext(MakeNext(genesisChainedBlock));
-                chained = MakeNext(MakeNext(genesisChainedBlock));
+                chained = this.MakeNext(this.MakeNext(genesisChainedBlock));
+                chained = this.MakeNext(this.MakeNext(genesisChainedBlock));
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).Wait();
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
                 ctx.ReloadPersistentCoinView();
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
-                var chained = MakeNext(genesisChainedBlock);
+                var chained = this.MakeNext(genesisChainedBlock);
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
 
                 cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
@@ -82,7 +82,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().Result);
                 //Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
-
 
                 //var previous = chained;
                 //chained = MakeNext(MakeNext(genesisChainedBlock));
@@ -132,7 +131,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
 
-
                 tester.Spend(coins[2]);
                 tester.Spend(coin[0]);
                 //2
@@ -145,7 +143,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(h1 == tester.Rewind());
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
-
 
                 var coins2 = tester.CreateCoins(7);
                 tester.Spend(coins2[0]);
@@ -229,18 +226,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                     };
                     Array.Sort(data, new UInt256Comparer());
 
-                    using(var tx = engine.GetTransaction())
+                    using (var tx = engine.GetTransaction())
                     {
-                        foreach(var d in data)
+                        foreach (var d in data)
                             tx.Insert("Table", d.ToBytes(false), d.ToBytes());
                         tx.Commit();
                     }
 
                     var data2 = new uint256[data.Length];
-                    using(var tx = engine.GetTransaction())
+                    using (var tx = engine.GetTransaction())
                     {
                         int i = 0;
-                        foreach(var row in tx.SelectForward<byte[], byte[]>("Table"))
+                        foreach (var row in tx.SelectForward<byte[], byte[]>("Table"))
                         {
                             data2[i++] = new uint256(row.Key, false);
                         }
@@ -269,12 +266,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     repo.LoadAsync(chain).GetAwaiter().GetResult();
                     Assert.True(chain.Tip == chain.Genesis);
                     chain = new ConcurrentChain(Network.RegTest);
-                    var tip = AppendBlock(chain);
+                    var tip = this.AppendBlock(chain);
                     repo.SaveAsync(chain).GetAwaiter().GetResult();
                     var newChain = new ConcurrentChain(Network.RegTest);
                     repo.LoadAsync(newChain).GetAwaiter().GetResult();
                     Assert.Equal(tip, newChain.Tip);
-                    tip = AppendBlock(chain);
+                    tip = this.AppendBlock(chain);
                     repo.SaveAsync(chain).GetAwaiter().GetResult();
                     newChain = new ConcurrentChain(Network.RegTest);
                     repo.LoadAsync(newChain).GetAwaiter().GetResult();
@@ -294,7 +291,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
-                if(!chain.TrySetTip(block.Header, out last))
+                if (!chain.TrySetTip(block.Header, out last))
                     throw new InvalidOperationException("Previous not existing");
             }
             return last;
@@ -303,13 +300,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
         {
             ChainedBlock index = null;
-            return AppendBlock(index, chains);
+            return this.AppendBlock(index, chains);
         }
 
         private byte[] GetFile(string fileName, string url)
         {
             fileName = Path.Combine("TestData", fileName);
-            if(File.Exists(fileName))
+            if (File.Exists(fileName))
                 return File.ReadAllBytes(fileName);
 
             HttpClient client = new HttpClient();

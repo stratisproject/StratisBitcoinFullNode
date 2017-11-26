@@ -12,9 +12,9 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Connection
 {
     /// <summary>
-    /// If the light wallet is only connected to nodes behind 
+    /// If the light wallet is only connected to nodes behind
     /// it cannot progress progress to the tip to get the full balance
-    /// this behaviour will make sure place is kept for nodes higher then 
+    /// this behaviour will make sure place is kept for nodes higher then
     /// current tip.
     /// </summary>
     public class DropNodesBehaviour : NodeBehavior
@@ -26,7 +26,9 @@ namespace Stratis.Bitcoin.Connection
         private readonly ILogger logger;
 
         private readonly ConcurrentChain chain;
+
         private readonly IConnectionManager connection;
+
         private readonly decimal dropThreshold;
 
         public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -37,7 +39,7 @@ namespace Stratis.Bitcoin.Connection
             this.chain = chain;
             this.connection = connectionManager;
 
-            // 80% of current max connections, the last 20% will only 
+            // 80% of current max connections, the last 20% will only
             // connect to nodes ahead of the current best chain.
             this.dropThreshold = 0.8M;
         }

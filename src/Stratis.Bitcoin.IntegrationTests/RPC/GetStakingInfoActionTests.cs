@@ -1,12 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Models;
-using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -48,7 +42,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 Assert.False(fullNodeRunTask.IsFaulted);
             }
-
         }
 
         /// <summary>
@@ -74,7 +67,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // create the wallet
                 var mnemonic = walletManager.CreateWallet(password, "test");
-
 
                 Assert.NotNull(fullNode.NodeService<PosMinting>(true));
 

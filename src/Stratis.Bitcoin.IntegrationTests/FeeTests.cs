@@ -137,7 +137,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
             }
 
-
             // Mine 15 more blocks with lots of transactions happening and not getting mined
             // Estimates should go up
             while (blocknum < 265)
@@ -197,7 +196,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                         var ptx = mpool.Get(hash);
                         if (ptx != null)
                             block.Add(ptx);
-
                     }
                 }
                 mpool.RemoveForBlock(block, ++blocknum);

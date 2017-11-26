@@ -16,13 +16,19 @@ namespace Stratis.Bitcoin
             this.Description = description;
         }
     }
+
     public abstract class FeatureController : Controller
     {
         protected IFullNode FullNode;
+
         protected NodeSettings Settings;
+
         protected Network Network;
+
         protected ChainBase Chain;
+
         protected ChainState ChainState;
+
         protected Connection.IConnectionManager ConnectionManager;
 
         public FeatureController(

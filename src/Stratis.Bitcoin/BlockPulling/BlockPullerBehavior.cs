@@ -39,16 +39,24 @@ namespace Stratis.Bitcoin.BlockPulling
         /// It is used during component shutdown.
         /// </summary>
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
         /// <summary>
         /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
-        public CancellationTokenSource CancellationTokenSource { get { return this.cancellationToken; } }
+        public CancellationTokenSource CancellationTokenSource
+        {
+            get { return this.cancellationToken; }
+        }
 
         /// <summary>Reference to the parent block puller.</summary>
         private readonly BlockPuller puller;
+
         /// <summary>Reference to the parent block puller.</summary>
-        public BlockPuller Puller { get { return this.puller; } }
+        public BlockPuller Puller
+        {
+            get { return this.puller; }
+        }
 
         /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
         public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
@@ -190,9 +198,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += Node_MessageReceived;
+            this.AttachedNode.MessageReceived += this.Node_MessageReceived;
             this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-            AssignPendingVector();
+            this.AssignPendingVector();
 
             this.logger.LogTrace("(-)");
         }
@@ -205,8 +213,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedNode.MessageReceived -= Node_MessageReceived;
-            ReleaseAll(true);
+            this.AttachedNode.MessageReceived -= this.Node_MessageReceived;
+            this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");
         }

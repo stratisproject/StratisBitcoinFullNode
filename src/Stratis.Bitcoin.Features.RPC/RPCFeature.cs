@@ -16,9 +16,13 @@ namespace Stratis.Bitcoin.Features.RPC
     public class RPCFeature : FullNodeFeature
     {
         private readonly FullNode fullNode;
+
         private readonly NodeSettings nodeSettings;
+
         private readonly ILogger logger;
+
         private readonly IFullNodeBuilder fullNodeBuilder;
+
         private readonly RpcSettings rpcSettings;
 
         public RPCFeature(IFullNodeBuilder fullNodeBuilder, FullNode fullNode, NodeSettings nodeSettings, ILoggerFactory loggerFactory, RpcSettings rpcSettings)
@@ -63,7 +67,7 @@ namespace Stratis.Bitcoin.Features.RPC
                         }
                     }
                 })
-                .UseStartup<RPC.Startup>()
+                .UseStartup<Startup>()
                 .Build();
 
                 this.fullNode.RPCHost.Start();

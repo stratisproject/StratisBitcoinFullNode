@@ -55,7 +55,6 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>Collection of DI services.</summary>
         public IServiceCollection Services { get; private set; }
 
-
         /// <summary>
         /// Initializes a default instance of the object and registers required services.
         /// </summary>
@@ -77,7 +76,6 @@ namespace Stratis.Bitcoin.Builder
                 new List<Action<IFeatureCollection>>(),
                 new FeatureCollection())
         {
-
         }
 
         /// <summary>
@@ -103,7 +101,6 @@ namespace Stratis.Bitcoin.Builder
 
             this.UseBaseFeature();
         }
-
 
         /// <summary>
         /// Initializes an instance of the object using specific configuration delegates.

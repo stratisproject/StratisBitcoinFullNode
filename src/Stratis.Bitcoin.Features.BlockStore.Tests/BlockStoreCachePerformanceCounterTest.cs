@@ -94,6 +94,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(16, snapshot2.TotalCacheMissCount);
             Assert.Equal(9, snapshot2.TotalCacheRemoveCount);
             Assert.Equal(68, snapshot2.TotalCacheSetCount);
-        }        
+        }
     }
 }

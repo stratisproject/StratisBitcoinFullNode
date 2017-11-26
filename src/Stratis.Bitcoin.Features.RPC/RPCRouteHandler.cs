@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC
     public class RPCRouteHandler : IRPCRouteHandler
     {
         private IRouter inner;
+
         private IActionDescriptorCollectionProvider actionDescriptor;
 
         public RPCRouteHandler(IRouter inner, IActionDescriptorCollectionProvider actionDescriptor)

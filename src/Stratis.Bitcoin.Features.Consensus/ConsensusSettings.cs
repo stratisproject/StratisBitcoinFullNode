@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public bool UseCheckpoints { get; set; }
 
         /// <summary>
-        /// If this block is in the chain assume that it and its ancestors are valid and skip their script verification. 
+        /// If this block is in the chain assume that it and its ancestors are valid and skip their script verification.
         /// Null to not assume valid blocks and therefore validate all blocks.
         /// </summary>
         public uint256 BlockAssumedValid { get; set; }

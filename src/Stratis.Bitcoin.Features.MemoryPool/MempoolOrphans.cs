@@ -81,13 +81,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
-            MempoolSchedulerLock mempoolLock, 
-            TxMempool memPool, 
-            ConcurrentChain chain, 
-            Signals.Signals signals, 
-            IMempoolValidator validator, 
-            PowConsensusValidator consensusValidator, 
-            CoinView coinView, 
+            MempoolSchedulerLock mempoolLock,
+            TxMempool memPool,
+            ConcurrentChain chain,
+            Signals.Signals signals,
+            IMempoolValidator validator,
+            PowConsensusValidator consensusValidator,
+            CoinView coinView,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ILoggerFactory loggerFactory)
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public MempoolSchedulerLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
-        public IMempoolValidator Validator { get; } // public for testing
+        public IMempoolValidator Validator { get; }
 
         /// <summary>
         /// Object representing an orphan transaction information.
@@ -129,7 +129,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             /// <summary>The time when this orphan transaction will expire.</summary>
             public long TimeExpire;
-        };
+        }
+
+;
 
         /// <summary>
         /// Gets a list of all the orphan transactions.
@@ -187,7 +189,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             List<ulong> setMisbehaving = new List<ulong>();
             while (vWorkQueue.Any())
             {
-                // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection 
+                // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection
                 // of orphans as this collection may be modifed later by anotehr thread
                 List<OrphanTx> itByPrev = await this.MempoolLock.ReadAsync(() => this.mapOrphanTransactionsByPrev.TryGet(vWorkQueue.Dequeue())?.ToList());
                 if (itByPrev == null)

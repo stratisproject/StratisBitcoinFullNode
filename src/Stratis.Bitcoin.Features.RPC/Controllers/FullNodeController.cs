@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 throw new ArgumentException(nameof(txid));
 
             UnspentOutputs unspentOutputs = null;
-            if(includeMemPool)
+            if (includeMemPool)
             {
                 unspentOutputs = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
@@ -103,13 +103,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
 
-            if(unspentOutputs == null)
+            if (unspentOutputs == null)
             {
                 return null;
             }
             return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
         }
-
 
         [ActionName("getblockcount")]
         [ActionDescription("Gets the current consensus tip height.")]
@@ -145,7 +144,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 paytxfee = null
             };
 
-
             return model;
         }
 
@@ -165,7 +163,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (!isJsonFormat)
             {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(GetBlockHeader));
+                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetBlockHeader));
                 throw new NotImplementedException();
             }
 

@@ -129,6 +129,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             this.Dispose(true);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

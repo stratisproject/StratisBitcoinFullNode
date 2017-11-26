@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// Starts an asynchronous loop that periodicly tries to discover new peers to add to the 
+        /// Starts an asynchronous loop that periodicly tries to discover new peers to add to the
         /// <see cref="PeerAddressManager"/>.
         /// </summary>
         public void DiscoverPeers()

@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+using NBitcoin;
 using NBitcoin.RPC;
 using System;
 using System.IO;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 }
                 Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
                 var oldClient = client;
-                client = new NBitcoin.RPC.RPCClient("abc:def", client.Address, client.Network);
+                client = new RPCClient("abc:def", client.Address, client.Network);
                 try
                 {
                     client.GetBestBlockHash();
@@ -50,7 +50,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 {
                     Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
                 }
-
             }
         }
 

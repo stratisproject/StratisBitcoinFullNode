@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the type of coin this HD path is for.
         /// </summary>
         /// <param name="hdPath">The HD path.</param>
-        /// <returns>The type of coin. <seealso cref="https://github.com/satoshilabs/slips/blob/master/slip-0044.md"/>.</returns>        
+        /// <returns>The type of coin. <seealso cref="https://github.com/satoshilabs/slips/blob/master/slip-0044.md"/>.</returns>
         /// <exception cref="FormatException">An exception is thrown if the HD path is not well-formed.</exception>
         /// <remarks>Refer to <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#path-levels"/> for the format of the HD path.</remarks>
         public static int GetCoinType(string hdPath)

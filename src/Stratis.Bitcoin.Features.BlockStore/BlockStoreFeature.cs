@@ -22,16 +22,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreFeature : FullNodeFeature, IBlockStore, INodeStats
     {
         protected readonly ConcurrentChain chain;
+
         protected readonly Signals.Signals signals;
+
         protected readonly IBlockRepository blockRepository;
+
         protected readonly IBlockStoreCache blockStoreCache;
+
         protected readonly StoreBlockPuller blockPuller;
+
         protected readonly BlockStoreLoop blockStoreLoop;
+
         protected readonly BlockStoreManager blockStoreManager;
+
         protected readonly BlockStoreSignaled blockStoreSignaled;
+
         protected readonly INodeLifetime nodeLifetime;
+
         protected readonly IConnectionManager connectionManager;
+
         protected readonly NodeSettings nodeSettings;
+
         protected readonly StoreSettings storeSettings;
 
         /// <summary>Instance logger.</summary>
@@ -106,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(BlockStoreBehaviorFactory());
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.BlockStoreBehaviorFactory());
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             // signal to peers that this node can serve blocks

@@ -19,13 +19,11 @@ namespace Stratis.Bitcoin.Signals
         protected override void OnErrorCore(Exception error)
         {
             Guard.NotNull(error, nameof(error));
-            // Nothing to do.
         }
 
         /// <inheritdoc />
         protected override void OnCompletedCore()
         {
-            // Nothing to do.
         }
     }
 }

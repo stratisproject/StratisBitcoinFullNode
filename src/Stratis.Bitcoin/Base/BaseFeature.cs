@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Base
 
             this.dbreezeSerializer.Initialize();
 
-            StartChainAsync().GetAwaiter().GetResult();
+            this.StartChainAsync().GetAwaiter().GetResult();
 
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);

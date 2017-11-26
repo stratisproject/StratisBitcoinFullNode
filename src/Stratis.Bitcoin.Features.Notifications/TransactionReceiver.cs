@@ -16,13 +16,14 @@ namespace Stratis.Bitcoin.Features.Notifications
     public class TransactionReceiver : NodeBehavior
     {
         private readonly TransactionNotification transactionNotification;
+
         private readonly TransactionNotificationProgress notifiedTransactions;
+
         private readonly ILogger logger;
 
         public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
             : this(transactionNotification, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
         {
-
         }
 
         public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
