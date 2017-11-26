@@ -28,24 +28,29 @@ namespace Stratis.Bitcoin.Features.Wallet
         private const int SendCountThresholdLimit = 500;
 
         private readonly ConcurrentChain chain;
+
         private readonly IWalletManager walletManager;
+
         private readonly IWalletFeePolicy walletFeePolicy;
+
         private readonly Network network;
+
         private readonly CoinType coinType;
+
         private readonly ILogger logger;
 
         public WalletTransactionHandler(
-            ILoggerFactory loggerFactory, 
-            ConcurrentChain chain, 
-            IWalletManager walletManager, 
-            IWalletFeePolicy walletFeePolicy, 
+            ILoggerFactory loggerFactory,
+            ConcurrentChain chain,
+            IWalletManager walletManager,
+            IWalletFeePolicy walletFeePolicy,
             Network network)
         {
             this.chain = chain;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
-            this.coinType = (CoinType)network.Consensus.CoinType;            
+            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -54,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.InitializeTransactionBuilder(context);
 
-            if(context.Shuffle)
+            if (context.Shuffle)
             {
                 context.TransactionBuilder.Shuffle();
             }
@@ -70,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return context.Transaction;
-        }        
+        }
 
         /// <inheritdoc />
         public void FundTransaction(TransactionBuildContext context, Transaction transaction)
@@ -129,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(accountReference, nameof(accountReference));
             Guard.NotEmpty(accountReference.WalletName, nameof(accountReference.WalletName));
             Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
-            
+
             // Get the total value of spendable coins in the account.
             var maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
 
@@ -140,13 +145,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
-            List<Recipient> recipients = new[] {new Recipient {Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey}}.ToList();
+            List<Recipient> recipients = new[] { new Recipient { Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey } }.ToList();
             Money fee;
 
             try
             {
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
-                // When the transaction builder throws an exception informing us that we have insufficient funds, 
+                // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
                 var context = new TransactionBuildContext(accountReference, recipients, null)
                 {
@@ -164,8 +169,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (NotEnoughFundsException e)
             {
-                fee = (Money) e.Missing;
-            }            
+                fee = (Money)e.Missing;
+            }
 
             return (maxSpendableAmount - fee, fee);
         }
@@ -203,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddSecrets(TransactionBuildContext context)
         {
-            if(!context.Sign)
+            if (!context.Sign)
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
@@ -216,9 +221,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             var added = new HashSet<HdAddress>();
             foreach (var unspentOutputsItem in context.UnspentOutputs)
             {
-                if(added.Contains(unspentOutputsItem.Address))
+                if (added.Contains(unspentOutputsItem.Address))
                     continue;
-                
+
                 var address = unspentOutputsItem.Address;
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
                 BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
@@ -242,11 +247,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // get address to send the change to
             context.ChangeAddress = this.walletManager.GetOrCreateChangeAddress(account);
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
-
         }
 
         /// <summary>
-        /// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>. 
+        /// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>.
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
@@ -267,14 +271,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (context.SelectedInputs.Any())
             {
-                // 'SelectedInputs' are inputs that must be included in the 
-                // current transaction. At this point we check the given 
+                // 'SelectedInputs' are inputs that must be included in the
+                // current transaction. At this point we check the given
                 // input is part of the UTXO set and filter out UTXOs that are not
                 // in the initial list if 'context.AllowOtherInputs' is false.
 
                 var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
-                if(!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
+                if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException("Not all the selected inputs were found on the wallet.");
 
                 if (!context.AllowOtherInputs)
@@ -294,18 +298,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 sum += item.Transaction.Amount;
                 index++;
 
-                // If threshold is reached and the total value is above the target 
+                // If threshold is reached and the total value is above the target
                 // then its safe to stop adding UTXOs to the coin list.
-                // The primery goal is to reduce the time it takes to build a trx 
+                // The primery goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
                 if (index > SendCountThresholdLimit && sum > totalToSend)
                     break;
             }
 
             // All the UTXOs are added to the builder without filtering.
-            // The builder then has its own coin selection mechanism 
+            // The builder then has its own coin selection mechanism
             // to select the best UTXO set for the corresponding amount.
-            // To add a custom implementation of a coin selection override 
+            // To add a custom implementation of a coin selection override
             // the builder using builder.SetCoinSelection().
 
             context.TransactionBuilder.AddCoins(coins);
@@ -389,7 +393,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// An indicator to estimate how much fee to spend on a transaction.
         /// </summary>
         /// <remarks>
-        /// The higher the fee the faster a transaction will get in to a block. 
+        /// The higher the fee the faster a transaction will get in to a block.
         /// </remarks>
         public FeeType FeeType { get; set; }
 
@@ -400,7 +404,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>
         /// Coins that are available to be spent.
-        /// </summary>        
+        /// </summary>
         public List<UnspentOutputReference> UnspentOutputs { get; set; }
 
         /// <summary>
@@ -412,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The change address, where any remaining funds will be sent to.
         /// </summary>
         /// <remarks>
-        /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target 
+        /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target
         /// the rest of the coins go in to a change address that is under the senders control.
         /// </remarks>
         public HdAddress ChangeAddress { get; set; }
@@ -466,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     }
 
     /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/> 
+    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>
     /// </summary>
     public class Recipient
     {

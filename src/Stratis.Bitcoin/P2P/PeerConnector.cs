@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.P2P
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 if (this.ConnectedPeers.Count < this.MaximumNodeConnections)
-                    await ConnectAsync();
+                    await this.ConnectAsync();
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second);
@@ -177,14 +177,10 @@ namespace Stratis.Bitcoin.P2P
             return peer;
         }
 
-        #region IDisposable Members
-
         public void Dispose()
         {
             this.asyncLoop?.Dispose();
             this.Disconnect();
         }
-
-        #endregion
     }
 }

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.Signals
 
             this.signals.SignalBlock(block);
 
-            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));            
+            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
         }
 
         [Fact]

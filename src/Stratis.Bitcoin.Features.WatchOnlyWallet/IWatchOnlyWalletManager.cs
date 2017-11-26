@@ -60,6 +60,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Loads a stored watch-only wallet.
         /// </summary>
         /// <returns>The stored watch-only wallet.</returns>
-        WatchOnlyWallet LoadWatchOnlyWallet();        
+        WatchOnlyWallet LoadWatchOnlyWallet();
     }
 }

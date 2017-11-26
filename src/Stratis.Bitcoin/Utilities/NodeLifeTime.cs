@@ -38,7 +38,9 @@ namespace Stratis.Bitcoin.Utilities
     public class NodeLifetime : INodeLifetime
     {
         private readonly CancellationTokenSource startedSource = new CancellationTokenSource();
+
         private readonly CancellationTokenSource stoppingSource = new CancellationTokenSource();
+
         private readonly CancellationTokenSource stoppedSource = new CancellationTokenSource();
 
         /// <summary>

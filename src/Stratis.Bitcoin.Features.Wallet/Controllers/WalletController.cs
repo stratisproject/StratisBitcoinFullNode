@@ -26,18 +26,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     public class WalletController : Controller
     {
         private readonly IWalletManager walletManager;
+
         private readonly IWalletTransactionHandler walletTransactionHandler;
+
         private readonly IWalletSyncManager walletSyncManager;
+
         private readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         private readonly IConnectionManager connectionManager;
+
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
         private readonly IBroadcasterManager broadcasterManager;
 
         /// <summary>Provider of date time functionality.</summary>
@@ -68,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         /// <summary>
         /// Generates a new mnemonic. The call can optionally specify a language and the number of words in the mnemonic.
-        /// </summary>        
+        /// </summary>
         /// <param name="language">The language for the words in the mnemonic. Options are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional. The default is 'English'.</param>
         /// <param name="wordCount">The number of words in the mnemonic. Options are: 12,15,18,21 or 24. the default is 12.</param>
         /// <returns>A JSON object containing the mnemonic generated.</returns>
@@ -86,28 +91,34 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     case "english":
                         wordList = Wordlist.English;
                         break;
+
                     case "french":
                         wordList = Wordlist.French;
                         break;
+
                     case "spanish":
                         wordList = Wordlist.Spanish;
                         break;
+
                     case "japanese":
                         wordList = Wordlist.Japanese;
                         break;
+
                     case "chinesetraditional":
                         wordList = Wordlist.ChineseTraditional;
                         break;
+
                     case "chinesesimplified":
                         wordList = Wordlist.ChineseSimplified;
                         break;
+
                     default:
                         throw new FormatException($"Invalid language '{language}'. Choices are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional.");
                 }
 
                 WordCount count = (WordCount)wordCount;
 
-                // generate the mnemonic 
+                // generate the mnemonic
                 Mnemonic mnemonic = new Mnemonic(wordList, count);
                 return this.Json(mnemonic.ToString());
             }
@@ -274,7 +285,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     IsDecrypted = true
                 };
                 return this.Json(model);
-
             }
             catch (Exception e)
             {
@@ -362,14 +372,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         // get the change address for this spending transaction
                         var changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
 
-                        // find all the spending details containing the spending transaction id and aggregate the sums. 
+                        // find all the spending details containing the spending transaction id and aggregate the sums.
                         // this is our best shot at finding the total value of inputs for this transaction.
                         var inputsAmount = new Money(spendingDetails.Where(t => t.Transaction.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Transaction.Amount));
 
                         // the fee is calculated as follows: funds in utxo - amount spent - amount sent as change
                         sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transaction.Amount);
 
-                        // mined/staked coins add more coins to the total out 
+                        // mined/staked coins add more coins to the total out
                         // that makes the fee negative if that's the case ignore the fee
                         if (sentItem.Fee < 0)
                             sentItem.Fee = 0;
@@ -395,7 +405,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets the balance of a wallet.
         /// </summary>
-        /// <param name="request">The request parameters.</param>        
+        /// <param name="request">The request parameters.</param>
         /// <returns></returns>
         [Route("balance")]
         [HttpGet]
@@ -512,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Builds a transaction. 
+        /// Builds a transaction.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
         /// <returns>All the details of the transaction, including the hex used to execute it.</returns>

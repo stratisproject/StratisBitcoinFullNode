@@ -18,11 +18,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             var node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseConsensus()
-                .AddRPC(x => {
+                .AddRPC(x =>
+                {
                     x.RpcUser = "abc";
                     x.RpcPassword = "def";
                     x.RPCPort = 91;
-                    })
+                })
                 .Build();
 
             var settings = node.NodeService<RpcSettings>();

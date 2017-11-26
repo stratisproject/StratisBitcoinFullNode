@@ -19,6 +19,5 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             Assert.Throws<FormatException>(() => { controller.AddNode("a.b.c.d", "onetry"); });
             Assert.True(controller.AddNode("0.0.0.0", "remove"));
         }
-
     }
 }

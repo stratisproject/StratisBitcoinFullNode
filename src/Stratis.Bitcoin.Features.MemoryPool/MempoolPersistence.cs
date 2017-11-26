@@ -36,14 +36,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     public struct MemPoolSaveResult
     {
         /// <summary>Gets a non successful save result.</summary>
-        public static MemPoolSaveResult NonSuccess { get { return new MemPoolSaveResult { Succeeded = false }; } }
+        public static MemPoolSaveResult NonSuccess
+        {
+            get { return new MemPoolSaveResult { Succeeded = false }; }
+        }
 
         /// <summary>
         /// Defines a successful save result.
         /// </summary>
         /// <param name="trxSaved">The transaction that was saved.</param>
         /// <returns>A successful save result.</returns>
-        public static MemPoolSaveResult Success(uint trxSaved) { return new MemPoolSaveResult { Succeeded = true, TrxSaved = trxSaved }; }
+        public static MemPoolSaveResult Success(uint trxSaved)
+        {
+            return new MemPoolSaveResult { Succeeded = true, TrxSaved = trxSaved };
+        }
 
         /// <summary>Whether the file save was successful.</summary>
         public bool Succeeded { get; private set; }
@@ -67,13 +73,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private uint feeDelta;
 
         /// <summary>Gets or set the transation for persistence.</summary>
-        public Transaction Tx { get { return this.tx; } set { this.tx = value; } }
+        public Transaction Tx
+        {
+            get { return this.tx; }
+            set { this.tx = value; }
+        }
 
         /// <summary>Gets or sets the memory pools time for the transaction for persistence.</summary>
-        public long Time { get { return (long)this.time; } set { this.time = (uint)value; } }
+        public long Time
+        {
+            get { return (long)this.time; }
+            set { this.time = (uint)value; }
+        }
 
         /// <summary>Gets or sets the transaction fee difference for persistence.</summary>
-        public long FeeDelta { get { return (long)this.feeDelta; } set { this.feeDelta = (uint)value; } }
+        public long FeeDelta
+        {
+            get { return (long)this.feeDelta; }
+            set { this.feeDelta = (uint)value; }
+        }
 
         /// <summary>
         /// Creates a persistence entry from a memory pool transaction entry.
@@ -297,6 +315,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             return toReturn;
         }
-
     }
 }

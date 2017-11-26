@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Utilities
         public static TimeSpan Minute => TimeSpan.FromMinutes(1);
 
         /// <summary>
-        /// Special time span value used for repeat frequency values, for which it means that 
+        /// Special time span value used for repeat frequency values, for which it means that
         /// the event should be only run once and not repeated.
         /// </summary>
         public static TimeSpan RunOnce => TimeSpan.FromSeconds(-1);

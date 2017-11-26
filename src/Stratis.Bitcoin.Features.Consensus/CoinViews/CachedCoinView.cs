@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
@@ -16,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     public class CachedCoinView : CoinView, IBackedCoinView
     {
         /// <summary>
-        /// Item of the coinview cache that holds information about the unspent outputs 
+        /// Item of the coinview cache that holds information about the unspent outputs
         /// as well as the status of the item in relation to the underlaying storage.
         /// </summary>
         private class CacheItem
@@ -37,10 +36,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Hashes of transactions that have been put into multiple blocks before fully spent.
         /// <para>
-        /// Historically, these two transactions violated rules that are currently applied 
-        /// in Bitcoin consensus. This was only possible for coinbase transactions when the miner 
-        /// used the same target address to receive the reward. Miners were not required to add 
-        /// an additional entropy (block height) to the coinbase transaction, which could result 
+        /// Historically, these two transactions violated rules that are currently applied
+        /// in Bitcoin consensus. This was only possible for coinbase transactions when the miner
+        /// used the same target address to receive the reward. Miners were not required to add
+        /// an additional entropy (block height) to the coinbase transaction, which could result
         /// in the same hash output.
         /// </para>
         /// <para>
@@ -49,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki"/>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki"/>
-        private static readonly uint256[] duplicateTransactions = new[] 
+        private static readonly uint256[] duplicateTransactions = new[]
         {
             new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"),
             new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
@@ -84,8 +83,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Coin view at one layer below this implementaiton.</summary>
         private readonly CoinView inner;
+
         /// <inheritdoc />
-        public CoinView Inner { get { return this.inner; } }
+        public CoinView Inner
+        {
+            get { return this.inner; }
+        }
 
         /// <summary>Storage of POS block information.</summary>
         private readonly StakeChainStore stakeChainStore;
@@ -96,10 +99,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Number of items in the cache.</summary>
         /// <remarks>The getter violates the lock contract on <see cref="unspents"/>, but the lock here is unnecessary as the <see cref="unspents"/> is marked as readonly.</remarks>
-        public int CacheEntryCount { get { return this.unspents.Count; } }
+        public int CacheEntryCount
+        {
+            get { return this.unspents.Count; }
+        }
 
         /// <summary>Task that handles persisting of unsaved changes to the underlaying coinview. Used for synchronization.</summary>
         private Task flushingTask = Task.CompletedTask;
+
         /// <summary>Task that handles rewinding of the the underlaying coinview. Used for synchronization.</summary>
         private Task rewindingTask = Task.CompletedTask;
 
@@ -216,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
                     cache.UnspentOutputs = unspent;
-                    cache.OriginalOutputs = unspent?._Outputs.ToArray();
+                    cache.OriginalOutputs = unspent?.Outputs.ToArray();
                     this.unspents.TryAdd(txIds[index], cache);
                 }
                 result = new FetchCoinsResponse(outputs, this.blockHash);
@@ -277,7 +284,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     u.Value.IsDirty = false;
                     u.Value.ExistInInner = true;
-                    u.Value.OriginalOutputs = u.Value.UnspentOutputs?._Outputs.ToArray();
+                    u.Value.OriginalOutputs = u.Value.UnspentOutputs?.Outputs.ToArray();
                 }
 
                 this.flushingTask = this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash);
@@ -299,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <summary>
-        /// Deletes some items from the cache to free space for new items. 
+        /// Deletes some items from the cache to free space for new items.
         /// Only items that are persisted in the underlaying storage can be deleted from the cache.
         /// </summary>
         private void Evict()
@@ -422,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Wait until flushing and rewinding task complete if any is in progress.
         /// </summary>
-        /// <remarks>TODO: This is blocking call and is used in async methods, which quite 
+        /// <remarks>TODO: This is blocking call and is used in async methods, which quite
         /// strongly erases the goals of using async in those methods.</remarks>
         private void WaitOngoingTasks()
         {

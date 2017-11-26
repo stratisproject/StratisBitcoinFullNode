@@ -16,12 +16,12 @@ namespace Stratis.Bitcoin.P2P
 
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
         }
 
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
         private void AttachedNode_StateChanged(Node node, NodeState oldState)
@@ -33,13 +33,9 @@ namespace Stratis.Bitcoin.P2P
                 this.peerConnector.RemoveNode(node);
         }
 
-        #region ICloneable Members
-
         public override object Clone()
         {
             return new PeerConnectorBehaviour(this.peerConnector);
         }
-
-        #endregion
     }
 }

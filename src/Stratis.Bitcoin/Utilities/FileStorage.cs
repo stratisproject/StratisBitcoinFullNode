@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
         /// <summary> Gets the folder path. </summary>
         public string FolderPath { get; }
 
-        /// <summary> 
+        /// <summary>
         /// Converters that should be used when serializing and deserializing.
         /// </summary>
         private JsonConverter[] converters;

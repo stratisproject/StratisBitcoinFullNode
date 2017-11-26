@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Determines whether the chain is downloaded and up to date.
         /// </summary>
-        /// <param name="chain">The chain.</param>        
+        /// <param name="chain">The chain.</param>
         public static bool IsDownloaded(this ConcurrentChain chain)
         {
             return chain.Tip.Header.BlockTime.ToUnixTimeSeconds() > (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - TimeSpan.FromHours(1).TotalSeconds);
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     return check;
                 }
-                
+
                 if (upperLimit - lowerLimit <= 1)
                 {
                     blockSyncStart = upperLimit;

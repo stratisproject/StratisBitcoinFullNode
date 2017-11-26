@@ -14,14 +14,15 @@ namespace Stratis.Bitcoin.Features.RPC
     public interface IRPCJsonOutputFormatter
     {
         void WriteObject(TextWriter writer, object value);
+
         Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding);
     }
 
     public class RPCJsonOutputFormatter : TextOutputFormatter, IRPCJsonOutputFormatter
     {
-        private readonly IArrayPool<char> _charPool;
+        private readonly IArrayPool<char> charPool;
 
-        private JsonSerializer _serializer;
+        private JsonSerializer serializer;
 
         /// <summary>
         /// Gets the <see cref="T:Newtonsoft.Json.JsonSerializerSettings" /> used to configure the <see cref="T:Newtonsoft.Json.JsonSerializer" />.
@@ -30,10 +31,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Any modifications to the <see cref="T:Newtonsoft.Json.JsonSerializerSettings" /> object after this
         /// <see cref="T:Microsoft.AspNetCore.Mvc.Formatters.JsonOutputFormatter" /> has been used will have no effect.
         /// </remarks>
-        protected JsonSerializerSettings SerializerSettings
-        {
-            get; set;
-        }
+        protected JsonSerializerSettings SerializerSettings { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="T:Microsoft.AspNetCore.Mvc.Formatters.JsonOutputFormatter" /> instance.
@@ -50,7 +48,7 @@ namespace Stratis.Bitcoin.Features.RPC
             Guard.NotNull(charPool, nameof(charPool));
 
             this.SerializerSettings = serializerSettings;
-            this._charPool = new JsonArrayPool<char>(charPool);
+            this.charPool = new JsonArrayPool<char>(charPool);
             this.SupportedEncodings.Add(Encoding.UTF8);
             this.SupportedEncodings.Add(Encoding.Unicode);
             this.SupportedMediaTypes.Add(ApplicationJson);
@@ -89,7 +87,7 @@ namespace Stratis.Bitcoin.Features.RPC
             Guard.NotNull(writer, nameof(writer));
 
             JsonTextWriter jsonTextWriter = new JsonTextWriter(writer);
-            jsonTextWriter.ArrayPool = this._charPool;
+            jsonTextWriter.ArrayPool = this.charPool;
             jsonTextWriter.CloseOutput = false;
             return jsonTextWriter;
         }
@@ -100,12 +98,12 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <returns>The <see cref="T:Newtonsoft.Json.JsonSerializer" /> used during serialization and deserialization.</returns>
         protected virtual JsonSerializer CreateJsonSerializer()
         {
-            if (this._serializer == null)
+            if (this.serializer == null)
             {
-                this._serializer = JsonSerializer.Create(this.SerializerSettings);
+                this.serializer = JsonSerializer.Create(this.SerializerSettings);
             }
 
-            return this._serializer;
+            return this.serializer;
         }
 
         /// <inheritdoc />

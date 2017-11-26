@@ -6,14 +6,17 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.RPC.Converters;
 
 #pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
+#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
+
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
-
     public abstract class TransactionModel
     {
-        public TransactionModel(Network network = null) { }
+        public TransactionModel(Network network = null)
+        {
+        }
 
-        public TransactionModel(NBitcoin.Transaction trx)
+        public TransactionModel(Transaction trx)
         {
             this.hex = trx?.ToHex();
         }
@@ -30,16 +33,22 @@ namespace Stratis.Bitcoin.Features.RPC.Models
     [JsonConverter(typeof(ToStringJsonConverter))]
     public class TransactionBriefModel : TransactionModel
     {
-        public TransactionBriefModel() { }
-        public TransactionBriefModel(NBitcoin.Transaction trx) : base(trx) { }
+        public TransactionBriefModel()
+        {
+        }
+
+        public TransactionBriefModel(Transaction trx) : base(trx)
+        {
+        }
     }
 
     public class TransactionVerboseModel : TransactionModel
     {
+        public TransactionVerboseModel()
+        {
+        }
 
-        public TransactionVerboseModel() { }
-
-        public TransactionVerboseModel(NBitcoin.Transaction trx, Network network, NBitcoin.ChainedBlock block = null, ChainedBlock tip = null) : base(trx)
+        public TransactionVerboseModel(Transaction trx, Network network, ChainedBlock block = null, ChainedBlock tip = null) : base(trx)
         {
             if (trx != null)
             {
@@ -61,7 +70,6 @@ namespace Stratis.Bitcoin.Features.RPC.Models
                         this.confirmations = tip.Height - block.Height + 1;
                 }
             }
-
         }
 
         [JsonProperty(Order = 1)]
@@ -97,11 +105,12 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
     public class Vin
     {
-        public Vin() { }
-
-        public Vin(NBitcoin.OutPoint prevOut, NBitcoin.Sequence sequence, NBitcoin.Script scriptSig)
+        public Vin()
         {
+        }
 
+        public Vin(OutPoint prevOut, Sequence sequence, NBitcoin.Script scriptSig)
+        {
             if (prevOut.Hash == uint256.Zero)
             {
                 this.coinbase = Encoders.Hex.EncodeData(scriptSig.ToBytes());
@@ -113,7 +122,6 @@ namespace Stratis.Bitcoin.Features.RPC.Models
                 this.scriptSig = new Script(scriptSig); ;
             }
             this.sequence = (uint)sequence;
-
         }
 
         [JsonProperty(Order = 0, DefaultValueHandling = DefaultValueHandling.Ignore)]
@@ -134,7 +142,9 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
     public class Vout
     {
-        public Vout() { }
+        public Vout()
+        {
+        }
 
         public Vout(int N, TxOut txout, Network network)
         {
@@ -156,7 +166,9 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
     public class Script
     {
-        public Script() { }
+        public Script()
+        {
+        }
 
         public Script(NBitcoin.Script script)
         {
@@ -164,18 +176,18 @@ namespace Stratis.Bitcoin.Features.RPC.Models
             this.hex = Encoders.Hex.EncodeData(script.ToBytes());
         }
 
-
         [JsonProperty(Order = 0)]
         public string asm { get; set; }
 
         [JsonProperty(Order = 1)]
         public string hex { get; set; }
-
     }
 
     public class ScriptPubKey : Script
     {
-        public ScriptPubKey() { }
+        public ScriptPubKey()
+        {
+        }
 
         public ScriptPubKey(NBitcoin.Script script, Network network) : base(script)
         {
@@ -220,12 +232,16 @@ namespace Stratis.Bitcoin.Features.RPC.Models
             {
                 case TxOutType.TX_PUBKEY:
                     return "pubkey";
+
                 case TxOutType.TX_PUBKEYHASH:
                     return "pubkeyhash";
+
                 case TxOutType.TX_SCRIPTHASH:
                     return "scripthash";
+
                 case TxOutType.TX_MULTISIG:
                     return "multisig";
+
                 case TxOutType.TX_NULL_DATA:
                     return "nulldata";
             }
@@ -233,4 +249,5 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         }
     }
 }
+
 #pragma warning restore IDE1006 // Naming Styles

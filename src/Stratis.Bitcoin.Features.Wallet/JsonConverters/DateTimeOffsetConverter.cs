@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.Features.Wallet.JsonConverters
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return DateTimeOffset.FromUnixTimeSeconds(long.Parse((string)reader.Value));            
+            return DateTimeOffset.FromUnixTimeSeconds(long.Parse((string)reader.Value));
         }
 
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {            
+        {
             writer.WriteValue(((DateTimeOffset)value).ToUnixTimeSeconds().ToString());
         }
     }

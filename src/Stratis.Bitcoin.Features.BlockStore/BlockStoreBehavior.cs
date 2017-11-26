@@ -28,7 +28,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
         private readonly ConcurrentChain chain;
+
         private readonly IBlockRepository blockRepository;
+
         private readonly IBlockStoreCache blockStoreCache;
 
         /// <summary>Instance logger.</summary>
@@ -44,7 +46,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public bool CanRespondToGetDataPayload { get; set; }
 
         // local resources
-        public bool PreferHeaders; // public for testing
+        public bool PreferHeaders;// public for testing
+
         private bool preferHeaderAndIDs;
 
         public BlockStoreBehavior(

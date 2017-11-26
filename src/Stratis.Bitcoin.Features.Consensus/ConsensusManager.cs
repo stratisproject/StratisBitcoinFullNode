@@ -14,10 +14,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ICheckpoints checkpoints;
 
         public ConsensusLoop ConsensusLoop { get; private set; }
+
         public IDateTimeProvider DateTimeProvider { get; private set; }
+
         public NodeSettings NodeSettings { get; private set; }
+
         public Network Network { get; private set; }
+
         public PowConsensusValidator ConsensusValidator { get; private set; }
+
         public ChainState ChainState { get; private set; }
 
         public ConsensusManager(ICheckpoints checkpoints, ConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,

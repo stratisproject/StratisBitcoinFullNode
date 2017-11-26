@@ -10,11 +10,11 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <summary>
         /// Obtains a value of command line argument.
         /// <para>
-        /// It is expected that arguments are written on command line as <c>argName=argValue</c>, 
+        /// It is expected that arguments are written on command line as <c>argName=argValue</c>,
         /// where argName usually (but does not need to) starts with "-".
         /// </para>
         /// <para>
-        /// The argValue can be wrapped with '"' quotes from both sides, in which case the quotes are removed, 
+        /// The argValue can be wrapped with '"' quotes from both sides, in which case the quotes are removed,
         /// but it is not allowed for argValue to contain '"' inside the actual value.
         /// </para>
         /// </summary>

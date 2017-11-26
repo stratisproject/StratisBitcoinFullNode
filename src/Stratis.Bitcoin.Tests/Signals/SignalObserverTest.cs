@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalObserverTest : LogsTestBase
     {
-        SignalObserver<Block> observer;               
+        private SignalObserver<Block> observer;
 
         public SignalObserverTest() : base()
         {
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Signals
             this.observer.OnError(exception);
 
             this.AssertLog(this.FullNodeLogger, LogLevel.Error, exception.ToString());
-        }            
+        }
 
         private class TestBlockSignalObserver : SignalObserver<Block>
         {
@@ -34,7 +34,6 @@ namespace Stratis.Bitcoin.Tests.Signals
 
             protected override void OnNextCore(Block value)
             {
-
             }
         }
     }

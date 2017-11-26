@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
-    /// Implements a strategy for a block puller that needs to download 
+    /// Implements a strategy for a block puller that needs to download
     /// a set of blocks from its connected peers.
     /// </summary>
     public static class PullerDownloadAssignments
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Having a list of block heights of the blocks that needs to be downloaded and having a list of available 
+        /// Having a list of block heights of the blocks that needs to be downloaded and having a list of available
         /// peer nodes that can be asked to provide the blocks, this method selects which peer is asked to provide
         /// which block.
         /// <para>
@@ -65,10 +65,10 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="availablePeersInformation">List of peers that are available including information about lengths of their chains.</param>
         /// <returns>List of block heights that each peer is assigned, mapped by information about peers.</returns>
         /// <remarks>
-        /// Peers with a lot of work (more than <see cref="HighWorkAmountThreshold"/>) already assigned to them have less chance 
+        /// Peers with a lot of work (more than <see cref="HighWorkAmountThreshold"/>) already assigned to them have less chance
         /// getting more work. However, the quality is stronger factor.
         /// <para>
-        /// Tasks to download blocks with height in the lower half of the requested block heights 
+        /// Tasks to download blocks with height in the lower half of the requested block heights
         /// are protected from being assigned to peers with quality below the median quality of available peers.
         /// </para>
         /// </remarks>
