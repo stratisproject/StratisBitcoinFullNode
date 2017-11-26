@@ -240,8 +240,6 @@ namespace Stratis.Bitcoin.P2P
             return peer;
         }
 
-        #region IDisposable Members
-
         /// <inheritdoc/>
         public void Dispose()
         {

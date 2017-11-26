@@ -36,8 +36,6 @@ namespace Stratis.Bitcoin.P2P
                 this.peerConnector.RemoveNode(node);
         }
 
-        #region ICloneable Members
-
         /// <inheritdoc/>
         public override object Clone()
         {
