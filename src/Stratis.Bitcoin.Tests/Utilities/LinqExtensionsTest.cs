@@ -55,7 +55,5 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Assert.Equal(6, median);
         }
-
-
     }
 }

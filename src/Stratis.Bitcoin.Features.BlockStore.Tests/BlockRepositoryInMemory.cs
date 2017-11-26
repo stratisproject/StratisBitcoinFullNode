@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public BlockRepositoryInMemory()
         {
-            InitializeAsync();
+            this.InitializeAsync();
         }
 
         public Task InitializeAsync()
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.store.TryRemove(hash, out block);
             }
 
-            SetBlockHashAsync(newlockHash);
+            this.SetBlockHashAsync(newlockHash);
 
             return Task.FromResult<object>(null);
         }
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.store.TryAdd(block.Header.GetHash(), block);
             }
 
-            SetBlockHashAsync(nextBlockHash);
+            this.SetBlockHashAsync(nextBlockHash);
 
             return Task.FromResult<object>(null);
         }
@@ -107,9 +107,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public void Dispose()
         {
-            Dispose(true);
+            this.Dispose(true);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

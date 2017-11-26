@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="peerAddress">IP address of the peer that the sample relates to.</param>
         /// <param name="offsetSample">Difference in the peer's time and our system time.</param>
-        /// <param name="isInboundConnection"><c>true</c> if the sample comes from a peer that connected to our node, 
+        /// <param name="isInboundConnection"><c>true</c> if the sample comes from a peer that connected to our node,
         /// <c>false</c> if the sample comes from a peer that our node connected to.</param>
         /// <returns><c>true</c> if the sample was added to the mix, <c>false</c> otherwise.</returns>
         bool AddTimeData(IPAddress peerAddress, TimeSpan offsetSample, bool isInboundConnection);
@@ -32,43 +32,43 @@ namespace Stratis.Bitcoin.Base
     /// and calculates adjustments to system time.
     /// </summary>
     /// <remarks>
-    /// Bitcoin introduced so called adjusted time, which is implemented as a time offset added 
-    /// to node's system time. The offset is result of time syncing feature with network peers that 
-    /// collects samples from "version" network message from anyone who connects with our node 
-    /// (in any direction). The median of the collected samples is used as the final time offset 
+    /// Bitcoin introduced so called adjusted time, which is implemented as a time offset added
+    /// to node's system time. The offset is result of time syncing feature with network peers that
+    /// collects samples from "version" network message from anyone who connects with our node
+    /// (in any direction). The median of the collected samples is used as the final time offset
     /// the node uses to calculate the adjusted time.
     /// <para>
-    /// The actual source of adjusted time is <see cref="IDateTimeProvider"/>. It is the logic 
-    /// behind its calculation and collection of samples that resides in this class. This class 
-    /// modifies the date time provider using its interface every time a new time offset sample 
+    /// The actual source of adjusted time is <see cref="IDateTimeProvider"/>. It is the logic
+    /// behind its calculation and collection of samples that resides in this class. This class
+    /// modifies the date time provider using its interface every time a new time offset sample
     /// that affects the final offset is collected.
     /// </para>
     /// <para>
-    /// Bitcoin allowed up to 70 minutes of time adjustment to be made using this mechanism. 
-    /// However, Bitcoin also allowed the blocks to be mined with timestamps that are off by up 
-    /// to 2 hours. This is very unlike Stratis' POS, which uses very narrow windows for block 
-    /// timestamps. This is why we implemented our mechanism of time syncing with peers 
+    /// Bitcoin allowed up to 70 minutes of time adjustment to be made using this mechanism.
+    /// However, Bitcoin also allowed the blocks to be mined with timestamps that are off by up
+    /// to 2 hours. This is very unlike Stratis' POS, which uses very narrow windows for block
+    /// timestamps. This is why we implemented our mechanism of time syncing with peers
     /// and adjusted time calculation slightly differently.
     /// </para>
     /// <para>
-    /// We also collect samples from network "version" messages and calculate time difference 
+    /// We also collect samples from network "version" messages and calculate time difference
     /// for every peer. We DO distinguish between inbound and outbound connections, however.
-    /// We consider inbound connections as less reliable sources of information and we introduce 
-    /// <see cref="OutboundToInboundWeightRatio"/> to reflect that. We keep outbound time offset 
-    /// samples separated from inbound samples. Our final offset is also a median of collected 
-    /// samples, but outbound samples have much greater weight in the median calculation 
-    /// as per the given ratio. 
+    /// We consider inbound connections as less reliable sources of information and we introduce
+    /// <see cref="OutboundToInboundWeightRatio"/> to reflect that. We keep outbound time offset
+    /// samples separated from inbound samples. Our final offset is also a median of collected
+    /// samples, but outbound samples have much greater weight in the median calculation
+    /// as per the given ratio.
     /// </para>
     /// <para>
-    /// Bitcoin's implementation only allows certain number of samples to be collected 
-    /// and once the limit is reached, no more samples are allowed. We do not replicate this 
-    /// behavior and we implement circular array to store the time offset samples. 
+    /// Bitcoin's implementation only allows certain number of samples to be collected
+    /// and once the limit is reached, no more samples are allowed. We do not replicate this
+    /// behavior and we implement circular array to store the time offset samples.
     /// This means that once the limit is reached, we replace oldest samples with the new ones.
     /// </para>
     /// <para>
-    /// Finally, as the POS chain is much more sensitive to correct time settings, our user 
-    /// alerting mechanism is triggered much earlier (for much lower time difference) than 
-    /// the one in Bitcoin. 
+    /// Finally, as the POS chain is much more sensitive to correct time settings, our user
+    /// alerting mechanism is triggered much earlier (for much lower time difference) than
+    /// the one in Bitcoin.
     /// </para>
     /// </remarks>
     public class TimeSyncBehaviorState : ITimeSyncBehaviorState, IDisposable
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Maximal number of samples to keep inside <see cref="outboundTimestampOffsets"/>.</summary>
         public const int MaxOutboundSamples = 200;
 
-        /// <summary>Ratio of weights of outbound timestamp offsets and inbound timestamp offsets. 
+        /// <summary>Ratio of weights of outbound timestamp offsets and inbound timestamp offsets.
         /// Ratio of N means that a single outbound sample has equal weight as N inbound samples.</summary>
         public const int OutboundToInboundWeightRatio = 10;
 
@@ -99,13 +99,13 @@ namespace Stratis.Bitcoin.Base
         public const int TimeOffsetWarningThresholdSeconds = 5 * 60;
 
         /// <summary>
-        /// Maximal value for <see cref="timeOffset"/>. If the newly calculated value is over this limit, 
+        /// Maximal value for <see cref="timeOffset"/>. If the newly calculated value is over this limit,
         /// the time syncing feature will be switched off.
         /// </summary>
         public const int MaxTimeOffsetSeconds = 25 * 60;
 
         /// <summary>
-        /// Number of unweighted samples required before <see cref="timeOffset"/> is changed. 
+        /// Number of unweighted samples required before <see cref="timeOffset"/> is changed.
         /// <para>
         /// Each inbound sample counts as 1 unweighted sample.
         /// Each outbound sample counts as <see cref="OutboundToInboundWeightRatio"/> unweighted samples.
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Base
         public bool SwitchedOff { get; private set; }
 
         /// <summary>
-        /// <c>true</c> if the reason for switching the time sync feature off was that <see cref="timeOffset"/> 
+        /// <c>true</c> if the reason for switching the time sync feature off was that <see cref="timeOffset"/>
         /// went over the maximal allowed value, <c>false</c> otherwise.
         /// </summary>
         public bool SwitchedOffLimitReached { get; private set; }
@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Base
 
                         // If SwitchedOffLimitReached is set, timeOffset is set to zero,
                         // so we need to check both conditions here.
-                        if (!this.WarningLoopStarted 
+                        if (!this.WarningLoopStarted
                             && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
@@ -430,10 +430,10 @@ namespace Stratis.Bitcoin.Base
         /// <param name="node">Node that received the message.</param>
         /// <param name="message">Received message.</param>
         /// <remarks>
-        /// This handler only cares about "verack" messages, which are only sent once per node 
+        /// This handler only cares about "verack" messages, which are only sent once per node
         /// and at the time they are sent the time offset information is parsed by underlaying logic.
         /// <para>
-        /// Note that it is not possible to use "version" message here as <see cref="Node"/> 
+        /// Note that it is not possible to use "version" message here as <see cref="Node"/>
         /// does not deliver this message for inbound peers to node behaviors.
         /// </para>
         /// </remarks>
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Base
                         TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, node.Inbound);
                     }
-                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);                    
+                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);
                 }
                 else this.logger.LogTrace("Message received from unknown node's address.");
             }

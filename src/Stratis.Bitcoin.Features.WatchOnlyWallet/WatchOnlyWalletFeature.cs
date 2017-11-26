@@ -14,9 +14,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
     public class WatchOnlyWalletFeature : FullNodeFeature
     {
         private readonly IWatchOnlyWalletManager walletManager;
+
         private readonly Signals.Signals signals;
 
         private IDisposable blockSubscriberdDisposable;
+
         private IDisposable transactionSubscriberdDisposable;
 
         /// <summary>

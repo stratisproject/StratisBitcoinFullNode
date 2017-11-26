@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Features.RPC.Converters;
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
 #pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
+
     public class GetInfoModel
     {
         [JsonProperty(Order = 0)]
@@ -37,8 +38,6 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         [JsonProperty(Order = 15)]
         public string errors { get; set; }
 
-        #region TODO: Wallet 
-
         [JsonProperty(Order = 2, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public uint? walletversion { get; set; }
 
@@ -56,8 +55,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         [JsonProperty(Order = 13, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal? paytxfee { get; set; }
-        
-        #endregion
     }
 }
+
 #pragma warning restore IDE1006 // Naming Styles

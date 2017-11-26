@@ -199,7 +199,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             IActionResult result = controller.GenerateMnemonic("invalidlanguage");
 
-
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
@@ -227,7 +226,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = ""
             });
 
-
             mockWalletCreate.VerifyAll();
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
             Assert.Equal(mnemonic.ToString(), viewResult.Value);
@@ -243,7 +241,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Name", "Name cannot be empty.");
 
-
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "",
@@ -251,7 +248,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Password = "",
                 Network = ""
             });
-
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -273,7 +269,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
-
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
@@ -281,7 +276,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Password = "",
                 Network = ""
             });
-
 
             mockWalletCreate.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -302,7 +296,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .Throws(new NotSupportedException("Not supported"));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
 
             IActionResult result = controller.Create(new WalletCreationRequest
             {
@@ -618,12 +611,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, concurrentChain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
-
             IActionResult result = controller.GetGeneralInfo(new WalletName
             {
                 Name = "myWallet"
             });
-
 
             mockWalletWrapper.VerifyAll();
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
@@ -962,7 +953,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 WalletName = walletName
             });
-
 
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as WalletHistoryModel;
@@ -1657,7 +1647,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
             Assert.Equal("There was an error in the model.", error.Message);
-
         }
 
         [Fact]

@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
-    /// Subscribes to state change events from <see cref="Node"/> and relays connection and handshake attempts to 
+    /// Subscribes to state change events from <see cref="Node"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
@@ -27,7 +27,9 @@ namespace Stratis.Bitcoin.P2P
         }
 
         private readonly IDateTimeProvider dateTimeProvider;
+
         public int PeersToDiscover { get; set; }
+
         public PeerAddressManagerBehaviourMode Mode { get; set; }
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
@@ -76,8 +78,6 @@ namespace Stratis.Bitcoin.P2P
             this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
-        #region ICloneable Members
-
         public override object Clone()
         {
             return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager)
@@ -86,8 +86,6 @@ namespace Stratis.Bitcoin.P2P
                 Mode = this.Mode
             };
         }
-
-        #endregion
     }
 
     [Flags]

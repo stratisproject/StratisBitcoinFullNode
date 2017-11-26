@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             });
         }
 
-
         private class FeatureCollectionFullNodeFeature : IFullNodeFeature
         {
             public void Start()

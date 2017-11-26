@@ -32,10 +32,11 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        Action<CancellationToken> loop;
+        private Action<CancellationToken> loop;
 
         /// <summary>Name of the application task. It is used for logging.</summary>
         private readonly string name;
+
         /// <inheritdoc />
         public string Name
         {
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Utilities
             });
             t.IsBackground = true;
             t.Name = this.name;
-            t.Start();            
+            t.Start();
             return this;
         }
 

@@ -108,6 +108,7 @@ namespace Stratis.Bitcoin.P2P
         public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
 
         internal const string PeerFileName = "peers.json";
+
         public DataFolder PeerFilePath { get; set; }
 
         /// <inheritdoc />

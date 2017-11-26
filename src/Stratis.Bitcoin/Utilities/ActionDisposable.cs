@@ -27,14 +27,10 @@ namespace Stratis.Bitcoin.Utilities
             onEnter();
         }
 
-        #region IDisposable Members
-
         /// <inheritdoc />
         public void Dispose()
         {
             this.onLeave();
         }
-
-        #endregion
     }
 }

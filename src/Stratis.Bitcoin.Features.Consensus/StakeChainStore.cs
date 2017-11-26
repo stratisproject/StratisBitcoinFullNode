@@ -21,11 +21,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         private readonly Network network;
+
         private readonly ConcurrentChain chain;
+
         private readonly DBreezeCoinView dBreezeCoinView;
 
         private readonly int threshold;
+
         private readonly int thresholdWindow;
+
         private readonly ConcurrentDictionary<uint256, StakeItem> items = new ConcurrentDictionary<uint256, StakeItem>();
 
         private readonly BlockStake genesis;
@@ -163,7 +167,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             // this removed the dependency on chain.
 
             throw new NotImplementedException();
-            //this.SetAsync(blockid, blockStake).GetAwaiter().GetResult();
         }
 
         public void Set(ChainedBlock chainedBlock, BlockStake blockStake)

@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var task = this.manager.RemoveForBlock(value, blockHeader?.Height ?? -1);
 
             // wait for the mempool code to complete
-            // until the signaler becomes async 
+            // until the signaler becomes async
             task.GetAwaiter().GetResult();
         }
 

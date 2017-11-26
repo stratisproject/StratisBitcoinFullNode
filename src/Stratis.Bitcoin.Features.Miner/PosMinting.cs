@@ -53,24 +53,33 @@ namespace Stratis.Bitcoin.Features.Miner
         public class StakeOutput
         {
             public UtxoStakeDescription UtxoStakeDescription;
+
             public int Depth;
         }
 
         public class UtxoStakeDescription
         {
             public uint256 HashBlock;
+
             public TxOut TxOut;
+
             public OutPoint OutPoint;
+
             public int OutputIndex;
+
             public HdAddress Address;
+
             public UnspentOutputs UtxoSet;
+
             public WalletSecret Secret;
+
             public Key Key;
         }
 
         public class WalletSecret
         {
             public string WalletPassword;
+
             public string WalletName;
         }
 
@@ -107,7 +116,10 @@ namespace Stratis.Bitcoin.Features.Miner
             private int kernelFoundIndex;
 
             /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
-            public int KernelFoundIndex { get { return this.kernelFoundIndex; } }
+            public int KernelFoundIndex
+            {
+                get { return this.kernelFoundIndex; }
+            }
 
             /// <summary>UTXO that satisfied the target difficulty.</summary>
             public UtxoStakeDescription KernelCoin { get; set; }
@@ -146,6 +158,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
+
         ///<summary>The maximum size for mined blocks.</summary>
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
@@ -165,26 +178,38 @@ namespace Stratis.Bitcoin.Features.Miner
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
         private readonly ConsensusLoop consensusLoop;
+
         private readonly ConcurrentChain chain;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+
         private readonly IConnectionManager connection;
+
         private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly AssemblerFactory blockAssemblerFactory;
+
         private readonly IBlockRepository blockRepository;
+
         private readonly ChainState chainState;
+
         private readonly Signals.Signals signals;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly NodeSettings settings;
+
         private readonly CoinView coinView;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
+
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private readonly WalletManager walletManager;
+
         private readonly PosConsensusValidator posConsensusValidator;
 
         /// <summary>Factory for creating loggers.</summary>
@@ -194,21 +219,25 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         private IAsyncLoop mining;
+
         /// <summary>
         /// Target reserved balance that will not participate in staking.
         /// It is possible that less than this amount will be reserved.
         /// </summary>
         private Money targetReserveBalance;
+
         private readonly int minimumInputValue;
+
         private readonly int minerSleep;
 
         protected readonly MempoolSchedulerLock mempoolLock;
+
         protected readonly TxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
-        private readonly Miner.Models.GetStakingInfoModel rpcGetStakingInfoModel;
+        private readonly Models.GetStakingInfoModel rpcGetStakingInfoModel;
 
         /// <summary>Estimation of the total staking weight of all nodes on the network.</summary>
         private long networkWeight;
@@ -281,7 +310,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
 
-            this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
+            this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
         }
 
         /// <summary>
@@ -401,7 +430,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 foreach (UnspentOutputReference infoTransaction in spendable)
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-                    TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set._Outputs.Length) ? set._Outputs[infoTransaction.Transaction.Index] : null;
+                    TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero))
                     {
@@ -1104,9 +1133,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Constructs model for RPC "getstakinginfo" call.
         /// </summary>
         /// <returns>Staking information RPC response.</returns>
-        public Miner.Models.GetStakingInfoModel GetGetStakingInfoModel()
+        public Models.GetStakingInfoModel GetGetStakingInfoModel()
         {
-            return (Miner.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
+            return (Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
         }
 
         /// <summary>

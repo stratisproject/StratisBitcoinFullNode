@@ -17,13 +17,13 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
         }
 
         /// <inheritdoc/>
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
         /// <inheritdoc/>
@@ -43,7 +43,5 @@ namespace Stratis.Bitcoin.P2P
         {
             return new PeerConnectorBehaviour(this.peerConnector);
         }
-
-        #endregion
     }
 }

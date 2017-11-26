@@ -1,5 +1,4 @@
 ﻿using System;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Utilities;
 

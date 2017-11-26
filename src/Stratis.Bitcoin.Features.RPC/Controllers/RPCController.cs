@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private readonly RpcSettings rpcSettings;
 
         /// <summary>ControllerActionDescriptor dictionary.</summary>
-        private Dictionary<string, ControllerActionDescriptor> ActionDescriptors {get; set;}
+        private Dictionary<string, ControllerActionDescriptor> ActionDescriptors { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 this.ActionDescriptors = new Dictionary<string, ControllerActionDescriptor>();
                 var actionDescriptorProvider = (this.fullNode as FullNode)?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
-                // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors 
+                // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors
                 // that RPC would normally act on subject to the method name matching the "ActionName".
                 foreach (var actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
                     this.ActionDescriptors[actionDescriptor.ActionName] = actionDescriptor;
@@ -61,14 +61,14 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Processes a RPCRequest. 
+        /// Processes a RPCRequest.
         /// </summary>
         /// <param name="request">The request to process.</param>
         /// <returns></returns>
         private RPCResponse SendRPCRequest(RPCRequest request)
         {
             // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
-            System.Net.IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
+            IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
             var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
 
             return rpcClient.SendCommand(request);
@@ -91,11 +91,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
                 var paramInfo = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
                 object[] param = new object[paramInfo.Count];
-                for (int i = 0; i <  paramInfo.Count; i++)
-                {                    
+                for (int i = 0; i < paramInfo.Count; i++)
+                {
                     var pInfo = paramInfo[i];
                     var stringValues = this.Request.Query.FirstOrDefault(p => p.Key.ToLower() == pInfo.Name.ToLower());
-                    param[i] = (stringValues.Key == null)?pInfo.ParameterInfo.HasDefaultValue?pInfo.ParameterInfo.DefaultValue.ToString():null:stringValues.Value[0];
+                    param[i] = (stringValues.Key == null) ? pInfo.ParameterInfo.HasDefaultValue ? pInfo.ParameterInfo.DefaultValue.ToString() : null : stringValues.Value[0];
                 }
 
                 // Build RPC request object.
@@ -156,5 +156,5 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-     }
+    }
 }

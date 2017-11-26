@@ -13,11 +13,12 @@ namespace Stratis.Bitcoin.P2P
     public sealed class PeerAddress
     {
         private const int PeerAddressLastSeen = 30;
-        private const int PeerMinimumFailDays = 7;
-        private const int PeerMaximumWeeklyAttempts = 10;
-        private const int PeerMaximumConnectionRetries = 3;
 
-        #region Address Data
+        private const int PeerMinimumFailDays = 7;
+
+        private const int PeerMaximumWeeklyAttempts = 10;
+
+        private const int PeerMaximumConnectionRetries = 3;
 
         /// <summary>EndPoint of this peer.</summary>
         [JsonProperty]
@@ -47,6 +48,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The source address of this peer.</summary>
         [JsonProperty]
         private string loopback;
+
         [JsonIgnore]
         public IPAddress Loopback
         {
@@ -57,10 +59,6 @@ namespace Stratis.Bitcoin.P2P
                 return IPAddress.Parse(this.loopback);
             }
         }
-
-        #endregion
-
-        #region Connection Data
 
         /// <summary>
         /// The amount of connection attempts.
@@ -113,10 +111,6 @@ namespace Stratis.Bitcoin.P2P
         [JsonProperty]
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
-        #endregion
-
-        #region Connection Methods
-
         /// <summary>
         /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
         /// </summary>
@@ -152,10 +146,6 @@ namespace Stratis.Bitcoin.P2P
         {
             this.LastConnectionHandshake = peerHandshakedAt;
         }
-
-        #endregion
-
-        #region Peer Preference
 
         /// <summary>
         /// Determines whether the peer will be selected by the <see cref="IPeerConnector"/> when connecting.
@@ -218,8 +208,6 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        #endregion
-
         /// <summary>Refer to <see cref="PeerIntroductionType"/> for what the individual types mean.</summary>
         [JsonIgnore]
         public PeerIntroductionType? PeerIntroductionType { get; set; }
@@ -232,7 +220,7 @@ namespace Stratis.Bitcoin.P2P
         /// <para>
         /// We effectively "deprioritize" the peer away after each failed attempt,
         /// making it harder for the peer to be able to be selected by the
-        /// address manager. But at most no more than 1/28th to avoid the search taking forever 
+        /// address manager. But at most no more than 1/28th to avoid the search taking forever
         /// or overly penalizing outages.
         /// </para>
         /// </summary>
@@ -251,7 +239,7 @@ namespace Stratis.Bitcoin.P2P
                 if (timeSinceLastAttempt < TimeSpan.FromMinutes(10))
                     selectability *= 0.01;
 
-                // Deprioritize 66% after each failed attempt, but at most 1/28th 
+                // Deprioritize 66% after each failed attempt, but at most 1/28th
                 // to avoid the search taking forever or overly penalizing outages.
                 selectability *= Math.Pow(0.66, Math.Min(this.ConnectionAttempts, 8));
 

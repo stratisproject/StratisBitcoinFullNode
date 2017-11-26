@@ -10,9 +10,6 @@ namespace Stratis.Bitcoin.Features.RPC
             this.ErrorCode = errorCode;
         }
 
-        public RPCErrorCode ErrorCode
-        {
-            get; set;
-        }
+        public RPCErrorCode ErrorCode { get; set; }
     }
 }

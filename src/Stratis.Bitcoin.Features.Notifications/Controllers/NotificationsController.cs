@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
     public class NotificationsController : Controller
     {
         private readonly IBlockNotification blockNotification;
+
         private readonly ConcurrentChain chain;
 
         /// <summary>

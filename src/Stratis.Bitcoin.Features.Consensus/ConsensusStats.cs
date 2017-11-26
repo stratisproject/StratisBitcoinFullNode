@@ -16,18 +16,26 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class ConsensusStats : SignalObserver<Block>
     {
         private readonly CachedCoinView cache;
+
         private readonly DBreezeCoinView dbreeze;
+
         private readonly CoinView bottom;
 
         private readonly LookaheadBlockPuller lookaheadPuller;
+
         private ConsensusPerformanceSnapshot lastSnapshot;
+
         private BackendPerformanceSnapshot lastSnapshot2;
+
         private CachePerformanceSnapshot lastSnapshot3;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
+
         private readonly ChainState chainState;
+
         private readonly ConcurrentChain chain;
+
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Instance logger.</summary>
@@ -37,10 +45,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IDateTimeProvider dateTimeProvider;
 
         public ConsensusStats(
-            CoinView coinView, 
-            ConsensusLoop consensusLoop, 
-            ChainState chainState, 
-            ConcurrentChain chain, 
+            CoinView coinView,
+            ConsensusLoop consensusLoop,
+            ChainState chainState,
+            ConcurrentChain chain,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)

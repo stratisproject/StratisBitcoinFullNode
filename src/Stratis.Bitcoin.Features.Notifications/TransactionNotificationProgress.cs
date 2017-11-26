@@ -16,6 +16,6 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <summary>
         /// Contains hashes of the transactions that have already been received from other nodes.
         /// </summary>
-        public ConcurrentDictionary<uint256, uint256> TransactionsReceived { get; set; }        
+        public ConcurrentDictionary<uint256, uint256> TransactionsReceived { get; set; }
     }
 }
