@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
         /// </summary>
         /// <param name="x">The first object of type TransactionItemModel to compare.</param>
         /// <param name="y">The second object of type TransactionItemModel to compare.</param>
-        /// <returns>true if the specified objects are equal; otherwise, false.</returns>  
+        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
         public bool Equals(TransactionItemModel x, TransactionItemModel y)
         {
             if (x == null && y == null)
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             foreach (var payment in x.Payments)
             {
-                // Make sure all payments in x have their equivalent in y. 
+                // Make sure all payments in x have their equivalent in y.
                 // Because we check the counts are equal there is no need to check from both sides.
                 if (!y.Payments.Any(w => w.Amount == payment.Amount && w.DestinationAddress == payment.DestinationAddress))
                 {

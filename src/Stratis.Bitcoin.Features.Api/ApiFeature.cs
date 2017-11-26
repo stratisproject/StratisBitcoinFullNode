@@ -25,9 +25,13 @@ namespace Stratis.Bitcoin.Features.Api
         private const int APIStopTimeoutSeconds = 10;
 
         private readonly IFullNodeBuilder fullNodeBuilder;
+
         private readonly FullNode fullNode;
+
         private readonly ApiFeatureOptions apiFeatureOptions;
+
         private readonly ILogger logger;
+
         private IWebHost webHost = null;
 
         public ApiFeature(
@@ -62,12 +66,12 @@ namespace Stratis.Bitcoin.Features.Api
                 this.logger.LogInformation("API stopping on URL '{0}'.", this.fullNode.Settings.ApiUri);
                 this.webHost.StopAsync(TimeSpan.FromSeconds(APIStopTimeoutSeconds)).Wait();
                 this.webHost = null;
-            }        
+            }
         }
 
         /// <summary>
         /// A KeepaliveMonitor when enabled will shutdown the
-        /// node if no one is calling the keepalive endpoint 
+        /// node if no one is calling the keepalive endpoint
         /// during a certain trashold window
         /// </summary>
         public void TryStartKeepaliveMonitor()

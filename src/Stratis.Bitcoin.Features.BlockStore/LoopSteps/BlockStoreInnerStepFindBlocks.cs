@@ -9,14 +9,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Find blocks to download by asking the BlockPuller.
     /// <para>
-    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains 
+    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains
     /// <see cref="BlockStoreInnerStepContext.DownloadStackThreshold"/> blocks.
     /// </para>
     /// <para>
     /// If a stop condition is found <see cref="ShouldStopFindingBlocksAsync"/> and
     /// there are still blocks to download, stop finding new blocks and only execute
     /// the read blocks inner step <see cref="BlockStoreInnerStepReadBlocks"/>.
-    /// </para> 
+    /// </para>
     /// </summary>
     public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public BlockStoreInnerStepFindBlocks(ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             while (batchList.Count < batchSize)
             {
-                if (await ShouldStopFindingBlocksAsync(context))
+                if (await this.ShouldStopFindingBlocksAsync(context))
                 {
                     context.StopFindingBlocks();
                     break;

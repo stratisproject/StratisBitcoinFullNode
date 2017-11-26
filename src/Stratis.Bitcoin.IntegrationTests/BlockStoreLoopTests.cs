@@ -15,7 +15,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void BlockStoreLoopIntegration()
         {
-
         }
     }
 }

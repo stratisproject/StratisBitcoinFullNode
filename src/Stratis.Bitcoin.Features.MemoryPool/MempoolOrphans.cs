@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public MempoolSchedulerLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
-        public IMempoolValidator Validator { get; } // public for testing
+        public IMempoolValidator Validator { get; }
 
         /// <summary>
         /// Object representing an orphan transaction information.
@@ -129,7 +129,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             /// <summary>The time when this orphan transaction will expire.</summary>
             public long TimeExpire;
-        };
+        }
+
+;
 
         /// <summary>
         /// Gets a list of all the orphan transactions.

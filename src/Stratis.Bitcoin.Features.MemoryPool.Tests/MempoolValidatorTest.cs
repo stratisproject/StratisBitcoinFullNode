@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             // TODO: Test case - the lock point MinTime exceeds 0
         }
-        
+
         [Fact]
         public void CheckSequenceLocks_WithExistingLockPointAndBadHeight_Fails()
         {
@@ -67,7 +67,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void GetTransactionWeight_WitnessTx_ReturnsWeight()
         {
             // TODO: Test getting tx weight on transaction with witness
-
         }
 
         [Fact]
@@ -235,7 +234,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     .AddKeys(alice)
                     .Send(satoshi.GetAddress(), "4.5")
                     .SendFees("0.001")
-                    .SetChange(corpMultiSig)                    
+                    .SetChange(corpMultiSig)
                     .BuildTransaction(true);
             Assert.True(!txBuilder.Verify(multiSigTx)); //Well, only one signature on the two required...
 
@@ -246,7 +245,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     .AddKeys(nico)
                     .SignTransaction(multiSigTx);
             Assert.True(txBuilder.Verify(multiSigTx));
-             
+
             Assert.True(await validator.AcceptToMemoryPool(state, multiSigTx), $"Transaction: {nameof(multiSigTx)} failed mempool validation.");
 
             Directory.Delete(dataDir, true);
@@ -366,7 +365,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
-            
+
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey);
@@ -425,7 +424,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.True(await validator.AcceptToMemoryPool(state, p2shOverp2wpkh), $"Transaction: {nameof(p2shOverp2wpkh)} failed mempool validation.");
 
             Directory.Delete(dataDir, true);
-        }        
+        }
 
         [Fact]
         public void AcceptToMemoryPool_TxIsCoinbase_ReturnsFalse()
@@ -458,7 +457,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void AcceptToMemoryPool_TxIsNonStandardScriptSigIsPushOnly_ReturnsFalse()
         {
             // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
-            // - Check input scriptsig push only            
+            // - Check input scriptsig push only
         }
 
         [Fact]
@@ -503,7 +502,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         [Fact]
         public void AcceptToMemoryPool_TxMissingInputs_ReturnsFalse()
         {
-            // TODO: Execute this case CheckMempoolCoinView !context.View.HaveCoins(txin.PrevOut.Hash) 
+            // TODO: Execute this case CheckMempoolCoinView !context.View.HaveCoins(txin.PrevOut.Hash)
         }
 
         [Fact]

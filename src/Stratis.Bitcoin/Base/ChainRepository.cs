@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Base
     public interface IChainRepository : IDisposable
     {
         Task LoadAsync(ConcurrentChain chain);
+
         Task SaveAsync(ConcurrentChain chain);
     }
 

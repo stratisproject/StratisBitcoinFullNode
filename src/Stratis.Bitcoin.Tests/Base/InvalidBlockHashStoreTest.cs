@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>
         /// Another test of behavior of the hash store when its capacity is reached.
         /// The internal implementation of the block hash store works with a dictionary and a circular array,
-        /// which should skip the entries removed from the dictionary. 
+        /// which should skip the entries removed from the dictionary.
         /// </summary>
         [Fact]
         public void ReachingStoreCapacity_CircularArraySkipsExpiredEntries()
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 Assert.True(invalidBlockHashStore.IsInvalid(hash));
 
             // Now we wait 5 seconds and touch the first four temporarily banned hashes,
-            // which should remove them from the dictionary. 
+            // which should remove them from the dictionary.
             Thread.Sleep(5000);
 
             Assert.False(invalidBlockHashStore.IsInvalid(hashesBannedTemporarily[0]));

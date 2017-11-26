@@ -21,8 +21,11 @@ namespace Stratis.Bitcoin.Connection
         private readonly ILogger infoLogger;
 
         public ConnectionManager ConnectionManager { get; private set; }
+
         public bool Inbound { get; private set; }
+
         public bool Whitelisted { get; internal set; }
+
         public bool OneTry { get; internal set; }
 
         private ChainHeadersBehavior chainHeadersBehavior;

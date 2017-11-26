@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.P2P
     public sealed class WellKnownPeerConnectorSelectors
     {
         private static Func<IPEndPoint, byte[]> byEndpoint;
+
         public static Func<IPEndPoint, byte[]> ByEndpoint
         {
             get
@@ -24,6 +25,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         private static Func<IPEndPoint, byte[]> byNetwork;
+
         public static Func<IPEndPoint, byte[]> ByNetwork
         {
             get

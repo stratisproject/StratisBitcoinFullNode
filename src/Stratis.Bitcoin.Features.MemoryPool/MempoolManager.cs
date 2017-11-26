@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -15,14 +14,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// A lock for managing asynchronous access to memory pool.
     /// </summary>
     public class MempoolSchedulerLock : SchedulerLock
-    { }
+    {
+    }
 
     /// <summary>
     /// The memory pool manager contains high level methods that can be used from outside of the mempool.
     /// Includes querying information about the transactions in the memory pool.
     /// Also includes methods for persisting memory pool.
     /// </summary>
-    public class MempoolManager: IPooledTransaction, IPooledGetUnspentTransaction
+    public class MempoolManager : IPooledTransaction, IPooledGetUnspentTransaction
     {
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
@@ -74,10 +74,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public MempoolSchedulerLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
-        public IMempoolValidator Validator { get; } // public for testing
+        public IMempoolValidator Validator { get; }
 
         /// <summary>Memory pool orphans for managing orphan transactions.</summary>
-        public MempoolOrphans Orphans { get; } // public for testing
+        public MempoolOrphans Orphans { get; }
 
         /// <summary>Date and time information provider.</summary>
         public IDateTimeProvider DateTimeProvider { get; }
@@ -173,7 +173,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task<List<TxMempoolInfo>> InfoAllAsync()
         {
             return this.MempoolLock.ReadAsync(this.InfoAll);
-
         }
 
         /// <summary>
@@ -235,7 +234,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
             var txInfo = await this.InfoAsync(trxid);
-            if(txInfo == null)
+            if (txInfo == null)
             {
                 return null;
             }
@@ -288,6 +287,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.mempoolLogger.LogInformation("...{0} entries accepted.", i);
             }
         }
-
     }
 }

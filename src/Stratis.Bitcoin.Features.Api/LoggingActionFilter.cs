@@ -25,17 +25,17 @@ namespace Stratis.Bitcoin.Features.Api
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             HttpRequest request = context.HttpContext.Request;
-            
+
             // get the body
             var body = string.Empty;
             IDictionary<string, object> arguments = context.ActionArguments;
             if (request.ContentLength != null && arguments != null && arguments.Any())
             {
-               body = string.Join(Environment.NewLine, arguments.Values);
+                body = string.Join(Environment.NewLine, arguments.Values);
             }
 
             this.logger.LogDebug($"Received {request.Method} {request.GetDisplayUrl()}. Body: '{body}'");
-            await next();            
+            await next();
         }
     }
 }

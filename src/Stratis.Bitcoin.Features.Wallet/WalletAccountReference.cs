@@ -7,8 +7,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public WalletAccountReference()
         {
-
         }
+
         public WalletAccountReference(string walletName, string accountName)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
@@ -18,29 +18,23 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AccountName = accountName;
         }
 
-        public string WalletName
-        {
-            get; set;
-        }
+        public string WalletName { get; set; }
 
-        public string AccountName
-        {
-            get; set;
-        }
-
+        public string AccountName { get; set; }
 
         public override bool Equals(object obj)
         {
             WalletAccountReference item = obj as WalletAccountReference;
-            if(item == null)
+            if (item == null)
                 return false;
             return this.GetId().Equals(item.GetId());
         }
+
         public static bool operator ==(WalletAccountReference a, WalletAccountReference b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if (ReferenceEquals(a, b))
                 return true;
-            if(((object)a == null) || ((object)b == null))
+            if (((object)a == null) || ((object)b == null))
                 return false;
             return a.GetId().Equals(b.GetId());
         }
@@ -55,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return this.GetId().GetHashCode();
         }
 
-        Tuple<string, string> GetId()
+        internal Tuple<string, string> GetId()
         {
             return Tuple.Create(this.WalletName, this.AccountName);
         }

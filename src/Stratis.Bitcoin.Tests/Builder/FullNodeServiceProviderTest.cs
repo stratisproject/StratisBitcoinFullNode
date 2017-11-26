@@ -43,7 +43,6 @@ namespace Stratis.Bitcoin.Tests.Builder
             var types = new List<Type> {
                 typeof(TestFeatureStub2),
                 typeof(TestFeatureStub)
-
             };
 
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);

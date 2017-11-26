@@ -8,12 +8,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Check if the next chained block already exists in the <see cref="BlockRepository"/>.
     /// <para>
-    /// If the block exists in the repository the step will return a Continue result which executes 
+    /// If the block exists in the repository the step will return a Continue result which executes
     /// "Continue" on the while loop.
     /// </para>
     /// <para>
-    /// If the block does not exists in the repository the step 
-    /// will return a Next result which'll cause the <see cref="BlockStoreLoop"/> to execute 
+    /// If the block does not exists in the repository the step
+    /// will return a Next result which'll cause the <see cref="BlockStoreLoop"/> to execute
     /// the next step (<see cref="ProcessPendingStorageStep"/>).
     /// </para>
     /// </summary>
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         internal CheckNextChainedBlockExistStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
             : base(blockStoreLoop, loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>

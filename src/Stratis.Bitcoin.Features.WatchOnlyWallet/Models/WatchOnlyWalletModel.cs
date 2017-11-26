@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         }
 
         /// <summary>
-        /// A base58 address being watched for transactions affecting it.        
+        /// A base58 address being watched for transactions affecting it.
         /// </summary>
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
@@ -78,7 +78,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
         public ICollection<TransactionVerboseModel> Transactions { get; set; }
-
     }
 
     /// <summary>

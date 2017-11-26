@@ -11,8 +11,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ILogger logger;
 
         private IBlockRepository repository;
+
         private BlockStoreCache cache;
+
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
+
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 
         /// <summary>Provider of time functions.</summary>

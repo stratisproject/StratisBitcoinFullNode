@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly ILogger logger;
 
         /// <summary>
-        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes. 
+        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes.
         /// </summary>
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="nodes">Network peers of the node.</param>
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadRequests), nameof(downloadRequests.Length), downloadRequests.Length);
 
-            base.AskBlocks(downloadRequests);
+            this.AskBlocks(downloadRequests);
 
             this.logger.LogTrace("(-)");
         }
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
 
-            if (TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
+            if (this.TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
             {
                 this.logger.LogTrace("(-):true");
                 return true;

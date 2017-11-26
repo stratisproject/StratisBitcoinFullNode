@@ -4,7 +4,7 @@ using System.Threading;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Wraps ReaderWriterLockSlim with disposable interface so that 
+    /// Wraps ReaderWriterLockSlim with disposable interface so that
     /// it is possible to use using construct to avoid forgotten lock releases.
     /// </summary>
     public class ReaderWriterLock

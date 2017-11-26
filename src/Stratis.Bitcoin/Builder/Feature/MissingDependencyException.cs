@@ -8,19 +8,19 @@ namespace Stratis.Bitcoin.Builder.Feature
     public class MissingDependencyException : Exception
     {
         /// <inheritdoc />
-        public MissingDependencyException() 
+        public MissingDependencyException()
             : base()
         {
         }
 
         /// <inheritdoc />
-        public MissingDependencyException(string message) 
+        public MissingDependencyException(string message)
             : base(message)
         {
         }
 
         /// <inheritdoc />
-        public MissingDependencyException(string message, Exception innerException) 
+        public MissingDependencyException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

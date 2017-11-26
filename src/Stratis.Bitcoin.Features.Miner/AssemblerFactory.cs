@@ -14,10 +14,15 @@ namespace Stratis.Bitcoin.Features.Miner
     public class PowAssemblerFactory : AssemblerFactory
     {
         protected readonly ConsensusLoop consensusLoop;
+
         protected readonly Network network;
+
         protected readonly MempoolSchedulerLock mempoolLock;
+
         protected readonly TxMempool mempool;
+
         protected readonly IDateTimeProvider dateTimeProvider;
+
         protected readonly StakeChain stakeChain;
 
         /// <summary>Factory for creating loggers.</summary>
@@ -54,10 +59,15 @@ namespace Stratis.Bitcoin.Features.Miner
     public class PosAssemblerFactory : AssemblerFactory
     {
         protected readonly ConsensusLoop consensusLoop;
+
         protected readonly Network network;
+
         protected readonly MempoolSchedulerLock mempoolScheduler;
+
         protected readonly TxMempool mempool;
+
         protected readonly IDateTimeProvider dateTimeProvider;
+
         protected readonly StakeChain stakeChain;
 
         /// <summary>Instance logger.</summary>

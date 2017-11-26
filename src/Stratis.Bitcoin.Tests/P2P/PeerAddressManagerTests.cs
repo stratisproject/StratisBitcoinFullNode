@@ -127,10 +127,10 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred.
-        /// 
+        ///
         /// Scenario 1:
         /// No peers in the database has had a connection attempted to or previously connected to.
-        /// 
+        ///
         /// Result:
         /// All 3 peers can be connected to.
         /// </summary>
@@ -158,10 +158,10 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred.
-        /// 
+        ///
         /// Scenario 2:
         /// Peer 2 has had a connection attempted to.
-        /// 
+        ///
         /// Result:
         /// All 3 peers can be connected to.
         /// </summary>
@@ -191,11 +191,11 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred.
-        /// 
+        ///
         /// Scenario 3:
         /// Peer 2 has had 2 connection attempts.
         /// Peer 2 has last attempted more than 60 secs ago.
-        /// 
+        ///
         /// Result:
         /// All 3 peers can be connected to.
         /// </summary>
@@ -228,11 +228,11 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred.
-        /// 
+        ///
         /// Scenario 3:
         /// Peer 1 has had 2 connection attempts.
         /// Peer 1 has attempted within the last 60 secs.
-        /// 
+        ///
         /// Result:
         /// Peer 1 is filtered out.
         /// </summary>
@@ -265,10 +265,10 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred.
-        /// 
+        ///
         /// Scenario 4:
         /// Peer 2 has had more than the maximum amount of connection attempts.
-        /// 
+        ///
         /// Result:
         /// There are 2 peers to connect to.
         /// Peer 1 has been filtered out.
@@ -304,10 +304,10 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred after it has been
         /// connected to before.
-        /// 
+        ///
         /// Scenario 1:
         /// Peer 3 has had a successful connection made to it.
-        /// 
+        ///
         /// Result:
         /// All 3 peers can be connected to.
         /// </summary>
@@ -338,11 +338,11 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred after it has been
         /// connected to before.
-        /// 
+        ///
         /// Scenario 2:
         /// Peer 3 has had a successful connection made to it but it
         /// last happened 8 days ago.
-        /// 
+        ///
         /// Result:
         /// There are 2 peers to connect to.
         /// Peer 3 has been filtered out.
@@ -376,11 +376,11 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a particular peer can be regarded as preferred after it has been
         /// connected to before.
-        /// 
+        ///
         /// Scenario 3:
         /// Peer 1 has had a successful connection made to.
         /// Peer 1 has had 11 unsuccessful attempts since then.
-        /// 
+        ///
         /// Result:
         /// There are 2 peers to connect to.
         /// Peer 1 has been filtered out.
