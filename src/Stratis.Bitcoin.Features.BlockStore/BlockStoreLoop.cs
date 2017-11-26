@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public IBlockRepository BlockRepository { get; }
         private readonly BlockStoreStats blockStoreStats;
 
-        /// <summary> Best chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
 
         public ChainState ChainState { get; }
@@ -102,9 +102,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///     <item>2. The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found 
+        /// To recover we walk back the chain until a common block header is found
         /// and set the BlockStore's StoreTip to that.
-        /// </para>                
+        /// </para>
         /// </summary>
         public async Task InitializeAsync()
         {
@@ -242,9 +242,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>
         /// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
         /// When in IBD we may need many reads for the block key without fetching the block
-        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
-        /// a read is normally done when a peer is asking for the entire block (not just the key) 
-        /// then if LazyLoadingOn = false the read will be faster on the entire block      
+        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD
+        /// a read is normally done when a peer is asking for the entire block (not just the key)
+        /// then if LazyLoadingOn = false the read will be faster on the entire block
         /// </remarks>
         private async Task DownloadAndStoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
         {

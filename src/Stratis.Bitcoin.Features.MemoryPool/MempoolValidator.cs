@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx);
 
         /// <summary>
-        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>. 
+        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>.
         /// </summary>
         Task SanityCheck();
     }
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int DefaultDescendantLimit = 25;
 
         /// <summary>
-        /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants. 
+        /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants.
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
         public const int DefaultDescendantSizeLimit = 101;
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings from the memory pool.</summary>
         private readonly MempoolSettings mempoolSettings;
 
-        /// <summary>Chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Coin view of the memory pool.</summary>
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
 
-        // TODO: Implement Later with CheckRateLimit() 
+        // TODO: Implement Later with CheckRateLimit()
         //private readonly FreeLimiterSection freeLimiter;
 
         //private class FreeLimiterSection
@@ -155,19 +155,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="consensusValidator">Proof of work consensus validator.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
-        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
-            TxMempool memPool, 
+            TxMempool memPool,
             MempoolSchedulerLock mempoolLock,
-            PowConsensusValidator consensusValidator, 
-            IDateTimeProvider dateTimeProvider, 
+            PowConsensusValidator consensusValidator,
+            IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
-            ConcurrentChain chain, 
+            ConcurrentChain chain,
             CoinView coinView,
-            ILoggerFactory loggerFactory, 
+            ILoggerFactory loggerFactory,
             NodeSettings nodeSettings)
         {
             this.memPool = memPool;
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Validates that the transaction is the final transaction."/>
         /// Validated by comparing the transaction vs chain tip.
-        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then 
+        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then
         /// use the block time at the end of the block chain for validation.
         /// Otherwise use the current time for the block time.
         /// </summary>
@@ -451,11 +451,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CheckAncestors(context);
                 this.CheckReplacment(context);
                 this.CheckAllInputs(context);
-            
+
                 // Remove conflicting transactions from the mempool
                 foreach (var it in context.AllConflicting)
                     this.logger.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
-                
+
                 this.memPool.RemoveStaged(context.AllConflicting, false);
 
                 // This transaction should only count for fee estimation if
@@ -476,7 +476,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 // do this here inside the exclusive scheduler for better accuracy
-                // and to avoid springing more concurrent tasks later 
+                // and to avoid springing more concurrent tasks later
                 state.MempoolSize = this.memPool.Size;
                 state.MempoolDynamicSize = this.memPool.DynamicMemoryUsage();
 
@@ -538,7 +538,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Checks that are done before touching the memory pool.
-        /// These checks don't need to run under the memory pool lock. 
+        /// These checks don't need to run under the memory pool lock.
         /// </summary>
         /// <param name="context">Current validation context.</param>
         private void PreMempoolChecks(MempoolValidationContext context)
@@ -627,7 +627,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (script.Type == TxOutType.TX_NULL_DATA)
                     dataOut++;
                 // TODO: fIsBareMultisigStd
-                //else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd)) 
+                //else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd))
                 //{
                 //  context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
                 //}

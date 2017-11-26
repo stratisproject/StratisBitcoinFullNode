@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly TxMempool memPool;
 
-        /// <summary>Chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Node notifications available to subscribe to.</summary>
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
-        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="validator">Memory pool validator for validating transactions.</param>
         /// <param name="consensusValidator">Proof of work consensus validator used for validating orphan transactions.</param>
@@ -81,13 +81,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
-            MempoolSchedulerLock mempoolLock, 
-            TxMempool memPool, 
-            ConcurrentChain chain, 
-            Signals.Signals signals, 
-            IMempoolValidator validator, 
-            PowConsensusValidator consensusValidator, 
-            CoinView coinView, 
+            MempoolSchedulerLock mempoolLock,
+            TxMempool memPool,
+            ConcurrentChain chain,
+            Signals.Signals signals,
+            IMempoolValidator validator,
+            PowConsensusValidator consensusValidator,
+            CoinView coinView,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ILoggerFactory loggerFactory)
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             List<ulong> setMisbehaving = new List<ulong>();
             while (vWorkQueue.Any())
             {
-                // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection 
+                // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection
                 // of orphans as this collection may be modifed later by anotehr thread
                 List<OrphanTx> itByPrev = await this.MempoolLock.ReadAsync(() => this.mapOrphanTransactionsByPrev.TryGet(vWorkQueue.Dequeue())?.ToList());
                 if (itByPrev == null)

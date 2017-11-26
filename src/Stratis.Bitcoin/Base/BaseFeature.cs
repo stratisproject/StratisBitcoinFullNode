@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="dataFolder">Locations of important folders and files on disk.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="chain">Thread safe chain of block headers from genesis.</param>
+        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="connectionManager">Manager of node's network connections.</param>
         /// <param name="chainRepository">Access to the database of blocks.</param>

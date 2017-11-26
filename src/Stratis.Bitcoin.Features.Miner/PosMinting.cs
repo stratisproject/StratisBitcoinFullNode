@@ -61,27 +61,34 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             /// <summary>Block's hash.</summary>
             public uint256 HashBlock { get; set; }
-            /// <summary>UTXO.</summary>
+
+            /// <summary>UTXO that participates in staking. It's a part of <see cref="UtxoSet"/>.</summary>
             public TxOut TxOut { get; set; }
+
             /// <summary>Information about transaction id and index.</summary>
             public OutPoint OutPoint { get; set; }
-            /// <summary>Transaction's address.</summary>
+
+            /// <summary>Address of the transaction that has spendable coins for staking.</summary>
             public HdAddress Address { get; set; }
-            /// <summary>Utxo set.</summary>
+
+            /// <summary>Selected outputs of a transaction.</summary>
             public UnspentOutputs UtxoSet { get; set; }
-            /// <summary><see cref="WalletSecret"/></summary>
+
+            /// <summary>Credentials to wallet that contains the private key for the staking UTXO.</summary>
             public WalletSecret Secret { get; set; }
-            /// <summary>Private key.</summary>
+
+            /// <summary>Private key that is needed for spending coins associated with the <see cref="Address"/>.</summary>
             public Key Key { get; set; }
         }
 
         /// <summary>
-        /// Information needed for getting staking UTXOs and signing blocks.
+        /// Credentials to wallet that contains the private key for the staking UTXO.
         /// </summary>
         public class WalletSecret
         {
             /// <summary>Wallet's password that is needed for getting wallet's private key which is used for signing generated blocks.</summary>
             public string WalletPassword { get; set; }
+
             /// <summary>Name of the wallet which UTXOs are used for staking.</summary>
             public string WalletName { get; set; }
         }
@@ -177,16 +184,17 @@ namespace Stratis.Bitcoin.Features.Miner
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Responsible for downloading and validating blocks.</summary>
+        /// <summary>Consumes incoming blocks and then validates and executes (processes) such a block.</summary>
         private readonly ConsensusLoop consensusLoop;
 
-        /// <summary>Chain of headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
-        /// <summary>Used to verify that node is connected to network before we start staking.</summary>
+        /// <summary>Provider of information about the node's connection to it's network peers.</summary>
+        /// <remarks>Used to verify that node is connected to network before we start staking.</remarks>
         private readonly IConnectionManager connection;
 
         /// <summary>Used to verify that node is not in a state of IBD (Initial Block Download).</summary>
@@ -860,7 +868,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                         var contextInformation = new ContextInformation(new BlockValidationContext { Block = block }, this.network.Consensus);
                         contextInformation.SetStake();
-                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, out _);
+                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation.Stake, chainTip, block.Header.Bits, txTime, prevoutStake, out _);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -1026,7 +1034,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Calculates blocks count till UTXO is considered mature for staking.
         /// </summary>
-        /// <param name="utxoStakeDescription">The utxo stake description.</param>
+        /// <param name="utxoStakeDescription">The UTXO stake description.</param>
         /// <returns>How many blocks are left till UTXO is considered mature for staking.</returns>
         private int GetBlocksCountToMaturity(UtxoStakeDescription utxoStakeDescription)
         {
@@ -1039,7 +1047,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Gets depth of transaction in blockchain.
         /// </summary>
-        /// <param name="utxoStakeDescription">The utxo stake description.</param>
+        /// <param name="utxoStakeDescription">The UTXO stake description.</param>
         /// <returns>
         /// <c>-1</c> if not in blockchain, and not in memory pool (conflicted transaction).
         /// <c>0</c> if in memory pool, waiting to be included in a block.
