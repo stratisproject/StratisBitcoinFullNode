@@ -45,11 +45,16 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// A class that is responsible for downloading blocks from peers using the <see cref="ILookaheadBlockPuller"/>
-    /// and validating this blocks using either the <see cref="PowConsensusValidator"/> for POF networks or <see cref="PosConsensusValidator"/> for POS networks.
+    /// Consumes incoming blocks and then validates and executes such a block.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by
+    /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
+    /// </para>
+    /// <para>
     /// An internal loop will manage such background operations.
+    /// </para>
     /// </remarks>
     public class ConsensusLoop
     {
