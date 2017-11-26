@@ -1,13 +1,14 @@
 ﻿#if !NOSOCKET
+
+using System;
+using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Linq;
-using System.Threading;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -74,15 +75,7 @@ namespace Stratis.Bitcoin.Base
                 this.chain = value;
             }
         }
-
-        private bool invalidHeaderReceived;
-        public bool InvalidHeaderReceived
-        {
-            get
-            {
-                return this.invalidHeaderReceived;
-            }
-        }
+        public bool InvalidHeaderReceived { get; private set; }
 
         /// <summary>
         /// Initializes an instanse of the object.
@@ -231,7 +224,7 @@ namespace Stratis.Bitcoin.Base
                     if (!validated)
                     {
                         this.logger.LogTrace("Validation of new header '{0}' failed.", tip);
-                        this.invalidHeaderReceived = true;
+                        this.InvalidHeaderReceived = true;
                         break;
                     }
 
@@ -257,7 +250,7 @@ namespace Stratis.Bitcoin.Base
                             if (reorgLength > maxReorgLength)
                             {
                                 this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                                this.invalidHeaderReceived = true;
+                                this.InvalidHeaderReceived = true;
                                 reorgPrevented = true;
                             }
                             else this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
@@ -278,7 +271,7 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = chainedPendingTip;
                 }
 
-                if ((!this.invalidHeaderReceived) && (newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
+                if ((!this.InvalidHeaderReceived) && (newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
                     this.TrySync();
             }
 
@@ -325,14 +318,14 @@ namespace Stratis.Bitcoin.Base
             Node node = this.AttachedNode;
             if (node != null)
             {
-                if ((node.State == NodeState.HandShaked) && this.CanSync && !this.invalidHeaderReceived)
+                if ((node.State == NodeState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
                 {
                     node.SendMessageAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });
                 }
-                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NodeState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.invalidHeaderReceived ? "" : "NO ");
+                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NodeState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.InvalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No node attached.");
 
@@ -345,8 +338,6 @@ namespace Stratis.Bitcoin.Base
             return this.pendingTip;
         }
 
-        #region ICloneable Members
-
         public override object Clone()
         {
             var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.loggerFactory)
@@ -357,8 +348,6 @@ namespace Stratis.Bitcoin.Base
             };
             return clone;
         }
-
-        #endregion
     }
 }
 #endif
