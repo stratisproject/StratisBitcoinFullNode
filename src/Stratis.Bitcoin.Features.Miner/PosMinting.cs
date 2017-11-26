@@ -1057,7 +1057,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns>
         /// <c>-1</c> if not in blockchain, and not in memory pool (conflicted transaction).
         /// <c>0</c> if in memory pool, waiting to be included in a block.
-        /// <c>>=1</c> if included in a block. Shows how many blocks deep in the main chain.
+        /// Value greater than <c>1</c> if included in a block. Shows how many blocks deep in the main chain.
         /// </returns>
         private int GetDepthInMainChain(UtxoStakeDescription utxoStakeDescription)
         {
