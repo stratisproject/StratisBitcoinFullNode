@@ -61,7 +61,8 @@ namespace NBitcoin.Tests
 
 		private static void Core()
 		{
-
+        /*
+         * TODO: Consider importing to FN.
 			var complete = Bench(() =>
 			{
 				using(var node = Node.Connect(Network.Main, "192.168.0.7", new NodeConnectionParameters()
@@ -94,7 +95,8 @@ namespace NBitcoin.Tests
 					}
 				}
 			});
-		}
+            */
+    }
 
 		[Fact]
 		[Trait("Benchmark", "Benchmark")]
