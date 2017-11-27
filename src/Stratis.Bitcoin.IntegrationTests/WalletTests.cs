@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.IO;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using System.IO;
-using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -75,13 +75,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 //TestHelper.WaitLoop(() => maturity + 6 == stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
             }
-
         }
 
         [Fact]
         public void CanMineBlocks()
         {
-            using(NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create())
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode();
                 this.InitializeTestWallet(stratisNodeSync);
@@ -95,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSendToAddress()
         {
-            using(NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create())
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode();
                 this.InitializeTestWallet(stratisNodeSync);
@@ -135,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(12, mnemonic2.Words.Length);
                 var addr = stratisSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
                 var wallet = stratisSender.FullNode.WalletManager().GetWalletByName("mywallet");
-                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;                
+                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
@@ -213,7 +212,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 //Assert.True(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any(b => b.Transaction.BlockHeight == null));
 
                 //// mine more blocks so its included in the chain
-              
+
                 //stratisSender.GenerateStratisWithMiner(1);
                 //var transaction2MinedHeight = currentBestHeight + 1;
                 //stratisSender.GenerateStratisWithMiner(1);
@@ -402,7 +401,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(12, mnemonic.Words.Length);
                 var addr = stratisminer.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
                 var wallet = stratisminer.FullNode.WalletManager().GetWalletByName("mywallet");
-                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;                
+                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisminer.SetDummyMinerSecret(key.GetBitcoinSecret(stratisminer.FullNode.Network));
                 stratisminer.GenerateStratis(10);
@@ -433,7 +432,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var addr = stratisNodeSync.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
                 var wallet = stratisNodeSync.FullNode.WalletManager().GetWalletByName("mywallet");
                 var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
-               
+
                 stratisNodeSync.SetDummyMinerSecret(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateStratis(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));

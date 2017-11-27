@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var allSamples = new List<int>(inSamples);
             for (int i = 0; i < TimeSyncBehaviorState.OutboundToInboundWeightRatio; i++)
-              allSamples.AddRange(outSamples);
+                allSamples.AddRange(outSamples);
 
             adjustedTime = dateTimeProvider.GetAdjustedTime();
             normalTime = dateTimeProvider.GetUtcNow();

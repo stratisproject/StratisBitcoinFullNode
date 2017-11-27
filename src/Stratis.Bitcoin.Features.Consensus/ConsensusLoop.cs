@@ -20,7 +20,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Information about a block that is required for its validation. 
+    /// Information about a block that is required for its validation.
     /// It is used when a new block is downloaded or mined.
     /// </summary>
     public class BlockValidationContext
@@ -45,8 +45,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// A class that is responsible for downloading blocks from peers using the <see cref="ILookaheadBlockPuller"/> 
-    /// and validating this blocks using either the <see cref="PowConsensusValidator"/> for POF networks or <see cref="PosConsensusValidator"/> for POS networks. 
+    /// A class that is responsible for downloading blocks from peers using the <see cref="ILookaheadBlockPuller"/>
+    /// and validating this blocks using either the <see cref="PowConsensusValidator"/> for POF networks or <see cref="PosConsensusValidator"/> for POS networks.
     /// </summary>
     /// <remarks>
     /// An internal loop will manage such background operations.
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Information holding POS data chained.</summary>
         public StakeChain StakeChain { get; }
-        
+
         /// <summary>A puller that can pull blocks from peers on demand.</summary>
         public LookaheadBlockPuller Puller { get; }
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
-        /// <summary>Contain information about the life time of the node, its used on startup and shutdown.</summary>
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Holds state related to the block chain.</summary>
@@ -129,10 +129,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             IAsyncLoopFactory asyncLoopFactory,
             PowConsensusValidator validator,
             INodeLifetime nodeLifetime,
-            ConcurrentChain chain, 
-            CoinView utxoSet, 
-            LookaheadBlockPuller puller, 
-            NodeDeployments nodeDeployments, 
+            ConcurrentChain chain,
+            CoinView utxoSet,
+            LookaheadBlockPuller puller,
+            NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ChainState chainState,
             IConnectionManager connectionManager,
@@ -190,8 +190,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (this.Tip != null)
                     break;
 
-                // TODO: this rewind code may never happen. 
-                // The node will complete loading before connecting to peers so the  
+                // TODO: this rewind code may never happen.
+                // The node will complete loading before connecting to peers so the
                 // chain will never know if a reorg happened.
                 utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
@@ -200,8 +200,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async (token) =>
             {
                 await this.PullerLoopAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-            }, 
-            this.nodeLifetime.ApplicationStopping, 
+            },
+            this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.RunOnce);
 
             this.logger.LogTrace("(-)");
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>
         /// A puller method that will continuously loop and ask for the next block  in the chain from peers.
-        /// The block will then be passed to the consensus validation. 
+        /// The block will then be passed to the consensus validation.
         /// </summary>
         /// <remarks>
         /// If the <see cref="Block"/> returned from the puller is null that means the puller is signalling a reorg was detected.
@@ -404,9 +404,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 this.logger.LogTrace("Validating new block.");
 
-                // Build the next block in the chain of headers. The chain header is most likely already created by 
-                // one of the peers so after we create a new chained block (mainly for validation) 
-                // we ask the chain headers for its version (also to prevent memory leaks). 
+                // Build the next block in the chain of headers. The chain header is most likely already created by
+                // one of the peers so after we create a new chained block (mainly for validation)
+                // we ask the chain headers for its version (also to prevent memory leaks).
                 context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
 
                 // Liberate from memory the block created above if possible.
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
                 // Check whether to use checkpoint to skip block validation.
-                context.BlockValidationContext.SkipValidation = false; 
+                context.BlockValidationContext.SkipValidation = false;
                 if (this.settings.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
@@ -470,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.Set = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.UTXOSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 context.Set.SetCoins(coins.UnspentOutputs);
             }
@@ -486,7 +486,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.Validator.ExecuteBlock(context, null);
             }
 
-            // Persist the changes to the coinview. This will likely only be stored in memory, 
+            // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
             await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedBlock.HashBlock).ConfigureAwait(false);
@@ -511,7 +511,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// This method try to load from cache the UTXO of the next block in a background task. 
+        /// This method try to load from cache the UTXO of the next block in a background task.
         /// </summary>
         /// <param name="flags">Information about activated features.</param>
         private async void TryPrefetchAsync(DeploymentFlags flags)
@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 Block nextBlock = this.Puller.TryGetLookahead(0);
                 if (nextBlock != null)
-                    await this.UTXOSet.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
+                    await this.UTXOSet.FetchCoinsAsync(this.GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");

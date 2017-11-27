@@ -7,13 +7,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     internal class CacheEntryStub : ICacheEntry
     {
-        private object key;
-        private object value;
-
         public CacheEntryStub(object key, object value)
         {
-            this.key = key;
-            this.value = value;
+            this.Key = key;
+            this.Value = value;
         }
 
         public DateTimeOffset? AbsoluteExpiration
@@ -23,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public TimeSpan? AbsoluteExpirationRelativeToNow
         {
-            get;set;
+            get; set;
         }
 
         public IList<IChangeToken> ExpirationTokens
@@ -39,13 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             get; set;
         }
 
-        public object Key
-        {
-            get
-            {
-                return this.key;
-            }
-        }
+        public object Key { get; }
 
         public IList<PostEvictionCallbackRegistration> PostEvictionCallbacks
         {
@@ -62,23 +53,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             get; set;
         }
 
-        public object Value
-        {
-            get
-            {
-                return this.value;
-            }
-
-            set
-            {
-                this.value = value;
-            }
-        }
+        public object Value { get; set; }
 
         public void Dispose()
         {
         }
     }
+
     internal class MemoryCacheStub : IMemoryCache
     {
         public IDictionary<object, object> internalDict;
@@ -98,14 +79,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.lastCreateCalled = null;
             this.internalDict = dict;
         }
-        
+
         public ICacheEntry CreateEntry(object key)
         {
             this.lastCreateCalled = key;
             this.internalDict.Add(key, null);
             return new CacheEntryStub(key, null);
         }
-        
+
         public void Dispose()
         {
         }

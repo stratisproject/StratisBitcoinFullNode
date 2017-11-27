@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mnemonic = walletManager.CreateWallet(password, "mywallet");
 
             // assert it has saved it to disk and has been created correctly.
-            var expectedWallet = JsonConvert.DeserializeObject<Stratis.Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));
+            var expectedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));
             var actualWallet = walletManager.Wallets.ElementAt(0);
 
             Assert.Equal("mywallet", expectedWallet.Name);
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mnemonic = walletManager.CreateWallet(password, "mywallet", passphrase);
 
             // assert it has saved it to disk and has been created correctly.
-            var expectedWallet = JsonConvert.DeserializeObject<Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));
+            var expectedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));
             var actualWallet = walletManager.Wallets.ElementAt(0);
 
             Assert.Equal("mywallet", expectedWallet.Name);
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
-            
+
             File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ConcurrentChain chain = WalletTestsHelpers.PrepareChainWithBlock();
             // Prepare an existing wallet through this manager and delete the file from disk. Return the created wallet object and mnemonic.
-            var deletedWallet = CreateWalletOnDiskAndDeleteWallet(dataFolder, password, passphrase, walletName, chain);
+            var deletedWallet = this.CreateWalletOnDiskAndDeleteWallet(dataFolder, password, passphrase, walletName, chain);
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/{walletName}.wallet.json")));
 
             // create a fresh manager.
@@ -820,7 +820,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(result.Address);
         }
-
 
         [Fact]
         public void GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet()
@@ -1449,7 +1448,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(data.wallet);
 
-
             var result = data.wallet.GetExtendedPrivateKeyForAddress("password", address);
 
             Assert.Equal(data.key.Derive(new KeyPath("m/44'/0'/0'/0/0")).GetWif(data.wallet.Network), result);
@@ -2014,7 +2012,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                     var nodeCollection = new NodesCollection();
                     nodeCollection.Add(node);
-                  
+
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
                         dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                     walletManager.Wallets.Add(wallet);
@@ -2124,7 +2122,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                     var nodeCollection = new NodesCollection();
                     nodeCollection.Add(node);
-                    
+
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
                         dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                     walletManager.Wallets.Add(wallet);
@@ -2237,7 +2235,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                     var nodeCollection = new NodesCollection();
                     nodeCollection.Add(node);
-                   
+
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
                         dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                     walletManager.Wallets.Add(wallet);
@@ -2629,14 +2627,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            var resultWallet = JsonConvert.DeserializeObject<Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
+            var resultWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.Equal(wallet.Name, resultWallet.Name);
             Assert.Equal(wallet.EncryptedSeed, resultWallet.EncryptedSeed);
             Assert.Equal(wallet.ChainCode, resultWallet.ChainCode);
             Assert.Equal(wallet.Network, resultWallet.Network);
             Assert.Equal(wallet.AccountsRoot.Count, resultWallet.AccountsRoot.Count);
 
-            var resultWallet2 = JsonConvert.DeserializeObject<Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
+            var resultWallet2 = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
             Assert.Equal(wallet2.Name, resultWallet2.Name);
             Assert.Equal(wallet2.EncryptedSeed, resultWallet2.EncryptedSeed);
             Assert.Equal(wallet2.ChainCode, resultWallet2.ChainCode);
@@ -2665,7 +2663,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            var resultWallet = JsonConvert.DeserializeObject<Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
+            var resultWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.Equal(wallet.Name, resultWallet.Name);
             Assert.Equal(wallet.EncryptedSeed, resultWallet.EncryptedSeed);
             Assert.Equal(wallet.ChainCode, resultWallet.ChainCode);
@@ -2883,7 +2881,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotEqual(chainedBlock.HashBlock, walletManager.WalletTipHash);
         }
 
-        private (Mnemonic mnemonic, Bitcoin.Features.Wallet.Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
+        private (Mnemonic mnemonic, Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
         {
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);

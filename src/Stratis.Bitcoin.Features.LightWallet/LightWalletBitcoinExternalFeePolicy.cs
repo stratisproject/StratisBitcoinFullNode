@@ -19,14 +19,22 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         private readonly Money maxTxFee;
+
         private static readonly HttpClient HttpClient = new HttpClient();
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly ILogger logger;
+
         private readonly NodeSettings nodeSettings;
+
         private bool initializedOnce;
 
         private FeeRate highTxFeePerKb;
+
         private FeeRate mediumTxFeePerKb;
+
         private FeeRate lowTxFeePerKb;
 
         public LightWalletBitcoinExternalFeePolicy(IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, NodeSettings settings)

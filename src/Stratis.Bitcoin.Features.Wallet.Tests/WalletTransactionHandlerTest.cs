@@ -55,7 +55,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 walletManager.Wallets.Add(wallet);
 
-
                 var walletReference = new WalletAccountReference
                 {
                     AccountName = "account1",
@@ -65,7 +64,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 walletTransactionHandler.BuildTransaction(CreateContext(walletReference, "password", new Script(), new Money(500), FeeType.Medium, 2));
             });
         }
-
 
         [Fact]
         public void BuildTransactionFeeTooLowThrowsWalletException()
@@ -110,7 +108,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Address = changeKeys.Address.ToString(),
                         Pubkey = changeKeys.PubKey.ScriptPubKey,
                         ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                        Transactions = new List<TransactionData>()                    }
+                        Transactions = new List<TransactionData>()
+                    }
                 }
                 });
 
@@ -161,7 +160,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
                 ExternalAddresses = new List<HdAddress> { address },
-                InternalAddresses = new List<HdAddress>()            });
+                InternalAddresses = new List<HdAddress>()
+            });
 
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
@@ -214,7 +214,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationKeys2 = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/2");
             var destinationKeys3 = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/3");
 
-
             var address = new HdAddress
             {
                 Index = 0,
@@ -236,7 +235,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
                 ExternalAddresses = new List<HdAddress> { address },
-                InternalAddresses = new List<HdAddress>()            });
+                InternalAddresses = new List<HdAddress>()
+            });
 
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
@@ -303,7 +303,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Given_AnInvalidAccountIsUsed_When_GetMaximumSpendableAmountIsCalled_Then_AnExceptionIsThrown()
         {
-
             DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
@@ -464,8 +463,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         /// <summary>
-        /// Tests the <see cref="WalletTransactionHandler.EstimateFee(TransactionBuildContext)"/> method by 
-        /// comparing it's fee calculation with the transaction fee computed for the same tx in the 
+        /// Tests the <see cref="WalletTransactionHandler.EstimateFee(TransactionBuildContext)"/> method by
+        /// comparing it's fee calculation with the transaction fee computed for the same tx in the
         /// <see cref="WalletTransactionHandler.BuildTransaction(TransactionBuildContext)"/> method.
         /// </summary>
         [Fact]

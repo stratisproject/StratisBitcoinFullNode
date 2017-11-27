@@ -24,13 +24,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         public StoreSettings(Action<StoreSettings> callback)
-            :this()
+            : this()
         {
             this.callback = callback;
         }
 
         public StoreSettings(NodeSettings nodeSettings, Action<StoreSettings> callback = null)
-            :this(callback)
+            : this(callback)
         {
             this.Load(nodeSettings);
         }
@@ -51,9 +51,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
-
-            // TODO: --reindex
-
         }
     }
 }

@@ -20,9 +20,13 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly ILogger logger;
+
         private readonly ISignals signals;
+
         private ChainedBlock tip;
 
         public BlockNotification(
@@ -49,8 +53,11 @@ namespace Stratis.Bitcoin.Features.Notifications
         }
 
         public ConcurrentChain Chain { get; }
+
         public ILookaheadBlockPuller Puller { get; }
+
         public virtual bool ReSync { get; private set; }
+
         public virtual uint256 StartHash { get; private set; }
 
         /// <inheritdoc/>
@@ -83,11 +90,11 @@ namespace Stratis.Bitcoin.Features.Notifications
         {
             this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
             {
-                await Notify(this.nodeLifetime.ApplicationStopping);
+                await this.Notify(this.nodeLifetime.ApplicationStopping);
             },
             this.nodeLifetime.ApplicationStopping);
         }
-        
+
         /// <inheritdoc/>
         public void Stop()
         {

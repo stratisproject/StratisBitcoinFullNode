@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
@@ -74,7 +73,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     var first = stopwatch.ElapsedMilliseconds;
                     blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
                     var second = stopwatch.ElapsedMilliseconds;
-
                 }
             }
         }
@@ -120,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
 
                     // delete
-                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList()).GetAwaiter().GetResult();
+                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] { lst.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
                     var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
                     Assert.Null(deleted);
                 }
@@ -213,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 newNodeInstance.Start();
 
                 // check that store recovered to be the same as the best chain.
-               Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.HighestPersistedBlock().HashBlock);
+                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.HighestPersistedBlock().HashBlock);
                 //TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
             }
         }
@@ -261,7 +259,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode2.GenerateStratisWithMiner(20);
                 TestHelper.WaitLoop(() => stratisNode2.FullNode.HighestPersistedBlock().Height == 30);
 
-                // add node2 
+                // add node2
                 stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
 
                 // node2 should be synced
@@ -292,7 +290,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var bestBlock1 = stratisNode1.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
                 Assert.NotNull(bestBlock1);
 
-                // get the block coinbase trx 
+                // get the block coinbase trx
                 var trx = stratisNode2.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());

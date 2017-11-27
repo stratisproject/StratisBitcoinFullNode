@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             periodicTask.Start(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33));
 
-            Thread.Sleep(120);            
+            Thread.Sleep(120);
             this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask starting");
             this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask stopping");
         }
@@ -88,7 +88,6 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             return Task.CompletedTask;
         }
-
 
         private Task DoTask(CancellationToken token)
         {

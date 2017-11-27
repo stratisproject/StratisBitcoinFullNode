@@ -24,7 +24,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private IAsyncLoop asyncLoop;
 
         public StoreBlockPuller BlockPuller { get; }
+
         public IBlockRepository BlockRepository { get; }
+
         private readonly BlockStoreStats blockStoreStats;
 
         /// <summary> Best chain of block headers.</summary>
@@ -47,6 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
@@ -58,7 +61,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
-        public virtual string StoreName { get { return "BlockStore"; } }
+        public virtual string StoreName
+        {
+            get { return "BlockStore"; }
+        }
 
         private readonly StoreSettings storeSettings;
 
@@ -84,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState = chainState;
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
 
@@ -101,9 +107,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///     <item>2. The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found 
+        /// To recover we walk back the chain until a common block header is found
         /// and set the BlockStore's StoreTip to that.
-        /// </para>                
+        /// </para>
         /// </summary>
         public async Task InitializeAsync()
         {
@@ -213,7 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
             {
-                await DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
+                await this.DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
@@ -241,9 +247,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>
         /// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
         /// When in IBD we may need many reads for the block key without fetching the block
-        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
-        /// a read is normally done when a peer is asking for the entire block (not just the key) 
-        /// then if LazyLoadingOn = false the read will be faster on the entire block      
+        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD
+        /// a read is normally done when a peer is asking for the entire block (not just the key)
+        /// then if LazyLoadingOn = false the read will be faster on the entire block
         /// </remarks>
         private async Task DownloadAndStoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
         {

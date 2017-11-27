@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Broadcasting
 
         public void OnTransactionStateChanged(TransactionBroadcastEntry entry)
         {
-            TransactionStateChanged?.Invoke(this, entry);
+            this.TransactionStateChanged?.Invoke(this, entry);
         }
 
         private ConcurrentHashSet<TransactionBroadcastEntry> Broadcasts { get; }
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Broadcasting
             if (oldEntry == default(TransactionBroadcastEntry))
             {
                 this.Broadcasts.Add(newEntry);
-                OnTransactionStateChanged(newEntry);
+                this.OnTransactionStateChanged(newEntry);
             }
             else
             {
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Broadcasting
                 {
                     this.Broadcasts.TryRemove(oldEntry);
                     this.Broadcasts.Add(newEntry);
-                    OnTransactionStateChanged(newEntry);
+                    this.OnTransactionStateChanged(newEntry);
                 }
             }
         }

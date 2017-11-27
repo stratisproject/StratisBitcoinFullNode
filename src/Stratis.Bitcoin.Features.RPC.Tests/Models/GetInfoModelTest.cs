@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
     public class GetInfoModelTest : BaseRPCModelTest
     {
-        static readonly string[] AllPropertyNames = new string[] {
+        private static readonly string[] AllPropertyNames = new string[] {
                 "version",
                 "protocolversion",
                 "walletversion",
@@ -94,7 +94,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             IOrderedEnumerable<string> actualSortedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name).OrderBy(name => name);
 
             Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
-
         }
 
         [Fact]
@@ -141,6 +140,5 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             Assert.Equal(Money.Satoshis(1000).ToUnit(MoneyUnit.BTC), model.relayfee);
             Assert.Equal("URGENT: Alert key compromised, upgrade required", model.errors);
         }
-
     }
 }

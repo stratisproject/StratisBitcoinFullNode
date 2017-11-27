@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests
     public class TestBase
     {
         /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        public readonly ILoggerFactory loggerFactory;
 
         /// <summary>
         /// Initializes logger factory for inherited tests.
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Tests
         }
 
         /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.        
+        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.
         /// </summary>
         /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
         /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>

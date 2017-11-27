@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Utilities.FileStorage
 {
@@ -9,10 +10,15 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
     /// Class providing methods to save objects as files on the file system.
     /// </summary>
     /// <typeparam name="T">The type of object to be stored in the file system.</typeparam>
-    public class FileStorage<T> where T : new()
+    public sealed class FileStorage<T> where T : new()
     {
         /// <summary> Gets the folder path. </summary>
         public string FolderPath { get; }
+
+        /// <summary>
+        /// Converters that should be used when serializing and deserializing.
+        /// </summary>
+        private JsonConverter[] converters;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileStorage{T}"/> class.
@@ -29,6 +35,20 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="FileStorage{T}"/> class.
+        /// </summary>
+        /// <param name="dataFolder">The path of the folder in which the files are to be stored.</param>
+        public FileStorage(DataFolder dataFolder)
+        {
+            Guard.NotNull(dataFolder, nameof(dataFolder));
+
+            this.FolderPath = dataFolder.AddressManagerFilePath;
+
+            // Create a folder if none exists.
+            Directory.CreateDirectory(this.FolderPath);
+        }
+
+        /// <summary>
         /// Saves an object to a file.
         /// </summary>
         /// <param name="toSave">Object to save as a file.</param>
@@ -39,7 +59,11 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+
+            if (this.converters != null && this.converters.Any())
+                File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented, this.converters));
+            else
+                File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
         }
 
         /// <summary>
@@ -95,7 +119,10 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
                 throw new FileNotFoundException($"No wallet file found at {filePath}");
 
             // Load the file from the file system.
-            return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
+            if (this.converters != null && this.converters.Any())
+                return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath), this.converters);
+            else
+                return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
         }
 
         /// <summary>
@@ -121,6 +148,15 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
             }
 
             return files;
+        }
+
+        /// <summary>
+        /// Sets a collection of <see cref="JsonConverter"/> to use.
+        /// </summary>
+        public FileStorage<T> WithConverters(JsonConverter[] converters)
+        {
+            this.converters = converters;
+            return this;
         }
     }
 }

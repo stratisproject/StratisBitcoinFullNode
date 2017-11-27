@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class MinerTests
     {
-        static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
+        private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
         public static PowBlockAssembler AssemblerForTest(TestContext testContext)
         {
@@ -35,6 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
         }
+
         public class Blockinfo
         {
             public int extranonce;
@@ -148,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, consensusSettings), dateTimeProvider, loggerFactory);
 
-                ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
+                var connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider);
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
 
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings);
@@ -486,7 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.HIGHFEE).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             Assert.True(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
-            Assert.True(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
+            Assert.True(!this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
@@ -521,7 +523,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
             Assert.True(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
-            Assert.True(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
+            Assert.True(!this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
         }
 
         [Fact]
@@ -563,7 +565,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
             Assert.True(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
-            Assert.True(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
+            Assert.True(this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast(), context.chain.Tip.Height + 2)); // Locktime passes on 2nd block
@@ -595,11 +597,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
             Assert.True(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
-            Assert.True(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
+            Assert.True(this.TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast().AddMinutes(2), context.chain.Tip.Height + 2)); // Locktime passes 2 min later
-
         }
 
         //NOTE: These tests rely on CreateNewBlock doing its own self-validation!
@@ -737,7 +738,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    chainActive.Tip().Height--;
             //    SetMockTime(0);
             //    mempool.clear();
-
         }
     }
 }

@@ -44,16 +44,28 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
+
         private readonly ConcurrentChain chain;
+
         private readonly Network network;
+
         private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly AssemblerFactory blockAssemblerFactory;
+
         private readonly IBlockRepository blockRepository;
+
         private readonly ChainState chainState;
+
         private readonly Signals.Signals signals;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private uint256 hashPrevBlock;
+
         private IAsyncLoop mining;
 
         /// <summary>Instance logger.</summary>

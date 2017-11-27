@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
     public class QualityScoreTest
     {
         /// <summary>
-        /// Checks that <see cref="QualityScore.AverageBlockTimePerKb"/> is correctly calculated 
+        /// Checks that <see cref="QualityScore.AverageBlockTimePerKb"/> is correctly calculated
         /// if the number of samples is low.
         /// </summary>
         [Fact]
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         }
 
         /// <summary>
-        /// Checks that <see cref="QualityScore.AverageBlockTimePerKb"/> is correctly calculated 
+        /// Checks that <see cref="QualityScore.AverageBlockTimePerKb"/> is correctly calculated
         /// if the number of samples exceeds the capacity of the history.
         /// </summary>
         [Fact]
@@ -83,8 +83,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         }
 
         /// <summary>
-        /// Checks that <see cref="QualityScore.CalculateQualityAdjustment"/> is correctly calculated. 
-        /// More specifically, we check if the score adjustment is positive (i.e. rewarding) if the block time 
+        /// Checks that <see cref="QualityScore.CalculateQualityAdjustment"/> is correctly calculated.
+        /// More specifically, we check if the score adjustment is positive (i.e. rewarding) if the block time
         /// is less then 2x current average and negative (i.e. penalizing) if the block time is more than 2x average.
         /// </summary>
         [Fact]
@@ -146,19 +146,19 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 peers[i].Setup(b => b.QualityScore).Returns(peerScores[i]);
             }
 
-            qualityScore.AddSample(peers[0].Object, 30, 2048); 
+            qualityScore.AddSample(peers[0].Object, 30, 2048);
             Assert.False(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[1].Object, 50, 1024); 
+            qualityScore.AddSample(peers[1].Object, 50, 1024);
             Assert.False(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[2].Object, 40, 1024); 
+            qualityScore.AddSample(peers[2].Object, 40, 1024);
             Assert.True(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[0].Object, 30, 2048); 
+            qualityScore.AddSample(peers[0].Object, 30, 2048);
             Assert.True(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[0].Object, 30, 3072); 
+            qualityScore.AddSample(peers[0].Object, 30, 3072);
             Assert.True(qualityScore.IsPenaltyDiscarded());
 
             qualityScore.AddSample(peers[0].Object, 30, 2048);

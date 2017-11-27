@@ -21,13 +21,22 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         private readonly IWalletManager walletManager;
+
         private readonly ConcurrentChain chain;
+
         private readonly IBlockNotification blockNotification;
+
         private readonly ILogger logger;
+
         private readonly ISignals signals;
+
         protected ChainedBlock walletTip;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private IDisposable sub;
+
         private IDisposable txSub;
 
         public ChainedBlock WalletTip => this.walletTip;
@@ -79,11 +88,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 {
                     // the wallet tip was not found in the main chain.
                     // this can happen if the node crashes unexpectedly.
-                    // to recover we need to find the first common fork 
-                    // with the best chain, as the wallet does not have a  
-                    // list of chain headers we use a BlockLocator and persist 
-                    // that in the wallet. the block locator will help finding 
-                    // a common fork and bringing the wallet back to a good 
+                    // to recover we need to find the first common fork
+                    // with the best chain, as the wallet does not have a
+                    // list of chain headers we use a BlockLocator and persist
+                    // that in the wallet. the block locator will help finding
+                    // a common fork and bringing the wallet back to a good
                     // state (behind the best chain)
                     ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
                     BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
@@ -122,7 +131,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                     this.SyncFromHeight(earliestWalletHeight.Value);
                 }
-
             }
         }
 
@@ -161,11 +169,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 return;
             }
 
-            // If the new block's previous hash is the same as the 
-            // wallet hash then just pass the block to the manager. 
+            // If the new block's previous hash is the same as the
+            // wallet hash then just pass the block to the manager.
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
-                // If previous block does not match there might have 
+                // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
                 ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)
@@ -253,7 +261,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     },
                     (ex) =>
                     {
-                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and 
+                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
                         // sync from the current height.
                         this.logger.LogError("Exception occurred while waiting for chain to download: {0}.", ex.Message);
                         this.StartSync(this.chain.Tip.Height);
@@ -295,7 +303,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     },
                     (ex) =>
                     {
-                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and 
+                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
                         // sync from the current height.
                         this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
                         this.StartSync(this.chain.Tip.Height);

@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
     public class GetStakingInfoModelTest : BaseRPCModelTest
     {
         /// <summary>List of all model properties.</summary>
-        private static readonly string[] ModelPropertyNames = new string[] 
+        private static readonly string[] ModelPropertyNames = new string[]
         {
             "enabled",
             "staking",

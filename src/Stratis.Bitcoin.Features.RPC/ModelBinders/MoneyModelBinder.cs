@@ -8,20 +8,20 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
     {
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
-            if(bindingContext.ModelType != typeof(Money))
+            if (bindingContext.ModelType != typeof(Money))
             {
                 return Task.CompletedTask;
             }
 
             ValueProviderResult val = bindingContext.ValueProvider.GetValue(
                 bindingContext.ModelName);
-            if(val == null)
+            if (val == null)
             {
                 return Task.CompletedTask;
             }
 
             string key = val.FirstValue as string;
-            if(key == null)
+            if (key == null)
             {
                 return Task.CompletedTask;
             }
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
 
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
-            if(context.Metadata.ModelType == typeof(Money))
+            if (context.Metadata.ModelType == typeof(Money))
                 return this;
             return null;
         }
