@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -225,7 +226,15 @@ namespace Stratis.Bitcoin.Connection
                 });
 
                 server.InboundNodeConnectionParameters = cloneParameters;
-                server.Listen();
+                try
+                {
+                    server.Listen();
+                }
+                catch (SocketException e)
+                {
+                    this.logger.LogCritical("Unable to listen on port {0} (you can change the port using '-port=[number]'). Error message: {1}", listen.Endpoint.Port, e.Message);
+                    throw e;
+                }
 
                 logs.Append(listen.Endpoint.Address + ":" + listen.Endpoint.Port);
                 if (listen.Whitelisted)
