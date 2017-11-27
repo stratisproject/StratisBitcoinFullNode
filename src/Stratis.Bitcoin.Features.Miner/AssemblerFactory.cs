@@ -6,11 +6,17 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// Provides an interface for creating block templates of different types.
+    /// </summary>
     public abstract class AssemblerFactory
     {
         public abstract BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null);
     }
 
+    /// <summary>
+    /// Provides functionality for creating PoW block templates.
+    /// </summary>
     public class PowAssemblerFactory : AssemblerFactory
     {
         protected readonly ConsensusLoop consensusLoop;
@@ -56,6 +62,9 @@ namespace Stratis.Bitcoin.Features.Miner
         }
     }
 
+    /// <summary>
+    /// Provides functionality for creating PoS block templates.
+    /// </summary>
     public class PosAssemblerFactory : AssemblerFactory
     {
         protected readonly ConsensusLoop consensusLoop;

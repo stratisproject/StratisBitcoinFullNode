@@ -45,15 +45,12 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// Consumes incoming blocks and then validates and executes such a block.
+    /// Consumes incoming blocks, validates and executes them.
     /// </summary>
     /// <remarks>
     /// <para>
     /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by
     /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
-    /// </para>
-    /// <para>
-    /// An internal loop will manage such background operations.
     /// </para>
     /// </remarks>
     public class ConsensusLoop

@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Consumes incoming blocks and then validates and executes (processes) such a block.</summary>
+        /// <summary>Consumes incoming blocks, validates and executes them.</summary>
         private readonly ConsensusLoop consensusLoop;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
@@ -206,13 +206,13 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Provides date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Used for creating block template.</summary>
+        /// <summary>Provides an interface for creating block templates of different types.</summary>
         private readonly AssemblerFactory blockAssemblerFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <summary>Used to fetch UTXOs.</summary>
+        /// <summary>Consensus' view of UTXO set.</summary>
         private readonly CoinView coinView;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private readonly StakeValidator stakeValidator;
 
-        /// <summary>Used for creating <see cref="mining"/> loop.</summary>
+        /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>A manager providing operations on wallets.</summary>
@@ -236,8 +236,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Mining loop.</summary>
-        private IAsyncLoop mining;
+        /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
+        private IAsyncLoop stakingLoop;
 
         /// <summary>
         /// Target reserved balance that will not participate in staking.
@@ -245,16 +245,13 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private Money targetReserveBalance;
 
-        /// <summary>UTXO's value threshold for being selected for staking.</summary>
-        private readonly int minimumInputValue;
-
         /// <summary>Time in milliseconds between attempts to generate PoS blocks.</summary>
         private readonly int minerSleep;
 
-        /// <summary>Used for managing asynchronous access to <see cref="mempool"/>.</summary>
+        /// <summary>A lock for managing asynchronous access to memory pool.</summary>
         protected readonly MempoolSchedulerLock mempoolLock;
 
-        /// <summary>Used for populating <see cref="rpcGetStakingInfoModel"/> with pooled transactions.</summary>
+        /// <summary>Memory pool of pending transactions.</summary>
         protected readonly TxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
@@ -288,21 +285,21 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
         /// </summary>
-        /// <param name="consensusLoop">Responsible for downloading and validating blocks.</param>
-        /// <param name="chain">Chain of headers from genesis.</param>
+        /// <param name="consensusLoop">Consumes incoming blocks, validates and executes them.</param>
+        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="connection">Used to verify that node is connected to network before we start staking.</param>
+        /// <param name="connection">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
-        /// <param name="blockAssemblerFactory">Used for creating block template.</param>
+        /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
         /// <param name="chainState">Used to verify that node is not in a state of IBD (Initial Block Download).</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="coinView">Used to fetch UTXOs.</param>
+        /// <param name="coinView">Consensus' view of UTXO set.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
         /// <param name="stakeValidator">Provides functionality for checking validity of PoS blocks.</param>
-        /// <param name="mempoolLock">Used for managing asynchronous access to <see cref="mempool"/>.</param>
-        /// <param name="mempool">Used for populating <see cref="rpcGetStakingInfoModel"/> with pooled transactions.</param>
+        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
+        /// <param name="mempool">Memory pool of pending transactions.</param>
         /// <param name="wallet">A manager providing operations on wallets.</param>
-        /// <param name="asyncLoopFactory">Used for creating <see cref="mining"/> loop.</param>
+        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             ConsensusLoop consensusLoop,
@@ -344,7 +341,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
-            this.minimumInputValue = 0;
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
 
@@ -356,18 +352,18 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
         /// <returns>Interface to started loop, so it can be stopped during shutdown.</returns>
-        public IAsyncLoop Mine(WalletSecret walletSecret)
+        public IAsyncLoop Stake(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
-            if (this.mining != null)
+            if (this.stakingLoop != null)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
-                return this.mining;
+                return this.stakingLoop;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
 
-            this.mining = this.asyncLoopFactory.Run("PosMining.Mine", async token =>
+            this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
             {
                 this.logger.LogTrace("()");
 
@@ -383,7 +379,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     // Miner exceptions should be ignored. It means that the miner
                     // possibly mined a block that was not accepted by peers or is even invalid,
-                    // but it should not halted the mining operation.
+                    // but it should not halted the staking operation.
                     this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
                     this.rpcGetStakingInfoModel.Errors = me.Message;
                 }
@@ -391,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     // All consensus exceptions should be ignored. It means that the miner
                     // run into problems while constructing block or verifying it
-                    // but it should not halted the mining operation.
+                    // but it should not halted the staking operation.
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                     this.rpcGetStakingInfoModel.Errors = cee.Message;
                 }
@@ -408,7 +404,7 @@ namespace Stratis.Bitcoin.Features.Miner
             startAfter: TimeSpans.TenSeconds);
 
             this.logger.LogTrace("(-)");
-            return this.mining;
+            return this.stakingLoop;
         }
 
         /// <summary>
@@ -874,7 +870,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                         var contextInformation = new ContextInformation(new BlockValidationContext { Block = block }, this.network.Consensus);
                         contextInformation.SetStake();
-                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation.Stake, chainTip, block.Header.Bits, txTime, prevoutStake, out _);
+                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation.Stake, chainTip, block.Header.Bits, txTime, prevoutStake);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -1018,12 +1014,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                if (utxoStakeDescription.TxOut.Value < this.minimumInputValue)
-                {
-                    this.logger.LogTrace("UTXO '{0}' can't be added because its value {1} is lower than required minimal value {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.TxOut.Value, this.minimumInputValue);
-                    continue;
-                }
-
                 currentValue += utxoStakeDescription.TxOut.Value;
 
                 this.logger.LogTrace("UTXO '{0}' accepted.", utxoStakeDescription.OutPoint);
@@ -1096,7 +1086,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return res;
                 }
 
-                block = this.stakeValidator.GetLastBlockIndex(this.stakeChain, tip, false);
+                block = this.stakeValidator.GetLastPowPosChainedBlock(this.stakeChain, tip, false);
             }
 
             uint shift = (block.Header.Bits >> 24) & 0xFF;
