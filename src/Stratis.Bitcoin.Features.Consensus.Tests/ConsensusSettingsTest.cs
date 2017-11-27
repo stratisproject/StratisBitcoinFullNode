@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
             NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { "-assumevalid=xxx" });
-            Assert.Throws<ConfigurationException>( () => new ConsensusSettings(nodeSettings, loggerFactory));
+            Assert.Throws<ConfigurationException>(() => new ConsensusSettings(nodeSettings, loggerFactory));
         }
 
         [Fact]

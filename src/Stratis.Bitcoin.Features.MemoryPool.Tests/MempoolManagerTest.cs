@@ -46,9 +46,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
                 Mock<TxMempool> mockTxMempool = new Mock<TxMempool>();
                 Mock<IMempoolValidator> mockValidator = new Mock<IMempoolValidator>();
-                mockValidator.Setup(i => 
+                mockValidator.Setup(i =>
                     i.AcceptToMemoryPoolWithTime(It.IsAny<MempoolValidationState>(), It.IsAny<Transaction>()))
-                        .ReturnsAsync((MempoolValidationState state, Transaction tx) => 
+                        .ReturnsAsync((MempoolValidationState state, Transaction tx) =>
                         {
                             PowConsensusOptions consensusOptions = new PowConsensusOptions();
                             mempool.MapTx.Add(new TxMempoolEntry(tx, Money.Zero, 0, 0, 0, Money.Zero, false, 0, null, consensusOptions));

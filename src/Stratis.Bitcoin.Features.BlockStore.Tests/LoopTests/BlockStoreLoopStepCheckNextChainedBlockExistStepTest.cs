@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void CheckNextChainedBlockExists_WithNextChainedBlock_Exists_SetStoreTipAndBlockHash_InMemory()
         {
-            var blocks = CreateBlocks(5);
+            var blocks = this.CreateBlocks(5);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 4 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
 
                 // Create the last chained block without appending to the chain
                 var block03 = chain.GetBlock(blocks[3].GetHash());

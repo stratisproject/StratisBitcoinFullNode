@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using NBitcoin.Protocol.Payloads;
 using Xunit;
 
@@ -24,6 +23,9 @@ namespace NBitcoin.Tests
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
         }
+
+        /*
+         * TODO: Consider importing to FN.
 
 		public static bool noClient = !Process.GetProcesses().Any(p => p.ProcessName.Contains("stratis"));
 
@@ -589,6 +591,8 @@ namespace NBitcoin.Tests
 				Assert.True(blocks.Count == 100);
 			}
 		}
-	}
+
+*/	}
 }
 #endif
+      

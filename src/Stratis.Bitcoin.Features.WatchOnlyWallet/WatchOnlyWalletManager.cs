@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
     /// <summary>
     /// Class representing a manager for a watch-only wallet.
-    /// In this implementation, the wallet is saved to the file system. 
+    /// In this implementation, the wallet is saved to the file system.
     /// </summary>
     public class WatchOnlyWalletManager : IWatchOnlyWalletManager
     {
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         /// <remarks>
         /// TODO ideally we'd have WatchAddress call this method, but the value populating the Address field is slightly different.
-        /// The Address field is actually not used anywhere and is more there for info. 
+        /// The Address field is actually not used anywhere and is more there for info.
         /// Regardless, we need to consolidate them.
         /// </remarks>
         public void WatchScriptPubKey(Script scriptPubKey)
@@ -217,7 +217,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 Script = scriptPubKey,
                 Address = scriptPubKey.Hash.ToString()
-
             });
 
             this.SaveWatchOnlyWallet();

@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             var settings = serviceProvider.GetService<NodeSettings>();
             var consensusLoop = serviceProvider.GetService<ConsensusLoop>();
             var consensus = serviceProvider.GetService<PowConsensusValidator>();
-            var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
+            var chain = serviceProvider.GetService<ConcurrentChain>();
             var chainState = serviceProvider.GetService<ChainState>();
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();

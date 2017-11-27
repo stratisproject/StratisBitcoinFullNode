@@ -5,6 +5,9 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -122,6 +125,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
         private readonly NodeRequirement requirements;
+
         /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
         public virtual NodeRequirement Requirements => this.requirements;
 

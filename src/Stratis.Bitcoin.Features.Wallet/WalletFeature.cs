@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
@@ -28,13 +27,19 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletFeature : FullNodeFeature, INodeStats, IFeatureStats
     {
         private readonly IWalletSyncManager walletSyncManager;
+
         private readonly IWalletManager walletManager;
+
         private readonly Signals.Signals signals;
 
         private IDisposable blockSubscriberDisposable;
+
         private IDisposable transactionSubscriberDisposable;
+
         private ConcurrentChain chain;
+
         private readonly IConnectionManager connectionManager;
+
         private readonly BroadcasterBehavior broadcasterBehavior;
 
         /// <summary>

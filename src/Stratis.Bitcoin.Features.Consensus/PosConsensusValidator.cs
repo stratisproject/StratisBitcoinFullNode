@@ -52,20 +52,25 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly StakeValidator stakeValidator;
-        public StakeValidator StakeValidator { get { return this.stakeValidator; } }
+        public StakeValidator StakeValidator { get; }
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
         private readonly PosConsensusOptions consensusOptions;
 
-        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public PosConsensusValidator(
+            StakeValidator stakeValidator,
+            ICheckpoints checkpoints,
+            Network network,
+            StakeChain stakeChain,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.stakeValidator = stakeValidator;
+            this.StakeValidator = stakeValidator;
             this.stakeChain = stakeChain;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
@@ -165,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check proof-of-stake block signature.
-            if (!CheckBlockSignature(block))
+            if (!this.CheckBlockSignature(block))
             {
                 this.logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -323,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private long FutureDrift(long time)
         {
-            return IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
+            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
 
         /// <summary>
@@ -439,7 +444,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
                 if (!context.BlockValidationContext.SkipValidation)
                 {
-                    this.stakeValidator.CheckProofOfStake(context, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
+                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
                 }
                 else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedBlock.Height);
             }
@@ -464,7 +469,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Compute stake modifier.
                 ChainedBlock prevChainedBlock = chainedBlock.Previous;
                 BlockStake blockStakePrev = prevChainedBlock == null ? null : this.stakeChain.Get(prevChainedBlock.HashBlock);
-                blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedBlock, blockStakePrev, blockStake.IsProofOfWork() ? chainedBlock.HashBlock : blockStake.PrevoutStake.Hash);
+                blockStake.StakeModifierV2 = this.StakeValidator.ComputeStakeModifierV2(prevChainedBlock, blockStakePrev, blockStake.IsProofOfWork() ? chainedBlock.HashBlock : blockStake.PrevoutStake.Hash);
             }
             else if (chainedBlock.Height == lastCheckpointHeight)
             {

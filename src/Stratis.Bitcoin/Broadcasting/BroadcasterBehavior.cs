@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
@@ -29,7 +31,6 @@ namespace Stratis.Bitcoin.Broadcasting
             ILoggerFactory loggerFactory)
             : this(manager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
         {
-
         }
 
         /// <inheritdoc />
@@ -80,13 +81,13 @@ namespace Stratis.Bitcoin.Broadcasting
         {
             if (message.Message.Payload is GetDataPayload getDataPayload)
             {
-                ProcessGetDataPayload(node, getDataPayload);
+                this.ProcessGetDataPayload(node, getDataPayload);
                 return Task.CompletedTask;
             }
 
             if (message.Message.Payload is InvPayload invPayload)
             {
-                ProcessInvPayload(invPayload);
+                this.ProcessInvPayload(invPayload);
                 return Task.CompletedTask;
             }
             return Task.CompletedTask;

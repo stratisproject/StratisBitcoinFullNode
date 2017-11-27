@@ -4,7 +4,6 @@ using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.OpenAsset;
 using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using NBitcoin.RPC;
 using NBitcoin.Stealth;
 using Newtonsoft.Json.Linq;

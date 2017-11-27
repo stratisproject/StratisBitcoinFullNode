@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Features.RPC;
 
 namespace Stratis.Bitcoin.Cli
 {
-    class Program
+    public class Program
     {
         /// <summary>
         /// The expected sequence of arguments:

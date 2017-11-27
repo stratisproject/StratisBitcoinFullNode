@@ -93,7 +93,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
                 bestBlockHash = stratisNodeSync.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
-
             }
         }
 
@@ -219,7 +218,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>
         /// This tests simulates scenario 2 from issue 636.
         /// <para>
-        /// The test mines a block and roughly at the same time, but just after that, a new block at the same height 
+        /// The test mines a block and roughly at the same time, but just after that, a new block at the same height
         /// arrives from the puller. Then another block comes from the puller extending the chain without the block we mined.
         /// </para>
         /// </summary>
@@ -274,7 +273,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     // Then give it time to receive the block from the puller.
                     Thread.Sleep(2500);
-                    
+
                     // Check that local node accepted the Dp as consensus tip.
                     Assert.Equal(stratisMinerLocal.FullNode.ChainBehaviorState.ConsensusTip.HashBlock, dpHash);
                 }

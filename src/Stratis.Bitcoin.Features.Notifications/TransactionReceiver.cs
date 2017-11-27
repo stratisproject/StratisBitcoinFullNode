@@ -3,8 +3,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
@@ -14,13 +16,14 @@ namespace Stratis.Bitcoin.Features.Notifications
     public class TransactionReceiver : NodeBehavior
     {
         private readonly TransactionNotification transactionNotification;
+
         private readonly TransactionNotificationProgress notifiedTransactions;
+
         private readonly ILogger logger;
 
         public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
             : this(transactionNotification, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
         {
-
         }
 
         public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)

@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args)
         {
-            // By default, we look for a file named '<network>.conf' in the network's data directory, 
+            // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
             this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            // Find out if we need to run on testnet or regtest from the config file. 
+            // Find out if we need to run on testnet or regtest from the config file.
             if (this.ConfigurationFile != null)
             {
                 AssertConfigFileExists(this.ConfigurationFile);
@@ -209,12 +209,12 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
 
-            this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
-            this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
+            this.Logger.LogDebug("Data directory set to '{0}'.", this.DataDir);
+            this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
 
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
             this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            this.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
+            this.ApiUri = config.GetOrDefault("apiuri", (this.Network == Network.StratisMain || this.Network == Network.StratisTest || this.Network == Network.StratisRegTest) ? new Uri("http://localhost:37221") : new Uri("http://localhost:37220"));
 
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
@@ -351,12 +351,12 @@ namespace Stratis.Bitcoin.Configuration
         private string CreateDefaultConfigurationFile()
         {
             string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
-            this.Logger.LogInformation("Configuration file set to '{0}'.", configFilePath);
+            this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
 
             // Create a config file if none exist.
             if (!File.Exists(configFilePath))
             {
-                this.Logger.LogInformation("Creating configuration file...");
+                this.Logger.LogDebug("Creating configuration file...");
 
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("####RPC Settings####");
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Configuration
                 var home = Environment.GetEnvironmentVariable("HOME");
                 if (!string.IsNullOrEmpty(home))
                 {
-                    this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
+                    this.Logger.LogDebug("Using HOME environment variable for initializing application data.");
                     directoryPath = Path.Combine(home, "." + appName.ToLowerInvariant());
                 }
                 else
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Configuration
                 var localAppData = Environment.GetEnvironmentVariable("APPDATA");
                 if (!string.IsNullOrEmpty(localAppData))
                 {
-                    this.Logger.LogInformation("Using APPDATA environment variable for initializing application data.");
+                    this.Logger.LogDebug("Using APPDATA environment variable for initializing application data.");
                     directoryPath = Path.Combine(localAppData, appName);
                 }
                 else
@@ -423,12 +423,12 @@ namespace Stratis.Bitcoin.Configuration
                 }
             }
 
-            // Create the data directories if they don't exist. 
+            // Create the data directories if they don't exist.
             Directory.CreateDirectory(directoryPath);
             directoryPath = Path.Combine(directoryPath, network.Name);
             Directory.CreateDirectory(directoryPath);
 
-            this.Logger.LogInformation("Data directory initialized with path {0}.", directoryPath);
+            this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
             return directoryPath;
         }
 
@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Configuration
 
             if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
             {
-                var defaults = NodeSettings.Default();
+                var defaults = Default();
 
                 var builder = new StringBuilder();
                 builder.AppendLine("Usage:");

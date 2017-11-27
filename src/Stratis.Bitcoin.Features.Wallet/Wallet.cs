@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string EncryptedSeed { get; set; }
 
         /// <summary>
-        /// The chain code. 
+        /// The chain code.
         /// </summary>
         [JsonProperty(PropertyName = "chainCode")]
         [JsonConverter(typeof(ByteArrayConverter))]
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             var accounts = this.GetAccountsByCoinType(coinType).ToList();
 
-            foreach(TransactionData txData in accounts.SelectMany(x=>x.ExternalAddresses).SelectMany(x=>x.Transactions))
+            foreach (TransactionData txData in accounts.SelectMany(x => x.ExternalAddresses).SelectMany(x => x.Transactions))
             {
                 yield return txData;
             }
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <remarks>
         /// The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
-        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.        
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.
         /// </remarks>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
         /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             // Get the accounts root for this type of coin.
             var accountsRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            
+
             if (accountsRoot.Accounts.Any())
             {
                 // Get an unused account.
@@ -557,12 +557,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <remarks>
         /// The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
-        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.        
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.
         /// </remarks>
         /// <param name="network">The network these addresses will be for.</param>
         /// <param name="addressesQuantity">The number of addresses to create.</param>
         /// <param name="isChange">Whether the addresses added are change (internal) addresses or receiving (external) addresses.</param>
-        /// <returns>A list of addresses in Base58 format.</returns>        
+        /// <returns>A list of addresses in Base58 format.</returns>
         public List<string> CreateAddresses(Network network, int addressesQuantity, bool isChange = false)
         {
             List<string> addressesCreated = new List<string>();
@@ -616,7 +616,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
         {
-            // This will take all the spendable coins that belong to the account and keep the reference to the HDAddress and HDAccount. 
+            // This will take all the spendable coins that belong to the account and keep the reference to the HDAddress and HDAccount.
             // This is useful so later the private key can be calculated just from a given UTXO.
             foreach (var address in this.GetCombinedAddresses())
             {
@@ -803,10 +803,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
         public SpendingDetails SpendingDetails { get; set; }
-        
+
         /// <summary>
         /// Determines whether this transaction is confirmed.
-        /// </summary>    
+        /// </summary>
         public bool IsConfirmed()
         {
             return this.BlockHeight != null;
@@ -912,7 +912,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>
         /// Determines whether this transaction being spent is confirmed.
-        /// </summary>    
+        /// </summary>
         public bool IsSpentConfirmed()
         {
             return this.BlockHeight != null;

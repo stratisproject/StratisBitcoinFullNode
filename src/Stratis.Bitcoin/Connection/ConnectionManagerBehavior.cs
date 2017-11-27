@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
@@ -21,8 +22,11 @@ namespace Stratis.Bitcoin.Connection
         private readonly ILogger infoLogger;
 
         public ConnectionManager ConnectionManager { get; private set; }
+
         public bool Inbound { get; private set; }
+
         public bool Whitelisted { get; internal set; }
+
         public bool OneTry { get; internal set; }
 
         private ChainHeadersBehavior chainHeadersBehavior;

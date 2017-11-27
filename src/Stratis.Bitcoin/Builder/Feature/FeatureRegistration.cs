@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Builder.Feature
                 configureServicesDelegate(serviceCollection);
 
             if (this.FeatureStartupType != null)
-                FeatureStartup(serviceCollection, this.FeatureStartupType);
+                this.FeatureStartup(serviceCollection, this.FeatureStartupType);
         }
 
         /// <inheritdoc />

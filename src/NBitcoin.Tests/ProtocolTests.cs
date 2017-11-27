@@ -10,13 +10,14 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using NBitcoin.DataEncoders;
-using NBitcoin.Protocol.Behaviors;
 using System.Diagnostics;
 
 namespace NBitcoin.Tests
 {
 	public class NodeServerTester : IDisposable
 	{
+        /*
+         * TODO: Consider porting to FN.
 		static Random _Rand = new Random();
 		public NodeServerTester(Network network = null)
 		{
@@ -106,13 +107,17 @@ namespace NBitcoin.Tests
 				return _Node2;
 			}
 		}
-
+        */
 		#region IDisposable Members
 
 		public void Dispose()
 		{
+        /*
+         * TODO: Consider porting to FN.
+
 			_Server1.Dispose();
 			_Server2.Dispose();
+            */
 			foreach(var dispo in _Disposables)
 				dispo.Dispose();
 		}
@@ -136,6 +141,8 @@ namespace NBitcoin.Tests
             Transaction.TimeStamp = false;
             Block.BlockSignature = false;
         }
+        /*
+         * TODO: Consider porting to FN.
 
         [Fact]
 		[Trait("UnitTest", "UnitTest")]
@@ -715,6 +722,7 @@ namespace NBitcoin.Tests
 				Assert.True(blocks.Count == 100);
 			}
 		}
-	}
+
+*/	}
 }
 #endif

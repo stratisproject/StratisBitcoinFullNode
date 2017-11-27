@@ -15,17 +15,28 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private DateTime start;
 
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        public DateTime Start { get { return this.start; } }
+        public DateTime Start
+        {
+            get { return this.start; }
+        }
 
         /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
         private long missCount;
+
         /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
-        public long MissCount { get { return this.missCount; } }
+        public long MissCount
+        {
+            get { return this.missCount; }
+        }
 
         /// <summary>Number of cache queries for which the result was found in the cache.</summary>
         private long hitCount;
+
         /// <summary>Number of cache queries for which the result was found in the cache.</summary>
-        public long HitCount { get { return this.hitCount; } }
+        public long HitCount
+        {
+            get { return this.hitCount; }
+        }
 
         /// <summary>Time span since the performance counter was created.</summary>
         public TimeSpan Elapsed
@@ -90,13 +101,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     {
         /// <summary>Number of cache queries for which the result was found in the cache.</summary>
         private readonly long hitCount;
+
         /// <summary>Number of cache queries for which the result was found in the cache.</summary>
-        public long TotalHitCount { get { return this.hitCount; } }
+        public long TotalHitCount
+        {
+            get { return this.hitCount; }
+        }
 
         /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
         private readonly long missCount;
+
         /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
-        public long TotalMissCount { get { return this.missCount; } }
+        public long TotalMissCount
+        {
+            get { return this.missCount; }
+        }
 
         /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
         public DateTime Start { get; internal set; }
@@ -127,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Creates a snapshot based on difference of two performance counter snapshots.
         /// <para>
-        /// This is used to obtain statistic information about performance of the cache 
+        /// This is used to obtain statistic information about performance of the cache
         /// during certain period.</para>
         /// </summary>
         /// <param name="end">Newer performance counter snapshot.</param>

@@ -93,7 +93,7 @@ namespace NBitcoin.Crypto
 
 		#endregion
 
-		internal class SipHasher
+		public class SipHasher
 		{
 			ulong v_0;
 			ulong v_1;
@@ -218,7 +218,7 @@ namespace NBitcoin.Crypto
 				return v0 ^ v1 ^ v2 ^ v3;
 			}
 
-			internal static ulong GetULong(uint256 val, int position)
+			public static ulong GetULong(uint256 val, int position)
 			{
 				switch(position)
 				{

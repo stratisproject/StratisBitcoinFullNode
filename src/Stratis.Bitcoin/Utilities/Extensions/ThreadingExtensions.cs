@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
                 // ignore
             }
         }
+
         /// <summary>
         /// Don't throw SemaphoreFullException
         /// https://stackoverflow.com/questions/4706734/semaphore-what-is-the-use-of-initial-count

@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 
         /// <summary>
         /// Loads a wallet from a file.
-        /// </summary>        
+        /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="name">The name of the wallet.</param>
         /// <returns>The wallet.</returns>
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 
         /// <summary>
         /// Saves all the loaded wallets into the file system.
-        /// </summary>        
+        /// </summary>
         void SaveWallets();
 
         /// <summary>
@@ -201,7 +201,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <returns>A wallet or null if it doesn't exist</returns>
         Wallet GetWalletByName(string walletName);
 
-
         /// <summary>
         /// Gets the block locator of the first loaded wallet.
         /// </summary>
@@ -209,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         ICollection<uint256> GetFirstWalletBlockLocator();
 
         /// <summary>
-        /// Gets a change address or create one if all change addresses are used. 
+        /// Gets a change address or create one if all change addresses are used.
         /// </summary>
         /// <param name="account">The account to create the change address.</param>
         /// <returns>The new HD address.</returns>

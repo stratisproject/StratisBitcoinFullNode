@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -28,7 +30,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
         private readonly ConcurrentChain chain;
+
         private readonly IBlockRepository blockRepository;
+
         private readonly IBlockStoreCache blockStoreCache;
 
         /// <summary>Instance logger.</summary>
@@ -44,7 +48,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public bool CanRespondToGetDataPayload { get; set; }
 
         // local resources
-        public bool PreferHeaders; // public for testing
+        public bool PreferHeaders;// public for testing
+
         private bool preferHeaderAndIDs;
 
         public BlockStoreBehavior(

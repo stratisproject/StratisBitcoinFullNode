@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
@@ -34,18 +37,29 @@ namespace Stratis.Bitcoin.Connection
         Network Network { get; }
 
         NodeSettings NodeSettings { get; }
+
         NodeConnectionParameters Parameters { get; }
+
         List<NodeServer> Servers { get; }
 
         void AddDiscoveredNodesRequirement(NodeServices services);
+
         void AddNodeAddress(IPEndPoint endpoint);
+
         Node Connect(IPEndPoint endpoint);
+
         Node FindLocalNode();
+
         Node FindNodeByEndpoint(IPEndPoint endpoint);
+
         Node FindNodeByIp(IPAddress ip);
+
         string GetNodeStats();
+
         string GetStats();
+
         void RemoveNodeAddress(IPEndPoint endpoint);
+
         void Start();
     }
 
@@ -76,21 +90,24 @@ namespace Stratis.Bitcoin.Connection
         private readonly INodeLifetime nodeLifetime;
 
         private readonly NodesCollection connectedNodes = new NodesCollection();
-        public IReadOnlyNodesCollection ConnectedNodes { get { return this.connectedNodes; } }
+
+        public IReadOnlyNodesCollection ConnectedNodes
+        {
+            get { return this.connectedNodes; }
+        }
 
         private readonly Dictionary<Node, PerformanceSnapshot> downloads = new Dictionary<Node, PerformanceSnapshot>();
+
         private NodeServices discoveredNodeRequiredService = NodeServices.Network;
+
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
-        private readonly Network network;
         /// <inheritdoc/>
-        public Network Network { get { return this.network; } }
+        public Network Network { get; }
 
-        private readonly NodeConnectionParameters parameters;
-        public NodeConnectionParameters Parameters { get { return this.parameters; } }
+        public NodeConnectionParameters Parameters { get; }
 
-        private readonly NodeSettings nodeSettings;
-        public NodeSettings NodeSettings { get { return this.nodeSettings; } }
+        public NodeSettings NodeSettings { get; }
 
         public List<NodeServer> Servers { get; }
 
@@ -114,12 +131,12 @@ namespace Stratis.Bitcoin.Connection
             IDateTimeProvider dateTimeProvider)
         {
             this.dateTimeProvider = dateTimeProvider;
-            this.network = network;
-            this.nodeSettings = nodeSettings;
+            this.Network = network;
+            this.NodeSettings = nodeSettings;
             this.nodeLifetime = nodeLifetime;
             this.connectionManagerSettings = nodeSettings.ConnectionManager;
-            this.parameters = parameters;
-            this.parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+            this.Parameters = parameters;
+            this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
 
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -135,20 +152,20 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
-            this.parameters.Version = this.NodeSettings.ProtocolVersion;
+            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
+            this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
-            NodeConnectionParameters clonedParameters = this.parameters.Clone();
+            NodeConnectionParameters clonedParameters = this.Parameters.Clone();
             clonedParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
 
             // Don't start peer discovery if we have specified any nodes using the -connect arg.
             if (!this.connectionManagerSettings.Connect.Any())
             {
-                if (this.parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+                if (this.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 {
                     this.logger.LogInformation("Starting peer discovery...");
 
-                    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.network, clonedParameters, this.nodeLifetime, this.peerAddressManager);
+                    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.Network, clonedParameters, this.nodeLifetime, this.peerAddressManager);
                     this.peerDiscoveryLoop.DiscoverPeers();
                 }
 
@@ -195,7 +212,7 @@ namespace Stratis.Bitcoin.Connection
 
             foreach (NodeServerEndpoint listen in this.connectionManagerSettings.Listen)
             {
-                NodeConnectionParameters cloneParameters = this.parameters.Clone();
+                NodeConnectionParameters cloneParameters = this.Parameters.Clone();
                 var server = new NodeServer(this.Network)
                 {
                     LocalEndpoint = listen.Endpoint,
@@ -209,7 +226,15 @@ namespace Stratis.Bitcoin.Connection
                 });
 
                 server.InboundNodeConnectionParameters = cloneParameters;
-                server.Listen();
+                try
+                {
+                    server.Listen();
+                }
+                catch (SocketException e)
+                {
+                    this.logger.LogCritical("Unable to listen on port {0} (you can change the port using '-port=[number]'). Error message: {1}", listen.Endpoint.Port, e.Message);
+                    throw e;
+                }
 
                 logs.Append(listen.Endpoint.Address + ":" + listen.Endpoint.Port);
                 if (listen.Whitelisted)
@@ -417,7 +442,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
-            NodeConnectionParameters cloneParameters = this.parameters.Clone();
+            NodeConnectionParameters cloneParameters = this.Parameters.Clone();
             cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory)
             {
                 OneTry = true

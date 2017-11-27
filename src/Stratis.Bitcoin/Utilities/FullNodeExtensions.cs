@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
-#if !NOASSEMBLYCONTEXT
-using System.Runtime.Loader;
-#endif
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -14,7 +12,7 @@ namespace Stratis.Bitcoin.Utilities
     public static class FullNodeExtensions
     {
         /// <summary>
-        /// Installs handlers for graceful shutdown in the console, starts a full node and waits until it terminates. 
+        /// Installs handlers for graceful shutdown in the console, starts a full node and waits until it terminates.
         /// </summary>
         /// <param name="node">Full node to run.</param>
         public static async Task RunAsync(this IFullNode node)
@@ -56,7 +54,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Starts a full node, sets up cancellation tokens for its shutdown, and waits until it terminates. 
+        /// Starts a full node, sets up cancellation tokens for its shutdown, and waits until it terminates.
         /// </summary>
         /// <param name="node">Full node to run.</param>
         /// <param name="cancellationToken">Cancellation token that triggers when the node should be shut down.</param>
@@ -87,7 +85,7 @@ namespace Stratis.Bitcoin.Utilities
                     var tcs = (TaskCompletionSource<object>)obj;
                     tcs.TrySetResult(null);
                 }, waitForStop);
-                
+
                 await waitForStop.Task.ConfigureAwait(false);
 
                 node.Stop();

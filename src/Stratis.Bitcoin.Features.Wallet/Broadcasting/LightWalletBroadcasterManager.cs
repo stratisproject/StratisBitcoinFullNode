@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
@@ -22,18 +22,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         {
             if (transaction == null) throw new ArgumentNullException(nameof(transaction));
 
-            var found = GetTransaction(transaction.GetHash());
+            var found = this.GetTransaction(transaction.GetHash());
             if (found != null)
             {
                 if (found.State == State.Propagated) return Success.Yes;
                 if (found.State == State.CantBroadcast)
                 {
-                    AddOrUpdate(transaction, State.ToBroadcast);
+                    this.AddOrUpdate(transaction, State.ToBroadcast);
                 }
             }
             else
             {
-                AddOrUpdate(transaction, State.ToBroadcast);
+                this.AddOrUpdate(transaction, State.ToBroadcast);
             }
 
             // ask half of the peers if they're interested in our transaction

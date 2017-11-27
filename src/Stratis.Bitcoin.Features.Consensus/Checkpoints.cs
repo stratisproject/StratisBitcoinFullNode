@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -147,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(settings, nameof(settings));
 
-            if (!settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>(); 
+            if (!settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>();
             else if (network.Equals(Network.Main)) this.checkpoints = bitcoinMainnetCheckpoints;
             else if (network.Equals(Network.TestNet)) this.checkpoints = bitcoinTestnetCheckpoints;
             else if (network.Equals(Network.RegTest)) this.checkpoints = new Dictionary<int, CheckpointInfo>();
