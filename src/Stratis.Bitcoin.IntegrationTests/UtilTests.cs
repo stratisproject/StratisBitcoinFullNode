@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class UtilTests
     {
         // TODO: write test scenarios for the AsyncLock
-        // example when a exclusive delegate breaks in to a concurrent delegate 
+        // example when a exclusive delegate breaks in to a concurrent delegate
         // and back the two parts of the exclusive delegate need to be called sequentially
 
         public static bool IsSequential(int[] a)
@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     collector.Add(4);
                     await exclusiveTask;
                 });
-
             });
 
             task.Wait();

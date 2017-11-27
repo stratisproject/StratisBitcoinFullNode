@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -20,7 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
-        /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay. 
+        /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay.
         /// </summary>
         private const int InventoryBroadcastInterval = 5;
 
@@ -408,7 +410,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
-                // TODO: check if we need to add support for "not found" 
+                // TODO: check if we need to add support for "not found"
 
                 TxMempoolInfo trxInfo = await this.manager.InfoAsync(item.Hash).ConfigureAwait(false);
 
@@ -450,7 +452,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;
 
-                this.logger.LogInformation("Transaction ID '{0}' accepted to memory pool from peer '{1}' (poolsz {2} txn, {3} kb).", trxHash, node.RemoteSocketEndpoint, mmsize, memdyn/1000);
+                this.logger.LogInformation("Transaction ID '{0}' accepted to memory pool from peer '{1}' (poolsz {2} txn, {3} kb).", trxHash, node.RemoteSocketEndpoint, mmsize, memdyn / 1000);
 
                 await this.orphans.ProcessesOrphansAsync(this, trx);
             }
@@ -462,7 +464,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 if (!trx.HasWitness && state.CorruptionPossible)
                 {
-
                 }
 
                 // TODO: Implement Processes whitelistforcerelay
@@ -510,7 +511,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return Task.CompletedTask;
             }
 
-            // find all behaviours then start an exclusive task 
+            // find all behaviours then start an exclusive task
             // to add the hash to each local collection
             IEnumerable<MempoolBehavior> behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
             this.logger.LogTrace("(-)");
@@ -523,7 +524,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
                 }
             });
-
         }
 
         /// <summary>
@@ -539,7 +539,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            // before locking an exclusive task 
+            // before locking an exclusive task
             // check if there is anything to processes
             if (!await this.manager.MempoolLock.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
             {

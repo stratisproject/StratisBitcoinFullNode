@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
 
@@ -128,6 +129,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             this.Dispose(true);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

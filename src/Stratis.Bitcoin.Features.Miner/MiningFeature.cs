@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret
+                this.posLoop = this.posMinting.Stake(new PosMinting.WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.minerSettings.Stake)
             {
-                StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
+                this.StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
             }
         }
 
@@ -169,7 +169,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-
                     });
             });
 

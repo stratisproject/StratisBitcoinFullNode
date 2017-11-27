@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public static void WaitLoop(Func<bool> act)
         {
             var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
-            while(!act())
+            while (!act())
             {
                 cancel.Token.ThrowIfCancellationRequested();
                 Thread.Sleep(50);

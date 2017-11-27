@@ -1,5 +1,6 @@
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -16,8 +17,8 @@ namespace Stratis.Bitcoin.Connection
 
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
         private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
@@ -30,8 +31,8 @@ namespace Stratis.Bitcoin.Connection
 
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
         }
     }
 }

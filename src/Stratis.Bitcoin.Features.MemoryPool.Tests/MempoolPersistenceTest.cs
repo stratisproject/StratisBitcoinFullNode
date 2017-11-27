@@ -21,6 +21,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
         public MempoolPersistenceTest()
         {
+            Block.BlockSignature = false;
+            Transaction.TimeStamp = false;
+
             this.dir = "TestData/MempoolPersistenceTest/";
 
             if (!Directory.Exists(this.dir))
@@ -275,12 +278,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
-            NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main, consensusSettings), dateTimeProvider, loggerFactory);
+            Network.Main.Consensus.Options = new PosConsensusOptions();
+            var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), dateTimeProvider, loggerFactory);
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings);
-            var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Bitcoin.Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
+            var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory);
         }
-
     }
 }

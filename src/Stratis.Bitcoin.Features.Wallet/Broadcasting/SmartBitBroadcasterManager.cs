@@ -13,7 +13,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
     public class SmartBitBroadcasterManager : BroadcasterManagerBase
     {
         private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(3, 3);
+
         private HttpClient HttpClient;
+
         private string BaseUrl
         {
             get
@@ -49,18 +51,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         {
             if (transaction == null) throw new ArgumentNullException(nameof(transaction));
 
-            var found = GetTransaction(transaction.GetHash());
+            var found = this.GetTransaction(transaction.GetHash());
             if (found != null)
             {
                 if (found.State == State.Propagated) return Success.Yes;
                 if (found.State == State.CantBroadcast)
                 {
-                    AddOrUpdate(transaction, State.ToBroadcast);
+                    this.AddOrUpdate(transaction, State.ToBroadcast);
                 }
             }
             else
             {
-                AddOrUpdate(transaction, State.ToBroadcast);
+                this.AddOrUpdate(transaction, State.ToBroadcast);
             }
 
             var post = $"{this.BaseUrl}blockchain/pushtx";
@@ -90,12 +92,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
             if (json.Value<bool>("success"))
             {
-                AddOrUpdate(transaction, State.Broadcasted);
+                this.AddOrUpdate(transaction, State.Broadcasted);
                 return Success.Yes;
             }
             else
             {
-                AddOrUpdate(transaction, State.CantBroadcast);
+                this.AddOrUpdate(transaction, State.CantBroadcast);
                 return Success.No;
             }
         }

@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
                 var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
-                base.AssertLog(this.Logger, LogLevel.Error, "Internal error while calling RPC Method");
+                this.AssertLog(this.Logger, LogLevel.Error, "Internal error while calling RPC Method");
             }
         }
 
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
                 var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
-                base.AssertLog<InvalidOperationException>(this.Logger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
+                this.AssertLog<InvalidOperationException>(this.Logger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
             }
         }
 

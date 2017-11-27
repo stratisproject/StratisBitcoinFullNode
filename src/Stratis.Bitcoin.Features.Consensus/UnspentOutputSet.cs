@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class UnspentOutputSet
     {
         private Dictionary<uint256, UnspentOutputs> unspents;
+
         public TxOut GetOutputFor(TxIn txIn)
         {
             var unspent = this.unspents.TryGet(txIn.PrevOut.Hash);

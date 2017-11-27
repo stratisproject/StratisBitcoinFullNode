@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns><c>true</c> if the specified network is bitcoin, <c>false</c> otherwise.</returns>
         public static bool IsBitcoin(this Network network)
         {
-           return !network.Name.ToLowerInvariant().Contains("stratis");
+            return !network.Name.ToLowerInvariant().Contains("stratis");
         }
     }
 }

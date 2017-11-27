@@ -6,6 +6,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -60,10 +61,10 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void Notify_WithSync_SetPullerLocationToPreviousBlockMatchingStartHash()
         {
-            var blocks = CreateBlocks(3);
+            var blocks = this.CreateBlocks(3);
 
             var chain = new ConcurrentChain(blocks[0].Header);
-            AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
+            this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
             var dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
@@ -93,10 +94,10 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             var lifetime = new NodeLifetime();
 
-            var blocks = CreateBlocks(2);
+            var blocks = this.CreateBlocks(2);
 
             var chain = new ConcurrentChain(blocks[0].Header);
-            AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
+            this.AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
             var stub = new Mock<ILookaheadBlockPuller>();
             stub.SetupSequence(s => s.NextBlock(lifetime.ApplicationStopping))
@@ -120,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
 
         /// <summary>
-        /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated 
+        /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated
         /// every time <see cref="BlockNotification.SyncFrom(uint256)"/> gets called.
         /// </summary>
         [Fact]

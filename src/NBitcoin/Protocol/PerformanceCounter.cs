@@ -124,7 +124,7 @@ namespace NBitcoin
             return Snapshot().ToString();
         }
 
-        internal void Add(PerformanceCounter counter)
+        public void Add(PerformanceCounter counter)
         {
             this.AddWritten(counter.WrittenBytes);
             this.AddRead(counter.ReadBytes);

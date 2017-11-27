@@ -9,11 +9,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreRepositoryPerformanceCounter
     {
         private long repositoryInsertCount;
+
         private long repositoryDeleteCount;
+
         private long repositoryHitCount;
+
         private long repositoryMissCount;
+
         public string Name { get; private set; }
-        public DateTime Start {get; private set; }
+
+        public DateTime Start { get; private set; }
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -103,53 +108,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     public class BlockStoreRepositoryPerformanceSnapshot
     {
-        private readonly long repositoryHitCount;
-        private readonly long repositoryMissCount;
-        private readonly long repositoryDeleteCount;
-        private readonly long repositoryInsertCount;
+        public long TotalRepositoryHitCount { get; }
+
+        public long TotalRepositoryMissCount { get; }
+
+        public long TotalRepositoryDeleteCount { get; }
+
+        public long TotalRepositoryInsertCount { get; }
+
         public string Name { get; private set; }
-        public DateTime Start { get; set; }    
+
+        public DateTime Start { get; set; }
+
         public DateTime Taken { get; set; }
 
         public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount, string name = "BlockStore")
         {
-            this.repositoryHitCount = repositoryHitCount;
-            this.repositoryMissCount = repositoryMissCount;
-            this.repositoryDeleteCount = repositoryDeleteCount;
-            this.repositoryInsertCount = repositoryInsertCount;
+            this.TotalRepositoryHitCount = repositoryHitCount;
+            this.TotalRepositoryMissCount = repositoryMissCount;
+            this.TotalRepositoryDeleteCount = repositoryDeleteCount;
+            this.TotalRepositoryInsertCount = repositoryInsertCount;
             this.Name = name;
-        }
-
-        public long TotalRepositoryHitCount
-        {
-            get
-            {
-                return this.repositoryHitCount;
-            }
-        }
-
-        public long TotalRepositoryMissCount
-        {
-            get
-            {
-                return this.repositoryMissCount;
-            }
-        }
-
-        public long TotalRepositoryDeleteCount
-        {
-            get
-            {
-                return this.repositoryDeleteCount;
-            }
-        }
-
-        public long TotalRepositoryInsertCount
-        {
-            get
-            {
-                return this.repositoryInsertCount;
-            }
         }
 
         public TimeSpan Elapsed

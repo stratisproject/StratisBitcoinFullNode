@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection

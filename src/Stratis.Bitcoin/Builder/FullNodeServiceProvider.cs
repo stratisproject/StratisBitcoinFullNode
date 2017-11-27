@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Builder
         {
             get
             {
-                // features are enumerated in the same order 
+                // features are enumerated in the same order
                 // they where registered with the provider
                 foreach (var featureDescriptor in this.featureTypes)
                     yield return this.ServiceProvider.GetService(featureDescriptor) as IFullNodeFeature;

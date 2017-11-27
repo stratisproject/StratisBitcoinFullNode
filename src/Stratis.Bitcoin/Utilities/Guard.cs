@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// Collection of guard methods.
     /// <para>
-    /// Guards are typically used at the beginning of a method to protect the body of  
+    /// Guards are typically used at the beginning of a method to protect the body of
     /// the method being called with invalid set of parameters or object states.
     /// </para>
     /// </summary>

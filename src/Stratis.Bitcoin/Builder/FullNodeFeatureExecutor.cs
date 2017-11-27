@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Builder
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
         /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
-        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called 
+        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called
         /// for all features, it throws AggregateException if there were any exceptions.</remarks>
         private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {
