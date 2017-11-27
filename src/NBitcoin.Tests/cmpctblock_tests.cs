@@ -19,6 +19,8 @@ namespace NBitcoin.Tests
             Transaction.TimeStamp = false;
             Block.BlockSignature = false;
         }
+                /*
+         * TODO: Consider importing to FN.
 
 		[Fact]
 		[Trait("CoreBeta", "CoreBeta")]
@@ -29,5 +31,6 @@ namespace NBitcoin.Tests
 			var cmpct = new CmpctBlockPayload(block);
 			cmpct.Clone();
 		}
-	}
+
+*/	}
 }

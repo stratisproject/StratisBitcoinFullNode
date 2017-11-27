@@ -491,6 +491,9 @@ namespace NBitcoin.Tests
 		[Fact]
 		public void CanGetPeersInfo()
 		{
+                    /*
+         * TODO: Consider importing to FN.
+
 			using(var builder = NodeBuilder.Create())
 			{
 				var nodeA = builder.CreateNode();
@@ -503,7 +506,8 @@ namespace NBitcoin.Tests
 					Assert.NotEmpty(peers);
 				}
 			}
-		}
+            */
+    }
 #endif
 #if !NOSOCKET
 		[Fact]
