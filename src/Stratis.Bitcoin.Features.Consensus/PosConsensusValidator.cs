@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -76,56 +74,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void CheckBlockReward(ContextInformation context, Money fees, int height, Block block)
+        public override Money GetProofOfWorkReward(int height)
         {
-            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
+            if (this.isPremine(height))
+                return this.consensusOptions.PremineReward;
 
-            if (BlockStake.IsProofOfStake(block))
-            {
-                // proof of stake invalidates previous inputs
-                // and spends the inputs to new outputs with the
-                // additional stake reward, next calculate the
-                // reward does not exceed the consensus rules
-
-                Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
-                Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
-
-                this.logger.LogTrace("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
-                if (stakeReward > calcStakeReward)
-                {
-                    this.logger.LogTrace("(-)[BAD_COINSTAKE_AMOUNT]");
-                    ConsensusErrors.BadCoinstakeAmount.Throw();
-                }
-            }
-            else
-            {
-                Money blockReward = fees + this.GetProofOfWorkReward(height);
-                this.logger.LogTrace("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
-                if (block.Transactions[0].TotalOut > blockReward)
-                {
-                    this.logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
-                    ConsensusErrors.BadCoinbaseAmount.Throw();
-                }
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        /// <remarks>Also does additional checks related to PoS.</remarks>
-        public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
-        {
-            this.logger.LogTrace("()");
-
-            // Compute and store the stake proofs.
-            this.CheckAndComputeStake(context);
-
-            base.ExecuteBlock(context, taskScheduler);
-
-            // TODO: A temporary fix till this methods is fixed in NStratis.
-            (this.stakeChain as StakeChainStore).Set(context.BlockValidationContext.ChainedBlock, context.Stake.BlockStake);
-
-            this.logger.LogTrace("(-)");
+            return this.ConsensusOptions.ProofOfWorkReward;
         }
 
         /// <inheritdoc />
@@ -138,10 +92,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
 
             // Check timestamp.
-            if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
+            if (block.Header.Time > this.futureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
             {
                 // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.FutureDrift(0)).UtcDateTime;
+                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.futureDrift(0)).UtcDateTime;
                 this.logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
@@ -170,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check proof-of-stake block signature.
-            if (!this.CheckBlockSignature(block))
+            if (!this.checkBlockSignature(block))
             {
                 this.logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -189,41 +143,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <inheritdoc />
-        protected override void UpdateCoinView(ContextInformation context, Transaction transaction)
-        {
-            this.logger.LogTrace("()");
-
-            UnspentOutputSet view = context.Set;
-
-            if (transaction.IsCoinStake)
-                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
-
-            base.UpdateCoinView(context, transaction);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)
-        {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
-
-            base.CheckMaturity(coins, spendHeight);
-
-            if (coins.IsCoinstake)
-            {
-                if ((spendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
-                {
-                    this.logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensusOptions.CoinbaseMaturity);
-                    this.logger.LogTrace("(-)[COINSTAKE_PREMATURE_SPENDING]");
-                    ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
-                }
-            }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -265,6 +184,44 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
+        public override void CheckBlockHeader(ContextInformation context)
+        {
+            this.logger.LogTrace("()");
+            context.SetStake();
+
+            if (context.Stake.BlockStake.IsProofOfWork())
+            {
+                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+                {
+                    this.logger.LogTrace("(-)[HIGH_HASH]");
+                    ConsensusErrors.HighHash.Throw();
+                }
+            }
+
+            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
+                context.Stake.BlockStake.IsProofOfStake());
+
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <inheritdoc />
+        /// <remarks>Also does additional checks related to PoS.</remarks>
+        public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
+        {
+            this.logger.LogTrace("()");
+
+            // Compute and store the stake proofs.
+            this.checkAndComputeStake(context);
+
+            base.ExecuteBlock(context, taskScheduler);
+
+            // TODO: A temporary fix till this methods is fixed in NStratis.
+            (this.stakeChain as StakeChainStore).Set(context.BlockValidationContext.ChainedBlock, context.Stake.BlockStake);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
         public override void ContextualCheckBlockHeader(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -286,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
+            if (chainedBlock.Header.Time > this.futureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -294,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check coinstake timestamp.
             if (context.Stake.BlockStake.IsProofOfStake()
-                && !this.CheckCoinStakeTimestamp(chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
+                && !this.checkCoinStakeTimestamp(chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
             {
                 this.logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
@@ -311,24 +268,152 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Check whether the coinstake timestamp meets protocol.
+        /// Gets miner's coin stake reward.
         /// </summary>
-        /// <param name="blockTime">The block time.</param>
-        /// <param name="transactionTime">The transaction time.</param>
-        /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
-        public bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
+        /// <param name="height">Target block height.</param>
+        /// <returns>Miner's coin stake reward.</returns>
+        public Money GetProofOfStakeReward(int height)
         {
-            return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
+            if (this.isPremine(height))
+                return this.consensusOptions.PremineReward;
+
+            return this.consensusOptions.ProofOfStakeReward;
         }
 
-        private bool IsDriftReduced(long time)
+        /// <inheritdoc />
+        protected override void updateCoinView(ContextInformation context, Transaction transaction)
         {
-            return time > DriftingBugFixTimestamp;
+            this.logger.LogTrace("()");
+
+            UnspentOutputSet view = context.Set;
+
+            if (transaction.IsCoinStake)
+                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
+
+            base.updateCoinView(context, transaction);
+
+            this.logger.LogTrace("(-)");
         }
 
-        private long FutureDrift(long time)
+        /// <inheritdoc />
+        protected override void checkBlockReward(ContextInformation context, Money fees, int height, Block block)
         {
-            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
+
+            if (BlockStake.IsProofOfStake(block))
+            {
+                // proof of stake invalidates previous inputs
+                // and spends the inputs to new outputs with the
+                // additional stake reward, next calculate the
+                // reward does not exceed the consensus rules
+
+                Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
+                Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
+
+                this.logger.LogTrace("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
+                if (stakeReward > calcStakeReward)
+                {
+                    this.logger.LogTrace("(-)[BAD_COINSTAKE_AMOUNT]");
+                    ConsensusErrors.BadCoinstakeAmount.Throw();
+                }
+            }
+            else
+            {
+                Money blockReward = fees + this.GetProofOfWorkReward(height);
+                this.logger.LogTrace("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
+                if (block.Transactions[0].TotalOut > blockReward)
+                {
+                    this.logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
+                    ConsensusErrors.BadCoinbaseAmount.Throw();
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        protected override void checkMaturity(UnspentOutputs coins, int spendHeight)
+        {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
+
+            base.checkMaturity(coins, spendHeight);
+
+            if (coins.IsCoinstake)
+            {
+                if ((spendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
+                {
+                    this.logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensusOptions.CoinbaseMaturity);
+                    this.logger.LogTrace("(-)[COINSTAKE_PREMATURE_SPENDING]");
+                    ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Checks and computes stake.
+        /// </summary>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
+        /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
+        private void checkAndComputeStake(ContextInformation context)
+        {
+            this.logger.LogTrace("()");
+
+            ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
+            Block block = context.BlockValidationContext.Block;
+            BlockStake blockStake = context.Stake.BlockStake;
+
+            // Verify hash target and signature of coinstake tx.
+            if (BlockStake.IsProofOfStake(block))
+            {
+                ChainedBlock prevChainedBlock = chainedBlock.Previous;
+
+                BlockStake prevBlockStake = this.stakeChain.Get(prevChainedBlock.HashBlock);
+                if (prevBlockStake == null)
+                    ConsensusErrors.PrevStakeNull.Throw();
+
+                // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
+                if (!context.BlockValidationContext.SkipValidation)
+                {
+                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
+                }
+                else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedBlock.Height);
+            }
+
+            // PoW is checked in CheckBlock().
+            if (BlockStake.IsProofOfWork(block))
+                context.Stake.HashProofOfStake = chainedBlock.Header.GetPoWHash();
+
+            // Compute stake entropy bit for stake modifier.
+            if (!blockStake.SetStakeEntropyBit(blockStake.GetStakeEntropyBit()))
+            {
+                this.logger.LogTrace("(-)[STAKE_ENTROPY_BIT_FAIL]");
+                ConsensusErrors.SetStakeEntropyBitFailed.Throw();
+            }
+
+            // Record proof hash value.
+            blockStake.HashProof = context.Stake.HashProofOfStake;
+
+            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
+            if (chainedBlock.Height > lastCheckpointHeight)
+            {
+                // Compute stake modifier.
+                ChainedBlock prevChainedBlock = chainedBlock.Previous;
+                BlockStake blockStakePrev = prevChainedBlock == null ? null : this.stakeChain.Get(prevChainedBlock.HashBlock);
+                blockStake.StakeModifierV2 = this.StakeValidator.ComputeStakeModifierV2(prevChainedBlock, blockStakePrev, blockStake.IsProofOfWork() ? chainedBlock.HashBlock : blockStake.PrevoutStake.Hash);
+            }
+            else if (chainedBlock.Height == lastCheckpointHeight)
+            {
+                // Copy checkpointed stake modifier.
+                CheckpointInfo checkpoint = this.Checkpoints.GetCheckpoint(lastCheckpointHeight);
+                blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
+                this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
+            }
+            else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
+
+            this.logger.LogTrace("(-)[OK]");
         }
 
         /// <summary>
@@ -336,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
-        public bool CheckBlockSignature(Block block)
+        private bool checkBlockSignature(Block block)
         {
             this.logger.LogTrace("()");
 
@@ -397,112 +482,25 @@ namespace Stratis.Bitcoin.Features.Consensus
             return verifyRes;
         }
 
-        /// <inheritdoc />
-        public override void CheckBlockHeader(ContextInformation context)
-        {
-            this.logger.LogTrace("()");
-            context.SetStake();
-
-            if (context.Stake.BlockStake.IsProofOfWork())
-            {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
-                {
-                    this.logger.LogTrace("(-)[HIGH_HASH]");
-                    ConsensusErrors.HighHash.Throw();
-                }
-            }
-
-            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
-                context.Stake.BlockStake.IsProofOfStake());
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
         /// <summary>
-        /// Checks and computes stake.
+        /// Check whether the coinstake timestamp meets protocol.
         /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
-        /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
-        public void CheckAndComputeStake(ContextInformation context)
+        /// <param name="blockTime">The block time.</param>
+        /// <param name="transactionTime">The transaction time.</param>
+        /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
+        private bool checkCoinStakeTimestamp(long blockTime, long transactionTime)
         {
-            this.logger.LogTrace("()");
-
-            ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
-            Block block = context.BlockValidationContext.Block;
-            BlockStake blockStake = context.Stake.BlockStake;
-
-            // Verify hash target and signature of coinstake tx.
-            if (BlockStake.IsProofOfStake(block))
-            {
-                ChainedBlock prevChainedBlock = chainedBlock.Previous;
-
-                BlockStake prevBlockStake = this.stakeChain.Get(prevChainedBlock.HashBlock);
-                if (prevBlockStake == null)
-                    ConsensusErrors.PrevStakeNull.Throw();
-
-                // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
-                if (!context.BlockValidationContext.SkipValidation)
-                {
-                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
-                }
-                else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedBlock.Height);
-            }
-
-            // PoW is checked in CheckBlock().
-            if (BlockStake.IsProofOfWork(block))
-                context.Stake.HashProofOfStake = chainedBlock.Header.GetPoWHash();
-
-            // Compute stake entropy bit for stake modifier.
-            if (!blockStake.SetStakeEntropyBit(blockStake.GetStakeEntropyBit()))
-            {
-                this.logger.LogTrace("(-)[STAKE_ENTROPY_BIT_FAIL]");
-                ConsensusErrors.SetStakeEntropyBitFailed.Throw();
-            }
-
-            // Record proof hash value.
-            blockStake.HashProof = context.Stake.HashProofOfStake;
-
-            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
-            if (chainedBlock.Height > lastCheckpointHeight)
-            {
-                // Compute stake modifier.
-                ChainedBlock prevChainedBlock = chainedBlock.Previous;
-                BlockStake blockStakePrev = prevChainedBlock == null ? null : this.stakeChain.Get(prevChainedBlock.HashBlock);
-                blockStake.StakeModifierV2 = this.StakeValidator.ComputeStakeModifierV2(prevChainedBlock, blockStakePrev, blockStake.IsProofOfWork() ? chainedBlock.HashBlock : blockStake.PrevoutStake.Hash);
-            }
-            else if (chainedBlock.Height == lastCheckpointHeight)
-            {
-                // Copy checkpointed stake modifier.
-                CheckpointInfo checkpoint = this.Checkpoints.GetCheckpoint(lastCheckpointHeight);
-                blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
-                this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
-            }
-            else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
-
-            this.logger.LogTrace("(-)[OK]");
+            return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
 
-        /// <inheritdoc />
-        public override Money GetProofOfWorkReward(int height)
+        private bool isDriftReduced(long time)
         {
-            if (this.IsPremine(height))
-                return this.consensusOptions.PremineReward;
-
-            return this.ConsensusOptions.ProofOfWorkReward;
+            return time > DriftingBugFixTimestamp;
         }
 
-        /// <summary>
-        /// Gets miner's coin stake reward.
-        /// </summary>
-        /// <param name="height">Target block height.</param>
-        /// <returns>Miner's coin stake reward.</returns>
-        public Money GetProofOfStakeReward(int height)
+        private long futureDrift(long time)
         {
-            if (this.IsPremine(height))
-                return this.consensusOptions.PremineReward;
-
-            return this.consensusOptions.ProofOfStakeReward;
+            return this.isDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
 
         /// <summary>
@@ -510,7 +508,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="height">Block's height.</param>
         /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
-        private bool IsPremine(int height)
+        private bool isPremine(int height)
         {
             return (this.consensusOptions.PremineHeight > 0) &&
                    (this.consensusOptions.PremineReward > 0) &&
