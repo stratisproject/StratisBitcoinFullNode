@@ -1,14 +1,14 @@
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
 using System;
 using System.Linq;
 using System.Threading;
-using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {
