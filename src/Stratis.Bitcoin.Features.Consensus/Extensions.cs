@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {

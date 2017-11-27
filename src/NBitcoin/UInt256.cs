@@ -1,9 +1,6 @@
-﻿
-using System;
+﻿using System;
 using System.Linq;
-using System.IO;
 using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
 
 namespace NBitcoin
 {
@@ -408,7 +405,7 @@ namespace NBitcoin
 			return new MutableUint256(this);
 		}
 
-		public int GetSerializeSize(int nType = 0, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION)
+		public int GetSerializeSize()
 		{
 			return WIDTH_BYTE;
 		}
@@ -742,7 +739,7 @@ namespace NBitcoin
 			return new MutableUint160(this);
 		}
 
-		public int GetSerializeSize(int nType = 0, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION)
+		public int GetSerializeSize()
 		{
 			return WIDTH_BYTE;
 		}
