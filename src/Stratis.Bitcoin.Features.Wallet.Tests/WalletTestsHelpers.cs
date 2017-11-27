@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static (Wallet wallet, ExtKey key) GenerateBlankWalletWithExtKey(string name, string password)
         {
-            Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            Mnemonic mnemonic = new Mnemonic("grass industry beef stereo soap employ million leader frequent salmon crumble banana");
             ExtKey extendedKey = mnemonic.DeriveExtKey(password);
 
             Wallet walletFile = new Wallet
