@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Utilities.FileStorage
 {
@@ -32,20 +31,6 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
 
             // Create a folder if none exists.
             Directory.CreateDirectory(folderPath);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FileStorage{T}"/> class.
-        /// </summary>
-        /// <param name="dataFolder">The path of the folder in which the files are to be stored.</param>
-        public FileStorage(DataFolder dataFolder)
-        {
-            Guard.NotNull(dataFolder, nameof(dataFolder));
-
-            this.FolderPath = dataFolder.AddressManagerFilePath;
-
-            // Create a folder if none exists.
-            Directory.CreateDirectory(this.FolderPath);
         }
 
         /// <summary>
