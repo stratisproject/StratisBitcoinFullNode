@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chainState = serviceProvider.GetService<ChainState>();
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
-            var connectionManager = serviceProvider.GetService<ConnectionManager>();
+            var connectionManager = serviceProvider.GetService<IConnectionManager>();
 
             Assert.NotNull(fullNode);
             Assert.NotNull(network);
