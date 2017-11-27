@@ -375,6 +375,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks that the stake kernel hash satisfies the target difficulty.
         /// </summary>
+        /// <param name="context">Staking context.</param>
+        /// <param name="prevChainedBlock">Previous chained block.</param>
+        /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
+        /// <param name="prevBlockTime">The previous block time.</param>
+        /// <param name="prevBlockStake">Information about previous staked block.</param>
+        /// <param name="stakingCoins">Coins that participate in staking.</param>
+        /// <param name="prevout">Information about transaction id and index.</param>
+        /// <param name="transactionTime">Transaction time.</param>
         /// <remarks>
         /// Coinstake must meet hash target according to the protocol:
         /// kernel (input 0) must meet the formula
@@ -393,14 +401,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// quantities so as to generate blocks faster, degrading the system back into a proof-of-work situation.
         /// </para>
         /// </remarks>
-        /// <param name="context">Staking context.</param>
-        /// <param name="prevChainedBlock">Previous chained block.</param>
-        /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
-        /// <param name="prevBlockTime">The previous block time.</param>
-        /// <param name="prevBlockStake">Information about previous staked block.</param>
-        /// <param name="stakingCoins">Coins that participate in staking.</param>
-        /// <param name="prevout">Information about transaction id and index.</param>
-        /// <param name="transactionTime">Transaction time.</param>
         /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
         /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
         private void CheckStakeKernelHash(ContextStakeInformation context, ChainedBlock prevChainedBlock, uint headerBits, uint prevBlockTime,
