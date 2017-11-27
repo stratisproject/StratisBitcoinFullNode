@@ -92,13 +92,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         private bool PingVersion()
         {
-            Node node = this.AttachedNode;
+            NetworkPeer node = this.AttachedNode;
             return (node != null) && (node.Version > NBitcoin.Protocol.ProtocolVersion.BIP0031_VERSION);
         }
 
-        void AttachedNode_StateChanged(Node node, NodeState oldState)
+        void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
-            if (node.State == NodeState.HandShaked)
+            if (node.State == NetworkPeerState.HandShaked)
                 this.Ping(null);
         }
 
@@ -108,11 +108,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 try
                 {
-                    Node node = this.AttachedNode;
+                    NetworkPeer node = this.AttachedNode;
 
                     if (node == null) return;
                     if (!PingVersion()) return;
-                    if (node.State != NodeState.HandShaked) return;
+                    if (node.State != NetworkPeerState.HandShaked) return;
                     if (this.currentPing != null) return;
 
                     this.currentPing = new PingPayload();
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         void PingTimeout(object ping)
         {
-            Node node = this.AttachedNode;
+            NetworkPeer node = this.AttachedNode;
             if ((node != null) && ((PingPayload)ping == this.currentPing))
                 node.DisconnectAsync("Pong timeout for " + ((PingPayload)ping).Nonce);
         }
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public TimeSpan Latency { get; private set; }
 
-        void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             if (!this.PingVersion())
                 return;

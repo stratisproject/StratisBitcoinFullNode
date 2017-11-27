@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             var node = this.AttachedNode;
-            if (node.State == NodeState.Connected)
+            if (node.State == NetworkPeerState.Connected)
             {
                 if (this.peerBanning.IsBanned(node.RemoteSocketEndpoint))
                 {
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="node">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

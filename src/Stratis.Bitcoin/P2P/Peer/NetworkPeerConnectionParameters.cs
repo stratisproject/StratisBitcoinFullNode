@@ -8,7 +8,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public class NodeConnectionParameters
+    public class NetworkPeerConnectionParameters
     {
         /// <summary>Send addr unsollicited message of the AddressFrom peer when passing to Handshaked state.</summary>
         public bool Advertize { get; set; }
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly NodeBehaviorsCollection templateBehaviors = new NodeBehaviorsCollection(null);
         public NodeBehaviorsCollection TemplateBehaviors { get { return this.templateBehaviors; } }
 
-        public NodeConnectionParameters()
+        public NetworkPeerConnectionParameters()
         {
             this.ReuseBuffer = true;
             this.TemplateBehaviors.Add(new PingPongBehavior());
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.PreferredTransactionOptions = TransactionOptions.All;
         }
 
-        public NodeConnectionParameters(NodeConnectionParameters other)
+        public NetworkPeerConnectionParameters(NetworkPeerConnectionParameters other)
         {
             this.Version = other.Version;
             this.IsRelay = other.IsRelay;
@@ -72,9 +72,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public NodeConnectionParameters Clone()
+        public NetworkPeerConnectionParameters Clone()
         {
-            return new NodeConnectionParameters(this);
+            return new NetworkPeerConnectionParameters(this);
         }
 
         public VersionPayload CreateVersion(IPEndPoint peer, Network network)

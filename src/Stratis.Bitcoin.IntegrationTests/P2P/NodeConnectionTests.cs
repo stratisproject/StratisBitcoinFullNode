@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
         [Fact]
         public void CanDiscoverAndConnectToPeersOnTheNetwork()
         {
-            var parameters = new NodeConnectionParameters();
+            var parameters = new NetworkPeerConnectionParameters();
 
             var testFolder = TestDirectory.Create("CanDiscoverAndConnectToPeersOnTheNetwork");
 
@@ -50,12 +50,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             }
 
             var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
-            Node node = Node.Connect(Network.Main, peerOne, parameters);
+            NetworkPeer node = NetworkPeer.Connect(Network.Main, peerOne, parameters);
             node.VersionHandshake();
             node.Disconnect();
 
             var peerTwo = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
-            Node node2 = Node.Connect(Network.Main, peerTwo, parameters);
+            NetworkPeer node2 = NetworkPeer.Connect(Network.Main, peerTwo, parameters);
             node.Disconnect();
         }
     }

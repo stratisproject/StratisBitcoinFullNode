@@ -635,14 +635,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 #if !NOSOCKET
 
-        public Node CreateNodeClient()
+        public NetworkPeer CreateNodeClient()
         {
-            return Node.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString());
+            return NetworkPeer.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString());
         }
 
-        public Node CreateNodeClient(NodeConnectionParameters parameters)
+        public NetworkPeer CreateNodeClient(NetworkPeerConnectionParameters parameters)
         {
-            return Node.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters);
+            return NetworkPeer.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters);
         }
 
 #endif
@@ -937,7 +937,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        public void BroadcastBlocks(Block[] blocks, Node node)
+        public void BroadcastBlocks(Block[] blocks, NetworkPeer node)
         {
             Block lastSent = null;
             foreach (var block in blocks)

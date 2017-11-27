@@ -21,11 +21,11 @@ namespace Stratis.Bitcoin.Connection
             this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
         }
 
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
         }
 

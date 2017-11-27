@@ -7,11 +7,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Filters
     public class ActionFilter : INodeFilter
     {
         private readonly Action<IncomingMessage, Action> onIncoming;
-        private readonly Action<Node, Payload, Action> onSending;
-        public ActionFilter(Action<IncomingMessage, Action> onIncoming = null, Action<Node, Payload, Action> onSending = null)
+        private readonly Action<NetworkPeer, Payload, Action> onSending;
+        public ActionFilter(Action<IncomingMessage, Action> onIncoming = null, Action<NetworkPeer, Payload, Action> onSending = null)
         {
             this.onIncoming = onIncoming ?? new Action<IncomingMessage, Action>((m, n) => n());
-            this.onSending = onSending ?? new Action<Node, Payload, Action>((m, p, n) => n());
+            this.onSending = onSending ?? new Action<NetworkPeer, Payload, Action>((m, p, n) => n());
         }
 
         public void OnReceivingMessage(IncomingMessage message, Action next)
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Filters
             this.onIncoming(message, next);
         }
 
-        public void OnSendingMessage(Node node, Payload payload, Action next)
+        public void OnSendingMessage(NetworkPeer node, Payload payload, Action next)
         {
             this.onSending(node, payload, next);
         }

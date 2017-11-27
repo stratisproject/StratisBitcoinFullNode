@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadAssignment>> peersPendingDownloads = new Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadAssignment>>();
 
         /// <summary>Collection of available network peers.</summary>
-        protected readonly IReadOnlyNodesCollection Nodes;
+        protected readonly IReadOnlyNetworkPeerCollection Nodes;
 
         /// <summary>Best chain that the node is aware of.</summary>
         protected readonly ConcurrentChain Chain;
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="nodes">Network peers of the node.</param>
         /// <param name="protocolVersion">Version of the protocol that the node supports.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion, ILoggerFactory loggerFactory)
+        protected BlockPuller(ConcurrentChain chain, IReadOnlyNetworkPeerCollection nodes, ProtocolVersion protocolVersion, ILoggerFactory loggerFactory)
         {
             this.Chain = chain;
             this.Nodes = nodes;

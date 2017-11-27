@@ -3,24 +3,36 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public delegate void NodeServerNodeEventHandler(NodeServer sender, Node node);
-    public delegate void NodeServerMessageEventHandler(NodeServer sender, IncomingMessage message);
+    public delegate void NodeServerNodeEventHandler(NetworkPeerServer sender, NetworkPeer node);
+    public delegate void NodeServerMessageEventHandler(NetworkPeerServer sender, IncomingMessage message);
 
-    public class NodeServer : IDisposable
+    public class NetworkPeerServer : IDisposable
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        private readonly INetworkPeerFactory networkPeerFactory;
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
 
         public ProtocolVersion Version { get; private set; }
 
-        /// <summary>The parameters that will be cloned and applied for each node connecting to <see cref="NodeServer"/>.</summary>
-        public NodeConnectionParameters InboundNodeConnectionParameters { get; set; }
+        /// <summary>The parameters that will be cloned and applied for each node connecting to <see cref="NetworkPeerServer"/>.</summary>
+        public NetworkPeerConnectionParameters InboundNodeConnectionParameters { get; set; }
 
         public bool AllowLocalPeers { get; set; }
 
@@ -69,7 +81,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public NodesCollection ConnectedNodes { get; private set; }
+        public NetworkPeerCollection ConnectedNodes { get; private set; }
 
         private List<IDisposable> resources = new List<IDisposable>();
 
@@ -95,12 +107,26 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NodeServerNodeEventHandler NodeAdded;
         public event NodeServerMessageEventHandler MessageReceived;
 
-        public NodeServer(Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, int internalPort = -1)
+        /// <summary>
+        /// Initializes instance of a network peer server.
+        /// </summary>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="version">Version of the network protocol that the server should run.</param>
+        /// <param name="internalPort">Port on which the server will listen, or -1 to use the default port for the selected network.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        /// <param name="networkPeerFactory">Factory for creating P2P network peer clients and servers.</param>
+        public NetworkPeerServer(Network network, ProtocolVersion version, int internalPort, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
         {
-            this.AllowLocalPeers = true;
-            this.InboundNodeConnectionParameters = new NodeConnectionParameters();
-
             internalPort = internalPort == -1 ? network.DefaultPort : internalPort;
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{internalPort}] ");
+            this.dateTimeProvider = dateTimeProvider;
+            this.networkPeerFactory = networkPeerFactory;
+
+            this.AllowLocalPeers = true;
+            this.InboundNodeConnectionParameters = new NetworkPeerConnectionParameters();
+
             this.localEndpoint = new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), internalPort);
 
             this.MaxConnections = 125;
@@ -112,7 +138,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.messageProducer.AddMessageListener(listener);
             this.OwnResource(listener);
 
-            this.ConnectedNodes = new NodesCollection();
+            this.ConnectedNodes = new NetworkPeerCollection();
             this.ConnectedNodes.Added += Nodes_NodeAdded;
             this.ConnectedNodes.Removed += Nodes_NodeRemoved;
             this.ConnectedNodes.MessageProducer.AddMessageListener(listener);
@@ -300,18 +326,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                         remoteEndpoint = new IPEndPoint(((IPEndPoint)message.Socket.RemoteEndPoint).Address, this.Network.DefaultPort);
                     }
 
-                    var peer = new NetworkAddress()
+                    var peerAddress = new NetworkAddress()
                     {
                         Endpoint = remoteEndpoint,
                         Time = DateTimeOffset.UtcNow
                     };
 
-                    var node = new Node(peer, this.Network, CreateNodeConnectionParameters(), message.Socket, version);
+                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNodeConnectionParameters(), message.Socket, version);
                     if (connectedToSelf)
                     {
-                        node.SendMessage(CreateNodeConnectionParameters().CreateVersion(node.Peer.Endpoint, this.Network));
+                        networkPeer.SendMessage(CreateNodeConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network));
                         NodeServerTrace.ConnectionToSelfDetected();
-                        node.Disconnect();
+                        networkPeer.Disconnect();
                         return;
                     }
 
@@ -319,19 +345,19 @@ namespace Stratis.Bitcoin.P2P.Peer
                     cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
                     try
                     {
-                        this.ConnectedNodes.Add(node);
-                        node.StateChanged += Node_StateChanged;
-                        node.RespondToHandShake(cancel.Token);
+                        this.ConnectedNodes.Add(networkPeer);
+                        networkPeer.StateChanged += Node_StateChanged;
+                        networkPeer.RespondToHandShake(cancel.Token);
                     }
                     catch (OperationCanceledException ex)
                     {
                         NodeServerTrace.Error("The remote node did not respond fast enough (10 seconds) to the handshake completion, dropping connection", ex);
-                        node.DisconnectAsync();
+                        networkPeer.DisconnectAsync();
                         throw;
                     }
                     catch (Exception)
                     {
-                        node.DisconnectAsync();
+                        networkPeer.DisconnectAsync();
                         throw;
                     }
                 }
@@ -340,11 +366,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MessageReceived?.Invoke(this, message);
         }
 
-        private void Node_StateChanged(Node node, NodeState oldState)
+        private void Node_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
-            if ((node.State == NodeState.Disconnecting)
-                || (node.State == NodeState.Failed)
-                || (node.State == NodeState.Offline))
+            if ((node.State == NetworkPeerState.Disconnecting)
+                || (node.State == NetworkPeerState.Failed)
+                || (node.State == NetworkPeerState.Offline))
                 this.ConnectedNodes.Remove(node);
         }
 
@@ -398,10 +424,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        internal NodeConnectionParameters CreateNodeConnectionParameters()
+        internal NetworkPeerConnectionParameters CreateNodeConnectionParameters()
         {
             IPEndPoint myExternal = Utils.EnsureIPv6(this.ExternalEndpoint);
-            NodeConnectionParameters param2 = this.InboundNodeConnectionParameters.Clone();
+            NetworkPeerConnectionParameters param2 = this.InboundNodeConnectionParameters.Clone();
             param2.Nonce = this.Nonce;
             param2.Version = this.Version;
             param2.AddressFrom = myExternal;
@@ -413,15 +439,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this.ConnectedNodes.FindByEndpoint(endpoint) != null;
         }
 
-        public Node FindOrConnect(IPEndPoint endpoint)
+        public NetworkPeer FindOrConnect(IPEndPoint endpoint)
         {
             while (true)
             {
-                Node node = this.ConnectedNodes.FindByEndpoint(endpoint);
+                NetworkPeer node = this.ConnectedNodes.FindByEndpoint(endpoint);
                 if (node != null)
                     return node;
 
-                node = Node.Connect(this.Network, endpoint, CreateNodeConnectionParameters());
+                node = NetworkPeer.Connect(this.Network, endpoint, CreateNodeConnectionParameters());
                 node.StateChanged += Node_StateChanged;
                 if (!this.ConnectedNodes.Add(node))
                 {

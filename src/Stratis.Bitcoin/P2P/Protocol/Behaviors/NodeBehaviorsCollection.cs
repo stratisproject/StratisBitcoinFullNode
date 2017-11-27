@@ -5,10 +5,10 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 {
     public class NodeBehaviorsCollection : ThreadSafeCollection<INodeBehavior>
     {
-        private readonly Node node;
+        private readonly NetworkPeer node;
         private bool delayAttach;
 
-        public NodeBehaviorsCollection(Node node)
+        public NodeBehaviorsCollection(NetworkPeer node)
         {
             this.node = node;
         }
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         {
             get
             {
-                return (this.node != null) && !this.DelayAttach && (this.node.State != NodeState.Offline) && (this.node.State != NodeState.Failed) && (this.node.State != NodeState.Disconnecting);
+                return (this.node != null) && !this.DelayAttach && (this.node.State != NetworkPeerState.Offline) && (this.node.State != NetworkPeerState.Failed) && (this.node.State != NetworkPeerState.Disconnecting);
             }
         }
 

@@ -6,8 +6,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 {
     public interface INodeBehavior
     {
-        Node AttachedNode { get; }
-        void Attach(Node node);
+        NetworkPeer AttachedNode { get; }
+        void Attach(NetworkPeer node);
         void Detach();
         INodeBehavior Clone();
     }
@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
     {
         private object cs = new object();
         private List<IDisposable> disposables = new List<IDisposable>();
-        public Node AttachedNode { get; private set; }
+        public NetworkPeer AttachedNode { get; private set; }
 
         protected abstract void AttachCore();
 
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.disposables.Add(disposable);
         }
 
-        public void Attach(Node node)
+        public void Attach(NetworkPeer node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
@@ -53,9 +53,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 throw new InvalidOperationException("Can't modify the behavior while it is attached");
         }
 
-        private static bool Disconnected(Node node)
+        private static bool Disconnected(NetworkPeer node)
         {
-            return (node.State == NodeState.Disconnecting) || (node.State == NodeState.Failed) || (node.State == NodeState.Offline);
+            return (node.State == NetworkPeerState.Disconnecting) || (node.State == NetworkPeerState.Failed) || (node.State == NetworkPeerState.Offline);
         }
 
         public void Detach()

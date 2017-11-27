@@ -60,18 +60,18 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
 
-            if (node.State == NodeState.HandShaked)
+            if (node.State == NetworkPeerState.HandShaked)
             {
                 this.ConnectionManager.AddConnectedNode(node);
                 this.infoLogger.LogInformation("Node '{0}' connected ({1}), agent '{2}', height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
                 node.SendMessageAsync(new SendHeadersPayload());
             }
 
-            if ((node.State == NodeState.Failed) || (node.State == NodeState.Offline))
+            if ((node.State == NetworkPeerState.Failed) || (node.State == NetworkPeerState.Offline))
             {
                 this.infoLogger.LogInformation("Node '{0}' offline, reason: '{1}'.", node.RemoteSocketEndpoint, node.DisconnectReason?.Reason ?? "unknown");
                 this.ConnectionManager.RemoveConnectedNode(node);

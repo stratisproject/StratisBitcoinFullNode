@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
 
-        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
         {
             try
             {
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private Task ProcessMessageAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
         {
             // check the type of message received.
             // we're only interested in Inventory and Transaction messages.
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
-        private async Task ProcessInvAsync(Node node, InvPayload invPayload)
+        private async Task ProcessInvAsync(NetworkPeer node, InvPayload invPayload)
         {
             var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
 

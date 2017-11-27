@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        private readonly NodeConnectionParameters parameters;
+        private readonly NetworkPeerConnectionParameters parameters;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.P2P
         public PeerDiscoveryLoop(
             IAsyncLoopFactory asyncLoopFactory,
             Network network,
-            NodeConnectionParameters nodeConnectionParameters,
+            NetworkPeerConnectionParameters nodeConnectionParameters,
             INodeLifetime nodeLifetime,
             IPeerAddressManager peerAddressManager)
         {
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
-                    Node node = null;
+                    NetworkPeer node = null;
 
                     try
                     {
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Clear();
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-                        node = Node.Connect(this.network, peer.Endpoint, clonedParameters);
+                        node = NetworkPeer.Connect(this.network, peer.Endpoint, clonedParameters);
                         node.VersionHandshake(connectTokenSource.Token);
                         node.SendMessageAsync(new GetAddrPayload());
 

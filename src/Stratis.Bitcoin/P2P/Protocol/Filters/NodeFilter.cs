@@ -22,6 +22,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Filters
         /// <param name="node"></param>
         /// <param name="payload"></param>
         /// <param name="next">The rest of the pipeline</param>
-        void OnSendingMessage(Node node, Payload payload, Action next);
+        void OnSendingMessage(NetworkPeer node, Payload payload, Action next);
     }
 }

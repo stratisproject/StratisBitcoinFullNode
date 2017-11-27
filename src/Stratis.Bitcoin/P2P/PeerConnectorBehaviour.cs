@@ -24,12 +24,12 @@ namespace Stratis.Bitcoin.P2P
             this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
-            if (node.State == NodeState.HandShaked)
+            if (node.State == NetworkPeerState.HandShaked)
                 this.peerConnector.AddNode(node);
 
-            if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
+            if ((node.State == NetworkPeerState.Failed) || (node.State == NetworkPeerState.Disconnecting) || (node.State == NetworkPeerState.Offline))
                 this.peerConnector.RemoveNode(node);
         }
 

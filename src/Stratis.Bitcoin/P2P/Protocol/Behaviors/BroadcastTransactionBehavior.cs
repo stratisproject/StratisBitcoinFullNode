@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
     public class BroadcastHub
     {
         internal ConcurrentDictionary<uint256, Transaction> BroadcastedTransaction;
-        internal ConcurrentDictionary<Node, Node> Nodes;
+        internal ConcurrentDictionary<NetworkPeer, NetworkPeer> Nodes;
 
         public event TransactionBroadcastedDelegate TransactionBroadcasted;
         public event TransactionRejectedDelegate TransactionRejected;
@@ -52,16 +52,16 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         public BroadcastHub()
         {
             this.BroadcastedTransaction = new ConcurrentDictionary<uint256, Transaction>();
-            this.Nodes = new ConcurrentDictionary<Node, Node>();
+            this.Nodes = new ConcurrentDictionary<NetworkPeer, NetworkPeer>();
             this.ManualBroadcast = false;
         }
 
-        public static BroadcastHub GetBroadcastHub(Node node)
+        public static BroadcastHub GetBroadcastHub(NetworkPeer node)
         {
             return GetBroadcastHub(node.Behaviors);
         }
 
-        public static BroadcastHub GetBroadcastHub(NodeConnectionParameters parameters)
+        public static BroadcastHub GetBroadcastHub(NetworkPeerConnectionParameters parameters)
         {
             return GetBroadcastHub(parameters.TemplateBehaviors);
         }
@@ -231,9 +231,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             return result;
         }
 
-        void AttachedNode_StateChanged(Node node, NodeState oldState)
+        void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
-            if (node.State == NodeState.HandShaked)
+            if (node.State == NetworkPeerState.HandShaked)
             {
                 this.BroadcastHub.Nodes.TryAdd(node, node);
                 this.AnnounceAll();
@@ -272,8 +272,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             if (!force && this.BroadcastHub.ManualBroadcast)
                 return;
 
-            Node node = this.AttachedNode;
-            if ((node != null) && (node.State == NodeState.HandShaked))
+            NetworkPeer node = this.AttachedNode;
+            if ((node != null) && (node.State == NetworkPeerState.HandShaked))
             {
                 tx.State = BroadcastState.Announced;
                 tx.AnnouncedTime = DateTime.UtcNow;
@@ -296,12 +296,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
             this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
 
-            Node unused;
+            NetworkPeer unused;
             this.BroadcastHub.Nodes.TryRemove(this.AttachedNode, out unused);
             this.flush.Dispose();
         }
 
-        void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             if (message.Message.Payload is InvPayload invPayload)
             {

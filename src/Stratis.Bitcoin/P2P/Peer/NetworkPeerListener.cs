@@ -8,25 +8,25 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public class NodeListener : PollMessageListener<IncomingMessage>, IDisposable
+    public class NetworkPeerListener : PollMessageListener<IncomingMessage>, IDisposable
     {
-        public Node Node { get; private set; }
+        public NetworkPeer Node { get; private set; }
         private IDisposable subscription;
         private List<Func<IncomingMessage, bool>> predicates = new List<Func<IncomingMessage, bool>>();
 
-        public NodeListener(Node node)
+        public NetworkPeerListener(NetworkPeer node)
         {
             this.subscription = node.MessageProducer.AddMessageListener(this);
             this.Node = node;
         }
 
-        public NodeListener Where(Func<IncomingMessage, bool> predicate)
+        public NetworkPeerListener Where(Func<IncomingMessage, bool> predicate)
         {
             this.predicates.Add(predicate);
             return this;
         }
 
-        public NodeListener OfType<TPayload>() where TPayload : Payload
+        public NetworkPeerListener OfType<TPayload>() where TPayload : Payload
         {
             this.predicates.Add(i => i.Message.Payload is TPayload);
             return this;

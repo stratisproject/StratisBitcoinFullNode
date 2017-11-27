@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
-    /// Subscribes to state change events from <see cref="Node"/> and relays connection and handshake attempts to
+    /// Subscribes to state change events from <see cref="NetworkPeer"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.P2P
             this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
@@ -63,15 +63,15 @@ namespace Stratis.Bitcoin.P2P
         //if (node.State == NodeState.Connected)
         //which is more intuitive.
         //This happens in PeerDiscovery as well where we connect and then disconnect straight after.
-        private void AttachedNode_StateChanged(Node node, NodeState previousState)
+        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
-                if (node.State <= NodeState.Disconnecting && previousState == NodeState.HandShaked)
-                    this.peerAddressManager.PeerConnected(node.Peer.Endpoint, this.dateTimeProvider.GetUtcNow());
+                if (node.State <= NetworkPeerState.Disconnecting && previousState == NetworkPeerState.HandShaked)
+                    this.peerAddressManager.PeerConnected(node.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
-                if (node.State == NodeState.HandShaked)
-                    this.peerAddressManager.PeerHandshaked(node.Peer.Endpoint, this.dateTimeProvider.GetUtcNow());
+                if (node.State == NetworkPeerState.HandShaked)
+                    this.peerAddressManager.PeerHandshaked(node.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 

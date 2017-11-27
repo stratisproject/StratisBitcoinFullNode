@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
     {
         public Message Message { get; set; }
         internal Socket Socket { get; set; }
-        public Node Node { get; set; }
+        public NetworkPeer Node { get; set; }
         public long Length { get; set; }
 
         public IncomingMessage()

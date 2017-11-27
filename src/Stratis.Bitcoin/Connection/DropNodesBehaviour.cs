@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Connection
             this.dropThreshold = 0.8M;
         }
 
-        private void AttachedNodeOnMessageReceived(Node node, IncomingMessage message)
+        private void AttachedNodeOnMessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

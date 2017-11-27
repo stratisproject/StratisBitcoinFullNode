@@ -1999,13 +1999,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             using (var nodeSocket = new NodeTcpListenerStub(Utils.ParseIpEndpoint("localhost", wallet.Network.DefaultPort)))
             {
-                using (var node = Node.ConnectToLocal(wallet.Network, new NodeConnectionParameters()))
+                using (var node = NetworkPeer.ConnectToLocal(wallet.Network, new NetworkPeerConnectionParameters()))
                 {
                     var payloads = new List<Payload>();
                     node.Filters.Add(new Action<IncomingMessage, Action>((i, a) => { a(); }),
-                              new Action<Node, Payload, Action>((n, p, a) => { payloads.Add(p); a(); }));
+                              new Action<NetworkPeer, Payload, Action>((n, p, a) => { payloads.Add(p); a(); }));
 
-                    var nodeCollection = new NodesCollection();
+                    var nodeCollection = new NetworkPeerCollection();
                     nodeCollection.Add(node);
 
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
@@ -2109,13 +2109,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             using (var nodeSocket = new NodeTcpListenerStub(Utils.ParseIpEndpoint("localhost", wallet.Network.DefaultPort)))
             {
-                using (var node = Node.ConnectToLocal(wallet.Network, new NodeConnectionParameters()))
+                using (var node = NetworkPeer.ConnectToLocal(wallet.Network, new NetworkPeerConnectionParameters()))
                 {
                     var payloads = new List<Payload>();
                     node.Filters.Add(new Action<IncomingMessage, Action>((i, a) => { a(); }),
-                              new Action<Node, Payload, Action>((n, p, a) => { payloads.Add(p); a(); }));
+                              new Action<NetworkPeer, Payload, Action>((n, p, a) => { payloads.Add(p); a(); }));
 
-                    var nodeCollection = new NodesCollection();
+                    var nodeCollection = new NetworkPeerCollection();
                     nodeCollection.Add(node);
 
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),
@@ -2222,13 +2222,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             using (var nodeSocket = new NodeTcpListenerStub(Utils.ParseIpEndpoint("localhost", wallet.Network.DefaultPort)))
             {
-                using (var node = Node.ConnectToLocal(wallet.Network, new NodeConnectionParameters()))
+                using (var node = NetworkPeer.ConnectToLocal(wallet.Network, new NetworkPeerConnectionParameters()))
                 {
                     var payloads = new List<Payload>();
                     node.Filters.Add(new Action<IncomingMessage, Action>((i, a) => { a(); }),
-                              new Action<Node, Payload, Action>((n, p, a) => { payloads.Add(p); a(); }));
+                              new Action<NetworkPeer, Payload, Action>((n, p, a) => { payloads.Add(p); a(); }));
 
-                    var nodeCollection = new NodesCollection();
+                    var nodeCollection = new NetworkPeerCollection();
                     nodeCollection.Add(node);
 
                     var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(),

@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Base
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
 
             this.RegisterDisposable(this.refreshTimer);
-            if (this.AttachedNode.State == NodeState.Connected)
+            if (this.AttachedNode.State == NetworkPeerState.Connected)
             {
                 ChainedBlock highPoW = this.chainState.ConsensusTip;
                 this.AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
 
@@ -318,17 +318,17 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            Node node = this.AttachedNode;
+            NetworkPeer node = this.AttachedNode;
             if (node != null)
             {
-                if ((node.State == NodeState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
+                if ((node.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
                 {
                     node.SendMessageAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });
                 }
-                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NodeState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.InvalidHeaderReceived ? "" : "NO ");
+                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NetworkPeerState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.InvalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No node attached.");
 

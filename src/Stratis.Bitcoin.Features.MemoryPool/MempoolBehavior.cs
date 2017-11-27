@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
             // TODO: Add exception handling
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        private Task ProcessMessageAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node Sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private async Task SendMempoolPayloadAsync(Node node, MempoolPayload message)
+        private async Task SendMempoolPayloadAsync(NetworkPeer node, MempoolPayload message)
         {
             Guard.NotNull(node, nameof(node));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Command);
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">The node sending the message.</param>
         /// <param name="invPayload">The inventory payload in the message.</param>
-        private async Task ProcessInvAsync(Node node, InvPayload invPayload)
+        private async Task ProcessInvAsync(NetworkPeer node, InvPayload invPayload)
         {
             Guard.NotNull(node, nameof(node));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="getDataPayload">The payload for the message.</param>
-        private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataAsync(NetworkPeer node, GetDataPayload getDataPayload)
         {
             Guard.NotNull(node, nameof(node));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="transactionPayload">The payload for the message.</param>
-        private async Task ProcessTxPayloadAsync(Node node, TxPayload transactionPayload)
+        private async Task ProcessTxPayloadAsync(NetworkPeer node, TxPayload transactionPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
             Transaction trx = transactionPayload.Obj;
@@ -481,7 +481,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node to receive message.</param>
         /// <param name="trxList">List of transactions.</param>
-        private async Task SendAsTxInventoryAsync(Node node, IEnumerable<uint256> trxList)
+        private async Task SendAsTxInventoryAsync(NetworkPeer node, IEnumerable<uint256> trxList)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
             Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(node.AddSupportedOptions(InventoryType.MSG_TX), s)));
@@ -504,7 +504,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task RelayTransaction(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-            IReadOnlyNodesCollection nodes = this.connectionManager.ConnectedNodes;
+            IReadOnlyNetworkPeerCollection nodes = this.connectionManager.ConnectedNodes;
             if (!nodes.Any())
             {
                 this.logger.LogTrace("(-)[NO_NODES]");

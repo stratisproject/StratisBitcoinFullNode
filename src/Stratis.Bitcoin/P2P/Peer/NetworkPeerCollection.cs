@@ -13,26 +13,26 @@ namespace Stratis.Bitcoin.P2P.Peer
     public class NodeEventArgs : EventArgs
     {
         public bool Added { get; private set; }
-        public Node Node { get; private set; }
+        public NetworkPeer Node { get; private set; }
 
-        public NodeEventArgs(Node node, bool added)
+        public NodeEventArgs(NetworkPeer node, bool added)
         {
             this.Added = added;
             this.Node = node;
         }
     }
 
-    public interface IReadOnlyNodesCollection : IEnumerable<Node>
+    public interface IReadOnlyNetworkPeerCollection : IEnumerable<NetworkPeer>
     {
         event EventHandler<NodeEventArgs> Added;
         event EventHandler<NodeEventArgs> Removed;
 
-        Node FindByEndpoint(IPEndPoint endpoint);
-        Node FindByIp(IPAddress ip);
-        Node FindLocal();
+        NetworkPeer FindByEndpoint(IPEndPoint endpoint);
+        NetworkPeer FindByIp(IPAddress ip);
+        NetworkPeer FindLocal();
     }
 
-    public class NodesCollection : IEnumerable<Node>, IReadOnlyNodesCollection
+    public class NetworkPeerCollection : IEnumerable<NetworkPeer>, IReadOnlyNetworkPeerCollection
     {
         private class Bridge : IMessageListener<IncomingMessage>
         {
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
 
-        private ConcurrentDictionary<Node, Node> nodes;
+        private ConcurrentDictionary<NetworkPeer, NetworkPeer> nodes;
 
         public int Count
         {
@@ -68,9 +68,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Provides a comparer to specify how nodes are compared for equality.
         /// </summary>
-        public class NodeComparer : IEqualityComparer<Node>
+        public class NodeComparer : IEqualityComparer<NetworkPeer>
         {
-            public bool Equals(Node nodeA, Node nodeB)
+            public bool Equals(NetworkPeer nodeA, NetworkPeer nodeB)
             {
                 if ((nodeA == null) || (nodeB == null))
                     return (nodeA == null) && (nodeB == null);
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (nodeA.RemoteSocketAddress.MapToIPv6().ToString() == nodeB.RemoteSocketAddress.MapToIPv6().ToString()) && (nodeA.RemoteSocketPort == nodeB.RemoteSocketPort);
             }
 
-            public int GetHashCode(Node node)
+            public int GetHashCode(NetworkPeer node)
             {
                 if (node == null)
                     return 0;
@@ -87,14 +87,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public NodesCollection()
+        public NetworkPeerCollection()
         {
             this.MessageProducer = new MessageProducer<IncomingMessage>();
             this.bridge = new Bridge(this.MessageProducer);
-            this.nodes = new ConcurrentDictionary<Node, Node>(new NodeComparer());
+            this.nodes = new ConcurrentDictionary<NetworkPeer, NetworkPeer>(new NodeComparer());
         }
 
-        public bool Add(Node node)
+        public bool Add(NetworkPeer node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
@@ -109,9 +109,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             return false;
         }
 
-        public bool Remove(Node node)
+        public bool Remove(NetworkPeer node)
         {
-            Node old;
+            NetworkPeer old;
             if (this.nodes.TryRemove(node, out old))
             {
                 node.MessageProducer.RemoveMessageListener(this.bridge);
@@ -122,49 +122,49 @@ namespace Stratis.Bitcoin.P2P.Peer
             return false;
         }
 
-        private void OnNodeAdded(Node node)
+        private void OnNodeAdded(NetworkPeer node)
         {
             this.Added?.Invoke(this, new NodeEventArgs(node, true));
         }
 
-        public void OnNodeRemoved(Node node)
+        public void OnNodeRemoved(NetworkPeer node)
         {
             this.Removed?.Invoke(this, new NodeEventArgs(node, false));
         }
 
-        public Node FindLocal()
+        public NetworkPeer FindLocal()
         {
             return this.FindByIp(IPAddress.Loopback);
         }
 
-        public Node FindByIp(IPAddress ip)
+        public NetworkPeer FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
             return this.nodes.Where(n => Match(ip, null, n.Key)).Select(s => s.Key).FirstOrDefault();
         }
 
-        public Node FindByEndpoint(IPEndPoint endpoint)
+        public NetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
             IPAddress ip = endpoint.Address.EnsureIPv6();
             int port = endpoint.Port;
             return this.nodes.Select(n => n.Key).FirstOrDefault(n => Match(ip, port, n));
         }
 
-        private static bool Match(IPAddress ip, int? port, Node node)
+        private static bool Match(IPAddress ip, int? port, NetworkPeer node)
         {
             if (port.HasValue)
             {
-                return ((node.State > NodeState.Disconnecting) && node.RemoteSocketAddress.Equals(ip) && (node.RemoteSocketPort == port.Value))
+                return ((node.State > NetworkPeerState.Disconnecting) && node.RemoteSocketAddress.Equals(ip) && (node.RemoteSocketPort == port.Value))
                     || (node.PeerVersion.AddressFrom.Address.Equals(ip) && (node.PeerVersion.AddressFrom.Port == port.Value));
             }
             else
             {
-                return ((node.State > NodeState.Disconnecting) && node.RemoteSocketAddress.Equals(ip))
+                return ((node.State > NetworkPeerState.Disconnecting) && node.RemoteSocketAddress.Equals(ip))
                     || node.PeerVersion.AddressFrom.Address.Equals(ip);
             }
         }
 
-        public IEnumerator<Node> GetEnumerator()
+        public IEnumerator<NetworkPeer> GetEnumerator()
         {
             return this.nodes.Select(n => n.Key).AsEnumerable().GetEnumerator();
         }
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public void DisconnectAll(CancellationToken cancellation = default(CancellationToken))
         {
-            foreach (KeyValuePair<Node, Node> node in this.nodes)
+            foreach (KeyValuePair<NetworkPeer, NetworkPeer> node in this.nodes)
                 node.Key.DisconnectAsync();
         }
 
