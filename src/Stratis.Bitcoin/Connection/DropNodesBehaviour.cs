@@ -2,9 +2,11 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
@@ -48,7 +50,7 @@ namespace Stratis.Bitcoin.Connection
 
             message.Message.IfPayloadIs<VersionPayload>(version =>
             {
-                PeerConnector nodeGroup = this.connection.DiscoverNodesPeerConnector ?? this.connection.ConnectNodePeerConnector;
+                IPeerConnector nodeGroup = this.connection.DiscoverNodesPeerConnector ?? this.connection.ConnectNodePeerConnector;
                 // Find how much 20% max nodes.
                 decimal thresholdCount = Math.Round(nodeGroup.MaximumNodeConnections * this.dropThreshold, MidpointRounding.ToEven);
 

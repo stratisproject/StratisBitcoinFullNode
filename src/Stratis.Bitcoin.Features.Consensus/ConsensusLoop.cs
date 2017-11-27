@@ -6,12 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
@@ -45,11 +45,13 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// A class that is responsible for downloading blocks from peers using the <see cref="ILookaheadBlockPuller"/>
-    /// and validating this blocks using either the <see cref="PowConsensusValidator"/> for POF networks or <see cref="PosConsensusValidator"/> for POS networks.
+    /// Consumes incoming blocks, validates and executes them.
     /// </summary>
     /// <remarks>
-    /// An internal loop will manage such background operations.
+    /// <para>
+    /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by
+    /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
+    /// </para>
     /// </remarks>
     public class ConsensusLoop
     {

@@ -1,5 +1,5 @@
-﻿using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
+﻿using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -7,23 +7,26 @@ namespace Stratis.Bitcoin.P2P
     internal sealed class PeerConnectorBehaviour : NodeBehavior
     {
         /// <summary>The peer connector this behaviour relates to.</summary>
-        private readonly PeerConnector peerConnector;
+        private readonly IPeerConnector peerConnector;
 
-        internal PeerConnectorBehaviour(PeerConnector peerConnector)
+        internal PeerConnectorBehaviour(IPeerConnector peerConnector)
         {
             this.peerConnector = peerConnector;
         }
 
+        /// <inheritdoc/>
         protected override void AttachCore()
         {
             this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
         }
 
+        /// <inheritdoc/>
         protected override void DetachCore()
         {
             this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
+        /// <inheritdoc/>
         private void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
             if (node.State == NodeState.HandShaked)
@@ -33,6 +36,7 @@ namespace Stratis.Bitcoin.P2P
                 this.peerConnector.RemoveNode(node);
         }
 
+        /// <inheritdoc/>
         public override object Clone()
         {
             return new PeerConnectorBehaviour(this.peerConnector);

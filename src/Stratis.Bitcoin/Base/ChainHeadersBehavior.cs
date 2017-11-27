@@ -1,13 +1,13 @@
-﻿#if !NOSOCKET
-
 using System;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
@@ -61,10 +61,10 @@ namespace Stratis.Bitcoin.Base
 
         private Timer refreshTimer;
 
-        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private ConcurrentChain chain;
 
-        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         public ConcurrentChain Chain
         {
             get
@@ -353,5 +353,3 @@ namespace Stratis.Bitcoin.Base
         }
     }
 }
-
-#endif

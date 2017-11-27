@@ -6,11 +6,17 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// Provides an interface for creating block templates of different types.
+    /// </summary>
     public abstract class AssemblerFactory
     {
         public abstract BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null);
     }
 
+    /// <summary>
+    /// Provides functionality for creating PoW block templates.
+    /// </summary>
     public class PowAssemblerFactory : AssemblerFactory
     {
         protected readonly ConsensusLoop consensusLoop;
@@ -56,6 +62,9 @@ namespace Stratis.Bitcoin.Features.Miner
         }
     }
 
+    /// <summary>
+    /// Provides functionality for creating PoS block templates.
+    /// </summary>
     public class PosAssemblerFactory : AssemblerFactory
     {
         protected readonly ConsensusLoop consensusLoop;
@@ -73,6 +82,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
+        private readonly StakeValidator stakeValidator;
+
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
@@ -81,6 +93,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             MempoolSchedulerLock mempoolScheduler,
             TxMempool mempool,
+            StakeValidator stakeValidator,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             StakeChain stakeChain = null)
@@ -89,6 +102,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.network = network;
             this.mempoolScheduler = mempoolScheduler;
             this.mempool = mempool;
+            this.stakeValidator = stakeValidator;
             this.dateTimeProvider = dateTimeProvider;
             this.stakeChain = stakeChain;
             this.loggerFactory = loggerFactory;
@@ -98,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public override BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
         {
             return new PosBlockAssembler(this.consensusLoop, this.network, this.mempoolScheduler, this.mempool,
-                this.dateTimeProvider, this.stakeChain, chainTip, this.loggerFactory, options);
+                this.dateTimeProvider, this.stakeChain, this.stakeValidator, chainTip, this.loggerFactory, options);
         }
     }
 }

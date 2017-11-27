@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly BlockStoreStats blockStoreStats;
 
-        /// <summary> Best chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
 
         public ChainState ChainState { get; }

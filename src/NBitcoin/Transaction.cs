@@ -1630,12 +1630,12 @@ namespace NBitcoin
 			}
 			Sign(key, coins.ToArray());
 		}
-
+        /*
 		public TxPayload CreatePayload()
 		{
 			return new TxPayload(this.Clone());
 		}
-
+        */
 #if !NOJSONNET
 		public static Transaction Parse(string tx, RawFormat format, Network network = null)
 		{

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
@@ -62,7 +63,15 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly PosConsensusOptions consensusOptions;
 
-        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public PosConsensusValidator(
+            StakeValidator stakeValidator,
+            ICheckpoints checkpoints,
+            Network network,
+            StakeChain stakeChain,
+            ConcurrentChain chain,
+            CoinView coinView,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));
@@ -419,7 +428,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
                 if (!context.BlockValidationContext.SkipValidation)
                 {
-                    this.StakeValidator.CheckProofOfStake(context, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
+                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
                 }
                 else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedBlock.Height);
             }

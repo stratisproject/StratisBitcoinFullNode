@@ -32,32 +32,32 @@ namespace NBitcoin.Protocol
             trace.TraceEvent(TraceEventType.Error, 0, "External ip cannot be detected " + Utils.ExceptionToString(ex));
         }
 
-        internal static void Information(string info)
+        public static void Information(string info)
         {
             trace.TraceInformation(info);
         }
 
-        internal static void Error(string msg, Exception ex)
+        public static void Error(string msg, Exception ex)
         {
             trace.TraceEvent(TraceEventType.Error, 0, msg + " " + Utils.ExceptionToString(ex));
         }
 
-        internal static void Warning(string msg)
+        public static void Warning(string msg)
         {
             Warning(msg, null);
         }
 
-        internal static void PeerTableRemainingPeerToGet(int count)
+        public static void PeerTableRemainingPeerToGet(int count)
         {
             trace.TraceInformation("Remaining peer to get : " + count);
         }
 
-        internal static void ConnectionToSelfDetected()
+        public static void ConnectionToSelfDetected()
         {
             Warning("Connection to self detected, abort connection");
         }
 
-        internal static void Verbose(string str)
+        public static void Verbose(string str)
         {
             trace.TraceEvent(TraceEventType.Verbose, 0, str);
         }
