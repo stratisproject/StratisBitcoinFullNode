@@ -10,7 +10,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -27,6 +27,12 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public class BlockValidationContext
     {
+        /// <summary>A value indicating the peer should not be banned.</summary>
+        public const int BanDurationNoBan = -1;
+
+        /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
+        public const int BanDurationDefaultBan = 0;
+
         /// <summary>The chain of headers associated with the block.</summary>
         public ChainedBlock ChainedBlock { get; set; }
 
@@ -52,10 +58,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// The ban, unless specified otherwise, will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
         /// </summary>
         /// <remarks>
-        /// Setting this value to be smaller or equal to 0 will disable the ban.
-        /// Leaving the value as <c>null</c> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>
+        /// Setting this value to be <see cref="BanDurationNoBan"/> will prevent the peer from being banned.
+        /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
         /// </remarks>
-        public int? BanDurationSeconds { get; set; }
+        public int BanDurationSeconds { get; set; }
 
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
@@ -121,7 +127,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ICheckpoints checkpoints;
 
         /// <summary>Consensus settings for the full node.</summary>
-        private readonly ConsensusSettings settings;
+        private readonly ConsensusSettings consensusSettings;
+
+        /// <summary>Settings for the full node.</summary>
+        private readonly NodeSettings nodeSettings;
 
         /// <summary>Handle the banning of peers.</summary>
         private readonly IPeerBanning peerBanning;
@@ -145,7 +154,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        /// <param name="settings">Consensus settings for the full node.</param>
+        /// <param name="consensusSettings">Consensus settings for the full node.</param>
+        /// <param name="nodeSettings">Settings for the full node.</param>
         /// <param name="peerBanning">Handle the banning of peers.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
@@ -162,7 +172,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
             ICheckpoints checkpoints,
-            ConsensusSettings settings,
+            ConsensusSettings consensusSettings,
+            NodeSettings nodeSettings,
             IPeerBanning peerBanning,
             StakeChain stakeChain = null)
         {
@@ -176,7 +187,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(settings, nameof(settings));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.consensusLock = new AsyncLock();
@@ -195,7 +207,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.NodeDeployments = nodeDeployments;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = dateTimeProvider;
-            this.settings = settings;
+            this.consensusSettings = consensusSettings;
+            this.nodeSettings = nodeSettings;
             this.peerBanning = peerBanning;
 
             // chain of stake info can be null if POS is not enabled
@@ -246,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// The block will then be passed to the consensus validation.
         /// </summary>
         /// <remarks>
-        /// If the <see cref="Block"/> returned from the puller is null that means the puller is signaling a reorg was detected.
+        /// If the <see cref="Block"/> returned from the puller is <c>null</c> that means the puller is signaling a reorg was detected.
         /// In this case a rewind of the <see cref="CoinView"/> db will be triggered to roll back consensus until a block is found that is in the best chain.
         /// </remarks>
         private async Task PullerLoopAsync()
@@ -382,9 +395,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
-                    if ((blockValidationContext.Peer != null) && !(blockValidationContext.BanDurationSeconds <= 0))
+                    if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds > BlockValidationContext.BanDurationNoBan))
                     {
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, blockValidationContext.BanDurationSeconds);
+                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.nodeSettings.ConnectionManager.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
+                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration);
                     }
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
@@ -457,7 +471,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Check whether to use checkpoint to skip block validation.
                 context.BlockValidationContext.SkipValidation = false;
-                if (this.settings.UseCheckpoints)
+                if (this.consensusSettings.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
                     context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
@@ -466,9 +480,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
 
                 // Check whether to use assumevalid switch to skip validation.
-                if (!context.BlockValidationContext.SkipValidation && (this.settings.BlockAssumedValid != null))
+                if (!context.BlockValidationContext.SkipValidation && (this.consensusSettings.BlockAssumedValid != null))
                 {
-                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.settings.BlockAssumedValid);
+                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.consensusSettings.BlockAssumedValid);
                     context.BlockValidationContext.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
                     if (context.BlockValidationContext.SkipValidation)
                         this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);

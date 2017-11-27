@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns><c>true</c> if bother instances are the same.</returns>
         public static bool operator ==(ConsensusError a, ConsensusError b)
         {
-            if(Object.ReferenceEquals(a, b))
+            if (Object.ReferenceEquals(a, b))
                 return true;
 
             if (((object)a == null) || ((object)b == null))
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Compare two instances of <see cref="ConsensusError"/> are not teh same.
+        /// Compare two instances of <see cref="ConsensusError"/> are not the same.
         /// </summary>
         public static bool operator !=(ConsensusError a, ConsensusError b)
         {
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{this.Code}: {this.Message}";
+            return string.Format("{0} : {1}", this.Code, this.Message);
         }
     }
 

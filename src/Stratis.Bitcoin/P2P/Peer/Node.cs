@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public Node()
         {
-            // this constructor is used for testing untill the Node class has an interface and can be mocked.
+            // This constructor is used for testing until the Node class has an interface and can be mocked.
             this.Behaviors = new NodeBehaviorsCollection(this);
         }
 

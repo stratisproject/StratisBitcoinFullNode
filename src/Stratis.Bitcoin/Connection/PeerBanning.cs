@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
@@ -19,12 +18,12 @@ namespace Stratis.Bitcoin.Connection
     public interface IPeerBanning
     {
         /// <summary>
-        /// Set a peer as banned, if<see cref="banTimeSeconds"/> is <c>null</c> the default ban time is <see cref="ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds"/>.
+        /// Set a peer as banned, if <paramref name="banTimeSeconds"/> is <c>zero</c> the default ban time is <see cref="ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds"/>.
         /// </summary>
         /// <param name="endpoint">The endpoint to set that it was banned.</param>
         /// <param name="banTimeSeconds">The time in seconds this peer should be banned.</param>
         /// <param name="reason">An optional reason for the ban, the 'reason' is only use for tracing.</param>
-        void BanPeer(IPEndPoint endpoint, int? banTimeSeconds = null, string reason = null);
+        void BanPeer(IPEndPoint endpoint, int banTimeSeconds = 0, string reason = null);
 
         /// <summary>
         /// Check if a peer is banned.
@@ -102,13 +101,15 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
-            this.banStore = new MemoryBanStore();
             this.dateTimeProvider = dateTimeProvider;
             this.connectionManagerSettings = nodeSettings.ConnectionManager;
+
+            // TODO: MemoryBanStore should be replaced with the address manager store
+            this.banStore = new MemoryBanStore();
         }
 
         /// <inheritdoc />
-        public void BanPeer(IPEndPoint endpoint, int? banTimeSeconds = null, string reason = null)
+        public void BanPeer(IPEndPoint endpoint, int banTimeSeconds = 0, string reason = null)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (banPeer)
             {
-                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds ?? this.connectionManagerSettings.BanTimeSeconds));
+                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds > 0 ? banTimeSeconds : this.connectionManagerSettings.BanTimeSeconds));
             }
 
             this.logger.LogTrace("(-)");

@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // create a new block that breaks consensus.
             var block = blocks.First();
             block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = -1 });
+            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = BlockValidationContext.BanDurationNoBan });
 
             Assert.False(context.PeerBanning.IsBanned(peer));
         }
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // create a new block that breaks consensus.
             var block = blocks.First();
             block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = -1 });
+            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = BlockValidationContext.BanDurationNoBan });
 
             Assert.False(context.PeerBanning.IsBanned(peer));
         }
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
-            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = false };
+            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
             var node = new Node();
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
