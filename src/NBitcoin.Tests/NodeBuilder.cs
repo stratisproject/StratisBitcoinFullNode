@@ -46,19 +46,51 @@ namespace NBitcoin.Tests
 	}
 	public class NodeBuilder : IDisposable
 	{
-		public static NodeBuilder Create([CallerMemberNameAttribute]string caller = null, string version = "0.13.1")
+        /// <summary>
+        /// Deletes test folders. Stops "bitcoind" if required.
+        /// </summary>
+        /// <param name="folder">The folder to remove.</param>
+        /// <param name="tryKill">If set to true will try to stop "bitcoind" if running.</param>
+        /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
+        public static bool CleanupTestFolder(string folder, bool tryKill = true)
+        {
+            for (int retry = 0; retry < 2; retry++)
+            {
+                try
+                {
+                    Directory.Delete(folder, true);
+                    return true;
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    return true;
+                }
+                catch (Exception)
+                {
+                }
+
+                if (tryKill)
+                {
+                    tryKill = false;
+
+                    var x = typeof(NodeBuilder);
+
+                    foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
+                        if (bitcoind.MainModule.FileName.Contains("NBitcoin.Tests"))
+                            bitcoind.Kill();
+
+                    Thread.Sleep(1000);
+                }
+            }
+
+            return false;
+        }
+
+        public static NodeBuilder Create([CallerMemberNameAttribute]string caller = null, string version = "0.13.1")
 		{
-			version = version ?? "0.13.1";
-			var path = EnsureDownloaded(version);
-			try
-			{
-				Directory.Delete(caller, true);
-			}
-			catch(DirectoryNotFoundException)
-			{
-			}
-			Directory.CreateDirectory(caller);
-			return new NodeBuilder(caller, path);
+            CleanupTestFolder(caller);
+            Directory.CreateDirectory(caller);    
+			return new NodeBuilder(caller, EnsureDownloaded(version));
 		}
 
 		private static string EnsureDownloaded(string version)
