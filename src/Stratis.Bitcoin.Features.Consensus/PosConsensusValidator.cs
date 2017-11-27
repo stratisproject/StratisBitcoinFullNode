@@ -40,8 +40,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </remarks>
     public class PosConsensusValidator : PowConsensusValidator
     {
-        // To decrease granularity of timestamp.
-        // Supposed to be 2^n-1.
+        /// <summary>PoS block's timestamp mask.</summary>
+        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
         public const uint StakeTimestampMask = 0x0000000F;
 
         /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>
@@ -50,12 +50,22 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         public StakeValidator StakeValidator { get; }
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
+
+        /// <summary>Proof of Stake consensus options.</summary>
         private readonly PosConsensusOptions consensusOptions;
 
+        /// <inheritdoc />
+        /// <param name="stakeValidator">Provides functionality for checking validity of PoS blocks.</param>
+        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosConsensusValidator(
             StakeValidator stakeValidator,
             ICheckpoints checkpoints,
@@ -205,7 +215,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        /// <remarks>Also does additional checks related to PoS.</remarks>
         public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
         {
             this.logger.LogTrace("()");
