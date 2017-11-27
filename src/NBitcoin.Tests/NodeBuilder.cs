@@ -277,6 +277,8 @@ namespace NBitcoin.Tests
 			return new RestClient(new Uri("http://127.0.0.1:" + ports[1].ToString() + "/"));
 		}
 #if !NOSOCKET
+        /*
+         * TODO: Consider importing to FN.
 		public Node CreateNodeClient()
 		{
 			return Node.Connect(Network.RegTest, "127.0.0.1:" + ports[0].ToString());
@@ -285,6 +287,7 @@ namespace NBitcoin.Tests
 		{
 			return Node.Connect(Network.RegTest, "127.0.0.1:" + ports[0].ToString(), parameters);
 		}
+        */
 #endif
 
 		string GetRPCAuth()
@@ -406,6 +409,9 @@ namespace NBitcoin.Tests
 #if !NOSOCKET
 		public void Broadcast(Transaction transaction)
 		{
+        /*
+         * TODO: Consider importing to FN.
+
 			using(var node = CreateNodeClient())
 			{
 				node.VersionHandshake();
@@ -413,7 +419,8 @@ namespace NBitcoin.Tests
 				node.SendMessageAsync(new TxPayload(transaction));
 				node.PingPong();
 			}
-		}
+            */
+    }
 #else
         public void Broadcast(Transaction transaction)
         {
@@ -495,9 +502,10 @@ namespace NBitcoin.Tests
 			List<Block> blocks = new List<Block>();
 			DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
 #if !NOSOCKET
+        /*
+         * TODO: Consider importing to FN.
 			using(var node = CreateNodeClient())
 			{
-
 				node.VersionHandshake();
 				chain = bestBlock == node.Network.GenesisHash ? new ConcurrentChain(node.Network) : node.GetChain();
 				for(int i = 0; i < blockCount; i++)
@@ -526,18 +534,27 @@ namespace NBitcoin.Tests
 				if(broadcast)
 					BroadcastBlocks(blocks.ToArray(), node);
 			}
+
+            */
 			return blocks.ToArray();
 #endif
 		}
 
 		public void BroadcastBlocks(Block[] blocks)
 		{
+        /*
+         * TODO: Consider importing to FN.
+
 			using(var node = CreateNodeClient())
 			{
 				node.VersionHandshake();
 				BroadcastBlocks(blocks, node);
 			}
-		}
+            */
+    }
+
+        /*
+         * TODO: Consider importing to FN.
 
 		public void BroadcastBlocks(Block[] blocks, Node node)
 		{
@@ -550,7 +567,7 @@ namespace NBitcoin.Tests
 			}
 			node.PingPong();
 		}
-
+*/
 		public void FindBlock(int blockCount = 1, bool includeMempool = true)
 		{
 			SelectMempoolTransactions();
@@ -620,3 +637,4 @@ namespace NBitcoin.Tests
 	}
 }
 #endif
+      

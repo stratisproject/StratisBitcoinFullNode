@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using NBitcoin;
-using NBitcoin.Protocol;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
