@@ -20,6 +20,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletManagerTest : LogsTestBase, IDisposable
     {
+        public WalletManagerTest()
+        {
+            // These tests use Nwtwork.StratisMain.
+            // Ensure that these static flags have the expected values.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
 
         public void Dispose()
         {
@@ -271,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             chain.SetTip(block.Header);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(),
-                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+                                                    dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var password = "test";
 
