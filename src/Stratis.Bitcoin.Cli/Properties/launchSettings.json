@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.CLI Stratis REST API": {
       "commandName": "Project",
-      "commandLineArgs": "stratis Wallet/history WalletName=testwallet"
+      "commandLineArgs": "stratis Wallet/files"
     },
     "Stratis.CLI Stratis RPC": {
       "commandName": "Project",
