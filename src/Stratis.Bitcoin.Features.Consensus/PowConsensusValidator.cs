@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <remarks>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</remarks>
     public class PowConsensusValidator
     {
-        /// <summary>Used as the flags parameter for checks in non-consensus code.</summary>
+        /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
         /// <summary>Instance logger.</summary>
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of block header hash checkpoints.</summary>
         protected readonly ICheckpoints Checkpoints;
 
-        /// <summary>The consensus parameters.</summary>
+        /// <summary>Consensus parameters.</summary>
         public NBitcoin.Consensus ConsensusParams { get; }
 
         /// <summary>Consensus options.</summary>
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks if <paramref name="context.BlockValidationContext.Block"/> has a valid PoW header.
         /// </summary>
-        /// <param name="context">The context.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
         public virtual void CheckBlockHeader(ContextInformation context)
         {
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Context-dependent validity checks.
         /// </summary>
-        /// <param name="context">The context.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
         public virtual void ContextualCheckBlock(ContextInformation context)
@@ -122,8 +122,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
-                    bool malleated = false;
-                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out malleated);
+                    bool unused = false;
+                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out unused);
 
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the
@@ -180,14 +180,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Validates the UTXO set is correctly spent.
         /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="taskScheduler">The task scheduler.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <param name="taskScheduler">Task scheduler for creating tasks that would check validity of each transaction input.</param>
         /// <exception cref="ConsensusErrors.BadTransactionBIP30">Thrown if block contain transactions which 'overwrite' older transactions.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction tries to spend inputs that are missing.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if transaction's height or time is lower then provided by SequenceLock for this block.</exception>
         /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
-        public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
+        public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
 
@@ -312,10 +312,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Updates context's coin view.
+        /// Updates context's <see cref="UnspentOutputSet"/>.
         /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="tx">Transaction that is used for fetching UTXO's.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <param name="tx">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
         protected virtual void UpdateCoinView(ContextInformation context, Transaction tx)
         {
             this.logger.LogTrace("()");
@@ -331,7 +331,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Verifies that block has correct coinbase transaction with appropriate reward and fees summ.
         /// </summary>
-        /// <param name="context">The context.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <param name="fees">Total amount of fees from transactions that are included in that block.</param>
         /// <param name="chainedBlock">The chained block.</param>
         /// <param name="block">The block.</param>
@@ -353,8 +353,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks the maturity of UTXOs.
         /// </summary>
-        /// <param name="coins">UTXOs.</param>
-        /// <param name="spendHeight">Height at which coins are considered spendable.</param>
+        /// <param name="coins">UTXOs to check the maturity of.</param>
+        /// <param name="spendHeight">Height at which coins are attempted to be spent.</param>
         /// <exception cref="ConsensusErrors.BadTransactionPrematureCoinbaseSpending">Thrown if transaction tries to spend coins that are not mature.</exception>
         protected virtual void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
@@ -377,8 +377,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks that transaction's inputs are valid.
         /// </summary>
-        /// <param name="tx">The transaction.</param>
-        /// <param name="inputs">Inputs for the transaction.</param>
+        /// <param name="tx">Transaction to check.</param>
+        /// <param name="inputs">UTXO set that should contain transaction's inputs in order to consider that inputs valid.</param>
         /// <param name="spendHeight">Height at which coins are considered spendable.</param>
         /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction's inputs are missing.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionInputValueOutOfRange">Thrown if input value is out of range.</exception>
@@ -551,7 +551,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks block's validity.
         /// </summary>
-        /// <param name="context">Context.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.BadMerkleRoot">Thrown block's merkle root is corrupted.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionDuplicate">Thrown if block contains duplicated transaction that don't affect merkle root.</exception>
         /// <exception cref="ConsensusErrors.BadBlockLength">Thrown if block exceeds maximum allowed size or doesn't contain any transaction.</exception>
@@ -999,7 +999,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Context-dependent validity checks.
         /// </summary>
-        /// <param name="context">Context.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
         /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>

@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="blockTime">The block time.</param>
         /// <param name="transactionTime">The transaction time.</param>
-        /// <returns><c>true</c> if block timestamp is equal to transaction timestamp. Otherwise: <c>false</c>.</returns>
+        /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
         public bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
             return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Checks if block signature is valid.
         /// </summary>
         /// <param name="block">The block.</param>
-        /// <returns><c>true</c> if the signature is valid. Otherwise: <c>false</c>.</returns>
+        /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
         public bool CheckBlockSignature(Block block)
         {
             this.logger.LogTrace("()");
@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks and computes stake.
         /// </summary>
-        /// <param name="context">The context.</param>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
         /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
         public void CheckAndComputeStake(ContextInformation context)
@@ -509,7 +509,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Determines whether the block with specified height is premined.
         /// </summary>
         /// <param name="height">Block's height.</param>
-        /// <returns><c>true</c> if the block with provided height is premined; otherwise, <c>false</c>.</returns>
+        /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
         private bool IsPremine(int height)
         {
             return (this.consensusOptions.PremineHeight > 0) &&
