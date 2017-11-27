@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Provides functionality to verify if block is a valid PoS block.
+    /// Provides functionality for verifying validity of PoS block.
     /// </summary>
     /// <remarks>
     /// These are the criteria for a new block to be accepted as a valid POS block at version 3 of the protocol,
@@ -76,9 +76,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void CheckBlockReward(ContextInformation context, Money fees, ChainedBlock chainedBlock, Block block)
+        public override void CheckBlockReward(ContextInformation context, Money fees, int height, Block block)
         {
-            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(chainedBlock), chainedBlock);
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
 
             if (BlockStake.IsProofOfStake(block))
             {
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // reward does not exceed the consensus rules
 
                 Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
-                Money calcStakeReward = fees + this.GetProofOfStakeReward(chainedBlock.Height);
+                Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
 
                 this.logger.LogTrace("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
                 if (stakeReward > calcStakeReward)
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             else
             {
-                Money blockReward = fees + this.GetProofOfWorkReward(chainedBlock.Height);
+                Money blockReward = fees + this.GetProofOfWorkReward(height);
                 this.logger.LogTrace("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
                 if (block.Transactions[0].TotalOut > blockReward)
                 {
@@ -192,16 +192,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        protected override void UpdateCoinView(ContextInformation context, Transaction tx)
+        protected override void UpdateCoinView(ContextInformation context, Transaction transaction)
         {
             this.logger.LogTrace("()");
 
             UnspentOutputSet view = context.Set;
 
-            if (tx.IsCoinStake)
-                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(tx);
+            if (transaction.IsCoinStake)
+                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
-            base.UpdateCoinView(context, tx);
+            base.UpdateCoinView(context, transaction);
 
             this.logger.LogTrace("(-)");
         }

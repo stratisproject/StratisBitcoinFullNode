@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Provides functionality to verify if block is a valid PoW block.
+    /// Provides functionality for verifying validity of PoW block.
     /// </summary>
     /// <remarks>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</remarks>
     public class PowConsensusValidator
@@ -40,6 +40,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
+        /// <inheritdoc />
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PowConsensusValidator(Network network, ICheckpoints checkpoints, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
@@ -79,17 +84,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
             DeploymentFlags deploymentFlags = context.Flags;
 
-            int nHeight = context.BestBlock == null ? 0 : context.BestBlock.Height + 1;
+            int height = context.BestBlock == null ? 0 : context.BestBlock.Height + 1;
 
             // Start enforcing BIP113 (Median Time Past) using versionbits logic.
-            DateTimeOffset nLockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
+            DateTimeOffset lockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
                 context.BestBlock.MedianTimePast :
                 block.Header.BlockTime;
 
             // Check that all transactions are finalized.
             foreach (Transaction transaction in block.Transactions)
             {
-                if (!transaction.IsFinal(nLockTimeCutoff, nHeight))
+                if (!transaction.IsFinal(lockTimeCutoff, height))
                 {
                     this.logger.LogTrace("(-)[TX_NON_FINAL]");
                     ConsensusErrors.BadTransactionNonFinal.Throw();
@@ -99,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Enforce rule that the coinbase starts with serialized block height.
             if (deploymentFlags.EnforceBIP34)
             {
-                Script expect = new Script(Op.GetPushOp(nHeight));
+                Script expect = new Script(Op.GetPushOp(height));
                 Script actual = block.Transactions[0].Inputs[0].ScriptSig;
                 if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
                 {
@@ -116,14 +121,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             // * There must be at least one output whose scriptPubKey is a single 36-byte push, the first 4 bytes of which are
             //   {0xaa, 0x21, 0xa9, 0xed}, and the following 32 bytes are SHA256^2(witness root, witness nonce). In case there are
             //   multiple, the last one is used.
-            bool fHaveWitness = false;
+            bool haveWitness = false;
             if (deploymentFlags.ScriptFlags.HasFlag(ScriptVerify.Witness))
             {
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
                     bool unused = false;
-                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out unused);
+                    uint256 hashWitness = this.blockWitnessMerkleRoot(block, out unused);
 
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the
@@ -146,11 +151,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                         ConsensusErrors.BadWitnessMerkleMatch.Throw();
                     }
 
-                    fHaveWitness = true;
+                    haveWitness = true;
                 }
             }
 
-            if (!fHaveWitness)
+            if (!haveWitness)
             {
                 for (int i = 0; i < block.Transactions.Count; i++)
                 {
@@ -216,8 +221,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             else this.logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", index.Height);
 
-            long nSigOpsCost = 0;
-            Money nFees = Money.Zero;
+            long sigOpsCost = 0;
+            Money fees = Money.Zero;
             List<Task<bool>> checkInputs = new List<Task<bool>>();
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
@@ -255,15 +260,15 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // * legacy (always),
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
-                    nSigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (nSigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
+                    sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
+                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                         ConsensusErrors.BadBlockSigOps.Throw();
 
                     // TODO: Simplify this condition.
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
                         this.CheckInputs(tx, view, index.Height);
-                        nFees += view.GetValueIn(tx) - tx.TotalOut;
+                        fees += view.GetValueIn(tx) - tx.TotalOut;
                         PrecomputedTransactionData txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
@@ -297,7 +302,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (!context.BlockValidationContext.SkipValidation)
             {
-                this.CheckBlockReward(context, nFees, index, block);
+                this.CheckBlockReward(context, fees, index.Height, block);
 
                 bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
                 if (!passed)
@@ -315,15 +320,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Updates context's <see cref="UnspentOutputSet"/>.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <param name="tx">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
-        protected virtual void UpdateCoinView(ContextInformation context, Transaction tx)
+        /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
+        protected virtual void UpdateCoinView(ContextInformation context, Transaction transaction)
         {
             this.logger.LogTrace("()");
 
             ChainedBlock index = context.BlockValidationContext.ChainedBlock;
             UnspentOutputSet view = context.Set;
 
-            view.Update(tx, index.Height);
+            view.Update(transaction, index.Height);
 
             this.logger.LogTrace("(-)");
         }
@@ -333,14 +338,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <param name="fees">Total amount of fees from transactions that are included in that block.</param>
-        /// <param name="chainedBlock">The chained block.</param>
-        /// <param name="block">The block.</param>
+        /// <param name="height">Block's height.</param>
+        /// <param name="block">Block for which reward amount is checked.</param>
         /// <exception cref="ConsensusErrors.BadCoinbaseAmount">Thrown if coinbase transaction output value is larger than expected.</exception>
-        public virtual void CheckBlockReward(ContextInformation context, Money fees, ChainedBlock chainedBlock, Block block)
+        public virtual void CheckBlockReward(ContextInformation context, Money fees, int height, Block block)
         {
             this.logger.LogTrace("()");
 
-            Money blockReward = fees + this.GetProofOfWorkReward(chainedBlock.Height);
+            Money blockReward = fees + this.GetProofOfWorkReward(height);
             if (block.Transactions[0].TotalOut > blockReward)
             {
                 this.logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
@@ -377,55 +382,55 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks that transaction's inputs are valid.
         /// </summary>
-        /// <param name="tx">Transaction to check.</param>
-        /// <param name="inputs">UTXO set that should contain transaction's inputs in order to consider that inputs valid.</param>
+        /// <param name="transaction">Transaction to check.</param>
+        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
         /// <param name="spendHeight">Height at which coins are considered spendable.</param>
         /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction's inputs are missing.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionInputValueOutOfRange">Thrown if input value is out of range.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionInBelowOut">Thrown if transaction inputs are less then outputs.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionNegativeFee">Thrown if fees sum is negative.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
-        public virtual void CheckInputs(Transaction tx, UnspentOutputSet inputs, int spendHeight)
+        public virtual void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
         {
             this.logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
 
-            if (!inputs.HaveInputs(tx))
+            if (!inputs.HaveInputs(transaction))
                 ConsensusErrors.BadTransactionMissingInput.Throw();
 
-            Money nValueIn = Money.Zero;
-            Money nFees = Money.Zero;
-            for (int i = 0; i < tx.Inputs.Count; i++)
+            Money valueIn = Money.Zero;
+            Money fees = Money.Zero;
+            for (int i = 0; i < transaction.Inputs.Count; i++)
             {
-                OutPoint prevout = tx.Inputs[i].PrevOut;
+                OutPoint prevout = transaction.Inputs[i].PrevOut;
                 UnspentOutputs coins = inputs.AccessCoins(prevout.Hash);
 
                 this.CheckMaturity(coins, spendHeight);
 
                 // Check for negative or overflow input values.
-                nValueIn += coins.TryGetOutput(prevout.N).Value;
-                if (!this.MoneyRange(coins.TryGetOutput(prevout.N).Value) || !this.MoneyRange(nValueIn))
+                valueIn += coins.TryGetOutput(prevout.N).Value;
+                if (!this.MoneyRange(coins.TryGetOutput(prevout.N).Value) || !this.MoneyRange(valueIn))
                 {
                     this.logger.LogTrace("(-)[BAD_TX_INPUT_VALUE]");
                     ConsensusErrors.BadTransactionInputValueOutOfRange.Throw();
                 }
             }
 
-            if (nValueIn < tx.TotalOut)
+            if (valueIn < transaction.TotalOut)
             {
                 this.logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
                 ConsensusErrors.BadTransactionInBelowOut.Throw();
             }
 
             // Tally transaction fees.
-            Money nTxFee = nValueIn - tx.TotalOut;
-            if (nTxFee < 0)
+            Money txFee = valueIn - transaction.TotalOut;
+            if (txFee < 0)
             {
                 this.logger.LogTrace("(-)[NEGATIVE_FEE]");
                 ConsensusErrors.BadTransactionNegativeFee.Throw();
             }
 
-            nFees += nTxFee;
-            if (!this.MoneyRange(nFees))
+            fees += txFee;
+            if (!this.MoneyRange(fees))
             {
                 this.logger.LogTrace("(-)[BAD_FEE]");
                 ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
@@ -446,35 +451,35 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (halvings >= 64)
                 return 0;
 
-            Money nSubsidy = this.ConsensusOptions.ProofOfWorkReward;
+            Money subsidy = this.ConsensusOptions.ProofOfWorkReward;
             // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-            nSubsidy >>= halvings;
-            return nSubsidy;
+            subsidy >>= halvings;
+            return subsidy;
         }
 
         /// <summary>
         /// Calculates total signature operation cost of a transaction.
         /// </summary>
-        /// <param name="tx">Transaction for which we are computing the cost.</param>
+        /// <param name="transaction">Transaction for which we are computing the cost.</param>
         /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
         /// <param name="flags">Script verification flags.</param>
         /// <returns>Signature operation cost for all transaction's inputs.</returns>
-        public long GetTransactionSignatureOperationCost(Transaction tx, UnspentOutputSet inputs, DeploymentFlags flags)
+        public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
         {
-            long signatureOperationCost = this.GetLegacySignatureOperationsCount(tx) * this.ConsensusOptions.WitnessScaleFactor;
+            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.ConsensusOptions.WitnessScaleFactor;
 
-            if (tx.IsCoinBase)
+            if (transaction.IsCoinBase)
                 return signatureOperationCost;
 
             if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
             {
-                signatureOperationCost += this.GetP2SHSignatureOperationsCount(tx, inputs) * this.ConsensusOptions.WitnessScaleFactor;
+                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.ConsensusOptions.WitnessScaleFactor;
             }
 
-            for (int i = 0; i < tx.Inputs.Count; i++)
+            for (int i = 0; i < transaction.Inputs.Count; i++)
             {
-                TxOut prevout = inputs.GetOutputFor(tx.Inputs[i]);
-                signatureOperationCost += this.CountWitnessSignatureOperation(tx.Inputs[i].ScriptSig, prevout.ScriptPubKey, tx.Inputs[i].WitScript, flags);
+                TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
+                signatureOperationCost += this.CountWitnessSignatureOperation(transaction.Inputs[i].ScriptSig, prevout.ScriptPubKey, transaction.Inputs[i].WitScript, flags);
             }
 
             return signatureOperationCost;
@@ -495,57 +500,45 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return 0;
 
             WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
-            if (witParams != null)
-                return this.WitnessSignatureOperation(witParams, witness, flags);
 
-            if (scriptPubKey.IsPayToScriptHash && scriptSig.IsPushOnly)
-            {
+            if (witParams == null && scriptPubKey.IsPayToScriptHash && scriptSig.IsPushOnly)
                 witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
-                if (witParams != null)
-                    return this.WitnessSignatureOperation(witParams, witness, flags);
-            }
 
-            return 0;
-        }
-
-        private long WitnessSignatureOperation(WitProgramParameters witParams, WitScript witScript, DeploymentFlags flags)
-        {
-            if (witParams.Version == 0)
+            if (witParams?.Version == 0)
             {
                 if (witParams.Program.Length == 20)
                     return 1;
 
-                if (witParams.Program.Length == 32 && witScript.PushCount > 0)
+                if (witParams.Program.Length == 32 && witness.PushCount > 0)
                 {
-                    Script subscript = Script.FromBytesUnsafe(witScript.GetUnsafePush(witScript.PushCount - 1));
+                    Script subscript = Script.FromBytesUnsafe(witness.GetUnsafePush(witness.PushCount - 1));
                     return subscript.GetSigOpCount(true);
                 }
             }
 
-            // Future flags may be implemented here.
             return 0;
         }
 
         /// <summary>
         /// Calculates pay-to-script-hash (BIP16) transaction signature operation cost.
         /// </summary>
-        /// <param name="tx">Transaction for which we are computing the cost.</param>
+        /// <param name="transaction">Transaction for which we are computing the cost.</param>
         /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
         /// <returns>Signature operation cost for transaction.</returns>
-        private uint GetP2SHSignatureOperationsCount(Transaction tx, UnspentOutputSet inputs)
+        private uint GetP2SHSignatureOperationsCount(Transaction transaction, UnspentOutputSet inputs)
         {
-            if (tx.IsCoinBase)
+            if (transaction.IsCoinBase)
                 return 0;
 
-            uint nSigOps = 0;
-            for (int i = 0; i < tx.Inputs.Count; i++)
+            uint sigOps = 0;
+            for (int i = 0; i < transaction.Inputs.Count; i++)
             {
-                TxOut prevout = inputs.GetOutputFor(tx.Inputs[i]);
+                TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
                 if (prevout.ScriptPubKey.IsPayToScriptHash)
-                    nSigOps += prevout.ScriptPubKey.GetSigOpCount(tx.Inputs[i].ScriptSig);
+                    sigOps += prevout.ScriptPubKey.GetSigOpCount(transaction.Inputs[i].ScriptSig);
             }
 
-            return nSigOps;
+            return sigOps;
         }
 
         /// <summary>
@@ -564,8 +557,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             Block block = context.BlockValidationContext.Block;
 
-            bool mutated = false;
-            uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, ref mutated);
+            bool mutated;
+            uint256 hashMerkleRoot2 = this.blockMerkleRoot(block, out mutated);
             if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
             {
                 this.logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
@@ -588,14 +581,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             // checks that use witness data may be performed here.
 
             // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) || (this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
+            if (block.Transactions.Count == 0 || block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize ||
+                this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
             }
 
             // First transaction must be coinbase, the rest must not be
-            if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)
+            if (block.Transactions.Count == 0 || !block.Transactions[0].IsCoinBase)
             {
                 this.logger.LogTrace("(-)[NO_COINBASE]");
                 ConsensusErrors.BadCoinbaseMissing.Throw();
@@ -614,11 +608,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(tx);
 
-            long nSigOps = 0;
+            long sigOps = 0;
             foreach (Transaction tx in block.Transactions)
-                nSigOps += this.GetLegacySignatureOperationsCount(tx);
+                sigOps += this.GetLegacySignatureOperationsCount(tx);
 
-            if ((nSigOps * this.ConsensusOptions.WitnessScaleFactor) > this.ConsensusOptions.MaxBlockSigopsCost)
+            if ((sigOps * this.ConsensusOptions.WitnessScaleFactor) > this.ConsensusOptions.MaxBlockSigopsCost)
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
                 ConsensusErrors.BadBlockSigOps.Throw();
@@ -630,24 +624,24 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Calculates legacy transaction signature operation cost.
         /// </summary>
-        /// <param name="tx">Transaction for which we are computing the cost.</param>
-        /// <returns>Signature operation cost for transaction.</returns>
-        private long GetLegacySignatureOperationsCount(Transaction tx)
+        /// <param name="transaction">Transaction for which we are computing the cost.</param>
+        /// <returns>Legacy signature operation cost for transaction.</returns>
+        private long GetLegacySignatureOperationsCount(Transaction transaction)
         {
-            long nSigOps = 0;
-            foreach (TxIn txin in tx.Inputs)
-                nSigOps += txin.ScriptSig.GetSigOpCount(false);
+            long sigOps = 0;
+            foreach (TxIn txin in transaction.Inputs)
+                sigOps += txin.ScriptSig.GetSigOpCount(false);
 
-            foreach (TxOut txout in tx.Outputs)
-                nSigOps += txout.ScriptPubKey.GetSigOpCount(false);
+            foreach (TxOut txout in transaction.Outputs)
+                sigOps += txout.ScriptPubKey.GetSigOpCount(false);
 
-            return nSigOps;
+            return sigOps;
         }
 
         /// <summary>
         /// Checks if transaction is valid.
         /// </summary>
-        /// <param name="tx">Transaction.</param>
+        /// <param name="transaction">Transaction.</param>
         /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionNoOutput">Thrown if transaction has no outputs.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionOversize">Thrown if transaction size is greater than maximum allowed size of a block.</exception>
@@ -657,33 +651,33 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
         /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
-        public virtual void CheckTransaction(Transaction tx)
+        public virtual void CheckTransaction(Transaction transaction)
         {
             this.logger.LogTrace("()");
 
             // Basic checks that don't depend on any context.
-            if (tx.Inputs.Count == 0)
+            if (transaction.Inputs.Count == 0)
             {
                 this.logger.LogTrace("(-)[TX_NO_INPUT]");
                 ConsensusErrors.BadTransactionNoInput.Throw();
             }
 
-            if (tx.Outputs.Count == 0)
+            if (transaction.Outputs.Count == 0)
             {
                 this.logger.LogTrace("(-)[TX_NO_OUTPUT]");
                 ConsensusErrors.BadTransactionNoOutput.Throw();
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(tx, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            if (this.GetSize(transaction, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
             }
 
             // Check for negative or overflow output values
-            long nValueOut = 0;
-            foreach (TxOut txout in tx.Outputs)
+            long valueOut = 0;
+            foreach (TxOut txout in transaction.Outputs)
             {
                 if (txout.Value.Satoshi < 0)
                 {
@@ -697,8 +691,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.BadTransactionTooLargeOutput.Throw();
                 }
 
-                nValueOut += txout.Value;
-                if (!this.MoneyRange(nValueOut))
+                valueOut += txout.Value;
+                if (!this.MoneyRange(valueOut))
                 {
                     this.logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
@@ -706,21 +700,21 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check for duplicate inputs.
-            HashSet<OutPoint> vInOutPoints = new HashSet<OutPoint>();
-            foreach (TxIn txin in tx.Inputs)
+            HashSet<OutPoint> inOutPoints = new HashSet<OutPoint>();
+            foreach (TxIn txin in transaction.Inputs)
             {
-                if (vInOutPoints.Contains(txin.PrevOut))
+                if (inOutPoints.Contains(txin.PrevOut))
                 {
                     this.logger.LogTrace("(-)[TX_DUP_INPUTS]");
                     ConsensusErrors.BadTransactionDuplicateInputs.Throw();
                 }
 
-                vInOutPoints.Add(txin.PrevOut);
+                inOutPoints.Add(txin.PrevOut);
             }
 
-            if (tx.IsCoinBase)
+            if (transaction.IsCoinBase)
             {
-                if ((tx.Inputs[0].ScriptSig.Length < 2) || (tx.Inputs[0].ScriptSig.Length > 100))
+                if (transaction.Inputs[0].ScriptSig.Length < 2 || transaction.Inputs[0].ScriptSig.Length > 100)
                 {
                     this.logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
                     ConsensusErrors.BadCoinbaseSize.Throw();
@@ -728,7 +722,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             else
             {
-                foreach (TxIn txin in tx.Inputs)
+                foreach (TxIn txin in transaction.Inputs)
                 {
                     if (txin.PrevOut.IsNull)
                     {
@@ -743,7 +737,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
 
         /// <summary>
-        /// Checks if value is in range from 0 to <see cref="this.consensusOptions.MaxMoney"/>.
+        /// Checks if value is in range from 0 to <see cref="ConsensusOptions.MaxMoney"/>.
         /// </summary>
         /// <param name="value">The value to be checked.</param>
         /// <returns><c>true</c> if the value is in range. Otherwise: <c>false</c>.</returns>
@@ -759,7 +753,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
         /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
         /// </remarks>
-        /// <param name="block">The block.</param>
+        /// <param name="block">Block that we get weight of.</param>
         /// <returns>Block weight.</returns>
         public long GetBlockWeight(Block block)
         {
@@ -769,7 +763,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Gets serialized size of <paramref name="data"/> in bytes.
         /// </summary>
-        /// <param name="data">The data.</param>
+        /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns></returns>
         public int GetSize(IBitcoinSerializable data, TransactionOptions options)
@@ -781,15 +775,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Checks if first <paramref name="len"/> entries are equal between two arrays.
+        /// Checks if first <paramref name="lenght"/> entries are equal between two arrays.
         /// </summary>
         /// <param name="a">First array.</param>
         /// <param name="b">Second array.</param>
-        /// <param name="len">Number of entries to be checked.</param>
-        /// <returns><c>true</c> if <paramref name="len"/> entries are equal between two arrays. Otherwise: <c>false</c>.</returns>
-        private bool EqualsArray(byte[] a, byte[] b, int len)
+        /// <param name="lenght">Number of entries to be checked.</param>
+        /// <returns><c>true</c> if <paramref name="lenght"/> entries are equal between two arrays. Otherwise: <c>false</c>.</returns>
+        private bool EqualsArray(byte[] a, byte[] b, int lenght)
         {
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < lenght; i++)
             {
                 if (a[i] != b[i])
                     return false;
@@ -797,48 +791,50 @@ namespace Stratis.Bitcoin.Features.Consensus
             return true;
         }
 
-        private uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
+        /// <summary>
+        /// Calculates merkle root for witness data.
+        /// </summary>
+        /// <param name="block">Block which transactions witness data is used for calculation.</param>
+        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
+        /// <returns>Merkle root.</returns>
+        private uint256 blockWitnessMerkleRoot(Block block, out bool mutated)
         {
             List<uint256> leaves = new List<uint256>();
             leaves.Add(uint256.Zero); // The witness hash of the coinbase is 0.
             foreach (Transaction tx in block.Transactions.Skip(1))
                 leaves.Add(tx.GetWitHash());
 
-            return this.ComputeMerkleRoot(leaves, out mutated);
+            return this.computeMerkleRoot(leaves, out mutated);
         }
 
-        private uint256 BlockMerkleRoot(Block block, ref bool mutated)
+        /// <summary>
+        /// Calculates merkle root for block's trasnactions.
+        /// </summary>
+        /// <param name="block">Block which transactions are used for calculation.</param>
+        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>
+        /// <returns>Merkle root.</returns>
+        private uint256 blockMerkleRoot(Block block, out bool mutated)
         {
             List<uint256> leaves = new List<uint256>(block.Transactions.Count);
             for (int s = 0; s < block.Transactions.Count; s++)
                 leaves.Add(block.Transactions[s].GetHash());
 
-            return this.ComputeMerkleRoot(leaves, out mutated);
-        }
-
-        private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
-        {
-            uint256 hash = null;
-            this.MerkleComputation(leaves, ref hash, out mutated, -1, null);
-            return hash;
+            return this.computeMerkleRoot(leaves, out mutated);
         }
 
         /// <summary>
-        /// This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.
+        /// Computes merkle root.
         /// </summary>
-        private void MerkleComputation(List<uint256> leaves, ref uint256 root, out bool pmutated, int branchpos, List<uint256> branch)
+        /// <remarks>This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.</remarks>
+        /// <param name="leaves">Merkle tree leaves.</param>
+        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
+        private uint256 computeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
-            if (branch != null)
-                branch.Clear();
+            List<uint256> branch = new List<uint256>();
 
+            mutated = false;
             if (leaves.Count == 0)
-            {
-                pmutated = false;
-                root = uint256.Zero;
-                return;
-            }
-
-            bool mutated = false;
+                return uint256.Zero;
 
             // count is the number of leaves processed so far.
             uint count = 0;
@@ -860,7 +856,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             while (count < leaves.Count)
             {
                 uint256 h = leaves[(int)count];
-                bool matchh = count == branchpos;
+                bool match = false;
                 count++;
                 int level;
 
@@ -871,17 +867,18 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     if (branch != null)
                     {
-                        if (matchh)
+                        if (match)
                         {
                             branch.Add(inner[level]);
                         }
                         else if (matchLevel == level)
                         {
                             branch.Add(h);
-                            matchh = true;
+                            match = true;
                         }
                     }
-                    mutated |= (inner[level] == h);
+                    if (!mutated)
+                        mutated = inner[level] == h;
                     var hash = new byte[64];
                     Buffer.BlockCopy(inner[level].ToBytes(), 0, hash, 0, 32);
                     Buffer.BlockCopy(h.ToBytes(), 0, hash, 32, 32);
@@ -890,69 +887,77 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Store the resulting hash at inner position level.
                 inner[level] = h;
-                if (matchh)
+                if (match)
                     matchLevel = level;
             }
 
-            // Do a final 'sweep' over the rightmost branch of the tree to process
-            // odd levels, and reduce everything to a single top value.
-            // Level is the level (counted from the bottom) up to which we've sweeped.
-            int levell = 0;
+            uint256 root;
 
-            // As long as bit number level in count is zero, skip it. It means there
-            // is nothing left at this level.
-            while ((count & (((uint)1) << levell)) == 0)
-                levell++;
-
-            uint256 hh = inner[levell];
-            bool matchhh = matchLevel == levell;
-            while (count != (((uint)1) << levell))
             {
-                // If we reach this point, h is an inner value that is not the top.
-                // We combine it with itself (Bitcoin's special rule for odd levels in
-                // the tree) to produce a higher level one.
-                if (branch != null && matchhh)
-                    branch.Add(hh);
+                // Do a final 'sweep' over the rightmost branch of the tree to process
+                // odd levels, and reduce everything to a single top value.
+                // Level is the level (counted from the bottom) up to which we've sweeped.
+                int level = 0;
 
-                var hash = new byte[64];
-                Buffer.BlockCopy(hh.ToBytes(), 0, hash, 0, 32);
-                Buffer.BlockCopy(hh.ToBytes(), 0, hash, 32, 32);
-                hh = Hashes.Hash256(hash);
+                // As long as bit number level in count is zero, skip it. It means there
+                // is nothing left at this level.
+                while ((count & (((uint) 1) << level)) == 0)
+                    level++;
 
-                // Increment count to the value it would have if two entries at this
-                // level had existed.
-                count += (((uint)1) << levell);
-                levell++;
-
-                // And propagate the result upwards accordingly.
-                while ((count & (((uint)1) << levell)) == 0)
+                root = inner[level];
+                bool match = matchLevel == level;
+                while (count != (((uint) 1) << level))
                 {
-                    if (branch != null)
+                    // If we reach this point, h is an inner value that is not the top.
+                    // We combine it with itself (Bitcoin's special rule for odd levels in
+                    // the tree) to produce a higher level one.
+                    if (match)
+                        branch.Add(root);
+
+                    var hash = new byte[64];
+                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 0, 32);
+                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 32, 32);
+                    root = Hashes.Hash256(hash);
+
+                    // Increment count to the value it would have if two entries at this
+                    // level had existed.
+                    count += (((uint) 1) << level);
+                    level++;
+
+                    // And propagate the result upwards accordingly.
+                    while ((count & (((uint) 1) << level)) == 0)
                     {
-                        if (matchhh)
+                        if (match)
                         {
-                            branch.Add(inner[levell]);
+                            branch.Add(inner[level]);
                         }
-                        else if (matchLevel == levell)
+                        else if (matchLevel == level)
                         {
-                            branch.Add(hh);
-                            matchhh = true;
+                            branch.Add(root);
+                            match = true;
                         }
+
+                        var hashh = new byte[64];
+                        Buffer.BlockCopy(inner[level].ToBytes(), 0, hashh, 0, 32);
+                        Buffer.BlockCopy(root.ToBytes(), 0, hashh, 32, 32);
+                        root = Hashes.Hash256(hashh);
+
+                        level++;
                     }
-
-                    var hashh = new byte[64];
-                    Buffer.BlockCopy(inner[levell].ToBytes(), 0, hashh, 0, 32);
-                    Buffer.BlockCopy(hh.ToBytes(), 0, hashh, 32, 32);
-                    hh = Hashes.Hash256(hashh);
-
-                    levell++;
                 }
             }
-            // Return result.
-            pmutated = mutated;
-            root = hh;
+
+            return root;
         }
 
+        /// <summary>
+        /// Gets index of the last coinbase transaction output with SegWit flag.
+        /// </summary>
+        /// <param name="block">Block which coinbase transaction's outputs will be checked for SegWit flags.</param>
+        /// <returns>
+        /// <c>-1</c> if no SegWit flags were found.
+        /// If SegWit flag is found index of the last transaction's output that has SegWit flag is returned.
+        /// </returns>
         private int GetWitnessCommitmentIndex(Block block)
         {
             int commitpos = -1;
@@ -1012,7 +1017,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             BlockHeader header = context.BlockValidationContext.Block.Header;
 
-            int nHeight = context.BestBlock.Height + 1;
+            int height = context.BestBlock.Height + 1;
 
             // Check proof of work.
             if (header.Bits != context.NextWorkRequired)
@@ -1037,16 +1042,16 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.
-            if (((header.Version < 2) && (nHeight >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
-               ((header.Version < 3) && (nHeight >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
-               ((header.Version < 4) && (nHeight >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
+            if (((header.Version < 2) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
+               ((header.Version < 3) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
+               ((header.Version < 4) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
             {
                 this.logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
             }
 
             // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.Checkpoints.CheckHardened(nHeight, header.GetHash()))
+            if (!this.Checkpoints.CheckHardened(height, header.GetHash()))
             {
                 this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
                 ConsensusErrors.CheckpointViolation.Throw();
