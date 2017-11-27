@@ -17,33 +17,38 @@ namespace Stratis.Bitcoin.Cli
     {
         /// <summary>
         /// The expected sequence of arguments:
-        ///    1) [network-name] [options] [rpc-command] [rpc-params].
-        /// OR
-        ///    2) [network-name] [options] [api-controller "/" api-command] [api-params].
+        /// <list>
+        /// <item>
+        /// 1, [network-name] [options] [rpc-command] [rpc-params].
+        /// </item>
+        /// <item>
+        /// 2, [network-name] [options] [api-controller "/" api-command] [api-params].
+        /// </item>
+        /// </list>
         /// </summary>
         public static void Main(string[] args)
         {
             try
             {
                 // Preprocess the command line arguments
-                List<string> argList = new List<string>(args);
+                var argList = new List<string>(args);
 
                 string networkName = null;
-                if (argList.Count > 0)
+                if (argList.Any())
                 {
                     networkName = argList.First();
                     argList.RemoveAt(0);
                 }
 
-                List<string> optionList = new List<string>();
-                while ((argList.Count > 0) && (argList[0].StartsWith('-')))
+                var optionList = new List<string>();
+                while ((argList.Any()) && (argList[0].StartsWith('-')))
                 {
                     optionList.Add(argList[0]);
                     argList.RemoveAt(0);
                 }
 
-                string command = null;
-                if (argList.Count > 0)
+                string command = string.Empty;
+                if (argList.Any())
                 {
                     command = argList.First();
                     argList.RemoveAt(0);
@@ -52,7 +57,7 @@ namespace Stratis.Bitcoin.Cli
                 List<string> commandArgList = new List<string>(argList);
 
                 // Display help if required.
-                if (command == null || argList.Contains("-help") || argList.Contains("--help"))
+                if (string.IsNullOrWhiteSpace(command) || argList.Contains("-help") || argList.Contains("--help"))
                 {
                     var builder = new StringBuilder();
                     builder.AppendLine("Usage:");
@@ -82,7 +87,7 @@ namespace Stratis.Bitcoin.Cli
                 }
 
                 // Determine API port.
-                string blockchain = "";
+                string blockchain = string.Empty;
                 int defaultRestApiPort = 0;
                 Network network = null;
 
@@ -108,7 +113,7 @@ namespace Stratis.Bitcoin.Cli
                     // Process RPC call.
                     try
                     {
-                        string[] options = optionList.ToArray();
+                        var options = optionList.ToArray();
 
                         NodeSettings nodeSettings = new NodeSettings(blockchain, network).LoadArguments(options);
 
@@ -141,12 +146,12 @@ namespace Stratis.Bitcoin.Cli
 
                         Console.WriteLine($"Connecting to the following RPC node: http://{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}@{rpcURI.Authority}...");
 
-                        // Initilize the RPC client with the configured or passed userid, password and endpoint.
-                        RPCClient rpc = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", rpcURI, network);
+                        // Initialize the RPC client with the configured or passed userid, password and endpoint.
+                        var rpcClient = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", rpcURI, network);
 
                         // Execute the RPC command
                         Console.WriteLine($"Sending RPC command '{command} {string.Join(" ", commandArgList)}' to '{rpcURI}'...");
-                        RPCResponse response = rpc.SendCommand(command, commandArgList.ToArray());
+                        RPCResponse response = rpcClient.SendCommand(command, commandArgList.ToArray());
 
                         // Return the result as a string to the console.
                         Console.WriteLine(response.ResultString);
@@ -163,7 +168,8 @@ namespace Stratis.Bitcoin.Cli
                     {
                         client.DefaultRequestHeaders.Accept.Clear();
                         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        var url = $"http://localhost:{defaultRestApiPort}/api/{command}?{string.Join("&", commandArgList)}";
+                        var url = $"http://localhost:{defaultRestApiPort}/api/{command}";
+                        if (commandArgList.Any()) url += $"?{string.Join("&", commandArgList)}";
                         try
                         {
                             // Get the response.
