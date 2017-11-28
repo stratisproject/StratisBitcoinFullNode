@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -20,14 +18,6 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>The collection of peers the node is currently connected to.</summary>
         NodesCollection ConnectedPeers { get; }
-
-        /// <summary>
-        /// Other peer connectors this instance relates. 
-        /// <para>
-        /// This is used to ensure that the same IP doesn't get connected to in this connector.
-        /// </para>
-        /// </summary>
-        RelatedPeerConnectors RelatedPeerConnector { get; set; }
 
         /// <summary>Specification of requirements the <see cref="PeerConnector"/> has when connecting to other peers.</summary>
         NodeRequirement Requirements { get; }
@@ -74,9 +64,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The cloned parameters used to connect to peers. </summary>
         private readonly NodeConnectionParameters currentParameters;
 
-        /// <summary>How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
-        private readonly Func<IPEndPoint, byte[]> groupSelector;
-
         /// <inheritdoc/>
         public int MaximumNodeConnections { get; set; }
 
@@ -96,9 +83,6 @@ namespace Stratis.Bitcoin.P2P
         private readonly PeerIntroductionType peerIntroductionType;
 
         /// <inheritdoc/>
-        public RelatedPeerConnectors RelatedPeerConnector { get; set; }
-
-        /// <inheritdoc/>
         public NodeRequirement Requirements { get; private set; }
 
         /// <summary>Constructor used for unit testing.</summary>
@@ -111,7 +95,6 @@ namespace Stratis.Bitcoin.P2P
             this.nodeLifetime = new NodeLifetime();
             this.peerAddressManager = peerAddressManager;
             this.peerIntroductionType = peerIntroductionType;
-            this.RelatedPeerConnector = new RelatedPeerConnectors();
         }
 
         /// <summary>Constructor used by dependency injection.</summary>
@@ -119,14 +102,12 @@ namespace Stratis.Bitcoin.P2P
             INodeLifetime nodeLifeTime,
             NodeConnectionParameters parameters,
             NodeRequirement nodeRequirements,
-            Func<IPEndPoint, byte[]> groupSelector,
             IAsyncLoopFactory asyncLoopFactory,
             IPeerAddressManager peerAddressManager,
             PeerIntroductionType peerIntroductionType)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.ConnectedPeers = new NodesCollection();
-            this.groupSelector = groupSelector;
             this.MaximumNodeConnections = 8;
             this.network = network;
             this.nodeLifetime = nodeLifeTime;
@@ -215,30 +196,10 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         internal NetworkAddress FindPeerToConnectTo()
         {
-            int groupFail = 0;
-
-            NetworkAddress peer = null;
-
-            while (groupFail < 50 && !this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-            {
-                peer = this.peerAddressManager.SelectPeerToConnectTo(this.peerIntroductionType);
-                if (peer == null)
-                    break;
-
-                if (!peer.Endpoint.Address.IsValid())
-                    continue;
-
-                var nodeExistsInGroup = this.RelatedPeerConnector.GlobalConnectedNodes().Any(a => this.groupSelector(a).SequenceEqual(this.groupSelector(peer.Endpoint)));
-                if (nodeExistsInGroup)
-                {
-                    groupFail++;
-                    continue;
-                }
-
-                break;
-            }
-
-            return peer;
+            NetworkAddress peer = this.peerAddressManager.SelectPeerToConnectTo(this.peerIntroductionType);
+            if (peer != null && peer.Endpoint.Address.IsValid())
+                return peer;
+            return null;
         }
 
         /// <inheritdoc/>
