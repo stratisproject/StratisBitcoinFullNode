@@ -11,7 +11,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
-    public class BroadcasterBehavior : NodeBehavior
+    public class BroadcasterBehavior : NetworkPeerBehavior
     {
         protected readonly IBroadcasterManager manager;
 
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-        protected async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        protected async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Broadcasting
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                         throw;
 
                 // do nothing
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Broadcasting
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        protected Task ProcessMessageAsync(Node node, IncomingMessage message)
+        protected Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
         {
             if (message.Message.Payload is GetDataPayload getDataPayload)
             {
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Broadcasting
             }
         }
 
-        protected void ProcessGetDataPayload(Node node, GetDataPayload getDataPayload)
+        protected void ProcessGetDataPayload(NetworkPeer node, GetDataPayload getDataPayload)
         {
             // if node asks for tx we want to broadcast
             foreach (var inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
@@ -129,13 +129,13 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
         }
 
         /// <inheritdoc />
         protected override void DetachCore()
         {
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
     }
 }

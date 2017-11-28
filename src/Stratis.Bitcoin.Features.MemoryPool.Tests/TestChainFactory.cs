@@ -74,8 +74,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network, consensusSettings), dateTimeProvider, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
+            NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(dateTimeProvider, loggerFactory);
 
-            var connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider);
+            var connectionManager = new ConnectionManager(network, new NetworkPeerConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider, networkPeerFactory);
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
 

@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
 
             bool banPeer = true;
-            Node peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
+            NetworkPeer peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
             if (peer != null)
             {
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();

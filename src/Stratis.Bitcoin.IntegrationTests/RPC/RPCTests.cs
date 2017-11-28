@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNodeClient())
                 {
                     nodeB.VersionHandshake();
                     PeerInfo[] peers = rpc.GetPeersInfo();
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNodeClient())
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getpeerinfo").ResultString;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNodeClient())
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getblockhash", "0").ResultString;
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 this.InitializeTestWallet(nodeA);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNodeClient())
                 {
                     nodeB.VersionHandshake();
                     string resp = rpc.SendCommand("generate", "1").ResultString;

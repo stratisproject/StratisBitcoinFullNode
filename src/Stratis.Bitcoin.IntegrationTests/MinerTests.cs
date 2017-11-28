@@ -149,8 +149,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, consensusSettings), dateTimeProvider, loggerFactory);
+                NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(dateTimeProvider, loggerFactory);
 
-                var connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider);
+                var connectionManager = new ConnectionManager(this.network, new NetworkPeerConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider, networkPeerFactory);
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings, nodeSettings, peerBanning);

@@ -238,10 +238,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
             if (transactionOptions == TransactionOptions.Witness)
             {
-                this.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+                this.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (BlockPullerBehavior node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
                 {
-                    if (!this.Requirements.Check(node.AttachedNode.PeerVersion))
+                    if (!this.Requirements.Check(node.AttachedPeer.PeerVersion))
                     {
                         this.logger.LogDebug("Peer {0:x} does not meet requirements, releasing its tasks.", node.GetHashCode());
                         // Prevent this node to be assigned any more work.

@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-                this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
             this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 
