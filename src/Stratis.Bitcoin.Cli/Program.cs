@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Cli
                 var commandArgList = new List<string>(argList);
 
                 // Display help if required.
-                if (argList.Contains("-help") || argList.Contains("--help") || string.IsNullOrWhiteSpace(command))
+                if (optionList.Contains("-help") || optionList.Contains("--help") || string.IsNullOrWhiteSpace(command))
                 {
                     var builder = new StringBuilder();
                     builder.AppendLine("Usage:");
