@@ -32,8 +32,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void StopwatchDisposable_MeasuresPerformanceCorrectly()
         {
-            //Don't run this test in a Mac environment as it takes too long,
-            //skewing the results.
+            // Don't run this test in a Mac environment as it takes too long,
+            // skewing the results.
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return;
 
