@@ -5,7 +5,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Filters
 {
-    public class NodeFiltersCollection : ThreadSafeCollection<INodeFilter>
+    public class NetworkPeerFiltersCollection : ThreadSafeCollection<INetworkPeerFilter>
     {
         public IDisposable Add(Action<IncomingMessage, Action> onReceiving, Action<NetworkPeer, Payload, Action> onSending = null)
         {

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Node behavior for memory pool.
     /// Provides message handling of notifications from attached node.
     /// </summary>
-    public class MempoolBehavior : NodeBehavior
+    public class MempoolBehavior : NetworkPeerBehavior
     {
         /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
@@ -130,11 +130,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             get
             {
-                if (!this.AttachedNode?.PeerVersion?.Relay ?? true)
+                if (!this.AttachedPeer?.PeerVersion?.Relay ?? true)
                     return false;
 
                 // Check whether periodic sends should happen
-                bool sendTrickle = this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted;
+                bool sendTrickle = this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted;
 
                 if (this.NextInvSend < this.manager.DateTimeProvider.GetTime())
                 {
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                     {
                         this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                         throw;
@@ -266,9 +266,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Guard.NotNull(node, nameof(node));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Command);
-            if (node != this.AttachedNode)
+            if (node != this.AttachedPeer)
             {
-                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedPeer?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
@@ -331,9 +331,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Guard.NotNull(node, nameof(node));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
-            if (node != this.AttachedNode)
+            if (node != this.AttachedPeer)
             {
-                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedPeer?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
@@ -401,9 +401,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Guard.NotNull(node, nameof(node));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
-            if (node != this.AttachedNode)
+            if (node != this.AttachedPeer)
             {
-                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedPeer?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
@@ -519,7 +519,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 foreach (MempoolBehavior mempoolBehavior in behaviours)
                 {
-                    if (mempoolBehavior?.AttachedNode.PeerVersion.Relay ?? false)
+                    if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
                         if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
                             mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
                 }
@@ -577,8 +577,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (sends.Any())
             {
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", this.AttachedNode.RemoteSocketEndpoint);
-                await this.SendAsTxInventoryAsync(this.AttachedNode, sends);
+                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", this.AttachedPeer.RemoteSocketEndpoint);
+                await this.SendAsTxInventoryAsync(this.AttachedPeer, sends);
             }
 
             this.logger.LogTrace("(-)");

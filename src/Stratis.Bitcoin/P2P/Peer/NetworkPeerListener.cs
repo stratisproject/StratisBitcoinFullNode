@@ -10,14 +10,14 @@ namespace Stratis.Bitcoin.P2P.Peer
 {
     public class NetworkPeerListener : PollMessageListener<IncomingMessage>, IDisposable
     {
-        public NetworkPeer Node { get; private set; }
+        public NetworkPeer Peer { get; private set; }
         private IDisposable subscription;
         private List<Func<IncomingMessage, bool>> predicates = new List<Func<IncomingMessage, bool>>();
 
-        public NetworkPeerListener(NetworkPeer node)
+        public NetworkPeerListener(NetworkPeer peer)
         {
-            this.subscription = node.MessageProducer.AddMessageListener(this);
-            this.Node = node;
+            this.subscription = peer.MessageProducer.AddMessageListener(this);
+            this.Peer = peer;
         }
 
         public NetworkPeerListener Where(Func<IncomingMessage, bool> predicate)
@@ -34,15 +34,15 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public TPayload ReceivePayload<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
         {
-            if (!this.Node.IsConnected)
-                throw new InvalidOperationException("The node is not in a connected state");
+            if (!this.Peer.IsConnected)
+                throw new InvalidOperationException("The peer is not in a connected state");
 
             Queue<IncomingMessage> pushedAside = new Queue<IncomingMessage>();
             try
             {
                 while (true)
                 {
-                    IncomingMessage message = ReceiveMessage(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Node.connection.Cancel.Token).Token);
+                    IncomingMessage message = ReceiveMessage(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Peer.connection.Cancel.Token).Token);
                     if (this.predicates.All(p => p(message)))
                     {
                         if (message.Message.Payload is TPayload)
@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
-                if (this.Node.connection.Cancel.IsCancellationRequested)
-                    throw new InvalidOperationException("The node is not in a connected state");
+                if (this.Peer.connection.Cancel.IsCancellationRequested)
+                    throw new InvalidOperationException("The peer is not in a connected state");
 
                 throw;
             }

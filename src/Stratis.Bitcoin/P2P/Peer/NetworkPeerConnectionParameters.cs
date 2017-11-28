@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>If true, the node will receive all incoming transactions if no bloomfilter are set.</summary>
         public bool IsRelay { get; set; }
 
-        public NodeServices Services { get; set; }
+        public NetworkPeerServices Services { get; set; }
 
         public TransactionOptions PreferredTransactionOptions { get; set; }
 
@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         public bool ReuseBuffer { get; set; }
         public CancellationToken ConnectCancellation { get; set; }
 
-        private readonly NodeBehaviorsCollection templateBehaviors = new NodeBehaviorsCollection(null);
-        public NodeBehaviorsCollection TemplateBehaviors { get { return this.templateBehaviors; } }
+        private readonly NetworkPeerBehaviorsCollection templateBehaviors = new NetworkPeerBehaviorsCollection(null);
+        public NetworkPeerBehaviorsCollection TemplateBehaviors { get { return this.templateBehaviors; } }
 
         public NetworkPeerConnectionParameters()
         {
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.TemplateBehaviors.Add(new PingPongBehavior());
             this.Version = ProtocolVersion.PROTOCOL_VERSION;
             this.IsRelay = true;
-            this.Services = NodeServices.Nothing;
+            this.Services = NetworkPeerServices.Nothing;
             this.ConnectCancellation = default(CancellationToken);
             this.ReceiveBufferSize = 1000 * 5000;
             this.SendBufferSize = 1000 * 1000;
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ReuseBuffer = other.ReuseBuffer;
             this.PreferredTransactionOptions = other.PreferredTransactionOptions;
 
-            foreach (INodeBehavior behavior in other.TemplateBehaviors)
+            foreach (INetworkPeerBehavior behavior in other.TemplateBehaviors)
             {
                 this.TemplateBehaviors.Add(behavior.Clone());
             }

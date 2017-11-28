@@ -30,23 +30,23 @@ namespace Stratis.Bitcoin.P2P
         RelatedPeerConnectors RelatedPeerConnector { get; set; }
 
         /// <summary>Specification of requirements the <see cref="PeerConnector"/> has when connecting to other peers.</summary>
-        NodeRequirement Requirements { get; }
+        NetworkPeerRequirement Requirements { get; }
 
         /// <summary>
-        /// Adds a node to the <see cref="NodesCollection"/>.
+        /// Adds a peer to the <see cref="ConnectedPeers"/>.
         /// <para>
-        /// This will only happen if the node successfully handshaked with another.
+        /// This will only happen if the peer successfully handshaked with another.
         /// </para>
         /// </summary>
-        void AddNode(NetworkPeer node);
+        void AddPeer(NetworkPeer peer);
 
         /// <summary>
-        /// Removes a given node from the <see cref="NodesCollection"/>.
+        /// Removes a given peer from the <see cref="ConnectedPeers"/>.
         /// <para>
-        /// This will happen if the node state changed to "disconnecting", "failed" or "offline".
+        /// This will happen if the peer state changed to "disconnecting", "failed" or "offline".
         /// </para>
         /// </summary>
-        void RemoveNode(NetworkPeer node);
+        void RemovePeer(NetworkPeer peer);
 
         /// <summary>
         /// Starts an asynchronous loop that connects to peers in one second intervals.
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The network the node is running on.</summary>
         private Network network;
 
-        /// <summary>The node parameters that is injected by <see cref="Connection.ConnectionManager"/>.</summary>
+        /// <summary>The network peer parameters that is injected by <see cref="Connection.ConnectionManager"/>.</summary>
         private readonly NetworkPeerConnectionParameters parentParameters;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.P2P
         public RelatedPeerConnectors RelatedPeerConnector { get; set; }
 
         /// <inheritdoc/>
-        public NodeRequirement Requirements { get; private set; }
+        public NetworkPeerRequirement Requirements { get; private set; }
 
         /// <summary>Constructor used for unit testing.</summary>
         internal PeerConnector(
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.P2P
         internal PeerConnector(Network network,
             INodeLifetime nodeLifeTime,
             NetworkPeerConnectionParameters parameters,
-            NodeRequirement nodeRequirements,
+            NetworkPeerRequirement requirements,
             Func<IPEndPoint, byte[]> groupSelector,
             IAsyncLoopFactory asyncLoopFactory,
             IPeerAddressManager peerAddressManager,
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.P2P
             this.parentParameters = parameters;
             this.peerAddressManager = peerAddressManager;
             this.peerIntroductionType = peerIntroductionType;
-            this.Requirements = nodeRequirements;
+            this.Requirements = requirements;
             this.networkPeerFactory = networkPeerFactory;
 
             this.currentParameters = this.parentParameters.Clone();
@@ -146,17 +146,17 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddNode(NetworkPeer node)
+        public void AddPeer(NetworkPeer peer)
         {
-            Guard.NotNull(node, nameof(node));
+            Guard.NotNull(peer, nameof(peer));
 
-            this.ConnectedPeers.Add(node);
+            this.ConnectedPeers.Add(peer);
         }
 
         /// <inheritdoc/>
-        public void RemoveNode(NetworkPeer node)
+        public void RemovePeer(NetworkPeer peer)
         {
-            this.ConnectedPeers.Remove(node);
+            this.ConnectedPeers.Remove(peer);
         }
 
         /// <inheritdoc/>
@@ -174,39 +174,39 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Attempts to connect to a random peer.</summary>
         private Task ConnectAsync()
         {
-            NetworkPeer node = null;
+            NetworkPeer peer = null;
 
             try
             {
-                NetworkAddress peer = this.FindPeerToConnectTo();
-                if (peer == null)
+                NetworkAddress peerAddress = this.FindPeerToConnectTo();
+                if (peerAddress == null)
                     return Task.CompletedTask;
 
                 using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
                     timeoutTokenSource.CancelAfter(5000);
 
-                    this.peerAddressManager.PeerAttempted(peer.Endpoint, DateTimeProvider.Default.GetUtcNow());
+                    this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
                     var clonedConnectParamaters = this.currentParameters.Clone();
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    node = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer, clonedConnectParamaters);
-                    node.VersionHandshake(this.Requirements, timeoutTokenSource.Token);
+                    peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peerAddress, clonedConnectParamaters);
+                    peer.VersionHandshake(this.Requirements, timeoutTokenSource.Token);
 
                     return Task.CompletedTask;
                 }
             }
             catch (Exception exception)
             {
-                if (node != null)
-                    node.DisconnectAsync("Error while connecting", exception);
+                if (peer != null)
+                    peer.DisconnectAsync("Error while connecting", exception);
             }
 
             return Task.CompletedTask;
         }
 
-        /// <summary>Disconnects all the nodes in <see cref="ConnectedPeers"/>.</summary>
+        /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>
         private void Disconnect()
         {
             this.ConnectedPeers.DisconnectAll();
@@ -233,8 +233,8 @@ namespace Stratis.Bitcoin.P2P
                 if (!peer.Endpoint.Address.IsValid())
                     continue;
 
-                var nodeExistsInGroup = this.RelatedPeerConnector.GlobalConnectedNodes().Any(a => this.groupSelector(a).SequenceEqual(this.groupSelector(peer.Endpoint)));
-                if (nodeExistsInGroup)
+                bool peerExistsInGroup = this.RelatedPeerConnector.GlobalConnectedNodes().Any(a => this.groupSelector(a).SequenceEqual(this.groupSelector(peer.Endpoint)));
+                if (peerExistsInGroup)
                 {
                     groupFail++;
                     continue;

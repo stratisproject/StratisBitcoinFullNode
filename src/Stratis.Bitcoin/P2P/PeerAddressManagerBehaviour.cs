@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.P2P
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
-    public sealed class PeerAddressManagerBehaviour : NodeBehavior
+    public sealed class PeerAddressManagerBehaviour : NetworkPeerBehavior
     {
         public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.P2P
 
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
         private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.P2P
 
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
         }
 
         public override object Clone()

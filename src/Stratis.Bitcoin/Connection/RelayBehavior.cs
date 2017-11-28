@@ -4,7 +4,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.Connection
 {
-    public class RelayBehavior : NodeBehavior
+    public class RelayBehavior : NetworkPeerBehavior
     {
         public RelayBehavior()
         {
@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.Connection
 
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
         private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
@@ -31,8 +31,8 @@ namespace Stratis.Bitcoin.Connection
 
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
         }
     }
 }

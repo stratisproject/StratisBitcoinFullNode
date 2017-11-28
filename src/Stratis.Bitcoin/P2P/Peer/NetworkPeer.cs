@@ -30,16 +30,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         HandShaked
     }
 
-    public class NodeDisconnectReason
+    public class NetworkPeerDisconnectReason
     {
         public string Reason { get; set; }
         public Exception Exception { get; set; }
     }
 
-    public class NodeRequirement
+    public class NetworkPeerRequirement
     {
         public ProtocolVersion? MinVersion { get; set; }
-        public NodeServices RequiredServices { get; set; }
+        public NetworkPeerServices RequiredServices { get; set; }
 
         public bool SupportSPV { get; set; }
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (version.Version < ProtocolVersion.MEMPOOL_GD_VERSION)
                     return false;
 
-                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NodeServices.NODE_BLOOM) == 0))
+                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NetworkPeerServices.NODE_BLOOM) == 0))
                     return false;
             }
 
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 Message = message,
                                 Socket = this.Socket,
                                 Length = counter.ReadBytes,
-                                Node = this.Node
+                                NetworkPeer = this.Node
                             });
                         }
                     }
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (!this.Cancel.IsCancellationRequested)
             {
                 NodeServerTrace.Error("Connection to server stopped unexpectedly", unhandledException);
-                this.Node.DisconnectReason = new NodeDisconnectReason()
+                this.Node.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
                     Reason = "Unexpected exception while connecting to socket",
                     Exception = unhandledException
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             Utils.SafeCloseSocket(this.Socket);
 
-            foreach (INodeBehavior behavior in this.Node.Behaviors)
+            foreach (INetworkPeerBehavior behavior in this.Node.Behaviors)
             {
                 try
                 {
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public bool Inbound { get; private set; }
 
         public bool ReuseBuffer;
-        public NodeBehaviorsCollection Behaviors { get; private set; }
+        public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
         public NetworkAddress PeerAddress { get; private set; }
 
         public DateTimeOffset LastSeen { get; set; }
@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         public MessageProducer<IncomingMessage> MessageProducer { get; private set; } = new MessageProducer<IncomingMessage>();
-        public NodeFiltersCollection Filters { get; private set; } = new NodeFiltersCollection();
+        public NetworkPeerFiltersCollection Filters { get; private set; } = new NetworkPeerFiltersCollection();
 
         /// <summary>Send addr unsollicited message of the AddressFrom peer when passing to Handshaked state.</summary>
         public bool Advertize { get; set; }
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public NodeDisconnectReason DisconnectReason { get; set; }
+        public NetworkPeerDisconnectReason DisconnectReason { get; set; }
 
         private Socket Socket
         {
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             parameters = parameters ?? new NetworkPeerConnectionParameters();
             this.Inbound = false;
-            this.Behaviors = new NodeBehaviorsCollection(this);
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
             this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
             this.PeerAddress = peerAddress;
@@ -506,7 +506,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     Utils.SafeCloseSocket(socket);
                     NodeServerTrace.Error("Error connecting to the remote endpoint ", ex);
-                    this.DisconnectReason = new NodeDisconnectReason()
+                    this.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
                         Reason = "Unexpected exception while connecting to socket",
                         Exception = ex
@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
 
             this.Inbound = true;
-            this.Behaviors = new NodeBehaviorsCollection(this);
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
             this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
             this.PeerAddress = peerAddress;
@@ -573,8 +573,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             var version = message.Message.Payload as VersionPayload;
             if ((version != null) && (this.State == NetworkPeerState.HandShaked))
             {
-                if (message.Node.Version >= ProtocolVersion.REJECT_VERSION)
-                    message.Node.SendMessageAsync(new RejectPayload()
+                if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
+                    message.NetworkPeer.SendMessageAsync(new RejectPayload()
                     {
                         Code = RejectCode.DUPLICATE
                     });
@@ -583,7 +583,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (version != null)
             {
                 this.TimeOffset = DateTimeOffset.Now - version.Timestamp;
-                if ((version.Services & NodeServices.NODE_WITNESS) != 0)
+                if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
                     this.SupportedTransactionOptions |= TransactionOptions.Witness;
             }
 
@@ -610,21 +610,21 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             });
 
-            IEnumerator<INodeFilter> enumerator = this.Filters.Concat(new[] { last }).GetEnumerator();
+            IEnumerator<INetworkPeerFilter> enumerator = this.Filters.Concat(new[] { last }).GetEnumerator();
             this.FireFilters(enumerator, message);
         }
 
         private void OnSendingMessage(Payload payload, Action final)
         {
-            IEnumerator<INodeFilter> enumerator = this.Filters.Concat(new[] { new ActionFilter(null, (n, p, a) => final()) }).GetEnumerator();
+            IEnumerator<INetworkPeerFilter> enumerator = this.Filters.Concat(new[] { new ActionFilter(null, (n, p, a) => final()) }).GetEnumerator();
             this.FireFilters(enumerator, payload);
         }
 
-        private void FireFilters(IEnumerator<INodeFilter> enumerator, Payload payload)
+        private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, Payload payload)
         {
             if (enumerator.MoveNext())
             {
-                INodeFilter filter = enumerator.Current;
+                INetworkPeerFilter filter = enumerator.Current;
                 try
                 {
                     filter.OnSendingMessage(this, payload, () => FireFilters(enumerator, payload));
@@ -636,11 +636,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        private void FireFilters(IEnumerator<INodeFilter> enumerator, IncomingMessage message)
+        private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, IncomingMessage message)
         {
             if (enumerator.MoveNext())
             {
-                INodeFilter filter = enumerator.Current;
+                INetworkPeerFilter filter = enumerator.Current;
                 try
                 {
                     filter.OnReceivingMessage(message, () => FireFilters(enumerator, message));
@@ -678,7 +678,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ReuseBuffer = parameters.ReuseBuffer;
 
             this.Behaviors.DelayAttach = true;
-            foreach (INodeBehavior behavior in parameters.TemplateBehaviors)
+            foreach (INetworkPeerBehavior behavior in parameters.TemplateBehaviors)
             {
                 this.Behaviors.Add(behavior.Clone());
             }
@@ -759,9 +759,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             VersionHandshake(null, cancellationToken);
         }
 
-        public void VersionHandshake(NodeRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
+        public void VersionHandshake(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
         {
-            requirements = requirements ?? new NodeRequirement();
+            requirements = requirements ?? new NetworkPeerRequirement();
             using (NetworkPeerListener listener = CreateListener().Where(p => (p.Message.Payload is VersionPayload)
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
@@ -874,7 +874,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if (this.DisconnectReason == null)
                 {
-                    this.DisconnectReason = new NodeDisconnectReason()
+                    this.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
                         Reason = reason,
                         Exception = exception

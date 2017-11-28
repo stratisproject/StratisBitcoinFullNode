@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 ConnectCancellation = cancellation,
                 IsRelay = isRelay,
                 Version = myVersion,
-                Services = NodeServices.Nothing,
+                Services = NetworkPeerServices.Nothing,
             };
 
             return this.CreateConnectedNetworkPeer(network, ipEndPoint, parameters);
