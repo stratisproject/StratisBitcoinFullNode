@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check coinstake timestamp.
             if (context.Stake.BlockStake.IsProofOfStake()
-                && !this.checkCoinStakeTimestamp(chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
+                && !this.CheckCoinStakeTimestamp(chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
             {
                 this.logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
@@ -321,9 +321,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Checks whether the coinstake timestamp meets protocol.
         /// </summary>
         /// <param name="blockTime">The block time.</param>
-        /// <param name="transactionTime">The transaction time.</param>
+        /// <param name="transactionTime">Transaction UNIX timestamp.</param>
         /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
-        private bool checkCoinStakeTimestamp(long blockTime, long transactionTime)
+        private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
             return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
@@ -331,7 +331,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Checks whether the future drift should be reduced after provided timestamp.
         /// </summary>
-        /// <param name="time">Timestamp.</param>
+        /// <param name="time">UNIX timestamp.</param>
         /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
         private bool IsDriftReduced(long time)
         {
@@ -342,10 +342,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Applies future drift to provided timestamp.
         /// </summary>
         /// <remarks>
-        /// Future drift is maximal allowed block's timestamp difference over local time.
+        /// Future drift is maximal allowed block's timestamp difference over adjusted time.
         /// If this difference is greater block won't be accepted.
         /// </remarks>
-        /// <param name="time">Timestamp</param>
+        /// <param name="time">UNIX timestamp.</param>
         /// <returns>Timestamp with maximum future drift applied.</returns>
         private long FutureDrift(long time)
         {

@@ -35,12 +35,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
+        /// <summary>Specifies how transaction's inputs should be validated.</summary>
         public bool UseConsensusLib { get; set; }
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PowConsensusValidator"/> class.
+        /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
@@ -317,7 +320,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Updates context's <see cref="UnspentOutputSet"/>.
+        /// Updates context's UTXO set.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
@@ -384,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="transaction">Transaction to check.</param>
         /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
-        /// <param name="spendHeight">Height at which coins are considered spendable.</param>
+        /// <param name="spendHeight">Height at which we are spending coins.</param>
         /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction's inputs are missing.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionInputValueOutOfRange">Thrown if input value is out of range.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionInBelowOut">Thrown if transaction inputs are less then outputs.</exception>
