@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public Guid ActivityId;
     }
 
-    public class NodeConnection
+    public class NetworkPeerConnection
     {
         public NetworkPeer Node { get; private set; }
 
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private int cleaningUp;
         public int ListenerThreadId;
 
-        public NodeConnection(NetworkPeer node, Socket socket)
+        public NetworkPeerConnection(NetworkPeer node, Socket socket)
         {
             this.Node = node;
             this.Socket = socket;
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        internal readonly NodeConnection connection;
+        internal readonly NetworkPeerConnection connection;
 
         private PerformanceCounter counter;
         public PerformanceCounter Counter
@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-            this.connection = new NodeConnection(this, socket);
+            this.connection = new NetworkPeerConnection(this, socket);
 
             socket.ReceiveBufferSize = parameters.ReceiveBufferSize;
             socket.SendBufferSize = parameters.SendBufferSize;
@@ -536,7 +536,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
             this.PeerAddress = peerAddress;
-            this.connection = new NodeConnection(this, socket);
+            this.connection = new NetworkPeerConnection(this, socket);
             this.PeerVersion = peerVersion;
             this.LastSeen = peerAddress.Time;
             this.ConnectedAt = DateTimeOffset.UtcNow;
