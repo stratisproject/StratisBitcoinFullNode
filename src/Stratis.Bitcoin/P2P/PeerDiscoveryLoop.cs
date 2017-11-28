@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
-                    NetworkPeer peer = null;
+                    NetworkPeer networkPeer = null;
 
                     try
                     {
@@ -113,9 +113,9 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Clear();
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-                        peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
-                        peer.VersionHandshake(connectTokenSource.Token);
-                        peer.SendMessageAsync(new GetAddrPayload());
+                        networkPeer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
+                        networkPeer.VersionHandshake(connectTokenSource.Token);
+                        networkPeer.SendMessageAsync(new GetAddrPayload());
 
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.P2P
                     }
                     finally
                     {
-                        peer?.DisconnectAsync();
+                        networkPeer?.DisconnectAsync();
                     }
                 }
             });
