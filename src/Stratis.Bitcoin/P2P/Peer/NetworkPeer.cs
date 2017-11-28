@@ -442,6 +442,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
+        public NetworkPeer()
+        {
+            // This constructor is used for testing until the Node class has an interface and can be mocked.
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+        }
+
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.RemoteSocketEndpoint}] ");

@@ -78,8 +78,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var connectionManager = new ConnectionManager(network, new NetworkPeerConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider, networkPeerFactory);
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
+            PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
 
-            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings);
+            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings, nodeSettings, peerBanning);
             await consensus.StartAsync();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);

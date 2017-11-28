@@ -132,6 +132,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     {
                         Block = block.Obj,
                         Length = (int)message.Length,
+                        Peer = node.RemoteSocketEndpoint
                     };
 
                     if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))

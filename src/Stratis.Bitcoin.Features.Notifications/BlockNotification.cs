@@ -125,12 +125,12 @@ namespace Stratis.Bitcoin.Features.Notifications
             {
                 token.ThrowIfCancellationRequested();
 
-                var block = this.Puller.NextBlock(token);
-                if (block != null)
+                LookaheadResult lookaheadResult = this.Puller.NextBlock(token);
+                if (lookaheadResult.Block != null)
                 {
                     // Broadcast the block to the registered observers.
-                    this.signals.SignalBlock(block);
-                    this.tip = this.Chain.GetBlock(block.GetHash());
+                    this.signals.SignalBlock(lookaheadResult.Block);
+                    this.tip = this.Chain.GetBlock(lookaheadResult.Block.GetHash());
 
                     continue;
                 }
