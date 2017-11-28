@@ -538,7 +538,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Validate the block.
-            BlockValidationContext blockValidationContext = new BlockValidationContext { Block = block };
+            var blockValidationContext = new BlockValidationContext { Block = block };
             this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedBlock == null)
@@ -586,7 +586,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 return true;
             }
 
-            CoinstakeContext coinstakeContext = new CoinstakeContext();
+            var coinstakeContext = new CoinstakeContext();
             coinstakeContext.CoinstakeTx = new Transaction();
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
@@ -703,13 +703,13 @@ namespace Stratis.Bitcoin.Features.Miner
             // Run task in parallel using the default task scheduler.
             int coinIndex = 0;
             int workerCount = (stakingUtxoDescriptions.Count + UtxoStakeDescriptionsPerCoinstakeWorker - 1) / UtxoStakeDescriptionsPerCoinstakeWorker;
-            Task[] workers = new Task[workerCount];
-            CoinstakeWorkerContext[] workerContexts = new CoinstakeWorkerContext[workerCount];
+            var workers = new Task[workerCount];
+            var workerContexts = new CoinstakeWorkerContext[workerCount];
 
             CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
             for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
-                CoinstakeWorkerContext cwc = new CoinstakeWorkerContext
+                var cwc = new CoinstakeWorkerContext
                 {
                     Index = workerIndex,
                     Logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[Worker #{workerIndex}] "),

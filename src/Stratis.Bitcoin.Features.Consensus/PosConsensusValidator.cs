@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override Money GetProofOfWorkReward(int height)
         {
-            if (this.isPremine(height))
+            if (this.IsPremine(height))
                 return this.consensusOptions.PremineReward;
 
             return this.ConsensusOptions.ProofOfWorkReward;
@@ -102,10 +102,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
 
             // Check timestamp.
-            if (block.Header.Time > this.futureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
+            if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
             {
                 // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.futureDrift(0)).UtcDateTime;
+                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.FutureDrift(0)).UtcDateTime;
                 this.logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check proof-of-stake block signature.
-            if (!this.checkBlockSignature(block))
+            if (!this.CheckBlockSignature(block))
             {
                 this.logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             // Compute and store the stake proofs.
-            this.checkAndComputeStake(context);
+            this.CheckAndComputeStake(context);
 
             base.ExecuteBlock(context, taskScheduler);
 
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > this.futureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
+            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -283,14 +283,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Miner's coin stake reward.</returns>
         public Money GetProofOfStakeReward(int height)
         {
-            if (this.isPremine(height))
+            if (this.IsPremine(height))
                 return this.consensusOptions.PremineReward;
 
             return this.consensusOptions.ProofOfStakeReward;
         }
 
         /// <inheritdoc />
-        protected override void updateCoinView(ContextInformation context, Transaction transaction)
+        protected override void UpdateCoinView(ContextInformation context, Transaction transaction)
         {
             this.logger.LogTrace("()");
 
@@ -299,13 +299,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (transaction.IsCoinStake)
                 context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
-            base.updateCoinView(context, transaction);
+            base.UpdateCoinView(context, transaction);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        protected override void checkBlockReward(ContextInformation context, Money fees, int height, Block block)
+        protected override void CheckBlockReward(ContextInformation context, Money fees, int height, Block block)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
 
@@ -341,11 +341,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        protected override void checkMaturity(UnspentOutputs coins, int spendHeight)
+        protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
-            base.checkMaturity(coins, spendHeight);
+            base.CheckMaturity(coins, spendHeight);
 
             if (coins.IsCoinstake)
             {
@@ -366,7 +366,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
         /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
-        private void checkAndComputeStake(ContextInformation context)
+        private void CheckAndComputeStake(ContextInformation context)
         {
             this.logger.LogTrace("()");
 
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
-        private bool checkBlockSignature(Block block)
+        private bool CheckBlockSignature(Block block)
         {
             this.logger.LogTrace("()");
 
@@ -502,14 +502,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
 
-        private bool isDriftReduced(long time)
+        private bool IsDriftReduced(long time)
         {
             return time > DriftingBugFixTimestamp;
         }
 
-        private long futureDrift(long time)
+        private long FutureDrift(long time)
         {
-            return this.isDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
+            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
 
         /// <summary>
@@ -517,7 +517,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="height">Block's height.</param>
         /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
-        private bool isPremine(int height)
+        private bool IsPremine(int height)
         {
             return (this.consensusOptions.PremineHeight > 0) &&
                    (this.consensusOptions.PremineReward > 0) &&
