@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var networkAddressConnectNode = new NetworkAddress(ipAddressThree, 80);
 
             peerAddressManager.AddPeer(networkAddressAddNode, IPAddress.Loopback, PeerIntroductionType.Add);
-            peerAddressManager.AddPeer(networkAddressConnectNode, IPAddress.Loopback, PeerIntroductionType.Connect);
+            peerAddressManager.AddPeerWithConnectArg(networkAddressConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressDiscoverNode, IPAddress.Loopback, PeerIntroductionType.Discover);
 
             var connector = new PeerConnector(peerAddressManager, PeerIntroductionType.Connect);

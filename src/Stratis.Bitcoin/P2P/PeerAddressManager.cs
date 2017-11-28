@@ -6,6 +6,7 @@ using System.Net;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 
 namespace Stratis.Bitcoin.P2P
@@ -34,6 +35,19 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         void AddPeers(NetworkAddress[] networkAddress, IPAddress source, PeerIntroductionType introductionType);
+
+        /// <summary>
+        /// Adds a set of peers to the <see cref="Peers"/> dictionary that have been specified using
+        /// the -connect arg.
+        /// <para>
+        /// This method will replace peers that have already been added to the peers list
+        /// and set their <see cref="PeerIntroductionType"/> to <see cref="PeerIntroductionType.Connect"/>.
+        /// </para>
+        /// <para>
+        /// Only routable IP addresses will be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
+        /// </para>
+        /// </summary>
+        void AddPeersWithConnectArg(NetworkAddress[] networkAddress, IPAddress source);
 
         /// <summary> Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);
@@ -136,6 +150,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void AddPeer(NetworkAddress networkAddress, IPAddress source, PeerIntroductionType peerIntroductionType)
         {
+            Guard.Assert(peerIntroductionType != PeerIntroductionType.Connect);
+
             if (networkAddress.Endpoint.Address.IsRoutable(true) == false)
                 return;
 
@@ -144,11 +160,38 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        public void AddPeerWithConnectArg(NetworkAddress networkAddress, IPAddress source)
+        {
+            if (networkAddress.Endpoint.Address.IsRoutable(true) == false)
+                return;
+
+            PeerAddress peer = null;
+            peer = this.FindPeer(networkAddress.Endpoint);
+            if (peer != null)
+                peer.PeerIntroductionType = PeerIntroductionType.Connect;
+            else
+                peer = PeerAddress.Create(networkAddress, PeerIntroductionType.Connect);
+
+            this.Peers.AddOrReplace(networkAddress.Endpoint, peer);
+        }
+
+        /// <inheritdoc/>
         public void AddPeers(NetworkAddress[] networkAddresses, IPAddress source, PeerIntroductionType peerIntroductionType)
         {
+            Guard.Assert(peerIntroductionType != PeerIntroductionType.Connect);
+
             foreach (var networkAddress in networkAddresses)
             {
                 this.AddPeer(networkAddress, source, peerIntroductionType);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void AddPeersWithConnectArg(NetworkAddress[] networkAddresses, IPAddress source)
+        {
+            foreach (var networkAddress in networkAddresses)
+            {
+                this.AddPeerWithConnectArg(networkAddress, source);
             }
         }
 
