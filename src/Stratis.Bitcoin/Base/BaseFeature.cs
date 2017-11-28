@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Base
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
-            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning));
+            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);
 

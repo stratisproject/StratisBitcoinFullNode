@@ -239,8 +239,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async (token) =>
             {
                 await this.PullerLoopAsync().ConfigureAwait(false);
-            }, 
-            this.nodeLifetime.ApplicationStopping, 
+            },
+            this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.RunOnce);
 
             this.logger.LogTrace("(-)");

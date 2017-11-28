@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -17,6 +18,9 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Handle the lifetime of a peer.</summary>
         private readonly IPeerBanning peerBanning;
 
+        /// <summary>The node settings.</summary>
+        private readonly NodeSettings nodeSettings;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -26,17 +30,18 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ConnectionManagerBehavior connectionManagerBehavior;
 
-        public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning)
+        public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.peerBanning = peerBanning;
+            this.nodeSettings = nodeSettings;
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new PeerBanningBehavior(this.loggerFactory, this.peerBanning);
+            return new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings);
         }
 
         /// <inheritdoc />
@@ -73,7 +78,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
-                this.peerBanning.BanPeer(node.RemoteSocketEndpoint);
+                this.peerBanning.BanPeer(node.RemoteSocketEndpoint, this.nodeSettings.ConnectionManager.BanTimeSeconds);
                 this.logger.LogTrace("Invalid block received from peer '{0}'.", node.RemoteSocketEndpoint);
                 node.DisconnectAsync("Invalid block received.");
             }
