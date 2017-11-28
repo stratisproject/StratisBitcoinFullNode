@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -11,9 +13,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
     public abstract class ConsensusRule
     {
-        protected ILogger logger;
+        public ILogger Logger { get; set; }
+
+        public ConsensusRules Parent { get; set; }
 
         public abstract void Validate(ContextInformation context);
+
+        public virtual IEnumerable<Type> Dependencies()
+        {
+            return Enumerable.Empty<Type>();
+        }
+    }
+
+    public abstract class AsyncConsensusRule : ConsensusRule
+    {
+        public abstract Task ValidateAsync(ContextInformation context);
+
+        public override void Validate(ContextInformation context)
+        {
+        }
     }
 
     public class WitnessCommitmentsRule : ConsensusRule
@@ -46,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                     WitScript witness = block.Transactions[0].Inputs[0].WitScript;
                     if ((witness.PushCount != 1) || (witness.Pushes.First().Length != 32))
                     {
-                        this.logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
+                        this.Logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
                         ConsensusErrors.BadWitnessNonceSize.Throw();
                     }
 
@@ -57,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
                     if (!this.EqualsArray(hashWitness.ToBytes(), block.Transactions[0].Outputs[commitpos].ScriptPubKey.ToBytes(true).Skip(6).ToArray(), 32))
                     {
-                        this.logger.LogTrace("(-)[WITNESS_MERKLE_MISMATCH]");
+                        this.Logger.LogTrace("(-)[WITNESS_MERKLE_MISMATCH]");
                         ConsensusErrors.BadWitnessMerkleMatch.Throw();
                     }
 
@@ -71,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 {
                     if (block.Transactions[i].HasWitness)
                     {
-                        this.logger.LogTrace("(-)[UNEXPECTED_WITNESS]");
+                        this.Logger.LogTrace("(-)[UNEXPECTED_WITNESS]");
                         ConsensusErrors.UnexpectedWitness.Throw();
                     }
                 }
@@ -134,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             return ComputeMerkleRoot(leaves, ref mutated);
         }
 
-        public static  void MerkleComputation(List<uint256> leaves, ref uint256 root, ref bool pmutated, int branchpos, List<uint256> pbranch)
+        public static void MerkleComputation(List<uint256> leaves, ref uint256 root, ref bool pmutated, int branchpos, List<uint256> pbranch)
         {
             if (pbranch != null)
                 pbranch.Clear();
@@ -262,24 +280,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
     }
 
+    /// <summary>
+    /// According to BIP34 a coinbase transaction must have the block height serialized in the script language,
+    /// </summary>
+    /// <remarks>
+    /// More info here https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki
+    /// </remarks>
     public class Bip34Rule : ConsensusRule
     {
         public override void Validate(ContextInformation context)
         {
-            DeploymentFlags deploymentFlags = context.Flags;
+            int nHeight = context.BestBlock?.Height + 1 ?? 0;
+            Block block = context.BlockValidationContext.Block;
 
-            if (deploymentFlags.EnforceBIP34)
+            Script expect = new Script(Op.GetPushOp(nHeight));
+            Script actual = block.Transactions[0].Inputs[0].ScriptSig;
+            if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
             {
-                int nHeight = context.BestBlock?.Height + 1 ?? 0;
-                Block block = context.BlockValidationContext.Block;
-
-                Script expect = new Script(Op.GetPushOp(nHeight));
-                Script actual = block.Transactions[0].Inputs[0].ScriptSig;
-                if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
-                {
-                    this.logger.LogTrace("(-)[BAD_COINBASE_HEIGHT]");
-                    ConsensusErrors.BadCoinbaseHeight.Throw();
-                }
+                this.Logger.LogTrace("(-)[BAD_COINBASE_HEIGHT]");
+                ConsensusErrors.BadCoinbaseHeight.Throw();
             }
         }
 
@@ -304,7 +323,157 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
     }
 
+    /// <summary>
+    /// With Bitcoin the BIP34 was activated at block 227,835 using the deployment flags, 
+    /// this rule allows a chain to have BIP34 activated as a deployment rule.
+    /// </summary>
+    public class Bip34ActivationRule : Bip34Rule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            DeploymentFlags deploymentFlags = context.Flags;
+
+            if (deploymentFlags.EnforceBIP34)
+            {
+                base.Validate(context);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Transaction lock-time calculations are checked using the median of the last 11 blocks instead of the block's time stamp.
+    /// </summary>
+    /// <remarks>
+    /// More info here https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
+    /// </remarks>
+    public class Bip113ActivationRule : ConsensusRule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            DeploymentFlags deploymentFlags = context.Flags;
+            int nHeight = context.BestBlock?.Height + 1 ?? 0;
+            Block block = context.BlockValidationContext.Block;
+
+            // Start enforcing BIP113 (Median Time Past) using versionbits logic.
+            DateTimeOffset nLockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
+                context.BestBlock.MedianTimePast :
+                block.Header.BlockTime;
+
+            // Check that all transactions are finalized.
+            foreach (Transaction transaction in block.Transactions)
+            {
+                if (!transaction.IsFinal(nLockTimeCutoff, nHeight))
+                {
+                    this.Logger.LogTrace("(-)[TX_NON_FINAL]");
+                    ConsensusErrors.BadTransactionNonFinal.Throw();
+                }
+            }
+        }
+    }
+
+    public class BlockWeightRule : ConsensusRule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            var options = context.Consensus.Option<PowConsensusOptions>();
+
+            // After the coinbase witness nonce and commitment are verified,
+            // we can check if the block weight passes (before we've checked the
+            // coinbase witness, it would be possible for the weight to be too
+            // large by filling up the coinbase witness, which doesn't change
+            // the block hash, so we couldn't mark the block as permanently
+            // failed).
+            if (GetBlockWeight(context.BlockValidationContext.Block, options) > options.MaxBlockWeight)
+            {
+                this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
+                ConsensusErrors.BadBlockWeight.Throw();
+            }
+        }
+
+        public static long GetBlockWeight(Block block, PowConsensusOptions options)
+        {
+            // This implements the weight = (stripped_size * 4) + witness_size formula,
+            // using only serialization with and without witness data. As witness_size
+            // is equal to total_size - stripped_size, this formula is identical to:
+            // weight = (stripped_size * 3) + total_size.
+            return GetSize(block, TransactionOptions.None) * (options.WitnessScaleFactor - 1) + GetSize(block, TransactionOptions.Witness);
+        }
+
+        public static int GetSize(IBitcoinSerializable data, TransactionOptions options)
+        {
+            var bms = new BitcoinStream(Stream.Null, true);
+            bms.TransactionOptions = options;
+            data.ReadWrite(bms);
+            return (int)bms.Counter.WrittenBytes;
+        }
+    }
+
     public class ConsensusRules
     {
+        private readonly ILoggerFactory loggerFactory;
+
+        private readonly Dictionary<ConsensusRule, ConsensusRule> consensusRules;
+
+        public Network Network { get; }
+
+        public NBitcoin.Consensus ConsensusParams { get; }
+
+        public ConsensusRules(Network network, ILoggerFactory loggerFactory)
+        {
+            this.loggerFactory = loggerFactory;
+            this.Network = network;
+            this.ConsensusParams = this.Network.Consensus;
+
+            this.consensusRules = new Dictionary<ConsensusRule, ConsensusRule>();
+        }
+
+        public ConsensusRules Register<TRule>() where TRule : ConsensusRule, new()
+        {
+            ConsensusRule rule = new TRule()
+            {
+                Parent = this,
+                Logger = loggerFactory.CreateLogger(typeof(TRule).FullName)
+            };
+
+            foreach (var dependency in rule.Dependencies())
+            {
+                var depdendency = this.consensusRules.Keys.SingleOrDefault(w => w.GetType() == dependency);
+
+                if (depdendency == null)
+                {
+                    throw new Exception(); // todo
+                }
+
+            }
+
+            this.consensusRules.Add(rule, rule);
+
+            return this;
+        }
+
+        public async Task ExectueAsync(BlockValidationContext blockValidationContext)
+        {
+            try
+            {
+                foreach (var consensusRule in this.consensusRules)
+                {
+                    var rule = consensusRule.Value;
+                    var context = new ContextInformation(blockValidationContext, this.ConsensusParams);
+
+                    if (rule is AsyncConsensusRule asyncRule)
+                    {
+                        await asyncRule.ValidateAsync(context).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        rule.Validate(context);
+                    }
+                }
+            }
+            catch (ConsensusErrorException ex)
+            {
+                blockValidationContext.Error = ex.ConsensusError;
+            }
+        }
     }
 }
