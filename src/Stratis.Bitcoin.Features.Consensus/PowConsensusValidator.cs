@@ -35,9 +35,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
-        /// <summary>Specifies how transaction's inputs should be validated.</summary>
-        public bool UseConsensusLib { get; set; }
-
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -281,18 +278,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
-                                if (this.UseConsensusLib)
-                                {
-                                    Script.BitcoinConsensusError error;
-                                    return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)inputIndexCopy, flags.ScriptFlags, out error);
-                                }
-                                else
-                                {
-                                    var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                    var ctx = new ScriptEvaluationContext();
-                                    ctx.ScriptVerify = flags.ScriptFlags;
-                                    return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
-                                }
+                                var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
+                                var ctx = new ScriptEvaluationContext();
+                                ctx.ScriptVerify = flags.ScriptFlags;
+                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
                             checkInput.Start(taskScheduler);
                             checkInputs.Add(checkInput);

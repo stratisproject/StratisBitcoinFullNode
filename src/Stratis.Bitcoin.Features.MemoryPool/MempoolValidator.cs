@@ -1037,47 +1037,40 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     int iiIntput = iInput;
                     TxOut txout = context.View.GetOutputFor(input);
 
-                    if (this.consensusValidator.UseConsensusLib)
+                    TransactionChecker checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
+                    ScriptEvaluationContext ctx = new ScriptEvaluationContext();
+                    ctx.ScriptVerify = scriptVerify;
+                    if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
                     {
-                        Script.BitcoinConsensusError error;
-                        return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)iiIntput, scriptVerify, out error);
+                        return true;
                     }
                     else
                     {
-                        TransactionChecker checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
-                        ScriptEvaluationContext ctx = new ScriptEvaluationContext();
-                        ctx.ScriptVerify = scriptVerify;
-                        if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            //TODO:
+                        //TODO:
 
-                            //if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS)
-                            //{
-                            //  // Check whether the failure was caused by a
-                            //  // non-mandatory script verification check, such as
-                            //  // non-standard DER encodings or non-null dummy
-                            //  // arguments; if so, don't trigger DoS protection to
-                            //  // avoid splitting the network between upgraded and
-                            //  // non-upgraded nodes.
-                            //  CScriptCheck check2(*coins, tx, i,
-                            //          flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, &txdata);
-                            //  if (check2())
-                            //      return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
-                            //}
-                            //// Failures of other flags indicate a transaction that is
-                            //// invalid in new blocks, e.g. a invalid P2SH. We DoS ban
-                            //// such nodes as they are not following the protocol. That
-                            //// said during an upgrade careful thought should be taken
-                            //// as to the correct behavior - we may want to continue
-                            //// peering with non-upgraded nodes even after soft-fork
-                            //// super-majority signaling has occurred.
-                            context.State.Fail(MempoolErrors.MandatoryScriptVerifyFlagFailed, ctx.Error.ToString()).Throw();
-                        }
+                        //if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS)
+                        //{
+                        //  // Check whether the failure was caused by a
+                        //  // non-mandatory script verification check, such as
+                        //  // non-standard DER encodings or non-null dummy
+                        //  // arguments; if so, don't trigger DoS protection to
+                        //  // avoid splitting the network between upgraded and
+                        //  // non-upgraded nodes.
+                        //  CScriptCheck check2(*coins, tx, i,
+                        //          flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, &txdata);
+                        //  if (check2())
+                        //      return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
+                        //}
+                        //// Failures of other flags indicate a transaction that is
+                        //// invalid in new blocks, e.g. a invalid P2SH. We DoS ban
+                        //// such nodes as they are not following the protocol. That
+                        //// said during an upgrade careful thought should be taken
+                        //// as to the correct behavior - we may want to continue
+                        //// peering with non-upgraded nodes even after soft-fork
+                        //// super-majority signaling has occurred.
+                        context.State.Fail(MempoolErrors.MandatoryScriptVerifyFlagFailed, ctx.Error.ToString()).Throw();
                     }
+
                 }
             }
 
