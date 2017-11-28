@@ -61,10 +61,10 @@ namespace Stratis.Bitcoin.Base
 
         private Timer refreshTimer;
 
-        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private ConcurrentChain chain;
 
-        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         public ConcurrentChain Chain
         {
             get

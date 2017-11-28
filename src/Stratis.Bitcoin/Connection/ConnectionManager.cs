@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -22,15 +23,15 @@ namespace Stratis.Bitcoin.Connection
     public interface IConnectionManager : IDisposable
     {
         /// <summary>Used when the -addnode argument is passed when running the node.</summary>
-        PeerConnector AddNodePeerConnector { get; }
+        IPeerConnector AddNodePeerConnector { get; }
 
         IReadOnlyNodesCollection ConnectedNodes { get; }
 
         /// <summary>Used when the -connect argument is passed when running the node.</summary>
-        PeerConnector ConnectNodePeerConnector { get; }
+        IPeerConnector ConnectNodePeerConnector { get; }
 
         /// <summary>Used when peer discovery takes place.</summary>
-        PeerConnector DiscoverNodesPeerConnector { get; }
+        IPeerConnector DiscoverNodesPeerConnector { get; }
 
         /// <summary>The network the node is running on.</summary>
         Network Network { get; }
@@ -111,13 +112,13 @@ namespace Stratis.Bitcoin.Connection
         public List<NodeServer> Servers { get; }
 
         /// <inheritdoc/>
-        public PeerConnector AddNodePeerConnector { get; private set; }
+        public IPeerConnector AddNodePeerConnector { get; private set; }
 
         /// <inheritdoc/>
-        public PeerConnector ConnectNodePeerConnector { get; private set; }
+        public IPeerConnector ConnectNodePeerConnector { get; private set; }
 
         /// <inheritdoc/>
-        public PeerConnector DiscoverNodesPeerConnector { get; private set; }
+        public IPeerConnector DiscoverNodesPeerConnector { get; private set; }
 
         public ConnectionManager(
             Network network,
@@ -225,7 +226,15 @@ namespace Stratis.Bitcoin.Connection
                 });
 
                 server.InboundNodeConnectionParameters = cloneParameters;
-                server.Listen();
+                try
+                {
+                    server.Listen();
+                }
+                catch (SocketException e)
+                {
+                    this.logger.LogCritical("Unable to listen on port {0} (you can change the port using '-port=[number]'). Error message: {1}", listen.Endpoint.Port, e.Message);
+                    throw e;
+                }
 
                 logs.Append(listen.Endpoint.Address + ":" + listen.Endpoint.Port);
                 if (listen.Whitelisted)
@@ -243,7 +252,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.discoveredNodeRequiredService |= services;
 
-            PeerConnector peerConnector = this.DiscoverNodesPeerConnector;
+            IPeerConnector peerConnector = this.DiscoverNodesPeerConnector;
             if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
             {
                 peerConnector.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
@@ -324,7 +333,7 @@ namespace Stratis.Bitcoin.Connection
             return speed.ToString("0.00") + " KB/S";
         }
 
-        private PeerConnector CreatePeerConnector(
+        private IPeerConnector CreatePeerConnector(
             NodeConnectionParameters parameters,
             NodeServices requiredServices,
             Func<IPEndPoint, byte[]> peerSelector,

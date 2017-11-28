@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings from the memory pool.</summary>
         private readonly MempoolSettings mempoolSettings;
 
-        /// <summary>Chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Coin view of the memory pool.</summary>
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="consensusValidator">Proof of work consensus validator.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
-        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
