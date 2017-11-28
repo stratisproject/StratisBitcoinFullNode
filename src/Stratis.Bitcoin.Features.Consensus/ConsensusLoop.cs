@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
-                    if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds > BlockValidationContext.BanDurationNoBan))
+                    if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds != BlockValidationContext.BanDurationNoBan))
                     {
                         int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.nodeSettings.ConnectionManager.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
                         this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration);
