@@ -124,10 +124,10 @@ namespace Stratis.Bitcoin.BlockPulling
         private Random Rand = new Random();
 
         /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
-        private readonly NodeRequirement requirements;
+        private readonly NetworkPeerRequirement requirements;
 
         /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
-        public virtual NodeRequirement Requirements => this.requirements;
+        public virtual NetworkPeerRequirement Requirements => this.requirements;
 
         /// <summary>
         /// Initializes a new instance of the object having a chain of block headers and a list of available nodes.
@@ -147,10 +147,10 @@ namespace Stratis.Bitcoin.BlockPulling
             this.peerQuality = new QualityScore(QualityScoreHistoryLength, loggerFactory);
 
             // Set the default requirements.
-            this.requirements = new NodeRequirement
+            this.requirements = new NetworkPeerRequirement
             {
                 MinVersion = protocolVersion,
-                RequiredServices = NodeServices.Network
+                RequiredServices = NetworkPeerServices.Network
             };
         }
 

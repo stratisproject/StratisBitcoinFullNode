@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public interface IBlockStoreBehavior : INodeBehavior
+    public interface IBlockStoreBehavior : INetworkPeerBehavior
     {
         bool CanRespondToGetDataPayload { get; set; }
 
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task AnnounceBlocks(List<uint256> blockHashesToAnnounce);
     }
 
-    public class BlockStoreBehavior : NodeBehavior, IBlockStoreBehavior
+    public class BlockStoreBehavior : NetworkPeerBehavior, IBlockStoreBehavior
     {
         // TODO: move this to the options
         // Maximum number of headers to announce when relaying blocks with headers message.
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                     {
                         this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                         throw;
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return Task.CompletedTask;
             }
 
-            NetworkPeer node = this.AttachedNode;
+            NetworkPeer node = this.AttachedPeer;
             if (node == null)
             {
                 this.logger.LogTrace("(-)[NO_NODE]");

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <inheritdoc />
-    public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
+    public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer attachedNode = this.AttachedNode;
+            NetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer attachedNode = this.AttachedNode;
+            NetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
@@ -198,8 +198,8 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.Node_MessageReceived;
-            this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
+            this.AttachedPeer.MessageReceived += this.Node_MessageReceived;
+            this.ChainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
             this.AssignPendingVector();
 
             this.logger.LogTrace("(-)");
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedNode.MessageReceived -= this.Node_MessageReceived;
+            this.AttachedPeer.MessageReceived -= this.Node_MessageReceived;
             this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");

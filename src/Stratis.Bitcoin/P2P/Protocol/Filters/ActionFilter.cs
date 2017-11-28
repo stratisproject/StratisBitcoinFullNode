@@ -4,7 +4,7 @@ using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Filters
 {
-    public class ActionFilter : INodeFilter
+    public class ActionFilter : INetworkPeerFilter
     {
         private readonly Action<IncomingMessage, Action> onIncoming;
         private readonly Action<NetworkPeer, Payload, Action> onSending;
@@ -19,9 +19,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Filters
             this.onIncoming(message, next);
         }
 
-        public void OnSendingMessage(NetworkPeer node, Payload payload, Action next)
+        public void OnSendingMessage(NetworkPeer peer, Payload payload, Action next)
         {
-            this.onSending(node, payload, next);
+            this.onSending(peer, payload, next);
         }
     }
 }
