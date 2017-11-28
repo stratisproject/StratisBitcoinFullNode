@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -46,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public Mock<IConnectionManager> MockConnectionManager { get; set; }
 
-        public Mock<IReadOnlyNodesCollection> MockReadOnlyNodesCollection { get; set; }
+        public Mock<IReadOnlyNetworkPeerCollection> MockReadOnlyNodesCollection { get; set; }
     }
 
     /// <summary>
@@ -80,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock), DateTimeProvider.Default, testChainContext.LoggerFactory);
 
             testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
-            testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNodesCollection>();
+            testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNetworkPeerCollection>();
             testChainContext.MockConnectionManager.Setup(s => s.ConnectedNodes).Returns(testChainContext.MockReadOnlyNodesCollection.Object);
             testChainContext.MockConnectionManager.Setup(s => s.NodeSettings).Returns(testChainContext.NodeSettings);
 

@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((Node)null);
+            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((NetworkPeer)null);
 
             var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
             var block = blocks.First();
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
-            var node = new Node();
+            var node = new NetworkPeer();
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new Node();
+            var node = new NetworkPeer();
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new Node();
+            var node = new NetworkPeer();
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new Node();
+            var node = new NetworkPeer();
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
