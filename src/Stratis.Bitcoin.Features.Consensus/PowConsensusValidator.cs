@@ -59,189 +59,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Calculates total signature operation cost of a transaction.
-        /// </summary>
-        /// <param name="transaction">Transaction for which we are computing the cost.</param>
-        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
-        /// <param name="flags">Script verification flags.</param>
-        /// <returns>Signature operation cost for all transaction's inputs.</returns>
-        public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
-        {
-            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.ConsensusOptions.WitnessScaleFactor;
-
-            if (transaction.IsCoinBase)
-                return signatureOperationCost;
-
-            if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
-            {
-                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.ConsensusOptions.WitnessScaleFactor;
-            }
-
-            for (int i = 0; i < transaction.Inputs.Count; i++)
-            {
-                TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
-                signatureOperationCost += this.CountWitnessSignatureOperation(transaction.Inputs[i].ScriptSig, prevout.ScriptPubKey, transaction.Inputs[i].WitScript, flags);
-            }
-
-            return signatureOperationCost;
-        }
-
-        /// <summary>
-        /// Checks that transaction's inputs are valid.
-        /// </summary>
-        /// <param name="transaction">Transaction to check.</param>
-        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
-        /// <param name="spendHeight">Height at which coins are considered spendable.</param>
-        /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction's inputs are missing.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionInputValueOutOfRange">Thrown if input value is out of range.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionInBelowOut">Thrown if transaction inputs are less then outputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNegativeFee">Thrown if fees sum is negative.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
-        public virtual void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
-        {
-            this.logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
-
-            if (!inputs.HaveInputs(transaction))
-                ConsensusErrors.BadTransactionMissingInput.Throw();
-
-            Money valueIn = Money.Zero;
-            Money fees = Money.Zero;
-            for (int i = 0; i < transaction.Inputs.Count; i++)
-            {
-                OutPoint prevout = transaction.Inputs[i].PrevOut;
-                UnspentOutputs coins = inputs.AccessCoins(prevout.Hash);
-
-                this.CheckMaturity(coins, spendHeight);
-
-                // Check for negative or overflow input values.
-                valueIn += coins.TryGetOutput(prevout.N).Value;
-                if (!this.MoneyRange(coins.TryGetOutput(prevout.N).Value) || !this.MoneyRange(valueIn))
-                {
-                    this.logger.LogTrace("(-)[BAD_TX_INPUT_VALUE]");
-                    ConsensusErrors.BadTransactionInputValueOutOfRange.Throw();
-                }
-            }
-
-            if (valueIn < transaction.TotalOut)
-            {
-                this.logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
-                ConsensusErrors.BadTransactionInBelowOut.Throw();
-            }
-
-            // Tally transaction fees.
-            Money txFee = valueIn - transaction.TotalOut;
-            if (txFee < 0)
-            {
-                this.logger.LogTrace("(-)[NEGATIVE_FEE]");
-                ConsensusErrors.BadTransactionNegativeFee.Throw();
-            }
-
-            fees += txFee;
-            if (!this.MoneyRange(fees))
-            {
-                this.logger.LogTrace("(-)[BAD_FEE]");
-                ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Gets the proof of work reward amount for the block at provided height.
-        /// </summary>
-        /// <param name="height">Height of the block that we're calculating the reward for.</param>
-        /// <returns>Reward amount.</returns>
-        public virtual Money GetProofOfWorkReward(int height)
-        {
-            int halvings = height / this.ConsensusParams.SubsidyHalvingInterval;
-            // Force block reward to zero when right shift is undefined.
-            if (halvings >= 64)
-                return 0;
-
-            Money subsidy = this.ConsensusOptions.ProofOfWorkReward;
-            // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-            subsidy >>= halvings;
-            return subsidy;
-        }
-
-        /// <summary>
-        /// Checks block's validity.
+        /// Checks if <paramref name="context.BlockValidationContext.Block"/> has a valid PoW header.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.BadMerkleRoot">Thrown block's merkle root is corrupted.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">Thrown if block contains duplicated transaction that don't affect merkle root.</exception>
-        /// <exception cref="ConsensusErrors.BadBlockLength">Thrown if block exceeds maximum allowed size or doesn't contain any transaction.</exception>
-        /// <exception cref="ConsensusErrors.BadCoinbaseMissing">Thrown if block's first transaction is not coinbase.</exception>
-        /// <exception cref="ConsensusErrors.BadMultipleCoinbase">Thrown if block contains more then one coinbase transactions.</exception>
-        /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if block's signature operation cost is greater than maximum allowed one.</exception>
-        public virtual void CheckBlock(ContextInformation context)
+        /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
+        public virtual void CheckBlockHeader(ContextInformation context)
         {
-            this.logger.LogTrace("()");
+            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+                ConsensusErrors.HighHash.Throw();
 
-            Block block = context.BlockValidationContext.Block;
-
-            bool mutated;
-            uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, out mutated);
-            if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
-            {
-                this.logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
-                ConsensusErrors.BadMerkleRoot.Throw();
-            }
-
-            // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
-            // of transactions in a block without affecting the merkle root of a block,
-            // while still invalidating it.
-            if (mutated)
-            {
-                this.logger.LogTrace("(-)[BAD_TX_DUP]");
-                ConsensusErrors.BadTransactionDuplicate.Throw();
-            }
-
-            // All potential-corruption validation must be done before we do any
-            // transaction validation, as otherwise we may mark the header as invalid
-            // because we receive the wrong transactions for it.
-            // Note that witness malleability is checked in ContextualCheckBlock, so no
-            // checks that use witness data may be performed here.
-
-            // Size limits.
-            if (block.Transactions.Count == 0 || block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize ||
-                this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
-            {
-                this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
-                ConsensusErrors.BadBlockLength.Throw();
-            }
-
-            // First transaction must be coinbase, the rest must not be
-            if (block.Transactions.Count == 0 || !block.Transactions[0].IsCoinBase)
-            {
-                this.logger.LogTrace("(-)[NO_COINBASE]");
-                ConsensusErrors.BadCoinbaseMissing.Throw();
-            }
-
-            for (int i = 1; i < block.Transactions.Count; i++)
-            {
-                if (block.Transactions[i].IsCoinBase)
-                {
-                    this.logger.LogTrace("(-)[MULTIPLE_COINBASE]");
-                    ConsensusErrors.BadMultipleCoinbase.Throw();
-                }
-            }
-
-            // Check transactions
-            foreach (Transaction tx in block.Transactions)
-                this.CheckTransaction(tx);
-
-            long sigOps = 0;
-            foreach (Transaction tx in block.Transactions)
-                sigOps += this.GetLegacySignatureOperationsCount(tx);
-
-            if ((sigOps * this.ConsensusOptions.WitnessScaleFactor) > this.ConsensusOptions.MaxBlockSigopsCost)
-            {
-                this.logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
-                ConsensusErrors.BadBlockSigOps.Throw();
-            }
-
-            this.logger.LogTrace("(-)[OK]");
+            context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
         }
 
         /// <summary>
@@ -350,116 +177,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
-            }
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <summary>
-        /// Checks if <paramref name="context.BlockValidationContext.Block"/> has a valid PoW header.
-        /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
-        public virtual void CheckBlockHeader(ContextInformation context)
-        {
-            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
-                ConsensusErrors.HighHash.Throw();
-
-            context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
-        }
-
-        /// <summary>
-        /// Checks if transaction is valid.
-        /// </summary>
-        /// <param name="transaction">Transaction.</param>
-        /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNoOutput">Thrown if transaction has no outputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionOversize">Thrown if transaction size is greater than maximum allowed size of a block.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNegativeOutput">Thrown if at least one transaction output has negative value.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionTooLargeOutput">Thrown if at least one transaction output value is greater than maximum allowed one.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionTooLargeTotalOutput">Thrown if sum of all transaction outputs is greater than maximum allowed one.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
-        /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
-        public virtual void CheckTransaction(Transaction transaction)
-        {
-            this.logger.LogTrace("()");
-
-            // Basic checks that don't depend on any context.
-            if (transaction.Inputs.Count == 0)
-            {
-                this.logger.LogTrace("(-)[TX_NO_INPUT]");
-                ConsensusErrors.BadTransactionNoInput.Throw();
-            }
-
-            if (transaction.Outputs.Count == 0)
-            {
-                this.logger.LogTrace("(-)[TX_NO_OUTPUT]");
-                ConsensusErrors.BadTransactionNoOutput.Throw();
-            }
-
-            // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(transaction, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
-            {
-                this.logger.LogTrace("(-)[TX_OVERSIZE]");
-                ConsensusErrors.BadTransactionOversize.Throw();
-            }
-
-            // Check for negative or overflow output values
-            long valueOut = 0;
-            foreach (TxOut txout in transaction.Outputs)
-            {
-                if (txout.Value.Satoshi < 0)
-                {
-                    this.logger.LogTrace("(-)[TX_OUTPUT_NEGATIVE]");
-                    ConsensusErrors.BadTransactionNegativeOutput.Throw();
-                }
-
-                if (txout.Value.Satoshi > this.ConsensusOptions.MaxMoney)
-                {
-                    this.logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
-                    ConsensusErrors.BadTransactionTooLargeOutput.Throw();
-                }
-
-                valueOut += txout.Value;
-                if (!this.MoneyRange(valueOut))
-                {
-                    this.logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
-                    ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
-                }
-            }
-
-            // Check for duplicate inputs.
-            var inOutPoints = new HashSet<OutPoint>();
-            foreach (TxIn txin in transaction.Inputs)
-            {
-                if (inOutPoints.Contains(txin.PrevOut))
-                {
-                    this.logger.LogTrace("(-)[TX_DUP_INPUTS]");
-                    ConsensusErrors.BadTransactionDuplicateInputs.Throw();
-                }
-
-                inOutPoints.Add(txin.PrevOut);
-            }
-
-            if (transaction.IsCoinBase)
-            {
-                if (transaction.Inputs[0].ScriptSig.Length < 2 || transaction.Inputs[0].ScriptSig.Length > 100)
-                {
-                    this.logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
-                    ConsensusErrors.BadCoinbaseSize.Throw();
-                }
-            }
-            else
-            {
-                foreach (TxIn txin in transaction.Inputs)
-                {
-                    if (txin.PrevOut.IsNull)
-                    {
-                        this.logger.LogTrace("(-)[TX_NULL_PREVOUT]");
-                        ConsensusErrors.BadTransactionNullPrevout.Throw();
-                    }
-                }
             }
 
             this.logger.LogTrace("(-)[OK]");
@@ -600,79 +317,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Context-dependent validity checks.
-        /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
-        /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
-        /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
-        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
-        /// <exception cref="ConsensusErrors.CheckpointViolation">Thrown if block header hash does not match the checkpointed value.</exception>
-        public virtual void ContextualCheckBlockHeader(ContextInformation context)
-        {
-            Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
-            this.logger.LogTrace("()");
-
-            BlockHeader header = context.BlockValidationContext.Block.Header;
-
-            int height = context.BestBlock.Height + 1;
-
-            // Check proof of work.
-            if (header.Bits != context.NextWorkRequired)
-            {
-                this.logger.LogTrace("(-)[BAD_DIFF_BITS]");
-                ConsensusErrors.BadDiffBits.Throw();
-            }
-
-            // Check timestamp against prev.
-            if (header.BlockTime <= context.BestBlock.MedianTimePast)
-            {
-                this.logger.LogTrace("(-)[TIME_TOO_OLD]");
-                ConsensusErrors.TimeTooOld.Throw();
-            }
-
-            // Check timestamp.
-            if (header.BlockTime > (context.Time + TimeSpan.FromHours(2)))
-            {
-                this.logger.LogTrace("(-)[TIME_TOO_NEW]");
-                ConsensusErrors.TimeTooNew.Throw();
-            }
-
-            // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
-            // check for version 2, 3 and 4 upgrades.
-            if (((header.Version < 2) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
-               ((header.Version < 3) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
-               ((header.Version < 4) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
-            {
-                this.logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.BadVersion.Throw();
-            }
-
-            // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.Checkpoints.CheckHardened(height, header.GetHash()))
-            {
-                this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
-                ConsensusErrors.CheckpointViolation.Throw();
-            }
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <summary>
-        /// Gets the block weight.
-        /// </summary>
-        /// <remarks>
-        /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
-        /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
-        /// </remarks>
-        /// <param name="block">Block that we get weight of.</param>
-        /// <returns>Block weight.</returns>
-        public long GetBlockWeight(Block block)
-        {
-            return this.GetSize(block, TransactionOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, TransactionOptions.Witness);
-        }
-
-        /// <summary>
         /// Updates context's <see cref="UnspentOutputSet"/>.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
@@ -736,6 +380,112 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
+        /// Checks that transaction's inputs are valid.
+        /// </summary>
+        /// <param name="transaction">Transaction to check.</param>
+        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
+        /// <param name="spendHeight">Height at which coins are considered spendable.</param>
+        /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction's inputs are missing.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionInputValueOutOfRange">Thrown if input value is out of range.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionInBelowOut">Thrown if transaction inputs are less then outputs.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNegativeFee">Thrown if fees sum is negative.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
+        public virtual void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
+
+            if (!inputs.HaveInputs(transaction))
+                ConsensusErrors.BadTransactionMissingInput.Throw();
+
+            Money valueIn = Money.Zero;
+            Money fees = Money.Zero;
+            for (int i = 0; i < transaction.Inputs.Count; i++)
+            {
+                OutPoint prevout = transaction.Inputs[i].PrevOut;
+                UnspentOutputs coins = inputs.AccessCoins(prevout.Hash);
+
+                this.CheckMaturity(coins, spendHeight);
+
+                // Check for negative or overflow input values.
+                valueIn += coins.TryGetOutput(prevout.N).Value;
+                if (!this.MoneyRange(coins.TryGetOutput(prevout.N).Value) || !this.MoneyRange(valueIn))
+                {
+                    this.logger.LogTrace("(-)[BAD_TX_INPUT_VALUE]");
+                    ConsensusErrors.BadTransactionInputValueOutOfRange.Throw();
+                }
+            }
+
+            if (valueIn < transaction.TotalOut)
+            {
+                this.logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
+                ConsensusErrors.BadTransactionInBelowOut.Throw();
+            }
+
+            // Tally transaction fees.
+            Money txFee = valueIn - transaction.TotalOut;
+            if (txFee < 0)
+            {
+                this.logger.LogTrace("(-)[NEGATIVE_FEE]");
+                ConsensusErrors.BadTransactionNegativeFee.Throw();
+            }
+
+            fees += txFee;
+            if (!this.MoneyRange(fees))
+            {
+                this.logger.LogTrace("(-)[BAD_FEE]");
+                ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Gets the proof of work reward amount for the block at provided height.
+        /// </summary>
+        /// <param name="height">Height of the block that we're calculating the reward for.</param>
+        /// <returns>Reward amount.</returns>
+        public virtual Money GetProofOfWorkReward(int height)
+        {
+            int halvings = height / this.ConsensusParams.SubsidyHalvingInterval;
+            // Force block reward to zero when right shift is undefined.
+            if (halvings >= 64)
+                return 0;
+
+            Money subsidy = this.ConsensusOptions.ProofOfWorkReward;
+            // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
+            subsidy >>= halvings;
+            return subsidy;
+        }
+
+        /// <summary>
+        /// Calculates total signature operation cost of a transaction.
+        /// </summary>
+        /// <param name="transaction">Transaction for which we are computing the cost.</param>
+        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
+        /// <param name="flags">Script verification flags.</param>
+        /// <returns>Signature operation cost for all transaction's inputs.</returns>
+        public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
+        {
+            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.ConsensusOptions.WitnessScaleFactor;
+
+            if (transaction.IsCoinBase)
+                return signatureOperationCost;
+
+            if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
+            {
+                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.ConsensusOptions.WitnessScaleFactor;
+            }
+
+            for (int i = 0; i < transaction.Inputs.Count; i++)
+            {
+                TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
+                signatureOperationCost += this.CountWitnessSignatureOperation(transaction.Inputs[i].ScriptSig, prevout.ScriptPubKey, transaction.Inputs[i].WitScript, flags);
+            }
+
+            return signatureOperationCost;
+        }
+
+        /// <summary>
         /// Calculates signature operation cost for single transaction input.
         /// </summary>
         /// <param name="scriptSig">Signature script.</param>
@@ -792,6 +542,86 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
+        /// Checks block's validity.
+        /// </summary>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <exception cref="ConsensusErrors.BadMerkleRoot">Thrown block's merkle root is corrupted.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">Thrown if block contains duplicated transaction that don't affect merkle root.</exception>
+        /// <exception cref="ConsensusErrors.BadBlockLength">Thrown if block exceeds maximum allowed size or doesn't contain any transaction.</exception>
+        /// <exception cref="ConsensusErrors.BadCoinbaseMissing">Thrown if block's first transaction is not coinbase.</exception>
+        /// <exception cref="ConsensusErrors.BadMultipleCoinbase">Thrown if block contains more then one coinbase transactions.</exception>
+        /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if block's signature operation cost is greater than maximum allowed one.</exception>
+        public virtual void CheckBlock(ContextInformation context)
+        {
+            this.logger.LogTrace("()");
+
+            Block block = context.BlockValidationContext.Block;
+
+            bool mutated;
+            uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, out mutated);
+            if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
+            {
+                this.logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+                ConsensusErrors.BadMerkleRoot.Throw();
+            }
+
+            // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
+            // of transactions in a block without affecting the merkle root of a block,
+            // while still invalidating it.
+            if (mutated)
+            {
+                this.logger.LogTrace("(-)[BAD_TX_DUP]");
+                ConsensusErrors.BadTransactionDuplicate.Throw();
+            }
+
+            // All potential-corruption validation must be done before we do any
+            // transaction validation, as otherwise we may mark the header as invalid
+            // because we receive the wrong transactions for it.
+            // Note that witness malleability is checked in ContextualCheckBlock, so no
+            // checks that use witness data may be performed here.
+
+            // Size limits.
+            if (block.Transactions.Count == 0 || block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize ||
+                this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            {
+                this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
+                ConsensusErrors.BadBlockLength.Throw();
+            }
+
+            // First transaction must be coinbase, the rest must not be
+            if (block.Transactions.Count == 0 || !block.Transactions[0].IsCoinBase)
+            {
+                this.logger.LogTrace("(-)[NO_COINBASE]");
+                ConsensusErrors.BadCoinbaseMissing.Throw();
+            }
+
+            for (int i = 1; i < block.Transactions.Count; i++)
+            {
+                if (block.Transactions[i].IsCoinBase)
+                {
+                    this.logger.LogTrace("(-)[MULTIPLE_COINBASE]");
+                    ConsensusErrors.BadMultipleCoinbase.Throw();
+                }
+            }
+
+            // Check transactions
+            foreach (Transaction tx in block.Transactions)
+                this.CheckTransaction(tx);
+
+            long sigOps = 0;
+            foreach (Transaction tx in block.Transactions)
+                sigOps += this.GetLegacySignatureOperationsCount(tx);
+
+            if ((sigOps * this.ConsensusOptions.WitnessScaleFactor) > this.ConsensusOptions.MaxBlockSigopsCost)
+            {
+                this.logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
+                ConsensusErrors.BadBlockSigOps.Throw();
+            }
+
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <summary>
         /// Calculates legacy transaction signature operation cost.
         /// </summary>
         /// <param name="transaction">Transaction for which we are computing the cost.</param>
@@ -809,6 +639,103 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
+        /// Checks if transaction is valid.
+        /// </summary>
+        /// <param name="transaction">Transaction.</param>
+        /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNoOutput">Thrown if transaction has no outputs.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionOversize">Thrown if transaction size is greater than maximum allowed size of a block.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNegativeOutput">Thrown if at least one transaction output has negative value.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionTooLargeOutput">Thrown if at least one transaction output value is greater than maximum allowed one.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionTooLargeTotalOutput">Thrown if sum of all transaction outputs is greater than maximum allowed one.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
+        /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
+        public virtual void CheckTransaction(Transaction transaction)
+        {
+            this.logger.LogTrace("()");
+
+            // Basic checks that don't depend on any context.
+            if (transaction.Inputs.Count == 0)
+            {
+                this.logger.LogTrace("(-)[TX_NO_INPUT]");
+                ConsensusErrors.BadTransactionNoInput.Throw();
+            }
+
+            if (transaction.Outputs.Count == 0)
+            {
+                this.logger.LogTrace("(-)[TX_NO_OUTPUT]");
+                ConsensusErrors.BadTransactionNoOutput.Throw();
+            }
+
+            // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
+            if (this.GetSize(transaction, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            {
+                this.logger.LogTrace("(-)[TX_OVERSIZE]");
+                ConsensusErrors.BadTransactionOversize.Throw();
+            }
+
+            // Check for negative or overflow output values
+            long valueOut = 0;
+            foreach (TxOut txout in transaction.Outputs)
+            {
+                if (txout.Value.Satoshi < 0)
+                {
+                    this.logger.LogTrace("(-)[TX_OUTPUT_NEGATIVE]");
+                    ConsensusErrors.BadTransactionNegativeOutput.Throw();
+                }
+
+                if (txout.Value.Satoshi > this.ConsensusOptions.MaxMoney)
+                {
+                    this.logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
+                    ConsensusErrors.BadTransactionTooLargeOutput.Throw();
+                }
+
+                valueOut += txout.Value;
+                if (!this.MoneyRange(valueOut))
+                {
+                    this.logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
+                    ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
+                }
+            }
+
+            // Check for duplicate inputs.
+            var inOutPoints = new HashSet<OutPoint>();
+            foreach (TxIn txin in transaction.Inputs)
+            {
+                if (inOutPoints.Contains(txin.PrevOut))
+                {
+                    this.logger.LogTrace("(-)[TX_DUP_INPUTS]");
+                    ConsensusErrors.BadTransactionDuplicateInputs.Throw();
+                }
+
+                inOutPoints.Add(txin.PrevOut);
+            }
+
+            if (transaction.IsCoinBase)
+            {
+                if (transaction.Inputs[0].ScriptSig.Length < 2 || transaction.Inputs[0].ScriptSig.Length > 100)
+                {
+                    this.logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
+                    ConsensusErrors.BadCoinbaseSize.Throw();
+                }
+            }
+            else
+            {
+                foreach (TxIn txin in transaction.Inputs)
+                {
+                    if (txin.PrevOut.IsNull)
+                    {
+                        this.logger.LogTrace("(-)[TX_NULL_PREVOUT]");
+                        ConsensusErrors.BadTransactionNullPrevout.Throw();
+                    }
+                }
+            }
+
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <summary>
         /// Checks if value is in range from 0 to <see cref="ConsensusOptions.MaxMoney"/>.
         /// </summary>
         /// <param name="value">The value to be checked.</param>
@@ -816,6 +743,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         private bool MoneyRange(long value)
         {
             return ((value >= 0) && (value <= this.ConsensusOptions.MaxMoney));
+        }
+
+        /// <summary>
+        /// Gets the block weight.
+        /// </summary>
+        /// <remarks>
+        /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
+        /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
+        /// </remarks>
+        /// <param name="block">Block that we get weight of.</param>
+        /// <returns>Block weight.</returns>
+        public long GetBlockWeight(Block block)
+        {
+            return this.GetSize(block, TransactionOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, TransactionOptions.Witness);
         }
 
         /// <summary>
@@ -959,12 +900,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // As long as bit number level in count is zero, skip it. It means there
                 // is nothing left at this level.
-                while ((count & (((uint) 1) << level)) == 0)
+                while ((count & (((uint)1) << level)) == 0)
                     level++;
 
                 root = inner[level];
                 bool match = matchLevel == level;
-                while (count != (((uint) 1) << level))
+                while (count != (((uint)1) << level))
                 {
                     // If we reach this point, h is an inner value that is not the top.
                     // We combine it with itself (Bitcoin's special rule for odd levels in
@@ -979,11 +920,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // Increment count to the value it would have if two entries at this
                     // level had existed.
-                    count += (((uint) 1) << level);
+                    count += (((uint)1) << level);
                     level++;
 
                     // And propagate the result upwards accordingly.
-                    while ((count & (((uint) 1) << level)) == 0)
+                    while ((count & (((uint)1) << level)) == 0)
                     {
                         if (match)
                         {
@@ -1057,6 +998,65 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Context-dependent validity checks.
+        /// </summary>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
+        /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
+        /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
+        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
+        /// <exception cref="ConsensusErrors.CheckpointViolation">Thrown if block header hash does not match the checkpointed value.</exception>
+        public virtual void ContextualCheckBlockHeader(ContextInformation context)
+        {
+            Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
+            this.logger.LogTrace("()");
+
+            BlockHeader header = context.BlockValidationContext.Block.Header;
+
+            int height = context.BestBlock.Height + 1;
+
+            // Check proof of work.
+            if (header.Bits != context.NextWorkRequired)
+            {
+                this.logger.LogTrace("(-)[BAD_DIFF_BITS]");
+                ConsensusErrors.BadDiffBits.Throw();
+            }
+
+            // Check timestamp against prev.
+            if (header.BlockTime <= context.BestBlock.MedianTimePast)
+            {
+                this.logger.LogTrace("(-)[TIME_TOO_OLD]");
+                ConsensusErrors.TimeTooOld.Throw();
+            }
+
+            // Check timestamp.
+            if (header.BlockTime > (context.Time + TimeSpan.FromHours(2)))
+            {
+                this.logger.LogTrace("(-)[TIME_TOO_NEW]");
+                ConsensusErrors.TimeTooNew.Throw();
+            }
+
+            // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
+            // check for version 2, 3 and 4 upgrades.
+            if (((header.Version < 2) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
+               ((header.Version < 3) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
+               ((header.Version < 4) && (height >= this.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
+            {
+                this.logger.LogTrace("(-)[BAD_VERSION]");
+                ConsensusErrors.BadVersion.Throw();
+            }
+
+            // Check that the block header hash matches the known checkpointed value, if any.
+            if (!this.Checkpoints.CheckHardened(height, header.GetHash()))
+            {
+                this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
+                ConsensusErrors.CheckpointViolation.Throw();
+            }
+
+            this.logger.LogTrace("(-)[OK]");
         }
     }
 }
