@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -31,6 +32,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void StopwatchDisposable_MeasuresPerformanceCorrectly()
         {
+            // Don't run this test in a Mac environment as it takes too long,
+            // skewing the results.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             int epsilonMs = 50;
             int expectedElapsedMs = 0;
             long elapsedTicksByDispStopwatch = 0;
