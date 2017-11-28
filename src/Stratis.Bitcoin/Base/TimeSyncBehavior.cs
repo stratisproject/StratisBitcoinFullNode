@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Base
     /// Node behavior that collects time offset samples from network "version" messages
     /// from each peer.
     /// </summary>
-    public class TimeSyncBehavior : NodeBehavior
+    public class TimeSyncBehavior : NetworkPeerBehavior
     {
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }

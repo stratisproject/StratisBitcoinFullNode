@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// <summary>
     /// This class receives transaction messages from other nodes.
     /// </summary>
-    public class TransactionReceiver : NodeBehavior
+    public class TransactionReceiver : NetworkPeerBehavior
     {
         private readonly TransactionNotification transactionNotification;
 
@@ -35,12 +35,12 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void AttachCore()
         {
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
         }
 
         protected override void DetachCore()
         {
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
 
         private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                         throw;
 
                 // do nothing
