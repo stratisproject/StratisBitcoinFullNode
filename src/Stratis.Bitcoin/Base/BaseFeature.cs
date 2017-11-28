@@ -298,6 +298,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<NodeDeployments>();
 
                     // Connection
+                    services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();
                     services.AddSingleton<NetworkPeerConnectionParameters>(new NetworkPeerConnectionParameters());
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
 
