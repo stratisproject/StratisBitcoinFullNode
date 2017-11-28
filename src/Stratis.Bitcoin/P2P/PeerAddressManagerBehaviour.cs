@@ -39,45 +39,45 @@ namespace Stratis.Bitcoin.P2P
 
         protected override void AttachCore()
         {
-            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
+            this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
         }
 
-        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
+        private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
-                    node.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
+                    peer.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
             }
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (message.Message.Payload is AddrPayload addr)
-                    this.peerAddressManager.AddPeers(addr.Addresses, node.RemoteSocketAddress, PeerIntroductionType.Discover);
+                    this.peerAddressManager.AddPeers(addr.Addresses, peer.RemoteSocketAddress, PeerIntroductionType.Discover);
             }
         }
 
-        //TODO: We need to refactor this as the StateChanged event handlers only gets attached
-        //AFTER the node has connected, which means that we can never go:
-        //if (node.State == NodeState.Connected)
-        //which is more intuitive.
-        //This happens in PeerDiscovery as well where we connect and then disconnect straight after.
-        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState previousState)
+        // TODO: We need to refactor this as the StateChanged event handlers only gets attached
+        // AFTER the peer has connected, which means that we can never go:
+        // if (peer.State == NetworkPeerState.Connected)
+        // which is more intuitive.
+        // This happens in PeerDiscovery as well where we connect and then disconnect straight after.
+        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
-                if (node.State <= NetworkPeerState.Disconnecting && previousState == NetworkPeerState.HandShaked)
-                    this.peerAddressManager.PeerConnected(node.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                if (peer.State <= NetworkPeerState.Disconnecting && previousState == NetworkPeerState.HandShaked)
+                    this.peerAddressManager.PeerConnected(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
-                if (node.State == NetworkPeerState.HandShaked)
-                    this.peerAddressManager.PeerHandshaked(node.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                if (peer.State == NetworkPeerState.HandShaked)
+                    this.peerAddressManager.PeerHandshaked(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 
         protected override void DetachCore()
         {
-            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
         }
 
         public override object Clone()
