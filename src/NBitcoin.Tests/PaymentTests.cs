@@ -191,28 +191,6 @@ namespace NBitcoin.Tests
 			}
 		}
 
-        /* TODO: Fix this test. Required data file "NicolasDorierMetchant.pfx" is missing
-         * 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanCreatePaymentRequest()
-		{
-			foreach(var provider in new ICertificateServiceProvider[]
-			{
-				new WindowsCertificateServiceProvider(X509VerificationFlags.IgnoreNotTimeValid)
-			})
-			{
-				PaymentRequest.DefaultCertificateServiceProvider = provider;
-				var cert = File.ReadAllBytes("Data/NicolasDorierMerchant.pfx");
-				CanCreatePaymentRequestCore(cert);
-				if(provider is WindowsCertificateServiceProvider)
-				{
-					CanCreatePaymentRequestCore(new X509Certificate2(cert, "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet));
-				}
-			}
-		}
-        */
-
 		private static void CanCreatePaymentRequestCore(object cert)
 		{
 			var request = new PaymentRequest();

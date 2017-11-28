@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>EndPoint of this peer.</summary>
         [JsonProperty]
+        [JsonConverter(typeof(IPEndPointConverter))]
         private IPEndPoint endPoint;
 
         /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
@@ -305,7 +306,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Converter used to convert <see cref="IPEndPoint"/> to and from JSON.
     /// </summary>
-    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
+    /// <seealso cref="JsonConverter" />
     public sealed class IPEndPointConverter : JsonConverter
     {
         /// <inheritdoc />

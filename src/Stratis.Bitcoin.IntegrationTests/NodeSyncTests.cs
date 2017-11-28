@@ -10,6 +10,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class NodeSyncTests
     {
+        public NodeSyncTests()
+        {
+            // These tests are for mostly for POW. Set the flags to the expected values.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;        
+        }
+
         [Fact]
         public void NodesCanConnectToEachOthers()
         {
@@ -135,6 +142,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // Temporary fix so the Network static initialize will not break.
             var m = Network.Main;
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
             try
             {
                 using (NodeBuilder builder = NodeBuilder.Create())
@@ -228,6 +237,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // Temporary fix so the Network static initialize will not break.
             var m = Network.Main;
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
             try
             {
                 using (NodeBuilder builder = NodeBuilder.Create())
