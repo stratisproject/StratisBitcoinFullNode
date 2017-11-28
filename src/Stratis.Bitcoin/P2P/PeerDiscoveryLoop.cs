@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The network the node is running on.</summary>
         private readonly Network network;
 
-        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
         public PeerDiscoveryLoop(

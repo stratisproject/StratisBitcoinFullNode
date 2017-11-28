@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P.Peer
 {
     /// <summary>
-    /// Contract for factory for creating P2P network peer clients and servers.
+    /// Contract for factory for creating P2P network peers.
     /// </summary>
     public interface INetworkPeerFactory
     {
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     }
 
     /// <summary>
-    /// Factory for creating P2P network peer clients and servers.
+    /// Factory for creating P2P network peers.
     /// </summary>
     public class NetworkPeerFactory : INetworkPeerFactory
     {

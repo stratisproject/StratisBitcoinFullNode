@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="internalPort">Port on which the server will listen, or -1 to use the default port for the selected network.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        /// <param name="networkPeerFactory">Factory for creating P2P network peer clients and servers.</param>
+        /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
         public NetworkPeerServer(Network network, ProtocolVersion version, int internalPort, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
         {
             internalPort = internalPort == -1 ? network.DefaultPort : internalPort;

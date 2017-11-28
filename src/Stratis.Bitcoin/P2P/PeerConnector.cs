@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>What peer types (by <see cref="PeerIntroductionType"/> this connector should find and connect to.</summary>
         private readonly PeerIntroductionType peerIntroductionType;
 
-        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
         /// <inheritdoc/>

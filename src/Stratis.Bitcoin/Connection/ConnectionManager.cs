@@ -89,10 +89,10 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        private readonly NetworkPeerCollection connectedNodes = new NetworkPeerCollection();
+        private readonly NetworkPeerCollection connectedNodes;
 
         public IReadOnlyNetworkPeerCollection ConnectedNodes
         {
@@ -147,10 +147,11 @@ namespace Stratis.Bitcoin.Connection
 
             this.asyncLoopFactory = asyncLoopFactory;
 
-            this.Servers = new List<NetworkPeerServer>();
-
             this.peerAddressManager = peerAddressManager;
             this.networkPeerFactory = networkPeerFactory;
+
+            this.Servers = new List<NetworkPeerServer>();
+            this.connectedNodes = new NetworkPeerCollection();
         }
 
         public void Start()

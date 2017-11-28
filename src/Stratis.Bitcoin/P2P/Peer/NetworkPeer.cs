@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
     public class NetworkPeerConnection
     {
-        public NetworkPeer Node { get; private set; }
+        public NetworkPeer Peer { get; private set; }
 
         public Socket Socket { get; private set; }
 
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             get
             {
-                return this.Node.TraceCorrelation;
+                return this.Peer.TraceCorrelation;
             }
         }
 
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerConnection(NetworkPeer node, Socket socket)
         {
-            this.Node = node;
+            this.Peer = node;
             this.Socket = socket;
             this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
         }
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 Payload payload = kv.Payload;
                                 var message = new Message
                                 {
-                                    Magic = this.Node.Network.Magic,
+                                    Magic = this.Peer.Network.Magic,
                                     Payload = payload
                                 };
 
@@ -153,13 +153,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 MemoryStream ms = new MemoryStream();
                                 message.ReadWrite(new BitcoinStream(ms, true)
                                 {
-                                    ProtocolVersion = this.Node.Version,
-                                    TransactionOptions = this.Node.SupportedTransactionOptions
+                                    ProtocolVersion = this.Peer.Version,
+                                    TransactionOptions = this.Peer.SupportedTransactionOptions
                                 });
 
                                 byte[] bytes = ms.ToArrayEfficient();
                                 socketEventManager.SocketEvent.SetBuffer(bytes, 0, bytes.Length);
-                                this.Node.Counter.AddWritten(bytes.Length);
+                                this.Peer.Counter.AddWritten(bytes.Length);
                                 completedEvent.Reset();
                                 if (!this.Socket.SendAsync(socketEventManager.SocketEvent))
                                     Utils.SafeSet(completedEvent);
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     NodeServerTrace.Information("Listening");
                     Exception unhandledException = null;
-                    byte[] buffer = this.Node.ReuseBuffer ? new byte[1024 * 1024] : null;
+                    byte[] buffer = this.Peer.ReuseBuffer ? new byte[1024 * 1024] : null;
                     try
                     {
                         var stream = new NetworkStream(this.Socket, false);
@@ -221,18 +221,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             PerformanceCounter counter;
 
-                            Message message = Message.ReadNext(stream, this.Node.Network, this.Node.Version, this.Cancel.Token, buffer, out counter);
+                            Message message = Message.ReadNext(stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
                             if (NodeServerTrace.Trace.Switch.ShouldTrace(TraceEventType.Verbose))
                                 NodeServerTrace.Verbose("Receiving message : " + message.Command + " (" + message.Payload + ")");
 
-                            this.Node.LastSeen = DateTimeOffset.UtcNow;
-                            this.Node.Counter.Add(counter);
-                            this.Node.OnMessageReceived(new IncomingMessage()
+                            this.Peer.LastSeen = DateTimeOffset.UtcNow;
+                            this.Peer.Counter.Add(counter);
+                            this.Peer.OnMessageReceived(new IncomingMessage()
                             {
                                 Message = message,
                                 Socket = this.Socket,
                                 Length = counter.ReadBytes,
-                                NetworkPeer = this.Node
+                                NetworkPeer = this.Peer
                             });
                         }
                     }
@@ -257,16 +257,16 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (!this.Cancel.IsCancellationRequested)
             {
                 NodeServerTrace.Error("Connection to server stopped unexpectedly", unhandledException);
-                this.Node.DisconnectReason = new NetworkPeerDisconnectReason()
+                this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
                     Reason = "Unexpected exception while connecting to socket",
                     Exception = unhandledException
                 };
-                this.Node.State = NetworkPeerState.Failed;
+                this.Peer.State = NetworkPeerState.Failed;
             }
 
-            if (this.Node.State != NetworkPeerState.Failed)
-                this.Node.State = NetworkPeerState.Offline;
+            if (this.Peer.State != NetworkPeerState.Failed)
+                this.Peer.State = NetworkPeerState.Offline;
 
             if (this.Cancel.IsCancellationRequested == false)
                 this.Cancel.Cancel();
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             Utils.SafeCloseSocket(this.Socket);
 
-            foreach (INetworkPeerBehavior behavior in this.Node.Behaviors)
+            foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
             {
                 try
                 {
@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public int RemoteSocketPort { get; private set; }
         public bool Inbound { get; private set; }
 
-        public bool ReuseBuffer;
+        public bool ReuseBuffer { get; private set; }
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
         public NetworkAddress PeerAddress { get; private set; }
 
