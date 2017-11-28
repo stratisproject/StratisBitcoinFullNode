@@ -15,11 +15,6 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
         public string FolderPath { get; }
 
         /// <summary>
-        /// Converters that should be used when serializing and deserializing.
-        /// </summary>
-        private JsonConverter[] converters;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="FileStorage{T}"/> class.
         /// </summary>
         /// <param name="folderPath">The path of the folder in which the files are to be stored.</param>
@@ -45,10 +40,7 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
 
             string filePath = Path.Combine(this.FolderPath, fileName);
 
-            if (this.converters != null && this.converters.Any())
-                File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented, this.converters));
-            else
-                File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
         }
 
         /// <summary>
@@ -103,11 +95,7 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"No wallet file found at {filePath}");
 
-            // Load the file from the file system.
-            if (this.converters != null && this.converters.Any())
-                return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath), this.converters);
-            else
-                return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
+            return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
         }
 
         /// <summary>
@@ -133,15 +121,6 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
             }
 
             return files;
-        }
-
-        /// <summary>
-        /// Sets a collection of <see cref="JsonConverter"/> to use.
-        /// </summary>
-        public FileStorage<T> WithConverters(JsonConverter[] converters)
-        {
-            this.converters = converters;
-            return this;
         }
     }
 }
