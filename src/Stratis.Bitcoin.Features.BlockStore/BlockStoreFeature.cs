@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             // signal to peers that this node can serve blocks
-            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 

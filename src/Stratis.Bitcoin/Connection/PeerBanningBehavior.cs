@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Connection
     /// <summary>
     /// A behaviour that will manage the lifetime of peers.
     /// </summary>
-    public class PeerBanningBehavior : NodeBehavior
+    public class PeerBanningBehavior : NetworkPeerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -44,8 +44,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            var node = this.AttachedNode;
-            if (node.State == NodeState.Connected)
+            var node = this.AttachedPeer;
+            if (node.State == NetworkPeerState.Connected)
             {
                 if (this.peerBanning.IsBanned(node.RemoteSocketEndpoint))
                 {
@@ -55,9 +55,9 @@ namespace Stratis.Bitcoin.Connection
                 }
             }
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
-            this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-            this.connectionManagerBehavior = this.AttachedNode.Behaviors.Find<ConnectionManagerBehavior>();
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
+            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
+            this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<ConnectionManagerBehavior>();
 
             this.logger.LogTrace("(-)");
         }
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="node">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }

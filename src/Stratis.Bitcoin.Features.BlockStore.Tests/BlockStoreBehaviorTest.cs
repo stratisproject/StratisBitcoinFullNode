@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var task = this.behavior.AnnounceBlocks(blocks);
 
             Assert.Equal(TaskStatus.RanToCompletion, task.Status);
-            Assert.Null(this.behavior.AttachedNode);
+            Assert.Null(this.behavior.AttachedPeer);
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var task = this.behavior.AnnounceBlocks(blocks);
 
             Assert.Equal(TaskStatus.RanToCompletion, task.Status);
-            Assert.Null(this.behavior.AttachedNode);
+            Assert.Null(this.behavior.AttachedPeer);
         }
     }
 }

@@ -8,7 +8,7 @@ using NBitcoin.Protocol;
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     [Flags]
-    public enum NodeServices : ulong
+    public enum NetworkPeerServices : ulong
     {
         Nothing = 0,
 
@@ -64,11 +64,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private ulong services;
-        public NodeServices Services
+        public NetworkPeerServices Services
         {
             get
             {
-                return (NodeServices)this.services;
+                return (NetworkPeerServices)this.services;
             }
             set
             {
