@@ -34,12 +34,14 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             parameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
+            INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, new LoggerFactory());
             var peerDiscoveryLoop = new PeerDiscoveryLoop(
                 new AsyncLoopFactory(new LoggerFactory()),
                 Network.Main,
                 parameters,
                 new NodeLifetime(),
-                addressManager);
+                addressManager,
+                networkPeerFactory);
 
             peerDiscoveryLoop.DiscoverPeers();
 
@@ -50,12 +52,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             }
 
             var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
-            NetworkPeer node = NetworkPeer.Connect(Network.Main, peerOne, parameters);
+            NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
             node.VersionHandshake();
             node.Disconnect();
 
             var peerTwo = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
-            NetworkPeer node2 = NetworkPeer.Connect(Network.Main, peerTwo, parameters);
+            NetworkPeer node2 = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerTwo, parameters);
             node.Disconnect();
         }
     }

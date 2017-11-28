@@ -442,7 +442,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
-        private NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.RemoteSocketEndpoint}] ");
             this.dateTimeProvider = dateTimeProvider;

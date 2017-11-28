@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Connection
                 {
                     this.logger.LogInformation("Starting peer discovery...");
 
-                    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.Network, clonedParameters, this.nodeLifetime, this.peerAddressManager);
+                    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.Network, clonedParameters, this.nodeLifetime, this.peerAddressManager, this.networkPeerFactory);
                     this.peerDiscoveryLoop.DiscoverPeers();
                 }
 
@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         private IPeerConnector CreatePeerConnector(
-            NodeConnectionParameters parameters,
+            NetworkPeerConnectionParameters parameters,
             NodeServices requiredServices,
             Func<IPEndPoint, byte[]> peerSelector,
             PeerIntroductionType peerIntroductionType,
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Connection
                 RequiredServices = requiredServices,
             };
 
-            var peerConnector = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, peerSelector, this.asyncLoopFactory, this.peerAddressManager, peerIntroductionType)
+            var peerConnector = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, peerSelector, this.asyncLoopFactory, this.peerAddressManager, peerIntroductionType, this.networkPeerFactory)
             {
                 MaximumNodeConnections = maximumNodeConnections.Value
             };
@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            NetworkPeer node = NetworkPeer.Connect(this.Network, endpoint, cloneParameters);
+            NetworkPeer node = this.networkPeerFactory.CreateConnectedNetworkPeer(this.Network, endpoint, cloneParameters);
             this.peerAddressManager.PeerAttempted(endpoint, this.dateTimeProvider.GetUtcNow());
             node.VersionHandshake();
 

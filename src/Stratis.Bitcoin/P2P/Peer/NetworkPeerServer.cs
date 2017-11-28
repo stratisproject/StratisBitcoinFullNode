@@ -447,7 +447,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (node != null)
                     return node;
 
-                node = NetworkPeer.Connect(this.Network, endpoint, CreateNodeConnectionParameters());
+                node = this.networkPeerFactory.CreateConnectedNetworkPeer(this.Network, endpoint, CreateNodeConnectionParameters());
                 node.StateChanged += Node_StateChanged;
                 if (!this.ConnectedNodes.Add(node))
                 {

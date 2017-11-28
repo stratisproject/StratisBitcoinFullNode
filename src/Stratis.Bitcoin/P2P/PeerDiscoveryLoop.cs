@@ -35,12 +35,16 @@ namespace Stratis.Bitcoin.P2P
         /// <summary> The network the node is running on.</summary>
         private readonly Network network;
 
+        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        private readonly INetworkPeerFactory networkPeerFactory;
+
         public PeerDiscoveryLoop(
             IAsyncLoopFactory asyncLoopFactory,
             Network network,
             NetworkPeerConnectionParameters nodeConnectionParameters,
             INodeLifetime nodeLifetime,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            INetworkPeerFactory networkPeerFactory)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
@@ -50,6 +54,7 @@ namespace Stratis.Bitcoin.P2P
             this.peersToFind = this.parameters.PeerAddressManagerBehaviour().PeersToDiscover;
             this.network = network;
             this.nodeLifetime = nodeLifetime;
+            this.networkPeerFactory = networkPeerFactory;
         }
 
         /// <summary>
@@ -108,7 +113,7 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Clear();
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-                        node = NetworkPeer.Connect(this.network, peer.Endpoint, clonedParameters);
+                        node = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
                         node.VersionHandshake(connectTokenSource.Token);
                         node.SendMessageAsync(new GetAddrPayload());
 

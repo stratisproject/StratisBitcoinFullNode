@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.P2P
         int MaximumNodeConnections { get; set; }
 
         /// <summary>The collection of peers the node is currently connected to.</summary>
-        NodesCollection ConnectedPeers { get; }
+        NetworkPeerCollection ConnectedPeers { get; }
 
         /// <summary>
         /// Other peer connectors this instance relates. 
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.P2P
         /// This will only happen if the node successfully handshaked with another.
         /// </para>
         /// </summary>
-        void AddNode(Node node);
+        void AddNode(NetworkPeer node);
 
         /// <summary>
         /// Removes a given node from the <see cref="NodesCollection"/>.
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.P2P
         /// This will happen if the node state changed to "disconnecting", "failed" or "offline".
         /// </para>
         /// </summary>
-        void RemoveNode(Node node);
+        void RemoveNode(NetworkPeer node);
 
         /// <summary>
         /// Starts an asynchronous loop that connects to peers in one second intervals.
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.P2P
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <inheritdoc/>
-        public NodesCollection ConnectedPeers { get; private set; }
+        public NetworkPeerCollection ConnectedPeers { get; private set; }
 
         /// <summary>The cloned parameters used to connect to peers. </summary>
         private readonly NetworkPeerConnectionParameters currentParameters;
@@ -87,13 +87,16 @@ namespace Stratis.Bitcoin.P2P
         private Network network;
 
         /// <summary>The node parameters that is injected by <see cref="Connection.ConnectionManager"/>.</summary>
-        private readonly NodeConnectionParameters parentParameters;
+        private readonly NetworkPeerConnectionParameters parentParameters;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
         /// <summary>What peer types (by <see cref="PeerIntroductionType"/> this connector should find and connect to.</summary>
         private readonly PeerIntroductionType peerIntroductionType;
+
+        /// <summary>Factory for creating P2P network peer clients and servers.</summary>
+        private readonly INetworkPeerFactory networkPeerFactory;
 
         /// <inheritdoc/>
         public RelatedPeerConnectors RelatedPeerConnector { get; set; }
@@ -122,7 +125,8 @@ namespace Stratis.Bitcoin.P2P
             Func<IPEndPoint, byte[]> groupSelector,
             IAsyncLoopFactory asyncLoopFactory,
             IPeerAddressManager peerAddressManager,
-            PeerIntroductionType peerIntroductionType)
+            PeerIntroductionType peerIntroductionType,
+            INetworkPeerFactory networkPeerFactory)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.ConnectedPeers = new NetworkPeerCollection();
@@ -134,6 +138,7 @@ namespace Stratis.Bitcoin.P2P
             this.peerAddressManager = peerAddressManager;
             this.peerIntroductionType = peerIntroductionType;
             this.Requirements = nodeRequirements;
+            this.networkPeerFactory = networkPeerFactory;
 
             this.currentParameters = this.parentParameters.Clone();
             this.currentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
@@ -141,7 +146,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddNode(Node node)
+        public void AddNode(NetworkPeer node)
         {
             Guard.NotNull(node, nameof(node));
 
@@ -149,7 +154,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void RemoveNode(Node node)
+        public void RemoveNode(NetworkPeer node)
         {
             this.ConnectedPeers.Remove(node);
         }
@@ -173,7 +178,7 @@ namespace Stratis.Bitcoin.P2P
 
             try
             {
-                var peer = this.FindPeerToConnectTo();
+                NetworkAddress peer = this.FindPeerToConnectTo();
                 if (peer == null)
                     return Task.CompletedTask;
 
@@ -186,7 +191,7 @@ namespace Stratis.Bitcoin.P2P
                     var clonedConnectParamaters = this.currentParameters.Clone();
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    node = NetworkPeer.Connect(this.network, peer, clonedConnectParamaters);
+                    node = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer, clonedConnectParamaters);
                     node.VersionHandshake(this.Requirements, timeoutTokenSource.Token);
 
                     return Task.CompletedTask;
