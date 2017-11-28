@@ -874,8 +874,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         private uint256 BlockMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>(block.Transactions.Count);
-            for (int s = 0; s < block.Transactions.Count; s++)
-                leaves.Add(block.Transactions[s].GetHash());
+            foreach (Transaction tx in block.Transactions)
+                leaves.Add(tx.GetHash());
 
             return this.ComputeMerkleRoot(leaves, out mutated);
         }

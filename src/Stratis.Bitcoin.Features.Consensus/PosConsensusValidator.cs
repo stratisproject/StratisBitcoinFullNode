@@ -492,7 +492,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Check whether the coinstake timestamp meets protocol.
+        /// Checks whether the coinstake timestamp meets protocol.
         /// </summary>
         /// <param name="blockTime">The block time.</param>
         /// <param name="transactionTime">The transaction time.</param>
@@ -502,11 +502,25 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
 
+        /// <summary>
+        /// Checks whether the future drift should be reduced after provided timestamp.
+        /// </summary>
+        /// <param name="time">Timestamp.</param>
+        /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
         private bool IsDriftReduced(long time)
         {
             return time > DriftingBugFixTimestamp;
         }
 
+        /// <summary>
+        /// Applies future drift to provided timestamp.
+        /// </summary>
+        /// <remarks>
+        /// Future drift is maximal allowed block's timestamp difference over local time.
+        /// If this difference is greater block won't be accepted.
+        /// </remarks>
+        /// <param name="time">Timestamp</param>
+        /// <returns>Timestamp with maximum future drift applied.</returns>
         private long FutureDrift(long time)
         {
             return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
