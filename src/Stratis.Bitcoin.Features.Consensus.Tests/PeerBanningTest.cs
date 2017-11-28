@@ -14,9 +14,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     public class PeerBanningTest
     {
         [Fact]
-        public async Task GivenANodeIsSyncedAndNotConnected_WhenAPeerSendsABadBlock_ThePeerGetsBanned_Async()
+        public async Task NodeIsSynced_PeerSendsABadBlock_ThePeerGetsBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.GivenANodeIsSyncedAndNotConnected_WhenAPeerSendsABadBlock_ThePeerGetsBanned_Async));
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlock_ThePeerGetsBanned_Async));
             Directory.CreateDirectory(dataDir);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -34,9 +34,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         [Fact]
-        public async Task GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
+        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async));
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async));
             Directory.CreateDirectory(dataDir);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -57,9 +57,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         [Fact]
-        public async Task GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
+        public async Task NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async));
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async));
             Directory.CreateDirectory(dataDir);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -80,9 +80,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         [Fact]
-        public async Task GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async()
+        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async));
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async));
             Directory.CreateDirectory(dataDir);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -103,9 +103,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         [Fact]
-        public async Task GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndPeerIsNotWhitelisted_ThePeerGetsBanned_Async()
+        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsNotWhitelisted_ThePeerGetsBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.GivenANodeIsSyncedAndConnected_WhenAPeerSendsABadBlockAndPeerIsNotWhitelisted_ThePeerGetsBanned_Async));
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsNotWhitelisted_ThePeerGetsBanned_Async));
             Directory.CreateDirectory(dataDir);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);

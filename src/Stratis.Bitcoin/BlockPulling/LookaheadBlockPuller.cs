@@ -5,7 +5,6 @@ using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -62,7 +61,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// The peer this block came from.
         /// </summary>
         public IPEndPoint Peer { get; set; }
-
     }
 
     /// <summary>

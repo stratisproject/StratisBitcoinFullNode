@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// A consensus error used to specify different types of reasons a block does not confirm to the consensus rules.
+    /// A consensus error that is used to specify different types of reasons a block does not confirm to the consensus rules.
     /// </summary>
     public class ConsensusError
     {

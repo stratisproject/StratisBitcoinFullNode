@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Settings for the full node.</summary>
         private readonly NodeSettings nodeSettings;
 
-        /// <summary>Handle the banning of peers.</summary>
+        /// <summary>Handles the banning of peers.</summary>
         private readonly IPeerBanning peerBanning;
 
         /// <summary>Provider of time functions.</summary>
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="consensusSettings">Consensus settings for the full node.</param>
         /// <param name="nodeSettings">Settings for the full node.</param>
-        /// <param name="peerBanning">Handle the banning of peers.</param>
+        /// <param name="peerBanning">Handles the banning of peers.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
