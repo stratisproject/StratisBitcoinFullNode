@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Connection
 
         List<NetworkPeerServer> Servers { get; }
 
-        void AddDiscoveredNodesRequirement(NodeServices services);
+        void AddDiscoveredNodesRequirement(NetworkPeerServices services);
 
         void AddNodeAddress(IPEndPoint endpoint);
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly Dictionary<NetworkPeer, PerformanceSnapshot> downloads = new Dictionary<NetworkPeer, PerformanceSnapshot>();
 
-        private NodeServices discoveredNodeRequiredService = NodeServices.Network;
+        private NetworkPeerServices discoveredNodeRequiredService = NetworkPeerServices.Network;
 
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Connect);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
 
-                this.ConnectNodePeerConnector = this.CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect, this.connectionManagerSettings.Connect.Count);
+                this.ConnectNodePeerConnector = this.CreatePeerConnector(clonedParameters, NetworkPeerServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect, this.connectionManagerSettings.Connect.Count);
             }
 
             {
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Add);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
 
-                this.AddNodePeerConnector = this.CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Add, this.connectionManagerSettings.AddNode.Count);
+                this.AddNodePeerConnector = this.CreatePeerConnector(clonedParameters, NetworkPeerServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Add, this.connectionManagerSettings.AddNode.Count);
             }
 
             // Relate the peer connectors to each other to prevent duplicate connections.
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Connection
                     Whitelisted = listen.Whitelisted
                 });
 
-                server.InboundNodeConnectionParameters = cloneParameters;
+                server.InboundNetworkPeerConnectionParameters = cloneParameters;
                 try
                 {
                     server.Listen();
@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogInformation(logs.ToString());
         }
 
-        public void AddDiscoveredNodesRequirement(NodeServices services)
+        public void AddDiscoveredNodesRequirement(NetworkPeerServices services)
         {
             this.logger.LogTrace("({0}:{1})", nameof(services), services);
 
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Connection
             IPeerConnector peerConnector = this.DiscoverNodesPeerConnector;
             if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
             {
-                peerConnector.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+                peerConnector.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (NetworkPeer node in peerConnector.ConnectedPeers)
                 {
                     if (!node.PeerVersion.Services.HasFlag(services))
@@ -338,14 +338,14 @@ namespace Stratis.Bitcoin.Connection
 
         private IPeerConnector CreatePeerConnector(
             NetworkPeerConnectionParameters parameters,
-            NodeServices requiredServices,
+            NetworkPeerServices requiredServices,
             Func<IPEndPoint, byte[]> peerSelector,
             PeerIntroductionType peerIntroductionType,
             int? maximumNodeConnections = 8)
         {
             this.logger.LogTrace("({0}:{1})", nameof(requiredServices), requiredServices);
 
-            var nodeRequirement = new NodeRequirement
+            var nodeRequirement = new NetworkPeerRequirement
             {
                 MinVersion = this.NodeSettings.ProtocolVersion,
                 RequiredServices = requiredServices,

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Connection
     /// this behaviour will make sure place is kept for nodes higher then
     /// current tip.
     /// </summary>
-    public class DropNodesBehaviour : NodeBehavior
+    public class DropNodesBehaviour : NetworkPeerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Connection
 
                 if (thresholdCount < this.connection.ConnectedNodes.Count())
                     if (version.StartHeight < this.chain.Height)
-                        this.AttachedNode.DisconnectAsync($"Node at height = {version.StartHeight} too far behind current height");
+                        this.AttachedPeer.DisconnectAsync($"Node at height = {version.StartHeight} too far behind current height");
             });
 
             this.logger.LogTrace("(-)");
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNodeOnMessageReceived;
+            this.AttachedPeer.MessageReceived += this.AttachedNodeOnMessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNodeOnMessageReceived;
+            this.AttachedPeer.MessageReceived -= this.AttachedNodeOnMessageReceived;
 
             this.logger.LogTrace("(-)");
         }

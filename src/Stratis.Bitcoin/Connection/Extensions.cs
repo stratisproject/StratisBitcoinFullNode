@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Connection
 {
     public static class Extensions
     {
-        public static T Behavior<T>(this NetworkPeer node) where T : NodeBehavior
+        public static T Behavior<T>(this NetworkPeer node) where T : NetworkPeerBehavior
         {
             return node.Behaviors.Find<T>();
         }

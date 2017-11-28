@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
-    public class ConnectionManagerBehavior : NodeBehavior
+    public class ConnectionManagerBehavior : NetworkPeerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
-            this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
+            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
         }
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
 
             this.logger.LogTrace("(-)");
         }

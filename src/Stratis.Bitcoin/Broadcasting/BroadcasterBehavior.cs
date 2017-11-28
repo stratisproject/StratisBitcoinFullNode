@@ -11,7 +11,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
-    public class BroadcasterBehavior : NodeBehavior
+    public class BroadcasterBehavior : NetworkPeerBehavior
     {
         protected readonly IBroadcasterManager manager;
 
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Broadcasting
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                         throw;
 
                 // do nothing
@@ -129,13 +129,13 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
         }
 
         /// <inheritdoc />
         protected override void DetachCore()
         {
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
     }
 }
