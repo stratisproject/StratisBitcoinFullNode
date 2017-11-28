@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Cli
                 var commandArgList = new List<string>(argList);
 
                 // Display help if required.
-                if (string.IsNullOrWhiteSpace(command) || argList.Contains("-help") || argList.Contains("--help"))
+                if (argList.Contains("-help") || argList.Contains("--help") || string.IsNullOrWhiteSpace(command))
                 {
                     var builder = new StringBuilder();
                     builder.AppendLine("Usage:");
@@ -118,18 +118,19 @@ namespace Stratis.Bitcoin.Cli
                         NodeSettings nodeSettings = new NodeSettings(blockchain, network).LoadArguments(options);
 
                         var rpcSettings = new RpcSettings();
+
                         // read the values from the configuration file
                         rpcSettings.Load(nodeSettings);
 
                         // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
                         System.Net.IPEndPoint nodeEndPoint = rpcSettings.Bind.FirstOrDefault(b => b.Address.ToString() == "127.0.0.1") ?? rpcSettings.Bind[0];
-                        Uri rpcURI = new Uri($"http://{nodeEndPoint}");
+                        Uri rpcUri = new Uri($"http://{nodeEndPoint}");
 
                         // Process the command line RPC arguments
                         // TODO: this should probably be moved to the NodeSettings.FromArguments
                         if (options.GetValueOf("-rpcbind") != null)
                         {
-                            rpcURI = new Uri($"http://{options.GetValueOf("-rpcbind")}");
+                            rpcUri = new Uri($"http://{options.GetValueOf("-rpcbind")}");
                         }
 
                         if (options.GetValueOf("-rpcconnect") != null || options.GetValueOf("-rpcport") != null)
@@ -139,18 +140,18 @@ namespace Stratis.Bitcoin.Cli
                             int rpcPort = rpcSettings.RPCPort;
                             int.TryParse(options.GetValueOf("-rpcport"), out rpcPort);
 
-                            rpcURI = new Uri($"http://{rpcAddress}:{rpcPort}");
+                            rpcUri = new Uri($"http://{rpcAddress}:{rpcPort}");
                         }
                         rpcSettings.RpcUser = options.GetValueOf("-rpcuser") ?? rpcSettings.RpcUser;
                         rpcSettings.RpcPassword = options.GetValueOf("-rpcpassword") ?? rpcSettings.RpcPassword;
 
-                        Console.WriteLine($"Connecting to the following RPC node: http://{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}@{rpcURI.Authority}...");
+                        Console.WriteLine($"Connecting to the following RPC node: http://{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}@{rpcUri.Authority}...");
 
                         // Initialize the RPC client with the configured or passed userid, password and endpoint.
-                        var rpcClient = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", rpcURI, network);
+                        var rpcClient = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", rpcUri, network);
 
                         // Execute the RPC command
-                        Console.WriteLine($"Sending RPC command '{command} {string.Join(" ", commandArgList)}' to '{rpcURI}'...");
+                        Console.WriteLine($"Sending RPC command '{command} {string.Join(" ", commandArgList)}' to '{rpcUri}'...");
                         RPCResponse response = rpcClient.SendCommand(command, commandArgList.ToArray());
 
                         // Return the result as a string to the console.
