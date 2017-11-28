@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,6 +23,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public WalletManagerTest(WalletFixture walletFixture)
         {
             this.walletFixture = walletFixture;
+
+            // These tests use Network.StratisMain.
+            // Ensure that these static flags have the expected values.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         public void Dispose()
@@ -341,14 +346,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void LoadWalletWithNonExistingWalletThrowsFileNotFoundException()
         {
             Assert.Throws<FileNotFoundException>(() =>
-           {
-               DataFolder dataFolder = CreateDataFolder(this);
+            {
+                DataFolder dataFolder = CreateDataFolder(this);
 
-               var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+                var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
-               walletManager.LoadWallet("password", "testWallet");
-           });
+                walletManager.LoadWallet("password", "testWallet");
+            });
         }
 
         [Fact]

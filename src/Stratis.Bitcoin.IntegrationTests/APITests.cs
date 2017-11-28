@@ -21,6 +21,14 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private static HttpClient client = null;
 
+        public APITests()
+        {
+            // These tests use Network.Stratis.
+            // Ensure that these static flags have the expected value.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+        }
+
         public void Dispose()
         {
             // This is needed here because of the fact that the Stratis network, when initialized, sets the
@@ -48,6 +56,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
+                Transaction.TimeStamp = false;
+                Block.BlockSignature = false;
+
                 try
                 {
                     CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
@@ -154,7 +165,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 using (NodeBuilder builder = NodeBuilder.Create())
                 {
-                    CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                    CoreNode nodeA = builder.CreateStratisPosNode(false, fullNodeBuilder =>
                     {
                         fullNodeBuilder
                        .UseConsensus()
@@ -178,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                         var response = client.GetStringAsync(ApiURI + "api/rpc/callbyname?methodName=getblockhash&height=0").GetAwaiter().GetResult();
 
-                        Assert.Equal("\"0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206\"", response);
+                        Assert.Equal("\"93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f\"", response);
                     }
                 }
             }
@@ -198,7 +209,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 using (NodeBuilder builder = NodeBuilder.Create())
                 {
-                    CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                    CoreNode nodeA = builder.CreateStratisPosNode(false, fullNodeBuilder =>
                     {
                         fullNodeBuilder
                        .UseConsensus()
