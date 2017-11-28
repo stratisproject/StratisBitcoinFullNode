@@ -1,0 +1,82 @@
+﻿using System;
+using System.Collections.Generic;
+using Stratis.Bitcoin.P2P.Peer;
+
+namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
+{
+    public interface INodeBehavior
+    {
+        NetworkPeer AttachedNode { get; }
+        void Attach(NetworkPeer node);
+        void Detach();
+        INodeBehavior Clone();
+    }
+
+    public abstract class NodeBehavior : INodeBehavior
+    {
+        private object cs = new object();
+        private List<IDisposable> disposables = new List<IDisposable>();
+        public NetworkPeer AttachedNode { get; private set; }
+
+        protected abstract void AttachCore();
+
+        protected abstract void DetachCore();
+
+        public abstract object Clone();
+
+        protected void RegisterDisposable(IDisposable disposable)
+        {
+            this.disposables.Add(disposable);
+        }
+
+        public void Attach(NetworkPeer node)
+        {
+            if (node == null)
+                throw new ArgumentNullException("node");
+
+            if (this.AttachedNode != null)
+                throw new InvalidOperationException("Behavior already attached to a node");
+
+            lock (this.cs)
+            {
+                this.AttachedNode = node;
+                if (Disconnected(node))
+                    return;
+
+                this.AttachCore();
+            }
+        }
+
+        protected void AssertNotAttached()
+        {
+            if (this.AttachedNode != null)
+                throw new InvalidOperationException("Can't modify the behavior while it is attached");
+        }
+
+        private static bool Disconnected(NetworkPeer node)
+        {
+            return (node.State == NetworkPeerState.Disconnecting) || (node.State == NetworkPeerState.Failed) || (node.State == NetworkPeerState.Offline);
+        }
+
+        public void Detach()
+        {
+            lock (this.cs)
+            {
+                if (this.AttachedNode == null)
+                    return;
+
+                this.DetachCore();
+                foreach (IDisposable dispo in this.disposables)
+                    dispo.Dispose();
+
+                this.disposables.Clear();
+                this.AttachedNode = null;
+            }
+        }
+
+        INodeBehavior INodeBehavior.Clone()
+        {
+            return (INodeBehavior)Clone();
+        }
+    }
+}
