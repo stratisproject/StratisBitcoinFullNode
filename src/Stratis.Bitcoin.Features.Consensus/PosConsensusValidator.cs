@@ -90,11 +90,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (BlockStake.IsProofOfStake(block))
             {
-                // proof of stake invalidates previous inputs
-                // and spends the inputs to new outputs with the
-                // additional stake reward, next calculate the
-                // reward does not exceed the consensus rules
-
                 Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
                 Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
 

@@ -588,15 +588,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             // checks that use witness data may be performed here.
 
             // Size limits.
-            if (block.Transactions.Count == 0 || block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize ||
-                this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) ||
+                (this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
             }
 
             // First transaction must be coinbase, the rest must not be
-            if (block.Transactions.Count == 0 || !block.Transactions[0].IsCoinBase)
+            if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)
             {
                 this.logger.LogTrace("(-)[NO_COINBASE]");
                 ConsensusErrors.BadCoinbaseMissing.Throw();
@@ -721,7 +721,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (transaction.IsCoinBase)
             {
-                if (transaction.Inputs[0].ScriptSig.Length < 2 || transaction.Inputs[0].ScriptSig.Length > 100)
+                if ((transaction.Inputs[0].ScriptSig.Length < 2) || (transaction.Inputs[0].ScriptSig.Length > 100))
                 {
                     this.logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
                     ConsensusErrors.BadCoinbaseSize.Throw();
@@ -746,7 +746,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Checks if value is in range from 0 to <see cref="ConsensusOptions.MaxMoney"/>.
         /// </summary>
         /// <param name="value">The value to be checked.</param>
-        /// <returns><c>true</c> if the value is in range. Otherwise: <c>false</c>.</returns>
+        /// <returns><c>true</c> if the value is in range. Otherwise <c>false</c>.</returns>
         private bool MoneyRange(long value)
         {
             return ((value >= 0) && (value <= this.ConsensusOptions.MaxMoney));
@@ -771,7 +771,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
-        /// <returns></returns>
+        /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
         private int GetSize(IBitcoinSerializable data, TransactionOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
@@ -786,7 +786,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="a">First array.</param>
         /// <param name="b">Second array.</param>
         /// <param name="lenght">Number of entries to be checked.</param>
-        /// <returns><c>true</c> if <paramref name="lenght"/> entries are equal between two arrays. Otherwise: <c>false</c>.</returns>
+        /// <returns><c>true</c> if <paramref name="lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
         private bool EqualsArray(byte[] a, byte[] b, int lenght)
         {
             for (int i = 0; i < lenght; i++)
@@ -801,7 +801,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Calculates merkle root for witness data.
         /// </summary>
         /// <param name="block">Block which transactions witness data is used for calculation.</param>
-        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
+        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
         private uint256 BlockWitnessMerkleRoot(Block block, ref bool mutated)
         {
@@ -814,10 +814,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Calculates merkle root for block's trasnactions.
+        /// Calculates merkle root for block's transactions.
         /// </summary>
         /// <param name="block">Block which transactions are used for calculation.</param>
-        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>
+        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
         private uint256 BlockMerkleRoot(Block block, ref bool mutated)
         {
@@ -839,8 +839,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Computes merkle root.
         /// </summary>
         /// <param name="leaves">Merkle tree leaves.</param>
-        /// <param name="root">Merkle root</param>
-        /// <param name="pmutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
+        /// <param name="root">Merkle root.</param>
+        /// <param name="pmutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise <c>false</c>.</param>
         /// <param name="pbranch">Previously generated merkle tree branch.</param>
         /// <param name="branchpos">Branch position.</param>
         /// <remarks>
@@ -987,17 +987,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
             {
                 var scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
-                byte[] scriptBytes = scriptPubKey.ToBytes(true);
 
-                if ((scriptPubKey.Length >= 38) &&
-                    (scriptBytes[0] == (byte)OpcodeType.OP_RETURN) &&
-                    (scriptBytes[1] == 0x24) &&
-                    (scriptBytes[2] == 0xaa) &&
-                    (scriptBytes[3] == 0x21) &&
-                    (scriptBytes[4] == 0xa9) &&
-                    (scriptBytes[5] == 0xed))
+                if (scriptPubKey.Length >= 38)
                 {
-                    commitpos = i;
+                    byte[] scriptBytes = scriptPubKey.ToBytes(true);
+
+                    if ((scriptBytes[0] == (byte)OpcodeType.OP_RETURN) &&
+                        (scriptBytes[1] == 0x24) &&
+                        (scriptBytes[2] == 0xaa) &&
+                        (scriptBytes[3] == 0x21) &&
+                        (scriptBytes[4] == 0xa9) &&
+                        (scriptBytes[5] == 0xed))
+                    {
+                        commitpos = i;
+                    }
                 }
             }
 
@@ -1009,7 +1012,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="bytes">Main array.</param>
         /// <param name="subset">Subset array.</param>
-        /// <returns><c>true</c> if <paramref name="subset.Lenght"/> entries are equal between two arrays. Otherwise: <c>false</c>.</returns>
+        /// <returns><c>true</c> if <paramref name="subset.Lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
         private bool StartWith(byte[] bytes, byte[] subset)
         {
             if (bytes.Length < subset.Length)
