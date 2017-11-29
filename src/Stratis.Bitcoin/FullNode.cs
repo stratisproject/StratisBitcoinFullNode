@@ -222,7 +222,6 @@ namespace Stratis.Bitcoin
 
             // Fire the NodeFeatureExecutor.Stop.
             this.fullNodeFeatureExecutor.Stop();
-            (this.Services.ServiceProvider as IDisposable)?.Dispose();
 
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
