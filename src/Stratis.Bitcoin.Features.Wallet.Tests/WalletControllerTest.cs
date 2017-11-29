@@ -611,7 +611,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.Setup(c => c.ConnectedNodes)
-                .Returns(new NodesCollection());
+                .Returns(new NetworkPeerCollection());
 
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.GetWallet("myWallet")).Returns(wallet);

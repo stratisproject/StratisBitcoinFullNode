@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to allow the caller to cancel waiting for the next block.</param>
         /// <returns>Next block or null if a reorganization happened on the chain.</returns>
-        Block NextBlock(CancellationToken cancellationToken);
+        LookaheadResult NextBlock(CancellationToken cancellationToken);
 
         /// <summary>
         /// Adds a specific requirement to all peer nodes.
@@ -47,7 +47,24 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <summary>
-    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading
+    /// A result from the <see cref="ILookaheadBlockPuller"/> containing the downloaded block and the <see cref="IPEndPoint"/> of the peer that it came from.
+    /// Block will be <c>null</c> if the current chain was reorganized.
+    /// </summary>
+    public class LookaheadResult
+    {
+        /// <summary>
+        /// The downloaded <see cref="Block"/> that was requested by the puller.
+        /// </summary>
+        public Block Block { get; set; }
+
+        /// <summary>
+        /// The peer this block came from.
+        /// </summary>
+        public IPEndPoint Peer { get; set; }
+    }
+
+    /// <summary>
+    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading 
     /// multiple blocks from multiple peers at once, so that IBD is fast enough, but does not consume too many resources.
     /// </summary>
     /// <remarks>
@@ -221,10 +238,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
             if (transactionOptions == TransactionOptions.Witness)
             {
-                this.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+                this.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (BlockPullerBehavior node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
                 {
-                    if (!this.Requirements.Check(node.AttachedNode.PeerVersion))
+                    if (!this.Requirements.Check(node.AttachedPeer.PeerVersion))
                     {
                         this.logger.LogDebug("Peer {0:x} does not meet requirements, releasing its tasks.", node.GetHashCode());
                         // Prevent this node to be assigned any more work.
@@ -237,7 +254,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public Block NextBlock(CancellationToken cancellationToken)
+        public LookaheadResult NextBlock(CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
 
@@ -259,7 +276,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.AskBlocks();
             }
 
-            Block block = this.NextBlockCore(cancellationToken);
+            LookaheadResult block = this.NextBlockCore(cancellationToken);
             if (block != null)
             {
                 if ((this.lookaheadLocation.Height - this.location.Height) <= this.ActualLookahead)
@@ -494,13 +511,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to allow the caller to cancel waiting for the next block.</param>
         /// <returns>Next block or null if a reorganization happened on the chain.</returns>
-        private Block NextBlockCore(CancellationToken cancellationToken)
+        private LookaheadResult NextBlockCore(CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
 
-            Block res = null;
+            LookaheadResult res = new LookaheadResult();
 
-            while (res == null)
+            while (res.Block == null)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -532,7 +549,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
                     this.consumed.Set();
 
-                    res = block.Block;
+                    res.Block = block.Block;
                 }
                 else
                 {

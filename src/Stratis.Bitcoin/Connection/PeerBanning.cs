@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
@@ -22,8 +21,9 @@ namespace Stratis.Bitcoin.Connection
         /// Set a peer as banned.
         /// </summary>
         /// <param name="endpoint">The endpoint to set that it was banned.</param>
+        /// <param name="banTimeSeconds">The time in seconds this peer should be banned.</param>
         /// <param name="reason">An optional reason for the ban, the 'reason' is only use for tracing.</param>
-        void BanPeer(IPEndPoint endpoint, string reason = null);
+        void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null);
 
         /// <summary>
         /// Check if a peer is banned.
@@ -101,35 +101,40 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
-            this.banStore = new MemoryBanStore();
             this.dateTimeProvider = dateTimeProvider;
             this.connectionManagerSettings = nodeSettings.ConnectionManager;
+
+            // TODO: MemoryBanStore should be replaced with the address manager store
+            this.banStore = new MemoryBanStore();
         }
 
         /// <inheritdoc />
-        public void BanPeer(IPEndPoint endpoint, string reason = null)
+        public void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
 
             bool banPeer = true;
-            Node peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
+            NetworkPeer peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
             if (peer != null)
             {
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    banPeer = false;
                     this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason ?? "unknown");
                     peer.DisconnectAsync($"The peer was banned, reason: {reason}");
                 }
-                else this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
+                else
+                {
+                    banPeer = false;
+                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
+                }
             }
 
             if (banPeer)
             {
-                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(this.connectionManagerSettings.BanTimeSeconds));
+                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds));
             }
 
             this.logger.LogTrace("(-)");

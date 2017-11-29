@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 // nodes that also signal they are segwit nodes
                 DeploymentFlags flags = this.nodeDeployments.GetFlags(this.walletSyncManager.WalletTip);
                 if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-                    this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                    this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
                 // done checking
                 loopToken.Cancel();

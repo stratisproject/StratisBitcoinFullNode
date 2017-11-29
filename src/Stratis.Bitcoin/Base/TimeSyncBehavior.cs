@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Base
     /// Node behavior that collects time offset samples from network "version" messages
     /// from each peer.
     /// </summary>
-    public class TimeSyncBehavior : NodeBehavior
+    public class TimeSyncBehavior : NetworkPeerBehavior
     {
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -435,11 +435,11 @@ namespace Stratis.Bitcoin.Base
         /// This handler only cares about "verack" messages, which are only sent once per node
         /// and at the time they are sent the time offset information is parsed by underlaying logic.
         /// <para>
-        /// Note that it is not possible to use "version" message here as <see cref="Node"/>
+        /// Note that it is not possible to use "version" message here as <see cref="NetworkPeer"/>
         /// does not deliver this message for inbound peers to node behaviors.
         /// </para>
         /// </remarks>
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

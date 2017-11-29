@@ -4,7 +4,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>Maintain connection to a given set of peers.</summary>
-    internal sealed class PeerConnectorBehaviour : NodeBehavior
+    internal sealed class PeerConnectorBehaviour : NetworkPeerBehavior
     {
         /// <summary>The peer connector this behaviour relates to.</summary>
         private readonly IPeerConnector peerConnector;
@@ -17,23 +17,23 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
         }
 
         /// <inheritdoc/>
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
         }
 
         /// <inheritdoc/>
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
-            if (node.State == NodeState.HandShaked)
-                this.peerConnector.AddNode(node);
+            if (peer.State == NetworkPeerState.HandShaked)
+                this.peerConnector.AddPeer(peer);
 
-            if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
-                this.peerConnector.RemoveNode(node);
+            if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Disconnecting) || (peer.State == NetworkPeerState.Offline))
+                this.peerConnector.RemovePeer(peer);
         }
 
         /// <inheritdoc/>

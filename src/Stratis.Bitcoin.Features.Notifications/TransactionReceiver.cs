@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// <summary>
     /// This class receives transaction messages from other nodes.
     /// </summary>
-    public class TransactionReceiver : NodeBehavior
+    public class TransactionReceiver : NetworkPeerBehavior
     {
         private readonly TransactionNotification transactionNotification;
 
@@ -35,15 +35,15 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void AttachCore()
         {
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
         }
 
         protected override void DetachCore()
         {
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
 
-        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                         throw;
 
                 // do nothing
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private Task ProcessMessageAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
         {
             // check the type of message received.
             // we're only interested in Inventory and Transaction messages.
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
-        private async Task ProcessInvAsync(Node node, InvPayload invPayload)
+        private async Task ProcessInvAsync(NetworkPeer node, InvPayload invPayload)
         {
             var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
 
