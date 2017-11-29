@@ -69,7 +69,6 @@ namespace NBitcoin
 		{
 			ReadWrite(serializable, new MemoryStream(bytes), false, version, options);
 		}
-
 		public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
             TransactionOptions options = TransactionOptions.All)
 		{
@@ -78,16 +77,18 @@ namespace NBitcoin
                 ProtocolVersion = version,
                 TransactionOptions = options
             };
-            (serializable as IHaveTransactionOptions)?.NotifyTransactionOptions(options);
             serializable.ReadWrite(bms);
-        }
+		}
 
-        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
+		public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
 		{
-            TransactionOptions options = TransactionOptions.All | 
-                (serializable as IHaveTransactionOptions)?.GetTransactionOptions() ?? TransactionOptions.None;
+            TransactionOptions options = TransactionOptions.All;
 			var instance = new T();
+            if (serializable is IHaveTransactionOptions)
+                options |= (serializable as IHaveTransactionOptions).GetTransactionOptions();
 			instance.FromBytes(serializable.ToBytes(version, options), version, options);
+            if (serializable is IHaveTransactionOptions)
+                (instance as IHaveTransactionOptions).NotifyTransactionOptions(options);
 			return instance;
 		}
         
