@@ -89,7 +89,26 @@ namespace NBitcoin
 				return _Serializing;
 			}
 		}
-		public BitcoinStream(Stream inner, bool serializing)
+
+        /// <summary>
+        /// This property replaces the legacy Transaction.TimeStamp static flag.
+        /// </summary>
+        public bool TimeStamp
+        {
+            get
+            {
+                bool timeStamp = ((uint)this.TransactionOptions & (uint)TransactionOptions.TimeStamp) != 0;
+
+                if (Transaction.TimeStamp != timeStamp)
+                {
+                    throw new ArgumentException($"The 'TimeStamp' value ({ timeStamp }) differs from Transaction.TimeStamp which is { Transaction.TimeStamp }");
+                }
+
+                return timeStamp;
+            }
+        }
+
+        public BitcoinStream(Stream inner, bool serializing)
 		{
 			_Serializing = serializing;
 			_Inner = inner;
@@ -384,6 +403,7 @@ namespace NBitcoin
 			if(stream == null)
 				throw new ArgumentNullException("stream");
 			ProtocolVersion = stream.ProtocolVersion;
+            TransactionOptions = stream.TransactionOptions;
 			IsBigEndian = stream.IsBigEndian;
 			MaxArraySize = stream.MaxArraySize;
 			Type = stream.Type;

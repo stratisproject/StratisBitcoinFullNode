@@ -9,19 +9,32 @@ namespace NBitcoin
 		void ReadWrite(BitcoinStream stream);
 	}
 
+    public interface IHaveTransactionOptions
+    {
+        TransactionOptions GetTransactionOptions();
+        void NotifyTransactionOptions(TransactionOptions options);
+    }
+
 	public static class BitcoinSerializableExtensions
 	{
-		public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+		public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
+            TransactionOptions options = TransactionOptions.All)
 		{
-			BitcoinStream s = new BitcoinStream(stream, serializing)
-			{
-				ProtocolVersion = version
-			};
-			serializable.ReadWrite(s);
+            if (serializing && serializable is IHaveTransactionOptions)
+                options |= (serializable as IHaveTransactionOptions).GetTransactionOptions();
+
+            serializable.ReadWrite(new BitcoinStream(stream, serializing)
+            {
+                ProtocolVersion = version,
+                TransactionOptions = options
+            });
+
+            if (!serializing && serializable is IHaveTransactionOptions)
+                (serializable as IHaveTransactionOptions).NotifyTransactionOptions(options);
 		}
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
 		{
-			BitcoinStream s = new BitcoinStream(Stream.Null, true);
+            BitcoinStream s = new BitcoinStream(Stream.Null, true);
 			s.Type = serializationType;
 			s.ReadWrite(serializable);
 			return (int)s.Counter.WrittenBytes;
@@ -51,31 +64,47 @@ namespace NBitcoin
 			}
 		}
 
-		public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+		public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
+            TransactionOptions options = TransactionOptions.All)
 		{
-			ReadWrite(serializable, new MemoryStream(bytes), false, version);
+			ReadWrite(serializable, new MemoryStream(bytes), false, version, options);
 		}
-		public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+		public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
+            TransactionOptions options = TransactionOptions.All)
 		{
-			serializable.ReadWrite(new BitcoinStream(bytes)
-			{
-				ProtocolVersion = version
-			});
+            var bms = new BitcoinStream(bytes)
+            {
+                ProtocolVersion = version,
+                TransactionOptions = options
+            };
+            serializable.ReadWrite(bms);
 		}
 
 		public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
 		{
+            TransactionOptions options = TransactionOptions.All;
 			var instance = new T();
-			instance.FromBytes(serializable.ToBytes(version), version);
+            if (serializable is IHaveTransactionOptions)
+                options |= (serializable as IHaveTransactionOptions).GetTransactionOptions();
+			instance.FromBytes(serializable.ToBytes(version, options), version, options);
+            if (serializable is IHaveTransactionOptions)
+                (instance as IHaveTransactionOptions).NotifyTransactionOptions(options);
 			return instance;
 		}
-		public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        
+		public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION,
+            TransactionOptions options = TransactionOptions.All)
 		{
-			MemoryStream ms = new MemoryStream();
-			serializable.ReadWrite(new BitcoinStream(ms, true)
-			{
-				ProtocolVersion = version
-			});
+            if (serializable is IHaveTransactionOptions)
+                options |= (serializable as IHaveTransactionOptions).GetTransactionOptions();
+
+            MemoryStream ms = new MemoryStream();
+            var bms = new BitcoinStream(ms, true)
+            {
+                ProtocolVersion = version,
+                TransactionOptions = options
+            };
+			serializable.ReadWrite(bms);
 			return ToArrayEfficient(ms);
 		}
 
