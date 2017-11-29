@@ -8,10 +8,16 @@ namespace NBitcoin
 {
 	public abstract class NoSqlRepository
 	{
+        public TransactionOptions TransactionOptions { get; private set; }
+
+        public NoSqlRepository(TransactionOptions options = TransactionOptions.All)
+        {
+            this.TransactionOptions = options;
+        }
 
 		public Task PutAsync(string key, IBitcoinSerializable obj)
 		{
-			return PutBytes(key, obj == null ? null : obj.ToBytes());
+			return PutBytes(key, obj == null ? null : obj.ToBytes(options:this.TransactionOptions));
 		}
 
 		public void Put(string key, IBitcoinSerializable obj)
@@ -32,7 +38,7 @@ namespace NBitcoin
 			if(data == null)
 				return default(T);
 			T obj = new T();
-			obj.ReadWrite(data);
+			obj.ReadWrite(data, options:this.TransactionOptions);
 			return obj;
 		}
 

@@ -8,6 +8,11 @@ namespace NBitcoin
 	{
 		Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
 
+        public InMemoryNoSqlRepository(TransactionOptions options = TransactionOptions.All)
+            :base(options)
+        {
+        }
+
 		protected override Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
 		{
 			foreach(var data in enumerable)

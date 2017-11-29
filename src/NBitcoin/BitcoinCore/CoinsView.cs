@@ -16,12 +16,13 @@ namespace NBitcoin.BitcoinCore
 			_Index = index;
 		}
 
-		public CoinsView()
-			: this(new InMemoryNoSqlRepository())
+		public CoinsView(TransactionOptions options = TransactionOptions.All)
+			: this(new InMemoryNoSqlRepository(options))
 		{
 
 		}
-		private readonly NoSqlRepository _Index;
+
+        private readonly NoSqlRepository _Index;
 		public NoSqlRepository Index
 		{
 			get
