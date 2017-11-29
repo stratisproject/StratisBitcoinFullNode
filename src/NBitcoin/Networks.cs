@@ -520,7 +520,7 @@ namespace NBitcoin
 
         private static Block CreateStratisGenesisBlock(string pszTimestamp, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
-            Transaction txNew = new Transaction();
+            Transaction txNew = new Transaction(true);
             txNew.Version = 1;
             txNew.Time = nTime;
             txNew.AddInput(new TxIn()
@@ -535,11 +535,12 @@ namespace NBitcoin
             {
                 Value = genesisReward,
             });
-            Block genesis = new Block();
+            Block genesis = new Block(TransactionOptions.POSAll);
             genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
             genesis.Header.Bits = nBits;
             genesis.Header.Nonce = nNonce;
             genesis.Header.Version = nVersion;
+            genesis.Header.TransactionOptions = TransactionOptions.POSAll;
             genesis.Transactions.Add(txNew);
             genesis.Header.HashPrevBlock = uint256.Zero;
             genesis.UpdateMerkleRoot();
