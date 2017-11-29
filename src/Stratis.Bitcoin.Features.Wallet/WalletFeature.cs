@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.blockSubscriberDisposable.Dispose();
             this.transactionSubscriberDisposable.Dispose();

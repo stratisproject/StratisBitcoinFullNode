@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void StopCallsStopOnEachFeatureRegisterdWithFullNode()
         {
-            this.executor.Stop();
+            this.executor.Dispose();
 
             this.feature.Verify(f => f.Stop(), Times.Exactly(1));
             this.feature2.Verify(f => f.Stop(), Times.Exactly(1));
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 this.feature2.Setup(f => f.Stop())
                     .Throws(new ArgumentNullException());
 
-                this.executor.Stop();
+                this.executor.Dispose();
             });
         }
 

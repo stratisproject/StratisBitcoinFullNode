@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.walletFeePolicy.Stop();
             this.asyncLoop.Dispose();

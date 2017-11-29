@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             if (this.mempoolManager != null)
             {

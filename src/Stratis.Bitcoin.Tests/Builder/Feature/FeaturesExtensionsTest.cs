@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }

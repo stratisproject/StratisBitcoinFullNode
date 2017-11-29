@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        public override void Stop()
+        public override void Dispose()
         {
             this.logger.LogInformation("Stopping {0}...", this.name);
 

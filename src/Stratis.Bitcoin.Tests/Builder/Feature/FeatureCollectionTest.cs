@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 throw new NotImplementedException();
             }
 
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }

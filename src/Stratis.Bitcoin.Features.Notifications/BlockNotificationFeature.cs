@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.chainState.ConsensusTip = this.chain.Tip;
         }
 
-        public override void Stop()
+        public override void Dispose()
         {
             this.blockNotification.Stop();
         }

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>
         /// Stops all registered features of the associated full node.
         /// </summary>
-        void Stop();
+        void Dispose();
     }
 
     /// <summary>
@@ -64,11 +64,11 @@ namespace Stratis.Bitcoin.Builder
         }
 
         /// <inheritdoc />
-        public void Stop()
+        public void Dispose()
         {
             try
             {
-                this.Execute(service => service.Stop(), true);
+                this.Execute(feature => feature.Dispose(), true);
             }
             catch (Exception ex)
             {

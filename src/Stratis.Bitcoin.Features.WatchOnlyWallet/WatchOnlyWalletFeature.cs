@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.blockSubscriberdDisposable.Dispose();
             this.transactionSubscriberdDisposable.Dispose();

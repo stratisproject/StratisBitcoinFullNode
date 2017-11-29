@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Api
             this.TryStartKeepaliveMonitor();
         }
 
-        public override void Stop()
+        public override void Dispose()
         {
             this.asyncLoop?.Dispose();
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Api
 
                     // check the trashold to trigger a shutdown
                     if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < this.fullNode.DateTimeProvider.GetUtcNow())
-                        this.fullNode.Stop();
+                        this.fullNode.Dispose();
 
                     return Task.CompletedTask;
                 },
