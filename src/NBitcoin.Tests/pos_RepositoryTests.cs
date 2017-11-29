@@ -137,7 +137,8 @@ namespace NBitcoin.Tests
 		public void CanStoreBlocks()
 		{
 			var store = CreateBlockStore();
-			var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat")).Take(50).ToList();
+			var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), 
+                network:Network.StratisMain).Take(50).ToList();
 
 			foreach(var s in allBlocks)
 			{
@@ -148,7 +149,8 @@ namespace NBitcoin.Tests
 
 			foreach(var s in allBlocks)
 			{
-				var retrieved = store.Enumerate(true).First(b => b.Item.GetHash() == s.Item.GetHash());
+				var retrieved = store.Enumerate(true)
+                    .First(b => b.Item.Header.GetHash() == s.Item.GetHash());
 				Assert.True(retrieved.Item.HeaderOnly);
 			}
 		}
@@ -560,7 +562,7 @@ namespace NBitcoin.Tests
 			var store = CreateBlockStore();
 
 			var index = 0;
-			var blockStore = new NoSqlBlockRepository();
+			var blockStore = new NoSqlBlockRepository(Network.StratisMain.TransactionOptions);
 			foreach (var storedBlock in mainStore.Enumerate(false).Take(totalblocks))
 			{
 				store.Append(storedBlock.Item);
@@ -572,8 +574,8 @@ namespace NBitcoin.Tests
 			var chain = store.GetChain();
 
 			// fill the transaction store
-			var trxStore = new NoSqlTransactionRepository();
-			var mapStore = new BlockTransactionMapStore();
+			var trxStore = new NoSqlTransactionRepository(Network.StratisMain.TransactionOptions);
+			var mapStore = new BlockTransactionMapStore(Network.StratisMain.TransactionOptions);
 			foreach (var chainedBlock in chain.ToEnumerable(false).Take(totalblocks))
 			{
 				var block = blockStore.GetBlock(chainedBlock.HashBlock);
