@@ -14,6 +14,10 @@ branches:
   only:
     - master
 
+cache:
+  directories:
+  - $HOME/.nuget/packages  
+  
 # Work around NuGet issue #2163
 # https://github.com/NuGet/Home/issues/2163
 # https://github.com/travis-ci/travis-ci/issues/7728
