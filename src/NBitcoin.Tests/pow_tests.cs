@@ -21,7 +21,7 @@ namespace NBitcoin.Tests
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
-		public static void CanCalculatePowCorrectly()
+		public void CanCalculatePowCorrectly()
 		{
 			ConcurrentChain chain = new ConcurrentChain(Network.Main);
 			EnsureDownloaded("MainChain.dat", "https://aois.blob.core.windows.net/public/MainChain.dat");
