@@ -38,6 +38,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         public uint256 TargetProofOfStake { get; set; }
     }
 
+    /// <summary>
+    /// Context that contains variety of information regarding blocks validation and execution.
+    /// </summary>
     public class ContextInformation
     {
         public NBitcoin.Consensus Consensus { get; set; }

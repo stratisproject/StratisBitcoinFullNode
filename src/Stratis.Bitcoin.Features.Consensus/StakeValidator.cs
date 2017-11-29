@@ -452,7 +452,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", stakeModifierV2, context.HashProofOfStake);
 
             // Now check if proof-of-stake hash meets target protocol.
-            BigInteger hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));
+            var hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));
             if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
             {
                 this.logger.LogTrace("(-)[TARGET_MISSED]");
