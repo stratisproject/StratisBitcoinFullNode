@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -9,13 +10,16 @@ namespace Stratis.Bitcoin.Connection
     /// <summary>
     /// A behaviour that will manage the lifetime of peers.
     /// </summary>
-    public class PeerBanningBehavior : NodeBehavior
+    public class PeerBanningBehavior : NetworkPeerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Handle the lifetime of a peer.</summary>
         private readonly IPeerBanning peerBanning;
+
+        /// <summary>The node settings.</summary>
+        private readonly NodeSettings nodeSettings;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -26,17 +30,18 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ConnectionManagerBehavior connectionManagerBehavior;
 
-        public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning)
+        public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.peerBanning = peerBanning;
+            this.nodeSettings = nodeSettings;
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new PeerBanningBehavior(this.loggerFactory, this.peerBanning);
+            return new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings);
         }
 
         /// <inheritdoc />
@@ -44,8 +49,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            var node = this.AttachedNode;
-            if (node.State == NodeState.Connected)
+            var node = this.AttachedPeer;
+            if (node.State == NetworkPeerState.Connected)
             {
                 if (this.peerBanning.IsBanned(node.RemoteSocketEndpoint))
                 {
@@ -55,9 +60,9 @@ namespace Stratis.Bitcoin.Connection
                 }
             }
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
-            this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-            this.connectionManagerBehavior = this.AttachedNode.Behaviors.Find<ConnectionManagerBehavior>();
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
+            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
+            this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<ConnectionManagerBehavior>();
 
             this.logger.LogTrace("(-)");
         }
@@ -67,13 +72,13 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="node">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
-                this.peerBanning.BanPeer(node.RemoteSocketEndpoint);
+                this.peerBanning.BanPeer(node.RemoteSocketEndpoint, this.nodeSettings.ConnectionManager.BanTimeSeconds);
                 this.logger.LogTrace("Invalid block received from peer '{0}'.", node.RemoteSocketEndpoint);
                 node.DisconnectAsync("Invalid block received.");
             }
@@ -86,7 +91,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }

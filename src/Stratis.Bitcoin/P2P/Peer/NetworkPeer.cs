@@ -10,16 +10,18 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Filters;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public enum NodeState : int
+    public enum NetworkPeerState : int
     {
         Failed,
         Offline,
@@ -28,16 +30,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         HandShaked
     }
 
-    public class NodeDisconnectReason
+    public class NetworkPeerDisconnectReason
     {
         public string Reason { get; set; }
         public Exception Exception { get; set; }
     }
 
-    public class NodeRequirement
+    public class NetworkPeerRequirement
     {
         public ProtocolVersion? MinVersion { get; set; }
-        public NodeServices RequiredServices { get; set; }
+        public NetworkPeerServices RequiredServices { get; set; }
 
         public bool SupportSPV { get; set; }
 
@@ -59,7 +61,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (version.Version < ProtocolVersion.MEMPOOL_GD_VERSION)
                     return false;
 
-                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NodeServices.NODE_BLOOM) == 0))
+                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NetworkPeerServices.NODE_BLOOM) == 0))
                     return false;
             }
 
@@ -67,115 +69,171 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
     }
 
+    public delegate void NodeEventHandler(NetworkPeer node);
+    public delegate void NodeEventMessageIncoming(NetworkPeer node, IncomingMessage message);
+    public delegate void NodeStateEventHandler(NetworkPeer node, NetworkPeerState oldState);
 
-    public delegate void NodeEventHandler(Node node);
-    public delegate void NodeEventMessageIncoming(Node node, IncomingMessage message);
-    public delegate void NodeStateEventHandler(Node node, NodeState oldState);
-
-    public class Node : IDisposable
+    public class SentMessage
     {
-        internal class SentMessage
+        public Payload Payload;
+        public TaskCompletionSource<bool> Completion;
+        public Guid ActivityId;
+    }
+
+    public class NetworkPeerConnection
+    {
+        public NetworkPeer Peer { get; private set; }
+
+        public Socket Socket { get; private set; }
+
+        public ManualResetEvent Disconnected { get; private set; }
+
+        public CancellationTokenSource Cancel { get; private set; }
+
+        public TraceCorrelation TraceCorrelation
         {
-            public Payload Payload;
-            public TaskCompletionSource<bool> Completion;
-            public Guid ActivityId;
+            get
+            {
+                return this.Peer.TraceCorrelation;
+            }
         }
 
-        public class NodeConnection
+        internal BlockingCollection<SentMessage> Messages;
+
+        private int cleaningUp;
+        public int ListenerThreadId;
+
+        public NetworkPeerConnection(NetworkPeer node, Socket socket)
         {
-            public Node Node { get; private set; }
+            this.Peer = node;
+            this.Socket = socket;
+            this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
+        }
 
-            public Socket Socket { get; private set; }
+        public void BeginListen()
+        {
+            this.Disconnected = new ManualResetEvent(false);
+            this.Cancel = new CancellationTokenSource();
 
-            public ManualResetEvent Disconnected { get; private set; }
-
-            public CancellationTokenSource Cancel { get; private set; }
-
-            public TraceCorrelation TraceCorrelation
+            new Thread(() =>
             {
-                get
+                SentMessage processing = null;
+                Exception unhandledException = null;
+                bool isVerbose = NodeServerTrace.Trace.Switch.ShouldTrace(TraceEventType.Verbose);
+
+                try
                 {
-                    return this.Node.TraceCorrelation;
-                }
-            }
-
-            internal BlockingCollection<SentMessage> Messages;
-
-            private int cleaningUp;
-            public int ListenerThreadId;
-
-            public NodeConnection(Node node, Socket socket)
-            {
-                this.Node = node;
-                this.Socket = socket;
-                this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
-            }
-
-            public void BeginListen()
-            {
-                this.Disconnected = new ManualResetEvent(false);
-                this.Cancel = new CancellationTokenSource();
-
-                new Thread(() =>
-                {
-                    SentMessage processing = null;
-                    Exception unhandledException = null;
-                    bool isVerbose = NodeServerTrace.Trace.Switch.ShouldTrace(TraceEventType.Verbose);
-
-                    try
+                    using (var completedEvent = new ManualResetEvent(false))
                     {
-                        using (var completedEvent = new ManualResetEvent(false))
+                        using (var socketEventManager = NodeSocketEventManager.Create(completedEvent))
                         {
-                            using (var socketEventManager = NodeSocketEventManager.Create(completedEvent))
+                            socketEventManager.SocketEvent.SocketFlags = SocketFlags.None;
+
+                            foreach (SentMessage kv in this.Messages.GetConsumingEnumerable(this.Cancel.Token))
                             {
-                                socketEventManager.SocketEvent.SocketFlags = SocketFlags.None;
-
-                                foreach (SentMessage kv in this.Messages.GetConsumingEnumerable(this.Cancel.Token))
+                                processing = kv;
+                                Payload payload = kv.Payload;
+                                var message = new Message
                                 {
-                                    processing = kv;
-                                    Payload payload = kv.Payload;
-                                    var message = new Message
-                                    {
-                                        Magic = this.Node.Network.Magic,
-                                        Payload = payload
-                                    };
+                                    Magic = this.Peer.Network.Magic,
+                                    Payload = payload
+                                };
 
-                                    if (isVerbose)
+                                if (isVerbose)
+                                {
+                                    // NETSTDCONV Trace.CorrelationManager.ActivityId = kv.ActivityId;
+                                    if (kv.ActivityId != this.TraceCorrelation.Activity)
                                     {
-                                        // NETSTDCONV Trace.CorrelationManager.ActivityId = kv.ActivityId;
-                                        if (kv.ActivityId != this.TraceCorrelation.Activity)
-                                        {
-                                            NodeServerTrace.Transfer(this.TraceCorrelation.Activity);
-                                            // NETSTDCONV Trace.CorrelationManager.ActivityId = TraceCorrelation.Activity;
-                                        }
-                                        NodeServerTrace.Verbose("Sending message " + message);
+                                        NodeServerTrace.Transfer(this.TraceCorrelation.Activity);
+                                        // NETSTDCONV Trace.CorrelationManager.ActivityId = TraceCorrelation.Activity;
                                     }
+                                    NodeServerTrace.Verbose("Sending message " + message);
+                                }
 
-                                    MemoryStream ms = new MemoryStream();
-                                    message.ReadWrite(new BitcoinStream(ms, true)
-                                    {
-                                        ProtocolVersion = this.Node.Version,
-                                        TransactionOptions = this.Node.SupportedTransactionOptions
-                                    });
+                                MemoryStream ms = new MemoryStream();
+                                message.ReadWrite(new BitcoinStream(ms, true)
+                                {
+                                    ProtocolVersion = this.Peer.Version,
+                                    TransactionOptions = this.Peer.SupportedTransactionOptions
+                                });
 
-                                    byte[] bytes = ms.ToArrayEfficient();
-                                    socketEventManager.SocketEvent.SetBuffer(bytes, 0, bytes.Length);
-                                    this.Node.Counter.AddWritten(bytes.Length);
-                                    completedEvent.Reset();
-                                    if (!this.Socket.SendAsync(socketEventManager.SocketEvent))
-                                        Utils.SafeSet(completedEvent);
+                                byte[] bytes = ms.ToArrayEfficient();
+                                socketEventManager.SocketEvent.SetBuffer(bytes, 0, bytes.Length);
+                                this.Peer.Counter.AddWritten(bytes.Length);
+                                completedEvent.Reset();
+                                if (!this.Socket.SendAsync(socketEventManager.SocketEvent))
+                                    Utils.SafeSet(completedEvent);
 
-                                    WaitHandle.WaitAny(new WaitHandle[] { completedEvent, this.Cancel.Token.WaitHandle }, -1);
-                                    if (!this.Cancel.Token.IsCancellationRequested)
-                                    {
-                                        if (socketEventManager.SocketEvent.SocketError != SocketError.Success)
-                                            throw new SocketException((int)socketEventManager.SocketEvent.SocketError);
+                                WaitHandle.WaitAny(new WaitHandle[] { completedEvent, this.Cancel.Token.WaitHandle }, -1);
+                                if (!this.Cancel.Token.IsCancellationRequested)
+                                {
+                                    if (socketEventManager.SocketEvent.SocketError != SocketError.Success)
+                                        throw new SocketException((int)socketEventManager.SocketEvent.SocketError);
 
-                                        processing.Completion.SetResult(true);
-                                        processing = null;
-                                    }
+                                    processing.Completion.SetResult(true);
+                                    processing = null;
                                 }
                             }
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    unhandledException = ex;
+                }
+
+                if (processing != null)
+                    this.Messages.Add(processing);
+
+                foreach (SentMessage pending in this.Messages)
+                {
+                    if (isVerbose)
+                    {
+                        // NETSTDCONV Trace.CorrelationManager.ActivityId = pending.ActivityId;
+                        if ((pending != processing) && (pending.ActivityId != this.TraceCorrelation.Activity))
+                            NodeServerTrace.Transfer(this.TraceCorrelation.Activity);
+                        // NETSTDCONV Trace.CorrelationManager.ActivityId = TraceCorrelation.Activity;
+                        NodeServerTrace.Verbose("The connection cancelled before the message was sent");
+                    }
+                    pending.Completion.SetException(new OperationCanceledException("The peer has been disconnected"));
+                }
+
+                this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
+                NodeServerTrace.Information("Stop sending");
+                this.EndListen(unhandledException);
+            }).Start();
+
+            new Thread(() =>
+            {
+                this.ListenerThreadId = Thread.CurrentThread.ManagedThreadId;
+                using (this.TraceCorrelation.Open(false))
+                {
+                    NodeServerTrace.Information("Listening");
+                    Exception unhandledException = null;
+                    byte[] buffer = this.Peer.ReuseBuffer ? new byte[1024 * 1024] : null;
+                    try
+                    {
+                        var stream = new NetworkStream(this.Socket, false);
+                        while (!this.Cancel.Token.IsCancellationRequested)
+                        {
+                            PerformanceCounter counter;
+
+                            Message message = Message.ReadNext(stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
+                            if (NodeServerTrace.Trace.Switch.ShouldTrace(TraceEventType.Verbose))
+                                NodeServerTrace.Verbose("Receiving message : " + message.Command + " (" + message.Payload + ")");
+
+                            this.Peer.LastSeen = DateTimeOffset.UtcNow;
+                            this.Peer.Counter.Add(counter);
+                            this.Peer.OnMessageReceived(new IncomingMessage()
+                            {
+                                Message = message,
+                                Socket = this.Socket,
+                                Length = counter.ReadBytes,
+                                NetworkPeer = this.Peer
+                            });
                         }
                     }
                     catch (OperationCanceledException)
@@ -185,136 +243,85 @@ namespace Stratis.Bitcoin.P2P.Peer
                     {
                         unhandledException = ex;
                     }
-
-                    if (processing != null)
-                        this.Messages.Add(processing);
-
-                    foreach (SentMessage pending in this.Messages)
-                    {
-                        if (isVerbose)
-                        {
-                            // NETSTDCONV Trace.CorrelationManager.ActivityId = pending.ActivityId;
-                            if ((pending != processing) && (pending.ActivityId != this.TraceCorrelation.Activity))
-                                NodeServerTrace.Transfer(this.TraceCorrelation.Activity);
-                            // NETSTDCONV Trace.CorrelationManager.ActivityId = TraceCorrelation.Activity;
-                            NodeServerTrace.Verbose("The connection cancelled before the message was sent");
-                        }
-                        pending.Completion.SetException(new OperationCanceledException("The peer has been disconnected"));
-                    }
-
-                    this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
-                    NodeServerTrace.Information("Stop sending");
+                    NodeServerTrace.Information("Stop listening");
                     this.EndListen(unhandledException);
-                }).Start();
+                }
+            }).Start();
+        }
 
-                new Thread(() =>
+        private void EndListen(Exception unhandledException)
+        {
+            if (Interlocked.CompareExchange(ref this.cleaningUp, 1, 0) == 1)
+                return;
+
+            if (!this.Cancel.IsCancellationRequested)
+            {
+                NodeServerTrace.Error("Connection to server stopped unexpectedly", unhandledException);
+                this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
-                    this.ListenerThreadId = Thread.CurrentThread.ManagedThreadId;
-                    using (this.TraceCorrelation.Open(false))
-                    {
-                        NodeServerTrace.Information("Listening");
-                        Exception unhandledException = null;
-                        byte[] buffer = this.Node.reuseBuffer ? new byte[1024 * 1024] : null;
-                        try
-                        {
-                            var stream = new NetworkStream(this.Socket, false);
-                            while (!this.Cancel.Token.IsCancellationRequested)
-                            {
-                                PerformanceCounter counter;
-
-                                Message message = Message.ReadNext(stream, this.Node.Network, this.Node.Version, this.Cancel.Token, buffer, out counter);
-                                if (NodeServerTrace.Trace.Switch.ShouldTrace(TraceEventType.Verbose))
-                                    NodeServerTrace.Verbose("Receiving message : " + message.Command + " (" + message.Payload + ")");
-
-                                this.Node.LastSeen = DateTimeOffset.UtcNow;
-                                this.Node.Counter.Add(counter);
-                                this.Node.OnMessageReceived(new IncomingMessage()
-                                {
-                                    Message = message,
-                                    Socket = this.Socket,
-                                    Length = counter.ReadBytes,
-                                    Node = this.Node
-                                });
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-                        catch (Exception ex)
-                        {
-                            unhandledException = ex;
-                        }
-                        NodeServerTrace.Information("Stop listening");
-                        this.EndListen(unhandledException);
-                    }
-                }).Start();
+                    Reason = "Unexpected exception while connecting to socket",
+                    Exception = unhandledException
+                };
+                this.Peer.State = NetworkPeerState.Failed;
             }
 
-            private void EndListen(Exception unhandledException)
+            if (this.Peer.State != NetworkPeerState.Failed)
+                this.Peer.State = NetworkPeerState.Offline;
+
+            if (this.Cancel.IsCancellationRequested == false)
+                this.Cancel.Cancel();
+
+            if (this.Disconnected.GetSafeWaitHandle().IsClosed == false)
+                this.Disconnected.Set();
+
+            Utils.SafeCloseSocket(this.Socket);
+
+            foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
             {
-                if (Interlocked.CompareExchange(ref this.cleaningUp, 1, 0) == 1)
-                    return;
-
-                if (!this.Cancel.IsCancellationRequested)
+                try
                 {
-                    NodeServerTrace.Error("Connection to server stopped unexpectedly", unhandledException);
-                    this.Node.DisconnectReason = new NodeDisconnectReason()
-                    {
-                        Reason = "Unexpected exception while connecting to socket",
-                        Exception = unhandledException
-                    };
-                    this.Node.State = NodeState.Failed;
+                    behavior.Detach();
                 }
-
-                if (this.Node.State != NodeState.Failed)
-                    this.Node.State = NodeState.Offline;
-
-                if (this.Cancel.IsCancellationRequested == false)
-                    this.Cancel.Cancel();
-
-                if (this.Disconnected.GetSafeWaitHandle().IsClosed == false)
-                    this.Disconnected.Set();
-
-                Utils.SafeCloseSocket(this.Socket);
-
-                foreach (INodeBehavior behavior in this.Node.Behaviors)
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        behavior.Detach();
-                    }
-                    catch (Exception ex)
-                    {
-                        NodeServerTrace.Error("Error while detaching behavior " + behavior.GetType().FullName, ex);
-                    }
+                    NodeServerTrace.Error("Error while detaching behavior " + behavior.GetType().FullName, ex);
                 }
-            }
-
-            internal void CleanUp()
-            {
-                this.Disconnected.Dispose();
-                this.Cancel.Dispose();
             }
         }
 
+        internal void CleanUp()
+        {
+            this.Disconnected.Dispose();
+            this.Cancel.Dispose();
+        }
+    }
+
+    public class NetworkPeer : IDisposable
+    {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         public DateTimeOffset ConnectedAt { get; private set; }
 
-        private volatile NodeState state = NodeState.Offline;
-        public NodeState State
+        private volatile NetworkPeerState state = NetworkPeerState.Offline;
+        public NetworkPeerState State
         {
             get
             {
                 return this.state;
             }
-            private set
+            set
             {
                 this.TraceCorrelation.LogInside(() => NodeServerTrace.Information("State changed from " + this.state + " to " + value));
-                NodeState previous = this.state;
+                NetworkPeerState previous = this.state;
                 this.state = value;
                 if (previous != this.state)
                 {
                     this.OnStateChanged(previous);
-                    if (value == NodeState.Failed || value == NodeState.Offline)
+                    if (value == NetworkPeerState.Failed || value == NetworkPeerState.Offline)
                     {
                         // NETSTDCONV
                         // TraceCorrelation.LogInside(() => NodeServerTrace.Trace.TraceEvent(TraceEventType.Stop, 0, "Communication closed"));
@@ -330,11 +337,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         public int RemoteSocketPort { get; private set; }
         public bool Inbound { get; private set; }
 
-        private bool reuseBuffer;
-        public NodeBehaviorsCollection Behaviors { get; private set; }
-        public NetworkAddress Peer { get; private set; }
+        public bool ReuseBuffer { get; private set; }
+        public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
+        public NetworkAddress PeerAddress { get; private set; }
 
-        public DateTimeOffset LastSeen { get; private set; }
+        public DateTimeOffset LastSeen { get; set; }
 
         public TimeSpan? TimeOffset { get; private set; }
 
@@ -346,13 +353,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 if (this.traceCorrelation == null)
                 {
-                    this.traceCorrelation = new TraceCorrelation(NodeServerTrace.Trace, "Communication with " + this.Peer.Endpoint.ToString());
+                    this.traceCorrelation = new TraceCorrelation(NodeServerTrace.Trace, "Communication with " + this.PeerAddress.Endpoint.ToString());
                 }
+
                 return this.traceCorrelation;
             }
         }
 
-        internal readonly NodeConnection connection;
+        internal readonly NetworkPeerConnection connection;
 
         private PerformanceCounter counter;
         public PerformanceCounter Counter
@@ -361,6 +369,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 if (this.counter == null)
                     this.counter = new PerformanceCounter();
+
                 return this.counter;
             }
         }
@@ -383,12 +392,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             get
             {
-                return (this.State == NodeState.Connected) || (this.State == NodeState.HandShaked);
+                return (this.State == NetworkPeerState.Connected) || (this.State == NetworkPeerState.HandShaked);
             }
         }
 
         public MessageProducer<IncomingMessage> MessageProducer { get; private set; } = new MessageProducer<IncomingMessage>();
-        public NodeFiltersCollection Filters { get; private set; } = new NodeFiltersCollection();
+        public NetworkPeerFiltersCollection Filters { get; private set; } = new NetworkPeerFiltersCollection();
 
         /// <summary>Send addr unsollicited message of the AddressFrom peer when passing to Handshaked state.</summary>
         public bool Advertize { get; set; }
@@ -414,7 +423,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public NodeDisconnectReason DisconnectReason { get; private set; }
+        public NetworkPeerDisconnectReason DisconnectReason { get; set; }
 
         private Socket Socket
         {
@@ -424,28 +433,38 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        internal TimeSpan pollHeaderDelay = TimeSpan.FromMinutes(1.0);
+        private TimeSpan pollHeaderDelay = TimeSpan.FromMinutes(1.0);
 
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
         public event NodeStateEventHandler StateChanged;
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
-        internal Node(NetworkAddress peer, Network network, NodeConnectionParameters parameters)
+        public NetworkPeer()
         {
-            parameters = parameters ?? new NodeConnectionParameters();
+            // This constructor is used for testing until the Node class has an interface and can be mocked.
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+        }
+
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.RemoteSocketEndpoint}] ");
+            this.dateTimeProvider = dateTimeProvider;
+
+            parameters = parameters ?? new NetworkPeerConnectionParameters();
             this.Inbound = false;
-            this.Behaviors = new NodeBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peer.Endpoint, network);
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
-            this.Peer = peer;
-            this.LastSeen = peer.Time;
+            this.PeerAddress = peerAddress;
+            this.LastSeen = peerAddress.Time;
 
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-            this.connection = new NodeConnection(this, socket);
+            this.connection = new NetworkPeerConnection(this, socket);
 
             socket.ReceiveBufferSize = parameters.ReceiveBufferSize;
             socket.SendBufferSize = parameters.SendBufferSize;
@@ -455,7 +474,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     using (var completedEvent = new ManualResetEvent(false))
                     {
-                        using (var nodeSocketEventManager = NodeSocketEventManager.Create(completedEvent, peer.Endpoint))
+                        using (var nodeSocketEventManager = NodeSocketEventManager.Create(completedEvent, peerAddress.Endpoint))
                         {
                             // If the socket connected straight away (synchronously) unblock all threads.
                             if (!socket.ConnectAsync(nodeSocketEventManager.SocketEvent))
@@ -474,7 +493,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                             this.RemoteSocketEndpoint = remoteEndpoint;
                             this.RemoteSocketPort = remoteEndpoint.Port;
 
-                            this.State = NodeState.Connected;
+                            this.State = NetworkPeerState.Connected;
                             this.ConnectedAt = DateTimeOffset.UtcNow;
 
                             NodeServerTrace.Information("Outbound connection successful.");
@@ -485,7 +504,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     Utils.SafeCloseSocket(socket);
                     NodeServerTrace.Information("Connection to node cancelled");
-                    this.State = NodeState.Offline;
+                    this.State = NetworkPeerState.Offline;
 
                     throw;
                 }
@@ -493,13 +512,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     Utils.SafeCloseSocket(socket);
                     NodeServerTrace.Error("Error connecting to the remote endpoint ", ex);
-                    this.DisconnectReason = new NodeDisconnectReason()
+                    this.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
                         Reason = "Unexpected exception while connecting to socket",
                         Exception = ex
                     };
 
-                    this.State = NodeState.Failed;
+                    this.State = NetworkPeerState.Failed;
 
                     throw;
                 }
@@ -509,30 +528,34 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        internal Node(NetworkAddress peer, Network network, NodeConnectionParameters parameters, Socket socket, VersionPayload peerVersion)
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, Socket socket, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            this.RemoteSocketAddress = ((IPEndPoint)socket.RemoteEndPoint).Address;
             this.RemoteSocketEndpoint = ((IPEndPoint)socket.RemoteEndPoint);
+            this.RemoteSocketAddress = ((IPEndPoint)socket.RemoteEndPoint).Address;
             this.RemoteSocketPort = ((IPEndPoint)socket.RemoteEndPoint).Port;
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.RemoteSocketEndpoint}] ");
+            this.dateTimeProvider = dateTimeProvider;
+
             this.Inbound = true;
-            this.Behaviors = new NodeBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peer.Endpoint, network);
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
-            this.Peer = peer;
-            this.connection = new NodeConnection(this, socket);
+            this.PeerAddress = peerAddress;
+            this.connection = new NetworkPeerConnection(this, socket);
             this.PeerVersion = peerVersion;
-            this.LastSeen = peer.Time;
+            this.LastSeen = peerAddress.Time;
             this.ConnectedAt = DateTimeOffset.UtcNow;
             this.TraceCorrelation.LogInside((Action)(() =>
             {
-                NodeServerTrace.Information((string)("Connected to advertised node " + this.Peer.Endpoint));
-                this.State = NodeState.Connected;
+                NodeServerTrace.Information((string)("Connected to advertised node " + this.PeerAddress.Endpoint));
+                this.State = NetworkPeerState.Connected;
             }));
             this.InitDefaultBehaviors(parameters);
             this.connection.BeginListen();
         }
 
-        private void OnStateChanged(NodeState previous)
+        private void OnStateChanged(NetworkPeerState previous)
         {
             NodeStateEventHandler stateChanged = StateChanged;
             if (stateChanged != null)
@@ -551,13 +574,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        protected void OnMessageReceived(IncomingMessage message)
+        public void OnMessageReceived(IncomingMessage message)
         {
             var version = message.Message.Payload as VersionPayload;
-            if ((version != null) && (this.State == NodeState.HandShaked))
+            if ((version != null) && (this.State == NetworkPeerState.HandShaked))
             {
-                if (message.Node.Version >= ProtocolVersion.REJECT_VERSION)
-                    message.Node.SendMessageAsync(new RejectPayload()
+                if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
+                    message.NetworkPeer.SendMessageAsync(new RejectPayload()
                     {
                         Code = RejectCode.DUPLICATE
                     });
@@ -566,7 +589,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (version != null)
             {
                 this.TimeOffset = DateTimeOffset.Now - version.Timestamp;
-                if ((version.Services & NodeServices.NODE_WITNESS) != 0)
+                if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
                     this.SupportedTransactionOptions |= TransactionOptions.Witness;
             }
 
@@ -593,21 +616,21 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             });
 
-            IEnumerator<INodeFilter> enumerator = this.Filters.Concat(new[] { last }).GetEnumerator();
+            IEnumerator<INetworkPeerFilter> enumerator = this.Filters.Concat(new[] { last }).GetEnumerator();
             this.FireFilters(enumerator, message);
         }
 
         private void OnSendingMessage(Payload payload, Action final)
         {
-            IEnumerator<INodeFilter> enumerator = this.Filters.Concat(new[] { new ActionFilter(null, (n, p, a) => final()) }).GetEnumerator();
+            IEnumerator<INetworkPeerFilter> enumerator = this.Filters.Concat(new[] { new ActionFilter(null, (n, p, a) => final()) }).GetEnumerator();
             this.FireFilters(enumerator, payload);
         }
 
-        private void FireFilters(IEnumerator<INodeFilter> enumerator, Payload payload)
+        private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, Payload payload)
         {
             if (enumerator.MoveNext())
             {
-                INodeFilter filter = enumerator.Current;
+                INetworkPeerFilter filter = enumerator.Current;
                 try
                 {
                     filter.OnSendingMessage(this, payload, () => FireFilters(enumerator, payload));
@@ -619,11 +642,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        private void FireFilters(IEnumerator<INodeFilter> enumerator, IncomingMessage message)
+        private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, IncomingMessage message)
         {
             if (enumerator.MoveNext())
             {
-                INodeFilter filter = enumerator.Current;
+                INetworkPeerFilter filter = enumerator.Current;
                 try
                 {
                     filter.OnReceivingMessage(message, () => FireFilters(enumerator, message));
@@ -654,187 +677,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <summary>
-        /// Connect to a random node on the network.
-        /// </summary>
-        /// <param name="network">The network to connect to.</param>
-        /// <param name="addrman">The addrman used for finding peers.</param>
-        /// <param name="parameters">The parameters used by the found node.</param>
-        /// <param name="connectedEndpoints">The already connected endpoints, the new endpoint will be select outside of existing groups.</param>
-        /// <returns></returns>
-        public static Node Connect(Network network, NodeConnectionParameters parameters = null, IPEndPoint[] connectedEndpoints = null)
-        {
-            parameters = parameters ?? new NodeConnectionParameters();
-            return ConnectWithDiscovery(network, parameters, connectedEndpoints);
-        }
-
-        /// <summary>
-        /// Connect to a random node on the network.
-        /// </summary>
-        /// <param name="network">The network to connect to.</param>
-        /// <param name="parameters">The parameters used by the found node, use AddressManagerBehavior.GetAddrman for finding peers.</param>
-        /// <param name="connectedEndpoints">The already connected endpoints, the new endpoint will be select outside of existing groups.</param>
-        /// <param name="getGroup">Group selector, by default NBicoin.IpExtensions.GetGroup.</param>
-        /// <returns></returns>
-        public static Node ConnectWithDiscovery(Network network, NodeConnectionParameters parameters = null, IPEndPoint[] connectedEndpoints = null, Func<IPEndPoint, byte[]> getGroup = null)
-        {
-            return ConnectWithDiscovery(network, parameters, new Func<IPEndPoint[]>(() => connectedEndpoints), getGroup);
-        }
-
-        /// <summary>
-        /// [Deprecated] This whole connect method will be deprecated
-        /// 
-        /// Connect to a random node on the network.
-        /// </summary>
-        /// <param name="network">The network to connect to.</param>
-        /// <param name="parameters">The parameters used by the found node, use AddressManagerBehavior.GetAddrman for finding peers.</param>
-        /// <param name="connectedEndpoints">Function returning the already connected endpoints, the new endpoint will be select outside of existing groups.</param>
-        /// <param name="getGroup">Group selector, by default NBicoin.IpExtensions.GetGroup.</param>
-        /// <returns></returns>
-        public static Node ConnectWithDiscovery(Network network, NodeConnectionParameters parameters, Func<IPEndPoint[]> connectedEndpoints, Func<IPEndPoint, byte[]> getGroup = null)
-        {
-            getGroup = getGroup ?? new Func<IPEndPoint, byte[]>((a) => IpExtensions.GetGroup(a.Address));
-            if (connectedEndpoints() == null)
-                connectedEndpoints = new Func<IPEndPoint[]>(() => new IPEndPoint[0]);
-
-            parameters = parameters ?? new NodeConnectionParameters();
-
-            //[Deprecated] This whole connect method will be deprecated
-            //AddressManagerBehavior addrmanBehavior = parameters.TemplateBehaviors.FindOrCreate(() => new AddressManagerBehavior(new AddressManager()));
-            //AddressManager addrman = AddressManagerBehavior.GetAddrman(parameters);
-
-            DateTimeOffset start = DateTimeOffset.UtcNow;
-            while (true)
-            {
-                parameters.ConnectCancellation.ThrowIfCancellationRequested();
-
-                //[Deprecated] This whole connect method will be deprecated
-                //if ((addrman.Count == 0) || ((DateTimeOffset.UtcNow - start) > TimeSpan.FromSeconds(60)))
-                //{
-                //    addrmanBehavior.DiscoverPeers(network, parameters);
-                //    start = DateTimeOffset.UtcNow;
-                //}
-
-                NetworkAddress addr = null;
-                int groupFail = 0;
-                while (true)
-                {
-                    if (groupFail > 50)
-                    {
-                        parameters.ConnectCancellation.WaitHandle.WaitOne((int)TimeSpan.FromSeconds(60).TotalMilliseconds);
-                        break;
-                    }
-
-                    //[Deprecated] This whole connect method will be deprecated
-                    //addr = addrman.Select();
-                    if (addr == null)
-                    {
-                        parameters.ConnectCancellation.WaitHandle.WaitOne(1000);
-                        break;
-                    }
-
-                    if (!addr.Endpoint.Address.IsValid())
-                        continue;
-
-                    bool groupExist = connectedEndpoints().Any(a => getGroup(a).SequenceEqual(getGroup(addr.Endpoint)));
-                    if (groupExist)
-                    {
-                        groupFail++;
-                        continue;
-                    }
-
-                    break;
-                }
-
-                if (addr == null)
-                    continue;
-
-                try
-                {
-                    var timeout = new CancellationTokenSource(5000);
-                    NodeConnectionParameters param2 = parameters.Clone();
-                    param2.ConnectCancellation = CancellationTokenSource.CreateLinkedTokenSource(parameters.ConnectCancellation, timeout.Token).Token;
-                    Node node = Connect(network, addr.Endpoint, param2);
-                    return node;
-                }
-                catch (OperationCanceledException ex)
-                {
-                    if (ex.CancellationToken == parameters.ConnectCancellation)
-                        throw;
-                }
-                catch (SocketException)
-                {
-                    parameters.ConnectCancellation.WaitHandle.WaitOne(500);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Connect to the node of this machine,
-        /// </summary>
-        /// <param name="network"></param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        public static Node ConnectToLocal(Network network, NodeConnectionParameters parameters)
-        {
-            return Connect(network, Utils.ParseIpEndpoint("localhost", network.DefaultPort), parameters);
-        }
-
-        public static Node ConnectToLocal(Network network, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken))
-        {
-            return ConnectToLocal(network, new NodeConnectionParameters()
-            {
-                ConnectCancellation = cancellation,
-                IsRelay = isRelay,
-                Version = myVersion
-            });
-        }
-
-        public static Node Connect(Network network, string endpoint, NodeConnectionParameters parameters)
-        {
-            return Connect(network, Utils.ParseIpEndpoint(endpoint, network.DefaultPort), parameters);
-        }
-
-        public static Node Connect(Network network, string endpoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken))
-        {
-            return Connect(network, Utils.ParseIpEndpoint(endpoint, network.DefaultPort), myVersion, isRelay, cancellation);
-        }
-
-        public static Node Connect(Network network, NetworkAddress endpoint, NodeConnectionParameters parameters)
-        {
-            return new Node(endpoint, network, parameters);
-        }
-
-        public static Node Connect(Network network, IPEndPoint endpoint, NodeConnectionParameters parameters)
-        {
-            var peer = new NetworkAddress()
-            {
-                Time = DateTimeOffset.UtcNow,
-                Endpoint = endpoint
-            };
-
-            return new Node(peer, network, parameters);
-        }
-
-        public static Node Connect(Network network, IPEndPoint endpoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken))
-        {
-            return Connect(network, endpoint, new NodeConnectionParameters()
-            {
-                ConnectCancellation = cancellation,
-                IsRelay = isRelay,
-                Version = myVersion,
-                Services = NodeServices.Nothing,
-            });
-        }
-
-        private void InitDefaultBehaviors(NodeConnectionParameters parameters)
+        private void InitDefaultBehaviors(NetworkPeerConnectionParameters parameters)
         {
             this.Advertize = parameters.Advertize;
             this.PreferredTransactionOptions = parameters.PreferredTransactionOptions;
-            this.reuseBuffer = parameters.ReuseBuffer;
+            this.ReuseBuffer = parameters.ReuseBuffer;
 
             this.Behaviors.DelayAttach = true;
-            foreach (INodeBehavior behavior in parameters.TemplateBehaviors)
+            foreach (INetworkPeerBehavior behavior in parameters.TemplateBehaviors)
             {
                 this.Behaviors.Add(behavior.Clone());
             }
@@ -904,7 +754,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public TPayload ReceiveMessage<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
         {
-            using (var listener = new NodeListener(this))
+            using (var listener = new NetworkPeerListener(this))
             {
                 return listener.ReceivePayload<TPayload>(cancellationToken);
             }
@@ -915,10 +765,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             VersionHandshake(null, cancellationToken);
         }
 
-        public void VersionHandshake(NodeRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
+        public void VersionHandshake(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
         {
-            requirements = requirements ?? new NodeRequirement();
-            using (NodeListener listener = CreateListener().Where(p => (p.Message.Payload is VersionPayload)
+            requirements = requirements ?? new NetworkPeerRequirement();
+            using (NetworkPeerListener listener = CreateListener().Where(p => (p.Message.Payload is VersionPayload)
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
@@ -951,7 +801,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.SendMessageAsync(new VerAckPayload());
                 listener.ReceivePayload<VerAckPayload>(cancellationToken);
-                this.State = NodeState.HandShaked;
+                this.State = NetworkPeerState.HandShaked;
                 if (this.Advertize && this.MyVersion.AddressFrom.Address.IsRoutable(true))
                 {
                     this.SendMessageAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
@@ -969,7 +819,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             using (this.TraceCorrelation.Open())
             {
-                using (NodeListener list = CreateListener().Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
+                using (NetworkPeerListener list = CreateListener().Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
                 {
                     NodeServerTrace.Information("Responding to handshake");
                     this.SendMessageAsync(this.MyVersion);
@@ -979,7 +829,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         throw new ProtocolException("Version rejected " + reject.Code + " : " + reject.Reason);
 
                     this.SendMessageAsync(new VerAckPayload());
-                    this.State = NodeState.HandShaked;
+                    this.State = NetworkPeerState.HandShaked;
                 }
             }
         }
@@ -1025,12 +875,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             using (this.TraceCorrelation.Open())
             {
                 NodeServerTrace.Information("Disconnection request " + reason);
-                this.State = NodeState.Disconnecting;
+                this.State = NetworkPeerState.Disconnecting;
                 this.connection.Cancel.Cancel();
 
                 if (this.DisconnectReason == null)
                 {
-                    this.DisconnectReason = new NodeDisconnectReason()
+                    this.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
                         Reason = reason,
                         Exception = exception
@@ -1047,7 +897,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public override string ToString()
         {
-            return string.Format("{0} ({1})", this.State, this.Peer.Endpoint);
+            return string.Format("{0} ({1})", this.State, this.PeerAddress.Endpoint);
         }
 
 
@@ -1066,10 +916,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public IEnumerable<ChainedBlock> GetHeadersFromFork(ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.AssertState(NodeState.HandShaked, cancellationToken);
+            this.AssertState(NetworkPeerState.HandShaked, cancellationToken);
 
             NodeServerTrace.Information("Building chain");
-            using (NodeListener listener = this.CreateListener().OfType<HeadersPayload>())
+            using (NetworkPeerListener listener = this.CreateListener().OfType<HeadersPayload>())
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)
@@ -1192,7 +1042,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public IEnumerable<Block> GetBlocksFromFork(ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            using (NodeListener listener = CreateListener())
+            using (NetworkPeerListener listener = CreateListener())
             {
                 this.SendMessageAsync(new GetBlocksPayload()
                 {
@@ -1215,10 +1065,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public IEnumerable<Block> GetBlocks(IEnumerable<uint256> neededBlocks, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.AssertState(NodeState.HandShaked, cancellationToken);
+            this.AssertState(NetworkPeerState.HandShaked, cancellationToken);
 
             int simultaneous = 70;
-            using (NodeListener listener = this.CreateListener().OfType<BlockPayload>())
+            using (NetworkPeerListener listener = this.CreateListener().OfType<BlockPayload>())
             {
                 foreach (List<InventoryVector> invs in neededBlocks.Select(b => new InventoryVector()
                 {
@@ -1255,15 +1105,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <returns>The listener.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown if used on the listener's thread, as it would result in a deadlock.</exception>
-        public NodeListener CreateListener()
+        public NetworkPeerListener CreateListener()
         {
             this.AssertNoListeningThread();
-            return new NodeListener(this);
+            return new NetworkPeerListener(this);
         }
 
-        private void AssertState(NodeState nodeState, CancellationToken cancellationToken = default(CancellationToken))
+        private void AssertState(NetworkPeerState nodeState, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if ((nodeState == NodeState.HandShaked) && (this.State == NodeState.Connected))
+            if ((nodeState == NetworkPeerState.HandShaked) && (this.State == NetworkPeerState.Connected))
                 this.VersionHandshake(cancellationToken);
 
             if (nodeState != this.State)
@@ -1272,8 +1122,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public uint256[] GetMempool(CancellationToken cancellationToken = default(CancellationToken))
         {
-            AssertState(NodeState.HandShaked);
-            using (NodeListener listener = this.CreateListener().OfType<InvPayload>())
+            AssertState(NetworkPeerState.HandShaked);
+            using (NetworkPeerListener listener = this.CreateListener().OfType<InvPayload>())
             {
                 this.SendMessageAsync(new MempoolPayload());
 
@@ -1307,14 +1157,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>The transactions, if a transaction is not found, then it is not returned in the array.</returns>
         public Transaction[] GetMempoolTransactions(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.AssertState(NodeState.HandShaked);
+            this.AssertState(NetworkPeerState.HandShaked);
 
             if (txIds.Length == 0)
                 return new Transaction[0];
 
             List<Transaction> result = new List<Transaction>();
 
-            using (NodeListener listener = CreateListener().Where(m => (m.Message.Payload is TxPayload) || (m.Message.Payload is NotFoundPayload)))
+            using (NetworkPeerListener listener = CreateListener().Where(m => (m.Message.Payload is TxPayload) || (m.Message.Payload is NotFoundPayload)))
             {
                 foreach (List<uint256> batch in txIds.Partition(500))
                 {
@@ -1382,7 +1232,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Latency.</returns>
         public TimeSpan PingPong(CancellationToken cancellation = default(CancellationToken))
         {
-            using (NodeListener listener = CreateListener().OfType<PongPayload>())
+            using (NetworkPeerListener listener = CreateListener().OfType<PongPayload>())
             {
                 var ping = new PingPayload()
                 {

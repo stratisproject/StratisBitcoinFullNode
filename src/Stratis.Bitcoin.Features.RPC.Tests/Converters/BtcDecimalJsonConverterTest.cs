@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.RPC.Converters;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Stratis.Bitcoin.Tests.Converters
+namespace Stratis.Bitcoin.Features.RPC.Tests.Converters
 {
     public class BtcDecimalJsonConverterTest
     {
