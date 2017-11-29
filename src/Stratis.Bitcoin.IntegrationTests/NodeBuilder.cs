@@ -843,7 +843,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var node = this.CreateNetworkPeerClient())
             {
                 node.VersionHandshake();
-                chain = bestBlock == node.Network.GenesisHash ? new ConcurrentChain(node.Network) : node.GetChain();
+                chain = bestBlock == node.Network.GenesisHash ? new ConcurrentChain(node.Network) : this.GetChain(node);
                 for (int i = 0; i < blockCount; i++)
                 {
                     uint nonce = 0;
@@ -872,6 +872,150 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
             return blocks.ToArray();
 #endif
+        }
+
+        /// <summary>
+        /// Get the chain of headers from the peer (thread safe).
+        /// </summary>
+        /// <param name="peer">Peer to get chain from.</param>
+        /// <param name="hashStop">The highest block wanted.</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>The chain of headers.</returns>
+        private ConcurrentChain GetChain(NetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            ConcurrentChain chain = new ConcurrentChain(peer.Network);
+            this.SynchronizeChain(peer, chain, hashStop, cancellationToken);
+            return chain;
+        }
+
+        /// <summary>
+        /// Synchronize a given Chain to the tip of the given node if its height is higher. (Thread safe).
+        /// </summary>
+        /// <param name="peer">Node to synchronize the chain for.</param>
+        /// <param name="chain">The chain to synchronize.</param>
+        /// <param name="hashStop">The location until which it synchronize.</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private IEnumerable<ChainedBlock> SynchronizeChain(NetworkPeer peer, ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            ChainedBlock oldTip = chain.Tip;
+            List<ChainedBlock> headers = this.GetHeadersFromFork(peer, oldTip, hashStop, cancellationToken).ToList();
+            if (headers.Count == 0)
+                return new ChainedBlock[0];
+
+            ChainedBlock newTip = headers[headers.Count - 1];
+
+            if (newTip.Height <= oldTip.Height)
+                throw new ProtocolException("No tip should have been recieved older than the local one");
+
+            foreach (ChainedBlock header in headers)
+            {
+                if (!header.Validate(peer.Network))
+                {
+                    throw new ProtocolException("A header which does not pass proof of work verification has been received");
+                }
+            }
+
+            chain.SetTip(newTip);
+
+            return headers;
+        }
+
+        private void AssertState(NetworkPeer peer, NetworkPeerState nodeState, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if ((nodeState == NetworkPeerState.HandShaked) && (peer.State == NetworkPeerState.Connected))
+                peer.VersionHandshake(cancellationToken);
+
+            if (nodeState != peer.State)
+                throw new InvalidOperationException("Invalid Node state, needed=" + nodeState + ", current= " + this.State);
+        }
+
+        public IEnumerable<ChainedBlock> GetHeadersFromFork(NetworkPeer peer, ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            this.AssertState(peer, NetworkPeerState.HandShaked, cancellationToken);
+
+            using (NetworkPeerListener listener = peer.CreateListener().OfType<HeadersPayload>())
+            {
+                int acceptMaxReorgDepth = 0;
+                while (true)
+                {
+                    // Get before last so, at the end, we should only receive 1 header equals to this one (so we will not have race problems with concurrent GetChains).
+                    BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
+                    peer.SendMessageAsync(new GetHeadersPayload()
+                    {
+                        BlockLocators = awaited,
+                        HashStop = hashStop
+                    });
+
+                    while (true)
+                    {
+                        bool isOurs = false;
+                        HeadersPayload headers = null;
+
+                        using (var headersCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                        {
+                            headersCancel.CancelAfter(TimeSpan.FromMinutes(1.0));
+                            try
+                            {
+                                headers = listener.ReceivePayload<HeadersPayload>(headersCancel.Token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                acceptMaxReorgDepth += 6;
+                                if (cancellationToken.IsCancellationRequested)
+                                    throw;
+
+                                // Send a new GetHeaders.
+                                break;
+                            }
+                        }
+
+                        // In the special case where the remote node is at height 0 as well as us, then the headers count will be 0.
+                        if ((headers.Headers.Count == 0) && (peer.PeerVersion.StartHeight == 0) && (currentTip.HashBlock == peer.Network.GenesisHash))
+                            yield break;
+
+                        if ((headers.Headers.Count == 1) && (headers.Headers[0].GetHash() == currentTip.HashBlock))
+                            yield break;
+
+                        foreach (BlockHeader header in headers.Headers)
+                        {
+                            uint256 hash = header.GetHash();
+                            if (hash == currentTip.HashBlock)
+                                continue;
+
+                            // The previous headers request timeout, this can arrive in case of big reorg.
+                            if (header.HashPrevBlock != currentTip.HashBlock)
+                            {
+                                int reorgDepth = 0;
+                                ChainedBlock tempCurrentTip = currentTip;
+                                while (reorgDepth != acceptMaxReorgDepth && tempCurrentTip != null && header.HashPrevBlock != tempCurrentTip.HashBlock)
+                                {
+                                    reorgDepth++;
+                                    tempCurrentTip = tempCurrentTip.Previous;
+                                }
+
+                                if (reorgDepth != acceptMaxReorgDepth && tempCurrentTip != null)
+                                    currentTip = tempCurrentTip;
+                            }
+
+                            if (header.HashPrevBlock == currentTip.HashBlock)
+                            {
+                                isOurs = true;
+                                currentTip = new ChainedBlock(header, hash, currentTip);
+
+                                yield return currentTip;
+
+                                if (currentTip.HashBlock == hashStop)
+                                    yield break;
+                            }
+                            else break; // Not our headers, continue receive.
+                        }
+
+                        if (isOurs)
+                            break;  //Go ask for next header.
+                    }
+                }
+            }
         }
 
         public bool AddToStratisMempool(Transaction trx)
