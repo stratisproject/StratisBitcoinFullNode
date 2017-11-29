@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public static bool CheckSequenceLocks(ChainedBlock tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null,
             bool useExistingLockPoints = false)
         {
-            var dummyBlock = new Block { Header = { HashPrevBlock = tip.HashBlock } };
+            var dummyBlock = new Block(tip.Header.TransactionOptions) { Header = { HashPrevBlock = tip.HashBlock } };
             ChainedBlock index = new ChainedBlock(dummyBlock.Header, dummyBlock.GetHash(), tip);
 
             // CheckSequenceLocks() uses chainActive.Height()+1 to evaluate
