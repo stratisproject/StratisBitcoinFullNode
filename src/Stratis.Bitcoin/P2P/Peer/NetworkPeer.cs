@@ -99,9 +99,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         private int cleaningUp;
         public int ListenerThreadId;
 
-        public NetworkPeerConnection(NetworkPeer peer, Socket socket, ILoggerFactory loggerFactory)
+        public NetworkPeerConnection(NetworkPeer peer, Socket socket, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
+            this.dateTimeProvider = dateTimeProvider;
+
             this.Peer = peer;
             this.Socket = socket;
             this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
@@ -437,7 +439,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
-        public NetworkPeer()
+        public NetworkPeer(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             // This constructor is used for testing until the Node class has an interface and can be mocked.
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
@@ -462,7 +464,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-            this.connection = new NetworkPeerConnection(this, socket, this.loggerFactory);
+            this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
 
             socket.ReceiveBufferSize = parameters.ReceiveBufferSize;
             socket.SendBufferSize = parameters.SendBufferSize;
@@ -545,7 +547,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
             this.PeerAddress = peerAddress;
-            this.connection = new NetworkPeerConnection(this, socket, this.loggerFactory);
+            this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
             this.PeerVersion = peerVersion;
             this.LastSeen = peerAddress.Time;
             this.ConnectedAt = DateTimeOffset.UtcNow;
