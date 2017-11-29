@@ -829,7 +829,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (NetworkPeerListener listener = CreateListener().Where(p => (p.Message.Payload is VersionPayload)
+            using (NetworkPeerListener listener = this.CreateListener().Where(p => (p.Message.Payload is VersionPayload)
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
@@ -1003,7 +1003,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             return chain;
         }
 
-        public IEnumerable<ChainedBlock> GetHeadersFromFork(ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private IEnumerable<ChainedBlock> GetHeadersFromFork(ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(currentTip), currentTip, nameof(hashStop), hashStop);
 
@@ -1106,7 +1106,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-
         /// <summary>
         /// Synchronize a given Chain to the tip of this node if its height is higher. (Thread safe).
         /// </summary>
@@ -1114,7 +1113,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="hashStop">The location until which it synchronize.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public IEnumerable<ChainedBlock> SynchronizeChain(ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private IEnumerable<ChainedBlock> SynchronizeChain(ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hashStop), hashStop);
 
@@ -1190,7 +1189,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            using (NetworkPeerListener listener = CreateListener().OfType<PongPayload>())
+            using (NetworkPeerListener listener = this.CreateListener().OfType<PongPayload>())
             {
                 var ping = new PingPayload()
                 {
