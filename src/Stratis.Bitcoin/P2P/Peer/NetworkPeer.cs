@@ -441,6 +441,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeer(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
+            this.dateTimeProvider = dateTimeProvider;
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
             // This constructor is used for testing until the Node class has an interface and can be mocked.
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
         }
