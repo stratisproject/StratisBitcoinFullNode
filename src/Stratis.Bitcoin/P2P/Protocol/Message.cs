@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             int length = 0;
             uint checksum = 0;
             bool hasChecksum = false;
-            byte[] payloadBytes = stream.Serializing ? GetPayloadBytes(stream.ProtocolVersion, out length) : null;
+            byte[] payloadBytes = stream.Serializing ? GetPayloadBytes(stream, out length) : null;
             length = payloadBytes == null ? 0 : length;
             stream.ReadWrite(ref length);
 
@@ -121,10 +121,10 @@ namespace Stratis.Bitcoin.P2P.Protocol
         }
 
         // FIXME: protocolVersion is not used. Is this a defect?
-        private byte[] GetPayloadBytes(ProtocolVersion protocolVersion, out int length)
+        private byte[] GetPayloadBytes(BitcoinStream stream, out int length)
         {
             MemoryStream ms = this.buffer == null ? new MemoryStream() : new MemoryStream(this.buffer);
-            this.Payload.ReadWrite(new BitcoinStream(ms, true));
+            this.Payload.ReadWrite(new BitcoinStream(ms, true) { TransactionOptions = stream.TransactionOptions });
             length = (int)ms.Position;
             return this.buffer ?? GetBuffer(ms);
         }
@@ -177,6 +177,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             BitcoinStream bitStream = new BitcoinStream(stream, false)
             {
                 ProtocolVersion = version,
+                TransactionOptions = network.TransactionOptions,
                 ReadCancellationToken = cancellationToken
             };
 
