@@ -26,6 +26,10 @@ configuration:
 - Debug
 - Release
 
+# build cache to preserve files/folders between builds
+cache:
+  - '%USERPROFILE%\.nuget\packages'
+  
 init:
 - ps: dotnet --info
 
