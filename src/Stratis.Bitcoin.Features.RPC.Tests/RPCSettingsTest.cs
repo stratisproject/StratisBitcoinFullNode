@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
     public class RPCSettingsTest : TestBase
     {
         public RPCSettingsTest()
+            :base()
         {
             // These are expected to be false for non-POS test cases.
             Transaction.TimeStamp = false;

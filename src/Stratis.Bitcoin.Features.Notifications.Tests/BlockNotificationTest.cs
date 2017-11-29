@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
     public class BlockNotificationTest : LogsTestBase
     {
         public BlockNotificationTest()
+            :base()
         {
             // These are expected to be false for non-POS test cases.
             Transaction.TimeStamp = false;

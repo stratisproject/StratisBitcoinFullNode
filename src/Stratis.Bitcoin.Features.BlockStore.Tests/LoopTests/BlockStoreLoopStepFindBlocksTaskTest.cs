@@ -11,6 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     public sealed class BlockStoreLoopStepFindBlocksTaskTest : BlockStoreLoopStepBaseTest
     {
         public BlockStoreLoopStepFindBlocksTaskTest()
+            :base()
         {
             // These are expected to be false for non-POS test cases.
             Transaction.TimeStamp = false;

@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
     public class ConsensusActionTests : BaseRPCControllerTest
     {
         public ConsensusActionTests()
+            :base()
         {
             // These are expected to be false for non-POS test cases.
             Transaction.TimeStamp = false;
