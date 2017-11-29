@@ -13,13 +13,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -575,7 +575,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
             this.FindPorts(this.ports);
-            this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, new LoggerFactory());
+
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
         }
 
         /// <summary>Get stratis full node if possible.</summary>
