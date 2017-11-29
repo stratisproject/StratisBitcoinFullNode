@@ -434,5 +434,54 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             Assert.True(resultOne > resultTwo);
         }
+
+        /// <summary>
+        /// This is to ensure that when we add a peer to the peers collection with
+        /// the -connect peer arg, we update the existing one in the collection accordingly,
+        /// IF it exist. Otherwise we just add it.
+        /// <para>
+        /// In this scenario the peer DOES NOT exist.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerAddressManager_ConnectNodeArgPeer_AddsPeerToList()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var addressOne = new NetworkAddress(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+            var addressManager = new PeerAddressManager(peerFolder);
+            addressManager.AddPeerWithConnectArg(addressOne, IPAddress.Loopback);
+
+            var addedPeer = addressManager.FindPeer(addressOne.Endpoint);
+            Assert.Equal(PeerIntroductionType.Connect, addedPeer.PeerIntroductionType);
+        }
+
+        /// <summary>
+        /// This is to ensure that when we add a peer to the peers collection with
+        /// the -connect peer arg, we update the existing one in the collection accordingly,
+        /// IF it exist. Otherwise we just add it.
+        /// <para>
+        /// In this scenario the peer DOES exist.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerAddressManager_ConnectNodeArgPeer_UpdatesPeerInList()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var addressOne = new NetworkAddress(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+            var addressManager = new PeerAddressManager(peerFolder);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+
+            var discoveredPeer = addressManager.FindPeer(addressOne.Endpoint);
+            Assert.Equal(PeerIntroductionType.Add, discoveredPeer.PeerIntroductionType);
+
+            addressManager.AddPeerWithConnectArg(addressOne, IPAddress.Loopback);
+
+            var updatedPeer = addressManager.FindPeer(addressOne.Endpoint);
+            Assert.Equal(PeerIntroductionType.Connect, updatedPeer.PeerIntroductionType);
+        }
     }
 }

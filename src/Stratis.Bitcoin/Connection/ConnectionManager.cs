@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 // Use if we have specified any nodes using the -connect arg
                 var peers = this.connectionManagerSettings.Connect.Select(node => new NetworkAddress(node)).ToArray();
-                this.peerAddressManager.AddPeers(peers, IPAddress.Loopback, PeerIntroductionType.Connect);
+                this.peerAddressManager.AddPeersWithConnectArg(peers, IPAddress.Loopback);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
 
                 this.ConnectNodePeerConnector = this.CreatePeerConnector(clonedParameters, NetworkPeerServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint, PeerIntroductionType.Connect, this.connectionManagerSettings.Connect.Count);
