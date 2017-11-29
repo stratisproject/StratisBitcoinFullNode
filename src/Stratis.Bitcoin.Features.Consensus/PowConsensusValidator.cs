@@ -789,7 +789,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="block">Block which transactions witness data is used for calculation.</param>
         /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
-        private uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
+        public uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>();
             leaves.Add(uint256.Zero); // The witness hash of the coinbase is 0.
@@ -805,7 +805,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="block">Block which transactions are used for calculation.</param>
         /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
-        private uint256 BlockMerkleRoot(Block block, out bool mutated)
+        public uint256 BlockMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>(block.Transactions.Count);
             foreach (Transaction tx in block.Transactions)
@@ -820,7 +820,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <remarks>This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.</remarks>
         /// <param name="leaves">Merkle tree leaves.</param>
         /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
-        private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
+        public uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
             var branch = new List<uint256>();
 
