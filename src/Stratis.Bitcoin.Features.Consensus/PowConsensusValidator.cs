@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class PowConsensusValidator
     {
-        // Used as the flags parameter to sequence and nLocktime checks in non-consensus code.
+        // Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
         /// <summary>Instance logger.</summary>
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     bool malleated = false;
                     uint256 hashWitness = this.BlockWitnessMerkleRoot(block, ref malleated);
-
+             
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the
                     // witness tree.
@@ -497,8 +497,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Note that witness malleability is checked in ContextualCheckBlock, so no
             // checks that use witness data may be performed here.
 
-            // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) || (this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
+            // Size limits. Retain Stratis legacy static flags.
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) || 
+                (this.GetSize(block, block.Header.TransactionOptions & TransactionOptions.POS) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -545,7 +546,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             foreach (TxOut txout in tx.Outputs)
                 nSigOps += txout.ScriptPubKey.GetSigOpCount(false);
-
+            
             return nSigOps;
         }
 
@@ -567,7 +568,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(tx, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            if (this.GetSize(tx, tx.TransactionOptions & TransactionOptions.POS) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
@@ -640,17 +641,28 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public long GetBlockWeight(Block block)
         {
+            // Retain legacy static flags
+            var stratis = block.Header.TransactionOptions & TransactionOptions.POS;
+
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
             // weight = (stripped_size * 3) + total_size.
-            return this.GetSize(block, TransactionOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, TransactionOptions.Witness);
+            return this.GetSize(block, stratis) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, stratis | TransactionOptions.Witness);
         }
 
         public int GetSize(IBitcoinSerializable data, TransactionOptions options)
         {
+            // Retain legacy static flags
+            var stratis = options & TransactionOptions.POS;
+
             var bms = new BitcoinStream(Stream.Null, true);
-            bms.TransactionOptions = options;
+            bms.TransactionOptions |= options;
+
+            // Propagate legacy static flags.
+            if (data is Block)
+                bms.TransactionOptions |= ((data as Block).TransactionOptions & TransactionOptions.POS);
+
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }
@@ -704,7 +716,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             bool mutated = false;
-
+            
             // count is the number of leaves processed so far.
             uint count = 0;
 
@@ -717,10 +729,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             for (int i = 0; i < inner.Length; i++)
                 inner[i] = uint256.Zero;
-
+            
             // Which position in inner is a hash that depends on the matching leaf.
             int matchLevel = -1;
-
+            
             // First process all leaves into 'inner' values.
             while (count < leaves.Count)
             {
@@ -728,7 +740,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 bool matchh = count == branchpos;
                 count++;
                 int level;
-
+            
                 // For each of the lower bits in count that are 0, do 1 step. Each
                 // corresponds to an inner value that existed before processing the
                 // current leaf, and each needs a hash to combine it.
@@ -788,7 +800,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // level had existed.
                 count += (((uint)1) << levell);
                 levell++;
-
+                
                 // And propagate the result upwards accordingly.
                 while ((count & (((uint)1) << levell)) == 0)
                 {
@@ -813,7 +825,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     levell++;
                 }
             }
-            // Return result.
+            // Return result.            
             pmutated = mutated;
             root = hh;
         }
