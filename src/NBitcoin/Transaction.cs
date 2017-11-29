@@ -1128,12 +1128,16 @@ namespace NBitcoin
 	{
 		public static bool TimeStamp = false;
 
-        public bool TimeStampNew
+        /// <summary>
+        /// To replace the legacy Transaction.TimeStamp static flag.
+        /// </summary>
+        public bool TimeStampNew // Temporary name until static flags are removed
         {
             get
             {
                 bool timeStamp = (this.TransactionOptions & TransactionOptions.TimeStamp) != 0;
 
+                // Test that we are achieving the same result as the legacy flag.
                 if (Transaction.TimeStamp != timeStamp)
                 {
                     throw new ArgumentException($"The 'TimeStamp' value ({ timeStamp }) differs from Transaction.TimeStamp which is { Transaction.TimeStamp }");

@@ -283,10 +283,10 @@ namespace NBitcoin
 		}
 		internal class TransactionBuildingContext
 		{
-			public TransactionBuildingContext(TransactionBuilder builder)
+			public TransactionBuildingContext(TransactionBuilder builder, TransactionOptions options = TransactionOptions.All)
 			{
 				Builder = builder;
-				Transaction = new Transaction();
+				Transaction = new Transaction(options);
 				AdditionalFees = Money.Zero;
 			}
 			public TransactionBuilder.BuilderGroup Group
@@ -384,7 +384,7 @@ namespace NBitcoin
 
 			public TransactionBuildingContext CreateMemento()
 			{
-				var memento = new TransactionBuildingContext(Builder);
+				var memento = new TransactionBuildingContext(Builder, this.Transaction.TransactionOptions);
 				memento.RestoreMemento(this);
 				return memento;
 			}
@@ -489,12 +489,13 @@ namespace NBitcoin
 				return _CurrentGroup;
 			}
 		}
-		public TransactionBuilder()
+		public TransactionBuilder(TransactionOptions transactionOptions = TransactionOptions.All)
 		{
 			_Rand = new Random();
 			CoinSelector = new DefaultCoinSelector();
 			StandardTransactionPolicy = new StandardTransactionPolicy();
 			DustPrevention = true;
+            TransactionOptions = transactionOptions;
 			InitExtensions();
 		}
 
@@ -507,16 +508,27 @@ namespace NBitcoin
 		}
 
 		internal Random _Rand;
-		public TransactionBuilder(int seed)
+		public TransactionBuilder(int seed, TransactionOptions transactionOptions = TransactionOptions.All)
 		{
 			_Rand = new Random(seed);
 			CoinSelector = new DefaultCoinSelector(seed);
 			StandardTransactionPolicy = new StandardTransactionPolicy();
 			DustPrevention = true;
+            this.TransactionOptions = transactionOptions;
 			InitExtensions();
 		}
 
-		public ICoinSelector CoinSelector
+        public TransactionBuilder(int seed, bool isPOS)
+            :this(seed, isPOS?TransactionOptions.POSAll:TransactionOptions.All)
+        {
+        }
+
+        public TransactionBuilder(bool isPOS)
+            : this(isPOS ? TransactionOptions.POSAll : TransactionOptions.All)
+        {
+        }
+
+        public ICoinSelector CoinSelector
 		{
 			get;
 			set;
@@ -531,10 +543,19 @@ namespace NBitcoin
 			set;
 		}
 
-		/// <summary>
-		/// A callback used by the TransactionBuilder when it does not find the coin for an input
-		/// </summary>
-		public Func<OutPoint, ICoin> CoinFinder
+        /// <summary>
+        /// The transaction options for creating transactions.
+        /// </summary>
+        public TransactionOptions TransactionOptions
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// A callback used by the TransactionBuilder when it does not find the coin for an input
+        /// </summary>
+        public Func<OutPoint, ICoin> CoinFinder
 		{
 			get;
 			set;
@@ -998,7 +1019,7 @@ namespace NBitcoin
 		/// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
 		public Transaction BuildTransaction(bool sign)
 		{
-			return BuildTransaction(sign, SigHash.All);
+			return BuildTransaction(sign, SigHash.All, this.TransactionOptions);
 		}
 
 		/// <summary>
@@ -1008,9 +1029,9 @@ namespace NBitcoin
 		/// <param name="sigHash">The type of signature</param>
 		/// <returns>The transaction</returns>
 		/// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
-		public Transaction BuildTransaction(bool sign, SigHash sigHash)
+		public Transaction BuildTransaction(bool sign, SigHash sigHash, TransactionOptions options = TransactionOptions.All)
 		{
-			TransactionBuildingContext ctx = new TransactionBuildingContext(this);
+			TransactionBuildingContext ctx = new TransactionBuildingContext(this, options);
 			if(_CompletedTransaction != null)
 				ctx.Transaction = _CompletedTransaction.Clone();
 			if(_LockTime != null)
@@ -1364,7 +1385,7 @@ namespace NBitcoin
 				throw new ArgumentNullException("tx");
 			var clone = tx.Clone();
 			clone.Inputs.Clear();
-			var baseSize = clone.GetSerializedSize();
+			var baseSize = clone.GetSerializedSize(tx.TransactionOptions);
 
 			int vSize = 0;
 			int size = baseSize;
