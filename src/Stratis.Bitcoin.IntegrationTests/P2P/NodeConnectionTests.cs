@@ -49,14 +49,23 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             // Wait until we have discovered 3 peers.
             TestHelper.WaitLoop(() => addressManager.Peers.Count > 3);
 
-            var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
-            NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
-            node.VersionHandshake();
-            node.Disconnect();
+            // Wait until at least one successful connection
+            // has been made.
+            while (true)
+            {
+                try
+                {
+                    var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
+                    NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
+                    node.VersionHandshake();
+                    node.Disconnect();
 
-            var peerTwo = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
-            NetworkPeer node2 = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerTwo, parameters);
-            node.Disconnect();
+                    break;
+                }
+                catch
+                {
+                }
+            };
         }
     }
 }
