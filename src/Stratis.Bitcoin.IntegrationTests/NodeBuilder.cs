@@ -824,7 +824,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 for (int i = 0; i < blockCount; i++)
                 {
                     uint nonce = 0;
-                    Block block = new Block();
+                    Block block = new Block(node.Network.TransactionOptions);
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;
                     block.Header.Bits = block.Header.GetWorkRequired(rpc.Network, chain.Tip);
                     block.Header.UpdateTime(now, rpc.Network, chain.Tip);
@@ -875,7 +875,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                Block block = new Block();
+                Block block = new Block(fullNode.Network.TransactionOptions);
                 block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
                 block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
