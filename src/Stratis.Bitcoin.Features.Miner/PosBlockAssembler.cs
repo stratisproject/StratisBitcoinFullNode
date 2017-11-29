@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
+            this.coinbase.TransactionOptions = this.pblocktemplate.Block.TransactionOptions;
 
             PosConsensusValidator posValidator = this.consensusLoop.Validator as PosConsensusValidator;
             Guard.NotNull(posValidator, nameof(posValidator));
