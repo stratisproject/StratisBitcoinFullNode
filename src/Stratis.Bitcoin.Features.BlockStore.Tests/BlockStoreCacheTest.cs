@@ -18,6 +18,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public BlockStoreCacheTest()
         {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+
             this.loggerFactory = new LoggerFactory();
             this.blockRepository = new Mock<IBlockRepository>();
             this.cache = new Mock<IMemoryCache>();
