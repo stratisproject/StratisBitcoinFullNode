@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // 1
                 var h1 = tester.NewBlock();
                 cacheCoinView.FlushAsync().Wait();
-                Assert.True(tester.Exists(coins[2]));
+                Assert.True(tester.Exists(coins[3]));
                 Assert.True(tester.Exists(coin[0]));
 
                 tester.Spend(coins[2]);
