@@ -12,7 +12,6 @@ namespace NBitcoin
     public interface IHaveTransactionOptions
     {
         TransactionOptions GetTransactionOptions();
-        void NotifyTransactionOptions(TransactionOptions options);
     }
 
 	public static class BitcoinSerializableExtensions
@@ -28,9 +27,6 @@ namespace NBitcoin
                 ProtocolVersion = version,
                 TransactionOptions = options
             });
-
-            if (!serializing && serializable is IHaveTransactionOptions)
-                (serializable as IHaveTransactionOptions).NotifyTransactionOptions(options);
 		}
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
 		{
@@ -87,8 +83,6 @@ namespace NBitcoin
             if (serializable is IHaveTransactionOptions)
                 options |= (serializable as IHaveTransactionOptions).GetTransactionOptions();
 			instance.FromBytes(serializable.ToBytes(version, options), version, options);
-            if (serializable is IHaveTransactionOptions)
-                (instance as IHaveTransactionOptions).NotifyTransactionOptions(options);
 			return instance;
 		}
         

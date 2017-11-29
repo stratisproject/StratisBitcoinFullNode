@@ -1224,11 +1224,6 @@ namespace NBitcoin
             return this.TransactionOptions & TransactionOptions.POS;
         }
 
-        public void NotifyTransactionOptions(TransactionOptions options)
-        {
-            this.TransactionOptions |= (options & TransactionOptions.POS);
-        }
-
 		public Money TotalOut
 		{
 			get

@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
 
         public override string ToString()
         {
-            return string.Format("{0} : {1}", this.Command, this.Payload);
+            return string.Format("{0}: {1}", this.Command, this.Payload);
         }
 
         public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken)

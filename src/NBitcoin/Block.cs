@@ -104,11 +104,6 @@ namespace NBitcoin
             return this.TransactionOptions & TransactionOptions.POS;
         }
 
-        public void NotifyTransactionOptions(TransactionOptions options)
-        {
-            this.TransactionOptions |= options & TransactionOptions.POS;
-        }
-
         internal void SetNull()
         {
             this.version = CurrentVersion;
@@ -308,10 +303,6 @@ namespace NBitcoin
         public TransactionOptions GetTransactionOptions()
         {
             return this.TransactionOptions;
-        }
-
-        public void NotifyTransactionOptions(TransactionOptions options)
-        {
         }
 
         public void ReadWrite(BitcoinStream stream)
