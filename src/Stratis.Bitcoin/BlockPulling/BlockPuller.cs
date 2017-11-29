@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -66,6 +67,9 @@ namespace Stratis.Bitcoin.BlockPulling
 
             /// <summary>Description of a block.</summary>
             public Block Block;
+
+            /// <summary>The peer the block came from.</summary>
+            public IPEndPoint Peer;
         }
 
         /// <summary>Number of historic samples we keep to calculate quality score stats from.</summary>
@@ -115,7 +119,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadAssignment>> peersPendingDownloads = new Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadAssignment>>();
 
         /// <summary>Collection of available network peers.</summary>
-        protected readonly IReadOnlyNodesCollection Nodes;
+        protected readonly IReadOnlyNetworkPeerCollection Nodes;
 
         /// <summary>Best chain that the node is aware of.</summary>
         protected readonly ConcurrentChain Chain;
@@ -124,10 +128,10 @@ namespace Stratis.Bitcoin.BlockPulling
         private Random Rand = new Random();
 
         /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
-        private readonly NodeRequirement requirements;
+        private readonly NetworkPeerRequirement requirements;
 
         /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
-        public virtual NodeRequirement Requirements => this.requirements;
+        public virtual NetworkPeerRequirement Requirements => this.requirements;
 
         /// <summary>
         /// Initializes a new instance of the object having a chain of block headers and a list of available nodes.
@@ -136,7 +140,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="nodes">Network peers of the node.</param>
         /// <param name="protocolVersion">Version of the protocol that the node supports.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion, ILoggerFactory loggerFactory)
+        protected BlockPuller(ConcurrentChain chain, IReadOnlyNetworkPeerCollection nodes, ProtocolVersion protocolVersion, ILoggerFactory loggerFactory)
         {
             this.Chain = chain;
             this.Nodes = nodes;
@@ -147,10 +151,10 @@ namespace Stratis.Bitcoin.BlockPulling
             this.peerQuality = new QualityScore(QualityScoreHistoryLength, loggerFactory);
 
             // Set the default requirements.
-            this.requirements = new NodeRequirement
+            this.requirements = new NetworkPeerRequirement
             {
                 MinVersion = protocolVersion,
-                RequiredServices = NodeServices.Network
+                RequiredServices = NetworkPeerServices.Network
             };
         }
 

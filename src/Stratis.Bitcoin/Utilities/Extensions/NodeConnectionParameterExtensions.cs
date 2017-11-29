@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin
 {
     public static class NodeConnectionParameterExtensions
     {
-        public static PeerAddressManagerBehaviour PeerAddressManagerBehaviour(this NodeConnectionParameters parameters)
+        public static PeerAddressManagerBehaviour PeerAddressManagerBehaviour(this NetworkPeerConnectionParameters parameters)
         {
             return parameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
         }

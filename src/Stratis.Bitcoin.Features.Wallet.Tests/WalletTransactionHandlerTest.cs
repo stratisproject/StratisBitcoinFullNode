@@ -13,6 +13,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletTransactionHandlerTest : LogsTestBase
     {
+        public WalletTransactionHandlerTest()
+        {
+            // These tests use Network.Main.
+            // Ensure that these static flags have the expected values.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         [Fact]
         public void BuildTransactionThrowsWalletExceptionWhenMoneyIsZero()
         {

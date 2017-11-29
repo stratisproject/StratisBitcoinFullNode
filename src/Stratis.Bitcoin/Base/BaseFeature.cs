@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,8 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
 namespace Stratis.Bitcoin.Base
 {
@@ -169,7 +172,7 @@ namespace Stratis.Bitcoin.Base
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
-            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning));
+            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);
 
@@ -221,7 +224,7 @@ namespace Stratis.Bitcoin.Base
         /// or creates new peer file if it does not exist. Creates periodic task to persist changes
         /// in peers to disk.
         /// </summary>
-        private void StartAddressManager(NodeConnectionParameters connectionParameters)
+        private void StartAddressManager(NetworkPeerConnectionParameters connectionParameters)
         {
             var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager);
             connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
@@ -298,7 +301,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<NodeDeployments>();
 
                     // Connection
-                    services.AddSingleton<NodeConnectionParameters>(new NodeConnectionParameters());
+                    services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();
+                    services.AddSingleton<NetworkPeerConnectionParameters>(new NetworkPeerConnectionParameters());
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
 
                     // Peer address manager

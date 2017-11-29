@@ -55,7 +55,7 @@ namespace NBitcoin.Tests
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
-		public static void CanCalculatePowPosCorrectly()
+		public void CanCalculatePowPosCorrectly()
 		{
 			var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
 			var chain = store.GetChain();
@@ -76,7 +76,7 @@ namespace NBitcoin.Tests
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
-		public static void CheckBlockSignatureSerialization()
+		public void CheckBlockSignatureSerialization()
 		{
 			// validate a selection of block signatures
 
@@ -97,7 +97,7 @@ namespace NBitcoin.Tests
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
-		public static void CheckBlockSignature()
+		public void CheckBlockSignature()
 		{
 			// validate all block signatures
 
