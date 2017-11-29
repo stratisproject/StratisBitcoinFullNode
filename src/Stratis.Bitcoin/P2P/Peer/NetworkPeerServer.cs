@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             TraceCorrelation trace = null;
             if (message.NetworkPeer != null)
             {
-                trace = message.NetworkPeer.TraceCorrelation;
+                trace = new TraceCorrelation(NodeServerTrace.Trace, "dummy");
             }
             else
             {
