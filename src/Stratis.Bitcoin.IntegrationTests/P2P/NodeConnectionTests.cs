@@ -1,8 +1,6 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using NBitcoin.Protocol;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -34,9 +32,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             parameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-            INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, new LoggerFactory());
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
             var peerDiscoveryLoop = new PeerDiscoveryLoop(
-                new AsyncLoopFactory(new LoggerFactory()),
+                new AsyncLoopFactory(loggerFactory),
                 Network.Main,
                 parameters,
                 new NodeLifetime(),
@@ -45,11 +46,8 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             peerDiscoveryLoop.DiscoverPeers();
 
-            //Wait until we have discovered 3 peers
-            while (addressManager.Peers.Count < 3)
-            {
-                Task.Delay(TimeSpans.Second).GetAwaiter().GetResult();
-            }
+            // Wait until we have discovered 3 peers.
+            TestHelper.WaitLoop(() => addressManager.Peers.Count > 3);
 
             var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
             NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
