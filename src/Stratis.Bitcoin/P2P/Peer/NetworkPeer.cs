@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.RemoteSocketEndpoint}] ");
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peerAddress.Endpoint}] ");
             this.dateTimeProvider = dateTimeProvider;
 
             parameters = parameters ?? new NetworkPeerConnectionParameters();
