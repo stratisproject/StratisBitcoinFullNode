@@ -217,8 +217,8 @@ namespace Stratis.Bitcoin
 
             this.ConnectionManager.Dispose();
 
-            foreach (IDisposable dispo in this.Resources)
-                dispo.Dispose();
+            foreach (IDisposable disposable in this.Resources)
+                disposable.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
             this.fullNodeFeatureExecutor.Stop();

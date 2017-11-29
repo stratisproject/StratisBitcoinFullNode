@@ -187,7 +187,6 @@ namespace Stratis.Bitcoin.Base
 
             this.disposableResources.Add(this.timeSyncBehaviorState);
             this.disposableResources.Add(this.chainRepository);
-            this.disposableResources.Add(this.connectionManager);
             this.disposableResources.Add(this.nodeSettings.LoggerFactory);
 
             this.logger.LogTrace("(-)");
