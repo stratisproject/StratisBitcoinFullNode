@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -47,6 +48,13 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         #endregion Mock Features
 
         #region Tests
+
+        public FeaturesDependencyCheckingTest()
+        {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
 
         /// <summary>
         /// Test no exceptions fired when checking features that exist.

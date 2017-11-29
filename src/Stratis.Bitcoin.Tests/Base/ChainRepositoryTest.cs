@@ -9,6 +9,13 @@ namespace Stratis.Bitcoin.Tests.Base
 {
     public class ChainRepositoryTest : TestBase
     {
+        public ChainRepositoryTest()
+        {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         [Fact]
         public void SaveWritesChainToDisk()
         {
