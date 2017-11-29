@@ -640,7 +640,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             return new RestClient(new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"));
         }
 
-        public NetworkPeer CreateNodeClient()
+        public NetworkPeer CreateNetworkPeerClient()
         {
             return this.networkPeerFactory.CreateConnectedNetworkPeer(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString());
         }
@@ -739,26 +739,45 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-#if !NOSOCKET
-
         public void Broadcast(Transaction transaction)
         {
-            using (var node = this.CreateNodeClient())
+            using (var peer = this.CreateNetworkPeerClient())
             {
-                node.VersionHandshake();
-                node.SendMessageAsync(new InvPayload(transaction));
-                node.SendMessageAsync(new TxPayload(transaction));
-                node.PingPong();
+                peer.VersionHandshake();
+                peer.SendMessageAsync(new InvPayload(transaction));
+                peer.SendMessageAsync(new TxPayload(transaction));
+                this.PingPong(peer);
             }
         }
 
-#else
-        public void Broadcast(Transaction transaction)
+        /// <summary>
+        /// Emit a ping and wait the pong.
+        /// </summary>
+        /// <param name="cancellation"></param>
+        /// <param name="peer"></param>
+        /// <returns>Latency.</returns>
+        public TimeSpan PingPong(NetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            var rpc = CreateRPCClient();
-            rpc.SendRawTransaction(transaction);
+            using (NetworkPeerListener listener = peer.CreateListener().OfType<PongPayload>())
+            {
+                var ping = new PingPayload()
+                {
+                    Nonce = RandomUtils.GetUInt64()
+                };
+
+                DateTimeOffset before = DateTimeOffset.UtcNow;
+                peer.SendMessageAsync(ping);
+
+                while (listener.ReceivePayload<PongPayload>(cancellation).Nonce != ping.Nonce)
+                {
+                }
+
+                DateTimeOffset after = DateTimeOffset.UtcNow;
+
+                return after - before;
+            }
         }
-#endif
+
 
         public void SelectMempoolTransactions()
         {
@@ -821,7 +840,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 #if !NOSOCKET
-            using (var node = this.CreateNodeClient())
+            using (var node = this.CreateNetworkPeerClient())
             {
                 node.VersionHandshake();
                 chain = bestBlock == node.Network.GenesisHash ? new ConcurrentChain(node.Network) : node.GetChain();
@@ -933,23 +952,23 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void BroadcastBlocks(Block[] blocks)
         {
-            using (var node = this.CreateNodeClient())
+            using (var node = this.CreateNetworkPeerClient())
             {
                 node.VersionHandshake();
                 this.BroadcastBlocks(blocks, node);
             }
         }
 
-        public void BroadcastBlocks(Block[] blocks, NetworkPeer node)
+        public void BroadcastBlocks(Block[] blocks, NetworkPeer peer)
         {
             Block lastSent = null;
             foreach (var block in blocks)
             {
-                node.SendMessageAsync(new InvPayload(block));
-                node.SendMessageAsync(new BlockPayload(block));
+                peer.SendMessageAsync(new InvPayload(block));
+                peer.SendMessageAsync(new BlockPayload(block));
                 lastSent = block;
             }
-            node.PingPong();
+            this.PingPong(peer);
         }
 
         public Block[] FindBlock(int blockCount = 1, bool includeMempool = true)

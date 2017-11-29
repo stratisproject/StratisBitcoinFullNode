@@ -819,7 +819,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            VersionHandshake(null, cancellationToken);
+            this.VersionHandshake(null, cancellationToken);
 
             this.logger.LogTrace("(-)");
         }
@@ -1178,37 +1178,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void Dispose()
         {
             Disconnect("Node disposed");
-        }
-
-        /// <summary>
-        /// Emit a ping and wait the pong.
-        /// </summary>
-        /// <param name="cancellation"></param>
-        /// <returns>Latency.</returns>
-        public TimeSpan PingPong(CancellationToken cancellation = default(CancellationToken))
-        {
-            this.logger.LogTrace("()");
-
-            using (NetworkPeerListener listener = this.CreateListener().OfType<PongPayload>())
-            {
-                var ping = new PingPayload()
-                {
-                    Nonce = RandomUtils.GetUInt64()
-                };
-
-                DateTimeOffset before = DateTimeOffset.UtcNow;
-                SendMessageAsync(ping);
-
-                while (listener.ReceivePayload<PongPayload>(cancellation).Nonce != ping.Nonce)
-                {
-                }
-
-                DateTimeOffset after = DateTimeOffset.UtcNow;
-
-                TimeSpan res = after - before;
-                this.logger.LogTrace("(-):{0}", res);
-                return res;
-            }
         }
     }
 }
