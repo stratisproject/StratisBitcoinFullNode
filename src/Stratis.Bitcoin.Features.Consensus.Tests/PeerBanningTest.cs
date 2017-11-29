@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
-            var node = new NetworkPeer();
+            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new NetworkPeer();
+            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new NetworkPeer();
+            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new NetworkPeer();
+            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
             node.Behaviors.Add(connectionManagerBehavior);
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
