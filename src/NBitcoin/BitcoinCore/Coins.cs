@@ -76,11 +76,11 @@ namespace NBitcoin.BitcoinCore
 		}
 		public Coins(Transaction tx, int height)
 		{
-			if (Transaction.TimeStamp)
-			{
-				fCoinStake = tx.IsCoinStake;
-				nTime = tx.Time;
-			}
+            if (tx.TimeStampNew)
+            {
+                fCoinStake = tx.IsCoinStake;
+                nTime = tx.Time;
+            }
 
 			CoinBase = tx.IsCoinBase;
 			Outputs = tx.Outputs.ToList();
@@ -177,7 +177,7 @@ namespace NBitcoin.BitcoinCore
 				// coinbase height
 				stream.ReadWriteAsVarInt(ref nHeight);
 
-				if (Transaction.TimeStamp)
+                if (stream.TimeStamp)
 				{
 					stream.ReadWrite(ref fCoinStake);
 					stream.ReadWrite(ref nTime);
@@ -222,8 +222,8 @@ namespace NBitcoin.BitcoinCore
 				//// coinbase height
 				stream.ReadWriteAsVarInt(ref nHeight);
 
-				if (Transaction.TimeStamp)
-				{
+                if (stream.TimeStamp)
+                {
 					stream.ReadWrite(ref fCoinStake);
 					stream.ReadWrite(ref nTime);
 				}

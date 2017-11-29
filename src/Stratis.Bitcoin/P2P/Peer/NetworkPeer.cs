@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 message.ReadWrite(new BitcoinStream(ms, true)
                                 {
                                     ProtocolVersion = this.Peer.Version,
-                                    TransactionOptions = this.Peer.SupportedTransactionOptions
+                                    TransactionOptions = this.Peer.SupportedTransactionOptions | (this.Peer.Network.TransactionOptions & TransactionOptions.POS)
                                 });
 
                                 byte[] bytes = ms.ToArrayEfficient();

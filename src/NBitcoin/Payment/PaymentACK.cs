@@ -112,7 +112,7 @@ namespace NBitcoin.Payment
 			};
 		}
 
-		public static PaymentMessage Load(Stream source)
+		public static PaymentMessage Load(Stream source, TransactionOptions options = TransactionOptions.All)
 		{
 			if(source.CanSeek && source.Length > MaxLength)
 				throw new ArgumentException("Payment messages larger than " + MaxLength + " bytes should be rejected by the merchant's server", "source");
@@ -128,7 +128,7 @@ namespace NBitcoin.Payment
 						message.MerchantData = proto.ReadBytes();
 						break;
 					case 2:
-						message.Transactions.Add(new Transaction(proto.ReadBytes()));
+						message.Transactions.Add(new Transaction(proto.ReadBytes(), options));
 						break;
 					case 3:
 						message.RefundTo.Add(PaymentOutput.Load(proto.ReadBytes()));

@@ -79,9 +79,9 @@ namespace NBitcoin.RPC
 			return json.ToObject<RPCBlock>();
 		}
 
-		public static Block ToBlock(RPCBlock rpcBlock)
+		public static Block ToBlock(RPCBlock rpcBlock, TransactionOptions options)
 		{
-			var header = new BlockHeader()
+			var header = new BlockHeader(options)
 			{
 				Time = rpcBlock.time,
 				//BlockStake = new BlockStake
@@ -105,7 +105,7 @@ namespace NBitcoin.RPC
 			}
 
 			// todo: parse transactions
-			block.Transactions = rpcBlock.tx.Select(t => new Transaction()).ToList();
+			block.Transactions = rpcBlock.tx.Select(t => new Transaction(options)).ToList();
 
 			return block;
 		}

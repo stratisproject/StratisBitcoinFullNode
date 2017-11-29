@@ -214,7 +214,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(Consensus consensus)
         {
-            BlockHeader dummy = new BlockHeader();
+            BlockHeader dummy = new BlockHeader(this.Header.TransactionOptions);
             dummy.HashPrevBlock = this.HashBlock;
             dummy.BlockTime = DateTimeOffset.UtcNow;
             return GetNextWorkRequired(dummy, consensus);
@@ -361,7 +361,7 @@ namespace NBitcoin
             if (network == null)
                 throw new ArgumentNullException("network");
 
-            if (Block.BlockSignature)
+            if (this.Header.Signature)
                 return BlockStake.Validate(network, this);
 
             bool genesisCorrect = (this.Height != 0) || this.HashBlock == network.GetGenesis().GetHash();

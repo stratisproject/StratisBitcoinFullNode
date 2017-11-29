@@ -1013,18 +1013,18 @@ namespace NBitcoin.RPC
 		public BlockHeader GetBlockHeader(uint256 blockHash)
 		{
 			var resp = SendCommand("getblockheader", blockHash.ToString());
-			return ParseBlockHeader(resp);
+			return ParseBlockHeader(resp, this.Network.TransactionOptions);
 		}
 
 		public async Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash)
 		{
 			var resp = await SendCommandAsync("getblockheader", blockHash.ToString()).ConfigureAwait(false);
-			return ParseBlockHeader(resp);
+			return ParseBlockHeader(resp, this.Network.TransactionOptions);
 		}
 
-		private static BlockHeader ParseBlockHeader(RPCResponse resp)
+		private static BlockHeader ParseBlockHeader(RPCResponse resp, TransactionOptions options)
 		{
-			var header = new BlockHeader();
+			var header = new BlockHeader(options);
 			header.Version = (int)resp.Result["version"];
 			header.Nonce = (uint)resp.Result["nonce"];
 			header.Bits = new Target(Encoders.Hex.DecodeData((string)resp.Result["bits"]));
@@ -1187,7 +1187,7 @@ namespace NBitcoin.RPC
 				return null;
 
 			response.ThrowIfError();
-			var tx = new Transaction();
+			var tx = new Transaction(this.Network.TransactionOptions);
 			tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()));
 			return tx;
 		}

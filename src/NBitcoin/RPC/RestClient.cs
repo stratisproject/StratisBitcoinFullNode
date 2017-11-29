@@ -29,13 +29,13 @@ namespace NBitcoin.RPC
 	{
 		private readonly Uri _address;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="RestClient"/> class.
-		/// </summary>
-		/// <param name="address">The rest API endpoint</param>
-		/// <exception cref="System.ArgumentNullException">Null rest API endpoint</exception>
-		/// <exception cref="System.ArgumentException">Invalid value for RestResponseFormat</exception>
-		public RestClient(Uri address)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RestClient"/> class.
+        /// </summary>
+        /// <param name="address">The rest API endpoint</param>
+        /// <exception cref="System.ArgumentNullException">Null rest API endpoint</exception>
+        /// <exception cref="System.ArgumentException">Invalid value for RestResponseFormat</exception>
+        public RestClient(Uri address)
 		{
 			if(address == null)
 				throw new ArgumentNullException("address");
@@ -82,13 +82,13 @@ namespace NBitcoin.RPC
 		/// <param name="txId">The transaction identifier.</param>
 		/// <returns>Given a transaction hash (id) returns the requested transaction object.</returns>
 		/// <exception cref="System.ArgumentNullException">txId cannot be null</exception>
-		public async Task<Transaction> GetTransactionAsync(uint256 txId)
+		public async Task<Transaction> GetTransactionAsync(uint256 txId, Network network = null)
 		{
 			if(txId == null)
 				throw new ArgumentNullException("txId");
 
 			var result = await SendRequestAsync("tx", RestResponseFormat.Bin, txId.ToString()).ConfigureAwait(false);
-			return new Transaction(result);
+			return new Transaction(result, network?.TransactionOptions ?? TransactionOptions.All);
 		}
 		/// <summary>
 		/// Gets a transaction.
@@ -96,11 +96,11 @@ namespace NBitcoin.RPC
 		/// <param name="txId">The transaction identifier.</param>
 		/// <returns>Given a transaction hash (id) returns the requested transaction object.</returns>
 		/// <exception cref="System.ArgumentNullException">txId cannot be null</exception>
-		public Transaction GetTransaction(uint256 txId)
+		public Transaction GetTransaction(uint256 txId, Network network = null)
 		{
 			try
 			{
-				return GetTransactionAsync(txId).Result;
+				return GetTransactionAsync(txId, network).Result;
 			}
 			catch(AggregateException ex)
 			{
