@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                             this.logger.LogTrace("Receiving message: '{0}'", message);
 
-                            this.Peer.LastSeen = DateTimeOffset.UtcNow;
+                            this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
                             this.Peer.Counter.Add(counter);
                             this.Peer.OnMessageReceived(new IncomingMessage()
                             {
@@ -318,7 +318,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        public DateTimeOffset ConnectedAt { get; private set; }
+        /// <summary>Time in UTC when the connection to the peer was established.</summary>
+        public DateTime ConnectedAt { get; private set; }
 
         private volatile NetworkPeerState state = NetworkPeerState.Offline;
         public NetworkPeerState State
@@ -353,7 +354,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
         public NetworkAddress PeerAddress { get; private set; }
 
-        public DateTimeOffset LastSeen { get; set; }
+        /// <summary>Last time in UTC the node received something from this peer.</summary>
+        public DateTime LastSeen { get; set; }
 
         public TimeSpan? TimeOffset { get; private set; }
 
@@ -437,13 +439,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
+        /// <summary>
+        /// Dummy constructor for testing only.
+        /// </summary>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Provider of time functions.</param>
+        /// <remarks>TODO: Remove this constructor as soon as we can mock the node in tests.</remarks>
         public NetworkPeer(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // This constructor is used for testing until the Node class has an interface and can be mocked.
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
         }
 
@@ -461,7 +468,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
             this.Network = network;
             this.PeerAddress = peerAddress;
-            this.LastSeen = peerAddress.Time;
+            this.LastSeen = peerAddress.Time.UtcDateTime;
 
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -496,7 +503,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.RemoteSocketPort = remoteEndpoint.Port;
 
                         this.State = NetworkPeerState.Connected;
-                        this.ConnectedAt = DateTimeOffset.UtcNow;
+                        this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
                         this.logger.LogTrace("Outbound connection to '{0}' established.", peerAddress.Endpoint);
                     }
@@ -551,8 +558,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.PeerAddress = peerAddress;
             this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
             this.PeerVersion = peerVersion;
-            this.LastSeen = peerAddress.Time;
-            this.ConnectedAt = DateTimeOffset.UtcNow;
+            this.LastSeen = peerAddress.Time.UtcDateTime;
+            this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
             this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
             this.State = NetworkPeerState.Connected;
@@ -602,7 +609,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (version != null)
             {
-                this.TimeOffset = DateTimeOffset.Now - version.Timestamp;
+                this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
                 if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
                     this.SupportedTransactionOptions |= TransactionOptions.Witness;
             }
@@ -869,7 +876,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.SendMessageAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
                     {
-                        Time = DateTimeOffset.UtcNow
+                        Time = this.dateTimeProvider.GetTimeOffset()
                     }));
                 }
             }
