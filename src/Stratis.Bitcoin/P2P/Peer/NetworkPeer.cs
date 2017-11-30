@@ -1335,6 +1335,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             return inventoryType;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             Disconnect("Node disposed");

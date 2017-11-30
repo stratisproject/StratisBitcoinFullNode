@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        ///<inheritdoc />
+        /// <inheritdoc />
         public override void Start()
         {
             if (this.minerSettings.Mine)
@@ -117,14 +117,14 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        ///<inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.powLoop?.Dispose();
             this.posLoop?.Dispose();
         }
 
-        ///<inheritdoc />
+        /// <inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)
         {
             if (services.ServiceProvider.GetService<PosMinting>() != null)

@@ -56,6 +56,7 @@ namespace Stratis.Bitcoin.Features.Api
             this.TryStartKeepaliveMonitor();
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.asyncLoop?.Dispose();

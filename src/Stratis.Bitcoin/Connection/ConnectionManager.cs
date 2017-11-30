@@ -368,6 +368,7 @@ namespace Stratis.Bitcoin.Connection
             return match.Groups[1].Value;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.logger.LogTrace("()");
