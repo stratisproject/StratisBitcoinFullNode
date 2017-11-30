@@ -101,8 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             string fileName = "mempool.dat";
             NodeSettings settings = this.CreateSettings("LoadPoolTest_WithBadTransactions");
             IEnumerable<MempoolPersistenceEntry> toSave = this.CreateTestEntries(numTx);
-            TxMempool unused;
-            MempoolManager mempoolManager = CreateTestMempool(settings, out unused);
+            MempoolManager mempoolManager = CreateTestMempool(settings, out TxMempool unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
             mempoolManager.LoadPoolAsync(fileName).GetAwaiter().GetResult();

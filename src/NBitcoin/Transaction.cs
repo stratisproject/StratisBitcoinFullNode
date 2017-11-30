@@ -696,8 +696,7 @@ namespace NBitcoin
 
         public bool VerifyScript(Script scriptPubKey, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            ScriptError unused;
-            return VerifyScript(scriptPubKey, scriptVerify, out unused);
+            return VerifyScript(scriptPubKey, scriptVerify, out ScriptError unused);
         }
         public bool VerifyScript(Script scriptPubKey, out ScriptError error)
         {
@@ -714,8 +713,7 @@ namespace NBitcoin
 
         public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            ScriptError error;
-            return VerifyScript(coin, scriptVerify, out error);
+            return VerifyScript(coin, scriptVerify, out ScriptError unused);
         }
 
         public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify, out ScriptError error)
