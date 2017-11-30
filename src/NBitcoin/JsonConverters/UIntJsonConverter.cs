@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class UInt160JsonConverter : JsonConverter
+    class UInt160JsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -45,11 +45,11 @@ namespace NBitcoin.JsonConverters
         }
     }
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class UInt256JsonConverter : JsonConverter
+    class UInt256JsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {

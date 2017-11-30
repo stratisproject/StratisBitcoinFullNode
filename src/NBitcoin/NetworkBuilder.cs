@@ -71,7 +71,7 @@ namespace NBitcoin
         {
             this.Aliases.Add(alias);
             return this;
-        }		
+        }        
 
         public NetworkBuilder SetRPCPort(int port)
         {
@@ -112,7 +112,7 @@ namespace NBitcoin
         {
             this.Genesis = genesis;
             return this;
-        }		
+        }        
 
         public NetworkBuilder SetBase58Bytes(Base58Type type, byte[] bytes)
         {

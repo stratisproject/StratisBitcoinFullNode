@@ -8,11 +8,11 @@ using System.Reflection;
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class CoinJsonConverter : JsonConverter
+    class CoinJsonConverter : JsonConverter
     {
         public class CoinJson
         {
