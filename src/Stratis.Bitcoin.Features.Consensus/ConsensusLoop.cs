@@ -13,6 +13,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -65,6 +66,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
+
+        /// <summary>The context of the validation processes.</summary>
+        public ContextInformation Context { get; set; }
     }
 
     /// <summary>
@@ -135,6 +139,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Handles the banning of peers.</summary>
         private readonly IPeerBanning peerBanning;
 
+        private readonly IConsensusRules consensusRules;
+
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -157,6 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="consensusSettings">Consensus settings for the full node.</param>
         /// <param name="nodeSettings">Settings for the full node.</param>
         /// <param name="peerBanning">Handles the banning of peers.</param>
+        /// <param name="consensusRules">The consensus rules to validate.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
@@ -175,6 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusSettings consensusSettings,
             NodeSettings nodeSettings,
             IPeerBanning peerBanning,
+            IConsensusRules consensusRules,
             StakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
@@ -190,6 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(peerBanning, nameof(peerBanning));
+            Guard.NotNull(consensusRules, nameof(consensusRules));
 
             this.consensusLock = new AsyncLock();
 
@@ -210,9 +219,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusSettings = consensusSettings;
             this.nodeSettings = nodeSettings;
             this.peerBanning = peerBanning;
+            this.consensusRules = consensusRules;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
+
+            // TODO: Ugly hack for now to avoid circular dependency.
+            (this.consensusRules as ConsensusRules).ConsensusLoop = this;
         }
 
         /// <summary>
@@ -349,9 +362,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
+                await this.consensusRules.ExectueAsync(blockValidationContext);
+
                 try
                 {
-                    await this.ValidateAndExecuteBlockAsync(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams)).ConfigureAwait(false);
+                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.Context).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {

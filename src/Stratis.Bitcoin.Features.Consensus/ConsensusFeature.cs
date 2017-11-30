@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -55,6 +58,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Consensus settings from configuration.</summary>
         private readonly ConsensusSettings consensusSettings;
 
+        private readonly IRuleRegistration ruleRegistration;
+        private readonly IConsensusRules consensusRules;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -89,6 +95,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusManager consensusManager,
             ConsensusStats consensusStats,
             ConsensusSettings consensusSettings,
+            IRuleRegistration ruleRegistration,
+            IConsensusRules consensusRules,
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
@@ -111,6 +119,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusManager = consensusManager;
             this.consensusStats = consensusStats;
             this.consensusSettings = consensusSettings;
+            this.ruleRegistration = ruleRegistration;
+            this.consensusRules = consensusRules;
 
             this.chainState.MaxReorgLength = this.network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
         }
@@ -143,6 +153,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 
             this.signals.SubscribeForBlocks(this.consensusStats);
+
+            this.consensusRules.Register(this.ruleRegistration);
         }
 
         /// <inheritdoc />
@@ -196,6 +208,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
+                    services.AddSingleton<IConsensusRules, ConsensusRules>();
+                    services.AddSingleton<IRuleRegistration, BaseConsensusRules>();
                 });
             });
 
@@ -233,10 +247,32 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
+                        services.AddSingleton<IConsensusRules, ConsensusRules>();
+                        services.AddSingleton<IRuleRegistration, BaseConsensusRules>();
                     });
             });
 
             return fullNodeBuilder;
+        }
+
+        public class BaseConsensusRules : IRuleRegistration
+        {
+            public IEnumerable<ConsensusRule> GetRules()
+            {
+                yield return new BlockPreviousHeaderRule();
+
+                // rules that are inside the method ContextualCheckBlock
+                yield return new Bip113ActivationRule();
+                yield return new Bip34ActivationRule();
+                yield return new WitnessCommitmentsRule();
+                yield return new BlockSizeRule();
+
+                // rules that are inside the method CheckBlock
+                yield return new BlockMerkleRootRule();
+                yield return new EnsureCoinbaseRule();
+                yield return new CheckTransactionRule();
+                yield return new CheckSigOpsRule();
+            }
         }
     }
 }
