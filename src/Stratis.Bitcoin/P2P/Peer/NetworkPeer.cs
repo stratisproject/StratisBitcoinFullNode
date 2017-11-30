@@ -959,7 +959,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (Interlocked.CompareExchange(ref this.disconnecting, 1, 0) == 1)
             {
-                this.logger.LogTrace("(-)[DISCONNETING");
+                this.logger.LogTrace("(-)[DISCONNECTING");
                 return;
             }
 
