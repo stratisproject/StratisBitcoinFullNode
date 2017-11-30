@@ -465,7 +465,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             parameters = parameters ?? new NetworkPeerConnectionParameters();
             this.Inbound = false;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
             this.Network = network;
             this.PeerAddress = peerAddress;
             this.LastSeen = peerAddress.Time.UtcDateTime;
@@ -553,7 +553,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Inbound = true;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
             this.Network = network;
             this.PeerAddress = peerAddress;
             this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
