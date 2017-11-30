@@ -127,8 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
-                    bool unused;
-                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out unused);
+                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out bool unused);
 
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the
@@ -492,9 +491,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return 0;
 
             WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
-
-            if (witParams == null && scriptPubKey.IsPayToScriptHash && scriptSig.IsPushOnly)
-                witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
 
             if (witParams?.Version == 0)
             {
