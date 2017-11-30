@@ -175,9 +175,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (OperationCanceledException)
                 {
+                    this.logger.LogTrace("Sending cancelled.");
                 }
                 catch (Exception ex)
                 {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
                     unhandledException = ex;
                 }
 
@@ -666,7 +668,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    this.logger.LogError("Exception occurred: {0}", ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
                 }
             }
 
@@ -686,7 +688,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    this.logger.LogError("Exception occurred: {0}", ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
                 }
             }
 
@@ -964,7 +966,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (Interlocked.CompareExchange(ref this.disconnecting, 1, 0) == 1)
             {
-                this.logger.LogTrace("(-)[DISCONNETING");
+                this.logger.LogTrace("(-)[DISCONNECTING");
                 return;
             }
 
