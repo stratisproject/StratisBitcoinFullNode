@@ -123,7 +123,7 @@ namespace NBitcoin
 		/// them to be valid. (but old blocks may not comply with) Currently just P2SH,
 		/// but in the future other flags may be added, such as a soft-fork to enforce
 		/// strict DER encoding.
-		/// 
+		///
 		/// Failing one of these tests may trigger a DoS ban - see CheckInputs() for
 		/// details.
 		/// </summary>
@@ -536,28 +536,32 @@ namespace NBitcoin
 			// by default StringBuilder capacity is 16 (too small)
 			// 300 is enough for P2PKH
 			var builder = new StringBuilder(300);
-			var reader = new ScriptReader(_Script);
+		    using (var reader = new ScriptReader(_Script))
+		    {
+		        Op op;
+		        while ((op = reader.Read()) != null)
+		        {
+		            builder.Append(" ");
+		            builder.Append(op);
+		        }
 
-			Op op;
-			while((op = reader.Read()) != null)
-			{
-				builder.Append(" ");
-				builder.Append(op);
-			}
-
-			return builder.ToString().Trim();
+		        return builder.ToString().Trim();
+            }
 		}
 
 		public bool IsPushOnly
 		{
 			get
 			{
-				foreach(var script in CreateReader().ToEnumerable())
-				{
-					if(script.PushData == null)
-						return false;
-				}
-				return true;
+			    using (ScriptReader reader = CreateReader())
+			    {
+			        foreach (var script in reader.ToEnumerable())
+			        {
+			            if (script.PushData == null)
+			                return false;
+			        }
+			        return true;
+                }
 			}
 		}
 
@@ -565,26 +569,29 @@ namespace NBitcoin
 		{
 			get
 			{
-				foreach(var op in CreateReader().ToEnumerable())
-				{
-					if(op.IsInvalid)
-						return false;
-					if(op.Code > OpcodeType.OP_16)
-						continue;
-					if(op.Code < OpcodeType.OP_PUSHDATA1 && op.Code > OpcodeType.OP_0 && (op.PushData.Length == 1 && op.PushData[0] <= 16))
-						// Could have used an OP_n code, rather than a 1-byte push.
-						return false;
-					if(op.Code == OpcodeType.OP_PUSHDATA1 && op.PushData.Length < (byte)OpcodeType.OP_PUSHDATA1)
-						// Could have used a normal n-byte push, rather than OP_PUSHDATA1.
-						return false;
-					if(op.Code == OpcodeType.OP_PUSHDATA2 && op.PushData.Length <= 0xFF)
-						// Could have used an OP_PUSHDATA1.
-						return false;
-					if(op.Code == OpcodeType.OP_PUSHDATA4 && op.PushData.Length <= 0xFFFF)
-						// Could have used an OP_PUSHDATA2.
-						return false;
-				}
-				return true;
+                using (ScriptReader reader = CreateReader())
+			    {
+			        foreach(Op op in reader.ToEnumerable())
+			        {
+				        if(op.IsInvalid)
+					        return false;
+				        if(op.Code > OpcodeType.OP_16)
+					        continue;
+				        if(op.Code < OpcodeType.OP_PUSHDATA1 && op.Code > OpcodeType.OP_0 && (op.PushData.Length == 1 && op.PushData[0] <= 16))
+					        // Could have used an OP_n code, rather than a 1-byte push.
+					        return false;
+				        if(op.Code == OpcodeType.OP_PUSHDATA1 && op.PushData.Length < (byte)OpcodeType.OP_PUSHDATA1)
+					        // Could have used a normal n-byte push, rather than OP_PUSHDATA1.
+					        return false;
+				        if(op.Code == OpcodeType.OP_PUSHDATA2 && op.PushData.Length <= 0xFF)
+					        // Could have used an OP_PUSHDATA1.
+					        return false;
+				        if(op.Code == OpcodeType.OP_PUSHDATA4 && op.PushData.Length <= 0xFFFF)
+					        // Could have used an OP_PUSHDATA2.
+					        return false;
+			        }
+			        return true;
+                }
 			}
 		}
 
@@ -807,8 +814,10 @@ namespace NBitcoin
 
 		public IEnumerable<Op> ToOps()
 		{
-			ScriptReader reader = new ScriptReader(_Script);
-			return reader.ToEnumerable();
+		    using (ScriptReader reader = new ScriptReader(_Script))
+		    {
+		        return reader.ToEnumerable().ToList();
+            }
 		}
 
 		public uint GetSigOpCount(bool fAccurate)
