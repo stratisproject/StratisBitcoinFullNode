@@ -215,13 +215,14 @@ namespace Stratis.Bitcoin
             // Fire INodeLifetime.Stopping.
             this.nodeLifetime.StopApplication();
 
-            this.ConnectionManager.Dispose();
+            // Fire the NodeFeatureExecutor.Stop.
+            this.fullNodeFeatureExecutor.Stop();
 
             foreach (IDisposable disposable in this.Resources)
                 disposable.Dispose();
 
-            // Fire the NodeFeatureExecutor.Stop.
-            this.fullNodeFeatureExecutor.Stop();
+            this.ConnectionManager.Dispose();
+            this.NodeService<NodeSettings>().LoggerFactory.Dispose();
 
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
