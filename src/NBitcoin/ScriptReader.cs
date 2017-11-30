@@ -696,7 +696,8 @@ namespace NBitcoin
             return result;
         }
     }
-    public class ScriptReader
+
+    public class ScriptReader : IDisposable
     {
         private readonly Stream _Inner;
 
@@ -704,13 +705,13 @@ namespace NBitcoin
         {
             get
             {
-                return _Inner;
+                return this._Inner;
             }
         }
 
         public ScriptReader(Stream stream)
         {
-            _Inner = stream ?? throw new ArgumentNullException("stream");
+            this._Inner = stream ?? throw new ArgumentNullException("stream");
         }
 
         public ScriptReader(byte[] data)
@@ -720,21 +721,21 @@ namespace NBitcoin
 
         public Op Read()
         {
-            var b = Inner.ReadByte();
+            var b = this.Inner.ReadByte();
             if(b == -1)
                 return null;
+
             var opcode = (OpcodeType)b;
+
             if(Op.IsPushCode(opcode))
             {
                 Op op = new Op();
                 op.Code = opcode;
-                op.PushData = op.ReadData(Inner);
+                op.PushData = op.ReadData(this.Inner);
                 return op;
             }
-            return new Op()
-            {
-                Code = opcode
-            };
+
+            return new Op() { Code = opcode };
         }
 
         public bool HasError
@@ -748,6 +749,11 @@ namespace NBitcoin
             Op code;
             while((code = Read()) != null)
                 yield return code;
+        }
+
+        public void Dispose()
+        {
+            this._Inner.Dispose();
         }
     }
 }
