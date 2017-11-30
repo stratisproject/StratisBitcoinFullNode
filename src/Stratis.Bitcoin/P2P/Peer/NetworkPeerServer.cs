@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (this.cancel.IsCancellationRequested)
                     return;
 
-                NodeServerTrace.Information("Client connection accepted : " + client.RemoteEndPoint);
+                this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
                 var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.cancel.Token);
                 cancel.CancelAfter(TimeSpan.FromSeconds(10));
 
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     if (this.ConnectedNetworkPeers.Count >= this.MaxConnections)
                     {
-                        NodeServerTrace.Information("MaxConnections limit reached");
+                        this.logger.LogDebug("Maximum number of connections {0} reached.", this.MaxConnections);
                         Utils.SafeCloseSocket(client);
                         break;
                     }
@@ -270,16 +270,15 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (message.Payload is VersionPayload)
                         break;
 
-                    NodeServerTrace.Error("The first message of the remote peer did not contained a Version payload", null);
+                    this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
                 }
             }
             catch (OperationCanceledException)
             {
-                Utils.SafeCloseSocket(client);
                 if (!this.cancel.Token.IsCancellationRequested)
-                {
-                    NodeServerTrace.Error("The remote connecting failed to send a message within 10 seconds, dropping connection", null);
-                }
+                    this.logger.LogTrace("Inbound client '{0}' failed to send a message within 10 seconds, dropping connection.", client.RemoteEndPoint);
+
+                Utils.SafeCloseSocket(client);
             }
             catch (Exception ex)
             {
@@ -288,13 +287,13 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if (client == null)
                 {
-                    NodeServerTrace.Error("Error while accepting connection ", ex);
+                    this.logger.LogTrace("Exception occurred while accepting connection: {0}", ex.ToString());
                     Thread.Sleep(3000);
                 }
                 else
                 {
+                    this.logger.LogTrace("Exception occurred while processing message from client '{0}': {1}", client.RemoteEndPoint, ex.ToString());
                     Utils.SafeCloseSocket(client);
-                    NodeServerTrace.Error("Invalid message received from the remote connecting peer", ex);
                 }
             }
 
