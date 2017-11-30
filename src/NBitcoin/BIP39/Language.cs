@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public enum Language
-	{
-		English,
-		Japanese,
-		Spanish,
-		ChineseSimplified,
-		ChineseTraditional,
-		French,
-		Unknown
-	};
+    public enum Language
+    {
+        English,
+        Japanese,
+        Spanish,
+        ChineseSimplified,
+        ChineseTraditional,
+        French,
+        Unknown
+    };
 }

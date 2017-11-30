@@ -1,10 +1,10 @@
 ﻿namespace NBitcoin
 {
-	public interface ISecret
-	{
-		Key PrivateKey
-		{
-			get;
-		}
-	}
+    public interface ISecret
+    {
+        Key PrivateKey
+        {
+            get;
+        }
+    }
 }
