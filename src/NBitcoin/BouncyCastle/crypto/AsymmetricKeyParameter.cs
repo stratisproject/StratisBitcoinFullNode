@@ -1,46 +1,46 @@
 namespace NBitcoin.BouncyCastle.Crypto
 {
-	internal abstract class AsymmetricKeyParameter
-		: ICipherParameters
-	{
-		private readonly bool privateKey;
+    internal abstract class AsymmetricKeyParameter
+        : ICipherParameters
+    {
+        private readonly bool privateKey;
 
-		protected AsymmetricKeyParameter(
-			bool privateKey)
-		{
-			this.privateKey = privateKey;
-		}
+        protected AsymmetricKeyParameter(
+            bool privateKey)
+        {
+            this.privateKey = privateKey;
+        }
 
-		public bool IsPrivate
-		{
-			get
-			{
-				return privateKey;
-			}
-		}
+        public bool IsPrivate
+        {
+            get
+            {
+                return privateKey;
+            }
+        }
 
-		public override bool Equals(
-			object obj)
-		{
-			AsymmetricKeyParameter other = obj as AsymmetricKeyParameter;
+        public override bool Equals(
+            object obj)
+        {
+            AsymmetricKeyParameter other = obj as AsymmetricKeyParameter;
 
-			if(other == null)
-			{
-				return false;
-			}
+            if(other == null)
+            {
+                return false;
+            }
 
-			return Equals(other);
-		}
+            return Equals(other);
+        }
 
-		protected bool Equals(
-			AsymmetricKeyParameter other)
-		{
-			return privateKey == other.privateKey;
-		}
+        protected bool Equals(
+            AsymmetricKeyParameter other)
+        {
+            return privateKey == other.privateKey;
+        }
 
-		public override int GetHashCode()
-		{
-			return privateKey.GetHashCode();
-		}
-	}
+        public override int GetHashCode()
+        {
+            return privateKey.GetHashCode();
+        }
+    }
 }

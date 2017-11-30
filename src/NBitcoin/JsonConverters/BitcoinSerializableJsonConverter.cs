@@ -9,11 +9,11 @@ using System.Reflection;
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class BitcoinSerializableJsonConverter : JsonConverter
+    class BitcoinSerializableJsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {

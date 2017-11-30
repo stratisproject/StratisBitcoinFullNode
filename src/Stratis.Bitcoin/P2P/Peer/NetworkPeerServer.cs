@@ -329,13 +329,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                     var peerAddress = new NetworkAddress()
                     {
                         Endpoint = remoteEndpoint,
-                        Time = DateTimeOffset.UtcNow
+                        Time = this.dateTimeProvider.GetUtcNow()
                     };
 
                     NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNetworkPeerConnectionParameters(), message.Socket, version);
                     if (connectedToSelf)
                     {
-                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network));
+                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset()));
                         NodeServerTrace.ConnectionToSelfDetected();
                         networkPeer.Disconnect();
                         return;

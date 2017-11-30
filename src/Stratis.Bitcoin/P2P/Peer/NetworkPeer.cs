@@ -175,9 +175,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (OperationCanceledException)
                 {
+                    this.logger.LogTrace("Sending cancelled.");
                 }
                 catch (Exception ex)
                 {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
                     unhandledException = ex;
                 }
 
@@ -219,7 +221,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                             this.logger.LogTrace("Receiving message: '{0}'", message);
 
-                            this.Peer.LastSeen = DateTimeOffset.UtcNow;
+                            this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
                             this.Peer.Counter.Add(counter);
                             this.Peer.OnMessageReceived(new IncomingMessage()
                             {
@@ -318,7 +320,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        public DateTimeOffset ConnectedAt { get; private set; }
+        /// <summary>Time in UTC when the connection to the peer was established.</summary>
+        public DateTime ConnectedAt { get; private set; }
 
         private volatile NetworkPeerState state = NetworkPeerState.Offline;
         public NetworkPeerState State
@@ -353,7 +356,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
         public NetworkAddress PeerAddress { get; private set; }
 
-        public DateTimeOffset LastSeen { get; set; }
+        /// <summary>Last time in UTC the node received something from this peer.</summary>
+        public DateTime LastSeen { get; set; }
 
         public TimeSpan? TimeOffset { get; private set; }
 
@@ -430,8 +434,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        private TimeSpan pollHeaderDelay = TimeSpan.FromMinutes(1.0);
-
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
@@ -439,13 +441,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NodeEventMessageIncoming MessageReceived;
         public event NodeEventHandler Disconnected;
 
+        /// <summary>
+        /// Dummy constructor for testing only.
+        /// </summary>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Provider of time functions.</param>
+        /// <remarks>TODO: Remove this constructor as soon as we can mock the node in tests.</remarks>
         public NetworkPeer(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // This constructor is used for testing until the Node class has an interface and can be mocked.
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
         }
 
@@ -460,10 +467,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             parameters = parameters ?? new NetworkPeerConnectionParameters();
             this.Inbound = false;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
             this.Network = network;
             this.PeerAddress = peerAddress;
-            this.LastSeen = peerAddress.Time;
+            this.LastSeen = peerAddress.Time.UtcDateTime;
 
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -498,7 +505,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.RemoteSocketPort = remoteEndpoint.Port;
 
                         this.State = NetworkPeerState.Connected;
-                        this.ConnectedAt = DateTimeOffset.UtcNow;
+                        this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
                         this.logger.LogTrace("Outbound connection to '{0}' established.", peerAddress.Endpoint);
                     }
@@ -548,13 +555,13 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Inbound = true;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network);
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
             this.Network = network;
             this.PeerAddress = peerAddress;
             this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
             this.PeerVersion = peerVersion;
-            this.LastSeen = peerAddress.Time;
-            this.ConnectedAt = DateTimeOffset.UtcNow;
+            this.LastSeen = peerAddress.Time.UtcDateTime;
+            this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
             this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
             this.State = NetworkPeerState.Connected;
@@ -604,7 +611,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (version != null)
             {
-                this.TimeOffset = DateTimeOffset.Now - version.Timestamp;
+                this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
                 if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
                     this.SupportedTransactionOptions |= TransactionOptions.Witness;
             }
@@ -661,7 +668,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    this.logger.LogError("Exception occurred: {0}", ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
                 }
             }
 
@@ -681,7 +688,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    this.logger.LogError("Exception occurred: {0}", ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
                 }
             }
 
@@ -819,7 +826,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            VersionHandshake(null, cancellationToken);
+            this.VersionHandshake(null, cancellationToken);
 
             this.logger.LogTrace("(-)");
         }
@@ -829,7 +836,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (NetworkPeerListener listener = CreateListener().Where(p => (p.Message.Payload is VersionPayload)
+            using (NetworkPeerListener listener = this.CreateListener().Where(p => (p.Message.Payload is VersionPayload)
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
@@ -871,7 +878,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.SendMessageAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
                     {
-                        Time = DateTimeOffset.UtcNow
+                        Time = this.dateTimeProvider.GetTimeOffset()
                     }));
                 }
             }
@@ -959,7 +966,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (Interlocked.CompareExchange(ref this.disconnecting, 1, 0) == 1)
             {
-                this.logger.LogTrace("(-)[DISCONNETING");
+                this.logger.LogTrace("(-)[DISCONNECTING");
                 return;
             }
 
@@ -989,232 +996,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             return string.Format("{0} ({1})", this.State, this.PeerAddress.Endpoint);
         }
 
-
-        /// <summary>
-        /// Get the chain of headers from the peer (thread safe).
-        /// </summary>
-        /// <param name="hashStop">The highest block wanted.</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns>The chain of headers.</returns>
-        public ConcurrentChain GetChain(uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            ConcurrentChain chain = new ConcurrentChain(this.Network);
-            this.SynchronizeChain(chain, hashStop, cancellationToken);
-            return chain;
-        }
-
-        public IEnumerable<ChainedBlock> GetHeadersFromFork(ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(currentTip), currentTip, nameof(hashStop), hashStop);
-
-            this.AssertState(NetworkPeerState.HandShaked, cancellationToken);
-
-            this.logger.LogDebug("Building chain.");
-            using (NetworkPeerListener listener = this.CreateListener().OfType<HeadersPayload>())
-            {
-                int acceptMaxReorgDepth = 0;
-                while (true)
-                {
-                    // Get before last so, at the end, we should only receive 1 header equals to this one (so we will not have race problems with concurrent GetChains).
-                    BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
-                    SendMessageAsync(new GetHeadersPayload()
-                    {
-                        BlockLocators = awaited,
-                        HashStop = hashStop
-                    });
-
-                    while (true)
-                    {
-                        bool isOurs = false;
-                        HeadersPayload headers = null;
-
-                        using (var headersCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-                        {
-                            headersCancel.CancelAfter(this.pollHeaderDelay);
-                            try
-                            {
-                                headers = listener.ReceivePayload<HeadersPayload>(headersCancel.Token);
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                acceptMaxReorgDepth += 6;
-                                if (cancellationToken.IsCancellationRequested)
-                                    throw;
-
-                                // Send a new GetHeaders.
-                                break;
-                            }
-                        }
-
-                        // In the special case where the remote node is at height 0 as well as us, then the headers count will be 0.
-                        if ((headers.Headers.Count == 0) && (this.PeerVersion.StartHeight == 0) && (currentTip.HashBlock == this.Network.GenesisHash))
-                        {
-                            this.logger.LogTrace("(-)[BREAK_HC_0]");
-                            yield break;
-                        }
-
-                        if ((headers.Headers.Count == 1) && (headers.Headers[0].GetHash() == currentTip.HashBlock))
-                        {
-                            this.logger.LogTrace("(-)[BREAK_HC_1]");
-                            yield break;
-                        }
-
-                        foreach (BlockHeader header in headers.Headers)
-                        {
-                            uint256 hash = header.GetHash();
-                            if (hash == currentTip.HashBlock)
-                                continue;
-
-                            // The previous headers request timeout, this can arrive in case of big reorg.
-                            if (header.HashPrevBlock != currentTip.HashBlock)
-                            {
-                                int reorgDepth = 0;
-                                ChainedBlock tempCurrentTip = currentTip;
-                                while (reorgDepth != acceptMaxReorgDepth && tempCurrentTip != null && header.HashPrevBlock != tempCurrentTip.HashBlock)
-                                {
-                                    reorgDepth++;
-                                    tempCurrentTip = tempCurrentTip.Previous;
-                                }
-
-                                if (reorgDepth != acceptMaxReorgDepth && tempCurrentTip != null)
-                                    currentTip = tempCurrentTip;
-                            }
-
-                            if (header.HashPrevBlock == currentTip.HashBlock)
-                            {
-                                isOurs = true;
-                                currentTip = new ChainedBlock(header, hash, currentTip);
-
-                                this.logger.LogTrace("(-):'{0}'", currentTip);
-                                yield return currentTip;
-
-                                this.logger.LogTrace("({0}:'{1}')[CONTINUE]", nameof(currentTip), currentTip);
-
-                                if (currentTip.HashBlock == hashStop)
-                                {
-                                    this.logger.LogTrace("(-)[BREAK_STOP]");
-                                    yield break;
-                                }
-                            }
-                            else break; // Not our headers, continue receive.
-                        }
-
-                        if (isOurs)
-                            break;  //Go ask for next header.
-                    }
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// Synchronize a given Chain to the tip of this node if its height is higher. (Thread safe).
-        /// </summary>
-        /// <param name="chain">The chain to synchronize.</param>
-        /// <param name="hashStop">The location until which it synchronize.</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public IEnumerable<ChainedBlock> SynchronizeChain(ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(hashStop), hashStop);
-
-            ChainedBlock oldTip = chain.Tip;
-            List<ChainedBlock> headers = this.GetHeadersFromFork(oldTip, hashStop, cancellationToken).ToList();
-            if (headers.Count == 0)
-                return new ChainedBlock[0];
-
-            ChainedBlock newTip = headers[headers.Count - 1];
-
-            if (newTip.Height <= oldTip.Height)
-                throw new ProtocolException("No tip should have been recieved older than the local one");
-
-            foreach (ChainedBlock header in headers)
-            {
-                if (!header.Validate(this.Network))
-                {
-                    this.logger.LogTrace("(-)[BAD_HEADER]");
-                    throw new ProtocolException("A header which does not pass proof of work verification has been received");
-                }
-            }
-
-            chain.SetTip(newTip);
-
-            this.logger.LogTrace("(-):'{0}')", headers);
-            return headers;
-        }
-
-        public IEnumerable<Block> GetBlocks(uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var genesis = new ChainedBlock(this.Network.GetGenesis().Header, 0);
-            return this.GetBlocksFromFork(genesis, hashStop, cancellationToken);
-        }
-
-
-        public IEnumerable<Block> GetBlocksFromFork(ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(currentTip), currentTip, nameof(hashStop), hashStop);
-
-            using (NetworkPeerListener listener = CreateListener())
-            {
-                this.SendMessageAsync(new GetBlocksPayload()
-                {
-                    BlockLocators = currentTip.GetLocator(),
-                });
-
-                IEnumerable<ChainedBlock> headers = this.GetHeadersFromFork(currentTip, hashStop, cancellationToken);
-
-                foreach (Block block in GetBlocks(headers.Select(b => b.HashBlock), cancellationToken))
-                {
-                    this.logger.LogTrace("(-):'{0}'", block);
-                    yield return block;
-
-                    this.logger.LogTrace("({0}:'{1}')[CONTINUE]", nameof(currentTip), currentTip);
-                }
-            }
-        }
-
-        public IEnumerable<Block> GetBlocks(IEnumerable<ChainedBlock> blocks, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return this.GetBlocks(blocks.Select(c => c.HashBlock), cancellationToken);
-        }
-
-        public IEnumerable<Block> GetBlocks(IEnumerable<uint256> neededBlocks, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            this.AssertState(NetworkPeerState.HandShaked, cancellationToken);
-
-            int simultaneous = 70;
-            using (NetworkPeerListener listener = this.CreateListener().OfType<BlockPayload>())
-            {
-                foreach (List<InventoryVector> invs in neededBlocks.Select(b => new InventoryVector()
-                {
-                    Type = this.AddSupportedOptions(InventoryType.MSG_BLOCK),
-                    Hash = b
-                }).Partition(() => simultaneous))
-                {
-                    var remaining = new Queue<uint256>(invs.Select(k => k.Hash));
-                    this.SendMessageAsync(new GetDataPayload(invs.ToArray()));
-
-                    int maxQueued = 0;
-                    while (remaining.Count != 0)
-                    {
-                        Block block = listener.ReceivePayload<BlockPayload>(cancellationToken).Obj;
-                        maxQueued = Math.Max(listener.MessageQueue.Count, maxQueued);
-                        if (remaining.Peek() == block.GetHash())
-                        {
-                            remaining.Dequeue();
-                            yield return block;
-                        }
-                    }
-
-                    if (maxQueued < 10) simultaneous *= 2;
-                    else simultaneous /= 2;
-
-                    simultaneous = Math.Max(10, simultaneous);
-                    simultaneous = Math.Min(10000, simultaneous);
-                }
-            }
-        }
-
         /// <summary>
         /// Create a listener that will queue messages until disposed.
         /// </summary>
@@ -1224,102 +1005,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.AssertNoListeningThread();
             return new NetworkPeerListener(this);
-        }
-
-        private void AssertState(NetworkPeerState nodeState, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if ((nodeState == NetworkPeerState.HandShaked) && (this.State == NetworkPeerState.Connected))
-                this.VersionHandshake(cancellationToken);
-
-            if (nodeState != this.State)
-                throw new InvalidOperationException("Invalid Node state, needed=" + nodeState + ", current= " + this.State);
-        }
-
-        public uint256[] GetMempool(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            AssertState(NetworkPeerState.HandShaked);
-            using (NetworkPeerListener listener = this.CreateListener().OfType<InvPayload>())
-            {
-                this.SendMessageAsync(new MempoolPayload());
-
-                List<uint256> invs = listener.ReceivePayload<InvPayload>(cancellationToken).Inventory.Select(i => i.Hash).ToList();
-                List<uint256> result = invs;
-                while (invs.Count == InvPayload.MaxInventorySize)
-                {
-                    invs = listener.ReceivePayload<InvPayload>(cancellationToken).Inventory.Select(i => i.Hash).ToList();
-                    result.AddRange(invs);
-                }
-
-                return result.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// Retrieve transactions from the mempool.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Transactions in the mempool.</returns>
-        public Transaction[] GetMempoolTransactions(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return this.GetMempoolTransactions(GetMempool(), cancellationToken);
-        }
-
-        /// <summary>
-        /// Retrieve transactions from the mempool by ids.
-        /// </summary>
-        /// <param name="txIds">Transaction ids to retrieve.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The transactions, if a transaction is not found, then it is not returned in the array.</returns>
-        public Transaction[] GetMempoolTransactions(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            this.AssertState(NetworkPeerState.HandShaked);
-
-            if (txIds.Length == 0)
-                return new Transaction[0];
-
-            List<Transaction> result = new List<Transaction>();
-
-            using (NetworkPeerListener listener = CreateListener().Where(m => (m.Message.Payload is TxPayload) || (m.Message.Payload is NotFoundPayload)))
-            {
-                foreach (List<uint256> batch in txIds.Partition(500))
-                {
-                    this.SendMessageAsync(new GetDataPayload(batch.Select(txid => new InventoryVector()
-                    {
-                        Type = this.AddSupportedOptions(InventoryType.MSG_TX),
-                        Hash = txid
-                    }).ToArray()));
-
-                    try
-                    {
-                        List<Transaction> batchResult = new List<Transaction>();
-                        while (batchResult.Count < batch.Count)
-                        {
-                            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10.0)))
-                            {
-                                using (var receiveTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token))
-                                {
-                                    Payload payload = listener.ReceivePayload<Payload>(receiveTimeout.Token);
-                                    if (payload is NotFoundPayload)
-                                        batchResult.Add(null);
-                                    else
-                                        batchResult.Add(((TxPayload)payload).Obj);
-                                }
-                            }
-                        }
-
-                        result.AddRange(batchResult);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            throw;
-                        }
-                    }
-                }
-            }
-
-            return result.Where(r => r != null).ToArray();
         }
 
         /// <summary>
@@ -1338,37 +1023,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void Dispose()
         {
             Disconnect("Node disposed");
-        }
-
-        /// <summary>
-        /// Emit a ping and wait the pong.
-        /// </summary>
-        /// <param name="cancellation"></param>
-        /// <returns>Latency.</returns>
-        public TimeSpan PingPong(CancellationToken cancellation = default(CancellationToken))
-        {
-            this.logger.LogTrace("()");
-
-            using (NetworkPeerListener listener = CreateListener().OfType<PongPayload>())
-            {
-                var ping = new PingPayload()
-                {
-                    Nonce = RandomUtils.GetUInt64()
-                };
-
-                DateTimeOffset before = DateTimeOffset.UtcNow;
-                SendMessageAsync(ping);
-
-                while (listener.ReceivePayload<PongPayload>(cancellation).Nonce != ping.Nonce)
-                {
-                }
-
-                DateTimeOffset after = DateTimeOffset.UtcNow;
-
-                TimeSpan res = after - before;
-                this.logger.LogTrace("(-):{0}", res);
-                return res;
-            }
         }
     }
 }

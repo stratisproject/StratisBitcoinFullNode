@@ -6,12 +6,12 @@
 
 //namespace NBitcoin.Tests
 //{
-//	public class Program
-//	{
-//		public static void Main()
-//		{
-//			//new spv_tests().CanSyncWallet();
-//			//RepositoryTests.Play();
-//		}
-//	}
+//    public class Program
+//    {
+//        public static void Main()
+//        {
+//            //new spv_tests().CanSyncWallet();
+//            //RepositoryTests.Play();
+//        }
+//    }
 //}

@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace NBitcoin.Payment
 {
-	public interface ICertificateServiceProvider
-	{
-		IChainChecker GetChainChecker();
-		ISignatureChecker GetSignatureChecker();
-		ISigner GetSigner();
-	}
+    public interface ICertificateServiceProvider
+    {
+        IChainChecker GetChainChecker();
+        ISignatureChecker GetSignatureChecker();
+        ISigner GetSigner();
+    }
 }
