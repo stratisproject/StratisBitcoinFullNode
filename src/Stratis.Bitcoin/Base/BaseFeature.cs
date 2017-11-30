@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             this.logger.LogTrace("()");
 

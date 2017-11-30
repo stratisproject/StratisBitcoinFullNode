@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>
         /// Starts all registered features of the associated full node.
         /// </summary>
-        void Start();
+        void Initialize();
 
         /// <summary>
         /// Stops all registered features of the associated full node.
@@ -49,12 +49,12 @@ namespace Stratis.Bitcoin.Builder
         }
 
         /// <inheritdoc />
-        public void Start()
+        public void Initialize()
         {
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.Start());
+                this.Execute(service => service.Initialize());
             }
             catch (Exception ex)
             {

@@ -187,8 +187,8 @@ namespace Stratis.Bitcoin
 
             this.logger.LogInformation("Starting node...");
 
-            // Start all registered features.
-            this.fullNodeFeatureExecutor.Start();
+            // Initialize all registered features.
+            this.fullNodeFeatureExecutor.Initialize();
 
             // Start connecting to peers.
             this.ConnectionManager.Start();

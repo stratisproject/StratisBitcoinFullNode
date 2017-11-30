@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             this.mempoolManager.LoadPoolAsync().GetAwaiter().GetResult();
 

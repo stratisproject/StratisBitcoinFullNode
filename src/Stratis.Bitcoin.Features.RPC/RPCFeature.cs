@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.RPC
             this.rpcSettings = rpcSettings;
         }
 
-        public override void Start()
+        public override void Initialize()
         {
             if (this.rpcSettings.Server)
             {

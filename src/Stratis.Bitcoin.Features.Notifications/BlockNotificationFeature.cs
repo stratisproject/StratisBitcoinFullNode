@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.loggerFactory = loggerFactory;
         }
 
-        public override void Start()
+        public override void Initialize()
         {
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));

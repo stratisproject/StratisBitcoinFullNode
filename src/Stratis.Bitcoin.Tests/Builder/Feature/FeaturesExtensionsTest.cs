@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureA : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureB : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }

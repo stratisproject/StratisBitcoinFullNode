@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
-        void Start();
+        void Initialize();
 
         /// <summary>
         /// Validates the feature's required dependencies are all present.
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Builder.Feature
     public abstract class FullNodeFeature : IFullNodeFeature
     {
         /// <inheritdoc />
-        public abstract void Start();
+        public abstract void Initialize();
 
         /// <inheritdoc />
         public virtual void Dispose()

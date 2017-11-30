@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 
         private class FeatureRegistrationFullNodeFeature : IFullNodeFeature
         {
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }

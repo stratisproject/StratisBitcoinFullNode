@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             if (this.minerSettings.Mine)
             {
