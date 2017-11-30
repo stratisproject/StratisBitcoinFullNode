@@ -381,13 +381,19 @@ namespace Stratis.Bitcoin.P2P.Peer
                     catch (OperationCanceledException)
                     {
                         this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
+
                         networkPeer.DisconnectAsync();
+
+                        this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                         throw;
                     }
                     catch (Exception ex)
                     {
                         this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+
                         networkPeer.DisconnectAsync();
+
+                        this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                         throw;
                     }
                 }
@@ -419,16 +425,24 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             return new Scope(() =>
             {
+                this.logger.LogTrace("()");
+
                 lock (this.resources)
                 {
                     this.resources.Add(resource);
                 }
+
+                this.logger.LogTrace("(-)");
             }, () =>
             {
+                this.logger.LogTrace("()");
+
                 lock (this.resources)
                 {
                     this.resources.Remove(resource);
                 }
+
+                this.logger.LogTrace("(-)");
             });
         }
 
