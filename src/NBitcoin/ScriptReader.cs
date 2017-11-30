@@ -699,19 +699,19 @@ namespace NBitcoin
 
     public class ScriptReader : IDisposable
     {
-        private readonly Stream _Inner;
+        private readonly Stream inner;
 
         public Stream Inner
         {
             get
             {
-                return this._Inner;
+                return this.inner;
             }
         }
 
         public ScriptReader(Stream stream)
         {
-            this._Inner = stream ?? throw new ArgumentNullException("stream");
+            this.inner = stream ?? throw new ArgumentNullException("stream");
         }
 
         public ScriptReader(byte[] data)
@@ -753,7 +753,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            this._Inner?.Dispose();
+            this.inner?.Dispose();
         }
     }
 }
