@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using NBitcoin;
-using NBitcoin.Protocol;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
                 {
                     nodeB.VersionHandshake();
                     PeerInfo[] peers = rpc.GetPeersInfo();
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getpeerinfo").ResultString;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getblockhash", "0").ResultString;
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 this.InitializeTestWallet(nodeA);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
+                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
                 {
                     nodeB.VersionHandshake();
                     string resp = rpc.SendCommand("generate", "1").ResultString;

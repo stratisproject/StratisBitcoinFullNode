@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
 
@@ -84,9 +85,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         private void ConfigureConnectionManager()
         {
             this.connectionManager = new Mock<IConnectionManager>();
-            this.connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
+            this.connectionManager.Setup(c => c.ConnectedNodes).Returns(new NetworkPeerCollection());
             this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
-            this.connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
+            this.connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
         }
 
         internal void Create(ConcurrentChain chain)

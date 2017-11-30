@@ -78,6 +78,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public long MaxMoney { get; set; }
 
+        /// <summary>
+        /// How many blocks should be on top of the block with coinbase transaction until it's outputs are considered spendable.
+        /// </summary>
         public long CoinbaseMaturity { get; set; }
 
         public Money ProofOfWorkReward { get; set; }

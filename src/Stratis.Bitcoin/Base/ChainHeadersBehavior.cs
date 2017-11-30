@@ -1,13 +1,13 @@
-﻿#if !NOSOCKET
-
 using System;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Base
     /// <summary>
     /// The Chain Behavior is responsible for keeping a ConcurrentChain up to date with the peer, it also responds to getheaders messages.
     /// </summary>
-    public class ChainHeadersBehavior : NodeBehavior
+    public class ChainHeadersBehavior : NetworkPeerBehavior
     {
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -61,10 +61,10 @@ namespace Stratis.Bitcoin.Base
 
         private Timer refreshTimer;
 
-        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private ConcurrentChain chain;
 
-        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         public ConcurrentChain Chain
         {
             get
@@ -115,14 +115,14 @@ namespace Stratis.Bitcoin.Base
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
 
             this.RegisterDisposable(this.refreshTimer);
-            if (this.AttachedNode.State == NodeState.Connected)
+            if (this.AttachedPeer.State == NetworkPeerState.Connected)
             {
                 ChainedBlock highPoW = this.chainState.ConsensusTip;
-                this.AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
+                this.AttachedPeer.MyVersion.StartHeight = highPoW?.Height ?? 0;
             }
 
-            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
-            this.RegisterDisposable(this.AttachedNode.Filters.Add(this.Intercept));
+            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.RegisterDisposable(this.AttachedPeer.Filters.Add(this.Intercept));
 
             this.logger.LogTrace("(-)");
         }
@@ -131,14 +131,14 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
 
             this.logger.LogTrace("(-)");
         }
 
         private void Intercept(IncomingMessage message, Action continueInvocation)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(message), message.Message.Command, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(message), message.Message.Command, nameof(this.AttachedPeer), this.AttachedPeer?.RemoteSocketEndpoint);
 
             var inv = message.Message.Payload as InvPayload;
             if (inv != null)
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Base
             if ((getheaders != null)
                 && this.CanRespondToGetHeaders
                 // If not in IBD whitelisted won't be checked.
-                && (!this.chainState.IsInitialBlockDownload || this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted))
+                && (!this.chainState.IsInitialBlockDownload || this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted))
             {
                 HeadersPayload headers = new HeadersPayload();
                 ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Base
                     }
                 }
 
-                this.AttachedNode.SendMessageAsync(headers);
+                this.AttachedPeer.SendMessageAsync(headers);
             }
 
             // == HeadersPayload ==
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Base
                         break;
 
                     tip = new ChainedBlock(header, header.GetHash(), prev);
-                    bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedNode.Network);
+                    bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedPeer.Network);
                     validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                     if (!validated)
                     {
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Base
                 uint maxReorgLength = this.chainState.MaxReorgLength;
                 if (maxReorgLength != 0)
                 {
-                    Network network = this.AttachedNode?.Network;
+                    Network network = this.AttachedPeer?.Network;
                     ChainedBlock consensusTip = this.chainState.ConsensusTip;
                     if ((network != null) && (consensusTip != null))
                     {
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
 
@@ -318,17 +318,17 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            Node node = this.AttachedNode;
+            NetworkPeer node = this.AttachedPeer;
             if (node != null)
             {
-                if ((node.State == NodeState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
+                if ((node.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
                 {
                     node.SendMessageAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });
                 }
-                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NodeState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.InvalidHeaderReceived ? "" : "NO ");
+                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NetworkPeerState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.InvalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No node attached.");
 
@@ -353,5 +353,3 @@ namespace Stratis.Bitcoin.Base
         }
     }
 }
-
-#endif

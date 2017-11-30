@@ -1,8 +1,8 @@
-﻿using System.Text;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -13,7 +13,10 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -135,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-                this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
             this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 

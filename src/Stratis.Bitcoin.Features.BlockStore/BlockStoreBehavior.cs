@@ -4,15 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public interface IBlockStoreBehavior : INodeBehavior
+    public interface IBlockStoreBehavior : INetworkPeerBehavior
     {
         bool CanRespondToGetDataPayload { get; set; }
 
@@ -21,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task AnnounceBlocks(List<uint256> blockHashesToAnnounce);
     }
 
-    public class BlockStoreBehavior : NodeBehavior, IBlockStoreBehavior
+    public class BlockStoreBehavior : NetworkPeerBehavior, IBlockStoreBehavior
     {
         // TODO: move this to the options
         // Maximum number of headers to announce when relaying blocks with headers message.
@@ -83,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -92,12 +94,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
 
-        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
@@ -108,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedNode?.IsConnected ?? false)
+                    if (this.AttachedPeer?.IsConnected ?? false)
                     {
                         this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                         throw;
@@ -125,7 +127,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private Task ProcessMessageAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
@@ -158,13 +160,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return Task.CompletedTask;
         }
 
-        private Task ProcessSendCmpctPayload(Node node, SendCmpctPayload sendCmpct)
+        private Task ProcessSendCmpctPayload(NetworkPeer node, SendCmpctPayload sendCmpct)
         {
             // TODO: announce using compact blocks
             return Task.CompletedTask;
         }
 
-        private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataAsync(NetworkPeer node, GetDataPayload getDataPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node?.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
             Guard.Assert(node != null);
@@ -187,7 +189,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private async Task SendAsBlockInventoryAsync(Node node, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventoryAsync(NetworkPeer node, IEnumerable<uint256> blocks)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(node), node?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
@@ -217,7 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return Task.CompletedTask;
             }
 
-            Node node = this.AttachedNode;
+            NetworkPeer node = this.AttachedPeer;
             if (node == null)
             {
                 this.logger.LogTrace("(-)[NO_NODE]");

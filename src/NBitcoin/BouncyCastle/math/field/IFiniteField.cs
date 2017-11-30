@@ -1,15 +1,15 @@
 ﻿namespace NBitcoin.BouncyCastle.Math.Field
 {
-	internal interface IFiniteField
-	{
-		BigInteger Characteristic
-		{
-			get;
-		}
+    internal interface IFiniteField
+    {
+        BigInteger Characteristic
+        {
+            get;
+        }
 
-		int Dimension
-		{
-			get;
-		}
-	}
+        int Dimension
+        {
+            get;
+        }
+    }
 }

@@ -770,7 +770,7 @@ namespace NBitcoin
         {
             return new BitcoinScriptAddress(scriptId, this);
         }
-
+        /*
         public Message ParseMessage(byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
             BitcoinStream bstream = new BitcoinStream(bytes);
@@ -786,7 +786,7 @@ namespace NBitcoin
 
             return message;
         }
-
+        */
 
         public Money GetReward(int nHeight)
         {

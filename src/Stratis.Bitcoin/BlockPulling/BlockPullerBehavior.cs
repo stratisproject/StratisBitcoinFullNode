@@ -1,9 +1,11 @@
 ﻿using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
@@ -24,7 +26,7 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <inheritdoc />
-    public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
+    public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -106,7 +108,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="node">Node that received the message.</param>
         /// <param name="message">Received message.</param>
-        private void Node_MessageReceived(Node node, IncomingMessage message)
+        private void Node_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -130,6 +132,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     {
                         Block = block.Obj,
                         Length = (int)message.Length,
+                        Peer = node.RemoteSocketEndpoint
                     };
 
                     if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
@@ -151,8 +154,8 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            Node attachedNode = this.AttachedNode;
-            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            NetworkPeer attachedNode = this.AttachedPeer;
+            if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
@@ -174,8 +177,8 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            Node attachedNode = this.AttachedNode;
-            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            NetworkPeer attachedNode = this.AttachedPeer;
+            if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
@@ -196,8 +199,8 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.Node_MessageReceived;
-            this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
+            this.AttachedPeer.MessageReceived += this.Node_MessageReceived;
+            this.ChainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
             this.AssignPendingVector();
 
             this.logger.LogTrace("(-)");
@@ -211,7 +214,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedNode.MessageReceived -= this.Node_MessageReceived;
+            this.AttachedPeer.MessageReceived -= this.Node_MessageReceived;
             this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");

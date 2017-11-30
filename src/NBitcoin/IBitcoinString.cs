@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public interface IBitcoinString
-	{
-		Network Network
-		{
-			get;
-		}
-	}
+    public interface IBitcoinString
+    {
+        Network Network
+        {
+            get;
+        }
+    }
 }

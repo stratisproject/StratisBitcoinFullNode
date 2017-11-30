@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="source">Collection of connected peer nodes.</param>
         /// <returns>Median time offset among the given nodes.</returns>
-        public static long GetMedianTimeOffset(this IEnumerable<Node> source)
+        public static long GetMedianTimeOffset(this IEnumerable<NetworkPeer> source)
         {
             return source
                 .Where(node => node.TimeOffset.HasValue)
