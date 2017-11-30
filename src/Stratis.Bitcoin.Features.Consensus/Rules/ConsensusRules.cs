@@ -371,7 +371,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
     }
 
-    public class BlockWeightRule : ConsensusRule
+    public class BlockSizeRule : ConsensusRule
     {
         public override void Validate(ContextInformation context)
         {
@@ -387,6 +387,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
+            }
+
+            Block block = context.BlockValidationContext.Block;
+
+            // Size limits.
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || (GetSize(block, TransactionOptions.None) > options.MaxBlockBaseSize))
+            {
+                this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");
+                ConsensusErrors.BadBlockLength.Throw();
             }
         }
 
@@ -405,6 +414,333 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             bms.TransactionOptions = options;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
+        }
+    }
+
+    public class MerkleRootRule : ConsensusRule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            if (context.CheckMerkleRoot)
+            {
+                Block block = context.BlockValidationContext.Block;
+
+                bool mutated = false;
+                uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, ref mutated);
+                if (block.Header.HashMerkleRoot != hashMerkleRoot2)
+                {
+                    this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+                    ConsensusErrors.BadMerkleRoot.Throw();
+                }
+
+                // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
+                // of transactions in a block without affecting the merkle root of a block,
+                // while still invalidating it.
+                if (mutated)
+                {
+                    this.Logger.LogTrace("(-)[BAD_TX_DUP]");
+                    ConsensusErrors.BadTransactionDuplicate.Throw();
+                }
+            }
+        }
+
+        private uint256 BlockMerkleRoot(Block block, ref bool mutated)
+        {
+            List<uint256> leaves = new List<uint256>(block.Transactions.Count);
+            for (int s = 0; s < block.Transactions.Count; s++)
+                leaves.Add(block.Transactions[s].GetHash());
+
+            return this.ComputeMerkleRoot(leaves, ref mutated);
+        }
+
+        private uint256 ComputeMerkleRoot(List<uint256> leaves, ref bool mutated)
+        {
+            uint256 hash = null;
+            this.MerkleComputation(leaves, ref hash, ref mutated, -1, null);
+            return hash;
+        }
+
+        private void MerkleComputation(List<uint256> leaves, ref uint256 root, ref bool pmutated, int branchpos, List<uint256> pbranch)
+        {
+            if (pbranch != null)
+                pbranch.Clear();
+
+            if (leaves.Count == 0)
+            {
+                pmutated = false;
+                root = uint256.Zero;
+                return;
+            }
+
+            bool mutated = false;
+
+            // count is the number of leaves processed so far.
+            uint count = 0;
+
+            // inner is an array of eagerly computed subtree hashes, indexed by tree
+            // level (0 being the leaves).
+            // For example, when count is 25 (11001 in binary), inner[4] is the hash of
+            // the first 16 leaves, inner[3] of the next 8 leaves, and inner[0] equal to
+            // the last leaf. The other inner entries are undefined.
+            var inner = new uint256[32];
+
+            for (int i = 0; i < inner.Length; i++)
+                inner[i] = uint256.Zero;
+
+            // Which position in inner is a hash that depends on the matching leaf.
+            int matchLevel = -1;
+
+            // First process all leaves into 'inner' values.
+            while (count < leaves.Count)
+            {
+                uint256 h = leaves[(int)count];
+                bool matchh = count == branchpos;
+                count++;
+                int level;
+
+                // For each of the lower bits in count that are 0, do 1 step. Each
+                // corresponds to an inner value that existed before processing the
+                // current leaf, and each needs a hash to combine it.
+                for (level = 0; (count & (((uint)1) << level)) == 0; level++)
+                {
+                    if (pbranch != null)
+                    {
+                        if (matchh)
+                        {
+                            pbranch.Add(inner[level]);
+                        }
+                        else if (matchLevel == level)
+                        {
+                            pbranch.Add(h);
+                            matchh = true;
+                        }
+                    }
+                    mutated |= (inner[level] == h);
+                    var hash = new byte[64];
+                    Buffer.BlockCopy(inner[level].ToBytes(), 0, hash, 0, 32);
+                    Buffer.BlockCopy(h.ToBytes(), 0, hash, 32, 32);
+                    h = Hashes.Hash256(hash);
+                }
+
+                // Store the resulting hash at inner position level.
+                inner[level] = h;
+                if (matchh)
+                    matchLevel = level;
+            }
+
+            // Do a final 'sweep' over the rightmost branch of the tree to process
+            // odd levels, and reduce everything to a single top value.
+            // Level is the level (counted from the bottom) up to which we've sweeped.
+            int levell = 0;
+
+            // As long as bit number level in count is zero, skip it. It means there
+            // is nothing left at this level.
+            while ((count & (((uint)1) << levell)) == 0)
+                levell++;
+
+            uint256 hh = inner[levell];
+            bool matchhh = matchLevel == levell;
+            while (count != (((uint)1) << levell))
+            {
+                // If we reach this point, h is an inner value that is not the top.
+                // We combine it with itself (Bitcoin's special rule for odd levels in
+                // the tree) to produce a higher level one.
+                if (pbranch != null && matchhh)
+                    pbranch.Add(hh);
+
+                var hash = new byte[64];
+                Buffer.BlockCopy(hh.ToBytes(), 0, hash, 0, 32);
+                Buffer.BlockCopy(hh.ToBytes(), 0, hash, 32, 32);
+                hh = Hashes.Hash256(hash);
+
+                // Increment count to the value it would have if two entries at this
+                // level had existed.
+                count += (((uint)1) << levell);
+                levell++;
+
+                // And propagate the result upwards accordingly.
+                while ((count & (((uint)1) << levell)) == 0)
+                {
+                    if (pbranch != null)
+                    {
+                        if (matchhh)
+                        {
+                            pbranch.Add(inner[levell]);
+                        }
+                        else if (matchLevel == levell)
+                        {
+                            pbranch.Add(hh);
+                            matchhh = true;
+                        }
+                    }
+
+                    var hashh = new byte[64];
+                    Buffer.BlockCopy(inner[levell].ToBytes(), 0, hashh, 0, 32);
+                    Buffer.BlockCopy(hh.ToBytes(), 0, hashh, 32, 32);
+                    hh = Hashes.Hash256(hashh);
+
+                    levell++;
+                }
+            }
+            // Return result.
+            pmutated = mutated;
+            root = hh;
+        }
+    }
+
+    public class EnsureCoinbaseRule : ConsensusRule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            Block block = context.BlockValidationContext.Block;
+
+            // First transaction must be coinbase, the rest must not be
+            if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)
+            {
+                this.Logger.LogTrace("(-)[NO_COINBASE]");
+                ConsensusErrors.BadCoinbaseMissing.Throw();
+            }
+
+            for (int i = 1; i < block.Transactions.Count; i++)
+            {
+                if (block.Transactions[i].IsCoinBase)
+                {
+                    this.Logger.LogTrace("(-)[MULTIPLE_COINBASE]");
+                    ConsensusErrors.BadMultipleCoinbase.Throw();
+                }
+            }
+        }
+    }
+
+    public class CheckSigOpsRule : ConsensusRule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            Block block = context.BlockValidationContext.Block;
+            var options = context.Consensus.Option<PowConsensusOptions>();
+
+            long nSigOps = 0;
+            foreach (Transaction tx in block.Transactions)
+                nSigOps += this.GetLegacySigOpCount(tx);
+
+            if ((nSigOps * options.WitnessScaleFactor) > options.MaxBlockSigopsCost)
+            {
+                this.Logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
+                ConsensusErrors.BadBlockSigOps.Throw();
+            }
+        }
+
+        private long GetLegacySigOpCount(Transaction tx)
+        {
+            long nSigOps = 0;
+            foreach (TxIn txin in tx.Inputs)
+                nSigOps += txin.ScriptSig.GetSigOpCount(false);
+
+            foreach (TxOut txout in tx.Outputs)
+                nSigOps += txout.ScriptPubKey.GetSigOpCount(false);
+
+            return nSigOps;
+        }
+    }
+
+    public class CheckTransactionRule : ConsensusRule
+    {
+        public override void Validate(ContextInformation context)
+        {
+            Block block = context.BlockValidationContext.Block;
+            var options = context.Consensus.Option<PowConsensusOptions>();
+
+            // Check transactions
+            foreach (Transaction tx in block.Transactions)
+                this.CheckTransaction(options, tx);
+
+        }
+
+        public virtual void CheckTransaction(PowConsensusOptions options, Transaction tx)
+        {
+            this.Logger.LogTrace("()");
+
+            // Basic checks that don't depend on any context.
+            if (tx.Inputs.Count == 0)
+            {
+                this.Logger.LogTrace("(-)[TX_NO_INPUT]");
+                ConsensusErrors.BadTransactionNoInput.Throw();
+            }
+
+            if (tx.Outputs.Count == 0)
+            {
+                this.Logger.LogTrace("(-)[TX_NO_OUTPUT]");
+                ConsensusErrors.BadTransactionNoOutput.Throw();
+            }
+
+            // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
+            if (BlockSizeRule.GetSize(tx, TransactionOptions.None) > options.MaxBlockBaseSize)
+            {
+                this.Logger.LogTrace("(-)[TX_OVERSIZE]");
+                ConsensusErrors.BadTransactionOversize.Throw();
+            }
+
+            // Check for negative or overflow output values
+            long valueOut = 0;
+            foreach (TxOut txout in tx.Outputs)
+            {
+                if (txout.Value.Satoshi < 0)
+                {
+                    this.Logger.LogTrace("(-)[TX_OUTPUT_NEGATIVE]");
+                    ConsensusErrors.BadTransactionNegativeOutput.Throw();
+                }
+
+                if (txout.Value.Satoshi > options.MaxMoney)
+                {
+                    this.Logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
+                    ConsensusErrors.BadTransactionTooLargeOutput.Throw();
+                }
+
+                valueOut += txout.Value;
+                if (!this.MoneyRange(options, valueOut))
+                {
+                    this.Logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
+                    ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
+                }
+            }
+
+            // Check for duplicate inputs.
+            HashSet<OutPoint> inOutPoints = new HashSet<OutPoint>();
+            foreach (TxIn txin in tx.Inputs)
+            {
+                if (inOutPoints.Contains(txin.PrevOut))
+                {
+                    this.Logger.LogTrace("(-)[TX_DUP_INPUTS]");
+                    ConsensusErrors.BadTransactionDuplicateInputs.Throw();
+                }
+
+                inOutPoints.Add(txin.PrevOut);
+            }
+
+            if (tx.IsCoinBase)
+            {
+                if ((tx.Inputs[0].ScriptSig.Length < 2) || (tx.Inputs[0].ScriptSig.Length > 100))
+                {
+                    this.Logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
+                    ConsensusErrors.BadCoinbaseSize.Throw();
+                }
+            }
+            else
+            {
+                foreach (TxIn txin in tx.Inputs)
+                {
+                    if (txin.PrevOut.IsNull)
+                    {
+                        this.Logger.LogTrace("(-)[TX_NULL_PREVOUT]");
+                        ConsensusErrors.BadTransactionNullPrevout.Throw();
+                    }
+                }
+            }
+        }
+
+        private bool MoneyRange(PowConsensusOptions options, long nValue)
+        {
+            return ((nValue >= 0) && (nValue <= options.MaxMoney));
         }
     }
 
@@ -443,7 +779,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 {
                     throw new Exception(); // todo
                 }
-
             }
 
             this.consensusRules.Add(rule, rule);
