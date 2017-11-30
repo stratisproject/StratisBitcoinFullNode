@@ -753,7 +753,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            this._Inner.Dispose();
+            this._Inner?.Dispose();
         }
     }
 }
