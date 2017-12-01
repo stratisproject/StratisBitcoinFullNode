@@ -1,19 +1,12 @@
-﻿using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Protocol;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
-	public class ChainTests
+    public class ChainTests
 	{
         public ChainTests()
         {
@@ -476,5 +469,108 @@ namespace NBitcoin.Tests
 			ChainedBlock index = null;
 			return AppendBlock(index, chains);
 		}
-	}
+
+        /// <summary> 
+        /// Adapted from bitcoin core test, verify skip list creation in <see cref="ChainedBlock"/>.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
+        /// </summary>
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]        
+        public void ChainedBlockVerifySkipListBuildsProperly()
+        {
+            const int skipListLength = 300000;
+
+            // Want a chain of exact length so subtract the genesis block.
+            ConcurrentChain chain = this.CreateChain(skipListLength - 1);
+
+            // Also want a copy in array form so can quickly verify indexing.
+            ChainedBlock[] chainArray = new ChainedBlock[skipListLength];
+
+            // Check skip height and build out array copy.
+            foreach (ChainedBlock block in chain.EnumerateToTip(chain.Genesis))
+            {
+                if (block.Height > 0)
+                    Assert.True(block.Skip.Height < block.Height);
+                else
+                    Assert.Null(block.Skip);
+                chainArray[block.Height] = block;
+            }
+
+            // Do some random verification of GetAncestor().
+            Random random = new Random();
+            const int randCheckCount = 1000;
+            for (int i = 0; i < randCheckCount; i++)
+            {
+                int from = random.Next(chain.Tip.Height - 1);
+                int to = random.Next(from + 1);
+
+                Assert.Equal(chainArray[chain.Tip.Height - 1].GetAncestor(from), chainArray[from]);
+                Assert.Equal(chainArray[from].GetAncestor(to), chainArray[to]);
+                Assert.Equal(chainArray[from].GetAncestor(0), chainArray[0]);
+            }
+        }
+
+        // TODO: Implement this test
+        // https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp
+        //BOOST_AUTO_TEST_CASE(getlocator_test)
+        //{
+        //    // Build a main chain 100000 blocks long.
+        //    std::vector<uint256> vHashMain(100000);
+        //    std::vector<CBlockIndex> vBlocksMain(100000);
+        //    for (unsigned int i = 0; i < vBlocksMain.size(); i++)
+        //    {
+        //        vHashMain[i] = ArithToUint256(i); // Set the hash equal to the height, so we can quickly check the distances.
+        //        vBlocksMain[i].nHeight = i;
+        //        vBlocksMain[i].pprev = i ? &vBlocksMain[i - 1] : nullptr;
+        //        vBlocksMain[i].phashBlock = &vHashMain[i];
+        //        vBlocksMain[i].BuildSkip();
+        //        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksMain[i].GetBlockHash()).GetLow64(), vBlocksMain[i].nHeight);
+        //        BOOST_CHECK(vBlocksMain[i].pprev == nullptr || vBlocksMain[i].nHeight == vBlocksMain[i].pprev->nHeight + 1);
+        //    }
+
+        //    // Build a branch that splits off at block 49999, 50000 blocks long.
+        //    std::vector<uint256> vHashSide(50000);
+        //    std::vector<CBlockIndex> vBlocksSide(50000);
+        //    for (unsigned int i = 0; i < vBlocksSide.size(); i++)
+        //    {
+        //        vHashSide[i] = ArithToUint256(i + 50000 + (arith_uint256(1) << 128)); // Add 1<<128 to the hashes, so GetLow64() still returns the height.
+        //        vBlocksSide[i].nHeight = i + 50000;
+        //        vBlocksSide[i].pprev = i ? &vBlocksSide[i - 1] : (vBlocksMain.data() + 49999);
+        //        vBlocksSide[i].phashBlock = &vHashSide[i];
+        //        vBlocksSide[i].BuildSkip();
+        //        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksSide[i].GetBlockHash()).GetLow64(), vBlocksSide[i].nHeight);
+        //        BOOST_CHECK(vBlocksSide[i].pprev == nullptr || vBlocksSide[i].nHeight == vBlocksSide[i].pprev->nHeight + 1);
+        //    }
+
+        //    // Build a CChain for the main branch.
+        //    CChain chain;
+        //    chain.SetTip(&vBlocksMain.back());
+
+        //    // Test 100 random starting points for locators.
+        //    for (int n = 0; n < 100; n++)
+        //    {
+        //        int r = InsecureRandRange(150000);
+        //        CBlockIndex* tip = (r < 100000) ? &vBlocksMain[r] : &vBlocksSide[r - 100000];
+        //        CBlockLocator locator = chain.GetLocator(tip);
+
+        //        // The first result must be the block itself, the last one must be genesis.
+        //        BOOST_CHECK(locator.vHave.front() == tip->GetBlockHash());
+        //        BOOST_CHECK(locator.vHave.back() == vBlocksMain[0].GetBlockHash());
+
+        //        // Entries 1 through 11 (inclusive) go back one step each.
+        //        for (unsigned int i = 1; i < 12 && i < locator.vHave.size() - 1; i++)
+        //        {
+        //            BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i]).GetLow64(), tip->nHeight - i);
+        //        }
+
+        //        // The further ones (excluding the last one) go back with exponential steps.
+        //        unsigned int dist = 2;
+        //        for (unsigned int i = 12; i < locator.vHave.size() - 1; i++)
+        //        {
+        //            BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i - 1]).GetLow64() - UintToArith256(locator.vHave[i]).GetLow64(), dist);
+        //            dist *= 2;
+        //        }
+        //    }
+        //}
+    }
 }
