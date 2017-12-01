@@ -19,28 +19,58 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
+    /// <summary>
+    /// State of the network connection to a peer.
+    /// </summary>
     public enum NetworkPeerState : int
     {
+        /// <summary>An error occurred during a network operation.</summary>
         Failed,
+
+        /// <summary>Shutdown has been initiated, the node went offline.</summary>
         Offline,
+
+        /// <summary>Process of disconnecting the peer has been initiated.</summary>
         Disconnecting,
+
+        /// <summary>Network connection between with the peer has been established.</summary>
         Connected,
+
+        /// <summary>The node and the peer exchanged version information.</summary>
         HandShaked
     }
 
+    /// <summary>
+    /// Explanation of why a peer was disconnected.
+    /// </summary>
     public class NetworkPeerDisconnectReason
     {
+        /// <summary>Human readable reason for disconnecting.</summary>
         public string Reason { get; set; }
+
+        /// <summary>Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</summary>
         public Exception Exception { get; set; }
     }
 
+    /// <summary>
+    /// Protocol requirement for network peers the node wants to be connected to.
+    /// </summary>
     public class NetworkPeerRequirement
     {
+        /// <summary>Minimal protocol version that the peer must support or <c>null</c> if there is no requirement for minimal protocol version.</summary>
         public ProtocolVersion? MinVersion { get; set; }
+
+        /// <summary>Specification of network services that the peer must provide.</summary>
         public NetworkPeerServices RequiredServices { get; set; }
 
+        /// <summary><c>true</c> to require the peer to support SPV, <c>false</c> otherwise..</summary>
         public bool SupportSPV { get; set; }
 
+        /// <summary>
+        /// Checks a version payload from a peer against the requirements.
+        /// </summary>
+        /// <param name="version">Version payload to check.</param>
+        /// <returns><c>true</c> if the version payload satisfies the protocol requirements, <c>false</c> otherwise.</returns>
         public virtual bool Check(VersionPayload version)
         {
             if (this.MinVersion != null)
@@ -67,17 +97,37 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
     }
 
-    public delegate void NetworkPeerEventHandler(NetworkPeer peer);
-    public delegate void NetworkPeerEventMessageIncoming(NetworkPeer peer, IncomingMessage message);
-    public delegate void NetworkPeerStateEventHandler(NetworkPeer peer, NetworkPeerState oldState);
+    /// <summary>
+    /// Type of event handler that is triggered on network peer disconnection.
+    /// </summary>
+    /// <param name="peer">Network peer that was disconnected.</param>
+    public delegate void NetworkPeerDisconnectedEventHandler(NetworkPeer peer);
 
+    /// <summary>
+    /// Type of event handler that is triggered when a new message is received from a network peer.
+    /// </summary>
+    /// <param name="peer">Network peer from which the message was received.</param>
+    /// <param name="message">Message that was received.</param>
+    public delegate void NetworkPeerMessageReceivedEventHandler(NetworkPeer peer, IncomingMessage message);
+
+    /// <summary>
+    /// Type of event handler that is triggered when the network state of a peer was changed.
+    /// </summary>
+    /// <param name="peer">Network peer which network state was changed.</param>
+    /// <param name="oldState">Previous network state of the peer.</param>
+    public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
+
+    /// <summary>Information to a message that the node sent to a peer.</summary>
     public class SentMessage
     {
+        /// <summary>Payload of the sent message.</summary>
         public Payload Payload;
-        public TaskCompletionSource<bool> Completion;
-        public Guid ActivityId;
     }
 
+    /// <summary>
+    /// Represents a network connection to a peer. It is responsible for reading incoming messages form the peer 
+    /// and sending messages from the node to the peer.
+    /// </summary>
     public class NetworkPeerConnection
     {
         /// <summary>Logger for the node.</summary>
@@ -86,18 +136,23 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>Network peer that this object represents the node's connection to.</summary>
         public NetworkPeer Peer { get; private set; }
 
+        /// <summary>Connected network socket to the peer.</summary>
         public Socket Socket { get; private set; }
 
+        /// <summary>Event that is set when the connection is closed.</summary>
         public ManualResetEvent Disconnected { get; private set; }
 
+        /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource Cancel { get; private set; }
 
+        /// <summary>Queue of messages to be sent to a peer over the network connection.</summary>
         internal BlockingCollection<SentMessage> Messages;
 
+        /// <summary>Set to <c>1</c> when a cleanup has been initiated, otherwise <c>0</c>.</summary>
         private int cleaningUp;
-        public int ListenerThreadId;
 
         public NetworkPeerConnection(NetworkPeer peer, Socket socket, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
@@ -166,7 +221,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                                     if (socketEventManager.SocketEvent.SocketError != SocketError.Success)
                                         throw new SocketException((int)socketEventManager.SocketEvent.SocketError);
 
-                                    processing.Completion.SetResult(true);
                                     processing = null;
                                 }
                             }
@@ -189,7 +243,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 foreach (SentMessage pending in this.Messages)
                 {
                     this.logger.LogTrace("Connection terminated before message '{0}' could be sent.", pending.Payload?.Command);
-                    pending.Completion.SetException(new OperationCanceledException("The peer has been disconnected"));
                 }
 
                 this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
@@ -203,8 +256,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             new Thread(() =>
             {
                 this.logger.LogTrace("()");
-
-                this.ListenerThreadId = Thread.CurrentThread.ManagedThreadId;
 
                 this.logger.LogTrace("Start listenting.");
                 Exception unhandledException = null;
@@ -424,6 +475,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary>When a peer is disconnected this is set to human readable information about why it happened.</summary>
         public NetworkPeerDisconnectReason DisconnectReason { get; set; }
 
         private Socket Socket
@@ -437,9 +489,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
-        public event NetworkPeerStateEventHandler StateChanged;
-        public event NetworkPeerEventMessageIncoming MessageReceived;
-        public event NetworkPeerEventHandler Disconnected;
+        public event NetworkPeerStateChangedEventHandler StateChanged;
+        public event NetworkPeerMessageReceivedEventHandler MessageReceived;
+        public event NetworkPeerDisconnectedEventHandler Disconnected;
 
         /// <summary>
         /// Dummy constructor for testing only.
@@ -576,10 +628,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
 
-            NetworkPeerStateEventHandler stateChanged = StateChanged;
+            NetworkPeerStateChangedEventHandler stateChanged = StateChanged;
             if (stateChanged != null)
             {
-                foreach (NetworkPeerStateEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateEventHandler>())
+                foreach (NetworkPeerStateChangedEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateChangedEventHandler>())
                 {
                     try
                     {
@@ -622,10 +674,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             var last = new ActionFilter((m, n) =>
             {
                 this.MessageProducer.PushMessage(m);
-                NetworkPeerEventMessageIncoming messageReceived = MessageReceived;
+                NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
                 if (messageReceived != null)
                 {
-                    foreach (NetworkPeerEventMessageIncoming handler in messageReceived.GetInvocationList().Cast<NetworkPeerEventMessageIncoming>())
+                    foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
                     {
                         try
                         {
@@ -699,10 +751,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            NetworkPeerEventHandler disconnected = Disconnected;
+            NetworkPeerDisconnectedEventHandler disconnected = Disconnected;
             if (disconnected != null)
             {
-                foreach (NetworkPeerEventHandler handler in disconnected.GetInvocationList().Cast<NetworkPeerEventHandler>())
+                foreach (NetworkPeerDisconnectedEventHandler handler in disconnected.GetInvocationList().Cast<NetworkPeerDisconnectedEventHandler>())
                 {
                     try
                     {
@@ -760,8 +812,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.connection.Messages.Add(new SentMessage()
                 {
                     Payload = payload,
-                    ActivityId = activity,
-                    Completion = completion
                 });
             };
 
@@ -930,7 +980,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.AssertNoListeningThread();
                 this.connection.Disconnected.WaitOne();
             }
             finally
@@ -985,12 +1034,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
-        private void AssertNoListeningThread()
-        {
-            if (this.connection.ListenerThreadId == Thread.CurrentThread.ManagedThreadId)
-                throw new InvalidOperationException("Using Disconnect on this thread would result in a deadlock, use DisconnectAsync instead");
-        }
-
         public override string ToString()
         {
             return string.Format("{0} ({1})", this.State, this.PeerAddress.Endpoint);
@@ -1003,7 +1046,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <exception cref="System.InvalidOperationException">Thrown if used on the listener's thread, as it would result in a deadlock.</exception>
         public NetworkPeerListener CreateListener()
         {
-            this.AssertNoListeningThread();
             return new NetworkPeerListener(this);
         }
 
