@@ -13,30 +13,30 @@ namespace Stratis.Bitcoin.Broadcasting
 {
     public class BroadcasterBehavior : NetworkPeerBehavior
     {
-        protected readonly IBroadcastManager manager;
+        protected readonly IBroadcastManager broadcastManager;
 
         /// <summary>Instance logger for the memory pool component.</summary>
         protected readonly ILogger logger;
 
         public BroadcasterBehavior(
-            IBroadcastManager manager,
+            IBroadcastManager broadcastManager,
             ILogger logger)
         {
             this.logger = logger;
-            this.manager = manager;
+            this.broadcastManager = broadcastManager;
         }
 
         public BroadcasterBehavior(
-            IBroadcastManager manager,
+            IBroadcastManager broadcastManager,
             ILoggerFactory loggerFactory)
-            : this(manager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
+            : this(broadcastManager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
         {
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BroadcasterBehavior(this.manager, this.logger);
+            return new BroadcasterBehavior(this.broadcastManager, this.logger);
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Broadcasting
 
         /// <summary>
         /// Handler for processing node messages.
-        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
+        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InventoryPayload.
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Broadcasting
                 return Task.CompletedTask;
             }
 
-            if (message.Message.Payload is InvPayload invPayload)
+            if (message.Message.Payload is InventoryPayload invPayload)
             {
                 this.ProcessInvPayload(invPayload);
                 return Task.CompletedTask;
@@ -93,15 +93,15 @@ namespace Stratis.Bitcoin.Broadcasting
             return Task.CompletedTask;
         }
 
-        private void ProcessInvPayload(InvPayload invPayload)
+        private void ProcessInvPayload(InventoryPayload inventoryPayload)
         {
             // if node has tx we broadcasted
-            foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
+            foreach (var inv in inventoryPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                var txEntry = this.manager.GetTransaction(inv.Hash);
+                var txEntry = this.broadcastManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
-                    this.manager.AddOrUpdate(txEntry.Transaction, State.Propagated);
+                    this.broadcastManager.AddOrUpdate(txEntry.Transaction, State.Propagated);
                 }
             }
         }
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Broadcasting
             // if node asks for tx we want to broadcast
             foreach (var inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                var txEntry = this.manager.GetTransaction(inv.Hash);
+                var txEntry = this.broadcastManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
                     if (txEntry.State != State.CantBroadcast)
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Broadcasting
                         node.SendMessage(new TxPayload(txEntry.Transaction));
                         if (txEntry.State == State.ToBroadcast)
                         {
-                            this.manager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
+                            this.broadcastManager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
                         }
                     }
                 }

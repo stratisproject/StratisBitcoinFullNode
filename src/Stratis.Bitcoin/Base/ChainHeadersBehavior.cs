@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(message), message.Message.Command, nameof(this.AttachedPeer), this.AttachedPeer?.RemoteSocketEndpoint);
 
-            var inv = message.Message.Payload as InvPayload;
+            var inv = message.Message.Payload as InventoryPayload;
             if (inv != null)
             {
                 if (inv.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.Chain.Contains(i.Hash)))

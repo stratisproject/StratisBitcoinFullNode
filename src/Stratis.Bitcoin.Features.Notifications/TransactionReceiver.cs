@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         {
             // check the type of message received.
             // we're only interested in Inventory and Transaction messages.
-            var invPayload = message.Message.Payload as InvPayload;
+            var invPayload = message.Message.Payload as InventoryPayload;
             if (invPayload != null)
             {
                 return this.ProcessInvAsync(node, invPayload);
@@ -102,9 +102,9 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
-        private async Task ProcessInvAsync(NetworkPeer node, InvPayload invPayload)
+        private async Task ProcessInvAsync(NetworkPeer node, InventoryPayload inventoryPayload)
         {
-            var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
+            var txs = inventoryPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
 
             // get the transactions in this inventory that have never been received - either because new or requested.
             var newTxs = txs.Where(t => this.notifiedTransactions.TransactionsReceived.All(ts => ts.Key != t.Hash)).ToList();

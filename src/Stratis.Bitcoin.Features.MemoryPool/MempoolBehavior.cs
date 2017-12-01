@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Handler for processing node messages.
-        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
+        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InventoryPayload.
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
@@ -245,11 +245,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return this.ProcessGetDataAsync(node, getDataPayload);
             }
 
-            InvPayload invPayload = message.Message.Payload as InvPayload;
-            if (invPayload != null)
+            InventoryPayload inventoryPayload = message.Message.Payload as InventoryPayload;
+            if (inventoryPayload != null)
             {
                 this.logger.LogTrace("(-)[INV_PAYLOAD]");
-                return this.ProcessInvAsync(node, invPayload);
+                return this.ProcessInvAsync(node, inventoryPayload);
             }
 
             this.logger.LogTrace("(-)");
@@ -326,11 +326,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Adds inventory to known inventory then sends GetDataPayload to the attached node.
         /// </summary>
         /// <param name="node">The node sending the message.</param>
-        /// <param name="invPayload">The inventory payload in the message.</param>
-        private async Task ProcessInvAsync(NetworkPeer node, InvPayload invPayload)
+        /// <param name="inventoryPayload">The inventory payload in the message.</param>
+        private async Task ProcessInvAsync(NetworkPeer node, InventoryPayload inventoryPayload)
         {
             Guard.NotNull(node, nameof(node));
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(inventoryPayload), nameof(inventoryPayload.Inventory), nameof(inventoryPayload.Inventory.Count), inventoryPayload.Inventory.Count);
             if (node != this.AttachedPeer)
             {
                 this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedPeer?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            if (invPayload.Inventory.Count > ConnectionManager.MaxInventorySize)
+            if (inventoryPayload.Inventory.Count > ConnectionManager.MaxInventorySize)
             {
                 this.logger.LogTrace("(-)[MAX_INV_SZ]");
                 //Misbehaving(pfrom->GetId(), 20); // TODO: Misbehaving
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
             GetDataPayload send = new GetDataPayload();
-            foreach (InventoryVector inv in invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
+            foreach (InventoryVector inv in inventoryPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
                 //inv.type |= nFetchFlags;
 
@@ -491,7 +491,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (node.IsConnected)
                 {
                     this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node.RemoteSocketEndpoint);
-                    await node.SendMessageAsync(new InvPayload(items));
+                    await node.SendMessageAsync(new InventoryPayload(items));
                 }
             }
             this.logger.LogTrace("(-)");
