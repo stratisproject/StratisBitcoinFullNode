@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             {
                 try
                 {
-                    var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
+                    var peerOne = addressManager.SelectPeerToConnectTo();
                     NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
                     node.VersionHandshake();
                     node.Disconnect();

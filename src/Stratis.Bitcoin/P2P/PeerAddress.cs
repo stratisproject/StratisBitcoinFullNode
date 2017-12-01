@@ -209,10 +209,6 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        /// <summary>Refer to <see cref="PeerIntroductionType"/> for what the individual types mean.</summary>
-        [JsonIgnore]
-        public PeerIntroductionType? PeerIntroductionType { get; set; }
-
         /// <summary>
         /// Calculates the relative chance this peer should be given when selecting nodes to connect to.
         /// <para>
@@ -252,15 +248,13 @@ namespace Stratis.Bitcoin.P2P
         /// Creates a new peer address instance.
         /// </summary>
         /// <param name="address">The network address of the peer.</param>
-        /// <param name="peerIntroductionType">How the peer will be introduced to the address manager.</param>
-        public static PeerAddress Create(NetworkAddress address, PeerIntroductionType peerIntroductionType)
+        public static PeerAddress Create(NetworkAddress address)
         {
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
                 endPoint = address.Endpoint,
-                loopback = IPAddress.Loopback.ToString(),
-                PeerIntroductionType = peerIntroductionType
+                loopback = IPAddress.Loopback.ToString()
             };
         }
 
@@ -269,38 +263,12 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         /// <param name="address">The network address of the peer.</param>
         /// <param name="loopback">The loopback (source) of the peer.</param>
-        /// <param name="peerIntroductionType">How the peer will be introduced to the address manager.</param>
-        public static PeerAddress Create(NetworkAddress address, IPAddress loopback, PeerIntroductionType peerIntroductionType)
+        public static PeerAddress Create(NetworkAddress address, IPAddress loopback)
         {
-            var peer = Create(address, peerIntroductionType);
+            var peer = Create(address);
             peer.loopback = loopback.ToString();
             return peer;
         }
-
-        /// <summary>Match the peer with another by IP and port.</summary>
-        public bool Match(IPEndPoint endPoint)
-        {
-            return this.endPoint.Address.ToString() == endPoint.Address.ToString() && this.endPoint.Port == endPoint.Port;
-        }
-    }
-
-    /// <summary>
-    /// These flags are used to show how a peer was added to the <see cref="PeerAddressManager"/>'s peer
-    /// collection.
-    /// </summary>
-    public enum PeerIntroductionType
-    {
-        /// <summary>
-        /// Used when nodes are discovered via <see cref="PeerDiscoveryLoop"/>. This is also
-        /// the default state when loading the peers from disk.
-        /// </summary>
-        Discover,
-
-        /// <summary>Used when nodes are added via the -addnode argument when starting up the node.</summary>
-        Add,
-
-        /// <summary>Used when nodes are added via the -connect argument when starting up the node.</summary>
-        Connect
     }
 
     /// <summary>
