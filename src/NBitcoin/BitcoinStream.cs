@@ -97,7 +97,7 @@ namespace NBitcoin
         {
             get
             {
-                bool timeStamp = ((uint)this.TransactionOptions & (uint)TransactionOptions.TimeStamp) != 0;
+                bool timeStamp = ((uint)this.NetworkOptions & (uint)NetworkOptions.TimeStamp) != 0;
 
                 if (Transaction.TimeStamp != timeStamp)
                 {
@@ -371,8 +371,8 @@ namespace NBitcoin
             }
         }
 
-        TransactionOptions _TransactionSupportedOptions = TransactionOptions.All;
-        public TransactionOptions TransactionOptions
+        NetworkOptions _TransactionSupportedOptions = NetworkOptions.All;
+        public NetworkOptions NetworkOptions
         {
             get
             {
@@ -403,7 +403,7 @@ namespace NBitcoin
 			if(stream == null)
 				throw new ArgumentNullException("stream");
 			ProtocolVersion = stream.ProtocolVersion;
-            TransactionOptions = stream.TransactionOptions;
+            NetworkOptions = stream.NetworkOptions;
 			IsBigEndian = stream.IsBigEndian;
 			MaxArraySize = stream.MaxArraySize;
 			Type = stream.Type;

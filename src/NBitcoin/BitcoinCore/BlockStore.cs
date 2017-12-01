@@ -194,7 +194,7 @@ namespace NBitcoin.BitcoinCore
 		{
 			StoredBlock block = new StoredBlock(Network, pos);
 			block.ParseSkipBlockContent = headerOnly;
-			block.ReadWrite(stream, false, options:Network.TransactionOptions);
+			block.ReadWrite(stream, false, options:Network.NetworkOptions);
 			return block;
 		}
 

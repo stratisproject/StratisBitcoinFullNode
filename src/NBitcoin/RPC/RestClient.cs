@@ -88,7 +88,7 @@ namespace NBitcoin.RPC
 				throw new ArgumentNullException("txId");
 
 			var result = await SendRequestAsync("tx", RestResponseFormat.Bin, txId.ToString()).ConfigureAwait(false);
-			return new Transaction(result, network?.TransactionOptions ?? TransactionOptions.All);
+			return new Transaction(result, network?.NetworkOptions ?? NetworkOptions.All);
 		}
 		/// <summary>
 		/// Gets a transaction.

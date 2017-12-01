@@ -8,7 +8,7 @@ namespace NBitcoin
     {
         Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
 
-        public InMemoryNoSqlRepository(TransactionOptions options = TransactionOptions.All)
+        public InMemoryNoSqlRepository(NetworkOptions options = null)
             :base(options)
         {
         }

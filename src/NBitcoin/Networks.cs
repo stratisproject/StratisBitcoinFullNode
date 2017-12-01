@@ -535,12 +535,12 @@ namespace NBitcoin
             {
                 Value = genesisReward,
             });
-            Block genesis = new Block(TransactionOptions.POSAll);
+            Block genesis = new Block(NetworkOptions.POSAll);
             genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
             genesis.Header.Bits = nBits;
             genesis.Header.Nonce = nNonce;
             genesis.Header.Version = nVersion;
-            genesis.Header.TransactionOptions = TransactionOptions.POSAll;
+            genesis.Header.NetworkOptions = NetworkOptions.POSAll;
             genesis.Transactions.Add(txNew);
             genesis.Header.HashPrevBlock = uint256.Zero;
             genesis.UpdateMerkleRoot();

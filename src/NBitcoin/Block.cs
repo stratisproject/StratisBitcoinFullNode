@@ -42,7 +42,7 @@ namespace NBitcoin
         private uint nonce;
         public uint Nonce { get { return this.nonce; } set { this.nonce = value; } }
 
-        public TransactionOptions TransactionOptions { get; set; }
+        public NetworkOptions NetworkOptions { get; set; }
 
         private uint256 hashMerkleRoot;
         public uint256 HashMerkleRoot { get { return this.hashMerkleRoot; } set { this.hashMerkleRoot = value; } }
@@ -67,7 +67,7 @@ namespace NBitcoin
         {
             get
             {
-                bool signature = (this.TransactionOptions & TransactionOptions.Signature) != 0;
+                bool signature = (this.NetworkOptions & NetworkOptions.Signature) != 0;
                 if (signature != Block.BlockSignature)
                 {
                     throw new ArgumentException($"Block.BlockSignature { Block.BlockSignature} mismatches { signature }");
@@ -80,28 +80,28 @@ namespace NBitcoin
         public BlockHeader()
         {
             this.SetNull();
-            this.TransactionOptions = TransactionOptions.All;
+            this.NetworkOptions = NetworkOptions.All;
         }
 
-        public BlockHeader(TransactionOptions options = TransactionOptions.All)
+        public BlockHeader(NetworkOptions options = null)
             :this()
         {
-            this.TransactionOptions = options;
+            this.NetworkOptions = options;
         }
 
-        public BlockHeader(string hex, TransactionOptions options = TransactionOptions.All)
+        public BlockHeader(string hex, NetworkOptions options = null)
             : this(Encoders.Hex.DecodeData(hex), options)
         {
         }
 
-        public BlockHeader(byte[] bytes, TransactionOptions options = TransactionOptions.All)
+        public BlockHeader(byte[] bytes, NetworkOptions options = null)
         {
             this.ReadWrite(bytes, options:options);
         }
 
-        public TransactionOptions GetTransactionOptions()
+        public NetworkOptions GetTransactionOptions()
         {
-            return this.TransactionOptions & TransactionOptions.POS;
+            return this.NetworkOptions & NetworkOptions.POS;
         }
 
         internal void SetNull()
@@ -120,7 +120,7 @@ namespace NBitcoin
         {
             // Propagate legacy static flags.
             if (!stream.Serializing)
-                this.TransactionOptions |= (stream.TransactionOptions & TransactionOptions.POS);
+                this.NetworkOptions |= (stream.NetworkOptions & NetworkOptions.POS);
 
             stream.ReadWrite(ref this.version);
             stream.ReadWrite(ref this.hashPrevBlock);
@@ -258,11 +258,11 @@ namespace NBitcoin
         private List<Transaction> transactions = new List<Transaction>();
         public List<Transaction> Transactions { get { return this.transactions; } set { this.transactions = value; } }
 
-        public TransactionOptions TransactionOptions
+        public NetworkOptions NetworkOptions
         {
             get
             {
-                return this.header.TransactionOptions;
+                return this.header.NetworkOptions;
             }
         }
 
@@ -270,7 +270,7 @@ namespace NBitcoin
         {
             get
             {
-                return (this.TransactionOptions & TransactionOptions.Signature) != 0;
+                return (this.NetworkOptions & NetworkOptions.Signature) != 0;
             }
         }
 
@@ -284,9 +284,9 @@ namespace NBitcoin
             this.SetNull();
         }
 
-        public Block(TransactionOptions options)
+        public Block(NetworkOptions options)
         {
-            this.header.TransactionOptions = options;
+            this.header.NetworkOptions = options;
         }
 
         public Block(BlockHeader blockHeader)
@@ -295,21 +295,21 @@ namespace NBitcoin
             this.header = blockHeader;
         }
 
-        public Block(byte[] bytes, TransactionOptions options = TransactionOptions.All)
+        public Block(byte[] bytes, NetworkOptions options = null)
         {
             this.ReadWrite(bytes, options:options);
         }
 
-        public TransactionOptions GetTransactionOptions()
+        public NetworkOptions GetTransactionOptions()
         {
-            return this.TransactionOptions;
+            return this.NetworkOptions;
         }
 
         public void ReadWrite(BitcoinStream stream)
         {
             // Propagate legacy static flags.
             if (stream.Serializing)
-                stream.TransactionOptions |= (this.TransactionOptions & TransactionOptions.POS);
+                stream.NetworkOptions |= (this.NetworkOptions & NetworkOptions.POS);
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
             if (this.header.Signature)
@@ -353,7 +353,7 @@ namespace NBitcoin
 
         public Transaction AddTransaction(Transaction tx = null)
         {
-            tx = tx ?? new Transaction(this.TransactionOptions);
+            tx = tx ?? new Transaction(this.NetworkOptions);
             this.Transactions.Add(tx);
             return tx;
         }
@@ -363,29 +363,29 @@ namespace NBitcoin
         /// </summary>
         /// <param name="options">Options to keep.</param>
         /// <returns>A new block with only the options wanted.</returns>
-        public Block WithOptions(TransactionOptions options)
+        public Block WithOptions(NetworkOptions options)
         {
             if (this.Transactions.Count == 0)
                 return this;
 
-            if (((options & TransactionOptions.Witness) != 0) == this.Transactions[0].HasWitness)
+            if (((options & NetworkOptions.Witness) != 0) == this.Transactions[0].HasWitness)
                 return this;
 
             // Will propagate these legacy static flags.
-            TransactionOptions savePOS = this.TransactionOptions & TransactionOptions.POS;
+            NetworkOptions savePOS = this.NetworkOptions & NetworkOptions.POS;
 
             var instance = new Block();
             var ms = new MemoryStream();
             var bms = new BitcoinStream(ms, true)
             {
-                TransactionOptions = options | savePOS
+                NetworkOptions = options | savePOS
             };
 
             this.ReadWrite(bms);
             ms.Position = 0;
             bms = new BitcoinStream(ms, false)
             {
-                TransactionOptions = options | savePOS
+                NetworkOptions = options | savePOS
             };
 
             instance.ReadWrite(bms);
@@ -444,7 +444,7 @@ namespace NBitcoin
             if (address == null)
                 throw new ArgumentNullException("address");
 
-            Block block = new Block(this.TransactionOptions);
+            Block block = new Block(this.NetworkOptions);
             block.Header.Nonce = RandomUtils.GetUInt32();
             block.Header.HashPrevBlock = this.GetHash();
             block.Header.BlockTime = now;
@@ -470,7 +470,7 @@ namespace NBitcoin
 
         public Block CreateNextBlockWithCoinbase(PubKey pubkey, Money value, DateTimeOffset now)
         {
-            Block block = new Block(this.TransactionOptions);
+            Block block = new Block(this.NetworkOptions);
             block.Header.Nonce = RandomUtils.GetUInt32();
             block.Header.HashPrevBlock = this.GetHash();
             block.Header.BlockTime = now;
@@ -490,7 +490,7 @@ namespace NBitcoin
             return block;
         }
 
-        public static Block ParseJson(string json, TransactionOptions options = TransactionOptions.All)
+        public static Block ParseJson(string json, NetworkOptions options = null)
         {
             var formatter = new BlockExplorerFormatter();
             JObject block = JObject.Parse(json);

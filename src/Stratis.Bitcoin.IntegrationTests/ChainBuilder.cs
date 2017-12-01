@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public Transaction Spend(ICoin[] coins, Money amount)
         {
-            TransactionBuilder builder = new TransactionBuilder(this.network.TransactionOptions);
+            TransactionBuilder builder = new TransactionBuilder(this.network.NetworkOptions);
             builder.AddCoins(coins);
             builder.AddKeys(this.MinerKey);
             builder.Send(this.MinerScriptPubKey, amount);
@@ -70,11 +70,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                Block block = new Block(this.network.TransactionOptions);
+                Block block = new Block(this.network.NetworkOptions);
                 block.Header.HashPrevBlock = this.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(this.network, this.Chain.Tip);
                 block.Header.UpdateTime(now, this.network, this.Chain.Tip);
-                var coinbase = new Transaction(this.network.TransactionOptions);
+                var coinbase = new Transaction(this.network.NetworkOptions);
                 coinbase.AddInput(TxIn.CreateCoinbase(this.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(this.network.GetReward(this.Chain.Height + 1), this.MinerScriptPubKey));
                 block.AddTransaction(coinbase);

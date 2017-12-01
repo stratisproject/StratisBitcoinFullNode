@@ -112,7 +112,7 @@ namespace NBitcoin.Payment
             };
         }
 
-		public static PaymentMessage Load(Stream source, TransactionOptions options = TransactionOptions.All)
+		public static PaymentMessage Load(Stream source, NetworkOptions options = null)
 		{
 			if(source.CanSeek && source.Length > MaxLength)
 				throw new ArgumentException("Payment messages larger than " + MaxLength + " bytes should be rejected by the merchant's server", "source");

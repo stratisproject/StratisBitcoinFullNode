@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             ChainedBlock last = null;
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block(chain.Tip.Header.TransactionOptions);
+            var block = new Block(chain.Tip.Header.NetworkOptions);
             block.AddTransaction();
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block(network.TransactionOptions);
+                var block = new Block(network.NetworkOptions);
                 block.AddTransaction();
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1).AddDays(i));
@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             uint256 forkBlockPrevHash = null;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block(network.TransactionOptions);
+                var block = new Block(network.NetworkOptions);
                 block.AddTransaction();
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -331,7 +331,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // build up the right fork further.
             for (var i = forkBlock; i < blockAmount; i++)
             {
-                var block = new Block(network.TransactionOptions);
+                var block = new Block(network.NetworkOptions);
                 block.AddTransaction();
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = forkBlockPrevHash;
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var blocks = new List<Block>();
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block(network.TransactionOptions);
+                var block = new Block(network.NetworkOptions);
                 block.AddTransaction();
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block(Network.StratisMain.TransactionOptions);
+            var block = new Block(Network.StratisMain.NetworkOptions);
             block.AddTransaction();
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;

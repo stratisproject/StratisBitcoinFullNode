@@ -283,7 +283,7 @@ namespace NBitcoin
 		}
 		internal class TransactionBuildingContext
 		{
-			public TransactionBuildingContext(TransactionBuilder builder, TransactionOptions options = TransactionOptions.All)
+			public TransactionBuildingContext(TransactionBuilder builder, NetworkOptions options = null)
 			{
 				Builder = builder;
 				Transaction = new Transaction(options);
@@ -384,7 +384,7 @@ namespace NBitcoin
 
 			public TransactionBuildingContext CreateMemento()
 			{
-				var memento = new TransactionBuildingContext(Builder, this.Transaction.TransactionOptions);
+				var memento = new TransactionBuildingContext(Builder, this.Transaction.NetworkOptions);
 				memento.RestoreMemento(this);
 				return memento;
 			}
@@ -489,7 +489,7 @@ namespace NBitcoin
 				return _CurrentGroup;
 			}
 		}
-		public TransactionBuilder(TransactionOptions transactionOptions = TransactionOptions.All)
+		public TransactionBuilder(NetworkOptions transactionOptions = null)
 		{
 			_Rand = new Random();
 			CoinSelector = new DefaultCoinSelector();
@@ -508,7 +508,7 @@ namespace NBitcoin
         }
 
 		internal Random _Rand;
-		public TransactionBuilder(int seed, TransactionOptions transactionOptions = TransactionOptions.All)
+		public TransactionBuilder(int seed, NetworkOptions transactionOptions = null)
 		{
 			_Rand = new Random(seed);
 			CoinSelector = new DefaultCoinSelector(seed);
@@ -519,12 +519,12 @@ namespace NBitcoin
 		}
 
         public TransactionBuilder(int seed, bool isPOS)
-            :this(seed, isPOS?TransactionOptions.POSAll:TransactionOptions.All)
+            :this(seed, isPOS?NetworkOptions.POSAll:NetworkOptions.All)
         {
         }
 
         public TransactionBuilder(bool isPOS)
-            : this(isPOS ? TransactionOptions.POSAll : TransactionOptions.All)
+            : this(isPOS ? NetworkOptions.POSAll : NetworkOptions.All)
         {
         }
 
@@ -546,7 +546,7 @@ namespace NBitcoin
         /// <summary>
         /// The transaction options for creating transactions.
         /// </summary>
-        public TransactionOptions TransactionOptions
+        public NetworkOptions TransactionOptions
         {
             get;
             set;
@@ -1029,7 +1029,7 @@ namespace NBitcoin
 		/// <param name="sigHash">The type of signature</param>
 		/// <returns>The transaction</returns>
 		/// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
-		public Transaction BuildTransaction(bool sign, SigHash sigHash, TransactionOptions options = TransactionOptions.All)
+		public Transaction BuildTransaction(bool sign, SigHash sigHash, NetworkOptions options = null)
 		{
 			TransactionBuildingContext ctx = new TransactionBuildingContext(this, options);
 			if(_CompletedTransaction != null)
@@ -1385,7 +1385,7 @@ namespace NBitcoin
 				throw new ArgumentNullException("tx");
 			var clone = tx.Clone();
 			clone.Inputs.Clear();
-			var baseSize = clone.GetSerializedSize(tx.TransactionOptions);
+			var baseSize = clone.GetSerializedSize(tx.NetworkOptions);
 
             int vSize = 0;
             int size = baseSize;

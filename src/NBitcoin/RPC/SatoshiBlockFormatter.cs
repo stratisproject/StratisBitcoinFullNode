@@ -79,7 +79,7 @@ namespace NBitcoin.RPC
             return json.ToObject<RPCBlock>();
         }
 
-		public static Block ToBlock(RPCBlock rpcBlock, TransactionOptions options)
+		public static Block ToBlock(RPCBlock rpcBlock, NetworkOptions options)
 		{
 			var header = new BlockHeader(options)
 			{

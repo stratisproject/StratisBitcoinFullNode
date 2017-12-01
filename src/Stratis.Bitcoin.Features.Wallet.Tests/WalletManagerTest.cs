@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block(Network.StratisMain.TransactionOptions);
+            var block = new Block(Network.StratisMain.NetworkOptions);
             block.AddTransaction();
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block(Network.StratisMain.TransactionOptions);
+            var block = new Block(Network.StratisMain.NetworkOptions);
             block.AddTransaction();
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 var chain = new ConcurrentChain(Network.StratisMain);
                 var nonce = RandomUtils.GetUInt32();
-                var block = new Block(Network.StratisMain.TransactionOptions);
+                var block = new Block(Network.StratisMain.NetworkOptions);
                 block.AddTransaction();
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = chain.Genesis.HashBlock;
@@ -1077,7 +1077,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block(Network.StratisMain.TransactionOptions);
+            var block = new Block(Network.StratisMain.NetworkOptions);
             block.AddTransaction();
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
@@ -1166,7 +1166,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block(Network.StratisMain.TransactionOptions);
+            var block = new Block(Network.StratisMain.NetworkOptions);
             block.AddTransaction();
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;

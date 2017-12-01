@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         private byte[] GetPayloadBytes(BitcoinStream stream, out int length)
         {
             MemoryStream ms = this.buffer == null ? new MemoryStream() : new MemoryStream(this.buffer);
-            this.Payload.ReadWrite(new BitcoinStream(ms, true) { TransactionOptions = stream.TransactionOptions });
+            this.Payload.ReadWrite(new BitcoinStream(ms, true) { NetworkOptions = stream.NetworkOptions });
             length = (int)ms.Position;
             return this.buffer ?? GetBuffer(ms);
         }
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             BitcoinStream bitStream = new BitcoinStream(stream, false)
             {
                 ProtocolVersion = version,
-                TransactionOptions = network.TransactionOptions,
+                NetworkOptions = network.NetworkOptions,
                 ReadCancellationToken = cancellationToken
             };
 

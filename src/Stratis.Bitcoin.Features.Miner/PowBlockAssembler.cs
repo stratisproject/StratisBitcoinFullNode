@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.fees = 0;
 
             this.ChainTip = chainTip;
-            this.pblocktemplate = new BlockTemplate { Block = new Block(network.TransactionOptions), VTxFees = new List<Money>() };
+            this.pblocktemplate = new BlockTemplate { Block = new Block(network.NetworkOptions), VTxFees = new List<Money>() };
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)

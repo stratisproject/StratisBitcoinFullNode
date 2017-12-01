@@ -291,11 +291,11 @@ namespace NBitcoin
             this.genesis = new Block();
         }
 
-        public TransactionOptions TransactionOptions
+        public NetworkOptions NetworkOptions
         {
             get
             {
-                return this.genesis.TransactionOptions;
+                return this.genesis.NetworkOptions;
             }
         }
 

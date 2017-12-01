@@ -588,7 +588,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                var transaction = new Transaction(request.Hex, options:this.network.TransactionOptions);
+                var transaction = new Transaction(request.Hex, options:this.network.NetworkOptions);
 
                 WalletSendTransactionModel model = new WalletSendTransactionModel
                 {

@@ -562,7 +562,7 @@ namespace NBitcoin.Tests
             var store = CreateBlockStore();
 
 			var index = 0;
-			var blockStore = new NoSqlBlockRepository(Network.StratisMain.TransactionOptions);
+			var blockStore = new NoSqlBlockRepository(Network.StratisMain.NetworkOptions);
 			foreach (var storedBlock in mainStore.Enumerate(false).Take(totalblocks))
 			{
 				store.Append(storedBlock.Item);
@@ -574,8 +574,8 @@ namespace NBitcoin.Tests
 			var chain = store.GetChain();
 
 			// fill the transaction store
-			var trxStore = new NoSqlTransactionRepository(Network.StratisMain.TransactionOptions);
-			var mapStore = new BlockTransactionMapStore(Network.StratisMain.TransactionOptions);
+			var trxStore = new NoSqlTransactionRepository(Network.StratisMain.NetworkOptions);
+			var mapStore = new BlockTransactionMapStore(Network.StratisMain.NetworkOptions);
 			foreach (var chainedBlock in chain.ToEnumerable(false).Take(totalblocks))
 			{
 				var block = blockStore.GetBlock(chainedBlock.HashBlock);

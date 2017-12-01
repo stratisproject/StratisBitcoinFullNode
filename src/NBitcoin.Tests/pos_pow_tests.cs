@@ -60,7 +60,7 @@ namespace NBitcoin.Tests
 			var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
 			var chain = store.GetChain();
 			var stakeChain = new MemoryStakeChain(Network.StratisMain);
-			var indexStore = new IndexedBlockStore(new InMemoryNoSqlRepository(TransactionOptions.POSAll), store);
+			var indexStore = new IndexedBlockStore(new InMemoryNoSqlRepository(NetworkOptions.POSAll), store);
 			var reindexed = indexStore.ReIndex();
 			Assert.Equal(reindexed, 103952);
 

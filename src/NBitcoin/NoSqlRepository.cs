@@ -8,9 +8,9 @@ namespace NBitcoin
 {
 	public abstract class NoSqlRepository
 	{
-        public TransactionOptions TransactionOptions { get; private set; }
+        public NetworkOptions TransactionOptions { get; private set; }
 
-        public NoSqlRepository(TransactionOptions options = TransactionOptions.All)
+        public NoSqlRepository(NetworkOptions options = null)
         {
             this.TransactionOptions = options;
         }

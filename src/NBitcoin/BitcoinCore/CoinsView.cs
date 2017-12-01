@@ -16,7 +16,7 @@ namespace NBitcoin.BitcoinCore
             _Index = index;
         }
 
-		public CoinsView(TransactionOptions options = TransactionOptions.All)
+		public CoinsView(NetworkOptions options = null)
 			: this(new InMemoryNoSqlRepository(options))
 		{
 

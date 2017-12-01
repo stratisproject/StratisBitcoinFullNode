@@ -738,7 +738,7 @@ namespace NBitcoin
 
 
 			//Serialize TxCopy, append 4 byte hashtypecode
-			var stream = CreateHashWriter(sigversion, txTo.TransactionOptions);
+			var stream = CreateHashWriter(sigversion, txTo.NetworkOptions);
 			txCopy.ReadWrite(stream);
 			stream.ReadWrite((uint)nHashType);
 			return GetHash(stream);
@@ -787,13 +787,13 @@ namespace NBitcoin
             return hashPrevouts;
         }
 
-		private static BitcoinStream CreateHashWriter(HashVersion version, TransactionOptions options = TransactionOptions.All)
+		private static BitcoinStream CreateHashWriter(HashVersion version, NetworkOptions options = null)
 		{
 			HashStream hs = new HashStream();
 			BitcoinStream stream = new BitcoinStream(hs, true);
 			stream.Type = SerializationType.Hash;
-			stream.TransactionOptions = version == HashVersion.Original ? TransactionOptions.None : TransactionOptions.Witness;
-            stream.TransactionOptions |= (options & TransactionOptions.POS);
+			stream.NetworkOptions = version == HashVersion.Original ? NetworkOptions.None : NetworkOptions.Witness;
+            stream.NetworkOptions |= (options & NetworkOptions.POS);
 			return stream;
 		}
 

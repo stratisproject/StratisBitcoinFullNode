@@ -30,7 +30,7 @@ namespace NBitcoin.RPC
             return Parse(obj);
         }
 
-		public Transaction Parse(JObject obj, TransactionOptions options = TransactionOptions.All)
+		public Transaction Parse(JObject obj, NetworkOptions options = null)
 		{
 			Transaction tx = new Transaction(options);
 			BuildTransaction(obj, tx);
