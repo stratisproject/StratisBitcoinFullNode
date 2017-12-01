@@ -154,6 +154,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Set to <c>1</c> when a cleanup has been initiated, otherwise <c>0</c>.</summary>
         private int cleaningUp;
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        /// <param name="peer">Network peer the node is connection to.</param>
+        /// <param name="socket">Connected network socket to the peer.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public NetworkPeerConnection(NetworkPeer peer, Socket socket, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
@@ -164,6 +171,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
         }
 
+        /// <summary>
+        /// Starts two threads, one is responsible for receiving incoming message from the peer 
+        /// and the other is responsible for sending node's message, which are waiting in a queue, to the peer.
+        /// </summary>
         public void BeginListen()
         {
             this.logger.LogTrace("()");
@@ -303,6 +314,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// When the connection is terminated, this method cleans up and informs connected behaviors about the termination.
+        /// </summary>
+        /// <param name="unhandledException">Error exception explaining why the termination occurred, or <c>null</c> if the connection was closed gracefully.</param>
         private void EndListen(Exception unhandledException)
         {
             this.logger.LogTrace("()");
@@ -349,6 +364,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary>
+        /// Disposes resources used by the object.
+        /// </summary>
         internal void CleanUp()
         {
             this.logger.LogTrace("()");
