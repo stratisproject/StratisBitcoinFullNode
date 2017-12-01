@@ -32,9 +32,6 @@ namespace Stratis.Bitcoin
         /// <summary>Component responsible for starting and stopping all the node's features.</summary>
         private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
-        /// <summary>Indicates whether the node has been stopped or is currently being stopped.</summary>
-        internal bool Stopped;
-
         /// <summary>Indicates whether the node's instance has been disposed or is currently being disposed.</summary>
         public bool IsDisposed { get; private set; }
 
@@ -195,8 +192,8 @@ namespace Stratis.Bitcoin
 
             this.logger.LogInformation("Starting node...");
 
-            // Start all registered features.
-            this.fullNodeFeatureExecutor.Start();
+            // Initialize all registered features.
+            this.fullNodeFeatureExecutor.Initialize();
 
             // Start connecting to peers.
             this.ConnectionManager.Start();
@@ -205,32 +202,6 @@ namespace Stratis.Bitcoin
             this.nodeLifetime.NotifyStarted();
 
             this.StartPeriodicLog();
-        }
-
-        /// <inheritdoc />
-        public void Stop()
-        {
-            if (this.Stopped)
-                return;
-
-            this.Stopped = true;
-
-            this.logger.LogInformation("Closing node pending...");
-
-            // Fire INodeLifetime.Stopping.
-            this.nodeLifetime.StopApplication();
-
-            // Fire the NodeFeatureExecutor.Stop.
-            this.fullNodeFeatureExecutor.Stop();
-
-            foreach (IDisposable disposable in this.Resources)
-                disposable.Dispose();
-
-            this.ConnectionManager.Dispose();
-            this.loggerFactory.Dispose();
-
-            // Fire INodeLifetime.Stopped.
-            this.nodeLifetime.NotifyStopped();
         }
 
         /// <summary>
@@ -277,17 +248,22 @@ namespace Stratis.Bitcoin
 
             this.IsDisposed = true;
 
-            if (!this.Stopped)
-            {
-                try
-                {
-                    this.Stop();
-                }
-                catch (Exception ex)
-                {
-                    this.logger?.LogError(ex.Message);
-                }
-            }
+            this.logger.LogInformation("Closing node pending...");
+
+            // Fire INodeLifetime.Stopping.
+            this.nodeLifetime.StopApplication();
+
+            this.ConnectionManager.Dispose();
+            this.loggerFactory.Dispose();
+
+            foreach (IDisposable disposable in this.Resources)
+                disposable.Dispose();
+
+            // Fire the NodeFeatureExecutor.Stop.
+            this.fullNodeFeatureExecutor.Dispose();
+
+            // Fire INodeLifetime.Stopped.
+            this.nodeLifetime.NotifyStopped();
 
             this.HasExited = true;
         }

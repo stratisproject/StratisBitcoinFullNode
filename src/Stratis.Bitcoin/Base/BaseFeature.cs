@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             this.logger.LogTrace("()");
 
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.logger.LogInformation("Flushing peers...");
             this.flushAddressManagerLoop.Dispose();

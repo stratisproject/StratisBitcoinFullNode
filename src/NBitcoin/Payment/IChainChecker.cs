@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace NBitcoin.Payment
 {
-	public interface IChainChecker
-	{
-		bool VerifyChain(byte[] certificate, byte[][] additionalCertificates);
-	}
+    public interface IChainChecker
+    {
+        bool VerifyChain(byte[] certificate, byte[][] additionalCertificates);
+    }
 }
