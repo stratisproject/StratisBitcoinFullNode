@@ -595,7 +595,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     TransactionId = transaction.GetHash(),
                     Outputs = new List<TransactionOutputModel>()
                 };
-                
+
                 foreach (var output in transaction.Outputs)
                 {
                     model.Outputs.Add(new TransactionOutputModel
@@ -604,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Amount = output.Value,
                     });
                 }
-                
+
                 var result = await this._broadcastManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
                 if (result == Bitcoin.Broadcasting.Success.Yes)
                 {
