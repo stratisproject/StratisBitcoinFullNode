@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Selects a peer from the address manager.
         /// <para>
-        /// Refer to <see cref="IPeerAddressManager.SelectPeerToConnectTo(PeerIntroductionType)"/> for details on how this is done.
+        /// Refer to <see cref="IPeerAddressManager.SelectPeerToConnectTo()"/> for details on how this is done.
         /// </para>
         /// </summary>
         internal abstract NetworkAddress FindPeerToConnectTo();
