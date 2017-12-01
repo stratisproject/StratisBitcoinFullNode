@@ -30,8 +30,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public ulong? Nonce { get; set; }
 
-        /// <summary>Whether we reuse a 1MB buffer for deserializing messages, for limiting GC activity (Default : true).</summary>
-        public bool ReuseBuffer { get; set; }
         public CancellationToken ConnectCancellation { get; set; }
 
         private readonly NetworkPeerBehaviorsCollection templateBehaviors = new NetworkPeerBehaviorsCollection(null);
@@ -39,7 +37,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerConnectionParameters()
         {
-            this.ReuseBuffer = true;
             this.TemplateBehaviors.Add(new PingPongBehavior());
             this.Version = ProtocolVersion.PROTOCOL_VERSION;
             this.IsRelay = true;
@@ -63,7 +60,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.AddressFrom = other.AddressFrom;
             this.Nonce = other.Nonce;
             this.Advertize = other.Advertize;
-            this.ReuseBuffer = other.ReuseBuffer;
             this.PreferredTransactionOptions = other.PreferredTransactionOptions;
 
             foreach (INetworkPeerBehavior behavior in other.TemplateBehaviors)

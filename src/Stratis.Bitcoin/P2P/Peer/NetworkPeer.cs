@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.logger.LogTrace("Start listenting.");
                 Exception unhandledException = null;
-                byte[] buffer = this.Peer.ReuseBuffer ? new byte[1024 * 1024] : null;
+                byte[] buffer = new byte[1024 * 1024];
                 try
                 {
                     using (var stream = new NetworkStream(this.Socket, false))
@@ -430,7 +430,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary><c>true</c> if the peer connected to the node, <c>false</c> if the node connected to the peer.</summary>
         public bool Inbound { get; private set; }
 
-        public bool ReuseBuffer { get; private set; }
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
         public NetworkAddress PeerAddress { get; private set; }
 
@@ -803,7 +802,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Advertize = parameters.Advertize;
             this.PreferredTransactionOptions = parameters.PreferredTransactionOptions;
-            this.ReuseBuffer = parameters.ReuseBuffer;
 
             this.Behaviors.DelayAttach = true;
             foreach (INetworkPeerBehavior behavior in parameters.TemplateBehaviors)
