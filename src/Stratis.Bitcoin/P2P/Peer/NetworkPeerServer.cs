@@ -12,9 +12,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public delegate void NetworkPeerServerNodeEventHandler(NetworkPeerServer sender, NetworkPeer peer);
-    public delegate void NetworkPeerServerMessageEventHandler(NetworkPeerServer sender, IncomingMessage message);
-
     public class NetworkPeerServer : IDisposable
     {
         /// <summary>Instance logger.</summary>
@@ -100,10 +97,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public event NetworkPeerServerNodeEventHandler PeerRemoved;
-        public event NetworkPeerServerNodeEventHandler PeerAdded;
-        public event NetworkPeerServerMessageEventHandler MessageReceived;
-
         private readonly EventLoopMessageListener<IncomingMessage> listener;
 
         /// <summary>
@@ -139,8 +132,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.messageProducer.AddMessageListener(this.listener);
 
             this.ConnectedNetworkPeers = new NetworkPeerCollection();
-            this.ConnectedNetworkPeers.Added += Peers_PeerAdded;
-            this.ConnectedNetworkPeers.Removed += Peers_PeerRemoved;
             this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(this.listener);
 
             this.AllMessages = new MessageProducer<IncomingMessage>();
@@ -150,24 +141,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
-        private void Peers_PeerRemoved(object sender, NetworkPeerEventArgs eventArgs)
-        {
-            this.logger.LogTrace("()");
-
-            this.PeerRemoved?.Invoke(this, eventArgs.peer);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        private void Peers_PeerAdded(object sender, NetworkPeerEventArgs eventArgs)
-        {
-            this.logger.LogTrace("()");
-
-            this.PeerAdded?.Invoke(this, eventArgs.peer);
-
-            this.logger.LogTrace("(-)");
-        }
-
+        /// <summary>
+        /// Starts listening on the server's initialialized endpoint.
+        /// </summary>
+        /// <param name="maxIncoming">Maximal number of newly connected clients waiting to be accepted.</param>
         public void Listen(int maxIncoming = 8)
         {
             this.logger.LogTrace("({0}:{1})", nameof(maxIncoming), maxIncoming);
@@ -198,6 +175,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Starts accepting connections from newly connected clients.
+        /// </summary>
         private void BeginAccept()
         {
             this.logger.LogTrace("()");
@@ -218,6 +198,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Callback that is called when a new connection is accepted.
+        /// </summary>
+        /// <inheritdoc/>
         private void Accept_Completed(object sender, SocketAsyncEventArgs e)
         {
             this.logger.LogTrace("()");
@@ -227,6 +211,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Handles a completed accept connection event and starts accepting again.
+        /// </summary>
+        /// <param name="args">Information about the accept connection event.</param>
         private void EndAccept(SocketAsyncEventArgs args)
         {
             this.logger.LogTrace("()");
@@ -239,7 +227,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 client = args.AcceptSocket;
                 if (this.cancel.IsCancellationRequested)
+                {
+                    this.logger.LogTrace("(-)[CANCELLED]");
                     return;
+                }
 
                 this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
                 var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.cancel.Token);
@@ -301,19 +292,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
-        internal void ExternalAddressDetected(IPAddress ipAddress)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(ipAddress), ipAddress);
-
-            if (!this.ExternalEndpoint.Address.IsRoutable(this.AllowLocalPeers) && ipAddress.IsRoutable(this.AllowLocalPeers))
-            {
-                this.logger.LogTrace("New external address '{0}' detected.", ipAddress);
-                this.ExternalEndpoint = new IPEndPoint(ipAddress, this.ExternalEndpoint.Port);
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
+        /// <summary>
+        /// Callback that is called when a new message is received from a connected client peer.
+        /// </summary>
+        /// <param name="message">Message received from the client.</param>
         private void ProcessMessage(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
@@ -324,6 +306,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Processes a new message received from a connected client peer.
+        /// </summary>
+        /// <param name="message">Message received from the client.</param>
         private void ProcessMessageCore(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
@@ -397,10 +383,15 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            this.MessageReceived?.Invoke(this, message);
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Callback that is called when a network status of a connected client peer changes.
+        /// <para>The peer is removed from the list of connected peers if the connection has been terminated for any reason.</para>
+        /// </summary>
+        /// <param name="peer">The connected peer.</param>
+        /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="NetworkPeer.State"/> property.</param>
         private void Peer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerAddress, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
