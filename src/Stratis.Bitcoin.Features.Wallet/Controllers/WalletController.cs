@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IBroadcastManager _broadcastManager;
+        private readonly IBroadcastManager broadcastManager;
 
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this._broadcastManager = broadcastManager;
+            this.broadcastManager = broadcastManager;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -605,7 +605,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
-                var result = await this._broadcastManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
+                var result = await this.broadcastManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
                 if (result == Bitcoin.Broadcasting.Success.Yes)
                 {
                     return this.Json(model);
@@ -619,7 +619,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     while (TimeSpan.FromSeconds(21) > waited)
                     {
                         // if broadcasts doesn't contain then success
-                        var transactionEntry = this._broadcastManager.GetTransaction(transaction.GetHash());
+                        var transactionEntry = this.broadcastManager.GetTransaction(transaction.GetHash());
                         if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
                         {
                             return this.Json(model);
