@@ -392,7 +392,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Time in UTC when the connection to the peer was established.</summary>
         public DateTime ConnectedAt { get; private set; }
 
+        /// <summary>State of the network connection to the peer.</summary>
         private volatile NetworkPeerState state = NetworkPeerState.Offline;
+        /// <summary>State of the network connection to the peer.</summary>
         public NetworkPeerState State
         {
             get
@@ -416,9 +418,16 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public IPAddress RemoteSocketAddress { get; private set; }
+        /// <summary>IP address and port of the connected peer.</summary>
         public IPEndPoint RemoteSocketEndpoint { get; private set; }
+
+        /// <summary>IP address part of <see cref="RemoteSocketEndpoint"/>.</summary>
+        public IPAddress RemoteSocketAddress { get; private set; }
+
+        /// <summary>Port part of <see cref="RemoteSocketEndpoint"/>.</summary>
         public int RemoteSocketPort { get; private set; }
+
+        /// <summary><c>true</c> if the peer connected to the node, <c>false</c> if the node connected to the peer.</summary>
         public bool Inbound { get; private set; }
 
         public bool ReuseBuffer { get; private set; }
@@ -570,8 +579,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                             throw new SocketException((int)nodeSocketEventManager.SocketEvent.SocketError);
 
                         var remoteEndpoint = (IPEndPoint)(socket.RemoteEndPoint ?? nodeSocketEventManager.SocketEvent.RemoteEndPoint);
-                        this.RemoteSocketAddress = remoteEndpoint.Address;
                         this.RemoteSocketEndpoint = remoteEndpoint;
+                        this.RemoteSocketAddress = remoteEndpoint.Address;
                         this.RemoteSocketPort = remoteEndpoint.Port;
 
                         this.State = NetworkPeerState.Connected;
