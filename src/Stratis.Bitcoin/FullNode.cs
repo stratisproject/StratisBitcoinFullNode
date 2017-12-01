@@ -26,6 +26,9 @@ namespace Stratis.Bitcoin
         /// <summary>Instance logger.</summary>
         private ILogger logger;
 
+        /// <summary>Factory for creating loggers.</summary>
+        private ILoggerFactory loggerFactory;
+
         /// <summary>Component responsible for starting and stopping all the node's features.</summary>
         private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
@@ -162,6 +165,8 @@ namespace Stratis.Bitcoin
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
+            this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
+
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
@@ -222,7 +227,7 @@ namespace Stratis.Bitcoin
                 disposable.Dispose();
 
             this.ConnectionManager.Dispose();
-            this.NodeService<NodeSettings>().LoggerFactory.Dispose();
+            this.loggerFactory.Dispose();
 
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
