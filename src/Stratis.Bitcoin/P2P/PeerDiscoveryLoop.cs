@@ -153,6 +153,7 @@ namespace Stratis.Bitcoin.P2P
             peers.AddRange(this.network.SeedNodes);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.asyncLoop?.Dispose();

@@ -111,6 +111,7 @@ namespace Stratis.Bitcoin.Base
             return task;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.dbreeze.Dispose();

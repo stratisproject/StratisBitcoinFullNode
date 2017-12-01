@@ -66,6 +66,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.subscription?.Dispose();
