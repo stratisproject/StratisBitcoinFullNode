@@ -410,13 +410,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         private int disconnecting;
 
         /// <summary>Transaction options we would like.</summary>
-        public TransactionOptions PreferredTransactionOptions { get; private set; } = TransactionOptions.All;
+        public NetworkOptions PreferredTransactionOptions { get; private set; } = NetworkOptions.All;
 
         /// <summary>Transaction options supported by the peer.</summary>
-        public TransactionOptions SupportedTransactionOptions { get; private set; } = TransactionOptions.None;
+        public NetworkOptions SupportedTransactionOptions { get; private set; } = NetworkOptions.None;
 
         /// <summary>Transaction options we prefer and which is also supported by peer.</summary>
-        public TransactionOptions ActualTransactionOptions
+        public NetworkOptions ActualTransactionOptions
         {
             get
             {
@@ -613,11 +613,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
                 if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
-                    this.SupportedTransactionOptions |= TransactionOptions.Witness;
+                    this.SupportedTransactionOptions |= NetworkOptions.Witness;
             }
 
             if (message.Message.Payload is HaveWitnessPayload)
-                this.SupportedTransactionOptions |= TransactionOptions.Witness;
+                this.SupportedTransactionOptions |= NetworkOptions.Witness;
 
             var last = new ActionFilter((m, n) =>
             {
@@ -1014,7 +1014,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Inventory type with options (MSG_TX | MSG_WITNESS_FLAG)</returns>
         public InventoryType AddSupportedOptions(InventoryType inventoryType)
         {
-            if ((this.ActualTransactionOptions & TransactionOptions.Witness) != 0)
+            if ((this.ActualTransactionOptions & NetworkOptions.Witness) != 0)
                 inventoryType |= InventoryType.MSG_WITNESS_FLAG;
 
             return inventoryType;
