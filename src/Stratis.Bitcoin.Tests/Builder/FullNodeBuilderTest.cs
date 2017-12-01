@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.Builder
     {
         public class DummyFeature : FullNodeFeature
         {
-            public override void Start()
+            public override void Initialize()
             {
                 // nothing.
             }
