@@ -30,11 +30,6 @@ namespace Stratis.Bitcoin
         void Start();
 
         /// <summary>
-        /// Stops the full node and all its features.
-        /// </summary>
-        void Stop();
-
-        /// <summary>
         /// Find a service of a particular type
         /// </summary>
         /// <typeparam name="T">Class of type</typeparam>

@@ -67,9 +67,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
     }
 
-    public delegate void NodeEventHandler(NetworkPeer node);
-    public delegate void NodeEventMessageIncoming(NetworkPeer node, IncomingMessage message);
-    public delegate void NodeStateEventHandler(NetworkPeer node, NetworkPeerState oldState);
+    public delegate void NetworkPeerEventHandler(NetworkPeer peer);
+    public delegate void NetworkPeerEventMessageIncoming(NetworkPeer peer, IncomingMessage message);
+    public delegate void NetworkPeerStateEventHandler(NetworkPeer peer, NetworkPeerState oldState);
 
     public class SentMessage
     {
@@ -410,13 +410,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         private int disconnecting;
 
         /// <summary>Transaction options we would like.</summary>
-        public TransactionOptions PreferredTransactionOptions { get; private set; } = TransactionOptions.All;
+        public NetworkOptions PreferredTransactionOptions { get; private set; } = NetworkOptions.All;
 
         /// <summary>Transaction options supported by the peer.</summary>
-        public TransactionOptions SupportedTransactionOptions { get; private set; } = TransactionOptions.None;
+        public NetworkOptions SupportedTransactionOptions { get; private set; } = NetworkOptions.None;
 
         /// <summary>Transaction options we prefer and which is also supported by peer.</summary>
-        public TransactionOptions ActualTransactionOptions
+        public NetworkOptions ActualTransactionOptions
         {
             get
             {
@@ -437,9 +437,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
-        public event NodeStateEventHandler StateChanged;
-        public event NodeEventMessageIncoming MessageReceived;
-        public event NodeEventHandler Disconnected;
+        public event NetworkPeerStateEventHandler StateChanged;
+        public event NetworkPeerEventMessageIncoming MessageReceived;
+        public event NetworkPeerEventHandler Disconnected;
 
         /// <summary>
         /// Dummy constructor for testing only.
@@ -576,10 +576,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
 
-            NodeStateEventHandler stateChanged = StateChanged;
+            NetworkPeerStateEventHandler stateChanged = StateChanged;
             if (stateChanged != null)
             {
-                foreach (NodeStateEventHandler handler in stateChanged.GetInvocationList().Cast<NodeStateEventHandler>())
+                foreach (NetworkPeerStateEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateEventHandler>())
                 {
                     try
                     {
@@ -613,19 +613,19 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
                 if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
-                    this.SupportedTransactionOptions |= TransactionOptions.Witness;
+                    this.SupportedTransactionOptions |= NetworkOptions.Witness;
             }
 
             if (message.Message.Payload is HaveWitnessPayload)
-                this.SupportedTransactionOptions |= TransactionOptions.Witness;
+                this.SupportedTransactionOptions |= NetworkOptions.Witness;
 
             var last = new ActionFilter((m, n) =>
             {
                 this.MessageProducer.PushMessage(m);
-                NodeEventMessageIncoming messageReceived = MessageReceived;
+                NetworkPeerEventMessageIncoming messageReceived = MessageReceived;
                 if (messageReceived != null)
                 {
-                    foreach (NodeEventMessageIncoming handler in messageReceived.GetInvocationList().Cast<NodeEventMessageIncoming>())
+                    foreach (NetworkPeerEventMessageIncoming handler in messageReceived.GetInvocationList().Cast<NetworkPeerEventMessageIncoming>())
                     {
                         try
                         {
@@ -699,10 +699,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            NodeEventHandler disconnected = Disconnected;
+            NetworkPeerEventHandler disconnected = Disconnected;
             if (disconnected != null)
             {
-                foreach (NodeEventHandler handler in disconnected.GetInvocationList().Cast<NodeEventHandler>())
+                foreach (NetworkPeerEventHandler handler in disconnected.GetInvocationList().Cast<NetworkPeerEventHandler>())
                 {
                     try
                     {
@@ -1014,12 +1014,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Inventory type with options (MSG_TX | MSG_WITNESS_FLAG)</returns>
         public InventoryType AddSupportedOptions(InventoryType inventoryType)
         {
-            if ((this.ActualTransactionOptions & TransactionOptions.Witness) != 0)
+            if ((this.ActualTransactionOptions & NetworkOptions.Witness) != 0)
                 inventoryType |= InventoryType.MSG_WITNESS_FLAG;
 
             return inventoryType;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             Disconnect("Node disposed");

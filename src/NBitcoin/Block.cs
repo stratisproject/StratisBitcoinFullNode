@@ -307,15 +307,15 @@ namespace NBitcoin
         /// </summary>
         /// <param name="options">Options to keep.</param>
         /// <returns>A new block with only the options wanted.</returns>
-        public Block WithOptions(TransactionOptions options)
+        public Block WithOptions(NetworkOptions options)
         {
             if (this.Transactions.Count == 0)
                 return this;
 
-            if ((options == TransactionOptions.Witness) && this.Transactions[0].HasWitness)
+            if ((options == NetworkOptions.Witness) && this.Transactions[0].HasWitness)
                 return this;
 
-            if ((options == TransactionOptions.None) && !this.Transactions[0].HasWitness)
+            if ((options == NetworkOptions.None) && !this.Transactions[0].HasWitness)
                 return this;
 
             var instance = new Block();

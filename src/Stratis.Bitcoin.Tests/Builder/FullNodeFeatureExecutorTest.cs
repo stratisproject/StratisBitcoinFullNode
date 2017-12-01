@@ -59,10 +59,10 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void StartCallsStartOnEachFeatureRegisterdWithFullNode()
         {
-            this.executor.Start();
+            this.executor.Initialize();
 
-            this.feature.Verify(f => f.Start(), Times.Exactly(1));
-            this.feature2.Verify(f => f.Start(), Times.Exactly(1));
+            this.feature.Verify(f => f.Initialize(), Times.Exactly(1));
+            this.feature2.Verify(f => f.Initialize(), Times.Exactly(1));
         }
 
         [Fact]
@@ -70,22 +70,22 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             Assert.Throws<AggregateException>(() =>
             {
-                this.feature.Setup(f => f.Start())
+                this.feature.Setup(f => f.Initialize())
                     .Throws(new ArgumentNullException());
-                this.feature2.Setup(f => f.Start())
+                this.feature2.Setup(f => f.Initialize())
                     .Throws(new ArgumentNullException());
 
-                this.executor.Start();
+                this.executor.Initialize();
             });
         }
 
         [Fact]
         public void StopCallsStopOnEachFeatureRegisterdWithFullNode()
         {
-            this.executor.Stop();
+            this.executor.Dispose();
 
-            this.feature.Verify(f => f.Stop(), Times.Exactly(1));
-            this.feature2.Verify(f => f.Stop(), Times.Exactly(1));
+            this.feature.Verify(f => f.Dispose(), Times.Exactly(1));
+            this.feature2.Verify(f => f.Dispose(), Times.Exactly(1));
         }
 
         [Fact]
@@ -93,12 +93,12 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             Assert.Throws<AggregateException>(() =>
             {
-                this.feature.Setup(f => f.Stop())
+                this.feature.Setup(f => f.Dispose())
                     .Throws(new ArgumentNullException());
-                this.feature2.Setup(f => f.Stop())
+                this.feature2.Setup(f => f.Dispose())
                     .Throws(new ArgumentNullException());
 
-                this.executor.Stop();
+                this.executor.Dispose();
             });
         }
 
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void TestMissingDependencyThrowsException()
         {
-            Assert.Throws<AggregateException>(() => this.MissingFeatureExecutor.Start());
+            Assert.Throws<AggregateException>(() => this.MissingFeatureExecutor.Initialize());
         }
     }
 }

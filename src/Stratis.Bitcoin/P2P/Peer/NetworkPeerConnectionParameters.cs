@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerServices Services { get; set; }
 
-        public TransactionOptions PreferredTransactionOptions { get; set; }
+        public NetworkOptions PreferredTransactionOptions { get; set; }
 
         public string UserAgent { get; set; }
         public int ReceiveBufferSize { get; set; }
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ReceiveBufferSize = 1000 * 5000;
             this.SendBufferSize = 1000 * 1000;
             this.UserAgent = VersionPayload.GetNBitcoinUserAgent();
-            this.PreferredTransactionOptions = TransactionOptions.All;
+            this.PreferredTransactionOptions = NetworkOptions.All;
         }
 
         public NetworkPeerConnectionParameters(NetworkPeerConnectionParameters other)

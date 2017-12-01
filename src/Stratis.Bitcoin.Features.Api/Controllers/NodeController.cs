@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Api.Controllers
         public IActionResult Shutdown()
         {
             // start the node shutdown process
-            this.fullNode.Stop();
+            this.fullNode.Dispose();
 
             return this.Ok();
         }
