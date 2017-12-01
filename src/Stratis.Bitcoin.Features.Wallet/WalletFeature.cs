@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly BroadcasterBehavior broadcasterBehavior;
+        private readonly BroadcastBehavior _broadcastBehavior;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
@@ -50,21 +50,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="chain">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
-        /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
+        /// <param name="broadcastBehavior">The broadcast behavior.</param>
         public WalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             Signals.Signals signals,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
-            BroadcasterBehavior broadcasterBehavior)
+            BroadcastBehavior broadcastBehavior)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.signals = signals;
             this.chain = chain;
             this.connectionManager = connectionManager;
-            this.broadcasterBehavior = broadcasterBehavior;
+            this._broadcastBehavior = broadcastBehavior;
         }
 
         /// <inheritdoc />
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.Start();
             this.walletSyncManager.Start();
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this._broadcastBehavior);
         }
 
         /// <inheritdoc />
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<WalletController>();
                         services.AddSingleton<WalletRPCController>();
                         services.AddSingleton<IBroadcastManager, FullNodeBroadcastManager>();
-                        services.AddSingleton<BroadcasterBehavior>();
+                        services.AddSingleton<BroadcastBehavior>();
                     });
             });
 

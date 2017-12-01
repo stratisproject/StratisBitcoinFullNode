@@ -11,14 +11,14 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
-    public class BroadcasterBehavior : NetworkPeerBehavior
+    public class BroadcastBehavior : NetworkPeerBehavior
     {
         protected readonly IBroadcastManager broadcastManager;
 
         /// <summary>Instance logger for the memory pool component.</summary>
         protected readonly ILogger logger;
 
-        public BroadcasterBehavior(
+        public BroadcastBehavior(
             IBroadcastManager broadcastManager,
             ILogger logger)
         {
@@ -26,17 +26,17 @@ namespace Stratis.Bitcoin.Broadcasting
             this.broadcastManager = broadcastManager;
         }
 
-        public BroadcasterBehavior(
+        public BroadcastBehavior(
             IBroadcastManager broadcastManager,
             ILoggerFactory loggerFactory)
-            : this(broadcastManager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
+            : this(broadcastManager, loggerFactory.CreateLogger(typeof(BroadcastBehavior).FullName))
         {
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BroadcasterBehavior(this.broadcastManager, this.logger);
+            return new BroadcastBehavior(this.broadcastManager, this.logger);
         }
 
         /// <summary>
