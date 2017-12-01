@@ -4,10 +4,10 @@ using NBitcoin.Protocol;
 
 namespace NBitcoin
 {
-	public interface IBitcoinSerializable
-	{
-		void ReadWrite(BitcoinStream stream);
-	}
+    public interface IBitcoinSerializable
+    {
+        void ReadWrite(BitcoinStream stream);
+    }
 
     public interface IHaveTransactionOptions
     {
@@ -47,18 +47,18 @@ namespace NBitcoin
 			return GetSerializedSize(serializable, version, SerializationType.Disk);
 		}
 
-		public static string ToHex(this IBitcoinSerializable serializable, SerializationType serializationType = SerializationType.Disk)
-		{
-			using (var memoryStream = new MemoryStream())
-			{
-				BitcoinStream bitcoinStream = new BitcoinStream(memoryStream, true);
-				bitcoinStream.Type = serializationType;
-				bitcoinStream.ReadWrite(serializable);
-				memoryStream.Seek(0, SeekOrigin.Begin);
-				var bytes = memoryStream.ReadBytes((int)memoryStream.Length);
-				return DataEncoders.Encoders.Hex.EncodeData(bytes);
-			}
-		}
+        public static string ToHex(this IBitcoinSerializable serializable, SerializationType serializationType = SerializationType.Disk)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                BitcoinStream bitcoinStream = new BitcoinStream(memoryStream, true);
+                bitcoinStream.Type = serializationType;
+                bitcoinStream.ReadWrite(serializable);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                var bytes = memoryStream.ReadBytes((int)memoryStream.Length);
+                return DataEncoders.Encoders.Hex.EncodeData(bytes);
+            }
+        }
 
 		public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
             TransactionOptions options = TransactionOptions.All)
@@ -102,15 +102,15 @@ namespace NBitcoin
 			return ToArrayEfficient(ms);
 		}
 
-		public static byte[] ToArrayEfficient(this MemoryStream ms)
-		{
+        public static byte[] ToArrayEfficient(this MemoryStream ms)
+        {
 #if !(PORTABLE || NETCORE)
-			var bytes = ms.GetBuffer();
-			Array.Resize(ref bytes, (int)ms.Length);
-			return bytes;
+            var bytes = ms.GetBuffer();
+            Array.Resize(ref bytes, (int)ms.Length);
+            return bytes;
 #else
-			return ms.ToArray();
+            return ms.ToArray();
 #endif
-		}
-	}
+        }
+    }
 }

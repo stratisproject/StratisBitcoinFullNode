@@ -6,29 +6,29 @@ using System.IO;
 
 namespace NBitcoin.RPC
 {
-	abstract class RawFormatter
-	{
-		protected RawFormatter()
-		{
-			Network = Network.Main;
-		}
-		public Network Network
-		{
-			get;
-			set;
-		}
-		public Transaction ParseJson(string str)
-		{
-			JObject obj = JObject.Parse(str);
-			return Parse(obj);
-		}
+    abstract class RawFormatter
+    {
+        protected RawFormatter()
+        {
+            Network = Network.Main;
+        }
+        public Network Network
+        {
+            get;
+            set;
+        }
+        public Transaction ParseJson(string str)
+        {
+            JObject obj = JObject.Parse(str);
+            return Parse(obj);
+        }
 
-		[Obsolete("Use RawFormatter.ParseJson method instead")]
-		public Transaction Parse(string str)
-		{
-			JObject obj = JObject.Parse(str);
-			return Parse(obj);
-		}
+        [Obsolete("Use RawFormatter.ParseJson method instead")]
+        public Transaction Parse(string str)
+        {
+            JObject obj = JObject.Parse(str);
+            return Parse(obj);
+        }
 
 		public Transaction Parse(JObject obj, TransactionOptions options = TransactionOptions.All)
 		{
@@ -43,20 +43,20 @@ namespace NBitcoin.RPC
 		}
 
 
-		protected abstract void BuildTransaction(JObject json, Transaction tx);
-		public string ToString(Transaction transaction)
-		{
-			var strWriter = new StringWriter();
-			var jsonWriter = new JsonTextWriter(strWriter);
-			jsonWriter.Formatting = Formatting.Indented;
-			jsonWriter.WriteStartObject();
-			WriteTransaction(jsonWriter, transaction);
-			jsonWriter.WriteEndObject();
-			jsonWriter.Flush();
-			return strWriter.ToString();
-		}
+        protected abstract void BuildTransaction(JObject json, Transaction tx);
+        public string ToString(Transaction transaction)
+        {
+            var strWriter = new StringWriter();
+            var jsonWriter = new JsonTextWriter(strWriter);
+            jsonWriter.Formatting = Formatting.Indented;
+            jsonWriter.WriteStartObject();
+            WriteTransaction(jsonWriter, transaction);
+            jsonWriter.WriteEndObject();
+            jsonWriter.Flush();
+            return strWriter.ToString();
+        }
 
-		protected abstract void WriteTransaction(JsonTextWriter writer, Transaction tx);
-	}
+        protected abstract void WriteTransaction(JsonTextWriter writer, Transaction tx);
+    }
 }
 #endif

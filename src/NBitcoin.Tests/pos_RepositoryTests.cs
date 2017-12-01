@@ -13,8 +13,8 @@ using Xunit;
 
 namespace NBitcoin.Tests
 {
-	public class pos_RepositoryTests
-	{
+    public class pos_RepositoryTests
+    {
         public pos_RepositoryTests()
         {
             // These tests should be using the Stratis network.
@@ -24,96 +24,96 @@ namespace NBitcoin.Tests
         }
 
         public class RawData : IBitcoinSerializable
-		{
-			public RawData()
-			{
+        {
+            public RawData()
+            {
 
-			}
-			public RawData(byte[] data)
-			{
-				_Data = data;
-			}
-			#region IBitcoinSerializable Members
+            }
+            public RawData(byte[] data)
+            {
+                _Data = data;
+            }
+            #region IBitcoinSerializable Members
 
-			public void ReadWrite(BitcoinStream stream)
-			{
-				stream.ReadWriteAsVarString(ref _Data);
-			}
+            public void ReadWrite(BitcoinStream stream)
+            {
+                stream.ReadWriteAsVarString(ref _Data);
+            }
 
-			private byte[] _Data = new byte[0];
-			public byte[] Data
-			{
-				get
-				{
-					return _Data;
-				}
-			}
+            private byte[] _Data = new byte[0];
+            public byte[] Data
+            {
+                get
+                {
+                    return _Data;
+                }
+            }
 
-			#endregion
-		}
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanReadStoredBlockFile()
-		{
-			int count = 0;
-			foreach (var stored in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network:Network.StratisMain))
-			{
-				Assert.True(stored.Item.Check());
-				count++;
-			}
-			Assert.Equal(2000, count);
-			count = 0;
-			var twoLast = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain).Skip(1998).ToList();
-			foreach(var stored in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain, range: new DiskBlockPosRange(twoLast[0].BlockPosition)))
-			{
-				count++;
-			}
-			Assert.Equal(2, count);
-		}
+            #endregion
+        }
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanReadStoredBlockFile()
+        {
+            int count = 0;
+            foreach (var stored in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network:Network.StratisMain))
+            {
+                Assert.True(stored.Item.Check());
+                count++;
+            }
+            Assert.Equal(2000, count);
+            count = 0;
+            var twoLast = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain).Skip(1998).ToList();
+            foreach(var stored in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain, range: new DiskBlockPosRange(twoLast[0].BlockPosition)))
+            {
+                count++;
+            }
+            Assert.Equal(2, count);
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanEnumerateBlockCountRange()
-		{
-			var store = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
-			var expectedBlock = store.Enumerate(false).Skip(4).First();
-			var actualBlocks = store.Enumerate(false, 4, 2).ToArray();
-			Assert.Equal(2, actualBlocks.Length);
-			Assert.Equal(expectedBlock.Item.Header.GetHash(), actualBlocks[0].Item.Header.GetHash());
-			Assert.True(actualBlocks[0].Item.CheckMerkleRoot());
-		}
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanEnumerateBlockCountRange()
+        {
+            var store = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
+            var expectedBlock = store.Enumerate(false).Skip(4).First();
+            var actualBlocks = store.Enumerate(false, 4, 2).ToArray();
+            Assert.Equal(2, actualBlocks.Length);
+            Assert.Equal(expectedBlock.Item.Header.GetHash(), actualBlocks[0].Item.Header.GetHash());
+            Assert.True(actualBlocks[0].Item.CheckMerkleRoot());
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanEnumerateBlockInAFileRange()
-		{
-			var store = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
-			var result = store.Enumerate(new DiskBlockPosRange(new DiskBlockPos(1, 0), new DiskBlockPos(2, 0))).ToList();
-			Assert.Equal(2000, result.Count);
-		}
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanEnumerateBlockInAFileRange()
+        {
+            var store = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
+            var result = store.Enumerate(new DiskBlockPosRange(new DiskBlockPos(1, 0), new DiskBlockPos(2, 0))).ToList();
+            Assert.Equal(2000, result.Count);
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		//The last block is off by 1 byte + lots of padding zero at the end
-		public void CanEnumerateIncompleteBlk()
-		{
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        //The last block is off by 1 byte + lots of padding zero at the end
+        public void CanEnumerateIncompleteBlk()
+        {
             Assert.Equal(300, StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("incompleteblk.dat"),network:Network.StratisMain).Count());
-		}
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanBuildChainFromBlocks()
-		{
-			var store = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
-			var chain = store.GetChain();
-			Assert.True(chain.Height == 3999);
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanBuildChainFromBlocks()
+        {
+            var store = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
+            var chain = store.GetChain();
+            Assert.True(chain.Height == 3999);
 
-		}
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanIndexBlock()
-		{
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIndexBlock()
+        {
             var index = CreateIndexedStore();
             foreach(var block in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network:Network.StratisMain).Take(50))
             {
@@ -123,14 +123,14 @@ namespace NBitcoin.Tests
             Assert.NotNull(genesis);
             var invalidBlock = index.Get(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972ae"));
             Assert.Null(invalidBlock);
-		}
+        }
 
 
-		public static IndexedBlockStore CreateIndexedStore([CallerMemberName]string folderName = null)
-		{
-			TestUtils.EnsureNew(folderName);
-			return new IndexedBlockStore(new InMemoryNoSqlRepository(), new BlockStore(folderName, Network.StratisMain));
-		}
+        public static IndexedBlockStore CreateIndexedStore([CallerMemberName]string folderName = null)
+        {
+            TestUtils.EnsureNew(folderName);
+            return new IndexedBlockStore(new InMemoryNoSqlRepository(), new BlockStore(folderName, Network.StratisMain));
+        }
 
 		[Fact]
 		[Trait("UnitTest", "UnitTest")]
@@ -140,12 +140,12 @@ namespace NBitcoin.Tests
 			var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), 
                 network:Network.StratisMain).Take(50).ToList();
 
-			foreach(var s in allBlocks)
-			{
-				store.Append(s.Item);
-			}
-			var storedBlocks = store.Enumerate(true).ToList();
-			Assert.Equal(allBlocks.Count, storedBlocks.Count);
+            foreach(var s in allBlocks)
+            {
+                store.Append(s.Item);
+            }
+            var storedBlocks = store.Enumerate(true).ToList();
+            Assert.Equal(allBlocks.Count, storedBlocks.Count);
 
 			foreach(var s in allBlocks)
 			{
@@ -171,235 +171,235 @@ namespace NBitcoin.Tests
 		}
 
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanReIndex()
-		{
-			var source = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
-			var store = CreateBlockStore("CanReIndexFolder");
-			store.AppendAll(source.Enumerate(false).Take(100).Select(b => b.Item));
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanReIndex()
+        {
+            var source = new BlockStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
+            var store = CreateBlockStore("CanReIndexFolder");
+            store.AppendAll(source.Enumerate(false).Take(100).Select(b => b.Item));
 
 
-			var test = new IndexedBlockStore(new InMemoryNoSqlRepository(), store);
-			var reIndexed = test.ReIndex();
-			Assert.Equal(100, reIndexed);
-			int i = 0;
-			foreach(var b in store.Enumerate(true))
-			{
-				var result = test.Get(b.Item.GetHash());
-				Assert.Equal(result.GetHash(), b.Item.GetHash());
-				i++;
-			}
-			Assert.Equal(100, i);
+            var test = new IndexedBlockStore(new InMemoryNoSqlRepository(), store);
+            var reIndexed = test.ReIndex();
+            Assert.Equal(100, reIndexed);
+            int i = 0;
+            foreach(var b in store.Enumerate(true))
+            {
+                var result = test.Get(b.Item.GetHash());
+                Assert.Equal(result.GetHash(), b.Item.GetHash());
+                i++;
+            }
+            Assert.Equal(100, i);
 
-			var last = source.Enumerate(false).Skip(100).FirstOrDefault();
-			store.Append(last.Item);
+            var last = source.Enumerate(false).Skip(100).FirstOrDefault();
+            store.Append(last.Item);
 
-			reIndexed = test.ReIndex();
-			Assert.Equal(1, reIndexed);
+            reIndexed = test.ReIndex();
+            Assert.Equal(1, reIndexed);
 
-			reIndexed = test.ReIndex();
-			Assert.Equal(0, reIndexed);
-		}
+            reIndexed = test.ReIndex();
+            Assert.Equal(0, reIndexed);
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public static void CanParseRev()
-		{
-			BlockUndoStore src = new BlockUndoStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
-			BlockUndoStore dest = CreateBlockUndoStore();
-			int count = 0;
-			foreach(var un in src.EnumerateFolder())
-			{
-				var expectedSize = un.Header.ItemSize;
-				var actualSize = (uint)un.Item.GetSerializedSize();
-				Assert.Equal(expectedSize, actualSize);
-				dest.Append(un.Item);
-				count++;
-			}
-			Assert.Equal(8, count);
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public static void CanParseRev()
+        {
+            BlockUndoStore src = new BlockUndoStore(TestDataLocations.DataFolder(@"blocks"), Network.StratisMain);
+            BlockUndoStore dest = CreateBlockUndoStore();
+            int count = 0;
+            foreach(var un in src.EnumerateFolder())
+            {
+                var expectedSize = un.Header.ItemSize;
+                var actualSize = (uint)un.Item.GetSerializedSize();
+                Assert.Equal(expectedSize, actualSize);
+                dest.Append(un.Item);
+                count++;
+            }
+            Assert.Equal(8, count);
 
-			count = 0;
-			foreach(var un in dest.EnumerateFolder())
-			{
-				var expectedSize = un.Header.ItemSize;
-				var actualSize = (uint)un.Item.GetSerializedSize();
-				Assert.Equal(expectedSize, actualSize);
-				count++;
-			}
-			Assert.Equal(8, count);
-		}
-		
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanStoreInBlockRepository()
-		{
-			var blockRepository = CreateBlockRepository();
-			var firstblk1 = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain).First();
-			blockRepository.WriteBlockHeader(firstblk1.Item.Header);
-			var result = blockRepository.GetBlock(firstblk1.Item.GetHash());
-			Assert.True(result.HeaderOnly);
+            count = 0;
+            foreach(var un in dest.EnumerateFolder())
+            {
+                var expectedSize = un.Header.ItemSize;
+                var actualSize = (uint)un.Item.GetSerializedSize();
+                Assert.Equal(expectedSize, actualSize);
+                count++;
+            }
+            Assert.Equal(8, count);
+        }
+        
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanStoreInBlockRepository()
+        {
+            var blockRepository = CreateBlockRepository();
+            var firstblk1 = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain).First();
+            blockRepository.WriteBlockHeader(firstblk1.Item.Header);
+            var result = blockRepository.GetBlock(firstblk1.Item.GetHash());
+            Assert.True(result.HeaderOnly);
 
-			blockRepository.WriteBlock(firstblk1.Item);
-			result = blockRepository.GetBlock(firstblk1.Item.GetHash());
-			Assert.False(result.HeaderOnly);
-		}
-
-
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanReadStoredBlockFolder()
-		{
-			var blk0 = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), (uint)1, network: Network.StratisMain).ToList();
-			var blk1 = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0002.dat"), (uint)2, network: Network.StratisMain).ToList();
-
-			int count = 0;
-			foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), network: Network.StratisMain))
-			{
-				if(count == 0)
-					Assert.Equal(blk0[0].Item.GetHash(), stored.Item.GetHash());
-				if(count == 2000)
-					Assert.Equal(blk1[0].Item.GetHash(), stored.Item.GetHash());
-				Assert.True(stored.Item.Check());
-				count++;
-			}
-			Assert.Equal(4000, count);
-
-			count = 0;
-			foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk1[1998].BlockPosition), network:Network.StratisMain))
-			{
-				count++;
-			}
-			Assert.Equal(2, count);
-
-			count = 0;
-			foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk0[1998].BlockPosition), network: Network.StratisMain))
-			{
-				count++;
-			}
-			Assert.Equal(2002, count);
-
-			count = 0;
-			foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk0[1998].BlockPosition, blk1[2].BlockPosition), network: Network.StratisMain))
-			{
-				count++;
-			}
-			Assert.Equal(4, count);
-
-			count = 0;
-			foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk0[30].BlockPosition, blk0[34].BlockPosition), network: Network.StratisMain))
-			{
-				count++;
-			}
-			Assert.Equal(4, count);
-		}
-
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanCacheNoSqlRepository()
-		{
-			var cached = new CachedNoSqlRepository(new InMemoryNoSqlRepository());
-			byte[] data1 = new byte[] { 1, 2, 3, 4, 5, 6 };
-			byte[] data2 = new byte[] { 11, 22, 33, 4, 5, 66 };
-			cached.InnerRepository.Put("data1", new RawData(data1));
-			Assert.NotNull(cached.Get<RawData>("data1"));
-			cached.InnerRepository.Put("data1", new RawData(data2));
-			cached.Flush();
-			var data1Actual = cached.InnerRepository.Get<RawData>("data1");
-			AssertEx.CollectionEquals(data1Actual.Data, data2);
-			cached.Put("data1", new RawData(data1));
-
-			data1Actual = cached.InnerRepository.Get<RawData>("data1");
-			AssertEx.CollectionEquals(data1Actual.Data, data2);
-
-			cached.Flush();
-
-			data1Actual = cached.InnerRepository.Get<RawData>("data1");
-			AssertEx.CollectionEquals(data1Actual.Data, data1);
-
-			cached.Put("data1", null);
-			cached.Flush();
-			Assert.Null(cached.InnerRepository.Get<RawData>("data1"));
-
-			cached.Put("data1", new RawData(data1));
-			cached.Put("data1", null);
-			cached.Flush();
-			Assert.Null(cached.InnerRepository.Get<RawData>("data1"));
-
-			cached.Put("data1", null);
-			cached.Put("data1", new RawData(data1));
-			cached.Flush();
-			Assert.NotNull(cached.InnerRepository.Get<RawData>("data1"));
-		}
-
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CanStoreInNoSql()
-		{
-			var repositories = new NoSqlRepository[]
-			{
-				new InMemoryNoSqlRepository(),
-				new CachedNoSqlRepository(new InMemoryNoSqlRepository())
-			};
-
-			foreach(var repository in repositories)
-			{
-				byte[] data1 = new byte[] { 1, 2, 3, 4, 5, 6 };
-				byte[] data2 = new byte[] { 11, 22, 33, 4, 5, 66 };
-				Assert.Null(repository.Get<RawData>("data1"));
-
-				repository.Put("data1", new RawData(data1));
-				var actual = repository.Get<RawData>("data1");
-				Assert.NotNull(actual);
-				AssertEx.CollectionEquals(actual.Data, data1);
-
-				repository.Put("data1", new RawData(data2));
-				actual = repository.Get<RawData>("data1");
-				Assert.NotNull(actual);
-				AssertEx.CollectionEquals(actual.Data, data2);
-
-				repository.Put("data1", null as RawData);
-				actual = repository.Get<RawData>("data1");
-				Assert.Null(actual);
-
-				repository.Put("data1", null as RawData);
-				actual = repository.Get<RawData>("data1");
-				Assert.Null(actual);
-
-				//Test batch
-				repository.PutBatch(new[] {new Tuple<string,IBitcoinSerializable>("data1",new RawData(data1)),
-									   new Tuple<string,IBitcoinSerializable>("data2",new RawData(data2))});
-
-				actual = repository.Get<RawData>("data1");
-				Assert.NotNull(actual);
-				AssertEx.CollectionEquals(actual.Data, data1);
-
-				actual = repository.Get<RawData>("data2");
-				Assert.NotNull(actual);
-				AssertEx.CollectionEquals(actual.Data, data2);
-			}
-		}
+            blockRepository.WriteBlock(firstblk1.Item);
+            result = blockRepository.GetBlock(firstblk1.Item.GetHash());
+            Assert.False(result.HeaderOnly);
+        }
 
 
-		private static BlockStore CreateBlockStore([CallerMemberName]string folderName = null)
-		{
-			if(Directory.Exists(folderName))
-				Directory.Delete(folderName, true);
-			Thread.Sleep(50);
-			Directory.CreateDirectory(folderName);
-			Thread.Sleep(50);
-			return new BlockStore(folderName, Network.StratisMain);
-		}
-		private static BlockUndoStore CreateBlockUndoStore([CallerMemberName]string folderName = null)
-		{
-			TestUtils.EnsureNew(folderName);
-			return new BlockUndoStore(folderName, Network.StratisMain);
-		}
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanReadStoredBlockFolder()
+        {
+            var blk0 = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), (uint)1, network: Network.StratisMain).ToList();
+            var blk1 = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0002.dat"), (uint)2, network: Network.StratisMain).ToList();
 
-		private BlockRepository CreateBlockRepository([CallerMemberName]string folderName = null)
-		{
-			return new BlockRepository(CreateIndexedStore(folderName + "-Blocks"), CreateIndexedStore(folderName + "-Headers"));
-		}
+            int count = 0;
+            foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), network: Network.StratisMain))
+            {
+                if(count == 0)
+                    Assert.Equal(blk0[0].Item.GetHash(), stored.Item.GetHash());
+                if(count == 2000)
+                    Assert.Equal(blk1[0].Item.GetHash(), stored.Item.GetHash());
+                Assert.True(stored.Item.Check());
+                count++;
+            }
+            Assert.Equal(4000, count);
+
+            count = 0;
+            foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk1[1998].BlockPosition), network:Network.StratisMain))
+            {
+                count++;
+            }
+            Assert.Equal(2, count);
+
+            count = 0;
+            foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk0[1998].BlockPosition), network: Network.StratisMain))
+            {
+                count++;
+            }
+            Assert.Equal(2002, count);
+
+            count = 0;
+            foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk0[1998].BlockPosition, blk1[2].BlockPosition), network: Network.StratisMain))
+            {
+                count++;
+            }
+            Assert.Equal(4, count);
+
+            count = 0;
+            foreach(var stored in StoredBlock.EnumerateFolder(TestDataLocations.DataFolder(@"blocks"), new DiskBlockPosRange(blk0[30].BlockPosition, blk0[34].BlockPosition), network: Network.StratisMain))
+            {
+                count++;
+            }
+            Assert.Equal(4, count);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanCacheNoSqlRepository()
+        {
+            var cached = new CachedNoSqlRepository(new InMemoryNoSqlRepository());
+            byte[] data1 = new byte[] { 1, 2, 3, 4, 5, 6 };
+            byte[] data2 = new byte[] { 11, 22, 33, 4, 5, 66 };
+            cached.InnerRepository.Put("data1", new RawData(data1));
+            Assert.NotNull(cached.Get<RawData>("data1"));
+            cached.InnerRepository.Put("data1", new RawData(data2));
+            cached.Flush();
+            var data1Actual = cached.InnerRepository.Get<RawData>("data1");
+            AssertEx.CollectionEquals(data1Actual.Data, data2);
+            cached.Put("data1", new RawData(data1));
+
+            data1Actual = cached.InnerRepository.Get<RawData>("data1");
+            AssertEx.CollectionEquals(data1Actual.Data, data2);
+
+            cached.Flush();
+
+            data1Actual = cached.InnerRepository.Get<RawData>("data1");
+            AssertEx.CollectionEquals(data1Actual.Data, data1);
+
+            cached.Put("data1", null);
+            cached.Flush();
+            Assert.Null(cached.InnerRepository.Get<RawData>("data1"));
+
+            cached.Put("data1", new RawData(data1));
+            cached.Put("data1", null);
+            cached.Flush();
+            Assert.Null(cached.InnerRepository.Get<RawData>("data1"));
+
+            cached.Put("data1", null);
+            cached.Put("data1", new RawData(data1));
+            cached.Flush();
+            Assert.NotNull(cached.InnerRepository.Get<RawData>("data1"));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanStoreInNoSql()
+        {
+            var repositories = new NoSqlRepository[]
+            {
+                new InMemoryNoSqlRepository(),
+                new CachedNoSqlRepository(new InMemoryNoSqlRepository())
+            };
+
+            foreach(var repository in repositories)
+            {
+                byte[] data1 = new byte[] { 1, 2, 3, 4, 5, 6 };
+                byte[] data2 = new byte[] { 11, 22, 33, 4, 5, 66 };
+                Assert.Null(repository.Get<RawData>("data1"));
+
+                repository.Put("data1", new RawData(data1));
+                var actual = repository.Get<RawData>("data1");
+                Assert.NotNull(actual);
+                AssertEx.CollectionEquals(actual.Data, data1);
+
+                repository.Put("data1", new RawData(data2));
+                actual = repository.Get<RawData>("data1");
+                Assert.NotNull(actual);
+                AssertEx.CollectionEquals(actual.Data, data2);
+
+                repository.Put("data1", null as RawData);
+                actual = repository.Get<RawData>("data1");
+                Assert.Null(actual);
+
+                repository.Put("data1", null as RawData);
+                actual = repository.Get<RawData>("data1");
+                Assert.Null(actual);
+
+                //Test batch
+                repository.PutBatch(new[] {new Tuple<string,IBitcoinSerializable>("data1",new RawData(data1)),
+                                       new Tuple<string,IBitcoinSerializable>("data2",new RawData(data2))});
+
+                actual = repository.Get<RawData>("data1");
+                Assert.NotNull(actual);
+                AssertEx.CollectionEquals(actual.Data, data1);
+
+                actual = repository.Get<RawData>("data2");
+                Assert.NotNull(actual);
+                AssertEx.CollectionEquals(actual.Data, data2);
+            }
+        }
+
+
+        private static BlockStore CreateBlockStore([CallerMemberName]string folderName = null)
+        {
+            if(Directory.Exists(folderName))
+                Directory.Delete(folderName, true);
+            Thread.Sleep(50);
+            Directory.CreateDirectory(folderName);
+            Thread.Sleep(50);
+            return new BlockStore(folderName, Network.StratisMain);
+        }
+        private static BlockUndoStore CreateBlockUndoStore([CallerMemberName]string folderName = null)
+        {
+            TestUtils.EnsureNew(folderName);
+            return new BlockUndoStore(folderName, Network.StratisMain);
+        }
+
+        private BlockRepository CreateBlockRepository([CallerMemberName]string folderName = null)
+        {
+            return new BlockRepository(CreateIndexedStore(folderName + "-Blocks"), CreateIndexedStore(folderName + "-Headers"));
+        }
 
         //[Fact]
         //[Trait("UnitTest", "UnitTest")]
@@ -496,9 +496,9 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void EnumerateAndValidateAllBlocks()
         {
-			var listAll = new Dictionary<string, StoredBlock>();
-			var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
-			foreach (var block in store.EnumerateFolder())
+            var listAll = new Dictionary<string, StoredBlock>();
+            var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
+            foreach (var block in store.EnumerateFolder())
             {
                 var hash = block.Item.GetHash();
                 listAll.Add(hash.ToString(), block);
@@ -533,33 +533,33 @@ namespace NBitcoin.Tests
             Assert.Equal(100000, lastblk.Height);
         }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void IndexTheFullChain()
-		{
-			var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
-			var indexStore = new IndexedBlockStore(new InMemoryNoSqlRepository(), store);
-			var reindexed = indexStore.ReIndex();
-			Assert.Equal(reindexed, 103952);
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void IndexTheFullChain()
+        {
+            var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
+            var indexStore = new IndexedBlockStore(new InMemoryNoSqlRepository(), store);
+            var reindexed = indexStore.ReIndex();
+            Assert.Equal(reindexed, 103952);
 
-			var chain = store.GetChain();
-			
-			foreach(var item in chain.ToEnumerable(false))
-			{
-				var block = indexStore.Get(item.HashBlock);
-				Assert.True(BlockValidator.CheckBlock(block));
-			}			
-		}
+            var chain = store.GetChain();
+            
+            foreach(var item in chain.ToEnumerable(false))
+            {
+                var block = indexStore.Get(item.HashBlock);
+                Assert.True(BlockValidator.CheckBlock(block));
+            }            
+        }
 
-		[Fact]
-		[Trait("UnitTest", "UnitTest")]
-		public void CheckBlockProofOfStake()
-		{
-			var totalblocks = 5000;  // fill only a small portion so test wont be too long
-			var mainStore = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CheckBlockProofOfStake()
+        {
+            var totalblocks = 5000;  // fill only a small portion so test wont be too long
+            var mainStore = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
 
-			// create the stores
-			var store = CreateBlockStore();
+            // create the stores
+            var store = CreateBlockStore();
 
 			var index = 0;
 			var blockStore = new NoSqlBlockRepository(Network.StratisMain.TransactionOptions);
@@ -586,33 +586,33 @@ namespace NBitcoin.Tests
 				}
 			}
 
-			RPCClient client = null;
-			if (!pos_RPCClientTests.noClient)
-				client = new RPCClient(new NetworkCredential("rpcuser", "rpcpassword"),
-					new Uri("http://127.0.0.1:" + Network.StratisMain.RPCPort), Network.StratisMain);
+            RPCClient client = null;
+            if (!pos_RPCClientTests.noClient)
+                client = new RPCClient(new NetworkCredential("rpcuser", "rpcpassword"),
+                    new Uri("http://127.0.0.1:" + Network.StratisMain.RPCPort), Network.StratisMain);
 
-			var stakeChain = new MemoryStakeChain(Network.StratisMain);
+            var stakeChain = new MemoryStakeChain(Network.StratisMain);
 
-			// validate the stake trasnaction
-			foreach (var item in chain.ToEnumerable(false).Take(totalblocks).ToList())
-			{
-				var block = blockStore.GetBlock(item.HashBlock);
-				BlockStake blockStake;
-				Assert.True(BlockValidator.CheckAndComputeStake(blockStore, trxStore, mapStore, stakeChain, chain, item, block, out blockStake));
-				stakeChain.Set(item.HashBlock, blockStake);
-				if (item.Height == 1125)
-				{
-					var g = block.ToHex();
-				}
+            // validate the stake trasnaction
+            foreach (var item in chain.ToEnumerable(false).Take(totalblocks).ToList())
+            {
+                var block = blockStore.GetBlock(item.HashBlock);
+                BlockStake blockStake;
+                Assert.True(BlockValidator.CheckAndComputeStake(blockStore, trxStore, mapStore, stakeChain, chain, item, block, out blockStake));
+                stakeChain.Set(item.HashBlock, blockStake);
+                if (item.Height == 1125)
+                {
+                    var g = block.ToHex();
+                }
 
-				if (client != null)
-				{
-					var fetched = client.GetRPCBlock(item.HashBlock).Result;
-					Assert.Equal(uint256.Parse(fetched.modifierv2), blockStake.StakeModifierV2);
-					Assert.Equal(uint256.Parse(fetched.proofhash), blockStake.HashProof);
-				}
-			}
-		}
-	}
+                if (client != null)
+                {
+                    var fetched = client.GetRPCBlock(item.HashBlock).Result;
+                    Assert.Equal(uint256.Parse(fetched.modifierv2), blockStake.StakeModifierV2);
+                    Assert.Equal(uint256.Parse(fetched.proofhash), blockStake.HashProof);
+                }
+            }
+        }
+    }
 }
 #endif

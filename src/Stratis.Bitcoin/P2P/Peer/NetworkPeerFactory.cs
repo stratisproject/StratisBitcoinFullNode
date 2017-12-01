@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             var peerAddress = new NetworkAddress()
             {
-                Time = DateTimeOffset.UtcNow,
+                Time = this.dateTimeProvider.GetTimeOffset(),
                 Endpoint = endpoint
             };
 

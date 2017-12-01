@@ -114,7 +114,7 @@ namespace NBitcoin
             for (int i = 0; i < pnSeed.Length; i++)
             {
                 // It'll only connect to one or two seed nodes because once it connects,
-                // it'll get a pile of addresses with newer timestamps.				
+                // it'll get a pile of addresses with newer timestamps.                
                 NetworkAddress addr = new NetworkAddress();
                 // Seed nodes are given a random 'last seen time' of between one and two
                 // weeks ago.
@@ -266,7 +266,7 @@ namespace NBitcoin
         }
 
         private static Network InitStratisMain()
-        {			
+        {            
             Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
@@ -357,7 +357,7 @@ namespace NBitcoin
             for (int i = 0; i < seed.Length; i++)
             {
                 // It'll only connect to one or two seed nodes because once it connects,
-                // it'll get a pile of addresses with newer timestamps.				
+                // it'll get a pile of addresses with newer timestamps.                
                 NetworkAddress addr = new NetworkAddress();
                 // Seed nodes are given a random 'last seen time' of between one and two
                 // weeks ago.

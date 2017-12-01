@@ -52,7 +52,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         private Socket socket;
-        private TraceCorrelation trace;
 
         public bool IsListening
         {
@@ -121,6 +120,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             internalPort = internalPort == -1 ? network.DefaultPort : internalPort;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{internalPort}] ");
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(version), version, nameof(internalPort), internalPort);
+
             this.dateTimeProvider = dateTimeProvider;
             this.networkPeerFactory = networkPeerFactory;
 
@@ -144,176 +145,202 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(listener);
 
             this.AllMessages = new MessageProducer<IncomingMessage>();
-            this.trace = new TraceCorrelation(NodeServerTrace.Trace, "Network peer server listening on " + this.LocalEndpoint);
+
+            this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void Peers_PeerRemoved(object sender, NetworkPeerEventArgs eventArgs)
         {
+            this.logger.LogTrace("()");
+
             this.PeerRemoved?.Invoke(this, eventArgs.peer);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void Peers_PeerAdded(object sender, NetworkPeerEventArgs eventArgs)
         {
+            this.logger.LogTrace("()");
+
             this.PeerAdded?.Invoke(this, eventArgs.peer);
+
+            this.logger.LogTrace("(-)");
         }
 
         public void Listen(int maxIncoming = 8)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(maxIncoming), maxIncoming);
+
             if (this.socket != null)
-                throw new InvalidOperationException("Already listening");
-
-            using (this.trace.Open())
             {
-                try
-                {
-                    this.socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-                    this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-
-                    this.socket.Bind(this.LocalEndpoint);
-                    this.socket.Listen(maxIncoming);
-                    NodeServerTrace.Information("Listening...");
-                    this.BeginAccept();
-                }
-                catch (Exception ex)
-                {
-                    NodeServerTrace.Error("Error while opening the Protocol server", ex);
-                    throw;
-                }
+                this.logger.LogTrace("(-)[ALREADY_LISTENING]");
+                throw new InvalidOperationException("Already listening");
             }
+
+            try
+            {
+                this.socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+
+                this.socket.Bind(this.LocalEndpoint);
+                this.socket.Listen(maxIncoming);
+
+                this.logger.LogTrace("Listening started.");
+                this.BeginAccept();
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                throw;
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         private void BeginAccept()
         {
+            this.logger.LogTrace("()");
+
             if (this.cancel.IsCancellationRequested)
             {
-                NodeServerTrace.Information("Stop accepting connection...");
+                this.logger.LogTrace("Stop accepting connection.");
                 return;
             }
 
-            NodeServerTrace.Information("Accepting connection...");
+            this.logger.LogTrace("Accepting incoming connections.");
+
             var args = new SocketAsyncEventArgs();
             args.Completed += Accept_Completed;
             if (!this.socket.AcceptAsync(args))
                 this.EndAccept(args);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void Accept_Completed(object sender, SocketAsyncEventArgs e)
         {
+            this.logger.LogTrace("()");
+
             this.EndAccept(e);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void EndAccept(SocketAsyncEventArgs args)
         {
-            using (this.trace.Open())
+            this.logger.LogTrace("()");
+
+            Socket client = null;
+            try
             {
-                Socket client = null;
-                try
+                if (args.SocketError != SocketError.Success)
+                    throw new SocketException((int)args.SocketError);
+
+                client = args.AcceptSocket;
+                if (this.cancel.IsCancellationRequested)
+                    return;
+
+                this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
+                var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.cancel.Token);
+                cancel.CancelAfter(TimeSpan.FromSeconds(10));
+
+                var stream = new NetworkStream(client, false);
+                while (true)
                 {
-                    if (args.SocketError != SocketError.Success)
-                        throw new SocketException((int)args.SocketError);
-
-                    client = args.AcceptSocket;
-                    if (this.cancel.IsCancellationRequested)
-                        return;
-
-                    NodeServerTrace.Information("Client connection accepted : " + client.RemoteEndPoint);
-                    var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.cancel.Token);
-                    cancel.CancelAfter(TimeSpan.FromSeconds(10));
-
-                    var stream = new NetworkStream(client, false);
-                    while (true)
+                    if (this.ConnectedNetworkPeers.Count >= this.MaxConnections)
                     {
-                        if (this.ConnectedNetworkPeers.Count >= this.MaxConnections)
-                        {
-                            NodeServerTrace.Information("MaxConnections limit reached");
-                            Utils.SafeCloseSocket(client);
-                            break;
-                        }
-                        cancel.Token.ThrowIfCancellationRequested();
-
-                        PerformanceCounter counter;
-                        Message message = Message.ReadNext(stream, this.Network, this.Version, cancel.Token, out counter);
-                        this.messageProducer.PushMessage(new IncomingMessage()
-                        {
-                            Socket = client,
-                            Message = message,
-                            Length = counter.ReadBytes,
-                            NetworkPeer = null,
-                        });
-
-                        if (message.Payload is VersionPayload)
-                            break;
-
-                        NodeServerTrace.Error("The first message of the remote peer did not contained a Version payload", null);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    Utils.SafeCloseSocket(client);
-                    if (!this.cancel.Token.IsCancellationRequested)
-                    {
-                        NodeServerTrace.Error("The remote connecting failed to send a message within 10 seconds, dropping connection", null);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (this.cancel.IsCancellationRequested)
-                        return;
-
-                    if (client == null)
-                    {
-                        NodeServerTrace.Error("Error while accepting connection ", ex);
-                        Thread.Sleep(3000);
-                    }
-                    else
-                    {
+                        this.logger.LogDebug("Maximum number of connections {0} reached.", this.MaxConnections);
                         Utils.SafeCloseSocket(client);
-                        NodeServerTrace.Error("Invalid message received from the remote connecting peer", ex);
+                        break;
                     }
-                }
+                    cancel.Token.ThrowIfCancellationRequested();
 
-                this.BeginAccept();
+                    PerformanceCounter counter;
+                    Message message = Message.ReadNext(stream, this.Network, this.Version, cancel.Token, out counter);
+                    this.messageProducer.PushMessage(new IncomingMessage()
+                    {
+                        Socket = client,
+                        Message = message,
+                        Length = counter.ReadBytes,
+                        NetworkPeer = null,
+                    });
+
+                    if (message.Payload is VersionPayload)
+                        break;
+
+                    this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
+                }
             }
+            catch (OperationCanceledException)
+            {
+                if (!this.cancel.Token.IsCancellationRequested)
+                    this.logger.LogTrace("Inbound client '{0}' failed to send a message within 10 seconds, dropping connection.", client.RemoteEndPoint);
+
+                Utils.SafeCloseSocket(client);
+            }
+            catch (Exception ex)
+            {
+                if (this.cancel.IsCancellationRequested)
+                    return;
+
+                if (client == null)
+                {
+                    this.logger.LogTrace("Exception occurred while accepting connection: {0}", ex.ToString());
+                    Thread.Sleep(3000);
+                }
+                else
+                {
+                    this.logger.LogTrace("Exception occurred while processing message from client '{0}': {1}", client.RemoteEndPoint, ex.ToString());
+                    Utils.SafeCloseSocket(client);
+                }
+            }
+
+            this.BeginAccept();
+
+            this.logger.LogTrace("(-)");
         }
 
         internal void ExternalAddressDetected(IPAddress ipAddress)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(ipAddress), ipAddress);
+
             if (!this.ExternalEndpoint.Address.IsRoutable(this.AllowLocalPeers) && ipAddress.IsRoutable(this.AllowLocalPeers))
             {
-                NodeServerTrace.Information("New externalAddress detected " + ipAddress);
+                this.logger.LogTrace("New external address '{0}' detected.", ipAddress);
                 this.ExternalEndpoint = new IPEndPoint(ipAddress, this.ExternalEndpoint.Port);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         private void ProcessMessage(IncomingMessage message)
         {
-            this.AllMessages.PushMessage(message);
-            TraceCorrelation trace = null;
-            if (message.NetworkPeer != null)
-            {
-                trace = new TraceCorrelation(NodeServerTrace.Trace, "dummy");
-            }
-            else
-            {
-                trace = new TraceCorrelation(NodeServerTrace.Trace, "Processing inbound message " + message.Message);
-            }
+            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
-            using (trace.Open(false))
-            {
-                this.ProcessMessageCore(message);
-            }
+            this.AllMessages.PushMessage(message);
+            this.ProcessMessageCore(message);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void ProcessMessageCore(IncomingMessage message)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
+
             if (message.Message.Payload is VersionPayload)
             {
                 VersionPayload version = message.AssertPayload<VersionPayload>();
                 bool connectedToSelf = version.Nonce == this.Nonce;
+
+                if (connectedToSelf) this.logger.LogDebug("Connection to self detected and will be aborted.");
+
                 if ((message.NetworkPeer != null) && connectedToSelf)
                 {
-                    NodeServerTrace.ConnectionToSelfDetected();
                     message.NetworkPeer.DisconnectAsync();
+
+                    this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                     return;
                 }
 
@@ -329,15 +356,16 @@ namespace Stratis.Bitcoin.P2P.Peer
                     var peerAddress = new NetworkAddress()
                     {
                         Endpoint = remoteEndpoint,
-                        Time = DateTimeOffset.UtcNow
+                        Time = this.dateTimeProvider.GetUtcNow()
                     };
 
                     NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNetworkPeerConnectionParameters(), message.Socket, version);
                     if (connectedToSelf)
                     {
-                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network));
-                        NodeServerTrace.ConnectionToSelfDetected();
+                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset()));
                         networkPeer.Disconnect();
+
+                        this.logger.LogTrace("(-)[CONNECTED_TO_SELF_2]");
                         return;
                     }
 
@@ -349,29 +377,41 @@ namespace Stratis.Bitcoin.P2P.Peer
                         networkPeer.StateChanged += Peer_StateChanged;
                         networkPeer.RespondToHandShake(cancel.Token);
                     }
-                    catch (OperationCanceledException ex)
+                    catch (OperationCanceledException)
                     {
-                        NodeServerTrace.Error("The remote peer did not respond fast enough (10 seconds) to the handshake completion, dropping connection", ex);
+                        this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
+
                         networkPeer.DisconnectAsync();
+
+                        this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                         throw;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+
                         networkPeer.DisconnectAsync();
+
+                        this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                         throw;
                     }
                 }
             }
 
             this.MessageReceived?.Invoke(this, message);
+            this.logger.LogTrace("(-)");
         }
 
         private void Peer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerAddress, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
+
             if ((peer.State == NetworkPeerState.Disconnecting)
                 || (peer.State == NetworkPeerState.Failed)
                 || (peer.State == NetworkPeerState.Offline))
                 this.ConnectedNetworkPeers.Remove(peer);
+
+            this.logger.LogTrace("(-)");
         }
 
         IDisposable OwnResource(IDisposable resource)
@@ -384,25 +424,37 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             return new Scope(() =>
             {
+                this.logger.LogTrace("()");
+
                 lock (this.resources)
                 {
                     this.resources.Add(resource);
                 }
+
+                this.logger.LogTrace("(-)");
             }, () =>
             {
+                this.logger.LogTrace("()");
+
                 lock (this.resources)
                 {
                     this.resources.Remove(resource);
                 }
+
+                this.logger.LogTrace("(-)");
             });
         }
 
         public void Dispose()
         {
+            this.logger.LogTrace("()");
+
             if (!this.cancel.IsCancellationRequested)
             {
                 this.cancel.Cancel();
-                this.trace.LogInside(() => NodeServerTrace.Information("Stopping network peer server..."));
+
+                this.logger.LogTrace("Stopping network peer server.");
+
                 lock (this.resources)
                 {
                     foreach (IDisposable resource in this.resources)
@@ -422,9 +474,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
-        internal NetworkPeerConnectionParameters CreateNetworkPeerConnectionParameters()
+        private NetworkPeerConnectionParameters CreateNetworkPeerConnectionParameters()
         {
             IPEndPoint myExternal = Utils.EnsureIPv6(this.ExternalEndpoint);
             NetworkPeerConnectionParameters param2 = this.InboundNetworkPeerConnectionParameters.Clone();
@@ -432,29 +486,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             param2.Version = this.Version;
             param2.AddressFrom = myExternal;
             return param2;
-        }
-
-        public bool IsConnectedTo(IPEndPoint endpoint)
-        {
-            return this.ConnectedNetworkPeers.FindByEndpoint(endpoint) != null;
-        }
-
-        public NetworkPeer FindOrConnect(IPEndPoint endpoint)
-        {
-            while (true)
-            {
-                NetworkPeer peer = this.ConnectedNetworkPeers.FindByEndpoint(endpoint);
-                if (peer != null)
-                    return peer;
-
-                peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.Network, endpoint, CreateNetworkPeerConnectionParameters());
-                peer.StateChanged += Peer_StateChanged;
-                if (!this.ConnectedNetworkPeers.Add(peer))
-                {
-                    peer.DisconnectAsync();
-                }
-                else return peer;
-            }
         }
     }
 }

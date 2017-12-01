@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public class InMemoryNoSqlRepository : NoSqlRepository
-	{
-		Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
+    public class InMemoryNoSqlRepository : NoSqlRepository
+    {
+        Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
 
         public InMemoryNoSqlRepository(TransactionOptions options = TransactionOptions.All)
             :base(options)
@@ -27,11 +27,11 @@ namespace NBitcoin
 			return Task.FromResult(true);
 		}
 
-		protected override Task<byte[]> GetBytes(string key)
-		{
-			byte[] result = null;
-			_Table.TryGetValue(key, out result);
-			return Task.FromResult(result);
-		}
-	}
+        protected override Task<byte[]> GetBytes(string key)
+        {
+            byte[] result = null;
+            _Table.TryGetValue(key, out result);
+            return Task.FromResult(result);
+        }
+    }
 }

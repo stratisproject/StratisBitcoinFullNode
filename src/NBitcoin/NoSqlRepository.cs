@@ -20,17 +20,17 @@ namespace NBitcoin
 			return PutBytes(key, obj == null ? null : obj.ToBytes(options:this.TransactionOptions));
 		}
 
-		public void Put(string key, IBitcoinSerializable obj)
-		{
-			try
-			{
-				PutAsync(key, obj).Wait();
-			}
-			catch(AggregateException aex)
-			{
-				ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-			}
-		}
+        public void Put(string key, IBitcoinSerializable obj)
+        {
+            try
+            {
+                PutAsync(key, obj).Wait();
+            }
+            catch(AggregateException aex)
+            {
+                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
+            }
+        }
 
 		public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
 		{
@@ -42,30 +42,30 @@ namespace NBitcoin
 			return obj;
 		}
 
-		public T Get<T>(string key) where T : IBitcoinSerializable, new()
-		{
-			try
-			{
-				return GetAsync<T>(key).Result;
-			}
-			catch(AggregateException aex)
-			{
-				ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-				return default(T);
-			}
-		}
+        public T Get<T>(string key) where T : IBitcoinSerializable, new()
+        {
+            try
+            {
+                return GetAsync<T>(key).Result;
+            }
+            catch(AggregateException aex)
+            {
+                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
+                return default(T);
+            }
+        }
 
-		public virtual Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
-		{
-			return PutBytesBatch(values.Select(s => new Tuple<string, byte[]>(s.Item1, s.Item2 == null ? null : s.Item2.ToBytes())));
-		}
+        public virtual Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
+        {
+            return PutBytesBatch(values.Select(s => new Tuple<string, byte[]>(s.Item1, s.Item2 == null ? null : s.Item2.ToBytes())));
+        }
 
-		protected abstract Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable);
-		protected abstract Task<byte[]> GetBytes(string key);
+        protected abstract Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable);
+        protected abstract Task<byte[]> GetBytes(string key);
 
-		protected virtual Task PutBytes(string key, byte[] data)
-		{
-			return PutBytesBatch(new[] { new Tuple<string, byte[]>(key, data) });
-		}
-	}
+        protected virtual Task PutBytes(string key, byte[] data)
+        {
+            return PutBytesBatch(new[] { new Tuple<string, byte[]>(key, data) });
+        }
+    }
 }
