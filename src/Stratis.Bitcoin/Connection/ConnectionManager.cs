@@ -100,6 +100,8 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly Dictionary<NetworkPeer, PerformanceSnapshot> downloads = new Dictionary<NetworkPeer, PerformanceSnapshot>();
 
+        private NetworkPeerServices discoveredNodeRequiredService = NetworkPeerServices.Network;
+
         /// <inheritdoc/>
         public Network Network { get; }
 
@@ -158,8 +160,6 @@ namespace Stratis.Bitcoin.Connection
             NetworkPeerConnectionParameters clonedParameters = this.Parameters.Clone();
             clonedParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
 
-            var peerConnectorConetxt = new PeerConnectorContext(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, clonedParameters, this.peerAddressManager);
-
             // Don't start peer discovery if we have specified any nodes using the -connect arg.
             if (!this.NodeSettings.ConnectionManager.Connect.Any())
             {
@@ -171,17 +171,17 @@ namespace Stratis.Bitcoin.Connection
                     this.peerDiscoveryLoop.DiscoverPeers();
                 }
 
-                this.DiscoverNodesPeerConnector = new PeerConnectorDiscovery(peerConnectorConetxt);
+                this.DiscoverNodesPeerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, clonedParameters, this.peerAddressManager);
             }
             else
             {
                 // Use if we have specified any nodes using the -connect arg
-                this.ConnectNodePeerConnector = new PeerConnectorConnectNode(peerConnectorConetxt);
+                this.ConnectNodePeerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, clonedParameters, this.peerAddressManager);
             }
 
             {
                 // Use if we have specified any nodes using the -addnode arg
-                this.AddNodePeerConnector = new PeerConnectorAddNode(peerConnectorConetxt);
+                this.AddNodePeerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, clonedParameters, this.peerAddressManager);
             }
 
             // Relate the peer connectors to each other to prevent duplicate connections.
@@ -242,8 +242,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:{1})", nameof(services), services);
 
-            var discoveredNodeRequiredService = NetworkPeerServices.Network;
-            discoveredNodeRequiredService |= services;
+            this.discoveredNodeRequiredService |= services;
 
             IPeerConnector peerConnector = this.DiscoverNodesPeerConnector;
             if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))

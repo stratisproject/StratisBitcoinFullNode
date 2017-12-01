@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public PeerAddress FindPeer(IPEndPoint endPoint)
         {
-            var peer = this.Peers.SingleOrDefault(p => p.Key.Match(endPoint));
+            var peer = this.Peers.Skip(0).SingleOrDefault(p => p.Key.Match(endPoint));
             if (peer.Value != null)
                 return peer.Value;
             return null;

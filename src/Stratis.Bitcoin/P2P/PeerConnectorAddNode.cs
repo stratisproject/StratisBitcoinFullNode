@@ -1,8 +1,11 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -18,8 +21,17 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Constructor used by <see cref="Connection.ConnectionManager"/>.</summary>
-        public PeerConnectorAddNode(PeerConnectorContext context)
-            : base(context)
+        public PeerConnectorAddNode(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILogger logger,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifeTime,
+            NodeSettings nodeSettings,
+            NetworkPeerConnectionParameters parameters,
+            IPeerAddressManager peerAddressManager)
+            :
+            base(asyncLoopFactory, logger, network, networkPeerFactory, nodeLifeTime, nodeSettings, parameters, peerAddressManager)
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
@@ -38,7 +50,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        internal override NetworkAddress FindPeerToConnectTo()
+        public override NetworkAddress FindPeerToConnectTo()
         {
             PeerAddress peer = null;
 
