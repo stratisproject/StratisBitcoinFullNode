@@ -26,16 +26,21 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
 
+        /// <summary>Version of the protocol that the server is running.</summary>
         public ProtocolVersion Version { get; private set; }
 
         /// <summary>The parameters that will be cloned and applied for each peer connecting to <see cref="NetworkPeerServer"/>.</summary>
         public NetworkPeerConnectionParameters InboundNetworkPeerConnectionParameters { get; set; }
 
+        /// <summary><c>true</c> to allow connections from LAN, <c>false</c> otherwise.</summary>
         public bool AllowLocalPeers { get; set; }
 
+        /// <summary>Maximal number of inbound connection that the server is willing to handle simultaneously.</summary>
         public int MaxConnections { get; set; }
 
+        /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
         private IPEndPoint localEndpoint;
+        /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
         public IPEndPoint LocalEndpoint
         {
             get
@@ -48,23 +53,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary>Network socket that the server listens on and accept new connections with.</summary>
         private Socket socket;
 
-        public bool IsListening
-        {
-            get
-            {
-                return this.socket != null;
-            }
-        }
+        /// <summary>Queue of incoming messages distributed to message consumers.</summary>
+        private readonly MessageProducer<IncomingMessage> messageProducer = new MessageProducer<IncomingMessage>();
 
-
-        internal readonly MessageProducer<IncomingMessage> messageProducer = new MessageProducer<IncomingMessage>();
-        internal readonly MessageProducer<object> internalMessageProducer = new MessageProducer<object>();
-
-        public MessageProducer<IncomingMessage> AllMessages { get; private set; }
-
+        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
         volatile IPEndPoint externalEndpoint;
+        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
         public IPEndPoint ExternalEndpoint
         {
             get
@@ -77,11 +74,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary>List of network client peers that are currently connected to the server.</summary>
         public NetworkPeerCollection ConnectedNetworkPeers { get; private set; }
 
+        /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
         private CancellationTokenSource cancel = new CancellationTokenSource();
 
+        /// <summary>Nonce for server's version payload.</summary>
         private ulong nonce;
+        /// <summary>Nonce for server's version payload.</summary>
         public ulong Nonce
         {
             get
@@ -97,6 +98,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary>Consumer of messages coming from connected clients.</summary>
+        /// <seealso cref="ProcessMessage(IncomingMessage)"/>
         private readonly EventLoopMessageListener<IncomingMessage> listener;
 
         /// <summary>
@@ -129,12 +132,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Version = version;
 
             this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
+            this.messageProducer = new MessageProducer<IncomingMessage>();
             this.messageProducer.AddMessageListener(this.listener);
 
             this.ConnectedNetworkPeers = new NetworkPeerCollection();
             this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(this.listener);
-
-            this.AllMessages = new MessageProducer<IncomingMessage>();
 
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
 
@@ -300,7 +302,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
-            this.AllMessages.PushMessage(message);
             this.ProcessMessageCore(message);
 
             this.logger.LogTrace("(-)");
