@@ -430,17 +430,24 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary><c>true</c> if the peer connected to the node, <c>false</c> if the node connected to the peer.</summary>
         public bool Inbound { get; private set; }
 
+        /// <summary>List of node's modules attached to the peer to receive notifications about various events related to the peer.</summary>
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
+
+        /// <summary>Information about the peer including its network address, protocol version, time of last contact.</summary>
         public NetworkAddress PeerAddress { get; private set; }
 
         /// <summary>Last time in UTC the node received something from this peer.</summary>
         public DateTime LastSeen { get; set; }
 
+        /// <summary>Difference between the local clock and the clock that peer claims, or <c>null</c> if this information has not been initialized yet.</summary>
         public TimeSpan? TimeOffset { get; private set; }
 
-        internal readonly NetworkPeerConnection connection;
+        /// <summary>Component representing the network connection to the peer that is responsible for sending and receiving messages.</summary>
+        internal readonly NetworkPeerConnection Connection;
 
+        /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         private PerformanceCounter counter;
+        /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         public PerformanceCounter Counter
         {
             get
@@ -466,6 +473,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary><c>true</c> if the connection to the peer is considered active, <c>false</c> otherwise, including any case of error.</summary>
         public bool IsConnected
         {
             get
@@ -508,7 +516,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             get
             {
-                return this.connection.Socket;
+                return this.Connection.Socket;
             }
         }
 
@@ -553,7 +561,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-            this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
 
             socket.ReceiveBufferSize = parameters.ReceiveBufferSize;
             socket.SendBufferSize = parameters.SendBufferSize;
@@ -613,7 +621,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.InitDefaultBehaviors(parameters);
-            this.connection.BeginListen();
+            this.Connection.BeginListen();
 
             this.logger.LogTrace("(-)");
         }
@@ -636,7 +644,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
             this.Network = network;
             this.PeerAddress = peerAddress;
-            this.connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
             this.PeerVersion = peerVersion;
             this.LastSeen = peerAddress.Time.UtcDateTime;
             this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
@@ -645,7 +653,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.State = NetworkPeerState.Connected;
 
             this.InitDefaultBehaviors(parameters);
-            this.connection.BeginListen();
+            this.Connection.BeginListen();
 
             this.logger.LogTrace("(-)");
         }
@@ -834,7 +842,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             var activity = Guid.NewGuid();
             Action final = () =>
             {
-                this.connection.Messages.Add(new SentMessage()
+                this.Connection.Messages.Add(new SentMessage()
                 {
                     Payload = payload,
                 });
@@ -1005,11 +1013,11 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.connection.Disconnected.WaitOne();
+                this.Connection.Disconnected.WaitOne();
             }
             finally
             {
-                this.connection.CleanUp();
+                this.Connection.CleanUp();
             }
 
             this.logger.LogTrace("(-)");
@@ -1029,7 +1037,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.DisconnectNode(reason, exception);
-            this.connection.CleanUp();
+            this.Connection.CleanUp();
 
             this.logger.LogTrace("(-)");
         }
@@ -1045,7 +1053,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.State = NetworkPeerState.Disconnecting;
-            this.connection.Cancel.Cancel();
+            this.Connection.Cancel.Cancel();
 
             if (this.DisconnectReason == null)
             {
