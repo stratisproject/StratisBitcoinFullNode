@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerCollection ConnectedNetworkPeers { get; private set; }
 
         /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
-        private CancellationTokenSource cancel = new CancellationTokenSource();
+        private CancellationTokenSource serverCancel = new CancellationTokenSource();
 
         /// <summary>Nonce for server's version payload.</summary>
         private ulong nonce;
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            if (this.cancel.IsCancellationRequested)
+            if (this.serverCancel.IsCancellationRequested)
             {
                 this.logger.LogTrace("Stop accepting connection.");
                 return;
@@ -228,53 +228,55 @@ namespace Stratis.Bitcoin.P2P.Peer
                     throw new SocketException((int)args.SocketError);
 
                 client = args.AcceptSocket;
-                if (this.cancel.IsCancellationRequested)
+                if (this.serverCancel.IsCancellationRequested)
                 {
                     this.logger.LogTrace("(-)[CANCELLED]");
                     return;
                 }
 
                 this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
-                var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.cancel.Token);
-                cancel.CancelAfter(TimeSpan.FromSeconds(10));
-
-                var stream = new NetworkStream(client, false);
-                while (true)
+                using (var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
                 {
-                    if (this.ConnectedNetworkPeers.Count >= this.MaxConnections)
+                    cancel.CancelAfter(TimeSpan.FromSeconds(10));
+
+                    var stream = new NetworkStream(client, false);
+                    while (true)
                     {
-                        this.logger.LogDebug("Maximum number of connections {0} reached.", this.MaxConnections);
-                        Utils.SafeCloseSocket(client);
-                        break;
+                        if (this.ConnectedNetworkPeers.Count >= this.MaxConnections)
+                        {
+                            this.logger.LogDebug("Maximum number of connections {0} reached.", this.MaxConnections);
+                            Utils.SafeCloseSocket(client);
+                            break;
+                        }
+                        cancel.Token.ThrowIfCancellationRequested();
+
+                        PerformanceCounter counter;
+                        Message message = Message.ReadNext(stream, this.Network, this.Version, cancel.Token, out counter);
+                        this.messageProducer.PushMessage(new IncomingMessage()
+                        {
+                            Socket = client,
+                            Message = message,
+                            Length = counter.ReadBytes,
+                            NetworkPeer = null,
+                        });
+
+                        if (message.Payload is VersionPayload)
+                            break;
+
+                        this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
                     }
-                    cancel.Token.ThrowIfCancellationRequested();
-
-                    PerformanceCounter counter;
-                    Message message = Message.ReadNext(stream, this.Network, this.Version, cancel.Token, out counter);
-                    this.messageProducer.PushMessage(new IncomingMessage()
-                    {
-                        Socket = client,
-                        Message = message,
-                        Length = counter.ReadBytes,
-                        NetworkPeer = null,
-                    });
-
-                    if (message.Payload is VersionPayload)
-                        break;
-
-                    this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
                 }
             }
             catch (OperationCanceledException)
             {
-                if (!this.cancel.Token.IsCancellationRequested)
+                if (!this.serverCancel.Token.IsCancellationRequested)
                     this.logger.LogTrace("Inbound client '{0}' failed to send a message within 10 seconds, dropping connection.", client.RemoteEndPoint);
 
                 Utils.SafeCloseSocket(client);
             }
             catch (Exception ex)
             {
-                if (this.cancel.IsCancellationRequested)
+                if (this.serverCancel.IsCancellationRequested)
                     return;
 
                 if (client == null)
@@ -355,31 +357,33 @@ namespace Stratis.Bitcoin.P2P.Peer
                         return;
                     }
 
-                    CancellationTokenSource cancel = new CancellationTokenSource();
-                    cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
-                    try
+                    using (CancellationTokenSource cancel = new CancellationTokenSource())
                     {
-                        this.ConnectedNetworkPeers.Add(networkPeer);
-                        networkPeer.StateChanged += Peer_StateChanged;
-                        networkPeer.RespondToHandShake(cancel.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
+                        cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
+                        try
+                        {
+                            this.ConnectedNetworkPeers.Add(networkPeer);
+                            networkPeer.StateChanged += Peer_StateChanged;
+                            networkPeer.RespondToHandShake(cancel.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
 
-                        networkPeer.DisconnectAsync();
+                            networkPeer.DisconnectAsync();
 
-                        this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                            this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
+                            throw;
+                        }
+                        catch (Exception ex)
+                        {
+                            this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
 
-                        networkPeer.DisconnectAsync();
+                            networkPeer.DisconnectAsync();
 
-                        this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
-                        throw;
+                            this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
+                            throw;
+                        }
                     }
                 }
             }
@@ -410,9 +414,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            if (!this.cancel.IsCancellationRequested)
+            if (!this.serverCancel.IsCancellationRequested)
             {
-                this.cancel.Cancel();
+                this.serverCancel.Cancel();
 
                 this.logger.LogTrace("Stopping network peer server.");
                 this.listener.Dispose();
