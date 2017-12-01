@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Adds a specific requirement to all peer nodes.
         /// </summary>
         /// <param name="transactionOptions">Specifies the requirement on nodes to add.</param>
-        void RequestOptions(TransactionOptions transactionOptions);
+        void RequestOptions(NetworkOptions transactionOptions);
     }
 
     /// <summary>
@@ -232,11 +232,11 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public void RequestOptions(TransactionOptions transactionOptions)
+        public void RequestOptions(NetworkOptions transactionOptions)
         {
             this.logger.LogTrace("({0}:{1})", nameof(transactionOptions), transactionOptions);
 
-            if (transactionOptions == TransactionOptions.Witness)
+            if (transactionOptions == NetworkOptions.Witness)
             {
                 this.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (BlockPullerBehavior node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))

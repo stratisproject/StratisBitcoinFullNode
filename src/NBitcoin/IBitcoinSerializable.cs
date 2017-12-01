@@ -26,7 +26,7 @@ namespace NBitcoin
             s.ReadWrite(serializable);
             return (int)s.Counter.WrittenBytes;
         }
-        public static int GetSerializedSize(this IBitcoinSerializable serializable, TransactionOptions options)
+        public static int GetSerializedSize(this IBitcoinSerializable serializable, NetworkOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
