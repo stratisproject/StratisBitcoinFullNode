@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
-    public abstract class BroadcasterManagerBase : IBroadcasterManager
+    public abstract class BroadcastManagerBase : IBroadcastManager
     {
         public event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
 
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Broadcasting
 
         private ConcurrentHashSet<TransactionBroadcastEntry> Broadcasts { get; }
 
-        public BroadcasterManagerBase()
+        public BroadcastManagerBase()
         {
             this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
         }

@@ -13,13 +13,13 @@ namespace Stratis.Bitcoin.Broadcasting
 {
     public class BroadcasterBehavior : NetworkPeerBehavior
     {
-        protected readonly IBroadcasterManager manager;
+        protected readonly IBroadcastManager manager;
 
         /// <summary>Instance logger for the memory pool component.</summary>
         protected readonly ILogger logger;
 
         public BroadcasterBehavior(
-            IBroadcasterManager manager,
+            IBroadcastManager manager,
             ILogger logger)
         {
             this.logger = logger;
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Broadcasting
         }
 
         public BroadcasterBehavior(
-            IBroadcasterManager manager,
+            IBroadcastManager manager,
             ILoggerFactory loggerFactory)
             : this(manager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
         {

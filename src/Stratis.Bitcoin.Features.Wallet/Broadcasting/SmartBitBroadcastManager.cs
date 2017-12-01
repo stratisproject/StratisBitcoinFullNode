@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
-    public class SmartBitBroadcasterManager : BroadcasterManagerBase
+    public class SmartBitBroadcastManager : BroadcastManagerBase
     {
         private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(3, 3);
 
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
         public Network Network { get; }
 
-        public SmartBitBroadcasterManager(Network network, HttpClientHandler handler = null) : base()
+        public SmartBitBroadcastManager(Network network, HttpClientHandler handler = null) : base()
         {
             this.Network = network ?? throw new ArgumentNullException(nameof(network));
             if (network != Network.TestNet && network != Network.Main)

@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                         services.AddSingleton<WalletController>();
                         services.AddSingleton<WalletRPCController>();
-                        services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
+                        services.AddSingleton<IBroadcastManager, FullNodeBroadcastManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                     });
             });

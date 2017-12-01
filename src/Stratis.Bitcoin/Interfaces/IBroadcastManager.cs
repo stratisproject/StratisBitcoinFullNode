@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Broadcasting;
 
 namespace Stratis.Bitcoin.Interfaces
 {
-    public interface IBroadcasterManager
+    public interface IBroadcastManager
     {
         Task<Success> TryBroadcastAsync(Transaction transaction);
 
