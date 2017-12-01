@@ -605,31 +605,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
-                var result = await this.broadcastManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
-                if (result == Bitcoin.Broadcasting.Success.Yes)
+                bool broadcasted = await this.broadcastManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
+                if (broadcasted)
                 {
                     return this.Json(model);
                 }
-
-                if (result == Bitcoin.Broadcasting.Success.DontKnow)
+                else
                 {
-                    // wait for propagation
-                    var waited = TimeSpan.Zero;
-                    var period = TimeSpan.FromSeconds(1);
-                    while (TimeSpan.FromSeconds(21) > waited)
-                    {
-                        // if broadcasts doesn't contain then success
-                        var transactionEntry = this.broadcastManager.GetTransaction(transaction.GetHash());
-                        if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
-                        {
-                            return this.Json(model);
-                        }
-                        await Task.Delay(period).ConfigureAwait(false);
-                        waited += period;
-                    }
+                    throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
                 }
-
-                throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
             }
             catch (Exception e)
             {

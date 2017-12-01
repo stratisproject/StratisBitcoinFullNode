@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Broadcasting
             }
         }
 
-        public abstract Task<Success> TryBroadcastAsync(Transaction transaction);
+        public abstract Task<bool> TryBroadcastAsync(Transaction transaction);
 
         protected void PropagateTransactionToPeers(Transaction transaction)
         {

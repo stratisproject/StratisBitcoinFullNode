@@ -1352,7 +1352,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletWrapper = new Mock<IBroadcastManager>();
             mockWalletWrapper.Setup(m => m.TryBroadcastAsync(transaction))
-                .Returns(Task.FromResult(Success.Yes));
+                .Returns(Task.FromResult(true));
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
             IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest(transactionHex)).GetAwaiter().GetResult();
@@ -1372,7 +1372,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IBroadcastManager>();
             mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
-                .Returns(Task.FromResult(Success.No));
+                .Returns(Task.FromResult(false));
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
             IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest(new uint256(15555).ToString())).GetAwaiter().GetResult();
