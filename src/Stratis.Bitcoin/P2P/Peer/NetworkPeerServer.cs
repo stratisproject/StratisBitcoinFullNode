@@ -82,8 +82,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerCollection ConnectedNetworkPeers { get; private set; }
 
-        private List<IDisposable> resources = new List<IDisposable>();
-
         private CancellationTokenSource cancel = new CancellationTokenSource();
 
         private ulong nonce;
@@ -105,6 +103,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NetworkPeerServerNodeEventHandler PeerRemoved;
         public event NetworkPeerServerNodeEventHandler PeerAdded;
         public event NetworkPeerServerMessageEventHandler MessageReceived;
+
+        private readonly EventLoopMessageListener<IncomingMessage> listener;
 
         /// <summary>
         /// Initializes instance of a network peer server.
@@ -135,14 +135,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.externalEndpoint = new IPEndPoint(this.localEndpoint.Address, this.Network.DefaultPort);
             this.Version = version;
 
-            var listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
-            this.messageProducer.AddMessageListener(listener);
-            this.OwnResource(listener);
+            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
+            this.messageProducer.AddMessageListener(this.listener);
 
             this.ConnectedNetworkPeers = new NetworkPeerCollection();
             this.ConnectedNetworkPeers.Added += Peers_PeerAdded;
             this.ConnectedNetworkPeers.Removed += Peers_PeerRemoved;
-            this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(listener);
+            this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(this.listener);
 
             this.AllMessages = new MessageProducer<IncomingMessage>();
 
@@ -414,37 +413,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
-        IDisposable OwnResource(IDisposable resource)
-        {
-            if (this.cancel.IsCancellationRequested)
-            {
-                resource.Dispose();
-                return Scope.Nothing;
-            }
-
-            return new Scope(() =>
-            {
-                this.logger.LogTrace("()");
-
-                lock (this.resources)
-                {
-                    this.resources.Add(resource);
-                }
-
-                this.logger.LogTrace("(-)");
-            }, () =>
-            {
-                this.logger.LogTrace("()");
-
-                lock (this.resources)
-                {
-                    this.resources.Remove(resource);
-                }
-
-                this.logger.LogTrace("(-)");
-            });
-        }
-
         /// <inheritdoc />
         public void Dispose()
         {
@@ -455,12 +423,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.cancel.Cancel();
 
                 this.logger.LogTrace("Stopping network peer server.");
-
-                lock (this.resources)
-                {
-                    foreach (IDisposable resource in this.resources)
-                        resource.Dispose();
-                }
+                this.listener.Dispose();
 
                 try
                 {
@@ -479,6 +442,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Initializes connection parameters using the server's initialized values.
+        /// </summary>
+        /// <returns>Initialized connection parameters.</returns>
         private NetworkPeerConnectionParameters CreateNetworkPeerConnectionParameters()
         {
             IPEndPoint myExternal = Utils.EnsureIPv6(this.ExternalEndpoint);
