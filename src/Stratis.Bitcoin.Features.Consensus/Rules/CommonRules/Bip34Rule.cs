@@ -31,11 +31,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Compare two byte arrays and return <c>true</c> if the first array start with the same sequence bytes as the second array from the first position.
+        /// Checks if first <paramref name="subset.Lenght"/> entries are equal between two arrays.
         /// </summary>
-        /// <param name="bytes">The first array in the checking sequence.</param>
-        /// <param name="subset">The second array in the checking sequence.</param>
-        /// <returns><c>true</c> if the second array has the same elements as the first array from the first position.</returns>
+        /// <param name="bytes">Main array.</param>
+        /// <param name="subset">Subset array.</param>
+        /// <returns><c>true</c> if <paramref name="subset.Lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
         private bool StartWith(byte[] bytes, byte[] subset)
         {
             if (bytes.Length < subset.Length)

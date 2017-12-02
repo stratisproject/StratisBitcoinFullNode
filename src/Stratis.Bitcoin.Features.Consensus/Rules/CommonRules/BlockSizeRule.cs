@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             Block block = context.BlockValidationContext.Block;
 
             // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || (GetSize(block, TransactionOptions.None) > options.MaxBlockBaseSize))
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || (GetSize(block, NetworkOptions.None) > options.MaxBlockBaseSize))
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -37,16 +37,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return Task.CompletedTask;
         }
 
-        public static long GetBlockWeight(Block block, PowConsensusOptions options)
+        /// <summary>
+        /// Gets the block weight.
+        /// </summary>
+        /// <remarks>
+        /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
+        /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
+        /// </remarks>
+        /// <param name="block">Block that we get weight of.</param>
+        /// <param name="options">Options for POW networks.</param>
+        /// <returns>Block weight.</returns>
+        public long GetBlockWeight(Block block, PowConsensusOptions options)
         {
-            // This implements the weight = (stripped_size * 4) + witness_size formula,
-            // using only serialization with and without witness data. As witness_size
-            // is equal to total_size - stripped_size, this formula is identical to:
-            // weight = (stripped_size * 3) + total_size.
-            return GetSize(block, TransactionOptions.None) * (options.WitnessScaleFactor - 1) + GetSize(block, TransactionOptions.Witness);
+            return GetSize(block, NetworkOptions.None) * (options.WitnessScaleFactor - 1) + GetSize(block, NetworkOptions.Witness);
         }
 
-        public static int GetSize(IBitcoinSerializable data, TransactionOptions options)
+        /// <summary>
+        /// Gets serialized size of <paramref name="data"/> in bytes.
+        /// </summary>
+        /// <param name="data">Data that we calculate serialized size of.</param>
+        /// <param name="options">Serialization options.</param>
+        /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
+        public static int GetSize(IBitcoinSerializable data, NetworkOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;

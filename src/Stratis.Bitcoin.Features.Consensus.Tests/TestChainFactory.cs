@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
@@ -88,7 +89,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, new LoggerFactory());
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.NodeSettings);
 
-            testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), consensusValidator, new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning);
+            ConsensusRules consensusRules = new ConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, new NodeDeployments(testChainContext.Network, testChainContext.Chain)).Register(new FullNodeBuilderConsensusExtension.BaseConsensusRules());
+            testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), consensusValidator, new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning, consensusRules);
             await testChainContext.Consensus.StartAsync();
 
             return testChainContext;
