@@ -119,19 +119,6 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Whether the chain contains a block at same height as the given block.
-        /// </summary>
-        /// <param name="blockIndex">The block at the height to search.</param>
-        /// <returns>Whether there is a block at the height of the given block.</returns>
-        public bool Contains(ChainedBlock blockIndex)
-        {
-            if (blockIndex == null)
-                throw new ArgumentNullException("blockIndex");
-
-            return this.GetBlock(blockIndex.Height) != null;
-        }
-
-        /// <summary>
         /// Whether the given chain and this chain have the same tip.
         /// </summary>
         /// <param name="chain">The chain to compare this chain against.</param>
