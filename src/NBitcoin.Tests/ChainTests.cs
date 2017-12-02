@@ -471,12 +471,12 @@ namespace NBitcoin.Tests
 		}
 
         /// <summary> 
-        /// Adapted from bitcoin core test, verify skip list creation in <see cref="ChainedBlock"/>.
+        /// Adapted from bitcoin core test, verify GetAncestor is using skip list in <see cref="ChainedBlock"/>.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
         /// </summary>
         [Fact]
         [Trait("UnitTest", "UnitTest")]        
-        public void ChainedBlockVerifySkipListBuildsProperly()
+        public void ChainedBlockVerifySkipListForGetAncestor()
         {
             const int skipListLength = 300000;
 
@@ -510,67 +510,67 @@ namespace NBitcoin.Tests
             }
         }
 
-        // TODO: Implement this test
-        // https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp
-        //BOOST_AUTO_TEST_CASE(getlocator_test)
-        //{
-        //    // Build a main chain 100000 blocks long.
-        //    std::vector<uint256> vHashMain(100000);
-        //    std::vector<CBlockIndex> vBlocksMain(100000);
-        //    for (unsigned int i = 0; i < vBlocksMain.size(); i++)
-        //    {
-        //        vHashMain[i] = ArithToUint256(i); // Set the hash equal to the height, so we can quickly check the distances.
-        //        vBlocksMain[i].nHeight = i;
-        //        vBlocksMain[i].pprev = i ? &vBlocksMain[i - 1] : nullptr;
-        //        vBlocksMain[i].phashBlock = &vHashMain[i];
-        //        vBlocksMain[i].BuildSkip();
-        //        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksMain[i].GetBlockHash()).GetLow64(), vBlocksMain[i].nHeight);
-        //        BOOST_CHECK(vBlocksMain[i].pprev == nullptr || vBlocksMain[i].nHeight == vBlocksMain[i].pprev->nHeight + 1);
-        //    }
+        /// <summary> 
+        /// Adapted from bitcoin core test, verify GetLocator is using skip list in <see cref="ChainedBlock"/>.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
+        /// </summary>
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void ChainedBlockVerifySkipListForGetLocator()
+        {
+            const int mainLength = 100000;
+            const int branchLength = 50000;
 
-        //    // Build a branch that splits off at block 49999, 50000 blocks long.
-        //    std::vector<uint256> vHashSide(50000);
-        //    std::vector<CBlockIndex> vBlocksSide(50000);
-        //    for (unsigned int i = 0; i < vBlocksSide.size(); i++)
-        //    {
-        //        vHashSide[i] = ArithToUint256(i + 50000 + (arith_uint256(1) << 128)); // Add 1<<128 to the hashes, so GetLow64() still returns the height.
-        //        vBlocksSide[i].nHeight = i + 50000;
-        //        vBlocksSide[i].pprev = i ? &vBlocksSide[i - 1] : (vBlocksMain.data() + 49999);
-        //        vBlocksSide[i].phashBlock = &vHashSide[i];
-        //        vBlocksSide[i].BuildSkip();
-        //        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksSide[i].GetBlockHash()).GetLow64(), vBlocksSide[i].nHeight);
-        //        BOOST_CHECK(vBlocksSide[i].pprev == nullptr || vBlocksSide[i].nHeight == vBlocksSide[i].pprev->nHeight + 1);
-        //    }
+            // Make a main chain 100000 blocks long.
+            ConcurrentChain chain = this.CreateChain(mainLength - 1);
 
-        //    // Build a CChain for the main branch.
-        //    CChain chain;
-        //    chain.SetTip(&vBlocksMain.back());
+            // Make a branch that splits off at block 49999, 50000 blocks long.
+            ChainedBlock mainTip = chain.Tip;
+            ChainedBlock block = mainTip.GetAncestor(branchLength - 1);
+            for (int i=0; i < branchLength; i++)
+            {
+                Block newBlock = TestUtils.CreateFakeBlock();
+                newBlock.Header.HashPrevBlock = block.Header.GetHash();
+                block = new ChainedBlock(newBlock.Header, newBlock.Header.GetHash(), block);
+            }
+            ChainedBlock branchTip = block;
 
-        //    // Test 100 random starting points for locators.
-        //    for (int n = 0; n < 100; n++)
-        //    {
-        //        int r = InsecureRandRange(150000);
-        //        CBlockIndex* tip = (r < 100000) ? &vBlocksMain[r] : &vBlocksSide[r - 100000];
-        //        CBlockLocator locator = chain.GetLocator(tip);
+            // Test 100 random starting points for locators.
+            Random rand = new Random();
+            for (int n = 0; n < 100; n++)
+            {
+                // Find a random location along chain for locator < mainLength is on main chain > mainLength is on branch.
+                int r = rand.Next(mainLength + branchLength);
 
-        //        // The first result must be the block itself, the last one must be genesis.
-        //        BOOST_CHECK(locator.vHave.front() == tip->GetBlockHash());
-        //        BOOST_CHECK(locator.vHave.back() == vBlocksMain[0].GetBlockHash());
+                // Block to get locator for.
+                ChainedBlock tip = r < mainLength ? mainTip.GetAncestor(r) : branchTip.GetAncestor(r - mainLength);
 
-        //        // Entries 1 through 11 (inclusive) go back one step each.
-        //        for (unsigned int i = 1; i < 12 && i < locator.vHave.size() - 1; i++)
-        //        {
-        //            BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i]).GetLow64(), tip->nHeight - i);
-        //        }
+                // Get a block locator.
+                BlockLocator locator = tip.GetLocator();
 
-        //        // The further ones (excluding the last one) go back with exponential steps.
-        //        unsigned int dist = 2;
-        //        for (unsigned int i = 12; i < locator.vHave.size() - 1; i++)
-        //        {
-        //            BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i - 1]).GetLow64() - UintToArith256(locator.vHave[i]).GetLow64(), dist);
-        //            dist *= 2;
-        //        }
-        //    }
-        //}
+                // The first result must be the block itself, the last one must be genesis.
+                Assert.Equal(tip.HashBlock, locator.Blocks.First());
+                Assert.Equal(chain.Genesis.HashBlock, locator.Blocks.Last());
+
+                // Entries 1 through 11 (inclusive) go back one step each.
+                for (int i = 1; (i < 12) && (i < (locator.Blocks.Count - 1)); i++)
+                {
+                    ChainedBlock expectedBlock = tip.GetAncestor(tip.Height - i);
+                    Assert.Equal(expectedBlock.HashBlock, locator.Blocks[i]);
+                }
+
+                // The further ones (excluding the last one) go back with exponential steps.
+                int dist = 2;
+                int height = tip.Height - 11 - dist;
+                for (int i = 12; i < locator.Blocks.Count() - 1; i++)
+                {
+                    ChainedBlock expectedBlock = tip.GetAncestor(height);
+                    Assert.Equal(expectedBlock.HashBlock, locator.Blocks[i]);
+                    dist *= 2;
+                    height -= dist;
+                }
+            }
+        }
+
     }
 }

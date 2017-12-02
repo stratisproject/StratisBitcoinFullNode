@@ -120,11 +120,7 @@ namespace NBitcoin
 
                 // Exponentially larger steps back, plus the genesis block.
                 int height = Math.Max(pindex.Height - nStep, 0);
-
-                while (pindex.Height > height)
-                    pindex = pindex.Previous;
-                //TODO: Add skiplist logic to locator https://github.com/bitcoin/bitcoin/blob/master/src/chain.cpp
-                //pindex = this.GetAncestor(height);
+                pindex = this.GetAncestor(height);
 
                 if (blockHashes.Count > 10)
                     nStep *= 2;
