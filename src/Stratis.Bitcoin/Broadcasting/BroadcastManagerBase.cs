@@ -59,18 +59,18 @@ namespace Stratis.Bitcoin.Broadcasting
 
         public abstract Task<bool> TryBroadcastAsync(Transaction transaction);
 
-        protected void PropagateTransactionToPeers(Transaction transaction)
+        protected void PropagateTransactionToPeers(Transaction transaction, bool skipHalfOfThePeers = false)
         {
             this.AddOrUpdate(transaction, State.ToBroadcast);
 
-            // ask half of the peers if they're interested in our transaction
             var invPayload = new InventoryPayload(transaction);
 
-            foreach (NetworkPeer networkPeer in this.connectionManager.ConnectedNodes)
-            {
-                //TODO run in several threads
+            var propagateTo = skipHalfOfThePeers
+                ? this.connectionManager.ConnectedNodes.AsEnumerable().Skip((int)Math.Ceiling(this.connectionManager.ConnectedNodes.Count() / 2.0))
+                : this.connectionManager.ConnectedNodes;
+
+            foreach (NetworkPeer networkPeer in propagateTo)
                 networkPeer.SendMessageAsync(invPayload).GetAwaiter().GetResult();
-            }
         }
 
         protected bool IsPropagated(Transaction transaction)

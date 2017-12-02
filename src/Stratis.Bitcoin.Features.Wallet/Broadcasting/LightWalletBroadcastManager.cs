@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
@@ -10,8 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public class LightWalletBroadcastManager : BroadcastManagerBase
     {
-        private readonly TimeSpan broadcastFrequencySec = TimeSpan.FromSeconds(2);
-        private readonly TimeSpan broadcastMaxTime = TimeSpan.FromSeconds(660);
+        private readonly TimeSpan broadcastMaxTime = TimeSpan.FromSeconds(25);
 
         public LightWalletBroadcastManager(IConnectionManager connectionManager) : base(connectionManager)
         {
@@ -26,50 +26,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             if (IsPropagated(transaction))
                 return true;
 
+            this.PropagateTransactionToPeers(transaction, true);
+
             var elapsed = TimeSpan.Zero;
-            var frequency = (int)this.broadcastFrequencySec.TotalMilliseconds;
+            var checkFrequency = TimeSpan.FromSeconds(1);
 
             while (elapsed < this.broadcastMaxTime)
             {
-                this.PropagateTransactionToPeers(transaction);
-
                 var transactionEntry = this.GetTransaction(transaction.GetHash());
-                if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
-                {
+                if (transactionEntry != null && transactionEntry.State == State.Propagated)
                     return true;
-                }
 
-                await Task.Delay(frequency).ConfigureAwait(false);
-                elapsed += this.broadcastFrequencySec;
+                await Task.Delay(checkFrequency).ConfigureAwait(false);
+                elapsed += checkFrequency;
             }
-
-
-            //this.PropagateTransactionToPeers(transaction);
-
-            /*
-
-            if (result == Bitcoin.Broadcasting.Success.DontKnow)
-            {
-                // wait for propagation
-                var waited = TimeSpan.Zero;
-                var period = TimeSpan.FromSeconds(1);
-                while (TimeSpan.FromSeconds(21) > waited)
-                {
-                    // if broadcasts doesn't contain then success
-                    var transactionEntry = this.broadcastManager.GetTransaction(transaction.GetHash());
-                    if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
-                    {
-                        return this.Json(model);
-                    }
-                    await Task.Delay(period).ConfigureAwait(false);
-                    waited += period;
-                }
-            }
-
-            */
-
-            //TODO
-            //return Success.DontKnow;
 
             return false;
         }

@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly FileStorage<Wallet> fileStorage;
 
         /// <summary>The broadcast manager.</summary>
-        private readonly IBroadcastManager _broadcastManager;
+        private readonly IBroadcastManager broadcastManager;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -136,13 +136,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
-            this._broadcastManager = broadcastManager;
+            this.broadcastManager = broadcastManager;
             this.dateTimeProvider = dateTimeProvider;
 
             // register events
-            if (this._broadcastManager != null)
+            if (this.broadcastManager != null)
             {
-                this._broadcastManager.TransactionStateChanged += this.BroadcastManagerTransactionStateChanged;
+                this.broadcastManager.TransactionStateChanged += this.BroadcastManagerTransactionStateChanged;
             }
         }
 
@@ -193,8 +193,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.logger.LogTrace("()");
 
-            if (this._broadcastManager != null)
-                this._broadcastManager.TransactionStateChanged -= this.BroadcastManagerTransactionStateChanged;
+            if (this.broadcastManager != null)
+                this.broadcastManager.TransactionStateChanged -= this.BroadcastManagerTransactionStateChanged;
 
             this.asyncLoop?.Dispose();
             this.SaveWallets();
