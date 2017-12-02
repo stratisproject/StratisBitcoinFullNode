@@ -425,10 +425,8 @@ namespace NBitcoin
 
             ChainedBlock highChain = this.Height > block.Height ? this : block;
             ChainedBlock lowChain = highChain == this ? block : this;
-            while (highChain.Height != lowChain.Height)
-            {
-                highChain = highChain.Previous;
-            }
+
+            highChain = highChain.GetAncestor(lowChain.Height);
 
             while (highChain.HashBlock != lowChain.HashBlock)
             {
