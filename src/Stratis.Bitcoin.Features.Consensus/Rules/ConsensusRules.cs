@@ -58,8 +58,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
         public NBitcoin.Consensus ConsensusParams { get; }
 
-        public ConsensusLoop ConsensusLoop { get; set; }
-
         public ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments)
         {
             this.Network = network;

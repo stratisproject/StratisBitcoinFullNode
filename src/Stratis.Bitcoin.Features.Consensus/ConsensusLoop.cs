@@ -69,6 +69,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>The context of the validation processes.</summary>
         public ContextInformation Context { get; set; }
+
+        /// <summary>The current tip of the chain that has been validated.</summary>
+        public ChainedBlock ConsensusTip { get; set; }
     }
 
     /// <summary>
@@ -100,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The validation logic for the consensus rules.</summary>
         public PowConsensusValidator Validator { get; }
 
-        /// <summary>The current tip of the cahin that has been validated.</summary>
+        /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedBlock Tip { get; private set; }
 
         /// <summary>Contain information about deployment and activation of features in the chain.</summary>
@@ -223,9 +226,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
-
-            // TODO: Ugly hack for now to avoid circular dependency.
-            (this.consensusRules as ConsensusRules).ConsensusLoop = this;
         }
 
         /// <summary>
@@ -362,6 +362,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
+                blockValidationContext.ConsensusTip = this.Tip;
+
                 await this.consensusRules.ExectueAsync(blockValidationContext);
 
                 try
