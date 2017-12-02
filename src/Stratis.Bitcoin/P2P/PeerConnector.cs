@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.P2P
             catch (Exception exception)
             {
                 if (peer != null)
-                    peer.DisconnectAsync("Error while connecting", exception);
+                    peer.DisconnectWithException("Error while connecting", exception);
             }
 
             return Task.CompletedTask;

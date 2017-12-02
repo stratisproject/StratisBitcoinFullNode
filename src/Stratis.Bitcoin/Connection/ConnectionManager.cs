@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Connection
                 foreach (NetworkPeer node in peerConnector.ConnectedPeers)
                 {
                     if (!node.PeerVersion.Services.HasFlag(services))
-                        node.DisconnectAsync("The peer does not support the required services requirement.");
+                        node.DisconnectWithException("The peer does not support the required services requirement.");
                 }
             }
 
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
             NetworkPeer node = this.connectedNodes.FindByEndpoint(endpoint);
-            node?.DisconnectAsync("Requested by user");
+            node?.DisconnectWithException("Requested by user");
 
             this.logger.LogTrace("(-)");
         }
