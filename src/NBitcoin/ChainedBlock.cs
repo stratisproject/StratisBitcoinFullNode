@@ -484,13 +484,13 @@ namespace NBitcoin
                 return 0;
 
             // Determine which height to jump back to. Any number strictly lower than height is acceptable,
-            // but the following expression was taken from bitcoin core. There is was tested in simulations
+            // but the following expression was taken from bitcoin core. There it was tested in simulations
             // and performed well (max 110 steps to go back up to 2^18 blocks).
             return (height & 1) != 0 ? this.InvertLowestOne(this.InvertLowestOne(height - 1)) + 1 : this.InvertLowestOne(height);
         }
 
         /// <summary>
-        /// Turn the lowest '1' bit in the binary representation of a number into a'0'.
+        /// Turn the lowest '1' bit in the binary representation of a number into a '0'.
         /// </summary>
         /// <param name="n">Number to invert lowest bit.</param>
         /// <returns>New number.</returns>
