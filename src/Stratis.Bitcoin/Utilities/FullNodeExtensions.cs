@@ -62,40 +62,37 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
         public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
         {
-            using (node)
+            node.Start();
+
+            if (!string.IsNullOrEmpty(shutdownMessage))
             {
-                node.Start();
+                Console.WriteLine();
+                Console.WriteLine(shutdownMessage);
+                Console.WriteLine();
+            }
 
-                if (!string.IsNullOrEmpty(shutdownMessage))
-                {
-                    Console.WriteLine();
-                    Console.WriteLine(shutdownMessage);
-                    Console.WriteLine();
-                }
+            cancellationToken.Register(state =>
+            {
+                ((INodeLifetime)state).StopApplication();
+            },
+            node.NodeLifetime);
 
-                cancellationToken.Register(state =>
-                {
-                    ((INodeLifetime)state).StopApplication();
-                },
-                node.NodeLifetime);
+            var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            node.NodeLifetime.ApplicationStopping.Register(obj =>
+            {
+                var tcs = (TaskCompletionSource<object>)obj;
+                tcs.TrySetResult(null);
+            }, waitForStop);
 
-                var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-                node.NodeLifetime.ApplicationStopping.Register(obj =>
-                {
-                    var tcs = (TaskCompletionSource<object>)obj;
-                    tcs.TrySetResult(null);
-                }, waitForStop);
+            await waitForStop.Task.ConfigureAwait(false);
 
-                await waitForStop.Task.ConfigureAwait(false);
+            node.Dispose();
 
-                node.Stop();
-
-                if (!string.IsNullOrEmpty(shutdownCompleteMessage))
-                {
-                    Console.WriteLine();
-                    Console.WriteLine(shutdownCompleteMessage);
-                    Console.WriteLine();
-                }
+            if (!string.IsNullOrEmpty(shutdownCompleteMessage))
+            {
+                Console.WriteLine();
+                Console.WriteLine(shutdownCompleteMessage);
+                Console.WriteLine();
             }
         }
     }

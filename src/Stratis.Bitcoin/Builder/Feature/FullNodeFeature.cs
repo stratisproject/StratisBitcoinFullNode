@@ -1,20 +1,16 @@
-﻿namespace Stratis.Bitcoin.Builder.Feature
+﻿using System;
+
+namespace Stratis.Bitcoin.Builder.Feature
 {
     /// <summary>
     /// Defines methods for features that are managed by the FullNode.
     /// </summary>
-    public interface IFullNodeFeature
+    public interface IFullNodeFeature : IDisposable
     {
         /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
-        void Start();
-
-        /// <summary>
-        /// Triggered when the FullNode is performing a graceful shutdown.
-        /// Requests may still be in flight. Shutdown will block until this event completes.
-        /// </summary>
-        void Stop();
+        void Initialize();
 
         /// <summary>
         /// Validates the feature's required dependencies are all present.
@@ -37,10 +33,10 @@
     public abstract class FullNodeFeature : IFullNodeFeature
     {
         /// <inheritdoc />
-        public abstract void Start();
+        public abstract void Initialize();
 
         /// <inheritdoc />
-        public virtual void Stop()
+        public virtual void Dispose()
         {
         }
 

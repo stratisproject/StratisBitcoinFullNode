@@ -7,7 +7,7 @@ matrix:
       dist: trusty
       sudo: required      
     - os: osx # OSX 10.12
-      osx_image: xcode8.1      
+      osx_image: xcode9      
 
 # branches to build 
 branches:

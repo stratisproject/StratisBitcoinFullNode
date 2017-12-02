@@ -12,11 +12,11 @@ using NBitcoin;
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class AssetIdJsonConverter : JsonConverter
+    class AssetIdJsonConverter : JsonConverter
     {
         public AssetIdJsonConverter(Network network)
         {

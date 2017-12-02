@@ -21,14 +21,14 @@ using System;
 
 namespace NBitcoin.Crypto.Internal
 {
-	static class Security
-	{
-		public static void Clear(Array array)
-		{
-			if(array != null)
-			{
-				Array.Clear(array, 0, array.Length);
-			}
-		}
-	}
+    static class Security
+    {
+        public static void Clear(Array array)
+        {
+            if(array != null)
+            {
+                Array.Clear(array, 0, array.Length);
+            }
+        }
+    }
 }

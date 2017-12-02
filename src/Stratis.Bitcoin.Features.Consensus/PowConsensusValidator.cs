@@ -127,8 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
-                    bool unused = false;
-                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, ref unused);
+                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out bool unused);
 
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the
@@ -492,37 +491,19 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return 0;
 
             WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
-            if (witParams != null)
-                return this.WitnessSigOps(witParams, witness, flags);
 
-            if (scriptPubKey.IsPayToScriptHash && scriptSig.IsPushOnly)
-            {
-                byte[] data = scriptSig.ToOps().Select(o => o.PushData).LastOrDefault() ?? new byte[0];
-                Script subScript = Script.FromBytesUnsafe(data);
-
-                witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
-                if (witParams != null)
-                    return this.WitnessSigOps(witParams, witness, flags);
-            }
-
-            return 0;
-        }
-
-        private long WitnessSigOps(WitProgramParameters witParams, WitScript witScript, DeploymentFlags flags)
-        {
-            if (witParams.Version == 0)
+            if (witParams?.Version == 0)
             {
                 if (witParams.Program.Length == 20)
                     return 1;
 
-                if (witParams.Program.Length == 32 && witScript.PushCount > 0)
+                if (witParams.Program.Length == 32 && witness.PushCount > 0)
                 {
-                    Script subscript = Script.FromBytesUnsafe(witScript.GetUnsafePush(witScript.PushCount - 1));
+                    Script subscript = Script.FromBytesUnsafe(witness.GetUnsafePush(witness.PushCount - 1));
                     return subscript.GetSigOpCount(true);
                 }
             }
 
-            // Future flags may be implemented here.
             return 0;
         }
 
@@ -564,8 +545,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             Block block = context.BlockValidationContext.Block;
 
-            bool mutated = false;
-            uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, ref mutated);
+            bool mutated;
+            uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, out mutated);
             if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
             {
                 this.logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
@@ -589,7 +570,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) ||
-                (this.GetSize(block, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
+                (this.GetSize(block, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -676,7 +657,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(transaction, TransactionOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            if (this.GetSize(transaction, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
@@ -763,7 +744,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Block weight.</returns>
         public long GetBlockWeight(Block block)
         {
-            return this.GetSize(block, TransactionOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, TransactionOptions.Witness);
+            return this.GetSize(block, NetworkOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, NetworkOptions.Witness);
         }
 
         /// <summary>
@@ -772,7 +753,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        private int GetSize(IBitcoinSerializable data, TransactionOptions options)
+        private int GetSize(IBitcoinSerializable data, NetworkOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
@@ -797,68 +778,51 @@ namespace Stratis.Bitcoin.Features.Consensus
             return true;
         }
 
+
         /// <summary>
         /// Calculates merkle root for witness data.
         /// </summary>
         /// <param name="block">Block which transactions witness data is used for calculation.</param>
-        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise <c>false</c>.</param>
+        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
-        private uint256 BlockWitnessMerkleRoot(Block block, ref bool mutated)
+        public uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>();
             leaves.Add(uint256.Zero); // The witness hash of the coinbase is 0.
             foreach (Transaction tx in block.Transactions.Skip(1))
                 leaves.Add(tx.GetWitHash());
 
-            return this.ComputeMerkleRoot(leaves, ref mutated);
+            return this.ComputeMerkleRoot(leaves, out mutated);
         }
 
         /// <summary>
-        /// Calculates merkle root for block's transactions.
+        /// Calculates merkle root for block's trasnactions.
         /// </summary>
         /// <param name="block">Block which transactions are used for calculation.</param>
-        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise <c>false</c>.</param>
+        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
-        private uint256 BlockMerkleRoot(Block block, ref bool mutated)
+        public uint256 BlockMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>(block.Transactions.Count);
             foreach (Transaction tx in block.Transactions)
                 leaves.Add(tx.GetHash());
 
-            return this.ComputeMerkleRoot(leaves, ref mutated);
-        }
-
-        private uint256 ComputeMerkleRoot(List<uint256> leaves, ref bool mutated)
-        {
-            uint256 hash = null;
-            this.MerkleComputation(leaves, ref hash, ref mutated, -1, null);
-            return hash;
+            return this.ComputeMerkleRoot(leaves, out mutated);
         }
 
         /// <summary>
         /// Computes merkle root.
         /// </summary>
+        /// <remarks>This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.</remarks>
         /// <param name="leaves">Merkle tree leaves.</param>
-        /// <param name="root">Merkle root.</param>
-        /// <param name="pmutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise <c>false</c>.</param>
-        /// <param name="pbranch">Previously generated merkle tree branch.</param>
-        /// <param name="branchpos">Branch position.</param>
-        /// <remarks>
-        /// This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.
-        /// </remarks>
-        private void MerkleComputation(List<uint256> leaves, ref uint256 root, ref bool pmutated, int branchpos, List<uint256> pbranch)
+        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
+        public uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
-            if (pbranch != null)
-                pbranch.Clear();
+            var branch = new List<uint256>();
 
+            mutated = false;
             if (leaves.Count == 0)
-            {
-                pmutated = false;
-                root = uint256.Zero;
-                return;
-            }
-
-            bool mutated = false;
+                return uint256.Zero;
 
             // count is the number of leaves processed so far.
             uint count = 0;
@@ -880,7 +844,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             while (count < leaves.Count)
             {
                 uint256 h = leaves[(int)count];
-                bool matchh = count == branchpos;
+                bool match = false;
                 count++;
                 int level;
 
@@ -889,19 +853,20 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // current leaf, and each needs a hash to combine it.
                 for (level = 0; (count & (((uint)1) << level)) == 0; level++)
                 {
-                    if (pbranch != null)
+                    if (branch != null)
                     {
-                        if (matchh)
+                        if (match)
                         {
-                            pbranch.Add(inner[level]);
+                            branch.Add(inner[level]);
                         }
                         else if (matchLevel == level)
                         {
-                            pbranch.Add(h);
-                            matchh = true;
+                            branch.Add(h);
+                            match = true;
                         }
                     }
-                    mutated |= (inner[level] == h);
+                    if (!mutated)
+                        mutated = inner[level] == h;
                     var hash = new byte[64];
                     Buffer.BlockCopy(inner[level].ToBytes(), 0, hash, 0, 32);
                     Buffer.BlockCopy(h.ToBytes(), 0, hash, 32, 32);
@@ -910,67 +875,67 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Store the resulting hash at inner position level.
                 inner[level] = h;
-                if (matchh)
+                if (match)
                     matchLevel = level;
             }
 
-            // Do a final 'sweep' over the rightmost branch of the tree to process
-            // odd levels, and reduce everything to a single top value.
-            // Level is the level (counted from the bottom) up to which we've sweeped.
-            int levell = 0;
+            uint256 root;
 
-            // As long as bit number level in count is zero, skip it. It means there
-            // is nothing left at this level.
-            while ((count & (((uint)1) << levell)) == 0)
-                levell++;
-
-            uint256 hh = inner[levell];
-            bool matchhh = matchLevel == levell;
-            while (count != (((uint)1) << levell))
             {
-                // If we reach this point, h is an inner value that is not the top.
-                // We combine it with itself (Bitcoin's special rule for odd levels in
-                // the tree) to produce a higher level one.
-                if (pbranch != null && matchhh)
-                    pbranch.Add(hh);
+                // Do a final 'sweep' over the rightmost branch of the tree to process
+                // odd levels, and reduce everything to a single top value.
+                // Level is the level (counted from the bottom) up to which we've sweeped.
+                int level = 0;
 
-                var hash = new byte[64];
-                Buffer.BlockCopy(hh.ToBytes(), 0, hash, 0, 32);
-                Buffer.BlockCopy(hh.ToBytes(), 0, hash, 32, 32);
-                hh = Hashes.Hash256(hash);
+                // As long as bit number level in count is zero, skip it. It means there
+                // is nothing left at this level.
+                while ((count & (((uint)1) << level)) == 0)
+                    level++;
 
-                // Increment count to the value it would have if two entries at this
-                // level had existed.
-                count += (((uint)1) << levell);
-                levell++;
-
-                // And propagate the result upwards accordingly.
-                while ((count & (((uint)1) << levell)) == 0)
+                root = inner[level];
+                bool match = matchLevel == level;
+                while (count != (((uint)1) << level))
                 {
-                    if (pbranch != null)
+                    // If we reach this point, h is an inner value that is not the top.
+                    // We combine it with itself (Bitcoin's special rule for odd levels in
+                    // the tree) to produce a higher level one.
+                    if (match)
+                        branch.Add(root);
+
+                    var hash = new byte[64];
+                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 0, 32);
+                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 32, 32);
+                    root = Hashes.Hash256(hash);
+
+                    // Increment count to the value it would have if two entries at this
+                    // level had existed.
+                    count += (((uint)1) << level);
+                    level++;
+
+                    // And propagate the result upwards accordingly.
+                    while ((count & (((uint)1) << level)) == 0)
                     {
-                        if (matchhh)
+                        if (match)
                         {
-                            pbranch.Add(inner[levell]);
+                            branch.Add(inner[level]);
                         }
-                        else if (matchLevel == levell)
+                        else if (matchLevel == level)
                         {
-                            pbranch.Add(hh);
-                            matchhh = true;
+                            branch.Add(root);
+                            match = true;
                         }
+
+                        var hashh = new byte[64];
+                        Buffer.BlockCopy(inner[level].ToBytes(), 0, hashh, 0, 32);
+                        Buffer.BlockCopy(root.ToBytes(), 0, hashh, 32, 32);
+                        root = Hashes.Hash256(hashh);
+
+                        level++;
                     }
-
-                    var hashh = new byte[64];
-                    Buffer.BlockCopy(inner[levell].ToBytes(), 0, hashh, 0, 32);
-                    Buffer.BlockCopy(hh.ToBytes(), 0, hashh, 32, 32);
-                    hh = Hashes.Hash256(hashh);
-
-                    levell++;
                 }
             }
-            // Return result.
-            pmutated = mutated;
-            root = hh;
+
+            return root;
         }
 
         /// <summary>

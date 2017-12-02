@@ -7,11 +7,11 @@ using Newtonsoft.Json;
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class KeyPathJsonConverter : JsonConverter
+    class KeyPathJsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {

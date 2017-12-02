@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
-        public override void Start()
+        public override void Initialize()
         {
             this.logger.LogTrace("()");
 
@@ -132,7 +132,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        public override void Stop()
+        /// <inheritdoc />
+        public override void Dispose()
         {
             this.logger.LogInformation("Stopping {0}...", this.name);
 

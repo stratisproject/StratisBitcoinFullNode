@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
             this.consensusLoop.StartAsync().GetAwaiter().GetResult();
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             // First, we need to wait for the consensus loop to finish.
             // Only then we can flush our coinview safely.

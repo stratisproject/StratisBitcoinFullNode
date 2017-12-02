@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
 
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.walletFeePolicy.Stop();
             this.asyncLoop.Dispose();

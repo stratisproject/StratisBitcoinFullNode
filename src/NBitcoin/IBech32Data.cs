@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public interface IBech32Data : IBitcoinString
-	{
-		Bech32Type Type
-		{
-			get;
-		}
-	}
+    public interface IBech32Data : IBitcoinString
+    {
+        Bech32Type Type
+        {
+            get;
+        }
+    }
 }
