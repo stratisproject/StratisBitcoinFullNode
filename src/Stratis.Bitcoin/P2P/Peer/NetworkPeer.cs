@@ -482,30 +482,36 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public MessageProducer<IncomingMessage> MessageProducer { get; private set; } = new MessageProducer<IncomingMessage>();
-        public NetworkPeerFiltersCollection Filters { get; private set; } = new NetworkPeerFiltersCollection();
+        /// <summary>Queue of incoming messages distributed to message consumers.</summary>
+        public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
 
-        /// <summary>Send addr unsollicited message of the AddressFrom peer when passing to Handshaked state.</summary>
+        /// <summary>List of filters to be notified before a message is sent or received.</summary>
+        public NetworkPeerFiltersCollection Filters { get; private set; }
+
+        /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
         public bool Advertize { get; set; }
 
+        /// <summary>Node's version message payload that is sent to the peer.</summary>
         public VersionPayload MyVersion { get; private set; }
 
+        /// <summary>Version message payload received from the peer.</summary>
         public VersionPayload PeerVersion { get; private set; }
 
+        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary>
         private int disconnecting;
 
         /// <summary>Transaction options we would like.</summary>
-        public NetworkOptions PreferredTransactionOptions { get; private set; } = NetworkOptions.All;
+        private NetworkOptions preferredTransactionOptions;
 
         /// <summary>Transaction options supported by the peer.</summary>
-        public NetworkOptions SupportedTransactionOptions { get; private set; } = NetworkOptions.None;
+        public NetworkOptions SupportedTransactionOptions { get; private set; }
 
         /// <summary>Transaction options we prefer and which is also supported by peer.</summary>
-        public NetworkOptions ActualTransactionOptions
+        private NetworkOptions actualTransactionOptions
         {
             get
             {
-                return this.PreferredTransactionOptions & this.SupportedTransactionOptions;
+                return this.preferredTransactionOptions & this.SupportedTransactionOptions;
             }
         }
 
@@ -515,8 +521,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
+        /// <summary>Event handler that is triggered on network peer disconnection.</summary>
         public event NetworkPeerStateChangedEventHandler StateChanged;
+
+        /// <summary>Event handler that is triggered when a new message is received from a network peer.</summary>
         public event NetworkPeerMessageReceivedEventHandler MessageReceived;
+        
+        /// <summary>Event handler that is triggered when the network state of a peer was changed.</summary>
         public event NetworkPeerDisconnectedEventHandler Disconnected;
 
         /// <summary>
@@ -548,6 +559,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peerAddress.Endpoint}] ");
             this.dateTimeProvider = dateTimeProvider;
+
+            this.MessageProducer = new MessageProducer<IncomingMessage>();
+            this.Filters = new NetworkPeerFiltersCollection();
+
+            this.preferredTransactionOptions = NetworkOptions.All;
+            this.SupportedTransactionOptions = NetworkOptions.None;
 
             this.Inbound = inbound;
             this.LastSeen = peerAddress.Time.UtcDateTime;
@@ -837,7 +854,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("()");
 
             this.Advertize = parameters.Advertize;
-            this.PreferredTransactionOptions = parameters.PreferredTransactionOptions;
+            this.preferredTransactionOptions = parameters.PreferredTransactionOptions;
 
             this.Behaviors.DelayAttach = true;
             foreach (INetworkPeerBehavior behavior in parameters.TemplateBehaviors)
@@ -1117,7 +1134,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Inventory type with options (MSG_TX | MSG_WITNESS_FLAG)</returns>
         public InventoryType AddSupportedOptions(InventoryType inventoryType)
         {
-            if ((this.ActualTransactionOptions & NetworkOptions.Witness) != 0)
+            if ((this.actualTransactionOptions & NetworkOptions.Witness) != 0)
                 inventoryType |= InventoryType.MSG_WITNESS_FLAG;
 
             return inventoryType;
