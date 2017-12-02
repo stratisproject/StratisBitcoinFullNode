@@ -512,14 +512,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>When a peer is disconnected this is set to human readable information about why it happened.</summary>
         public NetworkPeerDisconnectReason DisconnectReason { get; set; }
 
-        private Socket Socket
-        {
-            get
-            {
-                return this.Connection.Socket;
-            }
-        }
-
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
@@ -542,50 +534,119 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
         }
 
-        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        /// <summary>
+        /// Initializes parts of the object that are common for both inbound and outbound peers.
+        /// </summary>
+        /// <param name="inbound"><c>true</c> for inbound peers, <c>false</c> for outbound peers.</param>
+        /// <param name="peerAddress">Information about the peer including its network address, protocol version, time of last contact.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        private NetworkPeer(bool inbound, NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peerAddress.Endpoint}] ");
-
-            this.logger.LogTrace("()");
             this.dateTimeProvider = dateTimeProvider;
 
-            parameters = parameters ?? new NetworkPeerConnectionParameters();
-            this.Inbound = false;
-            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
-            this.Network = network;
-            this.PeerAddress = peerAddress;
+            this.Inbound = inbound;
             this.LastSeen = peerAddress.Time.UtcDateTime;
+            this.PeerAddress = peerAddress;
+            this.Network = network;
+            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+
+            parameters = parameters ?? new NetworkPeerConnectionParameters();
+            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object for outbound network peers.
+        /// </summary>
+        /// <param name="peerAddress">Information about the peer including its network address, protocol version, time of last contact.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
+        {
+            this.logger.LogTrace("()");
 
             var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-
-            this.Connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
-
             socket.ReceiveBufferSize = parameters.ReceiveBufferSize;
             socket.SendBufferSize = parameters.SendBufferSize;
+
+            this.Connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
+            this.Connect(parameters.ConnectCancellation);
+
+            this.InitDefaultBehaviors(parameters);
+            this.Connection.BeginListen();
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object for inbound network peers with already established connection.
+        /// </summary>
+        /// <param name="peerAddress">Information about the peer including its network address, protocol version, time of last contact.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
+        /// <param name="socket">Socket of already established connection with the peer.</param>
+        /// <param name="peerVersion">Version message payload received from the peer.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, Socket socket, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
+        {
+            this.logger.LogTrace("()");
+
+            this.RemoteSocketEndpoint = ((IPEndPoint)socket.RemoteEndPoint);
+            this.RemoteSocketAddress = ((IPEndPoint)socket.RemoteEndPoint).Address;
+            this.RemoteSocketPort = ((IPEndPoint)socket.RemoteEndPoint).Port;
+
+            this.PeerVersion = peerVersion;
+            this.Connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
+            this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
+
+            this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
+            this.State = NetworkPeerState.Connected;
+
+            this.InitDefaultBehaviors(parameters);
+            this.Connection.BeginListen();
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Connects the node to an outbound peer using already initialized information about the peer.
+        /// </summary>
+        /// <param name="cancellation">Cancellation that allows aborting establishing the connection with the peer.</param>
+        private void Connect(CancellationToken cancellation)
+        {
+            this.logger.LogTrace("()");
+
             try
             {
                 using (var completedEvent = new ManualResetEvent(false))
                 {
-                    using (var nodeSocketEventManager = NodeSocketEventManager.Create(completedEvent, peerAddress.Endpoint))
+                    using (var nodeSocketEventManager = NodeSocketEventManager.Create(completedEvent, this.PeerAddress.Endpoint))
                     {
-                        this.logger.LogTrace("Connecting to '{0}'.", peerAddress.Endpoint);
+                        this.logger.LogTrace("Connecting to '{0}'.", this.PeerAddress.Endpoint);
 
                         // If the socket connected straight away (synchronously) unblock all threads.
-                        if (!socket.ConnectAsync(nodeSocketEventManager.SocketEvent))
+                        if (!this.Connection.Socket.ConnectAsync(nodeSocketEventManager.SocketEvent))
                             completedEvent.Set();
 
                         // Otherwise wait for the socket connection to complete OR if the operation got cancelled.
-                        WaitHandle.WaitAny(new WaitHandle[] { completedEvent, parameters.ConnectCancellation.WaitHandle });
+                        WaitHandle.WaitAny(new WaitHandle[] { completedEvent, cancellation.WaitHandle });
 
-                        parameters.ConnectCancellation.ThrowIfCancellationRequested();
+                        cancellation.ThrowIfCancellationRequested();
 
                         if (nodeSocketEventManager.SocketEvent.SocketError != SocketError.Success)
                             throw new SocketException((int)nodeSocketEventManager.SocketEvent.SocketError);
 
-                        var remoteEndpoint = (IPEndPoint)(socket.RemoteEndPoint ?? nodeSocketEventManager.SocketEvent.RemoteEndPoint);
+                        var remoteEndpoint = (IPEndPoint)(this.Connection.Socket.RemoteEndPoint ?? nodeSocketEventManager.SocketEvent.RemoteEndPoint);
                         this.RemoteSocketEndpoint = remoteEndpoint;
                         this.RemoteSocketAddress = remoteEndpoint.Address;
                         this.RemoteSocketPort = remoteEndpoint.Port;
@@ -593,22 +654,23 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.State = NetworkPeerState.Connected;
                         this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
-                        this.logger.LogTrace("Outbound connection to '{0}' established.", peerAddress.Endpoint);
+                        this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerAddress.Endpoint);
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                this.logger.LogTrace("Connection to '{0}' cancelled.", peerAddress.Endpoint);
-                Utils.SafeCloseSocket(socket);
+                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerAddress.Endpoint);
+                Utils.SafeCloseSocket(this.Connection.Socket);
                 this.State = NetworkPeerState.Offline;
 
+                this.logger.LogTrace("(-)[CANCELLED]");
                 throw;
             }
             catch (Exception ex)
             {
                 this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                Utils.SafeCloseSocket(socket);
+                Utils.SafeCloseSocket(this.Connection.Socket);
                 this.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
                     Reason = "Unexpected exception while connecting to socket",
@@ -617,43 +679,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.State = NetworkPeerState.Failed;
 
+                this.logger.LogTrace("(-)[EXCEPTION]");
                 throw;
             }
-
-            this.InitDefaultBehaviors(parameters);
-            this.Connection.BeginListen();
-
-            this.logger.LogTrace("(-)");
-        }
-
-        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, Socket socket, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-        {
-            this.RemoteSocketEndpoint = ((IPEndPoint)socket.RemoteEndPoint);
-            this.RemoteSocketAddress = ((IPEndPoint)socket.RemoteEndPoint).Address;
-            this.RemoteSocketPort = ((IPEndPoint)socket.RemoteEndPoint).Port;
-
-            this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.RemoteSocketEndpoint}] ");
-
-            this.logger.LogTrace("()");
-
-            this.dateTimeProvider = dateTimeProvider;
-
-            this.Inbound = true;
-            this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
-            this.Network = network;
-            this.PeerAddress = peerAddress;
-            this.Connection = new NetworkPeerConnection(this, socket, this.dateTimeProvider, this.loggerFactory);
-            this.PeerVersion = peerVersion;
-            this.LastSeen = peerAddress.Time.UtcDateTime;
-            this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
-
-            this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
-            this.State = NetworkPeerState.Connected;
-
-            this.InitDefaultBehaviors(parameters);
-            this.Connection.BeginListen();
 
             this.logger.LogTrace("(-)");
         }
