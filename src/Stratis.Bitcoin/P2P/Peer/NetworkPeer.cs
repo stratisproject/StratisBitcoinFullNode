@@ -122,6 +122,15 @@ namespace Stratis.Bitcoin.P2P.Peer
     {
         /// <summary>Payload of the sent message.</summary>
         public Payload Payload;
+
+        /// <summary>
+        /// Completion of the send message task. 
+        /// </summary>
+        /// <remarks>
+        /// The result of the operation is set to <c>true</c> when the message is successful sent to the peer.
+        /// It is never set to <c>false</c>, it can only fail if the peer is disconnected, in which case an exception is set on the completion.
+        /// </remarks>
+        public TaskCompletionSource<bool> Completion;
     }
 
     /// <summary>
@@ -232,6 +241,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                     if (socketEventManager.SocketEvent.SocketError != SocketError.Success)
                                         throw new SocketException((int)socketEventManager.SocketEvent.SocketError);
 
+                                    processing.Completion.SetResult(true);
                                     processing = null;
                                 }
                             }
@@ -254,6 +264,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 foreach (SentMessage pending in this.Messages)
                 {
                     this.logger.LogTrace("Connection terminated before message '{0}' could be sent.", pending.Payload?.Command);
+                    pending.Completion.SetException(new OperationCanceledException("The peer has been disconnected"));
                 }
 
                 this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
@@ -913,13 +924,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                 completion.SetException(new OperationCanceledException("The peer has been disconnected"));
                 return completion.Task;
             }
-
+            
             var activity = Guid.NewGuid();
             Action final = () =>
             {
                 this.Connection.Messages.Add(new SentMessage()
                 {
                     Payload = payload,
+                    Completion = completion
                 });
             };
 
