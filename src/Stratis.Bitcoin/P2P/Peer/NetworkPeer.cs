@@ -703,6 +703,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Calls event handlers when the network state of the peer is changed.
+        /// </summary>
+        /// <param name="previous">Previous network state of the peer.</param>
         private void OnStateChanged(NetworkPeerState previous)
         {
             this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
@@ -726,6 +730,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Calls event handlers when a new message is received from the peer.
+        /// </summary>
+        /// <param name="message">Message that was received.</param>
         public void OnMessageReceived(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
@@ -776,6 +784,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Calls a registered action when a message is being sent to the peer.
+        /// </summary>
+        /// <param name="payload">Payload of the message being sent.</param>
+        /// <param name="final">Action to call.</param>
         private void OnSendingMessage(Payload payload, Action final)
         {
             this.logger.LogTrace("({0}:{1})", nameof(payload), payload);
@@ -786,6 +799,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Calls filters when a message is being sent to the peer.
+        /// </summary>
+        /// <param name="enumerator">Enumerator of sending message filters to call.</param>
+        /// <param name="payload">Payload of the message being sent.</param>
         private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, Payload payload)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
@@ -806,6 +824,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Calls filters when a new message is received from the peer.
+        /// </summary>
+        /// <param name="enumerator">Enumarator of received message filters to call.</param>
+        /// <param name="message">Message that was received.</param>
         private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message);
@@ -826,6 +849,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Calls event handlers when the peer is disconnected from the node.
+        /// </summary>
         private void OnDisconnected()
         {
             this.logger.LogTrace("()");
@@ -849,6 +875,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Initializes behaviors from the default template.
+        /// </summary>
+        /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, including the default behaviors template.</param>
         private void InitDefaultBehaviors(NetworkPeerConnectionParameters parameters)
         {
             this.logger.LogTrace("()");
@@ -871,7 +901,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Send a message to the peer asynchronously.
         /// </summary>
         /// <param name="payload">The payload to send.</param>
-        /// <param name="System.OperationCanceledException">The node has been disconnected.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected.</param>
         public Task SendMessageAsync(Payload payload)
         {
             Guard.NotNull(payload, nameof(payload));
@@ -903,8 +933,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Send a message to the peer synchronously.
         /// </summary>
         /// <param name="payload">The payload to send.</param>
-        /// <exception cref="System.ArgumentNullException">Payload is null.</exception>
-        /// <param name="System.OperationCanceledException">The node has been disconnected, or the cancellation token has been set to canceled.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
         public void SendMessage(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
@@ -922,6 +951,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Waits for a message of specific type to be received from the peer.
+        /// </summary>
+        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
+        /// <param name="timeout">How long to wait for the message.</param>
+        /// <returns>Received message.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the wait timed out.</exception>
         public TPayload ReceiveMessage<TPayload>(TimeSpan timeout) where TPayload : Payload
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(timeout), timeout);
@@ -936,6 +972,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <summary>
+        /// Waits for a message of specific type to be received from the peer.
+        /// </summary>
+        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
+        /// <param name="cancellationToken">Cancellation that allows aborting the operation.</param>
+        /// <returns>Received message.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the cancellation token was cancelled.</exception>
         public TPayload ReceiveMessage<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
         {
             this.logger.LogTrace("()");
@@ -950,15 +993,24 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         }
 
+        /// <summary>
+        /// Exchanges "version" and "verack" messages with the peer.
+        /// <para>Both parties have to send their "version" messages to the other party 
+        /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         public void VersionHandshake(CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.logger.LogTrace("()");
-
             this.VersionHandshake(null, cancellationToken);
-
-            this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Exchanges "version" and "verack" messages with the peer.
+        /// <para>Both parties have to send their "version" messages to the other party 
+        /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
+        /// </summary>
+        /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>
+        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         public void VersionHandshake(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
@@ -1015,13 +1067,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
+        /// Sends "version" message to the peer and waits for the response in form of "verack" or "reject" message.
         /// </summary>
-        /// <param name="cancellation"></param>
+        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         public void RespondToHandShake(CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
-            using (NetworkPeerListener list = CreateListener().Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
+            using (NetworkPeerListener list = this.CreateListener().Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
             {
                 this.logger.LogTrace("Responding to handshake.");
                 this.SendMessageAsync(this.MyVersion);
@@ -1042,8 +1095,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Disconnects the node and checks the listener thread.
+        /// Disconnects the peer and cleans up.
         /// </summary>
+        /// <param name="reason">Human readable reason for disconnecting.</param>
         public void Disconnect(string reason = null)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
@@ -1054,7 +1108,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            this.DisconnectNode(reason, null);
+            this.DisconnectInternal(reason, null);
 
             try
             {
@@ -1069,9 +1123,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Disconnects the node without checking the listener thread.
+        /// Disconnects the peer and cleans up.
         /// </summary>
-        public void DisconnectAsync(string reason = null, Exception exception = null)
+        /// <param name="reason">Human readable reason for disconnecting.</param>
+        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
+        public void DisconnectWithException(string reason = null, Exception exception = null)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
 
@@ -1081,13 +1137,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            this.DisconnectNode(reason, exception);
+            this.DisconnectInternal(reason, exception);
             this.Connection.CleanUp();
 
             this.logger.LogTrace("(-)");
         }
 
-        private void DisconnectNode(string reason = null, Exception exception = null)
+        /// <summary>
+        /// Disconnects the peer and cleans up.
+        /// </summary>
+        /// <param name="reason">Human readable reason for disconnecting.</param>
+        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
+        private void DisconnectInternal(string reason = null, Exception exception = null)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
 
@@ -1112,26 +1173,26 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return string.Format("{0} ({1})", this.State, this.PeerAddress.Endpoint);
         }
 
         /// <summary>
-        /// Create a listener that will queue messages until disposed.
+        /// Create a listener that will queue messages received from the peer until it is disposed.
         /// </summary>
         /// <returns>The listener.</returns>
-        /// <exception cref="System.InvalidOperationException">Thrown if used on the listener's thread, as it would result in a deadlock.</exception>
         public NetworkPeerListener CreateListener()
         {
             return new NetworkPeerListener(this);
         }
 
         /// <summary>
-        /// Add supported option to the input inventory type
+        /// Add supported option to the inventory type.
         /// </summary>
-        /// <param name="inventoryType">Inventory type (like MSG_TX)</param>
-        /// <returns>Inventory type with options (MSG_TX | MSG_WITNESS_FLAG)</returns>
+        /// <param name="inventoryType">Inventory type to extend.</param>
+        /// <returns>Inventory type possibly extended with new options.</returns>
         public InventoryType AddSupportedOptions(InventoryType inventoryType)
         {
             if ((this.actualTransactionOptions & NetworkOptions.Witness) != 0)
@@ -1143,7 +1204,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public void Dispose()
         {
-            Disconnect("Node disposed");
+            this.Disconnect("Node disposed");
         }
     }
 }
