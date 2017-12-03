@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -53,8 +53,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <summary>Network socket that the server listens on and accept new connections with.</summary>
-        private Socket socket;
+        /// <summary>TCP server listener accepting inbound connections.</summary>
+        private TcpListener tcpListener;
 
         /// <summary>Queue of incoming messages distributed to message consumers.</summary>
         private readonly MessageProducer<IncomingMessage> messageProducer = new MessageProducer<IncomingMessage>();
@@ -78,7 +78,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerCollection ConnectedNetworkPeers { get; private set; }
 
         /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
-        private CancellationTokenSource serverCancel = new CancellationTokenSource();
+        private readonly CancellationTokenSource serverCancel;
+
+        /// <summary>Number of unfinished tasks that we need to wait for before we consider shutdown of the object completed.</summary>
+        private volatile int unfinishedTasks;
 
         /// <summary>Nonce for server's version payload.</summary>
         private ulong nonce;
@@ -126,6 +129,11 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.localEndpoint = new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), internalPort);
 
+            this.tcpListener = new TcpListener(this.LocalEndpoint);
+            this.tcpListener.Server.LingerState = new LingerOption(true, 0);
+            this.tcpListener.Server.NoDelay = true;
+            this.tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+
             this.MaxConnections = 125;
             this.Network = network;
             this.externalEndpoint = new IPEndPoint(this.localEndpoint.Address, this.Network.DefaultPort);
@@ -138,6 +146,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ConnectedNetworkPeers = new NetworkPeerCollection();
             this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(this.listener);
 
+            this.serverCancel = new CancellationTokenSource();
+
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
 
             this.logger.LogTrace("(-)");
@@ -147,30 +157,19 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Starts listening on the server's initialialized endpoint.
         /// </summary>
         /// <param name="maxIncoming">Maximal number of newly connected clients waiting to be accepted.</param>
-        public void Listen(int maxIncoming = 8)
+        public void Listen(int maxIncoming = 20)
         {
             this.logger.LogTrace("({0}:{1})", nameof(maxIncoming), maxIncoming);
 
-            if (this.socket != null)
-            {
-                this.logger.LogTrace("(-)[ALREADY_LISTENING]");
-                throw new InvalidOperationException("Already listening");
-            }
-
             try
             {
-                this.socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-                this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-
-                this.socket.Bind(this.LocalEndpoint);
-                this.socket.Listen(maxIncoming);
-
-                this.logger.LogTrace("Listening started.");
-                this.BeginAccept();
+                this.tcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                this.tcpListener.Start();
+                this.AcceptClientsAsync();
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                this.logger.LogTrace("Exception occurred: {0}", e.ToString());
                 throw;
             }
 
@@ -178,63 +177,57 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Starts accepting connections from newly connected clients.
+        /// Implements loop accepting connections from newly connected clients.
         /// </summary>
-        private void BeginAccept()
+        private async void AcceptClientsAsync()
         {
             this.logger.LogTrace("()");
-
-            if (this.serverCancel.IsCancellationRequested)
-            {
-                this.logger.LogTrace("Stop accepting connection.");
-                return;
-            }
 
             this.logger.LogTrace("Accepting incoming connections.");
 
-            var args = new SocketAsyncEventArgs();
-            args.Completed += Accept_Completed;
-            if (!this.socket.AcceptAsync(args))
-                this.EndAccept(args);
+            while (!this.serverCancel.IsCancellationRequested)
+            {
+                try
+                {
+                    int taskCount = Interlocked.Increment(ref this.unfinishedTasks);
+                    this.logger.LogTrace("Starting accepting task, there are {0} unfinished tasks now.", taskCount);
 
+                    Socket client = await Task.Run(() => this.tcpListener.AcceptSocketAsync(), this.serverCancel.Token);
+
+                    taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
+
+                    this.logger.LogTrace("Connection accepted from client '{0}', there are {1} unfinished tasks now.", client.RemoteEndPoint, taskCount);
+                    Task unused = Task.Run(() => this.ProcessNewClient(client));
+                }
+                catch (Exception e)
+                {
+                    if (e is OperationCanceledException) this.logger.LogDebug("Shutdown detected, stop accepting connections.");
+                    else this.logger.LogDebug("Exception occurred: {0}");
+
+                    int taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
+                    this.logger.LogTrace("Accepting task aborted or failed, there are {0} unfinished tasks now.", taskCount);
+
+                    break;
+                }
+            }
+            
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Callback that is called when a new connection is accepted.
+        /// Handles a newly accepted client's connection.
         /// </summary>
-        /// <inheritdoc/>
-        private void Accept_Completed(object sender, SocketAsyncEventArgs e)
+        /// <param name="client">New client connection's socket.</param>
+        private void ProcessNewClient(Socket client)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(client), client.RemoteEndPoint);
 
-            this.EndAccept(e);
+            EndPoint clientEndPoint = client.RemoteEndPoint;
+            int taskCount = Interlocked.Increment(ref this.unfinishedTasks);
+            this.logger.LogTrace("Processing new client '{0}', there are {1} unfinished tasks now.", clientEndPoint, taskCount);
 
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Handles a completed accept connection event and starts accepting again.
-        /// </summary>
-        /// <param name="args">Information about the accept connection event.</param>
-        private void EndAccept(SocketAsyncEventArgs args)
-        {
-            this.logger.LogTrace("()");
-
-            Socket client = null;
             try
             {
-                if (args.SocketError != SocketError.Success)
-                    throw new SocketException((int)args.SocketError);
-
-                client = args.AcceptSocket;
-                if (this.serverCancel.IsCancellationRequested)
-                {
-                    this.logger.LogTrace("(-)[CANCELLED]");
-                    return;
-                }
-
-                this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
                 using (var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
                 {
                     cancel.CancelAfter(TimeSpan.FromSeconds(10));
@@ -261,7 +254,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                         });
 
                         if (message.Payload is VersionPayload)
+                        {
+                            this.logger.LogTrace("Connection with client '{0}' successfully initiated.", client.RemoteEndPoint);
                             break;
+                        }
 
                         this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
                     }
@@ -291,7 +287,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            this.BeginAccept();
+            taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
+            this.logger.LogTrace("Processing of new client '{0}' is complete, there are {1} unfinished tasks now.", clientEndPoint, taskCount);
 
             this.logger.LogTrace("(-)");
         }
@@ -416,26 +413,25 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            if (!this.serverCancel.IsCancellationRequested)
+            this.serverCancel.Cancel();
+
+            this.logger.LogTrace("Stopping network peer server.");
+            this.listener.Dispose();
+
+            try
             {
-                this.serverCancel.Cancel();
-
-                this.logger.LogTrace("Stopping network peer server.");
-                this.listener.Dispose();
-
-                try
-                {
-                    this.ConnectedNetworkPeers.DisconnectAll();
-                }
-                finally
-                {
-                    if (this.socket != null)
-                    {
-                        Utils.SafeCloseSocket(this.socket);
-                        this.socket = null;
-                    }
-                }
+                this.ConnectedNetworkPeers.DisconnectAll();
             }
+            catch (Exception e)
+            {
+                this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+            }
+
+            this.tcpListener.Stop();
+
+            this.logger.LogTrace("Waiting for {0} unfinished tasks to complete.", this.unfinishedTasks);
+            while (this.unfinishedTasks > 0)
+                Thread.Sleep(100);
 
             this.logger.LogTrace("(-)");
         }
