@@ -744,7 +744,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var peer = this.CreateNetworkPeerClient())
             {
                 peer.VersionHandshake();
-                peer.SendMessageAsync(new InventoryPayload(transaction));
+                peer.SendMessageAsync(new InvPayload(transaction));
                 peer.SendMessageAsync(new TxPayload(transaction));
                 this.PingPong(peer);
             }
@@ -1108,7 +1108,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Block lastSent = null;
             foreach (var block in blocks)
             {
-                peer.SendMessageAsync(new InventoryPayload(block));
+                peer.SendMessageAsync(new InvPayload(block));
                 peer.SendMessageAsync(new BlockPayload(block));
                 lastSent = block;
             }

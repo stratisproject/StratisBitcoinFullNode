@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Broadcasting
         {
             this.AddOrUpdate(transaction, State.ToBroadcast);
 
-            var invPayload = new InventoryPayload(transaction);
+            var invPayload = new InvPayload(transaction);
 
             var propagateTo = skipHalfOfThePeers
                 ? this.connectionManager.ConnectedNodes.AsEnumerable().Skip((int)Math.Ceiling(this.connectionManager.ConnectedNodes.Count() / 2.0))

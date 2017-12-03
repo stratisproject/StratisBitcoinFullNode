@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (node.IsConnected)
                 {
                     this.logger.LogTrace("Sending inventory message to peer '{0}'.", node.RemoteSocketEndpoint);
-                    await node.SendMessageAsync(new InventoryPayload(items));
+                    await node.SendMessageAsync(new InvPayload(items));
                 }
             }
 

@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Broadcasting
 
         /// <summary>
         /// Handler for processing node messages.
-        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InventoryPayload.
+        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Broadcasting
                 return Task.CompletedTask;
             }
 
-            if (message.Message.Payload is InventoryPayload invPayload)
+            if (message.Message.Payload is InvPayload invPayload)
             {
                 this.ProcessInvPayload(invPayload);
                 return Task.CompletedTask;
@@ -93,10 +93,10 @@ namespace Stratis.Bitcoin.Broadcasting
             return Task.CompletedTask;
         }
 
-        private void ProcessInvPayload(InventoryPayload inventoryPayload)
+        private void ProcessInvPayload(InvPayload invPayload)
         {
             // if node has tx we broadcasted
-            foreach (var inv in inventoryPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
+            foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
                 var txEntry = this.broadcastManager.GetTransaction(inv.Hash);
                 if (txEntry != null)

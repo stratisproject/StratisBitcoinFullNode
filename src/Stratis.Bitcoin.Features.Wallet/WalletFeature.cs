@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly BroadcastBehavior _broadcastBehavior;
+        private readonly BroadcastBehavior broadcastBehavior;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.signals = signals;
             this.chain = chain;
             this.connectionManager = connectionManager;
-            this._broadcastBehavior = broadcastBehavior;
+            this.broadcastBehavior = broadcastBehavior;
         }
 
         /// <inheritdoc />
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.Start();
             this.walletSyncManager.Start();
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(this._broadcastBehavior);
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcastBehavior);
         }
 
         /// <inheritdoc />
