@@ -122,6 +122,13 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
+
+            // TODO: Previously, this has been implemented using filters, which guaranteed 
+            // that ChainHeadersBehavior will be first to be notified about the message.
+            // This is no longer EXPLICITLY guaranteed with event approach, 
+            // and the order of notifications only depends on the order of component 
+            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior 
+            // is first to go again.
             this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
 
             this.logger.LogTrace("(-)");
