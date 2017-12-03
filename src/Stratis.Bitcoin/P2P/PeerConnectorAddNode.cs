@@ -54,15 +54,11 @@ namespace Stratis.Bitcoin.P2P
         {
             foreach (var endPoint in this.NodeSettings.ConnectionManager.AddNode)
             {
-                PeerAddress peer = this.peerAddressManager.FindPeer(endPoint.MapToIpv6());
-                if (peer == null)
-                    continue;
+                PeerAddress peerAddress = this.peerAddressManager.FindPeer(endPoint);
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
+                    return peerAddress.NetworkAddress;
 
-                // If the peer is already connected just continue.
-                if (this.IsPeerConnected(endPoint.MapToIpv6()))
-                    continue;
-
-                return peer.NetworkAddress;
+                continue;
             }
 
             return null;
