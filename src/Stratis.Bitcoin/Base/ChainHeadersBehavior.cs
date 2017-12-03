@@ -130,10 +130,9 @@ namespace Stratis.Bitcoin.Base
             // subscription. When we refactor the events, we should make sure ChainHeadersBehavior 
             // is first to go again.
             //
-            // However, the Intercept method that handled this before always allowed 
-            // the subsequent event notifications to be called, so it is probably not critical
-            // for this to be the first handler to go. But we would likely want to preserve that.
-            this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
+            // To guarantee that priority for ChainHeadersBehavior until events are refactored 
+            // we use special MessageReceivedPriority now instead of normal MessageReceived event.
+            this.AttachedPeer.MessageReceivedPriority += this.AttachedPeer_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -142,7 +141,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived -= this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.MessageReceivedPriority -= this.AttachedPeer_MessageReceived;
             this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
 
             this.logger.LogTrace("(-)");
