@@ -129,6 +129,10 @@ namespace Stratis.Bitcoin.Base
             // and the order of notifications only depends on the order of component 
             // subscription. When we refactor the events, we should make sure ChainHeadersBehavior 
             // is first to go again.
+            //
+            // However, the Intercept method that handled this before always allowed 
+            // the subsequent event notifications to be called, so it is probably not critical
+            // for this to be the first handler to go. But we would likely want to preserve that.
             this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
 
             this.logger.LogTrace("(-)");
