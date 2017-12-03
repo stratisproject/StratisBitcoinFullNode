@@ -528,12 +528,20 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
-        /// <summary>Event handler that is triggered on network peer disconnection.</summary>
+        /// <summary>Event that is triggered on network peer disconnection.</summary>
         public event NetworkPeerStateChangedEventHandler StateChanged;
 
-        /// <summary>Event handler that is triggered when a new message is received from a network peer.</summary>
+        /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
         public event NetworkPeerMessageReceivedEventHandler MessageReceived;
-        
+
+        /// <summary>
+        /// Event that is triggered when a new message is received from a network peer.
+        /// <para>This event is triggered before <see cref="MessageReceived"/>.</para>
+        /// </summary>
+        /// <seealso cref="Stratis.Bitcoin.Base.ChainHeadersBehavior.AttachCore"/>
+        /// <remarks>TODO: Remove this once the events are refactored.</remarks>
+        public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
+
         /// <summary>Event handler that is triggered when the network state of a peer was changed.</summary>
         public event NetworkPeerDisconnectedEventHandler Disconnected;
 
@@ -765,6 +773,22 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.SupportedTransactionOptions |= NetworkOptions.Witness;
 
             this.MessageProducer.PushMessage(message);
+            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = MessageReceivedPriority;
+            if (messageReceivedPriority != null)
+            {
+                foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
+                {
+                    try
+                    {
+                        handler.DynamicInvoke(this, message);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    }
+                }
+            }
+
             NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
             if (messageReceived != null)
             {
@@ -780,6 +804,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                 }
             }
+
 
             this.logger.LogTrace("(-)");
         }

@@ -129,7 +129,10 @@ namespace Stratis.Bitcoin.Base
             // and the order of notifications only depends on the order of component 
             // subscription. When we refactor the events, we should make sure ChainHeadersBehavior 
             // is first to go again.
-            this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
+            //
+            // To guarantee that priority for ChainHeadersBehavior until events are refactored 
+            // we use special MessageReceivedPriority now instead of normal MessageReceived event.
+            this.AttachedPeer.MessageReceivedPriority += this.AttachedPeer_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -138,7 +141,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived -= this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.MessageReceivedPriority -= this.AttachedPeer_MessageReceived;
             this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
 
             this.logger.LogTrace("(-)");
