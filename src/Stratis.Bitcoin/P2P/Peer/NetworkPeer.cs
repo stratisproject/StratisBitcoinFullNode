@@ -774,8 +774,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.MessageProducer.PushMessage(message);
             NetworkPeerMessageReceivedEventHandler messageReceivedPriority = MessageReceivedPriority;
-            NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
-            if ((messageReceivedPriority != null) || (messageReceived != null))
+            if (messageReceivedPriority != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
                 {
@@ -788,7 +787,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
                     }
                 }
+            }
 
+            NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
+            if ((messageReceived != null))
+            {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
                 {
                     try
@@ -801,6 +804,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                 }
             }
+
 
             this.logger.LogTrace("(-)");
         }
