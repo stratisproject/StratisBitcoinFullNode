@@ -790,7 +790,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
-            if ((messageReceived != null))
+            if (messageReceived != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
                 {
