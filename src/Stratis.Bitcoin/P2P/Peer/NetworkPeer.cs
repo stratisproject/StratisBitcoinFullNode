@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Human readable reason for disconnecting.</summary>
         public string Reason { get; set; }
 
-        /// <summary>Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</summary>
+        /// <summary>Exception because of which the disconnection happened, or <c>null</c> if there were no exceptions.</summary>
         public Exception Exception { get; set; }
     }
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of network services that the peer must provide.</summary>
         public NetworkPeerServices RequiredServices { get; set; }
 
-        /// <summary><c>true</c> to require the peer to support SPV, <c>false</c> otherwise..</summary>
+        /// <summary><c>true</c> to require the peer to support SPV, <c>false</c> otherwise.</summary>
         public bool SupportSPV { get; set; }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// <param name="oldState">Previous network state of the peer.</param>
     public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
 
-    /// <summary>Information to a message that the node sent to a peer.</summary>
+    /// <summary>Information about a message that the node sent to a peer.</summary>
     public class SentMessage
     {
         /// <summary>Payload of the sent message.</summary>
@@ -127,14 +127,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Completion of the send message task. 
         /// </summary>
         /// <remarks>
-        /// The result of the operation is set to <c>true</c> when the message is successful sent to the peer.
+        /// The result of the operation is set to <c>true</c> when the message is successfully sent to the peer.
         /// It is never set to <c>false</c>, it can only fail if the peer is disconnected, in which case an exception is set on the completion.
         /// </remarks>
         public TaskCompletionSource<bool> Completion;
     }
 
     /// <summary>
-    /// Represents a network connection to a peer. It is responsible for reading incoming messages form the peer 
+    /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer 
     /// and sending messages from the node to the peer.
     /// </summary>
     public class NetworkPeerConnection
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        /// <param name="peer">Network peer the node is connection to.</param>
+        /// <param name="peer">Network peer the node is connected to.</param>
         /// <param name="socket">Connected network socket to the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
