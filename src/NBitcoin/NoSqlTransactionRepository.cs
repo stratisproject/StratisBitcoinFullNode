@@ -10,7 +10,7 @@ namespace NBitcoin
         {
             get
             {
-                return repository;
+                return this.repository;
             }
         }
 
@@ -29,7 +29,7 @@ namespace NBitcoin
 
         public Task<Transaction> GetAsync(uint256 txId)
         {
-            return repository.GetAsync<Transaction>(GetId(txId));
+            return this.repository.GetAsync<Transaction>(GetId(txId));
         }
 
         private string GetId(uint256 txId)
@@ -39,7 +39,7 @@ namespace NBitcoin
 
         public Task PutAsync(uint256 txId, Transaction tx)
         {
-            return repository.PutAsync(GetId(txId), tx);
+            return this.repository.PutAsync(GetId(txId), tx);
         }
 
         #endregion
