@@ -74,15 +74,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Checks if first <paramref name="lenght"/> entries are equal between two arrays.
+        /// Checks if first <paramref name="length"/> entries are equal between two arrays.
         /// </summary>
         /// <param name="a">First array.</param>
         /// <param name="b">Second array.</param>
-        /// <param name="lenght">Number of entries to be checked.</param>
-        /// <returns><c>true</c> if <paramref name="lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
-        private bool EqualsArray(byte[] a, byte[] b, int lenght)
+        /// <param name="length">Number of entries to be checked.</param>
+        /// <returns><c>true</c> if <paramref name="length"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
+        private bool EqualsArray(byte[] a, byte[] b, int length)
         {
-            for (int i = 0; i < lenght; i++)
+            for (int i = 0; i < length; i++)
             {
                 if (a[i] != b[i])
                     return false;
