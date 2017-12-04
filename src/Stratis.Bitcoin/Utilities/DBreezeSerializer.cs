@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Initializes custom serializers for DBreeze engine.
         /// </summary>
-        public void Initialize(NetworkOptions networkOptions = null)
+        public void Initialize(NetworkOptions networkOptions = null) // TODO: Make the NetworkOptions required
         {
             this.NetworkOptions = networkOptions;
             CustomSerializator.ByteArraySerializator = this.Serializer;
