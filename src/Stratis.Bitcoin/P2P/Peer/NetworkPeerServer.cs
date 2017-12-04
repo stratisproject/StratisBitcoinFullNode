@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if ((message.NetworkPeer != null) && connectedToSelf)
                 {
-                    message.NetworkPeer.DisconnectAsync();
+                    message.NetworkPeer.DisconnectWithException();
 
                     this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                     return;
@@ -334,6 +334,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if (message.NetworkPeer == null)
                 {
+                    this.logger.LogDebug("First message received from peer '{0}'.", version.AddressFrom);
+
                     IPEndPoint remoteEndpoint = version.AddressFrom;
                     if (!remoteEndpoint.Address.IsRoutable(this.AllowLocalPeers))
                     {
@@ -370,7 +372,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
 
-                            networkPeer.DisconnectAsync();
+                            networkPeer.DisconnectWithException();
 
                             this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                             throw;
@@ -379,7 +381,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
 
-                            networkPeer.DisconnectAsync();
+                            networkPeer.DisconnectWithException();
 
                             this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                             throw;

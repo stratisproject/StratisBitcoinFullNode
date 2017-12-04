@@ -30,10 +30,10 @@ namespace Stratis.Bitcoin.BlockPulling
     /// </remarks>
     public class QualityScore
     {
-        /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
+        /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const double MinScore = 1.0;
 
-        /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
+        /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const double MaxScore = 150.0;
 
         /// <summary>Instance logger.</summary>

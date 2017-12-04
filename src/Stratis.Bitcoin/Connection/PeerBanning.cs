@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Connection
                 if (!peerBehavior.Whitelisted)
                 {
                     this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason ?? "unknown");
-                    peer.DisconnectAsync($"The peer was banned, reason: {reason}");
+                    peer.DisconnectWithException($"The peer was banned, reason: {reason}");
                 }
                 else
                 {
