@@ -247,7 +247,9 @@ namespace Stratis.Bitcoin.P2P
             return tried;
         }
 
-        /// <summary>Return a random peer from a given set of peers.</summary>
+        /// <summary>
+        /// Return a random peer from a given set of peers.
+        /// </summary>
         public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
         {
             var chanceFactor = 1.0;
