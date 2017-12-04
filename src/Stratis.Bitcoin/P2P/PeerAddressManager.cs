@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// Return peers where they have have had connection attempts, successful or not.
+        /// Return peers where they have had connection attempts, successful or not.
         /// </summary>
         public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers, PeerIntroductionType peerIntroductionType)
         {
