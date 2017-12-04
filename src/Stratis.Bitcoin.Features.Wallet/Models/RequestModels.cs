@@ -139,6 +139,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
     public class SendTransactionRequest : RequestModel
     {
+        public SendTransactionRequest()
+        {
+        }
+
+        public SendTransactionRequest(string transactionHex)
+        {
+            this.Hex = transactionHex;
+        }
+
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
         public string Hex { get; set; }
     }
