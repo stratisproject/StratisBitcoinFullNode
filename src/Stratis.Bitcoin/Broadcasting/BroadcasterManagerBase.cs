@@ -41,21 +41,21 @@ namespace Stratis.Bitcoin.Broadcasting
 
         public void AddOrUpdate(Transaction transaction, State state)
         {
-            var newEntry = new TransactionBroadcastEntry(transaction, state);
-            TransactionBroadcastEntry oldEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
-            if (oldEntry == default(TransactionBroadcastEntry))
+            TransactionBroadcastEntry broadcastEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
+
+            if (broadcastEntry == null)
             {
-                this.Broadcasts.Add(newEntry);
-                this.OnTransactionStateChanged(newEntry);
+                broadcastEntry = new TransactionBroadcastEntry(transaction, state);
+                this.Broadcasts.Add(broadcastEntry);
+                this.OnTransactionStateChanged(broadcastEntry);
             }
             else
             {
-                if (oldEntry.State != state)
-                {
-                    this.Broadcasts.TryRemove(oldEntry);
-                    this.Broadcasts.Add(newEntry);
-                    this.OnTransactionStateChanged(newEntry);
-                }
+                var oldState = broadcastEntry.State;
+                broadcastEntry.State = state;
+
+                if (oldState != broadcastEntry.State)
+                    this.OnTransactionStateChanged(broadcastEntry);
             }
         }
 
