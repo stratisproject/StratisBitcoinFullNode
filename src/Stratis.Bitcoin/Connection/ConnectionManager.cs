@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Manager class that handle peers and their respective states.</summary>
+        /// <summary>Manager class that handles peers and their respective states.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
         /// <summary>Loop that discovers peers to connect to.</summary>
