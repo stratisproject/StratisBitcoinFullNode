@@ -353,7 +353,7 @@ namespace NBitcoin
         }
 
         NetworkOptions _TransactionSupportedOptions = NetworkOptions.All;
-        public NetworkOptions NetworkOptions
+        public NetworkOptions TransactionOptions
         {
             get
             {
@@ -384,7 +384,7 @@ namespace NBitcoin
 			if(stream == null)
 				throw new ArgumentNullException("stream");
 			ProtocolVersion = stream.ProtocolVersion;
-            NetworkOptions = stream.NetworkOptions.Clone();
+            TransactionOptions = stream.TransactionOptions.Clone();
 			IsBigEndian = stream.IsBigEndian;
 			MaxArraySize = stream.MaxArraySize;
 			Type = stream.Type;

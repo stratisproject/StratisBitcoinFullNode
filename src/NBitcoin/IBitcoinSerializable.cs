@@ -26,7 +26,7 @@ namespace NBitcoin
             serializable.ReadWrite(new BitcoinStream(stream, serializing)
             {
                 ProtocolVersion = version,
-                NetworkOptions = options
+                TransactionOptions = options
             });
 		}
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
@@ -39,7 +39,7 @@ namespace NBitcoin
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, NetworkOptions options)
 		{
 			var bms = new BitcoinStream(Stream.Null, true);
-			bms.NetworkOptions = options;
+			bms.TransactionOptions = options;
 			serializable.ReadWrite(bms);
 			return (int)bms.Counter.WrittenBytes;
 		}
@@ -72,7 +72,7 @@ namespace NBitcoin
             var bms = new BitcoinStream(bytes)
             {
                 ProtocolVersion = version,
-                NetworkOptions = options
+                TransactionOptions = options
             };
             serializable.ReadWrite(bms);
 		}
@@ -98,7 +98,7 @@ namespace NBitcoin
             var bms = new BitcoinStream(ms, true)
             {
                 ProtocolVersion = version,
-                NetworkOptions = options
+                TransactionOptions = options
             };
 			serializable.ReadWrite(bms);
 			return ToArrayEfficient(ms);
