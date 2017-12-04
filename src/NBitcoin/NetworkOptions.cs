@@ -1,24 +1,17 @@
-﻿namespace NBitcoin
+﻿using System;
+
+namespace NBitcoin
 {
     /// <summary>
-    /// The current use-case for this class is to provide option-dependent serialization.
-    /// It is a drop-in replacement for the legacy TransactionOptions enumeration.
-    /// 
-    /// The NetworkOptions instance is intended to be relayed from the Network object to 
-    /// the child objects: Network => Block => Transaction => TxIn/TxOut => Coin => ...
-    /// It can also be used on repository or stream objects that need to deserialize the 
-    /// above objects or passed as a parameter futher down the call-hierarchy as needed.
+    /// This class is a drop-in replacement for the legacy TransactionOptions enumeration.
     /// </summary>
     public class NetworkOptions
     {
         public const uint None = 0x00000000;
+        public const uint POS = 0x20000000;
         public const uint Witness = 0x40000000;
         public const uint All = Witness;
-
-        //TODO?: Could be used by Block:
-        //public Action<NetworkOptions, Block> SetBlockSpecificFlags { get; set; } = null;
-        //TODO?: Could be used by Transaction:
-        //public Action<NetworkOptions, Transaction> SetTransactionSpecificFlags { get; set; } = null;
+        public const uint POSAll = Witness | POS;
 
         private uint flags = All;
 
@@ -31,6 +24,42 @@
             this.flags = flags;
         }
 
+        public bool IsProofOfStake
+        {
+            get
+            {
+                bool isPOS = (this.flags & POS) != 0;
+                // This sanity check will be removed once the static flags are removed
+                if (isPOS != Block.BlockSignature)
+                {
+                    throw new ArgumentException($"Block.BlockSignature { Block.BlockSignature} mismatches cross-check value: { isPOS }");
+                }
+                // This sanity check will be removed once the static flags are removed
+                if (isPOS != Transaction.TimeStamp)
+                {
+                    throw new ArgumentException($"Transaction.TimeStamp {Transaction.TimeStamp} mismatches cross-check value: { isPOS }");
+                }
+                return isPOS;
+            }
+
+            set
+            {
+                this.flags = value ? (this.flags | POS) : (this.flags & ~POS);
+            }
+        }
+
+        public bool IsWitness
+        {
+            get
+            {
+                return (this.flags & Witness) != 0;
+            }
+
+            set
+            {
+                this.flags = value ? (this.flags | Witness) : (this.flags & ~Witness);
+            }
+        }
         /// <summary>
         /// Clones the NetworkOptions object.
         /// </summary>

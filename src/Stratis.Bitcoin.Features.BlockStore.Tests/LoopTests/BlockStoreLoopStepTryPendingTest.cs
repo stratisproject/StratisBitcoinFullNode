@@ -8,6 +8,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepTryPendingTest : BlockStoreLoopStepBaseTest
     {
+        public BlockStoreLoopStepTryPendingTest()
+        {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         /// <summary>
         /// If the store is not in IBD we need to immediately push any pending blocks
         /// to the repository.

@@ -73,10 +73,10 @@ namespace NBitcoin.BitcoinCore
         public Coins()
         {
 
-        }
-        public Coins(Transaction tx, int height)
-        {
-            if (Transaction.TimeStamp)
+		}
+		public Coins(Transaction tx, int height)
+		{
+            if (tx.NetworkOptions?.IsProofOfStake ?? false)
             {
                 fCoinStake = tx.IsCoinStake;
                 nTime = tx.Time;
@@ -177,56 +177,56 @@ namespace NBitcoin.BitcoinCore
                 // coinbase height
                 stream.ReadWriteAsVarInt(ref nHeight);
 
-                if (Transaction.TimeStamp)
-                {
-                    stream.ReadWrite(ref fCoinStake);
-                    stream.ReadWrite(ref nTime);
-                }
-            }
-            else
-            {
-                uint nCode = 0;
-                // version
-                stream.ReadWriteAsVarInt(ref nVersion);
-                //// header code
-                stream.ReadWriteAsVarInt(ref nCode);
-                CoinBase = (nCode & 1) != 0;
-                List<bool> vAvail = new List<bool>() { false, false };
-                vAvail[0] = (nCode & 2) != 0;
-                vAvail[1] = (nCode & 4) != 0;
-                uint nMaskCode = unchecked((uint)((nCode / 8) + ((nCode & 6) != 0 ? 0 : 1)));
-                //// spentness bitmask
-                while(nMaskCode > 0)
-                {
-                    byte chAvail = 0;
-                    stream.ReadWrite(ref chAvail);
-                    for(uint p = 0; p < 8; p++)
-                    {
-                        bool f = (chAvail & (1 << (int)p)) != 0;
-                        vAvail.Add(f);
-                    }
-                    if(chAvail != 0)
-                        nMaskCode--;
-                }
-                // txouts themself
-                Outputs = Enumerable.Range(0, vAvail.Count).Select(_ => NullTxOut).ToList();
-                for(uint i = 0; i < vAvail.Count; i++)
-                {
-                    if(vAvail[(int)i])
-                    {
-                        TxOutCompressor compressed = new TxOutCompressor();
-                        stream.ReadWrite(ref compressed);
-                        Outputs[(int)i] = compressed.TxOut;
-                    }
-                }
-                //// coinbase height
-                stream.ReadWriteAsVarInt(ref nHeight);
+                if (stream.TimeStamp)
+				{
+					stream.ReadWrite(ref fCoinStake);
+					stream.ReadWrite(ref nTime);
+				}
+			}
+			else
+			{
+				uint nCode = 0;
+				// version
+				stream.ReadWriteAsVarInt(ref nVersion);
+				//// header code
+				stream.ReadWriteAsVarInt(ref nCode);
+				CoinBase = (nCode & 1) != 0;
+				List<bool> vAvail = new List<bool>() { false, false };
+				vAvail[0] = (nCode & 2) != 0;
+				vAvail[1] = (nCode & 4) != 0;
+				uint nMaskCode = unchecked((uint)((nCode / 8) + ((nCode & 6) != 0 ? 0 : 1)));
+				//// spentness bitmask
+				while(nMaskCode > 0)
+				{
+					byte chAvail = 0;
+					stream.ReadWrite(ref chAvail);
+					for(uint p = 0; p < 8; p++)
+					{
+						bool f = (chAvail & (1 << (int)p)) != 0;
+						vAvail.Add(f);
+					}
+					if(chAvail != 0)
+						nMaskCode--;
+				}
+				// txouts themself
+				Outputs = Enumerable.Range(0, vAvail.Count).Select(_ => NullTxOut).ToList();
+				for(uint i = 0; i < vAvail.Count; i++)
+				{
+					if(vAvail[(int)i])
+					{
+						TxOutCompressor compressed = new TxOutCompressor();
+						stream.ReadWrite(ref compressed);
+						Outputs[(int)i] = compressed.TxOut;
+					}
+				}
+				//// coinbase height
+				stream.ReadWriteAsVarInt(ref nHeight);
 
-                if (Transaction.TimeStamp)
+                if (stream.TimeStamp)
                 {
-                    stream.ReadWrite(ref fCoinStake);
-                    stream.ReadWrite(ref nTime);
-                }
+					stream.ReadWrite(ref fCoinStake);
+					stream.ReadWrite(ref nTime);
+				}
 
                 Cleanup();
                 UpdateValue();

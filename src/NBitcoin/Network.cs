@@ -291,6 +291,14 @@ namespace NBitcoin
             this.genesis = new Block();
         }
 
+        public NetworkOptions NetworkOptions
+        {
+            get
+            {
+                return this.genesis.NetworkOptions;
+            }
+        }
+
         public PubKey AlertPubKey
         {
             get
@@ -703,9 +711,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            var block = new Block();
-            block.ReadWrite(this.genesis.ToBytes());
-            return block;
+            return this.genesis.Clone();
         }
 
         public uint256 GenesisHash => this.consensus.HashGenesisBlock;

@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         /// <summary>
         /// Generates a new mnemonic. The call can optionally specify a language and the number of words in the mnemonic.
-        /// </summary>
+        /// </summary>        
         /// <param name="language">The language for the words in the mnemonic. Options are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional. The default is 'English'.</param>
         /// <param name="wordCount">The number of words in the mnemonic. Options are: 12,15,18,21 or 24. the default is 12.</param>
         /// <returns>A JSON object containing the mnemonic generated.</returns>
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 WordCount count = (WordCount)wordCount;
 
-                // generate the mnemonic
+                // generate the mnemonic 
                 Mnemonic mnemonic = new Mnemonic(wordList, count);
                 return this.Json(mnemonic.ToString());
             }
@@ -372,14 +372,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         // get the change address for this spending transaction
                         var changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
 
-                        // find all the spending details containing the spending transaction id and aggregate the sums.
+                        // find all the spending details containing the spending transaction id and aggregate the sums. 
                         // this is our best shot at finding the total value of inputs for this transaction.
                         var inputsAmount = new Money(spendingDetails.Where(t => t.Transaction.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Transaction.Amount));
 
                         // the fee is calculated as follows: funds in utxo - amount spent - amount sent as change
                         sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transaction.Amount);
 
-                        // mined/staked coins add more coins to the total out
+                        // mined/staked coins add more coins to the total out 
                         // that makes the fee negative if that's the case ignore the fee
                         if (sentItem.Fee < 0)
                             sentItem.Fee = 0;
@@ -405,7 +405,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets the balance of a wallet.
         /// </summary>
-        /// <param name="request">The request parameters.</param>
+        /// <param name="request">The request parameters.</param>        
         /// <returns></returns>
         [Route("balance")]
         [HttpGet]
@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Builds a transaction.
+        /// Builds a transaction. 
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
         /// <returns>All the details of the transaction, including the hex used to execute it.</returns>
@@ -588,14 +588,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                var transaction = new Transaction(request.Hex);
+                var transaction = new Transaction(request.Hex, options:this.network.NetworkOptions);
 
                 WalletSendTransactionModel model = new WalletSendTransactionModel
                 {
                     TransactionId = transaction.GetHash(),
                     Outputs = new List<TransactionOutputModel>()
                 };
-                
+
                 foreach (var output in transaction.Outputs)
                 {
                     model.Outputs.Add(new TransactionOutputModel
@@ -604,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Amount = output.Value,
                     });
                 }
-                
+
                 var result = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
                 if (result == Bitcoin.Broadcasting.Success.Yes)
                 {

@@ -275,25 +275,25 @@ namespace NBitcoin
                 }
             }
 
-            public SigHash SigHash
-            {
-                get;
-                set;
-            }
-        }
-        internal class TransactionBuildingContext
-        {
-            public TransactionBuildingContext(TransactionBuilder builder)
-            {
-                Builder = builder;
-                Transaction = new Transaction();
-                AdditionalFees = Money.Zero;
-            }
-            public TransactionBuilder.BuilderGroup Group
-            {
-                get;
-                set;
-            }
+			public SigHash SigHash
+			{
+				get;
+				set;
+			}
+		}
+		internal class TransactionBuildingContext
+		{
+			public TransactionBuildingContext(TransactionBuilder builder, NetworkOptions options = null)
+			{
+				Builder = builder;
+				Transaction = new Transaction(options);
+				AdditionalFees = Money.Zero;
+			}
+			public TransactionBuilder.BuilderGroup Group
+			{
+				get;
+				set;
+			}
 
             private readonly List<ICoin> _ConsumedCoins = new List<ICoin>();
             public List<ICoin> ConsumedCoins
@@ -382,12 +382,12 @@ namespace NBitcoin
                 set;
             }
 
-            public TransactionBuildingContext CreateMemento()
-            {
-                var memento = new TransactionBuildingContext(Builder);
-                memento.RestoreMemento(this);
-                return memento;
-            }
+			public TransactionBuildingContext CreateMemento()
+			{
+				var memento = new TransactionBuildingContext(Builder, this.Transaction.NetworkOptions);
+				memento.RestoreMemento(this);
+				return memento;
+			}
 
             public void RestoreMemento(TransactionBuildingContext memento)
             {
@@ -475,28 +475,29 @@ namespace NBitcoin
             }
         }
 
-        List<BuilderGroup> _BuilderGroups = new List<BuilderGroup>();
-        BuilderGroup _CurrentGroup = null;
-        internal BuilderGroup CurrentGroup
-        {
-            get
-            {
-                if(_CurrentGroup == null)
-                {
-                    _CurrentGroup = new BuilderGroup(this);
-                    _BuilderGroups.Add(_CurrentGroup);
-                }
-                return _CurrentGroup;
-            }
-        }
-        public TransactionBuilder()
-        {
-            _Rand = new Random();
-            CoinSelector = new DefaultCoinSelector();
-            StandardTransactionPolicy = new StandardTransactionPolicy();
-            DustPrevention = true;
-            InitExtensions();
-        }
+		List<BuilderGroup> _BuilderGroups = new List<BuilderGroup>();
+		BuilderGroup _CurrentGroup = null;
+		internal BuilderGroup CurrentGroup
+		{
+			get
+			{
+				if(_CurrentGroup == null)
+				{
+					_CurrentGroup = new BuilderGroup(this);
+					_BuilderGroups.Add(_CurrentGroup);
+				}
+				return _CurrentGroup;
+			}
+		}
+		public TransactionBuilder(NetworkOptions transactionOptions = null)
+		{
+			_Rand = new Random();
+			CoinSelector = new DefaultCoinSelector();
+			StandardTransactionPolicy = new StandardTransactionPolicy();
+			DustPrevention = true;
+            TransactionOptions = transactionOptions;
+			InitExtensions();
+		}
 
         private void InitExtensions()
         {
@@ -506,21 +507,32 @@ namespace NBitcoin
             Extensions.Add(new OPTrueExtension());
         }
 
-        internal Random _Rand;
-        public TransactionBuilder(int seed)
+		internal Random _Rand;
+		public TransactionBuilder(int seed, NetworkOptions transactionOptions = null)
+		{
+			_Rand = new Random(seed);
+			CoinSelector = new DefaultCoinSelector(seed);
+			StandardTransactionPolicy = new StandardTransactionPolicy();
+			DustPrevention = true;
+            this.TransactionOptions = transactionOptions;
+			InitExtensions();
+		}
+
+        public TransactionBuilder(int seed, bool isPOS)
+            :this(seed, isPOS?NetworkOptions.POSAll:NetworkOptions.All)
         {
-            _Rand = new Random(seed);
-            CoinSelector = new DefaultCoinSelector(seed);
-            StandardTransactionPolicy = new StandardTransactionPolicy();
-            DustPrevention = true;
-            InitExtensions();
+        }
+
+        public TransactionBuilder(bool isPOS)
+            : this(isPOS ? NetworkOptions.POSAll : NetworkOptions.All)
+        {
         }
 
         public ICoinSelector CoinSelector
-        {
-            get;
-            set;
-        }
+		{
+			get;
+			set;
+		}
 
         /// <summary>
         /// Will transform transfers below Dust, so the transaction get correctly relayed by the network.
@@ -532,13 +544,22 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// A callback used by the TransactionBuilder when it does not find the coin for an input
+        /// The transaction options for creating transactions.
         /// </summary>
-        public Func<OutPoint, ICoin> CoinFinder
+        public NetworkOptions TransactionOptions
         {
             get;
             set;
         }
+
+        /// <summary>
+        /// A callback used by the TransactionBuilder when it does not find the coin for an input
+        /// </summary>
+        public Func<OutPoint, ICoin> CoinFinder
+		{
+			get;
+			set;
+		}
 
         /// <summary>
         /// A callback used by the TransactionBuilder when it does not find the key for a scriptPubKey
@@ -983,43 +1004,43 @@ namespace NBitcoin
             return this;
         }
 
-        public TransactionBuilder SetCoinSelector(ICoinSelector selector)
-        {
-            if(selector == null)
-                throw new ArgumentNullException("selector");
-            CoinSelector = selector;
-            return this;
-        }
-        /// <summary>
-        /// Build the transaction
-        /// </summary>
-        /// <param name="sign">True if signs all inputs with the available keys</param>
-        /// <returns>The transaction</returns>
-        /// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
-        public Transaction BuildTransaction(bool sign)
-        {
-            return BuildTransaction(sign, SigHash.All);
-        }
+		public TransactionBuilder SetCoinSelector(ICoinSelector selector)
+		{
+			if(selector == null)
+				throw new ArgumentNullException("selector");
+			CoinSelector = selector;
+			return this;
+		}
+		/// <summary>
+		/// Build the transaction
+		/// </summary>
+		/// <param name="sign">True if signs all inputs with the available keys</param>
+		/// <returns>The transaction</returns>
+		/// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
+		public Transaction BuildTransaction(bool sign)
+		{
+			return BuildTransaction(sign, SigHash.All, this.TransactionOptions);
+		}
 
-        /// <summary>
-        /// Build the transaction
-        /// </summary>
-        /// <param name="sign">True if signs all inputs with the available keys</param>
-        /// <param name="sigHash">The type of signature</param>
-        /// <returns>The transaction</returns>
-        /// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
-        public Transaction BuildTransaction(bool sign, SigHash sigHash)
-        {
-            TransactionBuildingContext ctx = new TransactionBuildingContext(this);
-            if(_CompletedTransaction != null)
-                ctx.Transaction = _CompletedTransaction.Clone();
-            if(_LockTime != null)
-                ctx.Transaction.LockTime = _LockTime.Value;
-            foreach(var group in _BuilderGroups)
-            {
-                ctx.Group = group;
-                ctx.AdditionalBuilders.Clear();
-                ctx.AdditionalFees = Money.Zero;
+		/// <summary>
+		/// Build the transaction
+		/// </summary>
+		/// <param name="sign">True if signs all inputs with the available keys</param>
+		/// <param name="sigHash">The type of signature</param>
+		/// <returns>The transaction</returns>
+		/// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
+		public Transaction BuildTransaction(bool sign, SigHash sigHash, NetworkOptions options = null)
+		{
+			TransactionBuildingContext ctx = new TransactionBuildingContext(this, options);
+			if(_CompletedTransaction != null)
+				ctx.Transaction = _CompletedTransaction.Clone();
+			if(_LockTime != null)
+				ctx.Transaction.LockTime = _LockTime.Value;
+			foreach(var group in _BuilderGroups)
+			{
+				ctx.Group = group;
+				ctx.AdditionalBuilders.Clear();
+				ctx.AdditionalFees = Money.Zero;
 
                 ctx.ChangeType = ChangeType.Colored;
                 foreach(var builder in group.IssuanceBuilders)
@@ -1352,19 +1373,19 @@ namespace NBitcoin
             return EstimateSize(tx, false);
         }
 
-        /// <summary>
-        /// Estimate the size of the transaction
-        /// </summary>
-        /// <param name="tx">The transaction to be estimated</param>
-        /// <param name="virtualSize">If true, returns the size on which fee calculation are based, else returns the physical byte size</param>
-        /// <returns></returns>
-        public int EstimateSize(Transaction tx, bool virtualSize)
-        {
-            if(tx == null)
-                throw new ArgumentNullException("tx");
-            var clone = tx.Clone();
-            clone.Inputs.Clear();
-            var baseSize = clone.GetSerializedSize();
+		/// <summary>
+		/// Estimate the size of the transaction
+		/// </summary>
+		/// <param name="tx">The transaction to be estimated</param>
+		/// <param name="virtualSize">If true, returns the size on which fee calculation are based, else returns the physical byte size</param>
+		/// <returns></returns>
+		public int EstimateSize(Transaction tx, bool virtualSize)
+		{
+			if(tx == null)
+				throw new ArgumentNullException("tx");
+			var clone = tx.Clone();
+			clone.Inputs.Clear();
+			var baseSize = clone.GetSerializedSize(tx.NetworkOptions);
 
             int vSize = 0;
             int size = baseSize;

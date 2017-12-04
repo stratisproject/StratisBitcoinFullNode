@@ -79,23 +79,23 @@ namespace NBitcoin.RPC
             return json.ToObject<RPCBlock>();
         }
 
-        public static Block ToBlock(RPCBlock rpcBlock)
-        {
-            var header = new BlockHeader()
-            {
-                Time = rpcBlock.time,
-                //BlockStake = new BlockStake
-                //{
-                //    HashProof = uint256.Parse( rpcBlock.proofhash),
-                //    Mint = rpcBlock.mint,
-                //    StakeModifierV2 = uint256.Parse(rpcBlock.modifierv2)
-                //},
-                HashMerkleRoot = uint256.Parse(rpcBlock.merkleroot),
-                Bits = new Target(Encoders.Hex.DecodeData(rpcBlock.bits)),
-                HashPrevBlock = uint256.Parse(rpcBlock.previousblockhash),
-                Nonce = rpcBlock.nonce,
-                Version = rpcBlock.version,
-            };
+		public static Block ToBlock(RPCBlock rpcBlock, NetworkOptions options)
+		{
+			var header = new BlockHeader(options)
+			{
+				Time = rpcBlock.time,
+				//BlockStake = new BlockStake
+				//{
+				//	HashProof = uint256.Parse( rpcBlock.proofhash),
+				//	Mint = rpcBlock.mint,
+				//	StakeModifierV2 = uint256.Parse(rpcBlock.modifierv2)
+				//},
+				HashMerkleRoot = uint256.Parse(rpcBlock.merkleroot),
+				Bits = new Target(Encoders.Hex.DecodeData(rpcBlock.bits)),
+				HashPrevBlock = uint256.Parse(rpcBlock.previousblockhash),
+				Nonce = rpcBlock.nonce,
+				Version = rpcBlock.version,
+			};
 
             var block = new Block(header);
 
@@ -104,8 +104,8 @@ namespace NBitcoin.RPC
                 block.BlockSignatur.Signature = Encoders.Hex.DecodeData(rpcBlock.signature);
             }
 
-            // todo: parse transactions
-            block.Transactions = rpcBlock.tx.Select(t => new Transaction()).ToList();
+			// todo: parse transactions
+			block.Transactions = rpcBlock.tx.Select(t => new Transaction(options)).ToList();
 
             return block;
         }

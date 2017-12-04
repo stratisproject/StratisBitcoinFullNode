@@ -112,36 +112,36 @@ namespace NBitcoin.Payment
             };
         }
 
-        public static PaymentMessage Load(Stream source)
-        {
-            if(source.CanSeek && source.Length > MaxLength)
-                throw new ArgumentException("Payment messages larger than " + MaxLength + " bytes should be rejected by the merchant's server", "source");
-            PaymentMessage message = new PaymentMessage();
+		public static PaymentMessage Load(Stream source, NetworkOptions options = null)
+		{
+			if(source.CanSeek && source.Length > MaxLength)
+				throw new ArgumentException("Payment messages larger than " + MaxLength + " bytes should be rejected by the merchant's server", "source");
+			PaymentMessage message = new PaymentMessage();
 
-            ProtobufReaderWriter proto = new ProtobufReaderWriter(source);
-            int key;
-            while(proto.TryReadKey(out key))
-            {
-                switch(key)
-                {
-                    case 1:
-                        message.MerchantData = proto.ReadBytes();
-                        break;
-                    case 2:
-                        message.Transactions.Add(new Transaction(proto.ReadBytes()));
-                        break;
-                    case 3:
-                        message.RefundTo.Add(PaymentOutput.Load(proto.ReadBytes()));
-                        break;
-                    case 4:
-                        message.Memo = proto.ReadString();
-                        break;
-                    default:
-                        break;
-                }
-            }
-            return message;
-        }
+			ProtobufReaderWriter proto = new ProtobufReaderWriter(source);
+			int key;
+			while(proto.TryReadKey(out key))
+			{
+				switch(key)
+				{
+					case 1:
+						message.MerchantData = proto.ReadBytes();
+						break;
+					case 2:
+						message.Transactions.Add(new Transaction(proto.ReadBytes(), options));
+						break;
+					case 3:
+						message.RefundTo.Add(PaymentOutput.Load(proto.ReadBytes()));
+						break;
+					case 4:
+						message.Memo = proto.ReadString();
+						break;
+					default:
+						break;
+				}
+			}
+			return message;
+		}
 
         public string Memo
         {

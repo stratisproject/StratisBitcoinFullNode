@@ -132,12 +132,13 @@ namespace NBitcoin.Tests
             return new IndexedBlockStore(new InMemoryNoSqlRepository(), new BlockStore(folderName, Network.StratisMain));
         }
 
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanStoreBlocks()
-        {
-            var store = CreateBlockStore();
-            var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat")).Take(50).ToList();
+		[Fact]
+		[Trait("UnitTest", "UnitTest")]
+		public void CanStoreBlocks()
+		{
+			var store = CreateBlockStore();
+			var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), 
+                network:Network.StratisMain).Take(50).ToList();
 
             foreach(var s in allBlocks)
             {
@@ -146,27 +147,28 @@ namespace NBitcoin.Tests
             var storedBlocks = store.Enumerate(true).ToList();
             Assert.Equal(allBlocks.Count, storedBlocks.Count);
 
-            foreach(var s in allBlocks)
-            {
-                var retrieved = store.Enumerate(true).First(b => b.Item.GetHash() == s.Item.GetHash());
-                Assert.True(retrieved.Item.HeaderOnly);
-            }
-        }
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanStoreBlocksInMultipleFiles()
-        {
-            var store = CreateBlockStore();
-            store.MaxFileSize = 10; //Verify break all block in one respective file with extreme settings
-            var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain).Take(10).ToList();
-            foreach(var s in allBlocks)
-            {
-                store.Append(s.Item);
-            }
-            var storedBlocks = store.Enumerate(true).ToList();
-            Assert.Equal(allBlocks.Count, storedBlocks.Count);
-            Assert.Equal(11, store.Folder.GetFiles().Length); //10 files + lock file
-        }
+			foreach(var s in allBlocks)
+			{
+				var retrieved = store.Enumerate(true)
+                    .First(b => b.Item.Header.GetHash() == s.Item.GetHash());
+				Assert.True(retrieved.Item.HeaderOnly);
+			}
+		}
+		[Fact]
+		[Trait("UnitTest", "UnitTest")]
+		public void CanStoreBlocksInMultipleFiles()
+		{
+			var store = CreateBlockStore();
+			store.MaxFileSize = 10; //Verify break all block in one respective file with extreme settings
+			var allBlocks = StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network: Network.StratisMain).Take(10).ToList();
+			foreach(var s in allBlocks)
+			{
+				store.Append(s.Item);
+			}
+			var storedBlocks = store.Enumerate(true).ToList();
+			Assert.Equal(allBlocks.Count, storedBlocks.Count);
+			Assert.Equal(11, store.Folder.GetFiles().Length); //10 files + lock file
+		}
 
 
         [Fact]
@@ -559,30 +561,30 @@ namespace NBitcoin.Tests
             // create the stores
             var store = CreateBlockStore();
 
-            var index = 0;
-            var blockStore = new NoSqlBlockRepository();
-            foreach (var storedBlock in mainStore.Enumerate(false).Take(totalblocks))
-            {
-                store.Append(storedBlock.Item);
-                blockStore.PutAsync(storedBlock.Item);
-                index++;
-            }
-            
-            // build the chain
-            var chain = store.GetChain();
+			var index = 0;
+			var blockStore = new NoSqlBlockRepository(Network.StratisMain.NetworkOptions);
+			foreach (var storedBlock in mainStore.Enumerate(false).Take(totalblocks))
+			{
+				store.Append(storedBlock.Item);
+				blockStore.PutAsync(storedBlock.Item);
+				index++;
+			}
+			
+			// build the chain
+			var chain = store.GetChain();
 
-            // fill the transaction store
-            var trxStore = new NoSqlTransactionRepository();
-            var mapStore = new BlockTransactionMapStore();
-            foreach (var chainedBlock in chain.ToEnumerable(false).Take(totalblocks))
-            {
-                var block = blockStore.GetBlock(chainedBlock.HashBlock);
-                foreach (var blockTransaction in block.Transactions)
-                {
-                    trxStore.Put(blockTransaction);
-                    mapStore.PutAsync(blockTransaction.GetHash(), block.GetHash());
-                }
-            }
+			// fill the transaction store
+			var trxStore = new NoSqlTransactionRepository(Network.StratisMain.NetworkOptions);
+			var mapStore = new BlockTransactionMapStore(Network.StratisMain.NetworkOptions);
+			foreach (var chainedBlock in chain.ToEnumerable(false).Take(totalblocks))
+			{
+				var block = blockStore.GetBlock(chainedBlock.HashBlock);
+				foreach (var blockTransaction in block.Transactions)
+				{
+					trxStore.Put(blockTransaction);
+					mapStore.PutAsync(blockTransaction.GetHash(), block.GetHash());
+				}
+			}
 
             RPCClient client = null;
             if (!pos_RPCClientTests.noClient)

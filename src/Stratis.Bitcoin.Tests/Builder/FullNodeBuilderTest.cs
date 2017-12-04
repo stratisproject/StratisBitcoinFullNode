@@ -27,6 +27,10 @@ namespace Stratis.Bitcoin.Tests.Builder
 
         public FullNodeBuilderTest()
         {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+
             this.serviceCollectionDelegates = new List<Action<IServiceCollection>>();
             this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
             this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();

@@ -36,11 +36,11 @@ namespace NBitcoin.RPC
         /// <exception cref="System.ArgumentNullException">Null rest API endpoint</exception>
         /// <exception cref="System.ArgumentException">Invalid value for RestResponseFormat</exception>
         public RestClient(Uri address)
-        {
-            if(address == null)
-                throw new ArgumentNullException("address");
-            _address = address;
-        }
+		{
+			if(address == null)
+				throw new ArgumentNullException("address");
+			_address = address;
+		}
 
 
         /// <summary>
@@ -76,38 +76,38 @@ namespace NBitcoin.RPC
             }
         }
 
-        /// <summary>
-        /// Gets a transaction.
-        /// </summary>
-        /// <param name="txId">The transaction identifier.</param>
-        /// <returns>Given a transaction hash (id) returns the requested transaction object.</returns>
-        /// <exception cref="System.ArgumentNullException">txId cannot be null</exception>
-        public async Task<Transaction> GetTransactionAsync(uint256 txId)
-        {
-            if(txId == null)
-                throw new ArgumentNullException("txId");
+		/// <summary>
+		/// Gets a transaction.
+		/// </summary>
+		/// <param name="txId">The transaction identifier.</param>
+		/// <returns>Given a transaction hash (id) returns the requested transaction object.</returns>
+		/// <exception cref="System.ArgumentNullException">txId cannot be null</exception>
+		public async Task<Transaction> GetTransactionAsync(uint256 txId, Network network = null)
+		{
+			if(txId == null)
+				throw new ArgumentNullException("txId");
 
-            var result = await SendRequestAsync("tx", RestResponseFormat.Bin, txId.ToString()).ConfigureAwait(false);
-            return new Transaction(result);
-        }
-        /// <summary>
-        /// Gets a transaction.
-        /// </summary>
-        /// <param name="txId">The transaction identifier.</param>
-        /// <returns>Given a transaction hash (id) returns the requested transaction object.</returns>
-        /// <exception cref="System.ArgumentNullException">txId cannot be null</exception>
-        public Transaction GetTransaction(uint256 txId)
-        {
-            try
-            {
-                return GetTransactionAsync(txId).Result;
-            }
-            catch(AggregateException ex)
-            {
-                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                throw;
-            }
-        }
+			var result = await SendRequestAsync("tx", RestResponseFormat.Bin, txId.ToString()).ConfigureAwait(false);
+			return new Transaction(result, network?.NetworkOptions ?? NetworkOptions.All);
+		}
+		/// <summary>
+		/// Gets a transaction.
+		/// </summary>
+		/// <param name="txId">The transaction identifier.</param>
+		/// <returns>Given a transaction hash (id) returns the requested transaction object.</returns>
+		/// <exception cref="System.ArgumentNullException">txId cannot be null</exception>
+		public Transaction GetTransaction(uint256 txId, Network network = null)
+		{
+			try
+			{
+				return GetTransactionAsync(txId, network).Result;
+			}
+			catch(AggregateException ex)
+			{
+				ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+				throw;
+			}
+		}
 
         /// <summary>
         /// Gets blocks headers.

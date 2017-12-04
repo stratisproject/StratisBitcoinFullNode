@@ -568,9 +568,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Note that witness malleability is checked in ContextualCheckBlock, so no
             // checks that use witness data may be performed here.
 
-            // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) ||
-                (this.GetSize(block, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
+            // Size limits. Retain Stratis legacy static flags.
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) || 
+                (this.GetSize(block, block.Header.NetworkOptions & NetworkOptions.POS) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -657,7 +657,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(transaction, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            if (this.GetSize(transaction, transaction.NetworkOptions & NetworkOptions.POS) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
@@ -744,7 +744,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Block weight.</returns>
         public long GetBlockWeight(Block block)
         {
-            return this.GetSize(block, NetworkOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, NetworkOptions.Witness);
+            // Retain legacy static flags
+            var stratis = block.Header.NetworkOptions & NetworkOptions.POS;
+
+            // This implements the weight = (stripped_size * 4) + witness_size formula,
+            // using only serialization with and without witness data. As witness_size
+            // is equal to total_size - stripped_size, this formula is identical to:
+            // weight = (stripped_size * 3) + total_size.
+            return this.GetSize(block, stratis) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, stratis | NetworkOptions.Witness);
         }
 
         /// <summary>
@@ -755,8 +762,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
         private int GetSize(IBitcoinSerializable data, NetworkOptions options)
         {
+            // Retain legacy static flags
+            var stratis = options & NetworkOptions.POS;
+
             var bms = new BitcoinStream(Stream.Null, true);
-            bms.TransactionOptions = options;
+            bms.NetworkOptions |= options;
+
+            // Propagate legacy static flags.
+            if (data is Block)
+                bms.NetworkOptions |= ((data as Block).NetworkOptions & NetworkOptions.POS);
+
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }
@@ -836,10 +851,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             for (int i = 0; i < inner.Length; i++)
                 inner[i] = uint256.Zero;
-
+            
             // Which position in inner is a hash that depends on the matching leaf.
             int matchLevel = -1;
-
+            
             // First process all leaves into 'inner' values.
             while (count < leaves.Count)
             {
@@ -847,7 +862,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 bool match = false;
                 count++;
                 int level;
-
+            
                 // For each of the lower bits in count that are 0, do 1 step. Each
                 // corresponds to an inner value that existed before processing the
                 // current leaf, and each needs a hash to combine it.

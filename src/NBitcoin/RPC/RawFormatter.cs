@@ -30,17 +30,17 @@ namespace NBitcoin.RPC
             return Parse(obj);
         }
 
-        public Transaction Parse(JObject obj)
-        {
-            Transaction tx = new Transaction();
-            BuildTransaction(obj, tx);
-            return tx;
-        }
-        protected void WritePropertyValue<TValue>(JsonWriter writer, string name, TValue value)
-        {
-            writer.WritePropertyName(name);
-            writer.WriteValue(value);
-        }
+		public Transaction Parse(JObject obj, NetworkOptions options = null)
+		{
+			Transaction tx = new Transaction(options);
+			BuildTransaction(obj, tx);
+			return tx;
+		}
+		protected void WritePropertyValue<TValue>(JsonWriter writer, string name, TValue value)
+		{
+			writer.WritePropertyName(name);
+			writer.WriteValue(value);
+		}
 
 
         protected abstract void BuildTransaction(JObject json, Transaction tx);

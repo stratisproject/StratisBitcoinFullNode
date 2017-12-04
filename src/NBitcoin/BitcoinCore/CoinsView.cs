@@ -16,19 +16,20 @@ namespace NBitcoin.BitcoinCore
             _Index = index;
         }
 
-        public CoinsView()
-            : this(new InMemoryNoSqlRepository())
-        {
+		public CoinsView(NetworkOptions options = null)
+			: this(new InMemoryNoSqlRepository(options))
+		{
 
-        }
+		}
+
         private readonly NoSqlRepository _Index;
-        public NoSqlRepository Index
-        {
-            get
-            {
-                return _Index;
-            }
-        }
+		public NoSqlRepository Index
+		{
+			get
+			{
+				return _Index;
+			}
+		}
 
         public Coins GetCoins(uint256 txId)
         {

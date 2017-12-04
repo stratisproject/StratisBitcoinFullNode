@@ -190,13 +190,13 @@ namespace NBitcoin.BitcoinCore
         }
 
 
-        protected override StoredBlock ReadStoredItem(Stream stream, DiskBlockPos pos)
-        {
-            StoredBlock block = new StoredBlock(Network, pos);
-            block.ParseSkipBlockContent = headerOnly;
-            block.ReadWrite(stream, false);
-            return block;
-        }
+		protected override StoredBlock ReadStoredItem(Stream stream, DiskBlockPos pos)
+		{
+			StoredBlock block = new StoredBlock(Network, pos);
+			block.ParseSkipBlockContent = headerOnly;
+			block.ReadWrite(stream, false, options:Network.NetworkOptions);
+			return block;
+		}
 
         protected override StoredBlock CreateStoredItem(Block item, DiskBlockPos position)
         {

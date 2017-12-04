@@ -10,6 +10,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepDownloadBlocksTest : BlockStoreLoopStepBaseTest
     {
+        public BlockStoreLoopStepDownloadBlocksTest()
+        {
+            // Should be set to false for non-pos tests.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         /// <summary>
         /// This test executes DownloadBlockStep the <see cref="BlockStoreInnerStepFindBlocks"/> and
         /// <see cref="BlockStoreInnerStepReadBlocks"/> inner steps via <see cref="DownloadBlockStep"/>

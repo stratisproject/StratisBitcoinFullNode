@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                     message.ReadWrite(new BitcoinStream(ms, true)
                                     {
                                         ProtocolVersion = this.Peer.Version,
-                                        TransactionOptions = this.Peer.SupportedTransactionOptions
+                                        NetworkOptions = this.Peer.SupportedTransactionOptions | (this.Peer.Network.NetworkOptions & NetworkOptions.POS)
                                     });
 
                                     byte[] bytes = ms.ToArrayEfficient();
@@ -763,7 +763,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
                 if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
-                    this.SupportedTransactionOptions |= NetworkOptions.Witness;
+                    this.SupportedTransactionOptions = this.SupportedTransactionOptions | NetworkOptions.Witness;
             }
 
             if (message.Message.Payload is HaveWitnessPayload)

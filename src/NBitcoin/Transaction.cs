@@ -1077,12 +1077,12 @@ namespace NBitcoin
     }
 
     class Witness
-    {
-        TxInList _Inputs;
-        public Witness(TxInList inputs)
-        {
-            _Inputs = inputs;
-        }
+	{
+		TxInList _Inputs;
+		public Witness(TxInList inputs)
+		{
+			_Inputs = inputs;
+		}
 
         internal bool IsNull()
         {
@@ -1109,19 +1109,19 @@ namespace NBitcoin
         }
     }
 
-    //https://en.bitcoin.it/wiki/Transactions
-    //https://en.bitcoin.it/wiki/Protocol_specification
-    public class Transaction : IBitcoinSerializable
-    {
-        public static bool TimeStamp = false;
+	//https://en.bitcoin.it/wiki/Transactions
+	//https://en.bitcoin.it/wiki/Protocol_specification
+	public class Transaction : IBitcoinSerializable, IHaveTransactionOptions
+	{
+		public static bool TimeStamp = false;
 
-        public bool RBF
-        {
-            get
-            {
-                return this.Inputs.Any(i => i.Sequence < 0xffffffff - 1);
-            }
-        }
+		public bool RBF
+		{
+			get
+			{
+				return this.Inputs.Any(i => i.Sequence < 0xffffffff - 1);
+			}
+		}
 
         uint nVersion = 1;
 
@@ -1155,22 +1155,41 @@ namespace NBitcoin
         TxOutList vout;
         LockTime nLockTime;
 
-        public Transaction()
+        public NetworkOptions NetworkOptions { get; set; }
+
+		public Transaction()
+            :this(false)
+		{
+		}
+
+        public Transaction(bool isPOS)
+            :this(isPOS?NetworkOptions.POSAll:NetworkOptions.All)
+        {
+        }
+
+        public Transaction(NetworkOptions options)
         {
             vin = new TxInList(this);
             vout = new TxOutList(this);
+            NetworkOptions = options;
         }
 
-        public Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-            : this()
+        public Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION,
+            NetworkOptions options = null)
+            : this(options)
         {
-            this.FromBytes(Encoders.Hex.DecodeData(hex), version);
-        }
+			this.FromBytes(Encoders.Hex.DecodeData(hex), version, options);
+		}
 
-        public Transaction(byte[] bytes)
-            : this()
+		public Transaction(byte[] bytes, NetworkOptions options = null)
+			: this(options)
+		{
+			this.FromBytes(bytes, options:options);
+		}
+
+        public NetworkOptions GetTransactionOptions()
         {
-            this.FromBytes(bytes);
+            return this.NetworkOptions & NetworkOptions.POS;
         }
 
         public Money TotalOut
@@ -1213,19 +1232,26 @@ namespace NBitcoin
 
         #region IBitcoinSerializable Members
 
-        public virtual void ReadWrite(BitcoinStream stream)
+        public byte[] ToBytes(ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            var witSupported = (((uint)stream.TransactionOptions & (uint)NetworkOptions.Witness) != 0) &&
-                                stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
+            return this.ToBytes(version, this.NetworkOptions);
+        }
 
-            byte flags = 0;
-            if(!stream.Serializing)
-            {
-                stream.ReadWrite(ref nVersion);
+        public virtual void ReadWrite(BitcoinStream stream)
+		{
+			var witSupported = (((uint)stream.NetworkOptions & (uint)NetworkOptions.Witness) != 0) &&
+								stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
 
-                // the POS time stamp
-                if (Transaction.TimeStamp)
-                    stream.ReadWrite(ref this.nTime);
+			byte flags = 0;
+			if(!stream.Serializing)
+			{
+                this.NetworkOptions = stream.NetworkOptions;
+
+				stream.ReadWrite(ref nVersion);
+
+				// the POS time stamp
+				if (stream.TimeStamp)
+					stream.ReadWrite(ref this.nTime);
 
                 /* Try to read the vin. In case the dummy is there, this will be read as an empty vector. */
                 stream.ReadWrite<TxInList, TxIn>(ref vin);
@@ -1278,7 +1304,7 @@ namespace NBitcoin
                 stream.ReadWrite(ref version);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (stream.TimeStamp)
                     stream.ReadWrite(ref this.nTime);
 
                 if (witSupported)
@@ -1323,14 +1349,14 @@ namespace NBitcoin
             if(h != null)
                 return h;
 
-            using(HashStream hs = new HashStream())
-            {
+			using(HashStream hs = new HashStream())
+			{
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.None
-                });
-                h = hs.GetHash();
-            }
+					NetworkOptions = this.NetworkOptions & NetworkOptions.POS
+				});
+				h = hs.GetHash();
+			}
 
             hashes = _Hashes;
             if(hashes != null)
@@ -1372,14 +1398,14 @@ namespace NBitcoin
             if(h != null)
                 return h;
 
-            using(HashStream hs = new HashStream())
-            {
+			using(HashStream hs = new HashStream())
+			{
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.Witness
-                });
-                h = hs.GetHash();
-            }
+                    NetworkOptions = NetworkOptions.Witness | (this.NetworkOptions & NetworkOptions.POS)
+				});
+				h = hs.GetHash();
+			}
 
             hashes = _Hashes;
             if(hashes != null)
@@ -1455,33 +1481,42 @@ namespace NBitcoin
             return @in;
         }
 
-        internal static readonly int WITNESS_SCALE_FACTOR = 4;
+		internal static readonly int WITNESS_SCALE_FACTOR = 4;
+		/// <summary>
+		/// Size of the transaction discounting the witness (Used for fee calculation)
+		/// </summary>
+		/// <returns>Transaction size</returns>
+		public int GetVirtualSize()
+		{
+			var totalSize = this.GetSerializedSize(this.NetworkOptions | NetworkOptions.Witness);
+			var strippedSize = this.GetSerializedSize(this.NetworkOptions & ~NetworkOptions.Witness);
+			// This implements the weight = (stripped_size * 4) + witness_size formula,
+			// using only serialization with and without witness data. As witness_size
+			// is equal to total_size - stripped_size, this formula is identical to:
+			// weight = (stripped_size * 3) + total_size.
+			var weight = strippedSize * (WITNESS_SCALE_FACTOR - 1) + totalSize;
+			return (weight + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
+		}
+
         /// <summary>
-        /// Size of the transaction discounting the witness (Used for fee calculation)
+        /// Default serialized size.
         /// </summary>
-        /// <returns>Transaction size</returns>
-        public int GetVirtualSize()
+        /// <returns>Transaction size.</returns>
+        public int GetSerializedSize()
         {
-            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness));
-            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None));
-            // This implements the weight = (stripped_size * 4) + witness_size formula,
-            // using only serialization with and without witness data. As witness_size
-            // is equal to total_size - stripped_size, this formula is identical to:
-            // weight = (stripped_size * 3) + total_size.
-            var weight = strippedSize * (WITNESS_SCALE_FACTOR - 1) + totalSize;
-            return (weight + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
+            return this.GetSerializedSize(this.NetworkOptions);
         }
 
-        public TxIn AddInput(Transaction prevTx, int outIndex)
-        {
-            if(outIndex >= prevTx.Outputs.Count)
-                throw new InvalidOperationException("Output " + outIndex + " is not present in the prevTx");
-            var @in = new TxIn();
-            @in.PrevOut.Hash = prevTx.GetHash();
-            @in.PrevOut.N = (uint)outIndex;
-            AddInput(@in);
-            return @in;
-        }
+		public TxIn AddInput(Transaction prevTx, int outIndex)
+		{
+			if(outIndex >= prevTx.Outputs.Count)
+				throw new InvalidOperationException("Output " + outIndex + " is not present in the prevTx");
+			var @in = new TxIn();
+			@in.PrevOut.Hash = prevTx.GetHash();
+			@in.PrevOut.N = (uint)outIndex;
+			AddInput(@in);
+			return @in;
+		}
 
 
         /// <summary>
@@ -1634,10 +1669,10 @@ namespace NBitcoin
         }
 #endif
 
-        public static Transaction Parse(string hex)
-        {
-            return new Transaction(Encoders.Hex.DecodeData(hex));
-        }
+		public static Transaction Parse(string hex, Network network = null)
+		{
+			return new Transaction(Encoders.Hex.DecodeData(hex), network?.NetworkOptions??NetworkOptions.All);
+		}
 
         public string ToHex()
         {
@@ -1846,28 +1881,32 @@ namespace NBitcoin
             return a > b ? a : b;
         }
 
-        /// <summary>
-        /// Create a transaction with the specified option only. (useful for stripping data from a transaction)
-        /// </summary>
-        /// <param name="options">Options to keep</param>
-        /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(NetworkOptions options)
-        {
-            if(options == NetworkOptions.Witness && HasWitness)
-                return this;
-            if(options == NetworkOptions.None && !HasWitness)
-                return this;
-            var instance = new Transaction();
-            var ms = new MemoryStream();
-            var bms = new BitcoinStream(ms, true);
-            bms.TransactionOptions = options;
-            this.ReadWrite(bms);
-            ms.Position = 0;
-            bms = new BitcoinStream(ms, false);
-            bms.TransactionOptions = options;
-            instance.ReadWrite(bms);
-            return instance;
-        }
+		/// <summary>
+		/// Create a transaction with the specified option only. (useful for stripping data from a transaction).
+		/// </summary>
+		/// <param name="options">Options to keep.</param>
+        /// <param name="mask">Options mask specifies the bits of interest.</param>
+		/// <returns>A new transaction with only the options wanted</returns>
+		public Transaction WithOptions(NetworkOptions options, uint mask = NetworkOptions.Witness)
+		{
+            // If the bits of interest already have their intended values then exit
+			if ((options & mask) == (this.NetworkOptions & mask))
+				return this;
+
+            // Preserve the bits excluded by this operation
+            options |= (this.NetworkOptions & ~mask);
+
+			var instance = new Transaction() { NetworkOptions = options };
+			var ms = new MemoryStream();
+			var bms = new BitcoinStream(ms, true);
+			bms.NetworkOptions = options;
+			this.ReadWrite(bms);
+			ms.Position = 0;
+			bms = new BitcoinStream(ms, false);
+			bms.NetworkOptions = options;
+			instance.ReadWrite(bms);
+			return instance;
+		}
 
         public bool HasWitness
         {

@@ -228,43 +228,43 @@ namespace NBitcoin.RPC
             if(transaction == null)
                 throw new ArgumentNullException("transaction");
 
-            RPCResponse response = null;
-            if(options != null)
-            {
-                var jOptions = new JObject();
-                if(options.ChangeAddress != null)
-                    jOptions.Add(new JProperty("changeAddress", options.ChangeAddress.ToString()));
-                if(options.ChangePosition != null)
-                    jOptions.Add(new JProperty("changePosition", options.ChangePosition.Value));
-                jOptions.Add(new JProperty("includeWatching", options.IncludeWatching));
-                jOptions.Add(new JProperty("lockUnspents", options.LockUnspents));
-                if(options.ReserveChangeKey != null)
-                    jOptions.Add(new JProperty("reserveChangeKey", options.ReserveChangeKey));
-                if(options.FeeRate != null)
-                    jOptions.Add(new JProperty("feeRate", options.FeeRate.GetFee(1000).ToDecimal(MoneyUnit.BTC)));
-                if(options.SubtractFeeFromOutputs != null)
-                {
-                    JArray array = new JArray();
-                    foreach(var v in options.SubtractFeeFromOutputs)
-                    {
-                        array.Add(new JValue(v));
-                    }
-                    jOptions.Add(new JProperty("subtractFeeFromOutputs", array));
-                }
-                response = await SendCommandAsync("fundrawtransaction", ToHex(transaction), jOptions).ConfigureAwait(false);
-            }
-            else
-            {
-                response = await SendCommandAsync("fundrawtransaction", ToHex(transaction)).ConfigureAwait(false);
-            }
-            var r = (JObject)response.Result;
-            return new FundRawTransactionResponse()
-            {
-                Transaction = new Transaction(r["hex"].Value<string>()),
-                Fee = Money.Coins(r["fee"].Value<decimal>()),
-                ChangePos = r["changepos"].Value<int>()
-            };
-        }
+			RPCResponse response = null;
+			if(options != null)
+			{
+				var jOptions = new JObject();
+				if(options.ChangeAddress != null)
+					jOptions.Add(new JProperty("changeAddress", options.ChangeAddress.ToString()));
+				if(options.ChangePosition != null)
+					jOptions.Add(new JProperty("changePosition", options.ChangePosition.Value));
+				jOptions.Add(new JProperty("includeWatching", options.IncludeWatching));
+				jOptions.Add(new JProperty("lockUnspents", options.LockUnspents));
+				if(options.ReserveChangeKey != null)
+					jOptions.Add(new JProperty("reserveChangeKey", options.ReserveChangeKey));
+				if(options.FeeRate != null)
+					jOptions.Add(new JProperty("feeRate", options.FeeRate.GetFee(1000).ToDecimal(MoneyUnit.BTC)));
+				if(options.SubtractFeeFromOutputs != null)
+				{
+					JArray array = new JArray();
+					foreach(var v in options.SubtractFeeFromOutputs)
+					{
+						array.Add(new JValue(v));
+					}
+					jOptions.Add(new JProperty("subtractFeeFromOutputs", array));
+				}
+				response = await SendCommandAsync("fundrawtransaction", ToHex(transaction), jOptions).ConfigureAwait(false);
+			}
+			else
+			{
+				response = await SendCommandAsync("fundrawtransaction", ToHex(transaction)).ConfigureAwait(false);
+			}
+			var r = (JObject)response.Result;
+			return new FundRawTransactionResponse()
+			{
+				Transaction = new Transaction(r["hex"].Value<string>(), options:this.Network.NetworkOptions),
+				Fee = Money.Coins(r["fee"].Value<decimal>()),
+				ChangePos = r["changepos"].Value<int>()
+			};
+		}
 
         //NBitcoin internally put a bit in the version number to make difference between transaction without input and transaction with witness.
         private string ToHex(Transaction tx)
@@ -638,16 +638,16 @@ namespace NBitcoin.RPC
             return SignRawTransactionAsync(tx).GetAwaiter().GetResult();
         }
 
-        /// <summary>
-        /// Sign a transaction
-        /// </summary>
-        /// <param name="tx">The transaction to be signed</param>
-        /// <returns>The signed transaction</returns>
-        public async Task<Transaction> SignRawTransactionAsync(Transaction tx)
-        {
-            var result = await SendCommandAsync(RPCOperations.signrawtransaction, tx.ToHex()).ConfigureAwait(false);
-            return new Transaction(result.Result["hex"].Value<string>());
-        }
-    }
+		/// <summary>
+		/// Sign a transaction
+		/// </summary>
+		/// <param name="tx">The transaction to be signed</param>
+		/// <returns>The signed transaction</returns>
+		public async Task<Transaction> SignRawTransactionAsync(Transaction tx)
+		{
+			var result = await SendCommandAsync(RPCOperations.signrawtransaction, tx.ToHex()).ConfigureAwait(false);
+			return new Transaction(result.Result["hex"].Value<string>(), options:this.Network.NetworkOptions);
+		}
+	}
 }
 #endif

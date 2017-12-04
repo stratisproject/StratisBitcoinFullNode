@@ -12,6 +12,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopIntegration : BlockStoreLoopStepBaseTest
     {
+        public BlockStoreLoopIntegration()
+        {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         /// <summary>
         /// Tests the block store loop step with a concrete implementation of BlockRepository.
         /// </summary>

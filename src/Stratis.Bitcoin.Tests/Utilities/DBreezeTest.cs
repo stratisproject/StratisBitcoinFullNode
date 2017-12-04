@@ -23,6 +23,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// </summary>
         public DBreezeTest()
         {
+            // These are expected to be false for non-POS test cases.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+
             this.dbreezeSerializer = new DBreezeSerializer();
         }
 

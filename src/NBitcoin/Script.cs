@@ -689,7 +689,7 @@ namespace NBitcoin
             var scriptCopy = new Script(scriptCode._Script);
             scriptCopy.FindAndDelete(OpcodeType.OP_CODESEPARATOR);
 
-            var txCopy = new Transaction(txTo.ToBytes());
+            var txCopy = txTo.Clone();
 
             //Set all TxIn script to empty string
             foreach(var txin in txCopy.Inputs)
@@ -737,12 +737,12 @@ namespace NBitcoin
             }
 
 
-            //Serialize TxCopy, append 4 byte hashtypecode
-            var stream = CreateHashWriter(sigversion);
-            txCopy.ReadWrite(stream);
-            stream.ReadWrite((uint)nHashType);
-            return GetHash(stream);
-        }
+			//Serialize TxCopy, append 4 byte hashtypecode
+			var stream = CreateHashWriter(sigversion, txTo.NetworkOptions);
+			txCopy.ReadWrite(stream);
+			stream.ReadWrite((uint)nHashType);
+			return GetHash(stream);
+		}
 
         private static uint256 GetHash(BitcoinStream stream)
         {
@@ -787,14 +787,15 @@ namespace NBitcoin
             return hashPrevouts;
         }
 
-        private static BitcoinStream CreateHashWriter(HashVersion version)
-        {
-            HashStream hs = new HashStream();
-            BitcoinStream stream = new BitcoinStream(hs, true);
-            stream.Type = SerializationType.Hash;
-            stream.TransactionOptions = version == HashVersion.Original ? NetworkOptions.None : NetworkOptions.Witness;
-            return stream;
-        }
+		private static BitcoinStream CreateHashWriter(HashVersion version, NetworkOptions options = null)
+		{
+			HashStream hs = new HashStream();
+			BitcoinStream stream = new BitcoinStream(hs, true);
+			stream.Type = SerializationType.Hash;
+			stream.NetworkOptions = version == HashVersion.Original ? NetworkOptions.None : NetworkOptions.Witness;
+            stream.NetworkOptions |= (options & NetworkOptions.POS);
+			return stream;
+		}
 
         public static Script operator +(Script a, IEnumerable<byte> bytes)
         {

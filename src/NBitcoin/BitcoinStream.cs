@@ -81,19 +81,38 @@ namespace NBitcoin
             }
         }
 
-        private readonly bool _Serializing;
-        public bool Serializing
+		private readonly bool _Serializing;
+		public bool Serializing
+		{
+			get
+			{
+				return _Serializing;
+			}
+		}
+
+        /// <summary>
+        /// This property replaces the legacy Transaction.TimeStamp static flag.
+        /// </summary>
+        public bool TimeStamp
         {
             get
             {
-                return _Serializing;
+                bool timeStamp = ((uint)this.NetworkOptions & (uint)NetworkOptions.POS) != 0;
+
+                if (Transaction.TimeStamp != timeStamp)
+                {
+                    throw new ArgumentException($"The 'TimeStamp' value ({ timeStamp }) differs from Transaction.TimeStamp which is { Transaction.TimeStamp }");
+                }
+
+                return timeStamp;
             }
         }
+
         public BitcoinStream(Stream inner, bool serializing)
-        {
-            _Serializing = serializing;
-            _Inner = inner;
-        }
+		{
+			_Serializing = serializing;
+			_Inner = inner;
+		}
 
         public BitcoinStream(byte[] bytes)
             : this(new MemoryStream(bytes), false)
@@ -353,7 +372,7 @@ namespace NBitcoin
         }
 
         NetworkOptions _TransactionSupportedOptions = NetworkOptions.All;
-        public NetworkOptions TransactionOptions
+        public NetworkOptions NetworkOptions
         {
             get
             {
@@ -379,15 +398,16 @@ namespace NBitcoin
             });
         }
 
-        public void CopyParameters(BitcoinStream stream)
-        {
-            if(stream == null)
-                throw new ArgumentNullException("stream");
-            ProtocolVersion = stream.ProtocolVersion;
-            IsBigEndian = stream.IsBigEndian;
-            MaxArraySize = stream.MaxArraySize;
-            Type = stream.Type;
-        }
+		public void CopyParameters(BitcoinStream stream)
+		{
+			if(stream == null)
+				throw new ArgumentNullException("stream");
+			ProtocolVersion = stream.ProtocolVersion;
+            NetworkOptions = stream.NetworkOptions;
+			IsBigEndian = stream.IsBigEndian;
+			MaxArraySize = stream.MaxArraySize;
+			Type = stream.Type;
+		}
 
 
         public SerializationType Type

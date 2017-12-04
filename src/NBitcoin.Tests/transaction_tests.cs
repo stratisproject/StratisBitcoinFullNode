@@ -1205,13 +1205,13 @@ namespace NBitcoin.Tests
 
             MemoryStream ms = new MemoryStream();
             BitcoinStream stream = new BitcoinStream(ms, true);
-            stream.TransactionOptions = NetworkOptions.Witness;
+            stream.NetworkOptions = NetworkOptions.Witness;
             stream.ReadWrite(before);
 
             ms.Position = 0;
 
             stream = new BitcoinStream(ms, false);
-            stream.TransactionOptions = NetworkOptions.Witness;
+            stream.NetworkOptions = NetworkOptions.Witness;
             stream.ReadWrite(ref after2);
 
             Assert.Equal(after2.GetHash(), after.GetHash());

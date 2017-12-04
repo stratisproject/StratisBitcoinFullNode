@@ -53,16 +53,16 @@ namespace NBitcoin.Tests
             }
         }
 
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanCalculatePowPosCorrectly()
-        {
-            var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
-            var chain = store.GetChain();
-            var stakeChain = new MemoryStakeChain(Network.StratisMain);
-            var indexStore = new IndexedBlockStore(new InMemoryNoSqlRepository(), store);
-            var reindexed = indexStore.ReIndex();
-            Assert.Equal(reindexed, 103952);
+		[Fact]
+		[Trait("UnitTest", "UnitTest")]
+		public void CanCalculatePowPosCorrectly()
+		{
+			var store = new BlockStore(TestDataLocations.BlockFolderLocation, Network.StratisMain);
+			var chain = store.GetChain();
+			var stakeChain = new MemoryStakeChain(Network.StratisMain);
+			var indexStore = new IndexedBlockStore(new InMemoryNoSqlRepository(NetworkOptions.POSAll), store);
+			var reindexed = indexStore.ReIndex();
+			Assert.Equal(reindexed, 103952);
 
             foreach (var chainedBlock in chain.EnumerateAfter(chain.Genesis))
             {
