@@ -13,6 +13,7 @@ namespace NBitcoin
         Network,
         Hash
     }
+
     public class Scope : IDisposable
     {
         Action close;
@@ -43,26 +44,27 @@ namespace NBitcoin
             }
         }
     }
+
     public partial class BitcoinStream
     {
-        int _MaxArraySize = 1024 * 1024;
+        int maxArraySize = 1024 * 1024;
         public int MaxArraySize
         {
             get
             {
-                return _MaxArraySize;
+                return this.maxArraySize;
             }
             set
             {
-                _MaxArraySize = value;
+                this.maxArraySize = value;
             }
         }
 
         //ReadWrite<T>(ref T data)
-        static MethodInfo _ReadWriteTyped;
+        static MethodInfo readWriteTyped;
         static BitcoinStream()
         {
-            _ReadWriteTyped = typeof(BitcoinStream)
+            readWriteTyped = typeof(BitcoinStream)
             .GetTypeInfo()
             .DeclaredMethods
             .Where(m => m.Name == "ReadWrite")
@@ -72,28 +74,29 @@ namespace NBitcoin
             .First();
         }
 
-        private readonly Stream _Inner;
+        private readonly Stream inner;
         public Stream Inner
         {
             get
             {
-                return _Inner;
+                return this.inner;
             }
         }
 
-		private readonly bool _Serializing;
-		public bool Serializing
-		{
-			get
-			{
-				return _Serializing;
-			}
-		}
+        private readonly bool serializing;
+        public bool Serializing
+        {
+            get
+            {
+                return this.serializing;
+            }
+        }
+
         public BitcoinStream(Stream inner, bool serializing)
-		{
-			_Serializing = serializing;
-			_Inner = inner;
-		}
+        {
+            this.serializing = serializing;
+            this.inner = inner;
+        }
 
         public BitcoinStream(byte[] bytes)
             : this(new MemoryStream(bytes), false)
@@ -102,9 +105,9 @@ namespace NBitcoin
 
         public Script ReadWrite(Script data)
         {
-            if(Serializing)
+            if (this.Serializing)
             {
-                var bytes = data == null ? Script.Empty.ToBytes(true) : data.ToBytes(true);
+                byte[] bytes = data == null ? Script.Empty.ToBytes(true) : data.ToBytes(true);
                 ReadWriteAsVarString(ref bytes);
                 return data;
             }
@@ -118,7 +121,7 @@ namespace NBitcoin
 
         public void ReadWrite(ref Script script)
         {
-            if(Serializing)
+            if (this.Serializing)
                 ReadWrite(script);
             else
                 script = ReadWrite(script);
@@ -132,7 +135,7 @@ namespace NBitcoin
 
         public void ReadWriteAsVarString(ref byte[] bytes)
         {
-            if(Serializing)
+            if (this.Serializing)
             {
                 VarString str = new VarString(bytes);
                 str.ReadWrite(this);
@@ -150,7 +153,7 @@ namespace NBitcoin
             try
             {
                 var parameters = new object[] { obj };
-                _ReadWriteTyped.MakeGenericMethod(type).Invoke(this, parameters);
+                readWriteTyped.MakeGenericMethod(type).Invoke(this, parameters);
                 obj = parameters[0];
             }
             catch(TargetInvocationException ex)
@@ -163,6 +166,7 @@ namespace NBitcoin
         {
             ReadWriteByte(ref data);
         }
+
         public byte ReadWrite(byte data)
         {
             ReadWrite(ref data);
@@ -180,6 +184,7 @@ namespace NBitcoin
         {
             data.ReadWrite(this);
         }
+
         public void ReadWriteStruct<T>(T data) where T : struct, IBitcoinSerializable
         {
             data.ReadWrite(this);
@@ -188,10 +193,10 @@ namespace NBitcoin
         public void ReadWrite<T>(ref T data) where T : IBitcoinSerializable
         {
             var obj = data;
-            if(obj == null)
+            if (obj == null)
                 obj = Activator.CreateInstance<T>();
             obj.ReadWrite(this);
-            if(!Serializing)
+            if (!Serializing)
                 data = obj;
         }
 
@@ -212,14 +217,17 @@ namespace NBitcoin
             where TItem : IBitcoinSerializable, new()
         {
             var dataArray = data == null ? null : data.ToArray();
-            if(Serializing && dataArray == null)
+
+            if (this.Serializing && dataArray == null)
             {
                 dataArray = new TItem[0];
             }
+
             ReadWriteArray(ref dataArray);
-            if(!Serializing)
+
+            if (!this.Serializing)
             {
-                if(data == null)
+                if (data == null)
                     data = new TList();
                 else
                     data.Clear();
@@ -231,10 +239,12 @@ namespace NBitcoin
         {
             ReadWriteBytes(ref arr);
         }
+
         public void ReadWrite(ref byte[] arr, int offset, int count)
         {
             ReadWriteBytes(ref arr, offset, count);
         }
+
         public void ReadWrite<T>(ref T[] arr) where T : IBitcoinSerializable, new()
         {
             ReadWriteArray<T>(ref arr);
@@ -255,13 +265,13 @@ namespace NBitcoin
             {
                 bytes[i] = (byte)(value >> i * 8);
             }
-            if(IsBigEndian)
+            if (this.IsBigEndian)
                 Array.Reverse(bytes);
             ReadWriteBytes(ref bytes);
-            if(IsBigEndian)
+            if (this.IsBigEndian)
                 Array.Reverse(bytes);
             ulong valueTemp = 0;
-            for(int i = 0; i < bytes.Length; i++)
+            for (int i = 0; i < bytes.Length; i++)
             {
                 var v = (ulong)bytes[i];
                 valueTemp += v << (i * 8);
@@ -271,52 +281,54 @@ namespace NBitcoin
 
         private void ReadWriteBytes(ref byte[] data, int offset = 0, int count = -1)
         {
-            if(data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException("data");
 
-            if(data.Length == 0) return;
+            if (data.Length == 0) return;
 
             count = count == -1 ? data.Length : count;
 
-            if(count == 0) return;
+            if (count == 0) return;
 
-            if(Serializing)
+            if (this.Serializing)
             {
-                Inner.Write(data, offset, count);
-                Counter.AddWritten(count);
+                this.Inner.Write(data, offset, count);
+                this.Counter.AddWritten(count);
             }
             else
             {
-                var readen = Inner.ReadEx(data, offset, count, ReadCancellationToken);
-                if(readen == 0)
+                var readen = this.Inner.ReadEx(data, offset, count, this.ReadCancellationToken);
+                if (readen == 0)
                     throw new EndOfStreamException("No more byte to read");
-                Counter.AddRead(readen);
+                this.Counter.AddRead(readen);
 
             }
         }
-        private PerformanceCounter _Counter;
+
+        private PerformanceCounter counter;
         public PerformanceCounter Counter
         {
             get
             {
-                if(_Counter == null)
-                    _Counter = new PerformanceCounter();
-                return _Counter;
+                if (this.counter == null)
+                    this.counter = new PerformanceCounter();
+                return this.counter;
             }
         }
+
         private void ReadWriteByte(ref byte data)
         {
-            if(Serializing)
+            if (this.Serializing)
             {
-                Inner.WriteByte(data);
-                Counter.AddWritten(1);
+                this.Inner.WriteByte(data);
+                this.Counter.AddWritten(1);
             }
             else
             {
-                var readen = Inner.ReadByte();
-                if(readen == -1)
+                var readen = this.Inner.ReadByte();
+                if (readen == -1)
                     throw new EndOfStreamException("No more byte to read");
                 data = (byte)readen;
-                Counter.AddRead(1);
+                this.Counter.AddRead(1);
             }
         }
 
@@ -328,67 +340,66 @@ namespace NBitcoin
 
         public IDisposable BigEndianScope()
         {
-            var old = IsBigEndian;
+            var old = this.IsBigEndian;
             return new Scope(() =>
             {
-                IsBigEndian = true;
+                this.IsBigEndian = true;
             },
             () =>
             {
-                IsBigEndian = old;
+                this.IsBigEndian = old;
             });
         }
 
-        ProtocolVersion _ProtocolVersion = ProtocolVersion.PROTOCOL_VERSION;
+        ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION;
         public ProtocolVersion ProtocolVersion
         {
             get
             {
-                return _ProtocolVersion;
+                return this.protocolVersion;
             }
             set
             {
-                _ProtocolVersion = value;
+                this.protocolVersion = value;
             }
         }
 
-        NetworkOptions _TransactionSupportedOptions = NetworkOptions.All;
+        NetworkOptions transactionSupportedOptions = NetworkOptions.All;
         public NetworkOptions TransactionOptions
         {
             get
             {
-                return _TransactionSupportedOptions;
+                return this.transactionSupportedOptions;
             }
             set
             {
-                _TransactionSupportedOptions = value;
+                this.transactionSupportedOptions = value;
             }
         }
 
-
         public IDisposable ProtocolVersionScope(ProtocolVersion version)
         {
-            var old = ProtocolVersion;
+            var old = this.ProtocolVersion;
             return new Scope(() =>
             {
-                ProtocolVersion = version;
+                this.ProtocolVersion = version;
             },
             () =>
             {
-                ProtocolVersion = old;
+                this.ProtocolVersion = old;
             });
         }
 
-		public void CopyParameters(BitcoinStream stream)
-		{
-			if(stream == null)
-				throw new ArgumentNullException("stream");
-			ProtocolVersion = stream.ProtocolVersion;
-            TransactionOptions = stream.TransactionOptions.Clone();
-			IsBigEndian = stream.IsBigEndian;
-			MaxArraySize = stream.MaxArraySize;
-			Type = stream.Type;
-		}
+        public void CopyParameters(BitcoinStream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+            this.ProtocolVersion = stream.ProtocolVersion;
+            this.TransactionOptions = stream.TransactionOptions.Clone();
+            this.IsBigEndian = stream.IsBigEndian;
+            this.MaxArraySize = stream.MaxArraySize;
+            this.Type = stream.Type;
+        }
 
 
         public SerializationType Type
@@ -399,13 +410,13 @@ namespace NBitcoin
 
         public IDisposable SerializationTypeScope(SerializationType value)
         {
-            var old = Type;
+            var old = this.Type;
             return new Scope(() =>
             {
-                Type = value;
+                this.Type = value;
             }, () =>
             {
-                Type = old;
+                this.Type = old;
             });
         }
 
@@ -419,14 +430,15 @@ namespace NBitcoin
         {
             ulong vallong = val;
             ReadWriteAsVarInt(ref vallong);
-            if(!Serializing)
+            if (!this.Serializing)
                 val = (uint)vallong;
         }
+
         public void ReadWriteAsVarInt(ref ulong val)
         {
             var value = new VarInt(val);
             ReadWrite(ref value);
-            if(!Serializing)
+            if (!this.Serializing)
                 val = value.ToLong();
         }
 
@@ -434,14 +446,15 @@ namespace NBitcoin
         {
             var value = new CompactVarInt(val, sizeof(uint));
             ReadWrite(ref value);
-            if(!Serializing)
+            if (!this.Serializing)
                 val = (uint)value.ToLong();
         }
+
         public void ReadWriteAsCompactVarInt(ref ulong val)
         {
             var value = new CompactVarInt(val, sizeof(ulong));
             ReadWrite(ref value);
-            if(!Serializing)
+            if (!this.Serializing)
                 val = value.ToLong();
         }
     }
