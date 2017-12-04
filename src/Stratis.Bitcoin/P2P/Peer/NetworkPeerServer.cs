@@ -39,40 +39,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         public int MaxConnections { get; set; }
 
         /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
-        private IPEndPoint localEndpoint;
-        /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
-        public IPEndPoint LocalEndpoint
-        {
-            get
-            {
-                return this.localEndpoint;
-            }
-            set
-            {
-                this.localEndpoint = Utils.EnsureIPv6(value);
-            }
-        }
+        public IPEndPoint LocalEndpoint { get; private set; }
+
+        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
+        public IPEndPoint ExternalEndpoint { get; private set; }
 
         /// <summary>TCP server listener accepting inbound connections.</summary>
         private TcpListener tcpListener;
 
         /// <summary>Queue of incoming messages distributed to message consumers.</summary>
         private readonly MessageProducer<IncomingMessage> messageProducer = new MessageProducer<IncomingMessage>();
-
-        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
-        volatile IPEndPoint externalEndpoint;
-        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
-        public IPEndPoint ExternalEndpoint
-        {
-            get
-            {
-                return this.externalEndpoint;
-            }
-            set
-            {
-                this.externalEndpoint = Utils.EnsureIPv6(value);
-            }
-        }
 
         /// <summary>List of network client peers that are currently connected to the server.</summary>
         public NetworkPeerCollection ConnectedNetworkPeers { get; private set; }
@@ -109,17 +85,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Initializes instance of a network peer server.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="version">Version of the network protocol that the server should run.</param>
+        /// <param name="ipAddress">Address of the local interface to listen on, or <c>null</c> to listen on all available interfaces.</param>
         /// <param name="internalPort">Port on which the server will listen, or -1 to use the default port for the selected network.</param>
+        /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
-        public NetworkPeerServer(Network network, ProtocolVersion version, int internalPort, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
+        public NetworkPeerServer(Network network, IPEndPoint localEndpoint, IPEndPoint externalEndpoint, ProtocolVersion version, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
         {
-            internalPort = internalPort == -1 ? network.DefaultPort : internalPort;
-
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{internalPort}] ");
-            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(version), version, nameof(internalPort), internalPort);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndpoint}] ");
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndpoint), localEndpoint, nameof(externalEndpoint), externalEndpoint, nameof(version), version);
 
             this.dateTimeProvider = dateTimeProvider;
             this.networkPeerFactory = networkPeerFactory;
@@ -127,16 +102,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.AllowLocalPeers = true;
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
-            this.localEndpoint = new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), internalPort);
-
-            this.tcpListener = new TcpListener(this.LocalEndpoint);
-            this.tcpListener.Server.LingerState = new LingerOption(true, 0);
-            this.tcpListener.Server.NoDelay = true;
-            this.tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+            this.LocalEndpoint = Utils.EnsureIPv6(localEndpoint);
+            this.ExternalEndpoint = Utils.EnsureIPv6(externalEndpoint);
 
             this.MaxConnections = 125;
             this.Network = network;
-            this.externalEndpoint = new IPEndPoint(this.localEndpoint.Address, this.Network.DefaultPort);
             this.Version = version;
 
             this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
@@ -147,6 +117,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ConnectedNetworkPeers.MessageProducer.AddMessageListener(this.listener);
 
             this.serverCancel = new CancellationTokenSource();
+
+            this.tcpListener = new TcpListener(this.LocalEndpoint);
+            this.tcpListener.Server.LingerState = new LingerOption(true, 0);
+            this.tcpListener.Server.NoDelay = true;
+            this.tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
 
@@ -427,7 +402,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("Exception occurred: {0}", e.ToString());
             }
 
-            this.tcpListener.Stop();
+            this.tcpListener?.Stop();
 
             this.logger.LogTrace("Waiting for {0} unfinished tasks to complete.", this.unfinishedTasks);
             while (this.unfinishedTasks > 0)
