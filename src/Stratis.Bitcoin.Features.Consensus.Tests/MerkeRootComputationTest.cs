@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var root = ComputeMerkleRoot(leaves, out mutated);
 
             Assert.Equal("cd00f5d5aada62c8e49a9f01378998cbd016d04b725d0d8497877e5f75ffc722", root.ToString());
-            Assert.Equal(mutated, false);
+            Assert.False(mutated);
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var root = ComputeMerkleRoot(leaves, out mutated);
 
             Assert.Equal("95aa5bba66381c3817df338895349acd3fc3e8ce226e04a5e2acbb53db18b9c0", root.ToString());
-            Assert.Equal(mutated, true);
+            Assert.True(mutated);
         }
 
         private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)

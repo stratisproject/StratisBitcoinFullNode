@@ -94,8 +94,8 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        ///<inheritdoc />
-        public override void Start()
+        /// <inheritdoc />
+        public override void Initialize()
         {
             if (this.minerSettings.Mine)
             {
@@ -117,14 +117,14 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        ///<inheritdoc />
-        public override void Stop()
+        /// <inheritdoc />
+        public override void Dispose()
         {
             this.powLoop?.Dispose();
             this.posLoop?.Dispose();
         }
 
-        ///<inheritdoc />
+        /// <inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)
         {
             if (services.ServiceProvider.GetService<PosMinting>() != null)
@@ -162,6 +162,9 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 features
                     .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<PowMining>();
