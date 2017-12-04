@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public override string ToString()
         {
-            return "Count: " + this.Inventory.Count;
+            return $"Count: {this.Inventory.Count}";
         }
 
         public IEnumerator<InventoryVector> GetEnumerator()

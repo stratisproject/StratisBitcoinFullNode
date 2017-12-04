@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
-            if (IsPropagated(transaction))
+            if (this.IsPropagated(transaction))
                 return true;
 
             this.PropagateTransactionToPeers(transaction, true);

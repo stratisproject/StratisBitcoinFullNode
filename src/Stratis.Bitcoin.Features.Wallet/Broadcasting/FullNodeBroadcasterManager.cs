@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
@@ -15,6 +16,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
         public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
         {
+            Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
+
             this.mempoolValidator = mempoolValidator;
         }
 
@@ -24,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
-            if (IsPropagated(transaction))
+            if (this.IsPropagated(transaction))
                 return true;
 
             var state = new MempoolValidationState(false);
