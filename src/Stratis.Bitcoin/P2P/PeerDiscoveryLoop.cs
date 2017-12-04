@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.P2P
                     }
                     finally
                     {
-                        networkPeer?.DisconnectAsync();
+                        networkPeer?.DisconnectWithException();
                     }
                 }
             });
