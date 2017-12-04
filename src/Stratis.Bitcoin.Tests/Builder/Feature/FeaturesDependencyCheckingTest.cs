@@ -19,13 +19,13 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureA : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }

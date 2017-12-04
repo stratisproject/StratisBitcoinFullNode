@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
 
                 // stop the node it will persist the chain with the reset tip
-                stratisNodeSync.FullNode.Stop();
+                stratisNodeSync.FullNode.Dispose();
 
                 var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
 

@@ -73,9 +73,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return Task.CompletedTask;
         }
 
-        private bool EqualsArray(byte[] a, byte[] b, int len)
+        /// <summary>
+        /// Checks if first <paramref name="lenght"/> entries are equal between two arrays.
+        /// </summary>
+        /// <param name="a">First array.</param>
+        /// <param name="b">Second array.</param>
+        /// <param name="lenght">Number of entries to be checked.</param>
+        /// <returns><c>true</c> if <paramref name="lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
+        private bool EqualsArray(byte[] a, byte[] b, int lenght)
         {
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < lenght; i++)
             {
                 if (a[i] != b[i])
                     return false;
@@ -83,20 +90,34 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return true;
         }
 
+        /// <summary>
+        /// Gets index of the last coinbase transaction output with SegWit flag.
+        /// </summary>
+        /// <param name="block">Block which coinbase transaction's outputs will be checked for SegWit flags.</param>
+        /// <returns>
+        /// <c>-1</c> if no SegWit flags were found.
+        /// If SegWit flag is found index of the last transaction's output that has SegWit flag is returned.
+        /// </returns>
         private int GetWitnessCommitmentIndex(Block block)
         {
             int commitpos = -1;
             for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
             {
-                if ((block.Transactions[0].Outputs[i].ScriptPubKey.Length >= 38) &&
-                    (block.Transactions[0].Outputs[i].ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN) &&
-                    (block.Transactions[0].Outputs[i].ScriptPubKey.ToBytes(true)[1] == 0x24) &&
-                    (block.Transactions[0].Outputs[i].ScriptPubKey.ToBytes(true)[2] == 0xaa) &&
-                    (block.Transactions[0].Outputs[i].ScriptPubKey.ToBytes(true)[3] == 0x21) &&
-                    (block.Transactions[0].Outputs[i].ScriptPubKey.ToBytes(true)[4] == 0xa9) &&
-                    (block.Transactions[0].Outputs[i].ScriptPubKey.ToBytes(true)[5] == 0xed))
+                var scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
+
+                if (scriptPubKey.Length >= 38)
                 {
-                    commitpos = i;
+                    byte[] scriptBytes = scriptPubKey.ToBytes(true);
+
+                    if ((scriptBytes[0] == (byte)OpcodeType.OP_RETURN) &&
+                        (scriptBytes[1] == 0x24) &&
+                        (scriptBytes[2] == 0xaa) &&
+                        (scriptBytes[3] == 0x21) &&
+                        (scriptBytes[4] == 0xa9) &&
+                        (scriptBytes[5] == 0xed))
+                    {
+                        commitpos = i;
+                    }
                 }
             }
 

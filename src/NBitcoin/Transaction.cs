@@ -696,8 +696,7 @@ namespace NBitcoin
 
         public bool VerifyScript(Script scriptPubKey, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            ScriptError unused;
-            return VerifyScript(scriptPubKey, scriptVerify, out unused);
+            return VerifyScript(scriptPubKey, scriptVerify, out ScriptError unused);
         }
         public bool VerifyScript(Script scriptPubKey, out ScriptError error)
         {
@@ -714,8 +713,7 @@ namespace NBitcoin
 
         public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            ScriptError error;
-            return VerifyScript(coin, scriptVerify, out error);
+            return VerifyScript(coin, scriptVerify, out ScriptError unused);
         }
 
         public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify, out ScriptError error)
@@ -1078,13 +1076,6 @@ namespace NBitcoin
         }
     }
 
-    [Flags]
-    public enum TransactionOptions : uint
-    {
-        None = 0x00000000,
-        Witness = 0x40000000,
-        All = Witness
-    }
     class Witness
     {
         TxInList _Inputs;
@@ -1224,7 +1215,7 @@ namespace NBitcoin
 
         public virtual void ReadWrite(BitcoinStream stream)
         {
-            var witSupported = (((uint)stream.TransactionOptions & (uint)TransactionOptions.Witness) != 0) &&
+            var witSupported = (((uint)stream.TransactionOptions & (uint)NetworkOptions.Witness) != 0) &&
                                 stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
 
             byte flags = 0;
@@ -1336,7 +1327,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = TransactionOptions.None
+                    TransactionOptions = NetworkOptions.None
                 });
                 h = hs.GetHash();
             }
@@ -1385,7 +1376,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = TransactionOptions.Witness
+                    TransactionOptions = NetworkOptions.Witness
                 });
                 h = hs.GetHash();
             }
@@ -1471,8 +1462,8 @@ namespace NBitcoin
         /// <returns>Transaction size</returns>
         public int GetVirtualSize()
         {
-            var totalSize = this.GetSerializedSize(TransactionOptions.Witness);
-            var strippedSize = this.GetSerializedSize(TransactionOptions.None);
+            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness));
+            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None));
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
@@ -1860,11 +1851,11 @@ namespace NBitcoin
         /// </summary>
         /// <param name="options">Options to keep</param>
         /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(TransactionOptions options)
+        public Transaction WithOptions(NetworkOptions options)
         {
-            if(options == TransactionOptions.Witness && HasWitness)
+            if(options == NetworkOptions.Witness && HasWitness)
                 return this;
-            if(options == TransactionOptions.None && !HasWitness)
+            if(options == NetworkOptions.None && !HasWitness)
                 return this;
             var instance = new Transaction();
             var ms = new MemoryStream();

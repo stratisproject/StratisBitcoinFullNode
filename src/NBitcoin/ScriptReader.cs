@@ -260,7 +260,7 @@ namespace NBitcoin
                 default:
                     return Enum.GetName(typeof(OpcodeType), opcode);
             }
-        }        
+        }
         internal static bool IsPushCode(OpcodeType opcode)
         {
             return 0 <= opcode && opcode <= OpcodeType.OP_16 && opcode != OpcodeType.OP_RESERVED;
@@ -306,7 +306,7 @@ namespace NBitcoin
         {
             return _OpcodeByName.TryGetValue(name, out result);
         }
-    
+
         public static Op GetPushOp(long value)
         {
             return GetPushOp(Utils.BigIntegerToBytes(ooo.BigInteger.ValueOf(value)));
@@ -696,46 +696,46 @@ namespace NBitcoin
             return result;
         }
     }
-    public class ScriptReader
+
+    public class ScriptReader : IDisposable
     {
-        private readonly Stream _Inner;
+        private readonly Stream inner;
+
         public Stream Inner
         {
             get
             {
-                return _Inner;
+                return this.inner;
             }
         }
+
         public ScriptReader(Stream stream)
         {
-            if(stream == null)
-                throw new ArgumentNullException("stream");
-            _Inner = stream;
+            this.inner = stream ?? throw new ArgumentNullException("stream");
         }
+
         public ScriptReader(byte[] data)
             : this(new MemoryStream(data))
         {
-
         }
-
 
         public Op Read()
         {
-            var b = Inner.ReadByte();
+            var b = this.Inner.ReadByte();
             if(b == -1)
                 return null;
+
             var opcode = (OpcodeType)b;
+
             if(Op.IsPushCode(opcode))
             {
                 Op op = new Op();
                 op.Code = opcode;
-                op.PushData = op.ReadData(Inner);
+                op.PushData = op.ReadData(this.Inner);
                 return op;
             }
-            return new Op()
-            {
-                Code = opcode
-            };
+
+            return new Op() { Code = opcode };
         }
 
         public bool HasError
@@ -748,9 +748,12 @@ namespace NBitcoin
         {
             Op code;
             while((code = Read()) != null)
-            {
                 yield return code;
-            }
+        }
+
+        public void Dispose()
+        {
+            this.inner?.Dispose();
         }
     }
 }

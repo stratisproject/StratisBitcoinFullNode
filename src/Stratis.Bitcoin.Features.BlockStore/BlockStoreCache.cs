@@ -153,6 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.cache.Dispose();
