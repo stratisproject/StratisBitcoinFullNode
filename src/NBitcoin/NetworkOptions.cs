@@ -1,4 +1,6 @@
-﻿namespace NBitcoin
+﻿using System;
+
+namespace NBitcoin
 {
     /// <summary>
     /// This class is a drop-in replacement for the legacy TransactionOptions enumeration.
@@ -6,11 +8,9 @@
     public class NetworkOptions
     {
         public const uint None = 0x00000000;
-        public const uint Signature = 0x10000000;
-        public const uint TimeStamp = 0x20000000;
+        public const uint POS = 0x20000000;
         public const uint Witness = 0x40000000;
         public const uint All = Witness;
-        public const uint POS = Signature | TimeStamp;
         public const uint POSAll = Witness | POS;
 
         private uint flags = All;
@@ -24,6 +24,42 @@
             this.flags = flags;
         }
 
+        public bool IsProofOfStake
+        {
+            get
+            {
+                bool isPOS = (this.flags & POS) != 0;
+                // This sanity check will be removed once the static flags are removed
+                if (isPOS != Block.BlockSignature)
+                {
+                    throw new ArgumentException($"Block.BlockSignature { Block.BlockSignature} mismatches cross-check value: { isPOS }");
+                }
+                // This sanity check will be removed once the static flags are removed
+                if (isPOS != Transaction.TimeStamp)
+                {
+                    throw new ArgumentException($"Transaction.TimeStamp {Transaction.TimeStamp} mismatches cross-check value: { isPOS }");
+                }
+                return isPOS;
+            }
+
+            set
+            {
+                this.flags = value ? (this.flags | POS) : (this.flags & ~POS);
+            }
+        }
+
+        public bool IsWitness
+        {
+            get
+            {
+                return (this.flags & Witness) != 0;
+            }
+
+            set
+            {
+                this.flags = value ? (this.flags | Witness) : (this.flags & ~Witness);
+            }
+        }
         /// <summary>
         /// Clones the NetworkOptions object.
         /// </summary>

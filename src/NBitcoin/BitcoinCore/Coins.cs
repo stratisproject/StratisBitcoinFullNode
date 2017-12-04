@@ -76,7 +76,7 @@ namespace NBitcoin.BitcoinCore
 		}
 		public Coins(Transaction tx, int height)
 		{
-            if (tx.TimeStampNew)
+            if (tx.NetworkOptions?.IsProofOfStake ?? false)
             {
                 fCoinStake = tx.IsCoinStake;
                 nTime = tx.Time;

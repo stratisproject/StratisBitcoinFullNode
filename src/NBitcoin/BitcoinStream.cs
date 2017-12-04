@@ -97,7 +97,7 @@ namespace NBitcoin
         {
             get
             {
-                bool timeStamp = ((uint)this.NetworkOptions & (uint)NetworkOptions.TimeStamp) != 0;
+                bool timeStamp = ((uint)this.NetworkOptions & (uint)NetworkOptions.POS) != 0;
 
                 if (Transaction.TimeStamp != timeStamp)
                 {

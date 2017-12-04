@@ -361,7 +361,7 @@ namespace NBitcoin
             if (network == null)
                 throw new ArgumentNullException("network");
 
-            if (this.Header.Signature)
+            if (this.Header.NetworkOptions.IsProofOfStake)
                 return BlockStake.Validate(network, this);
 
             bool genesisCorrect = (this.Height != 0) || this.HashBlock == network.GetGenesis().GetHash();

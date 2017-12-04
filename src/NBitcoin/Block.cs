@@ -63,20 +63,6 @@ namespace NBitcoin
             }
         }
 
-        public bool Signature
-        {
-            get
-            {
-                bool signature = (this.NetworkOptions & NetworkOptions.Signature) != 0;
-                if (signature != Block.BlockSignature)
-                {
-                    throw new ArgumentException($"Block.BlockSignature { Block.BlockSignature} mismatches { signature }");
-                }
-                return signature;
-            }
-        }
-            
-
         public BlockHeader()
         {
             this.SetNull();
@@ -143,7 +129,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            if (this.Signature)
+            if (this.NetworkOptions?.IsProofOfStake ?? false)
             {
                 if (this.version > 6)
                     hash = Hashes.Hash256(this.ToBytes());
@@ -195,7 +181,7 @@ namespace NBitcoin
                 return false;
 
             // Check proof of work matches claimed amount.
-            if (this.Signature) // Note this can only be called on a POW block.
+            if (this.NetworkOptions.IsProofOfStake) // Note this can only be called on a POW block.
                 return this.GetPoWHash() <= this.Bits.ToUInt256();
 
             return consensus.GetPoWHash(this) <= this.Bits.ToUInt256();
@@ -266,14 +252,6 @@ namespace NBitcoin
             }
         }
 
-        public bool Signature
-        {
-            get
-            {
-                return (this.NetworkOptions & NetworkOptions.Signature) != 0;
-            }
-        }
-
         public MerkleNode GetMerkleRoot()
         {
             return MerkleNode.GetRoot(this.Transactions.Select(t => t.GetHash()));
@@ -312,7 +290,7 @@ namespace NBitcoin
                 stream.NetworkOptions |= (this.NetworkOptions & NetworkOptions.POS);
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
-            if (this.header.Signature)
+            if (this.header.NetworkOptions.IsProofOfStake)
                 stream.ReadWrite(ref this.blockSignature);
         }
 
@@ -413,7 +391,7 @@ namespace NBitcoin
         /// <returns></returns>
         public bool Check(Consensus consensus)
         {
-            if (this.Signature)
+            if (this.NetworkOptions.IsProofOfStake)
                 return BlockStake.Check(this);
 
             return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);

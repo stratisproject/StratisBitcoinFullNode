@@ -1115,25 +1115,6 @@ namespace NBitcoin
 	{
 		public static bool TimeStamp = false;
 
-        /// <summary>
-        /// To replace the legacy Transaction.TimeStamp static flag.
-        /// </summary>
-        public bool TimeStampNew // Temporary name until static flags are removed
-        {
-            get
-            {
-                bool timeStamp = (this.NetworkOptions & NetworkOptions.TimeStamp) != 0;
-
-                // Test that we are achieving the same result as the legacy flag.
-                if (Transaction.TimeStamp != timeStamp)
-                {
-                    throw new ArgumentException($"The 'TimeStamp' value ({ timeStamp }) differs from Transaction.TimeStamp which is { Transaction.TimeStamp }");
-                }
-
-                return timeStamp;
-            }
-        }
-
 		public bool RBF
 		{
 			get
@@ -1901,16 +1882,20 @@ namespace NBitcoin
         }
 
 		/// <summary>
-		/// Create a transaction with the specified option only. (useful for stripping data from a transaction)
+		/// Create a transaction with the specified option only. (useful for stripping data from a transaction).
 		/// </summary>
-		/// <param name="options">Options to keep</param>
+		/// <param name="options">Options to keep.</param>
+        /// <param name="mask">Options mask specifies the bits of interest.</param>
 		/// <returns>A new transaction with only the options wanted</returns>
-		public Transaction WithOptions(NetworkOptions options)
+		public Transaction WithOptions(NetworkOptions options, uint mask = NetworkOptions.Witness)
 		{
-			if (((options & NetworkOptions.Witness) != 0) == HasWitness)
+            // If the bits of interest already have their intended values then exit
+			if ((options & mask) == (this.NetworkOptions & mask))
 				return this;
 
-            options |= this.NetworkOptions & NetworkOptions.POS;
+            // Preserve the bits excluded by this operation
+            options |= (this.NetworkOptions & ~mask);
+
 			var instance = new Transaction() { NetworkOptions = options };
 			var ms = new MemoryStream();
 			var bms = new BitcoinStream(ms, true);
