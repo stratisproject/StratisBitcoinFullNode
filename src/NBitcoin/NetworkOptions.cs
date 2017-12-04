@@ -1,26 +1,40 @@
-﻿namespace NBitcoin
+﻿using System;
+
+namespace NBitcoin
 {
     /// <summary>
     /// The current use-case for this class is to provide option-dependent serialization.
     /// It is a drop-in replacement for the legacy TransactionOptions enumeration.
-    /// 
+    /// </summary>
+    /// <description>
     /// The NetworkOptions instance is intended to be relayed from the Network object to 
     /// the child objects: Network => Block => Transaction => TxIn/TxOut => Coin => ...
     /// It can also be used on repository or stream objects that need to deserialize the 
     /// above objects or passed as a parameter futher down the call-hierarchy as needed.
-    /// </summary>
+    /// </description>
     public class NetworkOptions
     {
         public const uint None = 0x00000000;
+        public const uint POS = 0x20000000;
         public const uint Witness = 0x40000000;
         public const uint All = Witness;
+        public const uint POSAll = Witness | POS;
 
         //TODO?: Could be used by Block:
-        //public Action<NetworkOptions, Block> SetBlockSpecificFlags { get; set; } = null;
+        //public virtual SetBlockSpecificFlags(Block block);
         //TODO?: Could be used by Transaction:
-        //public Action<NetworkOptions, Transaction> SetTransactionSpecificFlags { get; set; } = null;
+        //public virtual SetTransactionSpecificFlags(Transaction transaction);
 
         private uint flags = All;
+
+        /// <summary>To be used as placeholder until static flags have been completely removed - i.e. from the tests as well...</summary>
+        public static NetworkOptions TemporaryOptions
+        {
+            get
+            {
+                return new NetworkOptions(Transaction.TimeStamp?POSAll:All);
+            }
+        }
 
         /// <summary>
         /// Creates a NetworkOptions object.
@@ -32,10 +46,52 @@
         }
 
         /// <summary>
+        /// Get/Set ProofOfStake flags.
+        /// </summary>
+        public bool IsProofOfStake
+        {
+            get
+            {
+                bool isPOS = (this.flags & POS) != 0;
+                // This sanity check will be removed once the static flags are removed
+                if (isPOS != Block.BlockSignature)
+                {
+                    throw new ArgumentException($"Block.BlockSignature { Block.BlockSignature} mismatches cross-check value: { isPOS }");
+                }
+                // This sanity check will be removed once the static flags are removed
+                if (isPOS != Transaction.TimeStamp)
+                {
+                    throw new ArgumentException($"Transaction.TimeStamp {Transaction.TimeStamp} mismatches cross-check value: { isPOS }");
+                }
+                return isPOS;
+            }
+
+            set
+            {
+                this.flags = value ? (this.flags | POS) : (this.flags & ~POS);
+            }
+        }
+
+        /// <summary>
+        /// Get/Set Witness flag.
+        /// </summary>
+        public bool IsWitness
+        {
+            get
+            {
+                return (this.flags & Witness) != 0;
+            }
+
+            set
+            {
+                this.flags = value ? (this.flags | Witness) : (this.flags & ~Witness);
+            }
+        }
+        /// <summary>
         /// Clones the NetworkOptions object.
         /// </summary>
         /// <returns>The cloned NetworkOptions object.</returns>
-        public NetworkOptions Clone()
+        public virtual NetworkOptions Clone()
         {
             var clone = new NetworkOptions();
             clone.flags = this.flags;
