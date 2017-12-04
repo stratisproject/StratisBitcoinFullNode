@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.P2P
     public static class PeerAddressExtensions
     {
         /// <summary>
-        /// Return peers where they have never have had a connection attempt or have been connected to.
+        /// Return peers where they have never had a connection attempt or have been connected to.
         /// </summary>
         public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers, PeerIntroductionType peerIntroductionType)
         {
