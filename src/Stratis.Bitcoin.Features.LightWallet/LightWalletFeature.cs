@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly IWalletFeePolicy walletFeePolicy;
 
-        private readonly BroadcasterBehavior broadcasterBehavior;
+        private readonly BroadcastBehavior broadcastBehavior;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LightWalletFeature"/> class.
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         /// <param name="nodeLifetime">The node lifetime.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
-        /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
+        /// <param name="broadcastBehavior">The broadcast behavior.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         public LightWalletFeature(
             IWalletSyncManager walletSyncManager,
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IWalletFeePolicy walletFeePolicy,
-            BroadcasterBehavior broadcasterBehavior,
+            BroadcastBehavior broadcastBehavior,
             ILoggerFactory loggerFactory)
         {
             this.walletSyncManager = walletSyncManager;
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.walletFeePolicy = walletFeePolicy;
-            this.broadcasterBehavior = broadcasterBehavior;
+            this.broadcastBehavior = broadcastBehavior;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
         }
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             this.walletFeePolicy.Start();
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcastBehavior);
         }
 
         public IAsyncLoop StartDeploymentsChecksLoop()
@@ -204,8 +204,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         else
                             services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
                         services.AddSingleton<WalletController>();
-                        services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
-                        services.AddSingleton<BroadcasterBehavior>();
+                        services.AddSingleton<IBroadcastManager, LightWalletBroadcastManager>();
+                        services.AddSingleton<BroadcastBehavior>();
                     });
             });
 

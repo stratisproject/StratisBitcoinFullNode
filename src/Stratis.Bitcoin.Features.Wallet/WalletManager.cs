@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly FileStorage<Wallet> fileStorage;
 
         /// <summary>The broadcast manager.</summary>
-        private readonly IBroadcasterManager broadcasterManager;
+        private readonly IBroadcastManager broadcastManager;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
+            IBroadcastManager broadcastManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -136,17 +136,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
-            this.broadcasterManager = broadcasterManager;
+            this.broadcastManager = broadcastManager;
             this.dateTimeProvider = dateTimeProvider;
 
             // register events
-            if (this.broadcasterManager != null)
+            if (this.broadcastManager != null)
             {
-                this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
+                this.broadcastManager.TransactionStateChanged += this.BroadcastManagerTransactionStateChanged;
             }
         }
 
-        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
+        private void BroadcastManagerTransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
             if (transactionEntry.State == State.Propagated)
             {
@@ -193,8 +193,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.logger.LogTrace("()");
 
-            if (this.broadcasterManager != null)
-                this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
+            if (this.broadcastManager != null)
+                this.broadcastManager.TransactionStateChanged -= this.BroadcastManagerTransactionStateChanged;
 
             this.asyncLoop?.Dispose();
             this.SaveWallets();

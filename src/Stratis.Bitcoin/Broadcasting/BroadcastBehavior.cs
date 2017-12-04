@@ -11,32 +11,32 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
-    public class BroadcasterBehavior : NetworkPeerBehavior
+    public class BroadcastBehavior : NetworkPeerBehavior
     {
-        protected readonly IBroadcasterManager manager;
+        protected readonly IBroadcastManager broadcastManager;
 
         /// <summary>Instance logger for the memory pool component.</summary>
         protected readonly ILogger logger;
 
-        public BroadcasterBehavior(
-            IBroadcasterManager manager,
+        public BroadcastBehavior(
+            IBroadcastManager broadcastManager,
             ILogger logger)
         {
             this.logger = logger;
-            this.manager = manager;
+            this.broadcastManager = broadcastManager;
         }
 
-        public BroadcasterBehavior(
-            IBroadcasterManager manager,
+        public BroadcastBehavior(
+            IBroadcastManager broadcastManager,
             ILoggerFactory loggerFactory)
-            : this(manager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
+            : this(broadcastManager, loggerFactory.CreateLogger(typeof(BroadcastBehavior).FullName))
         {
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BroadcasterBehavior(this.manager, this.logger);
+            return new BroadcastBehavior(this.broadcastManager, this.logger);
         }
 
         /// <summary>
@@ -98,10 +98,10 @@ namespace Stratis.Bitcoin.Broadcasting
             // if node has tx we broadcasted
             foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                var txEntry = this.manager.GetTransaction(inv.Hash);
+                var txEntry = this.broadcastManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
-                    this.manager.AddOrUpdate(txEntry.Transaction, State.Propagated);
+                    this.broadcastManager.AddOrUpdate(txEntry.Transaction, State.Propagated);
                 }
             }
         }
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Broadcasting
             // if node asks for tx we want to broadcast
             foreach (var inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                var txEntry = this.manager.GetTransaction(inv.Hash);
+                var txEntry = this.broadcastManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
                     if (txEntry.State != State.CantBroadcast)
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Broadcasting
                         node.SendMessage(new TxPayload(txEntry.Transaction));
                         if (txEntry.State == State.ToBroadcast)
                         {
-                            this.manager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
+                            this.broadcastManager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
                         }
                     }
                 }

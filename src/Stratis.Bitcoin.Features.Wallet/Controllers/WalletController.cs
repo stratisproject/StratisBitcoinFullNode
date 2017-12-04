@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IBroadcasterManager broadcasterManager;
+        private readonly IBroadcastManager broadcastManager;
 
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            IBroadcasterManager broadcasterManager,
+            IBroadcastManager broadcastManager,
             IDateTimeProvider dateTimeProvider)
         {
             this.walletManager = walletManager;
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.broadcasterManager = broadcasterManager;
+            this.broadcastManager = broadcastManager;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -595,7 +595,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     TransactionId = transaction.GetHash(),
                     Outputs = new List<TransactionOutputModel>()
                 };
-                
+
                 foreach (var output in transaction.Outputs)
                 {
                     model.Outputs.Add(new TransactionOutputModel
@@ -604,32 +604,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Amount = output.Value,
                     });
                 }
-                
-                var result = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
-                if (result == Bitcoin.Broadcasting.Success.Yes)
+
+                bool broadcasted = await this.broadcastManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
+                if (broadcasted)
                 {
                     return this.Json(model);
                 }
-
-                if (result == Bitcoin.Broadcasting.Success.DontKnow)
+                else
                 {
-                    // wait for propagation
-                    var waited = TimeSpan.Zero;
-                    var period = TimeSpan.FromSeconds(1);
-                    while (TimeSpan.FromSeconds(21) > waited)
-                    {
-                        // if broadcasts doesn't contain then success
-                        var transactionEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
-                        if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
-                        {
-                            return this.Json(model);
-                        }
-                        await Task.Delay(period).ConfigureAwait(false);
-                        waited += period;
-                    }
+                    throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
                 }
-
-                throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
             }
             catch (Exception e)
             {

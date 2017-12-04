@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Validations;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
@@ -139,6 +140,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
     public class SendTransactionRequest : RequestModel
     {
+        public SendTransactionRequest()
+        {
+        }
+
+        public SendTransactionRequest(string transactionHex)
+        {
+            this.Hex = transactionHex;
+        }
+
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
         public string Hex { get; set; }
     }
