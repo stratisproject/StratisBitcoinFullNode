@@ -45,6 +45,7 @@ namespace NBitcoin
         }
     }
 
+    // TODO: Make NetworkOptions required in the constructors of this class.
     public partial class BitcoinStream
     {
         int maxArraySize = 1024 * 1024;
@@ -156,7 +157,7 @@ namespace NBitcoin
                 readWriteTyped.MakeGenericMethod(type).Invoke(this, parameters);
                 obj = parameters[0];
             }
-            catch(TargetInvocationException ex)
+            catch (TargetInvocationException ex)
             {
                 throw ex.InnerException;
             }
@@ -196,7 +197,7 @@ namespace NBitcoin
             if (obj == null)
                 obj = Activator.CreateInstance<T>();
             obj.ReadWrite(this);
-            if (!Serializing)
+            if (!this.Serializing)
                 data = obj;
         }
 
