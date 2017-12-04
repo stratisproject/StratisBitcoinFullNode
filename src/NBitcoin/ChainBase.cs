@@ -11,14 +11,14 @@ namespace NBitcoin
         /// Gets the chained block header given a block ID (hash).
         /// </summary>
         /// <param name="id">Block ID to retreive.</param>
-        /// <returns>The block.</returns>
+        /// <returns>The chained block header.</returns>
         public abstract ChainedBlock GetBlock(uint256 id);
 
         /// <summary>
         /// Gets the chained block header at a given block height.
         /// </summary>
         /// <param name="height">Height to retrieve chained block header at.</param>
-        /// <returns>The block.</returns>
+        /// <returns>The chained block header.</returns>
         public abstract ChainedBlock GetBlock(int height);
 
         /// <summary>Gets the chained block header at the tip of the chain.</summary>
@@ -28,7 +28,7 @@ namespace NBitcoin
         public abstract int Height { get; }
 
         /// <summary>
-        /// Enumerates from start of the chain.
+        /// Enumerates chained block headers from start of the chain.
         /// </summary>
         /// <returns>An enumerable iterator.</returns>
         protected abstract IEnumerable<ChainedBlock> EnumerateFromStart();
@@ -41,7 +41,7 @@ namespace NBitcoin
         public abstract ChainedBlock SetTip(ChainedBlock chainedBlock);
 
         /// <summary>Gets the genesis block for the chain.</summary>
-        public virtual ChainedBlock Genesis { get { return GetBlock(0); } }
+        public virtual ChainedBlock Genesis { get { return this.GetBlock(0); } }
 
         /// <summary>
         /// Gets an enumerable iterator for the chain.
@@ -91,7 +91,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="header">The block header to set to tip.</param>
         /// <param name="chainedHeader">The newly chained block header for the tip.</param>
-        /// <returns>Whether the tip was set successfully. Will return <c>false</c> if the block header previous block link cannot be found in the current chain.</returns>
+        /// <returns>Whether the tip was set successfully. The method fails (and returns <c>false</c>)
+        /// if the <paramref name="header"/>'s link to a previous header does not point to any block
+        /// in the current chain.</returns>
         public bool TrySetTip(BlockHeader header, out ChainedBlock chainedHeader)
         {
             if (header == null)
@@ -159,7 +161,7 @@ namespace NBitcoin
         /// Returns the first chained block header that exists in the chain from the list of block hashes.
         /// </summary>
         /// <param name="hashes">Hash to search for.</param>
-        /// <returns>First found chained block header or <c>null</c>.</returns>
+        /// <returns>First found chained block header or <c>null</c> if not found.</returns>
         public ChainedBlock FindFork(IEnumerable<uint256> hashes)
         {
             if (hashes == null)
@@ -190,7 +192,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Enumerate chain after given block hash to genesis block.
+        /// Enumerate chain block headers after given block hash to genesis block.
         /// </summary>
         /// <param name="blockHash">Block hash to enumerate after.</param>
         /// <returns>Enumeration of chained block headers after given block hash.</returns>
@@ -205,9 +207,9 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Enumerates chain from the given chained block header to tip.
+        /// Enumerates chain block headers from the given chained block header to tip.
         /// </summary>
-        /// <param name="block">Chained block header to enumerate from</param>
+        /// <param name="block">Chained block header to enumerate from.</param>
         /// <returns>Enumeration of chained block headers from given chained block header to tip.</returns>
         public IEnumerable<ChainedBlock> EnumerateToTip(ChainedBlock block)
         {
@@ -218,7 +220,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Enumerates chain from given block hash to tip.
+        /// Enumerates chain block headers from given block hash to tip.
         /// </summary>
         /// <param name="blockHash">Block hash to enumerate from.</param>
         /// <returns>Enumeration of chained block headers from the given block hash to tip.</returns>
@@ -235,7 +237,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Enumerates chain after the given chained block header to genesis block.
+        /// Enumerates chain block headers after the given chained block header to genesis block.
         /// </summary>
         /// <param name="block">The chained block header to enumerate after.</param>
         /// <returns>Enumeration of chained block headers after the given block.</returns>
