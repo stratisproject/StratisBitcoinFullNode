@@ -5,6 +5,8 @@ using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
@@ -58,5 +60,25 @@ namespace Stratis.Bitcoin.Broadcasting
         }
 
         public abstract Task<Success> TryBroadcastAsync(Transaction transaction);
+
+        protected void PropagateTransactionToPeers(Transaction transaction, bool skipHalfOfThePeers = false)
+        {
+            this.AddOrUpdate(transaction, State.ToBroadcast);
+
+            var invPayload = new InvPayload(transaction);
+
+            var propagateTo = skipHalfOfThePeers
+                ? this.connectionManager.ConnectedNodes.AsEnumerable().Skip((int)Math.Ceiling(this.connectionManager.ConnectedNodes.Count() / 2.0))
+                : this.connectionManager.ConnectedNodes;
+
+            foreach (NetworkPeer networkPeer in propagateTo)
+                networkPeer.SendMessageAsync(invPayload).GetAwaiter().GetResult();
+        }
+
+        protected bool IsPropagated(Transaction transaction)
+        {
+            TransactionBroadcastEntry broadcastEntry = this.GetTransaction(transaction.GetHash());
+            return broadcastEntry != null && broadcastEntry.State == State.Propagated;
+        }
     }
 }

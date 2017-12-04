@@ -21,21 +21,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <inheritdoc />
         public override async Task<Success> TryBroadcastAsync(Transaction transaction)
         {
-            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (transaction == null)
+                throw new ArgumentNullException(nameof(transaction));
 
-            var found = this.GetTransaction(transaction.GetHash());
-            if (found != null)
-            {
-                if (found.State == State.Propagated) return Success.Yes;
-                if (found.State == State.CantBroadcast)
-                {
-                    this.AddOrUpdate(transaction, State.ToBroadcast);
-                }
-            }
-            else
-            {
-                this.AddOrUpdate(transaction, State.ToBroadcast);
-            }
+            if (IsPropagated(transaction))
+                return Success.Yes;
 
             var state = new MempoolValidationState(false);
             if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
@@ -44,17 +34,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 return Success.No;
             }
 
-            // ask half of the peers if they're interested in our transaction
-            var invPayload = new InvPayload(transaction);
-            var oneTwo = 1;
-            foreach (var node in this.connectionManager.ConnectedNodes)
-            {
-                if (oneTwo == 1)
-                {
-                    await node.SendMessageAsync(invPayload).ConfigureAwait(false);
-                }
-                oneTwo = oneTwo == 1 ? 2 : 1;
-            }
+            this.PropagateTransactionToPeers(transaction);
+
             return Success.Yes;
         }
     }
