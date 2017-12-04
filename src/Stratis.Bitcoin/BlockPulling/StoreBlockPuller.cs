@@ -4,7 +4,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
-    /// Puller that download blocks from peers.
+    /// Puller that downloads blocks from peers.
     /// </summary>
     public class StoreBlockPuller : BlockPuller
     {
