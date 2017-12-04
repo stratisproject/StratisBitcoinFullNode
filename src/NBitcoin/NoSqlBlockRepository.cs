@@ -16,9 +16,9 @@ namespace NBitcoin
             this.repository = repository;
         }
 
-        public NoSqlBlockRepository()
-            : this(new InMemoryNoSqlRepository())
-        {
+		public NoSqlBlockRepository(NetworkOptions options = null)
+			: this(new InMemoryNoSqlRepository(options))
+		{
 
         }
 
@@ -55,9 +55,9 @@ namespace NBitcoin
             this.repository = repository;
         }
 
-        public BlockTransactionMapStore()
-            : this(new InMemoryNoSqlRepository())
-        {
+		public BlockTransactionMapStore(NetworkOptions options = null)
+			: this(new InMemoryNoSqlRepository(options))
+		{
 
         }
 

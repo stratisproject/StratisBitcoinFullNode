@@ -6,13 +6,19 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-    public abstract class NoSqlRepository
-    {
+	public abstract class NoSqlRepository
+	{
+        public NetworkOptions TransactionOptions { get; private set; }
 
-        public Task PutAsync(string key, IBitcoinSerializable obj)
+        public NoSqlRepository(NetworkOptions options = null)
         {
-            return PutBytes(key, obj == null ? null : obj.ToBytes());
+            this.TransactionOptions = options ?? NetworkOptions.TemporaryOptions;
         }
+
+		public Task PutAsync(string key, IBitcoinSerializable obj)
+		{
+			return PutBytes(key, obj == null ? null : obj.ToBytes(options:this.TransactionOptions));
+		}
 
         public void Put(string key, IBitcoinSerializable obj)
         {
@@ -26,15 +32,15 @@ namespace NBitcoin
             }
         }
 
-        public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
-        {
-            var data = await GetBytes(key).ConfigureAwait(false);
-            if(data == null)
-                return default(T);
-            T obj = new T();
-            obj.ReadWrite(data);
-            return obj;
-        }
+		public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
+		{
+			var data = await GetBytes(key).ConfigureAwait(false);
+			if(data == null)
+				return default(T);
+			T obj = new T();
+			obj.ReadWrite(data, options:this.TransactionOptions);
+			return obj;
+		}
 
         public T Get<T>(string key) where T : IBitcoinSerializable, new()
         {

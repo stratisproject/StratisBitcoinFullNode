@@ -81,19 +81,19 @@ namespace NBitcoin
             }
         }
 
-        private readonly bool _Serializing;
-        public bool Serializing
-        {
-            get
-            {
-                return _Serializing;
-            }
-        }
+		private readonly bool _Serializing;
+		public bool Serializing
+		{
+			get
+			{
+				return _Serializing;
+			}
+		}
         public BitcoinStream(Stream inner, bool serializing)
-        {
-            _Serializing = serializing;
-            _Inner = inner;
-        }
+		{
+			_Serializing = serializing;
+			_Inner = inner;
+		}
 
         public BitcoinStream(byte[] bytes)
             : this(new MemoryStream(bytes), false)
@@ -353,7 +353,7 @@ namespace NBitcoin
         }
 
         NetworkOptions _TransactionSupportedOptions = NetworkOptions.All;
-        public NetworkOptions TransactionOptions
+        public NetworkOptions NetworkOptions
         {
             get
             {
@@ -379,15 +379,16 @@ namespace NBitcoin
             });
         }
 
-        public void CopyParameters(BitcoinStream stream)
-        {
-            if(stream == null)
-                throw new ArgumentNullException("stream");
-            ProtocolVersion = stream.ProtocolVersion;
-            IsBigEndian = stream.IsBigEndian;
-            MaxArraySize = stream.MaxArraySize;
-            Type = stream.Type;
-        }
+		public void CopyParameters(BitcoinStream stream)
+		{
+			if(stream == null)
+				throw new ArgumentNullException("stream");
+			ProtocolVersion = stream.ProtocolVersion;
+            NetworkOptions = stream.NetworkOptions.Clone();
+			IsBigEndian = stream.IsBigEndian;
+			MaxArraySize = stream.MaxArraySize;
+			Type = stream.Type;
+		}
 
 
         public SerializationType Type
