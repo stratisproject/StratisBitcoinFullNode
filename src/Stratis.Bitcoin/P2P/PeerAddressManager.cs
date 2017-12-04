@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.P2P
     public static class PeerAddressExtensions
     {
         /// <summary>
-        /// Return peers where they have never have had a connection attempt or have been connected to.
+        /// Return peers where they have never had a connection attempt or have been connected to.
         /// </summary>
         public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// Return peers where they have have had connection attempts, successful or not.
+        /// Return peers where they have had connection attempts, successful or not.
         /// </summary>
         public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
@@ -242,7 +242,9 @@ namespace Stratis.Bitcoin.P2P
             return tried;
         }
 
-        /// <summary>Return a random peer from a given set of peers.</summary>
+        /// <summary>
+        /// Return a random peer from a given set of peers.
+        /// </summary>
         public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
         {
             var chanceFactor = 1.0;
