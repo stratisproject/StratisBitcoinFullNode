@@ -27,7 +27,7 @@ namespace NBitcoin
 
         private uint flags = All;
 
-        /// <summary>To be used as placeholder until static flags have been completely removed - i.e. from the tests as well...</summary>
+        /// <summary>TODO: To be used as placeholder until static flags have been completely removed - i.e. from the tests as well...</summary>
         public static NetworkOptions TemporaryOptions
         {
             get
@@ -53,19 +53,18 @@ namespace NBitcoin
             get
             {
                 bool isPOS = (this.flags & POS) != 0;
-                // This sanity check will be removed once the static flags are removed
+                // TODO: This sanity check will be removed once the static flags are removed
                 if (isPOS != Block.BlockSignature)
                 {
-                    throw new ArgumentException($"Block.BlockSignature { Block.BlockSignature} mismatches cross-check value: { isPOS }");
+                    throw new ArgumentException($"Block.BlockSignature {Block.BlockSignature} mismatches cross-check value: {isPOS}");
                 }
-                // This sanity check will be removed once the static flags are removed
+                // TODO: This sanity check will be removed once the static flags are removed
                 if (isPOS != Transaction.TimeStamp)
                 {
-                    throw new ArgumentException($"Transaction.TimeStamp {Transaction.TimeStamp} mismatches cross-check value: { isPOS }");
+                    throw new ArgumentException($"Transaction.TimeStamp {Transaction.TimeStamp} mismatches cross-check value: {isPOS}");
                 }
                 return isPOS;
             }
-
             set
             {
                 this.flags = value ? (this.flags | POS) : (this.flags & ~POS);
@@ -81,7 +80,6 @@ namespace NBitcoin
             {
                 return (this.flags & Witness) != 0;
             }
-
             set
             {
                 this.flags = value ? (this.flags | Witness) : (this.flags & ~Witness);
