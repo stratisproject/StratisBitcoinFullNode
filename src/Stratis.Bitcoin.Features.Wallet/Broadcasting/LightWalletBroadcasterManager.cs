@@ -9,12 +9,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public class LightWalletBroadcasterManager : BroadcasterManagerBase
     {
-        /// <summary>Connection manager for managing node connections.</summary>
-        private readonly IConnectionManager connectionManager;
-
-        public LightWalletBroadcasterManager(IConnectionManager connectionManager) : base()
+        public LightWalletBroadcasterManager(IConnectionManager connectionManager) : base(connectionManager)
         {
-            this.connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
         }
 
         /// <inheritdoc />

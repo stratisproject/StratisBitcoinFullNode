@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConcurrentCollections;
 using NBitcoin;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Broadcasting
@@ -11,6 +12,15 @@ namespace Stratis.Bitcoin.Broadcasting
     {
         public event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
 
+        /// <summary>Connection manager for managing node connections.</summary>
+        protected readonly IConnectionManager connectionManager;
+
+        public BroadcasterManagerBase(IConnectionManager connectionManager)
+        {
+            this.connectionManager = connectionManager;
+            this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
+        }
+
         public void OnTransactionStateChanged(TransactionBroadcastEntry entry)
         {
             this.TransactionStateChanged?.Invoke(this, entry);
@@ -18,18 +28,11 @@ namespace Stratis.Bitcoin.Broadcasting
 
         private ConcurrentHashSet<TransactionBroadcastEntry> Broadcasts { get; }
 
-        public BroadcasterManagerBase()
-        {
-            this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
-        }
-
         public TransactionBroadcastEntry GetTransaction(uint256 transactionHash)
         {
             TransactionBroadcastEntry txEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transactionHash);
             if (txEntry == default(TransactionBroadcastEntry))
-            {
                 return null;
-            }
 
             return txEntry;
         }
