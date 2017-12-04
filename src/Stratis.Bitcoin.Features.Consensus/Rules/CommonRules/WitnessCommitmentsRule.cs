@@ -11,6 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public class WitnessCommitmentsRule : ConsensusRule
     {
+        /// <inheritdoc />
         public override Task RunAsync(ContextInformation context)
         {
             DeploymentFlags deploymentFlags = context.Flags;

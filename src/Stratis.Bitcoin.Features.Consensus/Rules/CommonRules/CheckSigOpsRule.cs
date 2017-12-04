@@ -6,6 +6,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public class CheckSigOpsRule : ConsensusRule
     {
+        /// <inheritdoc />
         public override Task RunAsync(ContextInformation context)
         {
             Block block = context.BlockValidationContext.Block;

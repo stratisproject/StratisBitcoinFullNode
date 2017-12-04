@@ -35,31 +35,51 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         Task ExectueAsync(BlockValidationContext blockValidationContext);
     }
 
+    /// <summary>
+    /// An interface that will allow the registration of bulk consensus rules in to the engine.
+    /// </summary>
     public interface IRuleRegistration
     {
+        /// <summary>
+        /// The rules that will be registered with the rules engine.
+        /// </summary>
+        /// <returns>A list of rules.</returns>
         IEnumerable<ConsensusRule> GetRules();
     }
 
     /// <inheritdoc />
     public class ConsensusRules : IConsensusRules
     {
+        /// <summary>A factory to creates logger instances for each rule.</summary>
         private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-
+        /// <summary>A collection of rules that well be executed by the rules engine.</summary>
         private readonly Dictionary<ConsensusRule, ConsensusRule> consensusRules;
 
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
+
+        /// <summary>A provider of date and time.</summary>
         public IDateTimeProvider DateTimeProvider { get; }
+
+        /// <summary>A chain of the longest block headers all the way to genesis.</summary>
         public ConcurrentChain Chain { get; }
+
+        /// <summary>A deployment construction that tracks activation of features on the chain.</summary>
         public NodeDeployments NodeDeployments { get; }
 
+        /// <summary>A collection of consensus constants.</summary>
         public NBitcoin.Consensus ConsensusParams { get; }
 
+        /// <summary>The main loop of the consensus execution engine.</summary>
         public ConsensusLoop ConsensusLoop { get; set; }
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
         public ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments)
         {
             this.Network = network;

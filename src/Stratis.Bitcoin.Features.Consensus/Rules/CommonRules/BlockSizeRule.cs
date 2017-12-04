@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         public override bool CanSkipValidation => true;
 
+        /// <inheritdoc />
         public override Task RunAsync(ContextInformation context)
         {
             var options = context.Consensus.Option<PowConsensusOptions>();

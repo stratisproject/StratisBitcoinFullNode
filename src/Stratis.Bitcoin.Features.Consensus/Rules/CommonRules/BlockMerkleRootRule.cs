@@ -8,7 +8,8 @@ using NBitcoin.Crypto;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public class BlockMerkleRootRule : ConsensusRule
-    {
+    {        
+        /// <inheritdoc />
         public override Task RunAsync(ContextInformation context)
         {
             if (context.CheckMerkleRoot)
