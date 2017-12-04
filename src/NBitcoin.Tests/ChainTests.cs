@@ -479,7 +479,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void ChainedBlockVerifySkipListForGetAncestor()
         {
-            const int skipListLength = 300000;
+            int skipListLength = 300000;
 
             // Want a chain of exact length so subtract the genesis block.
             ConcurrentChain chain = this.CreateChain(skipListLength - 1);
@@ -499,7 +499,7 @@ namespace NBitcoin.Tests
 
             // Do some random verification of GetAncestor().
             Random random = new Random();
-            const int randCheckCount = 1000;
+            int randCheckCount = 1000;
             for (int i = 0; i < randCheckCount; i++)
             {
                 int from = random.Next(chain.Tip.Height - 1);
@@ -519,8 +519,8 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void ChainedBlockVerifySkipListForGetLocator()
         {
-            const int mainLength = 100000;
-            const int branchLength = 50000;
+            int mainLength = 100000;
+            int branchLength = 50000;
 
             // Make a main chain 100000 blocks long.
             ConcurrentChain chain = this.CreateChain(mainLength - 1);

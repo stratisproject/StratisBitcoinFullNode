@@ -475,6 +475,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Compute what height to jump back to for the skip block given this height.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/chain.cpp#L72-L81"/>
         /// </summary>
         /// <param name="height">Height to compute skip height for.</param>
         /// <returns>The height to skip to.</returns>
@@ -485,7 +486,8 @@ namespace NBitcoin
 
             // Determine which height to jump back to. Any number strictly lower than height is acceptable,
             // but the following expression was taken from bitcoin core. There it was tested in simulations
-            // and performed well (max 110 steps to go back up to 2^18 blocks).
+            // and performed well.
+            // Skip steps are exponential - Using skip, max 110 steps to go back up to 2^18 blocks.
             return (height & 1) != 0 ? this.InvertLowestOne(this.InvertLowestOne(height - 1)) + 1 : this.InvertLowestOne(height);
         }
 
