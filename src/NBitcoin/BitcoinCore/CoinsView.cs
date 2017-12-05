@@ -1,32 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NBitcoin.BitcoinCore
 {
     public class CoinsView
     {
+        private readonly NoSqlRepository index;
+
         public CoinsView(NoSqlRepository index)
         {
-            if(index == null)
-                throw new ArgumentNullException("index");
-            _Index = index;
+            this.index = index ?? throw new ArgumentNullException("index");
         }
 
         public CoinsView()
             : this(new InMemoryNoSqlRepository())
         {
-
         }
-        private readonly NoSqlRepository _Index;
+
         public NoSqlRepository Index
         {
             get
             {
-                return _Index;
+                return this.index;
             }
         }
 
@@ -34,9 +31,9 @@ namespace NBitcoin.BitcoinCore
         {
             try
             {
-                return Index.GetAsync<Coins>(txId.ToString()).Result;
+                return this.Index.GetAsync<Coins>(txId.ToString()).Result;
             }
-            catch(AggregateException aex)
+            catch (AggregateException aex)
             {
                 ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
                 return null; //Can't happen
@@ -45,13 +42,12 @@ namespace NBitcoin.BitcoinCore
 
         public Task<Coins> GetCoinsAsync(uint256 txId)
         {
-            return Index.GetAsync<Coins>(txId.ToString());
+            return this.Index.GetAsync<Coins>(txId.ToString());
         }
-
 
         public void SetCoins(uint256 txId, Coins coins)
         {
-            Index.PutAsync(txId.ToString(), coins);
+            this.Index.PutAsync(txId.ToString(), coins);
         }
 
         public bool HaveCoins(uint256 txId)
@@ -65,44 +61,46 @@ namespace NBitcoin.BitcoinCore
             {
                 return GetBestBlockAsync().Result;
             }
-            catch(AggregateException aex)
+            catch (AggregateException aex)
             {
                 ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
                 return null; //Can't happen
             }
         }
+
         public async Task<uint256> GetBestBlockAsync()
         {
-            var block = await Index.GetAsync<uint256.MutableUint256>("B").ConfigureAwait(false);
+            uint256.MutableUint256 block = await this.Index.GetAsync<uint256.MutableUint256>("B").ConfigureAwait(false);
             return block == null ? uint256.Zero : block.Value;
         }
 
         public void SetBestBlock(uint256 blockId)
         {
-            Index.PutAsync("B", blockId.AsBitcoinSerializable());
+            this.Index.PutAsync("B", blockId.AsBitcoinSerializable());
         }
 
         public bool HaveInputs(Transaction tx)
         {
-            if(!tx.IsCoinBase)
+            if (!tx.IsCoinBase)
             {
                 // first check whether information about the prevout hash is available
-                foreach(var input in tx.Inputs)
+                foreach(TxIn input in tx.Inputs)
                 {
                     OutPoint prevout = input.PrevOut;
-                    if(!HaveCoins(prevout.Hash))
+                    if (!HaveCoins(prevout.Hash))
                         return false;
                 }
 
                 // then check whether the actual outputs are available
-                foreach(var input in tx.Inputs)
+                foreach (TxIn input in tx.Inputs)
                 {
                     OutPoint prevout = input.PrevOut;
                     Coins coins = GetCoins(prevout.Hash);
-                    if(!coins.IsAvailable(prevout.N))
+                    if (!coins.IsAvailable(prevout.N))
                         return false;
                 }
             }
+
             return true;
         }
 
@@ -114,14 +112,15 @@ namespace NBitcoin.BitcoinCore
 
         public Money GetValueIn(Transaction tx)
         {
-            if(tx.IsCoinBase)
+            if (tx.IsCoinBase)
                 return 0;
+
             return tx.Inputs.Select(i => GetOutputFor(i).Value).Sum();
         }
 
         public CoinsView CreateCached()
         {
-            return new CoinsView(new CachedNoSqlRepository(Index));
+            return new CoinsView(new CachedNoSqlRepository(this.Index));
         }
 
         public void AddTransaction(Transaction tx, int height)
