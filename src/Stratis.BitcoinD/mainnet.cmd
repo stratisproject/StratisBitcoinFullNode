@@ -1,1 +1,0 @@
-dotnet exec bin\Debug\netcoreapp2.0\Stratis.BitcoinD.dll -datadir="Z:\StratisBitcoinData"
