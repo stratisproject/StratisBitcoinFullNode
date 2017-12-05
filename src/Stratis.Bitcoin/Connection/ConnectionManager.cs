@@ -135,59 +135,52 @@ namespace Stratis.Bitcoin.Connection
             IDateTimeProvider dateTimeProvider,
             INetworkPeerFactory networkPeerFactory)
         {
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.connectedNodes = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
-            this.Network = network;
-            this.NodeSettings = nodeSettings;
-            this.nodeLifetime = nodeLifetime;
-            this.Parameters = parameters;
-            this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
-
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
-            this.asyncLoopFactory = asyncLoopFactory;
-
-            this.peerAddressManager = peerAddressManager;
+            this.Network = network;
             this.networkPeerFactory = networkPeerFactory;
-
+            this.NodeSettings = nodeSettings;
+            this.nodeLifetime = nodeLifetime;
+            this.peerAddressManager = peerAddressManager;
             this.Servers = new List<NetworkPeerServer>();
-            this.connectedNodes = new NetworkPeerCollection();
 
-            // Don't start the peer discovery f we have specified any nodes using the -connect arg.
+            this.Parameters = parameters;
+            this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
+            this.Parameters.Version = this.NodeSettings.ProtocolVersion;
+
+            // Don't start the peer discovery connector if the -connect arg is specified at startup.
             if (!this.NodeSettings.ConnectionManager.Connect.Any())
-            {
                 this.DiscoverNodesPeerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, this.peerAddressManager);
-            }
-            else
-            {
-                // Use if we have specified any nodes using the -connect arg
-                this.ConnectNodePeerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, this.peerAddressManager);
-            }
 
-            {
-                // Use if we have specified any nodes using the -addnode arg
-                this.AddNodePeerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, this.peerAddressManager);
-            }
+            // Use if we have specified the -connect arg at startup.
+            if (this.NodeSettings.ConnectionManager.Connect.Any())
+                this.ConnectNodePeerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, this.peerAddressManager);
+
+            // Use if we have specified the -addnode arg at startup.
+            this.AddNodePeerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, this.logger, this.Network, this.networkPeerFactory, this.nodeLifetime, this.NodeSettings, this.peerAddressManager);
         }
 
         public void Start()
         {
             this.logger.LogTrace("()");
 
-            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
-            this.Parameters.Version = this.NodeSettings.ProtocolVersion;
-
+            // TODO: Move connection manager to the connector next
+            // so that we can clone the parameters inside it.
             NetworkPeerConnectionParameters clonedParameters = this.Parameters.Clone();
             clonedParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
 
             // Don't start peer discovery if we have specified any nodes using the -connect arg.
-            //if (this.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
-            //{
-            //    this.logger.LogInformation("Starting peer discovery...");
+            if (!this.NodeSettings.ConnectionManager.Connect.Any() && this.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+            {
+                this.logger.LogInformation("Starting peer discovery...");
 
-            //    this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.Network, clonedParameters, this.nodeLifetime, this.peerAddressManager, this.networkPeerFactory);
-            //    this.peerDiscoveryLoop.DiscoverPeers();
-            //}
+                this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.Network, clonedParameters, this.nodeLifetime, this.peerAddressManager, this.networkPeerFactory);
+                this.peerDiscoveryLoop.DiscoverPeers();
+            }
 
             // Relate the peer connectors to each other to prevent duplicate connections.
             var relatedPeerConnectors = new RelatedPeerConnectors();

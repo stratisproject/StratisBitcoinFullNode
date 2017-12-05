@@ -172,16 +172,15 @@ namespace Stratis.Bitcoin.P2P
             this.parentParameters = parameters;
 
             this.CurrentParameters = this.parentParameters.Clone();
+            this.CurrentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = mode;
             this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
-            this.CurrentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
 
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 await this.ConnectAsync();
             },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Second);
+            this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.Second);
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
