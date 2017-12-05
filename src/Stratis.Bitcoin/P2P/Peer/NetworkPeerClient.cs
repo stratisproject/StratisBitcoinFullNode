@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, string.Format("[{0}{1}] ", this.Id, this.RemoteEndPoint != null ? "-" + this.RemoteEndPoint.ToString() : ""));
 
-            this.Stream = this.tcpClient.GetStream();
+            this.Stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
             this.ProcessingCompletion = new TaskCompletionSource<bool>();
 
             this.writeLock = new AsyncLock();
