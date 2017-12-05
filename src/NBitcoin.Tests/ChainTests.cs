@@ -432,45 +432,6 @@ namespace NBitcoin.Tests
             Assert.NotNull(side.GetBlock(sideb.HashBlock));
         }
 
-        private ConcurrentChain CreateChain(int height)
-        {
-            return CreateChain(TestUtils.CreateFakeBlock().Header, height);
-        }
-
-        private ConcurrentChain CreateChain(BlockHeader genesis, int height)
-        {
-            var chain = new ConcurrentChain(genesis);
-            for (int i = 0; i < height; i++)
-            {
-                var b = TestUtils.CreateFakeBlock();
-                b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                chain.SetTip(b.Header);
-            }
-            return chain;
-        }
-
-
-        public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
-        {
-            ChainedBlock last = null;
-            var nonce = RandomUtils.GetUInt32();
-            foreach (var chain in chains)
-            {
-                var block = TestUtils.CreateFakeBlock(new Transaction());
-                block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
-                block.Header.Nonce = nonce;
-                if (!chain.TrySetTip(block.Header, out last))
-                    throw new InvalidOperationException("Previous not existing");
-            }
-            return last;
-        }
-
-        private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
-        {
-            ChainedBlock index = null;
-            return AppendBlock(index, chains);
-        }
-
         /// <summary> 
         /// Adapted from bitcoin core test, verify GetAncestor is using skip list in <see cref="ChainedBlock"/>.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
@@ -572,5 +533,45 @@ namespace NBitcoin.Tests
                 }
             }
         }
+
+        private ConcurrentChain CreateChain(int height)
+        {
+            return CreateChain(TestUtils.CreateFakeBlock().Header, height);
+        }
+
+        private ConcurrentChain CreateChain(BlockHeader genesis, int height)
+        {
+            var chain = new ConcurrentChain(genesis);
+            for (int i = 0; i < height; i++)
+            {
+                var b = TestUtils.CreateFakeBlock();
+                b.Header.HashPrevBlock = chain.Tip.HashBlock;
+                chain.SetTip(b.Header);
+            }
+            return chain;
+        }
+
+
+        public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
+        {
+            ChainedBlock last = null;
+            var nonce = RandomUtils.GetUInt32();
+            foreach (var chain in chains)
+            {
+                var block = TestUtils.CreateFakeBlock(new Transaction());
+                block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
+                block.Header.Nonce = nonce;
+                if (!chain.TrySetTip(block.Header, out last))
+                    throw new InvalidOperationException("Previous not existing");
+            }
+            return last;
+        }
+
+        private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
+        {
+            ChainedBlock index = null;
+            return AppendBlock(index, chains);
+        }
+
     }
 }
