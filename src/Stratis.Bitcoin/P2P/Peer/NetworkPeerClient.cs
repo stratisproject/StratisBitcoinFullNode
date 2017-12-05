@@ -37,6 +37,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <remarks>The client is being processed as long as this task is not complete.</remarks>
         public TaskCompletionSource<bool> ProcessingCompletion { get; private set; }
 
+        /// <summary><c>1</c> if the instance of the object has been disposed or disposing is in progress, <c>0</c> otherwise.</summary>
+        private int disposed;
+
         /// <summary>Address of the end point the client is connected to, or <c>null</c> if the client has not connected yet.</summary>
         public IPEndPoint RemoteEndPoint
         {
@@ -147,6 +150,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void Dispose()
         {
             this.logger.LogTrace("()");
+
+            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
+            {
+                this.logger.LogTrace("(-)[DISPOSED]");
+                return;
+            }
 
             NetworkStream disposeStream = this.Stream;
             TcpClient disposeTcpClient = this.tcpClient;
