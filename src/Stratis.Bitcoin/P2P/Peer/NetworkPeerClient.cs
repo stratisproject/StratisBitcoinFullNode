@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -24,7 +26,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Underlaying TCP client.</summary>
         private TcpClient tcpClient;
 
+        /// <summary>Prevents parallel execution of multiple write operations on <see cref="Stream"/>.</summary>
+        private AsyncLock writeLock;
+
         /// <summary>Stream to send and receive messages through established TCP connection.</summary>
+        /// <remarks>Write operations on the stream have to be protected by <see cref="writeLock"/>.</remarks>
         public NetworkStream Stream { get; private set; }
 
         /// <summary>Task that cares about the client once its connection is accepted up until the communication is terminated.</summary>
@@ -53,34 +59,88 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, string.Format("[{0}{1}] ", this.Id, this.RemoteEndPoint != null ? "-" + this.RemoteEndPoint.ToString() : ""));
 
-            this.Stream = tcpClient.GetStream();
+            this.Stream = this.tcpClient.GetStream();
             this.ProcessingCompletion = new TaskCompletionSource<bool>();
+
+            this.writeLock = new AsyncLock();
         }
 
         /// <summary>
         /// Connects the network client to the target server.
         /// </summary>
         /// <param name="endPoint">IP address and port to connect to.</param>
-        /// <returns><c>true</c> if the connection has been established, <c>false</c> otherwise.</returns>
-        public async Task<bool> ConnectAsync(IPEndPoint endPoint)
+        /// <param name="cancellation">Cancellation token that allows aborting the operation.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the connection attempt was aborted.</exception>
+        public async Task ConnectAsync(IPEndPoint endPoint, CancellationToken cancellation)
         {
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Id}-{endPoint}] ");
             this.logger.LogTrace("({0}:'{1}')", nameof(endPoint), endPoint);
 
-            bool res = false;
             try
             {
-                await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port);
+                await Task.Run(async () => await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port), cancellation);
                 this.Stream = this.tcpClient.GetStream();
-                res = true;
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Error connecting to '{0}', exception: {1}", endPoint, e.ToString());
+                if (e is OperationCanceledException)
+                {
+                    this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
+                    this.logger.LogTrace("(-)[CANCELLED]");
+                }
+                else
+                {
+                    this.logger.LogDebug("Error connecting to '{0}', exception: {1}", endPoint, e.ToString());
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                }
+                throw;
             }
 
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Sends data over the established connection.
+        /// </summary>
+        /// <param name="data">Data to send.</param>
+        /// <param name="cancellation">Cancellation token that allows aborting the operation.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the connection was terminated or the cancellation token was cancelled.</exception>
+        public async Task SendAsync(byte[] data, CancellationToken cancellation)
+        {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(data), nameof(data.Length), data.Length);
+
+            using (await this.writeLock.LockAsync(cancellation))
+            {
+                if (this.Stream == null)
+                {
+                    this.logger.LogTrace("Connection has been terminated.");
+                    this.logger.LogTrace("(-)[NO_STREAM]");
+                    throw new OperationCanceledException();
+                }
+
+                try
+                {
+                    await this.Stream.WriteAsync(data, 0, data.Length, cancellation);
+                }
+                catch (Exception e)
+                {
+                    if ((e is IOException) || (e is OperationCanceledException))
+                    {
+                        this.logger.LogTrace("Connection has been terminated.");
+                        if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
+                        else this.logger.LogTrace("(-)[CANCELLED]");
+                        throw new OperationCanceledException();
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+                        this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                        throw;
+                    }
+                }
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
