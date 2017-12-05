@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanMineBlocks()
+        public void CanMineAndSendToAddress()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
@@ -88,19 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
                 Assert.Equal(10, rpc.GetBlockCount());
-            }
-        }
 
-        [Fact]
-        public void CanSendToAddress()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode();
-                this.InitializeTestWallet(stratisNodeSync);
-                builder.StartAll();
-                var rpc = stratisNodeSync.CreateRPCClient();
-                rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 101);
                 var address = new Key().PubKey.GetAddress(rpc.Network);
                 var tx = rpc.SendToAddress(address, Money.Coins(1.0m));
                 Assert.NotNull(tx);
