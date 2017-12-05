@@ -21,18 +21,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Register a new rule to the engine
         /// </summary>
-        /// <typeparam name="TRule"></typeparam>
-        /// <returns></returns>
-        ConsensusRules Register<TRule>() where TRule : ConsensusRule, new();
-
-        /// <summary>
-        /// Register a new rule to the engine
-        /// </summary>
         /// <param name="ruleRegistration">A container of rules to register.</param>
         /// <returns></returns>
         ConsensusRules Register(IRuleRegistration ruleRegistration);
 
-        Task ExectueAsync(BlockValidationContext blockValidationContext);
+        /// <summary>
+        /// Execute the consensus rule engine.
+        /// </summary>
+        /// <param name="blockValidationContext">A context that holds information about the current validated block.</param>
+        /// <returns>The processing task.</returns>
+        Task ExecuteAsync(BlockValidationContext blockValidationContext);
+
+        /// <summary>
+        /// Execute the consensus rule engine in validation mode only, no state will be changed.
+        /// </summary>
+        /// <param name="contextInformation">A context that holds information about the current validated block.</param>
+        /// <returns>The processing task.</returns>
+        Task ValidateAsync(ContextInformation contextInformation);
     }
 
     /// <summary>
@@ -57,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         private readonly ILogger logger;
 
         /// <summary>A collection of rules that well be executed by the rules engine.</summary>
-        private readonly Dictionary<ConsensusRule, ConsensusRule> consensusRules;
+        private readonly Dictionary<string, ConsensusRule> consensusRules;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
@@ -90,31 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             this.ConsensusParams = this.Network.Consensus;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.consensusRules = new Dictionary<ConsensusRule, ConsensusRule>();
-        }
-
-        /// <inheritdoc />
-        public ConsensusRules Register<TRule>() where TRule : ConsensusRule, new()
-        {
-            ConsensusRule rule = new TRule()
-            {
-                Parent = this,
-                Logger = this.loggerFactory.CreateLogger(typeof(TRule).FullName)
-            };
-
-            foreach (var dependency in rule.Dependencies())
-            {
-                var depdendency = this.consensusRules.Keys.SingleOrDefault(w => w.GetType() == dependency);
-
-                if (depdendency == null)
-                {
-                    throw new Exception(); // todo
-                }
-            }
-
-            this.consensusRules.Add(rule, rule);
-
-            return this;
+            this.consensusRules = new Dictionary<string, ConsensusRule>();
         }
 
         /// <inheritdoc />
@@ -135,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                     }
                 }
 
-                this.consensusRules.Add(consensusRule, consensusRule);
+                this.consensusRules.Add(consensusRule.GetType().FullName, consensusRule);
             }
 
             return this;
@@ -152,20 +133,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public async Task ExectueAsync(BlockValidationContext blockValidationContext)
+        public async Task ExecuteAsync(BlockValidationContext blockValidationContext)
         {
+            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
+            Guard.NotNull(blockValidationContext.Context, nameof(blockValidationContext.Context));
+
             try
             {
-                var context = new ContextInformation(blockValidationContext, this.ConsensusParams);
-                blockValidationContext.Context = context;
+                var context = blockValidationContext.Context;
 
                 foreach (var consensusRule in this.consensusRules)
                 {
                     var rule = consensusRule.Value;
 
-                    if (context.BlockValidationContext.SkipValidation && rule.CanSkipValidation)
+                    if (context.SkipValidation && rule.ValidationRule)
                     {
-                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(rule), context.BlockValidationContext.ChainedBlock.Height);
+                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(rule), blockValidationContext.ChainedBlock.Height);
                     }
                     else
                     {
@@ -181,6 +164,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             if (blockValidationContext.Error != null)
             {
                 // TODO invoke the error handler rule.
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task ValidateAsync(ContextInformation contextInformation)
+        {
+            foreach (var consensusRule in this.consensusRules)
+            {
+                var rule = consensusRule.Value;
+
+                if (rule.ValidationRule)
+                {
+                    await rule.RunAsync(contextInformation).ConfigureAwait(false);
+                }
             }
         }
     }

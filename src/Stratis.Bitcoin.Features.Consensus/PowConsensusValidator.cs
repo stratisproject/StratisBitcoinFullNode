@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
-            if (!context.BlockValidationContext.SkipValidation)
+            if (!context.SkipValidation)
             {
                 if (flags.EnforceBIP30)
                 {
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
-                if (!context.BlockValidationContext.SkipValidation)
+                if (!context.SkipValidation)
                 {
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.UpdateCoinView(context, tx);
             }
 
-            if (!context.BlockValidationContext.SkipValidation)
+            if (!context.SkipValidation)
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 

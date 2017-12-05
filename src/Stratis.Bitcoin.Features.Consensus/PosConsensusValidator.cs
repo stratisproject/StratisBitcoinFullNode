@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.PrevStakeNull.Throw();
 
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
-                if (!context.BlockValidationContext.SkipValidation)
+                if (!context.SkipValidation)
                 {
                     this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
                 }

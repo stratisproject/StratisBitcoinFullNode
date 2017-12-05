@@ -63,6 +63,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public bool CheckPow { get; set; }
 
+        /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
+        public bool SkipValidation { get; set; }
+
+        /// <summary>The current tip of the chain that has been validated.</summary>
+        public ChainedBlock ConsensusTip { get; set; }
+
         public bool IsPoS
         {
             get { return this.Stake != null; }
@@ -72,13 +78,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public ContextInformation(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus)
+        public ContextInformation(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedBlock consensusTip)
         {
             Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(consensus, nameof(consensus));
 
             this.BlockValidationContext = blockValidationContext;
             this.Consensus = consensus;
+            this.ConsensusTip = consensusTip;
 
             // TODO: adding flags to determine the flow of logic is not ideal
             // a refator is in depbate on moving to a consensus rules engine

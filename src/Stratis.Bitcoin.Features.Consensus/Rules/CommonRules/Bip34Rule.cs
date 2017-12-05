@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki
     /// </remarks>
-    public class Bip34Rule : SkipValidationConsensusRule
+    public class Bip34Rule : ConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(ContextInformation context)
