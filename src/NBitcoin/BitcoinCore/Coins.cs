@@ -71,6 +71,7 @@ namespace NBitcoin.BitcoinCore
 
         public Coins()
         {
+
         }
 
         public Coins(Transaction tx, int height)

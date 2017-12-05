@@ -93,29 +93,11 @@ namespace NBitcoin.Payment
     {
         public const int MaxLength = 50000;
         public readonly static string MediaType = "application/bitcoin-payment";
-
-        private readonly List<PaymentOutput> refundTo = new List<PaymentOutput>();
-        private readonly List<Transaction> transactions = new List<Transaction>();
-
         public string Memo { get; set; }
         public byte[] MerchantData { get; set; }
         public Uri ImplicitPaymentUrl { get; set; }
-
-        public List<Transaction> Transactions
-        {
-            get
-            {
-                return this.transactions;
-            }
-        }
-
-        public List<PaymentOutput> RefundTo
-        {
-            get
-            {
-                return this.refundTo;
-            }
-        }
+        public List<Transaction> Transactions { get; } = new List<Transaction>();
+        public List<PaymentOutput> RefundTo { get; } = new List<PaymentOutput>();
 
         public static PaymentMessage Load(byte[] data)
         {

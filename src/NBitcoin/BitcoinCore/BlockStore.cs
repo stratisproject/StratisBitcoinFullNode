@@ -41,7 +41,7 @@ namespace NBitcoin.BitcoinCore
 
             var toRemove = new List<uint256>();
 
-            while (headers.Count != 0)
+            while (headers.Any())
             {
                 foreach (KeyValuePair<uint256, BlockHeader> header in headers)
                 {
@@ -56,7 +56,7 @@ namespace NBitcoin.BitcoinCore
                 foreach (uint256 item in toRemove)
                     headers.Remove(item);
 
-                if (toRemove.Count == 0)
+                if (!toRemove.Any())
                     break;
 
                 toRemove.Clear();
@@ -87,7 +87,7 @@ namespace NBitcoin.BitcoinCore
             }
 
             var toRemove = new List<uint256>();
-            while (blocks.Count != 0)
+            while (blocks.Any())
             {
                 // to optimize keep a track of the last block
                 ChainedBlock last = chain.GetBlock(0);
@@ -120,7 +120,7 @@ namespace NBitcoin.BitcoinCore
                 foreach (uint256 item in toRemove)
                     blocks.Remove(item);
 
-                if (toRemove.Count == 0)
+                if (!toRemove.Any())
                     break;
 
                 toRemove.Clear();
