@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class Bip34Rule : ConsensusRule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             int nHeight = context.BestBlock?.Height + 1 ?? 0;
             Block block = context.BlockValidationContext.Block;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class Bip34ActivationRule : Bip34Rule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;
 

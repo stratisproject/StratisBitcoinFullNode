@@ -35,9 +35,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Execute the consensus rule engine in validation mode only, no state will be changed.
         /// </summary>
-        /// <param name="contextInformation">A context that holds information about the current validated block.</param>
+        /// <param name="ruleContext">A context that holds information about the current validated block.</param>
         /// <returns>The processing task.</returns>
-        Task ValidateAsync(ContextInformation contextInformation);
+        Task ValidateAsync(RuleContext ruleContext);
     }
 
     /// <summary>
@@ -136,11 +136,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         public async Task ExecuteAsync(BlockValidationContext blockValidationContext)
         {
             Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
-            Guard.NotNull(blockValidationContext.Context, nameof(blockValidationContext.Context));
+            Guard.NotNull(blockValidationContext.RuleContext, nameof(blockValidationContext.RuleContext));
 
             try
             {
-                var context = blockValidationContext.Context;
+                var context = blockValidationContext.RuleContext;
 
                 foreach (var consensusRule in this.consensusRules)
                 {
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public async Task ValidateAsync(ContextInformation contextInformation)
+        public async Task ValidateAsync(RuleContext ruleContext)
         {
             foreach (var consensusRule in this.consensusRules)
             {
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
                 if (rule.ValidationRule)
                 {
-                    await rule.RunAsync(contextInformation).ConfigureAwait(false);
+                    await rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
             }
         }

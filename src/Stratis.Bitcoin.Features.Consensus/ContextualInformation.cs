@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <summary>
     /// Context that contains variety of information regarding blocks validation and execution.
     /// </summary>
-    public class ContextInformation
+    public class RuleContext
     {
         public NBitcoin.Consensus Consensus { get; set; }
 
@@ -74,11 +74,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             get { return this.Stake != null; }
         }
 
-        public ContextInformation()
+        public RuleContext()
         {
         }
 
-        public ContextInformation(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedBlock consensusTip)
+        public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedBlock consensusTip)
         {
             Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(consensus, nameof(consensus));

@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         /// <param name="context">The context that has all info that needs to be validated.</param>
         /// <returns>The execution task.</returns>
-        public abstract Task RunAsync(ContextInformation context);
+        public abstract Task RunAsync(RuleContext context);
     }
 
     /// <summary>

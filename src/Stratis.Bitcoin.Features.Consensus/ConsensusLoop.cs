@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public int BanDurationSeconds { get; set; }
 
         /// <summary>The context of the validation processes.</summary>
-        public ContextInformation Context { get; set; }
+        public RuleContext RuleContext { get; set; }
     }
 
     /// <summary>
@@ -356,13 +356,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
-                blockValidationContext.Context = new ContextInformation(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
+                blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
 
                 await this.consensusRules.ExecuteAsync(blockValidationContext);
 
                 try
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.Context).ConfigureAwait(false);
+                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -446,7 +446,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Validates a block using the consensus rules.
         /// </summary>
-        public void ValidateBlock(ContextInformation context, bool skipRules = false)
+        public void ValidateBlock(RuleContext context, bool skipRules = false)
         {
             this.logger.LogTrace("()");
 
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        internal async Task ValidateAndExecuteBlockAsync(ContextInformation context)
+        internal async Task ValidateAndExecuteBlockAsync(RuleContext context)
         {
             this.logger.LogTrace("()");
 

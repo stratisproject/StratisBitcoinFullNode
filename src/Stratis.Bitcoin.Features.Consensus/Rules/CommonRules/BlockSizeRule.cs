@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class BlockSizeRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             var options = context.Consensus.Option<PowConsensusOptions>();
 

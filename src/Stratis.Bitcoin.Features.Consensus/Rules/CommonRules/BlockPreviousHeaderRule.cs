@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class BlockPreviousHeaderRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
