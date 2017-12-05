@@ -5,132 +5,139 @@ namespace NBitcoin.BitcoinCore
 {
     public class Coins : IBitcoinSerializable
     {
-        bool fCoinStake;
+        private bool fCoinStake;
+        private uint nTime;
+        private uint nHeight;
+        private uint nVersion;
+
+        // Determines whether transaction is a coinbase.
+        public bool CoinBase { get; set; }
+
         public bool CoinStake
         {
             get
             {
-                return fCoinStake;
+                return this.fCoinStake;
             }
             set
             {
-                fCoinStake = value;
+                this.fCoinStake = value;
             }
         }
 
-        uint nTime;
         public uint Time
         {
             get
             {
-                return nTime;
+                return this.nTime;
             }
             set
             {
-                nTime = value;
+                this.nTime = value;
             }
         }
 
-        // whether transaction is a coinbase
-        public bool CoinBase { get; set; }
-
-        // unspent transaction outputs; spent outputs are .IsNull(); spent outputs at the end of the array are dropped
-        public List<TxOut> Outputs { get; private set; } = new List<TxOut>();
-
-        // at which height this transaction was included in the active block chain
-        uint nHeight;
+        // Specifies at which height this transaction was included in the active block chain
         public uint Height
         {
             get
             {
-                return nHeight;
+                return this.nHeight;
             }
             set
             {
-                nHeight = value;
+                this.nHeight = value;
             }
         }
 
-        // version of the CTransaction; accesses to this value should probably check for nHeight as well,
-        // as new tx version will probably only be introduced at certain heights
-        uint nVersion;
+        // Version of the CTransaction; accesses to this value should probably check for nHeight as well,
+        // as new tx version will probably only be introduced at certain heights        .
         public uint Version
         {
             get
             {
-                return nVersion;
+                return this.nVersion;
             }
             set
             {
-                nVersion = value;
+                this.nVersion = value;
             }
         }
 
+        // Lists unspent transaction outputs; spent outputs are .IsNull(); spent outputs at the end of the array are dropped.
+        public List<TxOut> Outputs { get; private set; } = new List<TxOut>();
         public Money Value { get; private set; }
-
-
         public static readonly TxOut NullTxOut = new TxOut(new Money(-1), Script.Empty);
+
         public Coins()
         {
 
         }
+
         public Coins(Transaction tx, int height)
         {
             if (Transaction.TimeStamp)
             {
-                fCoinStake = tx.IsCoinStake;
-                nTime = tx.Time;
+                this.fCoinStake = tx.IsCoinStake;
+                this.nTime = tx.Time;
             }
 
-            CoinBase = tx.IsCoinBase;
-            Outputs = tx.Outputs.ToList();
-            nVersion = tx.Version;
-            nHeight = (uint)height;
+            this.CoinBase = tx.IsCoinBase;
+            this.Outputs = tx.Outputs.ToList();
+            this.nVersion = tx.Version;
+            this.nHeight = (uint)height;
+
             ClearUnspendable();
             UpdateValue();
         }
 
         private void UpdateValue()
         {
-            Value = Outputs
+            this.Value = this.Outputs
                 .Where(o => !IsNull(o))
                 .Sum(o=> o.Value);
         }
 
         private bool IsNull(TxOut o) => o.Value.Satoshi == -1;
-        public bool IsEmpty => Outputs.Count == 0;
+        public bool IsEmpty => this.Outputs.Count == 0;
 
         private void Cleanup()
         {
-            var count = Outputs.Count;
-            // remove spent outputs at the end of vout
+            var count = this.Outputs.Count;
+
+            // Remove spent outputs at the end of vout.
             for(int i = count - 1; i >= 0; i--)
             {
-                if(IsNull(Outputs[i]))
-                    Outputs.RemoveAt(i);
+                if (IsNull(this.Outputs[i]))
+                    this.Outputs.RemoveAt(i);
                 else
                     break;
             }
         }
 
-        public int UnspentCount => Outputs.Count(c => !IsNull(c));
+        public int UnspentCount => this.Outputs.Count(c => !IsNull(c));
 
         public bool Spend(int position, out TxInUndo undo)
         {
             undo = null;
-            if(position >= Outputs.Count)
+
+            if (position >= this.Outputs.Count)
                 return false;
-            if(IsNull(Outputs[position]))
+
+            if (IsNull(this.Outputs[position]))
                 return false;
-            undo = new TxInUndo(Outputs[position].Clone());
-            Outputs[position] = NullTxOut;
+
+            undo = new TxInUndo(this.Outputs[position].Clone());
+            this.Outputs[position] = NullTxOut;
             Cleanup();
-            if(IsEmpty)
+
+            if (this.IsEmpty)
             {
-                undo.Height = nHeight;
-                undo.CoinBase = CoinBase;
-                undo.Version = nVersion;
+                undo.Height = this.nHeight;
+                undo.CoinBase = this.CoinBase;
+                undo.Version = this.nVersion;
             }
+
             return true;
         }
 
@@ -144,88 +151,103 @@ namespace NBitcoin.BitcoinCore
 
         public void ReadWrite(BitcoinStream stream)
         {
-            if(stream.Serializing)
+            if (stream.Serializing)
             {
                 uint nMaskSize = 0, nMaskCode = 0;
                 CalcMaskSize(ref nMaskSize, ref nMaskCode);
-                bool fFirst = Outputs.Count > 0 && !IsNull(Outputs[0]);
-                bool fSecond = Outputs.Count > 1 && !IsNull(Outputs[1]);
-                uint nCode = unchecked((uint)(8 * (nMaskCode - (fFirst || fSecond ? 0 : 1)) + (CoinBase ? 1 : 0) + (fFirst ? 2 : 0) + (fSecond ? 4 : 0)));
+
+                bool fFirst = this.Outputs.Count > 0 && !IsNull(this.Outputs[0]);
+                bool fSecond = this.Outputs.Count > 1 && !IsNull(this.Outputs[1]);
+                uint nCode = unchecked((uint)(8 * (nMaskCode - (fFirst || fSecond ? 0 : 1)) + (this.CoinBase ? 1 : 0) + (fFirst ? 2 : 0) + (fSecond ? 4 : 0)));
+
                 // version
-                stream.ReadWriteAsVarInt(ref nVersion);
+                stream.ReadWriteAsVarInt(ref this.nVersion);
+
                 // size of header code
                 stream.ReadWriteAsVarInt(ref nCode);
+
                 // spentness bitmask
-                for(uint b = 0; b < nMaskSize; b++)
+                for (uint b = 0; b < nMaskSize; b++)
                 {
                     byte chAvail = 0;
-                    for(uint i = 0; i < 8 && 2 + b * 8 + i < Outputs.Count; i++)
-                        if(!IsNull(Outputs[2 + (int)b * 8 + (int)i]))
+                    for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
+                        if(!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                             chAvail |= (byte)(1 << (int)i);
+
                     stream.ReadWrite(ref chAvail);
                 }
 
                 // txouts themself
-                for(uint i = 0; i < Outputs.Count; i++)
+                for (uint i = 0; i < this.Outputs.Count; i++)
                 {
-                    if(!IsNull(Outputs[(int)i]))
+                    if (!IsNull(this.Outputs[(int)i]))
                     {
-                        var compressedTx = new TxOutCompressor(Outputs[(int)i]);
+                        var compressedTx = new TxOutCompressor(this.Outputs[(int)i]);
                         stream.ReadWrite(ref compressedTx);
                     }
                 }
                 // coinbase height
-                stream.ReadWriteAsVarInt(ref nHeight);
+                stream.ReadWriteAsVarInt(ref this.nHeight);
 
                 if (Transaction.TimeStamp)
                 {
-                    stream.ReadWrite(ref fCoinStake);
-                    stream.ReadWrite(ref nTime);
+                    stream.ReadWrite(ref this.fCoinStake);
+                    stream.ReadWrite(ref this.nTime);
                 }
             }
             else
             {
                 uint nCode = 0;
+
                 // version
-                stream.ReadWriteAsVarInt(ref nVersion);
+                stream.ReadWriteAsVarInt(ref this.nVersion);
+
                 //// header code
                 stream.ReadWriteAsVarInt(ref nCode);
-                CoinBase = (nCode & 1) != 0;
+                this.CoinBase = (nCode & 1) != 0;
+
                 List<bool> vAvail = new List<bool>() { false, false };
                 vAvail[0] = (nCode & 2) != 0;
                 vAvail[1] = (nCode & 4) != 0;
+
                 uint nMaskCode = unchecked((uint)((nCode / 8) + ((nCode & 6) != 0 ? 0 : 1)));
+
                 //// spentness bitmask
-                while(nMaskCode > 0)
+                while (nMaskCode > 0)
                 {
                     byte chAvail = 0;
+
                     stream.ReadWrite(ref chAvail);
-                    for(uint p = 0; p < 8; p++)
+
+                    for (uint p = 0; p < 8; p++)
                     {
                         bool f = (chAvail & (1 << (int)p)) != 0;
                         vAvail.Add(f);
                     }
-                    if(chAvail != 0)
+
+                    if (chAvail != 0)
                         nMaskCode--;
                 }
+
                 // txouts themself
-                Outputs = Enumerable.Range(0, vAvail.Count).Select(_ => NullTxOut).ToList();
-                for(uint i = 0; i < vAvail.Count; i++)
+                this.Outputs = Enumerable.Range(0, vAvail.Count).Select(_ => NullTxOut).ToList();
+                for (uint i = 0; i < vAvail.Count; i++)
                 {
-                    if(vAvail[(int)i])
+                    if (vAvail[(int)i])
                     {
                         TxOutCompressor compressed = new TxOutCompressor();
                         stream.ReadWrite(ref compressed);
-                        Outputs[(int)i] = compressed.TxOut;
+                        this.Outputs[(int)i] = compressed.TxOut;
                     }
                 }
+
                 //// coinbase height
-                stream.ReadWriteAsVarInt(ref nHeight);
+                stream.ReadWriteAsVarInt(ref this.nHeight);
 
                 if (Transaction.TimeStamp)
                 {
-                    stream.ReadWrite(ref fCoinStake);
-                    stream.ReadWrite(ref nTime);
+                    stream.ReadWrite(ref this.fCoinStake);
+                    stream.ReadWrite(ref this.nTime);
                 }
 
                 Cleanup();
@@ -237,13 +259,13 @@ namespace NBitcoin.BitcoinCore
         {
             return new Coins()
             {
-                nHeight = nHeight,
-                nVersion = nVersion,
-                CoinBase = CoinBase,
-                Value = Value,
-                Outputs = Outputs.Select(txout => txout.Clone()).ToList(),
-                fCoinStake = fCoinStake,
-                nTime = nTime
+                nHeight = this.nHeight,
+                nVersion = this.nVersion,
+                CoinBase = this.CoinBase,
+                Value = this.Value,
+                Outputs = this.Outputs.Select(txout => txout.Clone()).ToList(),
+                fCoinStake = this.fCoinStake,
+                nTime = this.nTime
             };
         }
 
@@ -253,71 +275,71 @@ namespace NBitcoin.BitcoinCore
         private void CalcMaskSize(ref uint nBytes, ref uint nNonzeroBytes)
         {
             uint nLastUsedByte = 0;
-            for(uint b = 0; 2 + b * 8 < Outputs.Count; b++)
+
+            for (uint b = 0; 2 + b * 8 < this.Outputs.Count; b++)
             {
                 bool fZero = true;
-                for(uint i = 0; i < 8 && 2 + b * 8 + i < Outputs.Count; i++)
+                for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
                 {
-                    if(!IsNull(Outputs[2 + (int)b * 8 + (int)i]))
+                    if (!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                     {
                         fZero = false;
                         continue;
                     }
                 }
-                if(!fZero)
+
+                if (!fZero)
                 {
                     nLastUsedByte = b + 1;
                     nNonzeroBytes++;
                 }
             }
+
             nBytes += nLastUsedByte;
         }
 
         // check whether a particular output is still available
         public bool IsAvailable(uint position)
         {
-            return (position <= int.MaxValue && position < Outputs.Count && !IsNull(Outputs[(int)position]));
+            return position <= int.MaxValue && position < this.Outputs.Count && !IsNull(this.Outputs[(int)position]);
         }
 
         public TxOut TryGetOutput(uint position)
         {
-            if(!IsAvailable(position))
+            if (!IsAvailable(position))
                 return null;
-            return Outputs[(int)position];
+
+            return this.Outputs[(int)position];
         }
 
         // check whether the entire CCoins is spent
         // note that only !IsPruned() CCoins can be serialized
-        public bool IsPruned => IsEmpty || Outputs.All(v => IsNull(v));
-
+        public bool IsPruned => this.IsEmpty || this.Outputs.All(v => IsNull(v));
 
         #endregion
 
         public void ClearUnspendable()
         {
-            for(int i = 0; i < Outputs.Count; i++)
+            for(int i = 0; i < this.Outputs.Count; i++)
             {
-                var o = Outputs[i];
-                if(o.ScriptPubKey.IsUnspendable)
-                {
-                    Outputs[i] = NullTxOut;
-                }
+                TxOut o = this.Outputs[i];
+                if (o.ScriptPubKey.IsUnspendable)
+                    this.Outputs[i] = NullTxOut;
             }
+
             Cleanup();
         }
 
         public void MergeFrom(Coins otherCoin)
         {
             var diff = otherCoin.Outputs.Count - this.Outputs.Count;
-            if(diff > 0)
-                for(int i = 0; i < diff; i++)
-                {
-                    Outputs.Add(NullTxOut);
-                }
-            for(int i = 0; i < otherCoin.Outputs.Count; i++)
-            {
-                Outputs[i] = otherCoin.Outputs[i];
-            }
+            if (diff > 0)
+                for (int i = 0; i < diff; i++)
+                    this.Outputs.Add(NullTxOut);
+
+            for (int i = 0; i < otherCoin.Outputs.Count; i++)
+                this.Outputs[i] = otherCoin.Outputs[i];
+
             UpdateValue();
         }
     }
