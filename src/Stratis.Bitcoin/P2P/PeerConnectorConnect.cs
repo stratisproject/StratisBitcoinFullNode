@@ -51,20 +51,16 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override NetworkAddress FindPeerToConnectTo()
         {
-            PeerAddress peer = null;
-
             foreach (var endPoint in this.NodeSettings.ConnectionManager.Connect)
             {
-                peer = this.peerAddressManager.FindPeer(endPoint.MapToIpv6());
-                if (peer == null)
-                    continue;
+                PeerAddress peerAddress = this.peerAddressManager.FindPeer(endPoint);
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
+                    return peerAddress.NetworkAddress;
 
-                // If the peer is already connected just continue.
-                if (this.IsPeerConnected(endPoint))
-                    continue;
+                continue;
             }
 
-            return peer.NetworkAddress;
+            return null;
         }
     }
 }

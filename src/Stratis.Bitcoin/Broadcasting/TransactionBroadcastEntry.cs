@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Broadcasting
     {
         public Transaction Transaction { get; }
 
-        public State State { get; }
+        public State State { get; set; }
 
         public TransactionBroadcastEntry(Transaction transaction, State state)
         {
