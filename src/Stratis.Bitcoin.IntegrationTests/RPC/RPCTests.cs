@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using System.Net;
 using NBitcoin;
+using NBitcoin.Protocol;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
@@ -9,6 +12,34 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class RpcTests
     {
+        /// <summary>
+        /// Tests whether the RPC method "addnode" adds a network peer to the .
+        /// </summary>
+        [Fact]
+        public void CanAddNodeToConnectionManager()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisPowNode();
+
+                builder.StartAll();
+                RPCClient rpc = nodeA.CreateRPCClient();
+                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
+                {
+                    nodeB.VersionHandshake();
+
+                    var connectionManager = nodeA.FullNode.NodeService<IConnectionManager>();
+                    Assert.Empty(connectionManager.NodeSettings.ConnectionManager.AddNode);
+
+                    var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+                    var networkAddress = new NetworkAddress(ipAddress, 80);
+                    rpc.AddNode(networkAddress.Endpoint);
+
+                    Assert.Single(connectionManager.NodeSettings.ConnectionManager.AddNode);
+                }
+            }
+        }
+
         [Fact]
         public void CheckRPCFailures()
         {
