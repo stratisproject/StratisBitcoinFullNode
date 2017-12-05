@@ -611,7 +611,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     return this.Json(model);
                 else
                 {
-                    throw new Exception("Transaction was not validated by mempool. Can't send the transaction.");
+                    throw new Exception(string.Format("Transaction was not sent correctly. Investigate current instance of {0} for more information.", typeof(IBroadcasterManager).Name));
                 }
             }
             catch (Exception e)
