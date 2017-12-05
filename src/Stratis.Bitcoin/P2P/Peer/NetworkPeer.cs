@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Process of disconnecting the peer has been initiated.</summary>
         Disconnecting,
 
-        /// <summary>Network connection between with the peer has been established.</summary>
+        /// <summary>Network connection with the peer has been established.</summary>
         Connected,
 
         /// <summary>The node and the peer exchanged version information.</summary>
@@ -340,6 +340,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.Disconnected.Set();
 
             this.Client.Dispose();
+            this.Client.ProcessingCompletion.SetResult(true);
 
             foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
             {
