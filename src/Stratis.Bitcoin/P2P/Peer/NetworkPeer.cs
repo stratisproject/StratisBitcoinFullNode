@@ -267,7 +267,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     while (!this.Cancel.Token.IsCancellationRequested)
                     {
                         PerformanceCounter counter;
-
                         Message message = Message.ReadNext(this.Client.Stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
 
                         this.logger.LogTrace("Receiving message: '{0}'", message);
