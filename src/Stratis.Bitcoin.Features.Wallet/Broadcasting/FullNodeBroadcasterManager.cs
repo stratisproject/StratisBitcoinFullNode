@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
@@ -13,53 +14,32 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
 
-        /// <summary>Connection manager for managing node connections.</summary>
-        private readonly IConnectionManager connectionManager;
-
-        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base()
+        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
         {
-            this.connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
-            this.mempoolValidator = mempoolValidator ?? throw new ArgumentNullException(nameof(mempoolValidator));
+            Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
+
+            this.mempoolValidator = mempoolValidator;
         }
 
         /// <inheritdoc />
-        public override async Task<Success> TryBroadcastAsync(Transaction transaction)
+        public override async Task<bool> TryBroadcastAsync(Transaction transaction)
         {
-            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (transaction == null)
+                throw new ArgumentNullException(nameof(transaction));
 
-            var found = this.GetTransaction(transaction.GetHash());
-            if (found != null)
-            {
-                if (found.State == State.Propagated) return Success.Yes;
-                if (found.State == State.CantBroadcast)
-                {
-                    this.AddOrUpdate(transaction, State.ToBroadcast);
-                }
-            }
-            else
-            {
-                this.AddOrUpdate(transaction, State.ToBroadcast);
-            }
+            if (this.IsPropagated(transaction))
+                return true;
 
             var state = new MempoolValidationState(false);
             if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
             {
                 this.AddOrUpdate(transaction, State.CantBroadcast);
-                return Success.No;
+                return false;
             }
 
-            // ask half of the peers if they're interested in our transaction
-            var invPayload = new InvPayload(transaction);
-            var oneTwo = 1;
-            foreach (var node in this.connectionManager.ConnectedNodes)
-            {
-                if (oneTwo == 1)
-                {
-                    await node.SendMessageAsync(invPayload).ConfigureAwait(false);
-                }
-                oneTwo = oneTwo == 1 ? 2 : 1;
-            }
-            return Success.Yes;
+            this.PropagateTransactionToPeers(transaction, true);
+
+            return true;
         }
     }
 }

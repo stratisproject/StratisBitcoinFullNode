@@ -9,45 +9,37 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public class LightWalletBroadcasterManager : BroadcasterManagerBase
     {
-        /// <summary>Connection manager for managing node connections.</summary>
-        private readonly IConnectionManager connectionManager;
+        private TimeSpan broadcastMaxTime = TimeSpan.FromSeconds(21);
 
-        public LightWalletBroadcasterManager(IConnectionManager connectionManager) : base()
+        public LightWalletBroadcasterManager(IConnectionManager connectionManager) : base(connectionManager)
         {
-            this.connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
         }
 
         /// <inheritdoc />
-        public override async Task<Success> TryBroadcastAsync(Transaction transaction)
+        public override async Task<bool> TryBroadcastAsync(Transaction transaction)
         {
-            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (transaction == null)
+                throw new ArgumentNullException(nameof(transaction));
 
-            var found = this.GetTransaction(transaction.GetHash());
-            if (found != null)
+            if (this.IsPropagated(transaction))
+                return true;
+
+            this.PropagateTransactionToPeers(transaction, true);
+
+            var elapsed = TimeSpan.Zero;
+            var checkFrequency = TimeSpan.FromSeconds(1);
+
+            while (elapsed < this.broadcastMaxTime)
             {
-                if (found.State == State.Propagated) return Success.Yes;
-                if (found.State == State.CantBroadcast)
-                {
-                    this.AddOrUpdate(transaction, State.ToBroadcast);
-                }
-            }
-            else
-            {
-                this.AddOrUpdate(transaction, State.ToBroadcast);
+                var transactionEntry = this.GetTransaction(transaction.GetHash());
+                if (transactionEntry != null && transactionEntry.State == State.Propagated)
+                    return true;
+
+                await Task.Delay(checkFrequency).ConfigureAwait(false);
+                elapsed += checkFrequency;
             }
 
-            // ask half of the peers if they're interested in our transaction
-            var invPayload = new InvPayload(transaction);
-            var oneTwo = 1;
-            foreach (var node in this.connectionManager.ConnectedNodes)
-            {
-                if (oneTwo == 1)
-                {
-                    await node.SendMessageAsync(invPayload).ConfigureAwait(false);
-                }
-                oneTwo = oneTwo == 1 ? 2 : 1;
-            }
-            return Success.DontKnow;
+            throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
         }
     }
 }

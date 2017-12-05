@@ -3,13 +3,28 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConcurrentCollections;
 using NBitcoin;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Broadcasting
 {
     public abstract class BroadcasterManagerBase : IBroadcasterManager
     {
         public event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
+
+        /// <summary>Connection manager for managing node connections.</summary>
+        protected readonly IConnectionManager connectionManager;
+
+        public BroadcasterManagerBase(IConnectionManager connectionManager)
+        {
+            Guard.NotNull(connectionManager, nameof(connectionManager));
+
+            this.connectionManager = connectionManager;
+            this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
+        }
 
         public void OnTransactionStateChanged(TransactionBroadcastEntry entry)
         {
@@ -18,42 +33,56 @@ namespace Stratis.Bitcoin.Broadcasting
 
         private ConcurrentHashSet<TransactionBroadcastEntry> Broadcasts { get; }
 
-        public BroadcasterManagerBase()
-        {
-            this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
-        }
-
         public TransactionBroadcastEntry GetTransaction(uint256 transactionHash)
         {
             TransactionBroadcastEntry txEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transactionHash);
             if (txEntry == default(TransactionBroadcastEntry))
-            {
                 return null;
-            }
 
             return txEntry;
         }
 
         public void AddOrUpdate(Transaction transaction, State state)
         {
-            var newEntry = new TransactionBroadcastEntry(transaction, state);
-            TransactionBroadcastEntry oldEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
-            if (oldEntry == default(TransactionBroadcastEntry))
+            TransactionBroadcastEntry broadcastEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
+
+            if (broadcastEntry == null)
             {
-                this.Broadcasts.Add(newEntry);
-                this.OnTransactionStateChanged(newEntry);
+                broadcastEntry = new TransactionBroadcastEntry(transaction, state);
+                this.Broadcasts.Add(broadcastEntry);
+                this.OnTransactionStateChanged(broadcastEntry);
             }
-            else
+            else if (broadcastEntry.State != state)
             {
-                if (oldEntry.State != state)
-                {
-                    this.Broadcasts.TryRemove(oldEntry);
-                    this.Broadcasts.Add(newEntry);
-                    this.OnTransactionStateChanged(newEntry);
-                }
+                broadcastEntry.State = state;
+                this.OnTransactionStateChanged(broadcastEntry);
             }
         }
 
-        public abstract Task<Success> TryBroadcastAsync(Transaction transaction);
+        public abstract Task<bool> TryBroadcastAsync(Transaction transaction);
+
+        /// <summary>
+        /// Sends transaction to peers.
+        /// </summary>
+        /// <param name="transaction">Transaction that will be propagated.</param>
+        /// <param name="skipHalfOfThePeers">If set to <c>true</c> transaction will be send to all the peers we are connected to. Otherwise it will be sent to half of them.</param>
+        protected void PropagateTransactionToPeers(Transaction transaction, bool skipHalfOfThePeers = false)
+        {
+            this.AddOrUpdate(transaction, State.ToBroadcast);
+
+            var invPayload = new InvPayload(transaction);
+
+            var peers = this.connectionManager.ConnectedNodes.ToList();
+            int propagateToCount = skipHalfOfThePeers ? (int)Math.Ceiling(peers.Count / 2.0) : peers.Count;
+
+            for (int i = 0; i < propagateToCount; ++i)
+                peers[i].SendMessageAsync(invPayload).GetAwaiter().GetResult();
+        }
+
+        protected bool IsPropagated(Transaction transaction)
+        {
+            TransactionBroadcastEntry broadcastEntry = this.GetTransaction(transaction.GetHash());
+            return broadcastEntry != null && broadcastEntry.State == State.Propagated;
+        }
     }
 }
