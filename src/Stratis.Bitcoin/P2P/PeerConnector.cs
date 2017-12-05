@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.P2P
         /// If the maximum amount of connections has been reached (<see cref="MaximumNodeConnections"/>), the action gets skipped.
         /// </para>
         /// </summary>
-        void StartConnectAsync();
+        void StartConnectAsync(NetworkPeerConnectionParameters parameters, PeerAddressManagerBehaviourMode mode);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.P2P
         private Network network;
 
         /// <summary>The network peer parameters that is injected by <see cref="Connection.ConnectionManager"/>.</summary>
-        private readonly NetworkPeerConnectionParameters parentParameters;
+        private NetworkPeerConnectionParameters parentParameters;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected readonly IPeerAddressManager peerAddressManager;
@@ -135,7 +135,6 @@ namespace Stratis.Bitcoin.P2P
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifeTime,
             NodeSettings nodeSettings,
-            NetworkPeerConnectionParameters parameters,
             IPeerAddressManager peerAddressManager)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -144,12 +143,7 @@ namespace Stratis.Bitcoin.P2P
             this.networkPeerFactory = networkPeerFactory;
             this.nodeLifetime = nodeLifeTime;
             this.NodeSettings = nodeSettings;
-            this.parentParameters = parameters;
             this.peerAddressManager = peerAddressManager;
-
-            this.CurrentParameters = this.parentParameters.Clone();
-            this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
-            this.CurrentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
         }
 
         /// <inheritdoc/>
@@ -173,8 +167,15 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void StartConnectAsync()
+        public void StartConnectAsync(NetworkPeerConnectionParameters parameters, PeerAddressManagerBehaviourMode mode)
         {
+            this.parentParameters = parameters;
+
+            this.CurrentParameters = this.parentParameters.Clone();
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = mode;
+            this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
+            this.CurrentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 await this.ConnectAsync();

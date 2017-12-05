@@ -28,12 +28,10 @@ namespace Stratis.Bitcoin.P2P
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifeTime,
             NodeSettings nodeSettings,
-            NetworkPeerConnectionParameters parameters,
             IPeerAddressManager peerAddressManager)
             :
-            base(asyncLoopFactory, logger, network, networkPeerFactory, nodeLifeTime, nodeSettings, parameters, peerAddressManager)
+            base(asyncLoopFactory, logger, network, networkPeerFactory, nodeLifeTime, nodeSettings, peerAddressManager)
         {
-            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
 

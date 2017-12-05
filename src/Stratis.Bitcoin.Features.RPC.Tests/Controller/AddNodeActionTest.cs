@@ -10,14 +10,32 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall_AddNode()
         {
-            string dir = CreateTestDir(this);
-            IFullNode fullNode = this.BuildServicedNode(dir);
+            string testDirectory = CreateTestDir(this);
+
+            IFullNode fullNode = this.BuildServicedNode(testDirectory);
             ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+
+            var connectionManager = fullNode.NodeService<IConnectionManager>();
 
             Assert.Throws<System.Net.Sockets.SocketException>(() => { controller.AddNode("0.0.0.0", "onetry"); });
             Assert.Throws<ArgumentException>(() => { controller.AddNode("0.0.0.0", "notarealcommand"); });
             Assert.Throws<FormatException>(() => { controller.AddNode("a.b.c.d", "onetry"); });
             Assert.True(controller.AddNode("0.0.0.0", "remove"));
+        }
+
+        [Fact]
+        public void CanCall_AddNode_AddsNodeToCollection()
+        {
+            string testDirectory = CreateTestDir(this);
+
+            IFullNode fullNode = this.BuildServicedNode(testDirectory);
+
+            ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+
+            var connectionManager = fullNode.NodeService<IConnectionManager>();
+            controller.AddNode("0.0.0.0", "add");
+            Assert.Single(connectionManager.NodeSettings.ConnectionManager.AddNode);
+
         }
     }
 }
