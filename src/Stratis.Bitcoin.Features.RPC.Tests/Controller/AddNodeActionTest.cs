@@ -15,8 +15,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
             ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
 
-            var connectionManager = fullNode.NodeService<IConnectionManager>();
-
             Assert.Throws<System.Net.Sockets.SocketException>(() => { controller.AddNode("0.0.0.0", "onetry"); });
             Assert.Throws<ArgumentException>(() => { controller.AddNode("0.0.0.0", "notarealcommand"); });
             Assert.Throws<FormatException>(() => { controller.AddNode("a.b.c.d", "onetry"); });
