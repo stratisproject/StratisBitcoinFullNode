@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 return false;
             }
 
-            this.PropagateTransactionToPeers(transaction);
+            this.PropagateTransactionToPeers(transaction, true);
 
             return true;
         }
