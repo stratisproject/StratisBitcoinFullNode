@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;

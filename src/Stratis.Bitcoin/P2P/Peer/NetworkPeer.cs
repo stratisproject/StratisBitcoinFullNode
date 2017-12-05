@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,7 +142,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Network peer that this object represents the node's connection to.</summary>
+        /// <summary>Network peer this connection connects to.</summary>
         public NetworkPeer Peer { get; private set; }
 
         /// <summary>Connected network socket to the peer.</summary>
