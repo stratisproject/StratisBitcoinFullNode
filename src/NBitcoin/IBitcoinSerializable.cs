@@ -89,18 +89,17 @@ namespace NBitcoin
         public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION,
             NetworkOptions options = null)
         {
-            // If no options have been provided then take the options from the serializable
-            if (options == null && serializable is IHaveNetworkOptions)
-                options = (serializable as IHaveNetworkOptions).GetNetworkOptions();
-
-            MemoryStream ms = new MemoryStream();
-            var bms = new BitcoinStream(ms, true)
+            using (MemoryStream ms = new MemoryStream())
             {
-                ProtocolVersion = version,
-                TransactionOptions = options
-            };
-            serializable.ReadWrite(bms);
-            return ToArrayEfficient(ms);
+                var bms = new BitcoinStream(ms, true)
+                {
+                    ProtocolVersion = version,
+                    // If no options have been provided then take the options from the serializable (or default)
+                    TransactionOptions = options ?? ((serializable as IHaveNetworkOptions)?.GetNetworkOptions() ?? NetworkOptions.TemporaryOptions)
+                };
+                serializable.ReadWrite(bms);
+                return ToArrayEfficient(ms);
+            }
         }
 
         public static byte[] ToArrayEfficient(this MemoryStream ms)
