@@ -411,29 +411,29 @@ namespace NBitcoin.Tests
         private IEnumerable<string> ManuallyEnumerateTheBlockchainFile()
         {
             // read all bytes form the first block file
-            byte[] byts = File.ReadAllBytes(TestDataLocations.Block0001Location);
+            byte[] bytes = File.ReadAllBytes(TestDataLocations.Block0001Location);
 
             // the magic byte separator of blocks
-            byte[] m = new byte[4] { 0x70, 0x35, 0x22, 0x05 };
+            byte[] magicBytes = new byte[4] { 0x70, 0x35, 0x22, 0x05 };
 
             // first bytes must be magic
-            Assert.True(m[0] == byts[0] && m[1] == byts[1] && m[2] == byts[2] && m[3] == byts[3]);
+            Assert.True(magicBytes[0] == bytes[0] && magicBytes[1] == bytes[1] && magicBytes[2] == bytes[2] && magicBytes[3] == bytes[3]);
 
             // enumerate over all the bytes and separate the blocks to hex representations
             var current = new List<byte>();
-            for (int i = 0; i < byts.Length; i++) // start from 1 to skip first check
+            for (int i = 0; i < bytes.Length; i++) // start from 1 to skip first check
             {
                 // check for the magic byte
-                if ((m[0] == byts[i] &&
-                    m[1] == byts[i + 1] &&
-                    m[2] == byts[i + 2] &&
-                    m[3] == byts[i + 3]) && i > 0)
+                if ((magicBytes[0] == bytes[i] &&
+                    magicBytes[1] == bytes[i + 1] &&
+                    magicBytes[2] == bytes[i + 2] &&
+                    magicBytes[3] == bytes[i + 3]) && i > 0)
                 {
                     // if we reached the magic byte we got to the end of the block
                     yield return Encoders.Hex.EncodeData(current.ToArray());
                     current.Clear();
                 }
-                current.Add(byts[i]);
+                current.Add(bytes[i]);
             }
 
             // read the last block

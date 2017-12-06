@@ -243,7 +243,7 @@ namespace NBitcoin.RPC
         private string ToHex(Transaction tx)
         {
             // if there is inputs, then it can't be confusing
-            if (tx.Inputs.Count > 0)
+            if (tx.Inputs.Any())
                 return tx.ToHex();
 
             // if there is, do this ACK so that NBitcoin does not change the version number
@@ -418,7 +418,6 @@ namespace NBitcoin.RPC
         }
 
         // listaddressgroupings
-
         public IEnumerable<AddressGrouping> ListAddressGroupings()
         {
             RPCResponse result = SendCommand(RPCOperations.listaddressgroupings);
