@@ -451,7 +451,7 @@ namespace NBitcoin
                 return null;
 
             ChainedBlock walk = this;
-            while (walk.Height != ancestorHeight)
+            while ((walk != null) && (walk.Height != ancestorHeight))
             {
                 // No skip so follow previous.
                 if (walk.Skip == null)
