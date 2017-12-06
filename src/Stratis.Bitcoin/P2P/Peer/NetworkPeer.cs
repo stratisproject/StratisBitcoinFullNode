@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer 
     /// and sending messages from the node to the peer.
     /// </summary>
-    public class NetworkPeerConnection
+    public class NetworkPeerConnection : IDisposable
     {
         /// <summary>Logger for the node.</summary>
         private readonly ILogger logger;
@@ -175,6 +175,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Peer = peer;
             this.Client = client;
             this.Messages = new BlockingCollection<SentMessage>(new ConcurrentQueue<SentMessage>());
+            this.Cancel = new CancellationTokenSource();
+            this.Disconnected = new ManualResetEvent(false);
         }
 
         /// <summary>
@@ -184,9 +186,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void BeginListen()
         {
             this.logger.LogTrace("()");
-
-            this.Disconnected = new ManualResetEvent(false);
-            this.Cancel = new CancellationTokenSource();
 
             // This is sending thread.
             new Thread(() =>
@@ -352,10 +351,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <summary>
-        /// Disposes resources used by the object.
-        /// </summary>
-        internal void CleanUp()
+        /// <inheritdoc />
+        public void Dispose()
         {
             this.logger.LogTrace("()");
 
@@ -1029,7 +1026,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                this.Connection.CleanUp();
+                this.Connection.Dispose();
             }
 
             this.logger.LogTrace("(-)");
@@ -1051,7 +1048,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.DisconnectInternal(reason, exception);
-            this.Connection.CleanUp();
+            this.Connection.Dispose();
 
             this.logger.LogTrace("(-)");
         }
