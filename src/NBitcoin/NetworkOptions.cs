@@ -15,10 +15,11 @@ namespace NBitcoin
     public class NetworkOptions
     {
         public const uint None = 0x00000000;
-        public const uint POS = 0x20000000;
         public const uint Witness = 0x40000000;
         public const uint All = Witness;
-        public const uint POSAll = Witness | POS;
+
+        /// <summary>ProofOfStake flags.</summary>
+        public bool IsProofOfStake = false;
 
         //TODO?: Could be used by Block:
         //public virtual SetBlockSpecificFlags(Block block);
@@ -32,7 +33,7 @@ namespace NBitcoin
         {
             get
             {
-                return new NetworkOptions(Transaction.TimeStamp?POSAll:All);
+                return new NetworkOptions() { IsProofOfStake = Transaction.TimeStamp };
             }
         }
 
@@ -43,32 +44,6 @@ namespace NBitcoin
         public NetworkOptions(uint flags = All)
         {
             this.flags = flags;
-        }
-
-        /// <summary>
-        /// Get/Set ProofOfStake flags.
-        /// </summary>
-        public bool IsProofOfStake
-        {
-            get
-            {
-                bool isPOS = (this.flags & POS) != 0;
-                // TODO: This sanity check will be removed once the static flags are removed
-                if (isPOS != Block.BlockSignature)
-                {
-                    throw new ArgumentException($"Block.BlockSignature {Block.BlockSignature} mismatches cross-check value: {isPOS}");
-                }
-                // TODO: This sanity check will be removed once the static flags are removed
-                if (isPOS != Transaction.TimeStamp)
-                {
-                    throw new ArgumentException($"Transaction.TimeStamp {Transaction.TimeStamp} mismatches cross-check value: {isPOS}");
-                }
-                return isPOS;
-            }
-            set
-            {
-                this.flags = value ? (this.flags | POS) : (this.flags & ~POS);
-            }
         }
 
         /// <summary>
@@ -93,6 +68,7 @@ namespace NBitcoin
         {
             var clone = new NetworkOptions();
             clone.flags = this.flags;
+            clone.IsProofOfStake = this.IsProofOfStake;
             return clone;
         }
 
@@ -176,7 +152,8 @@ namespace NBitcoin
         /// <returns>Returns true iff the two objects are the same.</returns>
         public override bool Equals(object obj)
         {
-            return (uint)(obj as NetworkOptions) == (uint)this;
+            return (uint)(obj as NetworkOptions) == (uint)this &&
+                   (obj as NetworkOptions).IsProofOfStake == this.IsProofOfStake;
         }
 
         /// <summary>
@@ -185,7 +162,7 @@ namespace NBitcoin
         /// <returns>The hash code.</returns>
         public override int GetHashCode()
         {
-            return (int)(uint)this;
+            return (int)(uint)this ^ this.IsProofOfStake.GetHashCode();
         }
 
         /// <summary>
