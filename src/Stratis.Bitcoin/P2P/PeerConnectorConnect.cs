@@ -42,22 +42,23 @@ namespace Stratis.Bitcoin.P2P
                 RequiredServices = NetworkPeerServices.Nothing
             };
 
+            // Add the end points from the -connect arg to the address manager
             foreach (var endPoint in this.NodeSettings.ConnectionManager.Connect)
             {
                 this.peerAddressManager.AddPeer(new NetworkAddress(endPoint.MapToIpv6()), IPAddress.Loopback);
             }
         }
 
-        /// <inheritdoc/>
-        public override NetworkAddress FindPeerToConnectTo()
+        /// <summary>
+        /// Only return nodes as specified in the -connect node arg.
+        /// </summary>
+        public override PeerAddress FindPeerToConnectTo()
         {
             foreach (var endPoint in this.NodeSettings.ConnectionManager.Connect)
             {
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(endPoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
-                    return peerAddress.NetworkAddress;
-
-                continue;
+                    return peerAddress;
             }
 
             return null;
