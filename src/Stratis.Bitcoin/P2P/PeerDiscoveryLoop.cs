@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.P2P
 
                         networkPeer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
                         networkPeer.VersionHandshake(connectTokenSource.Token);
-                        networkPeer.SendMessageAsync(new GetAddrPayload());
+                        Task unused = networkPeer.SendMessageAsync(new GetAddrPayload());
 
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
                     this.currentPing = new PingPayload();
                     this.dateSent = DateTimeOffset.UtcNow;
-                    peer.SendMessageAsync(this.currentPing);
+                    Task unusedTask = peer.SendMessageAsync(this.currentPing);
                     this.pingTimeoutTimer = new Timer(PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
                 finally
@@ -155,7 +156,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
             if ((message.Message.Payload is PingPayload ping) && this.Mode.HasFlag(PingPongMode.RespondPong))
             {
-                peer.SendMessageAsync(new PongPayload()
+                Task unused = peer.SendMessageAsync(new PongPayload()
                 {
                     Nonce = ping.Nonce
                 });
