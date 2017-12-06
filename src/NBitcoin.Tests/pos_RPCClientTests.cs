@@ -1,26 +1,23 @@
-﻿using NBitcoin.DataEncoders;
-using NBitcoin.RPC;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using NBitcoin.RPC;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
-    //Require a rpc server on test network running on default port with -rpcuser=NBitcoin -rpcpassword=NBitcoinPassword
-    //For me : 
-    //"bitcoin-qt.exe" -testnet -server -rpcuser=NBitcoin -rpcpassword=NBitcoinPassword 
+    // Require a rpc server on test network running on default port with -rpcuser=NBitcoin -rpcpassword=NBitcoinPassword.
+    // For me : 
+    // "bitcoin-qt.exe" -testnet -server -rpcuser=NBitcoin -rpcpassword=NBitcoinPassword.
     [Trait("RPCClient", "RPCClient")]
     public class pos_RPCClientTests
     {
+        public static bool noClient = !Process.GetProcesses().Any(p => p.ProcessName.Contains("stratis"));
+        private const string TestAccount = "NBitcoin.RPCClientTests";
+
         public pos_RPCClientTests()
         {
             // These tests should be using the Stratis network.
@@ -29,17 +26,14 @@ namespace NBitcoin.Tests
             Block.BlockSignature = true;
         }
 
-        public static bool noClient = !Process.GetProcesses().Any(p => p.ProcessName.Contains("stratis"));
-
-        const string TestAccount = "NBitcoin.RPCClientTests";
         [Fact]
         public void InvalidCommandSendRPCException()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var rpc = builder.CreateNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateNode().CreateRPCClient();
                 builder.StartAll();
                 AssertException<RPCException>(() => rpc.SendCommand("donotexist"), (ex) =>
                 {
@@ -48,17 +42,16 @@ namespace NBitcoin.Tests
             }
         }
 
-
         [Fact]
         public void CanSendCommand()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var rpc = builder.CreateNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateNode().CreateRPCClient();
                 builder.StartAll();
-                var response = rpc.SendCommand(RPCOperations.getinfo);
+                RPCResponse response = rpc.SendCommand(RPCOperations.getinfo);
                 Assert.NotNull(response.Result);
             }
         }
@@ -66,13 +59,13 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanGetGenesisFromRPC()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var rpc = builder.CreateNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateNode().CreateRPCClient();
                 builder.StartAll();
-                var response = rpc.SendCommand(RPCOperations.getblockhash, 0);
+                RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
                 var actualGenesis = (string)response.Result;
                 Assert.Equal(Network.StratisMain.GetGenesis().GetHash().ToString(), actualGenesis);
                 //Assert.Equal(Network.StratisMain.GetGenesis().GetHash(), rpc.GetBestBlockHash());
@@ -82,16 +75,16 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanGetRawMemPool()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var node = builder.CreateNode();
-                var rpc = node.CreateRPCClient();
+                CoreNodeStratis node = builder.CreateNode();
+                RPCClient rpc = node.CreateRPCClient();
                 builder.StartAll();
                 ////node.Generate(101);
                 //var txid = rpc.SendToAddress(new Key().PubKey.GetAddress(rpc.Network), Money.Coins(1.0m), "hello", "world");
-                var ids = rpc.GetRawMempool();
+                uint256[] ids = rpc.GetRawMempool();
                 Assert.NotNull(ids);
                 //Assert.Equal(txid, ids[0]);
             }
@@ -100,12 +93,12 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanUseAsyncRPC()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var node = builder.CreateNode();
-                var rpc = node.CreateRPCClient();
+                CoreNodeStratis node = builder.CreateNode();
+                RPCClient rpc = node.CreateRPCClient();
                 builder.StartAll();
                 ////node.Generate(10);
                 var blkCount = rpc.GetBlockCountAsync().Result;
@@ -116,13 +109,13 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanGetBlockFromRPC()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var rpc = builder.CreateNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateNode().CreateRPCClient();
                 builder.StartAll();
-                var response = rpc.GetBlockHeader(0);
+                BlockHeader response = rpc.GetBlockHeader(0);
                 AssertEx.CollectionEquals(Network.StratisMain.GetGenesis().Header.ToBytes(), response.ToBytes());
 
                 response = rpc.GetBlockHeader(0);
@@ -163,14 +156,14 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanGetTransactionBlockFromRPC()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var rpc = builder.CreateNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateNode().CreateRPCClient();
                 builder.StartAll();
-                var blockId = rpc.GetBestBlockHash();
-                var block = rpc.GetRPCBlock(blockId).Result;
+                uint256 blockId = rpc.GetBestBlockHash();
+                RPCBlock block = rpc.GetRPCBlockAsync(blockId).Result;
                 Assert.NotNull(block);
             }
         }
@@ -253,7 +246,7 @@ namespace NBitcoin.Tests
             var testData = JObject.Parse(testJson);
             var unspentCoin = new UnspentCoin(testData, Network.TestNet);
 
-            // Versions prior to 0.10.0 were always spendable (but had no JSON field)
+            // Versions prior to 0.10.0 were always spendable (but had no JSON field).
             Assert.True(unspentCoin.IsSpendable);
         }
 
@@ -282,13 +275,13 @@ namespace NBitcoin.Tests
         [Fact]
         public void RawTransactionIsConformsToRPC()
         {
-            using(var builder = NodeBuilderStratis.Create())
+            using (var builder = NodeBuilderStratis.Create())
             {
-                var rpc = builder.CreateNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateNode().CreateRPCClient();
                 builder.StartAll();
                 var tx = Transaction.Parse("01000000ac55a957010000000000000000000000000000000000000000000000000000000000000000ffffffff0401320103ffffffff010084d717000000001976a9143ac0dad2ad42e35fcd745d7511d47c24ad6580b588ac00000000");
 
-                var tx2 = rpc.GetRawTransaction(uint256.Parse("a6783a0933942d37dcb5fb923ddd343522036de23fbc658f2ad2a9f1428ca19d"));
+                Transaction tx2 = rpc.GetRawTransaction(uint256.Parse("a6783a0933942d37dcb5fb923ddd343522036de23fbc658f2ad2a9f1428ca19d"));
                 Assert.Equal(tx.GetHash(), tx2.GetHash());
             }
         }
@@ -322,46 +315,48 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseIpEndpoint()
         {
-            var endpoint = Utils.ParseIpEndpoint("google.com:94", 90);
+            IPEndPoint endpoint = Utils.ParseIpEndpoint("google.com:94", 90);
             Assert.Equal(94, endpoint.Port);
+
             endpoint = Utils.ParseIpEndpoint("google.com", 90);
             Assert.Equal(90, endpoint.Port);
+
             endpoint = Utils.ParseIpEndpoint("10.10.1.3", 90);
             Assert.Equal("10.10.1.3", endpoint.Address.ToString());
             Assert.Equal(90, endpoint.Port);
+
             endpoint = Utils.ParseIpEndpoint("10.10.1.3:94", 90);
             Assert.Equal("10.10.1.3", endpoint.Address.ToString());
             Assert.Equal(94, endpoint.Port);
             Assert.Throws<System.Net.Sockets.SocketException>(() => Utils.ParseIpEndpoint("2001:db8:1f70::999:de8:7648:6e8:100", 90));
+
             endpoint = Utils.ParseIpEndpoint("2001:db8:1f70::999:de8:7648:6e8", 90);
             Assert.Equal("2001:db8:1f70:0:999:de8:7648:6e8", endpoint.Address.ToString());
             Assert.Equal(90, endpoint.Port);
+
             endpoint = Utils.ParseIpEndpoint("[2001:db8:1f70::999:de8:7648:6e8]:94", 90);
             Assert.Equal("2001:db8:1f70:0:999:de8:7648:6e8", endpoint.Address.ToString());
             Assert.Equal(94, endpoint.Port);
         }
 
-    
-
-
         [Fact]
         public void RPCSendRPCException()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var node = builder.CreateNode();
+                CoreNodeStratis node = builder.CreateNode();
                 builder.StartAll();
-                var rpcClient = node.CreateRPCClient();
+                RPCClient rpcClient = node.CreateRPCClient();
                 try
                 {
                     rpcClient.SendCommand("whatever");
                     Assert.False(true, "Should have thrown");
                 }
-                catch(RPCException ex)
+                catch (RPCException ex)
                 {
-                    if(ex.RPCCode != RPCErrorCode.RPC_METHOD_NOT_FOUND)
+                    if (ex.RPCCode != RPCErrorCode.RPC_METHOD_NOT_FOUND)
                     {
                         Assert.False(true, "Should have thrown RPC_METHOD_NOT_FOUND");
                     }
@@ -372,27 +367,32 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanAddNodes()
         {
-            if (pos_RPCClientTests.noClient) return;
+            if (noClient) return;
 
             using (var builder = NodeBuilderStratis.Create())
             {
-                var nodeA = builder.CreateNode();
-                var nodeB = builder.CreateNode();
+                CoreNodeStratis nodeA = builder.CreateNode();
+                CoreNodeStratis nodeB = builder.CreateNode();
                 builder.StartAll();
-                var rpc = nodeA.CreateRPCClient();
+
+                RPCClient rpc = nodeA.CreateRPCClient();
                 rpc.RemoveNode(nodeA.Endpoint);
                 rpc.AddNode(nodeB.Endpoint);
                 Thread.Sleep(500);
-                var info = rpc.GetAddedNodeInfo(true);
+
+                AddedNodeInfo[] info = rpc.GetAddedNodeInfo(true);
                 Assert.NotNull(info);
                 Assert.NotEmpty(info);
-                //For some reason this one does not pass anymore in 0.13.1
+
+                //For some reason this one does not pass anymore in 0.13.1.
                 //Assert.Equal(nodeB.Endpoint, info.First().Addresses.First().Address);
-                var oneInfo = rpc.GetAddedNodeInfo(true, nodeB.Endpoint);
+                AddedNodeInfo oneInfo = rpc.GetAddedNodeInfo(true, nodeB.Endpoint);
                 Assert.NotNull(oneInfo);
                 Assert.True(oneInfo.AddedNode.ToString() == nodeB.Endpoint.ToString());
+
                 oneInfo = rpc.GetAddedNodeInfo(true, nodeA.Endpoint);
                 Assert.Null(oneInfo);
+
                 //rpc.RemoveNode(nodeB.Endpoint);
                 //Thread.Sleep(500);
                 //info = rpc.GetAddedNodeInfo(true);
@@ -441,10 +441,9 @@ namespace NBitcoin.Tests
         //    }
         //}
 
-
         private void AssertJsonEquals(string json1, string json2)
         {
-            foreach(var c in new[] { "\r\n", " ", "\t" })
+            foreach (var c in new[] { "\r\n", " ", "\t" })
             {
                 json1 = json1.Replace(c, "");
                 json2 = json2.Replace(c, "");
@@ -460,7 +459,7 @@ namespace NBitcoin.Tests
                 act();
                 Assert.False(true, "Should have thrown an exception");
             }
-            catch(T ex)
+            catch (T ex)
             {
                 assert(ex);
             }

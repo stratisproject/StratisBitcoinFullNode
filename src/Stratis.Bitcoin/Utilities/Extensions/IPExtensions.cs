@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin
         /// <summary>Match the end point with another by IP and port.</summary>
         public static bool Match(this IPEndPoint endPoint, IPEndPoint matchWith)
         {
-            return matchWith.Address.ToString() == endPoint.Address.ToString() && matchWith.Port == endPoint.Port;
+            return endPoint.Address.ToString() == matchWith.MapToIpv6().Address.ToString() && endPoint.Port == matchWith.MapToIpv6().Port;
         }
     }
 }

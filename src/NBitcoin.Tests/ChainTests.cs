@@ -1,14 +1,7 @@
-﻿using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Protocol;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -64,7 +57,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseRandomScripts()
         {
-            for(int i = 0; i < 600; i++)
+            for (int i = 0; i < 600; i++)
             {
                 var bytes = RandomUtils.GetBytes(120);
                 new Script(bytes).ToString();
@@ -154,12 +147,12 @@ namespace NBitcoin.Tests
             AppendBlock(chain);
             AppendBlock(chain);
             AppendBlock(chain);
-            foreach(var b in chain.EnumerateAfter(chain.Genesis))
+            foreach (var b in chain.EnumerateAfter(chain.Genesis))
             {
                 chain.GetBlock(0);
             }
 
-            foreach(var b in chain.ToEnumerable(false))
+            foreach (var b in chain.ToEnumerable(false))
             {
                 chain.GetBlock(0);
             }
@@ -224,7 +217,7 @@ namespace NBitcoin.Tests
             var main = new ConcurrentChain(LoadMainChain());
             var histories = File.ReadAllText("data/targethistory.csv").Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-            foreach(var history in histories)
+            foreach (var history in histories)
             {
                 var height = int.Parse(history.Split(',')[0]);
                 var expectedTarget = new Target(new BouncyCastle.Math.BigInteger(history.Split(',')[1], 10));
@@ -242,15 +235,15 @@ namespace NBitcoin.Tests
         public void CanValidateChain()
         {
             var main = new ConcurrentChain(LoadMainChain());
-            foreach(var h in main.ToEnumerable(false))
+            foreach (var h in main.ToEnumerable(false))
             {
                 Assert.True(h.Validate(Network.Main));
             }
         }
-        
+
         private byte[] LoadMainChain()
         {
-            if(!File.Exists("MainChain1.dat"))
+            if (!File.Exists("MainChain1.dat"))
             {
                 HttpClient client = new HttpClient();
                 var bytes = client.GetByteArrayAsync("https://aois.blob.core.windows.net/public/MainChain1.dat").GetAwaiter().GetResult();
@@ -439,6 +432,108 @@ namespace NBitcoin.Tests
             Assert.NotNull(side.GetBlock(sideb.HashBlock));
         }
 
+        /// <summary> 
+        /// Adapted from bitcoin core test, verify GetAncestor is using skip list in <see cref="ChainedBlock"/>.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
+        /// </summary>
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void ChainedBlockVerifySkipListForGetAncestor()
+        {
+            int skipListLength = 300000;
+
+            // Want a chain of exact length so subtract the genesis block.
+            ConcurrentChain chain = this.CreateChain(skipListLength - 1);
+
+            // Also want a copy in array form so can quickly verify indexing.
+            ChainedBlock[] chainArray = new ChainedBlock[skipListLength];
+
+            // Check skip height and build out array copy.
+            foreach (ChainedBlock block in chain.EnumerateToTip(chain.Genesis))
+            {
+                if (block.Height > 0)
+                    Assert.True(block.Skip.Height < block.Height);
+                else
+                    Assert.Null(block.Skip);
+                chainArray[block.Height] = block;
+            }
+
+            // Do some random verification of GetAncestor().
+            Random random = new Random();
+            int randCheckCount = 1000;
+            for (int i = 0; i < randCheckCount; i++)
+            {
+                int from = random.Next(chain.Tip.Height - 1);
+                int to = random.Next(from + 1);
+
+                Assert.Equal(chainArray[chain.Tip.Height - 1].GetAncestor(from), chainArray[from]);
+                Assert.Equal(chainArray[from].GetAncestor(to), chainArray[to]);
+                Assert.Equal(chainArray[from].GetAncestor(0), chainArray[0]);
+            }
+        }
+
+        /// <summary> 
+        /// Adapted from bitcoin core test, verify GetLocator is using skip list in <see cref="ChainedBlock"/>.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
+        /// </summary>
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void ChainedBlockVerifySkipListForGetLocator()
+        {
+            int mainLength = 100000;
+            int branchLength = 50000;
+
+            // Make a main chain 100000 blocks long.
+            ConcurrentChain chain = this.CreateChain(mainLength - 1);
+
+            // Make a branch that splits off at block 49999, 50000 blocks long.
+            ChainedBlock mainTip = chain.Tip;
+            ChainedBlock block = mainTip.GetAncestor(branchLength - 1);
+            for (int i = 0; i < branchLength; i++)
+            {
+                Block newBlock = TestUtils.CreateFakeBlock();
+                newBlock.Header.HashPrevBlock = block.Header.GetHash();
+                block = new ChainedBlock(newBlock.Header, newBlock.Header.GetHash(), block);
+            }
+            ChainedBlock branchTip = block;
+
+            // Test 100 random starting points for locators.
+            Random rand = new Random();
+            for (int n = 0; n < 100; n++)
+            {
+                // Find a random location along chain for locator < mainLength is on main chain > mainLength is on branch.
+                int r = rand.Next(mainLength + branchLength);
+
+                // Block to get locator for.
+                ChainedBlock tip = r < mainLength ? mainTip.GetAncestor(r) : branchTip.GetAncestor(r - mainLength);
+
+                // Get a block locator.
+                BlockLocator locator = tip.GetLocator();
+
+                // The first result must be the block itself, the last one must be genesis.
+                Assert.Equal(tip.HashBlock, locator.Blocks.First());
+                Assert.Equal(chain.Genesis.HashBlock, locator.Blocks.Last());
+
+                // Entries 1 through 11 (inclusive) go back one step each.
+                for (int i = 1; (i < 12) && (i < (locator.Blocks.Count - 1)); i++)
+                {
+                    ChainedBlock expectedBlock = tip.GetAncestor(tip.Height - i);
+                    Assert.Equal(expectedBlock.HashBlock, locator.Blocks[i]);
+                }
+
+                // The further ones (excluding the last one) go back with exponential steps.
+                int dist = 2;
+                int height = tip.Height - 11 - dist;
+                for (int i = 12; i < locator.Blocks.Count() - 1; i++)
+                {
+                    ChainedBlock expectedBlock = tip.GetAncestor(height);
+                    Assert.Equal(expectedBlock.HashBlock, locator.Blocks[i]);
+                    dist *= 2;
+                    height -= dist;
+                }
+            }
+        }
+
         private ConcurrentChain CreateChain(int height)
         {
             return CreateChain(TestUtils.CreateFakeBlock().Header, height);
@@ -447,7 +542,7 @@ namespace NBitcoin.Tests
         private ConcurrentChain CreateChain(BlockHeader genesis, int height)
         {
             var chain = new ConcurrentChain(genesis);
-            for(int i = 0; i < height; i++)
+            for (int i = 0; i < height; i++)
             {
                 var b = TestUtils.CreateFakeBlock();
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
@@ -461,20 +556,22 @@ namespace NBitcoin.Tests
         {
             ChainedBlock last = null;
             var nonce = RandomUtils.GetUInt32();
-            foreach(var chain in chains)
+            foreach (var chain in chains)
             {
                 var block = TestUtils.CreateFakeBlock(new Transaction());
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
-                if(!chain.TrySetTip(block.Header, out last))
+                if (!chain.TrySetTip(block.Header, out last))
                     throw new InvalidOperationException("Previous not existing");
             }
             return last;
         }
+
         private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
         {
             ChainedBlock index = null;
             return AppendBlock(index, chains);
         }
+
     }
 }
