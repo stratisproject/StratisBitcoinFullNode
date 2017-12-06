@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         public InvPayload()
         {
         }
-        
+
         public InvPayload(params Transaction[] transactions)
             : this(transactions.Select(tx => new InventoryVector(InventoryType.MSG_TX, tx.GetHash())).ToArray())
         {
