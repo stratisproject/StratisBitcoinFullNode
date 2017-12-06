@@ -443,7 +443,7 @@ namespace NBitcoin
         /// Finds the ancestor of this entry in the chain that matches the block height given.
         /// <remarks>Note: This uses a skiplist to improve list navigation performance.</remarks>
         /// </summary>
-        /// <param name="height">The block height to search for.</param>
+        /// <param name="ancestorHeight">The block height to search for.</param>
         /// <returns>The ancestor of this chain that matches the block height.</returns>
         public ChainedBlock GetAncestor(int ancestorHeight)
         {
