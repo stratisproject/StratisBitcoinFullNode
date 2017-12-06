@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (!this.Cancel.IsCancellationRequested)
             {
-                this.logger.LogDebug("Connection to server stopped unexpectedly, error message '{0}'.", unhandledException.Message);
+                this.logger.LogDebug("Connection to server stopped unexpectedly, error message '{0}'.", unhandledException?.Message);
 
                 this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
