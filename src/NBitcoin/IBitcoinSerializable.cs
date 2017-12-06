@@ -65,6 +65,7 @@ namespace NBitcoin
         {
             ReadWrite(serializable, new MemoryStream(bytes), false, version, options);
         }
+
         public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
             NetworkOptions options = null)
         {
@@ -80,8 +81,8 @@ namespace NBitcoin
         {
             NetworkOptions options = NetworkOptions.All;
             var instance = new T();
-            if (serializable is IHaveNetworkOptions)
-                options = (serializable as IHaveNetworkOptions).GetNetworkOptions();
+            if (serializable is IHaveNetworkOptions haveNetworkOptions)
+                options = haveNetworkOptions.GetNetworkOptions();
             instance.FromBytes(serializable.ToBytes(version, options), version, options);
             return instance;
         }
