@@ -24,30 +24,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 typeof(NBitcoin.BitcoinCore.StoredItem<>)
             };
 
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(x =>
-                x.FullName.Contains("Stratis") || x.FullName.Contains("NBitcoin")).ToList();
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(x =>x.FullName.Contains("Stratis") || x.FullName.Contains("NBitcoin"))
+                .SelectMany(s => s.GetTypes())
+                .Where(p => typeof(IBitcoinSerializable).IsAssignableFrom(p) && !p.IsInterface && p.IsClass);
 
-            Assert.True(assemblies.Count != 0);
-
-            List<Type> serializableTypes = new List<Type>();
-
-            //collect all types that inherit IBitcoinSerializable
-            foreach (var assembly in assemblies)
+            foreach (var type in types)
             {
-                foreach (var type in assembly.GetTypes())
-                {
-                    var interfaces = type.GetInterfaces();
-                    if (interfaces.Contains(typeof(IBitcoinSerializable)))
-                        serializableTypes.Add(type);
-                }
-            }
-
-            //ensure each type implements a parameterless constructor.
-            foreach (var type in serializableTypes)
-            {
-                if (!type.IsClass)
-                    continue;
-
                 bool parameterlessConstructorExists = type.GetConstructors().Any(x => x.GetParameters().Length == 0);
 
                 if (!exceptionalTypes.Contains(type))
