@@ -388,7 +388,7 @@ namespace NBitcoin.RPC
         /// <summary>Get the a whole block.</summary>
         /// <param name="blockId"></param>
         /// <returns></returns>
-        public async Task<RPCBlock> GetRPCBlock(uint256 blockId)
+        public async Task<RPCBlock> GetRPCBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync("getblock", blockId.ToString(), false).ConfigureAwait(false);
             return SatoshiBlockFormatter.Parse(resp.Result as JObject);
@@ -431,7 +431,7 @@ namespace NBitcoin.RPC
         public void CancelBatch()
         {
             ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> batches;
-            lock (this.batchedRequests)
+            lock (this)
             {
                 if (this.batchedRequests == null)
                     throw new InvalidOperationException("This RPCClient instance is not a batch, use PrepareBatch");
@@ -448,7 +448,7 @@ namespace NBitcoin.RPC
         public async Task SendBatchAsync()
         {
             ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> batches;
-            lock (this.batchedRequests)
+            lock (this)
             {
                 if (this.batchedRequests == null)
                     throw new InvalidOperationException("This RPCClient instance is not a batch, use PrepareBatch");
