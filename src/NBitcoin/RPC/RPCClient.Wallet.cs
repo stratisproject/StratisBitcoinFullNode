@@ -1,75 +1,37 @@
 ﻿#if !NOJSONNET
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading.Tasks;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
     public class RPCAccount
     {
-        public Money Amount
-        {
-            get;
-            set;
-        }
-        public String AccountName
-        {
-            get;
-            set;
-        }
+        public Money Amount { get; set; }
+        public string AccountName { get; set; }
     }
 
     public class ChangeAddress
     {
-        public Money Amount
-        {
-            get;
-            set;
-        }
-        public BitcoinAddress Address
-        {
-            get;
-            set;
-        }
+        public Money Amount { get; set; }
+        public BitcoinAddress Address { get; set; }
     }
 
     public class AddressGrouping
     {
         public AddressGrouping()
         {
-            ChangeAddresses = new List<ChangeAddress>();
-        }
-        public BitcoinAddress PublicAddress
-        {
-            get;
-            set;
-        }
-        public Money Amount
-        {
-            get;
-            set;
-        }
-        public string Account
-        {
-            get;
-            set;
+            this.ChangeAddresses = new List<ChangeAddress>();
         }
 
-        public List<ChangeAddress> ChangeAddresses
-        {
-            get;
-            set;
-        }
+        public BitcoinAddress PublicAddress { get; set; }
+        public Money Amount { get; set; }
+        public string Account { get; set; }
+        public List<ChangeAddress> ChangeAddresses { get; set; }
     }
 
     /*
@@ -123,15 +85,17 @@ namespace NBitcoin.RPC
 
         public void BackupWallet(string path)
         {
-            if(string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path))
                 throw new ArgumentNullException("path");
+
             SendCommand("backupwallet", path);
         }
 
         public async Task BackupWalletAsync(string path)
         {
-            if(string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path))
                 throw new ArgumentNullException("path");
+
             await SendCommandAsync("backupwallet", path).ConfigureAwait(false);
         }
 
@@ -140,14 +104,14 @@ namespace NBitcoin.RPC
 
         public BitcoinSecret DumpPrivKey(BitcoinAddress address)
         {
-            var response = SendCommand("dumpprivkey", address.ToString());
-            return Network.Parse<BitcoinSecret>((string)response.Result);
+            RPCResponse response = SendCommand("dumpprivkey", address.ToString());
+            return this.Network.Parse<BitcoinSecret>((string)response.Result);
         }
 
         public async Task<BitcoinSecret> DumpPrivKeyAsync(BitcoinAddress address)
         {
-            var response = await SendCommandAsync("dumpprivkey", address.ToString()).ConfigureAwait(false);
-            return Network.Parse<BitcoinSecret>((string)response.Result);
+            RPCResponse response = await SendCommandAsync("dumpprivkey", address.ToString()).ConfigureAwait(false);
+            return this.Network.Parse<BitcoinSecret>((string)response.Result);
         }
 
 
@@ -155,25 +119,25 @@ namespace NBitcoin.RPC
 
         public BitcoinAddress GetAccountAddress(string account)
         {
-            var response = SendCommand("getaccountaddress", account);
-            return Network.Parse<BitcoinAddress>((string)response.Result);
+            RPCResponse response = SendCommand("getaccountaddress", account);
+            return this.Network.Parse<BitcoinAddress>((string)response.Result);
         }
 
         public async Task<BitcoinAddress> GetAccountAddressAsync(string account)
         {
-            var response = await SendCommandAsync("getaccountaddress", account).ConfigureAwait(false);
-            return Network.Parse<BitcoinAddress>((string)response.Result);
+            RPCResponse response = await SendCommandAsync("getaccountaddress", account).ConfigureAwait(false);
+            return this.Network.Parse<BitcoinAddress>((string)response.Result);
         }
 
         public BitcoinSecret GetAccountSecret(string account)
         {
-            var address = GetAccountAddress(account);
+            BitcoinAddress address = GetAccountAddress(account);
             return DumpPrivKey(address);
         }
 
         public async Task<BitcoinSecret> GetAccountSecretAsync(string account)
         {
-            var address = await GetAccountAddressAsync(account).ConfigureAwait(false);
+            BitcoinAddress address = await GetAccountAddressAsync(account).ConfigureAwait(false);
             return await DumpPrivKeyAsync(address).ConfigureAwait(false);
         }
 
@@ -189,12 +153,12 @@ namespace NBitcoin.RPC
         /// </param>
         /// <returns>
         /// A collection of all addresses belonging to the specified account. 
-        /// If the account has no addresses, the collection will be empty
+        /// If the account has no addresses, the collection will be empty.
         /// </returns>
         public IEnumerable<BitcoinAddress> GetAddressesByAccount(string account)
         {
-            var response = SendCommand(RPCOperations.getaddressesbyaccount, account);
-            return response.Result.Select(t => Network.Parse<BitcoinAddress>((string)t));
+            RPCResponse response = SendCommand(RPCOperations.getaddressesbyaccount, account);
+            return response.Result.Select(t => this.Network.Parse<BitcoinAddress>((string)t));
         }
 
         public FundRawTransactionResponse FundRawTransaction(Transaction transaction, FundRawTransactionOptions options = null)
@@ -206,6 +170,7 @@ namespace NBitcoin.RPC
         {
             return GetBalanceAsync(minConf, includeWatchOnly).GetAwaiter().GetResult();
         }
+
         public Money GetBalance()
         {
             return GetBalanceAsync().GetAwaiter().GetResult();
@@ -213,36 +178,42 @@ namespace NBitcoin.RPC
 
         public async Task<Money> GetBalanceAsync()
         {
-            var data = await SendCommandAsync(RPCOperations.getbalance, "*").ConfigureAwait(false);
+            RPCResponse data = await SendCommandAsync(RPCOperations.getbalance, "*").ConfigureAwait(false);
             return Money.Coins(data.Result.Value<decimal>());
         }
 
         public async Task<Money> GetBalanceAsync(int minConf, bool includeWatchOnly)
         {
-            var data = await SendCommandAsync(RPCOperations.getbalance, "*", minConf, includeWatchOnly).ConfigureAwait(false);
+            RPCResponse data = await SendCommandAsync(RPCOperations.getbalance, "*", minConf, includeWatchOnly).ConfigureAwait(false);
             return Money.Coins(data.Result.Value<decimal>());
         }
 
         public async Task<FundRawTransactionResponse> FundRawTransactionAsync(Transaction transaction, FundRawTransactionOptions options = null)
         {
-            if(transaction == null)
+            if (transaction == null)
                 throw new ArgumentNullException("transaction");
 
             RPCResponse response = null;
-            if(options != null)
+            if (options != null)
             {
                 var jOptions = new JObject();
-                if(options.ChangeAddress != null)
+
+                if (options.ChangeAddress != null)
                     jOptions.Add(new JProperty("changeAddress", options.ChangeAddress.ToString()));
-                if(options.ChangePosition != null)
+
+                if (options.ChangePosition != null)
                     jOptions.Add(new JProperty("changePosition", options.ChangePosition.Value));
+
                 jOptions.Add(new JProperty("includeWatching", options.IncludeWatching));
                 jOptions.Add(new JProperty("lockUnspents", options.LockUnspents));
-                if(options.ReserveChangeKey != null)
+
+                if (options.ReserveChangeKey != null)
                     jOptions.Add(new JProperty("reserveChangeKey", options.ReserveChangeKey));
-                if(options.FeeRate != null)
+
+                if (options.FeeRate != null)
                     jOptions.Add(new JProperty("feeRate", options.FeeRate.GetFee(1000).ToDecimal(MoneyUnit.BTC)));
-                if(options.SubtractFeeFromOutputs != null)
+
+                if (options.SubtractFeeFromOutputs != null)
                 {
                     JArray array = new JArray();
                     foreach(var v in options.SubtractFeeFromOutputs)
@@ -251,12 +222,14 @@ namespace NBitcoin.RPC
                     }
                     jOptions.Add(new JProperty("subtractFeeFromOutputs", array));
                 }
+
                 response = await SendCommandAsync("fundrawtransaction", ToHex(transaction), jOptions).ConfigureAwait(false);
             }
             else
             {
                 response = await SendCommandAsync("fundrawtransaction", ToHex(transaction)).ConfigureAwait(false);
             }
+
             var r = (JObject)response.Result;
             return new FundRawTransactionResponse()
             {
@@ -266,16 +239,16 @@ namespace NBitcoin.RPC
             };
         }
 
-        //NBitcoin internally put a bit in the version number to make difference between transaction without input and transaction with witness.
+        // NBitcoin internally put a bit in the version number to make difference between transaction without input and transaction with witness.
         private string ToHex(Transaction tx)
         {
             // if there is inputs, then it can't be confusing
-            if(tx.Inputs.Count > 0)
+            if (tx.Inputs.Count > 0)
                 return tx.ToHex();
+
             // if there is, do this ACK so that NBitcoin does not change the version number
             return Encoders.Hex.EncodeData(tx.ToBytes(NBitcoin.Protocol.ProtocolVersion.WITNESS_VERSION - 1));
         }
-
 
         // getreceivedbyaddress
 
@@ -287,7 +260,7 @@ namespace NBitcoin.RPC
         /// <returns>The number of bitcoins received by the address, excluding coinbase transactions. May be 0.</returns>
         public Money GetReceivedByAddress(BitcoinAddress address)
         {
-            var response = SendCommand(RPCOperations.getreceivedbyaddress, address.ToString());
+            RPCResponse response = SendCommand(RPCOperations.getreceivedbyaddress, address.ToString());
             return Money.Coins(response.Result.Value<decimal>());
         }
 
@@ -305,10 +278,9 @@ namespace NBitcoin.RPC
         /// <returns>The number of bitcoins received by the address, excluding coinbase transactions. May be 0.</returns>
         public Money GetReceivedByAddress(BitcoinAddress address, int confirmations)
         {
-            var response = SendCommand(RPCOperations.getreceivedbyaddress, address.ToString(), confirmations);
+            RPCResponse response = SendCommand(RPCOperations.getreceivedbyaddress, address.ToString(), confirmations);
             return Money.Coins(response.Result.Value<decimal>());
         }
-
 
         // importprivkey
 
@@ -331,7 +303,6 @@ namespace NBitcoin.RPC
         {
             await SendCommandAsync("importprivkey", secret.ToWif(), label, rescan).ConfigureAwait(false);
         }
-
 
         // importaddress
 
@@ -375,7 +346,6 @@ namespace NBitcoin.RPC
             await SendCommandAsync("importaddress", address.ToString(), label, rescan).ConfigureAwait(false);
         }
 
-
         // listaccounts
 
         /// <summary>
@@ -384,7 +354,7 @@ namespace NBitcoin.RPC
         /// </summary>
         public IEnumerable<RPCAccount> ListAccounts()
         {
-            var response = SendCommand(RPCOperations.listaccounts);
+            RPCResponse response = SendCommand(RPCOperations.listaccounts);
             return AsRPCAccount(response);
         }
 
@@ -403,7 +373,7 @@ namespace NBitcoin.RPC
         /// </returns>
         public IEnumerable<RPCAccount> ListAccounts(int confirmations)
         {
-            var response = SendCommand(RPCOperations.listaccounts, confirmations);
+            RPCResponse response = SendCommand(RPCOperations.listaccounts, confirmations);
             return AsRPCAccount(response);
         }
 
@@ -430,14 +400,14 @@ namespace NBitcoin.RPC
             // Added in Bitcoin Core 0.10.0
             bool includeWatchOnly)
         {
-            var response = SendCommand(RPCOperations.listaccounts, confirmations, includeWatchOnly);
+            RPCResponse response = SendCommand(RPCOperations.listaccounts, confirmations, includeWatchOnly);
             return AsRPCAccount(response);
         }
 
         private IEnumerable<RPCAccount> AsRPCAccount(RPCResponse response)
         {
             var obj = (JObject)response.Result;
-            foreach(var prop in obj.Properties())
+            foreach (JProperty prop in obj.Properties())
             {
                 yield return new RPCAccount()
                 {
@@ -447,21 +417,20 @@ namespace NBitcoin.RPC
             }
         }
 
-
         // listaddressgroupings
 
         public IEnumerable<AddressGrouping> ListAddressGroupings()
         {
-            var result = SendCommand(RPCOperations.listaddressgroupings);
+            RPCResponse result = SendCommand(RPCOperations.listaddressgroupings);
             var array = (JArray)result.Result;
-            foreach(var group in array.Children<JArray>())
+            foreach (JArray group in array.Children<JArray>())
             {
                 var grouping = new AddressGrouping();
                 grouping.PublicAddress = BitcoinAddress.Create(group[0][0].ToString());
                 grouping.Amount = Money.Coins(group[0][1].Value<decimal>());
                 grouping.Account = group[0].Count() > 2 ? group[0][2].ToString() : null;
 
-                foreach(var subgroup in group.Skip(1))
+                foreach (JToken subgroup in group.Skip(1))
                 {
                     var change = new ChangeAddress();
                     change.Address = BitcoinAddress.Create(subgroup[0].ToString());
@@ -475,14 +444,14 @@ namespace NBitcoin.RPC
 
         public IEnumerable<BitcoinSecret> ListSecrets()
         {
-            foreach(var grouping in ListAddressGroupings())
+            foreach (AddressGrouping grouping in ListAddressGroupings())
             {
                 yield return DumpPrivKey(grouping.PublicAddress);
-                foreach(var change in grouping.ChangeAddresses)
+
+                foreach (ChangeAddress change in grouping.ChangeAddresses)
                     yield return DumpPrivKey(change.Address);
             }
         }
-
 
         // listunspent
 
@@ -497,8 +466,8 @@ namespace NBitcoin.RPC
         /// </remarks>
         public UnspentCoin[] ListUnspent()
         {
-            var response = SendCommand("listunspent");
-            return response.Result.Select(i => new UnspentCoin((JObject)i, Network)).ToArray();
+            RPCResponse response = SendCommand("listunspent");
+            return response.Result.Select(i => new UnspentCoin((JObject)i, this.Network)).ToArray();
         }
 
         /// <summary>
@@ -508,9 +477,9 @@ namespace NBitcoin.RPC
         /// </summary>
         public UnspentCoin[] ListUnspent(int minconf, int maxconf, params BitcoinAddress[] addresses)
         {
-            var addr = from a in addresses select a.ToString();
-            var response = SendCommand("listunspent", minconf, maxconf, addr.ToArray());
-            return response.Result.Select(i => new UnspentCoin((JObject)i, Network)).ToArray();
+            IEnumerable<string> addr = from a in addresses select a.ToString();
+            RPCResponse response = SendCommand("listunspent", minconf, maxconf, addr.ToArray());
+            return response.Result.Select(i => new UnspentCoin((JObject)i, this.Network)).ToArray();
         }
 
         /// <summary>
@@ -518,8 +487,8 @@ namespace NBitcoin.RPC
         /// </summary>
         public async Task<UnspentCoin[]> ListUnspentAsync()
         {
-            var response = await SendCommandAsync("listunspent").ConfigureAwait(false);
-            return response.Result.Select(i => new UnspentCoin((JObject)i, Network)).ToArray();
+            RPCResponse response = await SendCommandAsync("listunspent").ConfigureAwait(false);
+            return response.Result.Select(i => new UnspentCoin((JObject)i, this.Network)).ToArray();
         }
 
         /// <summary>
@@ -529,15 +498,15 @@ namespace NBitcoin.RPC
         /// </summary>
         public async Task<UnspentCoin[]> ListUnspentAsync(int minconf, int maxconf, params BitcoinAddress[] addresses)
         {
-            var addr = from a in addresses select a.ToString();
-            var response = await SendCommandAsync("listunspent", minconf, maxconf, addr.ToArray()).ConfigureAwait(false);
-            return response.Result.Select(i => new UnspentCoin((JObject)i, Network)).ToArray();
+            IEnumerable<string> addr = from a in addresses select a.ToString();
+            RPCResponse response = await SendCommandAsync("listunspent", minconf, maxconf, addr.ToArray()).ConfigureAwait(false);
+            return response.Result.Select(i => new UnspentCoin((JObject)i, this.Network)).ToArray();
         }
 
         //listlockunspent
         public async Task<OutPoint[]> ListLockUnspentAsync()
         {
-            var unspent = await SendCommandAsync("listlockunspent").ConfigureAwait(false);
+            RPCResponse unspent = await SendCommandAsync("listlockunspent").ConfigureAwait(false);
             return ((JArray)unspent.Result)
                 .Select(i => new OutPoint(new uint256(i["txid"].Value<string>()), i["vout"].Value<int>()))
                 .ToArray();
@@ -547,7 +516,6 @@ namespace NBitcoin.RPC
         {
             return ListLockUnspentAsync().GetAwaiter().GetResult();
         }
-
 
         // lockunspent
 
@@ -585,19 +553,22 @@ namespace NBitcoin.RPC
 
         private async Task LockUnspentCoreAsync(bool unlock, OutPoint[] outpoints)
         {
-            if(outpoints == null || outpoints.Length == 0)
+            if (outpoints == null || outpoints.Length == 0)
                 return;
+
             var parameters = new List<object>();
             parameters.Add(unlock);
             var array = new JArray();
             parameters.Add(array);
-            foreach(var outp in outpoints)
+
+            foreach (OutPoint outp in outpoints)
             {
                 var obj = new JObject();
                 obj["txid"] = outp.Hash.ToString();
                 obj["vout"] = outp.N;
                 array.Add(obj);
             }
+
             await SendCommandAsync("lockunspent", parameters.ToArray()).ConfigureAwait(false);
         }
 
@@ -633,8 +604,9 @@ namespace NBitcoin.RPC
         /// <returns>The signed transaction</returns>
         public Transaction SignRawTransaction(Transaction tx)
         {
-            if(tx == null)
+            if (tx == null)
                 throw new ArgumentNullException("tx");
+
             return SignRawTransactionAsync(tx).GetAwaiter().GetResult();
         }
 
@@ -645,7 +617,7 @@ namespace NBitcoin.RPC
         /// <returns>The signed transaction</returns>
         public async Task<Transaction> SignRawTransactionAsync(Transaction tx)
         {
-            var result = await SendCommandAsync(RPCOperations.signrawtransaction, tx.ToHex()).ConfigureAwait(false);
+            RPCResponse result = await SendCommandAsync(RPCOperations.signrawtransaction, tx.ToHex()).ConfigureAwait(false);
             return new Transaction(result.Result["hex"].Value<string>());
         }
     }
