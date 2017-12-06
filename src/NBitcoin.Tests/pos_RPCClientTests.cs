@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
@@ -314,7 +315,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseIpEndpoint()
         {
-            System.Net.IPEndPoint endpoint = Utils.ParseIpEndpoint("google.com:94", 90);
+            IPEndPoint endpoint = Utils.ParseIpEndpoint("google.com:94", 90);
             Assert.Equal(94, endpoint.Port);
 
             endpoint = Utils.ParseIpEndpoint("google.com", 90);
