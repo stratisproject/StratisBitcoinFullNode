@@ -445,32 +445,40 @@ namespace NBitcoin
         /// </summary>
         /// <param name="height">The block height to search for.</param>
         /// <returns>The ancestor of this chain that matches the block height.</returns>
-        public ChainedBlock GetAncestor(int height)
+        public ChainedBlock GetAncestor(int ancestorHeight)
         {
-            if ((height > this.Height) || (height < 0))
+            if (ancestorHeight > this.Height)
                 return null;
 
-            ChainedBlock current = this;
-
-            int currentHeight = this.Height;
-            while (currentHeight > height)
+            ChainedBlock walk = this;
+            while (walk.Height != ancestorHeight)
             {
-                int heightSkip = GetSkipHeight(currentHeight);
-                int heightSkipPrev = GetSkipHeight(currentHeight - 1);
-                if ((current.Skip != null) && ((heightSkip == height) || ((heightSkip > height) && !((heightSkipPrev < (heightSkip - 2)) && (heightSkipPrev >= height)))))
+                // No skip so follow previous.
+                if (walk.Skip == null)
                 {
-                    // Only follow Skip if Previous.Skip isn't better than Skip.Previous.
-                    current = current.Skip;
-                    currentHeight = heightSkip;
+                    walk = walk.Previous;
+                    continue;
                 }
-                else
+
+                // Skip is at target.
+                if (walk.Skip.Height == ancestorHeight)
+                    return walk.Skip;
+
+                // Only follow skip if Previous.skip isn't better than skip.Previous.
+                int heightSkip = walk.Skip.Height;
+                int heightSkipPrev = this.GetSkipHeight(walk.Height - 1);
+                bool skipAboveTarget = heightSkip > ancestorHeight;
+                bool skipPreviousBetterThanPreviousSkip = !((heightSkipPrev < (heightSkip - 2)) && (heightSkipPrev >= ancestorHeight));
+                if (skipAboveTarget && skipPreviousBetterThanPreviousSkip)
                 {
-                    current = current.Previous;
-                    currentHeight--;
+                    walk = walk.Skip;
+                    continue;
                 }
+
+                walk = walk.Previous;
             }
 
-            return current;
+            return walk;
         }
 
         /// <summary>
