@@ -31,13 +31,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             foreach (var type in types)
             {
+                if (exceptionalTypes.Contains(type))
+                    continue;
+
                 bool parameterlessConstructorExists = type.GetConstructors().Any(x => x.GetParameters().Length == 0);
 
-                if (!exceptionalTypes.Contains(type))
-                {
-                    Assert.True(parameterlessConstructorExists, $"Class {type.FullName} inherits {typeof(IBitcoinSerializable).Name} " +
-                        "but doesn't have a parameterless constructor which is needed for serialization and deserialization process!");
-                }
+                Assert.True(parameterlessConstructorExists, $"Class {type.FullName} inherits {typeof(IBitcoinSerializable).Name} " +
+                    "but doesn't have a parameterless constructor which is needed for serialization and deserialization process!");
             }
         }
 
