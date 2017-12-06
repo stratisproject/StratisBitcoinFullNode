@@ -13,7 +13,6 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
-using Stratis.Bitcoin.P2P.Protocol.Filters;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -181,7 +180,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Starts two threads, one is responsible for receiving incoming message from the peer 
+        /// Starts two threads, one is responsible for receiving incoming messages from the peer 
         /// and the other is responsible for sending node's message, which are waiting in a queue, to the peer.
         /// </summary>
         public void BeginListen()
@@ -496,9 +495,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Queue of incoming messages distributed to message consumers.</summary>
         public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
 
-        /// <summary>List of filters to be notified before a message is sent or received.</summary>
-        public NetworkPeerFiltersCollection Filters { get; private set; }
-
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
         public bool Advertize { get; set; }
 
@@ -532,12 +528,20 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
-        /// <summary>Event handler that is triggered on network peer disconnection.</summary>
+        /// <summary>Event that is triggered on network peer disconnection.</summary>
         public event NetworkPeerStateChangedEventHandler StateChanged;
 
-        /// <summary>Event handler that is triggered when a new message is received from a network peer.</summary>
+        /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
         public event NetworkPeerMessageReceivedEventHandler MessageReceived;
-        
+
+        /// <summary>
+        /// Event that is triggered when a new message is received from a network peer.
+        /// <para>This event is triggered before <see cref="MessageReceived"/>.</para>
+        /// </summary>
+        /// <seealso cref="Stratis.Bitcoin.Base.ChainHeadersBehavior.AttachCore"/>
+        /// <remarks>TODO: Remove this once the events are refactored.</remarks>
+        public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
+
         /// <summary>Event handler that is triggered when the network state of a peer was changed.</summary>
         public event NetworkPeerDisconnectedEventHandler Disconnected;
 
@@ -572,7 +576,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.Filters = new NetworkPeerFiltersCollection();
 
             this.preferredTransactionOptions = NetworkOptions.All;
             this.SupportedTransactionOptions = NetworkOptions.None;
@@ -769,93 +772,39 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (message.Message.Payload is HaveWitnessPayload)
                 this.SupportedTransactionOptions |= NetworkOptions.Witness;
 
-            var last = new ActionFilter((m, n) =>
+            this.MessageProducer.PushMessage(message);
+            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = MessageReceivedPriority;
+            if (messageReceivedPriority != null)
             {
-                this.MessageProducer.PushMessage(m);
-                NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
-                if (messageReceived != null)
+                foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
                 {
-                    foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
+                    try
                     {
-                        try
-                        {
-                            handler.DynamicInvoke(this, m);
-                        }
-                        catch (TargetInvocationException ex)
-                        {
-                            this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
-                        }
+                        handler.DynamicInvoke(this, message);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
                     }
                 }
-            });
+            }
 
-            IEnumerator<INetworkPeerFilter> enumerator = this.Filters.Concat(new[] { last }).GetEnumerator();
-            this.FireFilters(enumerator, message);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Calls a registered action when a message is being sent to the peer.
-        /// </summary>
-        /// <param name="payload">Payload of the message being sent.</param>
-        /// <param name="final">Action to call.</param>
-        private void OnSendingMessage(Payload payload, Action final)
-        {
-            this.logger.LogTrace("({0}:{1})", nameof(payload), payload);
-
-            IEnumerator<INetworkPeerFilter> enumerator = this.Filters.Concat(new[] { new ActionFilter(null, (n, p, a) => final()) }).GetEnumerator();
-            this.FireFilters(enumerator, payload);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Calls filters when a message is being sent to the peer.
-        /// </summary>
-        /// <param name="enumerator">Enumerator of sending message filters to call.</param>
-        /// <param name="payload">Payload of the message being sent.</param>
-        private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, Payload payload)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
-
-            if (enumerator.MoveNext())
+            NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
+            if (messageReceived != null)
             {
-                INetworkPeerFilter filter = enumerator.Current;
-                try
+                foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
                 {
-                    filter.OnSendingMessage(this, payload, () => FireFilters(enumerator, payload));
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogError("Exception occurred: {0}", ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
+                    try
+                    {
+                        handler.DynamicInvoke(this, message);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    }
                 }
             }
 
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Calls filters when a new message is received from the peer.
-        /// </summary>
-        /// <param name="enumerator">Enumarator of received message filters to call.</param>
-        /// <param name="message">Message that was received.</param>
-        private void FireFilters(IEnumerator<INetworkPeerFilter> enumerator, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(message), message);
-
-            if (enumerator.MoveNext())
-            {
-                INetworkPeerFilter filter = enumerator.Current;
-                try
-                {
-                    filter.OnReceivingMessage(message, () => FireFilters(enumerator, message));
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogError("Exception occurred: {0}", ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
-                }
-            }
 
             this.logger.LogTrace("(-)");
         }
@@ -924,18 +873,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                 completion.SetException(new OperationCanceledException("The peer has been disconnected"));
                 return completion.Task;
             }
-            
-            var activity = Guid.NewGuid();
-            Action final = () =>
-            {
-                this.Connection.Messages.Add(new SentMessage()
-                {
-                    Payload = payload,
-                    Completion = completion
-                });
-            };
 
-            this.OnSendingMessage(payload, final);
+            this.Connection.Messages.Add(new SentMessage()
+            {
+                Payload = payload,
+                Completion = completion
+            });
 
             this.logger.LogTrace("(-)");
             return completion.Task;
