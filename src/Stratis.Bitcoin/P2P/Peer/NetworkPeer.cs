@@ -179,6 +179,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Disconnected = new ManualResetEvent(false);
         }
 
+        /// <summary>
+        /// Sends message to the connected counterparty.
+        /// </summary>
+        /// <param name="payload">Payload of the message to send.</param>
         public async Task SendAsync(Payload payload)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
