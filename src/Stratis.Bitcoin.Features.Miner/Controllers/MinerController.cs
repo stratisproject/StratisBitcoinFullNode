@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         private readonly ILogger logger;
 
         /// <summary>PoS staker.</summary>
-        private readonly PosMinting posMinting;
+        private readonly IPosMinting posMinting;
 
         /// <summary>Full Node.</summary>
         private readonly IFullNode fullNode;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
         /// <param name="fullNode">Full Node.</param>
-        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, PosMinting posMinting = null)
+        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
