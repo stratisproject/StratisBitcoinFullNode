@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 var block = new Block();
                 block.AddTransaction(new Transaction());
                 block.UpdateMerkleRoot();
-                block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1).AddDays(i));
+                block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
