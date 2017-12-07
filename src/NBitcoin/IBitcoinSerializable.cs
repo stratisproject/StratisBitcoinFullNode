@@ -72,7 +72,7 @@ namespace NBitcoin
             var bms = new BitcoinStream(bytes)
             {
                 ProtocolVersion = version,
-                TransactionOptions = options
+                TransactionOptions = options ?? NetworkOptions.TemporaryOptions
             };
             serializable.ReadWrite(bms);
         }
