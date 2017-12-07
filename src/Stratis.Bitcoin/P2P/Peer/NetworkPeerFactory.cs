@@ -104,6 +104,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        private readonly Network network;
+
         /// <summary>Identifier of the last network peer client this factory produced.</summary>
         /// <remarks>When a new client is created, the ID is incremented so that each client has its own unique ID.</remarks>
         private int lastClientId;
@@ -111,14 +114,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Initializes a new instance of the factory.
         /// </summary>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerFactory(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
+            this.network = network;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.lastClientId = 1;
+            this.lastClientId = 0;
         }
 
         /// <inheritdoc/>
@@ -189,7 +194,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerClient CreateNetworkPeerClient(TcpClient tcpClient)
         {
             int id = Interlocked.Increment(ref this.lastClientId);
-            return new NetworkPeerClient(id, tcpClient, this.loggerFactory);
+            return new NetworkPeerClient(id, tcpClient, this.network, this.loggerFactory);
         }
 
     }
