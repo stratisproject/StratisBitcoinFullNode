@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly PowMining powMining;
 
         /// <summary>PoS staker.</summary>
-        private readonly PosMinting posMinting;
+        private readonly IPosMinting posMinting;
 
         /// <summary>Full node.</summary>
         private readonly IFullNode fullNode;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fullNode">Full node to offer mining RPC.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
-        public MiningRPCController(PowMining powMining, IFullNode fullNode, ILoggerFactory loggerFactory, PosMinting posMinting = null) : base(fullNode: fullNode)
+        public MiningRPCController(PowMining powMining, IFullNode fullNode, ILoggerFactory loggerFactory, IPosMinting posMinting = null) : base(fullNode: fullNode)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
