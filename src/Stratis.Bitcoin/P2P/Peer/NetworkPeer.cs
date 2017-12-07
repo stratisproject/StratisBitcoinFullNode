@@ -157,6 +157,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Registration of callback routine to shutdown the connection when <see cref="Cancel"/> is cancelled.</summary>
         private CancellationTokenRegistration cancelRegistration;
 
+        /// <summary>Task responsible for reading incoming messages from the stream.</summary>
+        private Task receiveMessageTask;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -235,58 +238,60 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.Disconnected.Reset();
-            
-            // This is receiving thread.
-            new Thread(() =>
+            this.receiveMessageTask = Task.Run(() => ReceiveMessages());
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Reads messages from the connection stream.
+        /// </summary>
+        public void ReceiveMessages()
+        { 
+            this.logger.LogTrace("()");
+
+            this.logger.LogTrace("Start listenting.");
+            byte[] buffer = new byte[1024 * 1024];
+            try
             {
-                this.logger.LogTrace("()");
-
-                this.logger.LogTrace("Start listenting.");
-                byte[] buffer = new byte[1024 * 1024];
-                try
+                while (!this.Cancel.Token.IsCancellationRequested)
                 {
-                    while (!this.Cancel.Token.IsCancellationRequested)
+                    PerformanceCounter counter;
+                    Message message = Message.ReadNext(this.Client.Stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
+
+                    this.logger.LogTrace("Receiving message: '{0}'", message);
+
+                    this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
+                    this.Peer.Counter.Add(counter);
+                    this.Peer.OnMessageReceived(new IncomingMessage()
                     {
-                        PerformanceCounter counter;
-                        Message message = Message.ReadNext(this.Client.Stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
-
-                        this.logger.LogTrace("Receiving message: '{0}'", message);
-
-                        this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
-                        this.Peer.Counter.Add(counter);
-                        this.Peer.OnMessageReceived(new IncomingMessage()
-                        {
-                            Message = message,
-                            Client = this.Client,
-                            Length = counter.ReadBytes,
-                            NetworkPeer = this.Peer
-                        });
-                    }
+                        Message = message,
+                        Client = this.Client,
+                        Length = counter.ReadBytes,
+                        NetworkPeer = this.Peer
+                    });
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                if (ex is OperationCanceledException)
                 {
-                    if (ex is OperationCanceledException)
-                    {
-                        this.logger.LogTrace("Receiving cancelled.");
-                    }
-                    else
-                    {
-                        this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                    this.logger.LogTrace("Receiving cancelled.");
+                }
+                else
+                {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                        this.Peer.State = NetworkPeerState.Failed;
-                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                        {
-                            Reason = "Unexpected exception while waiting for a message",
-                            Exception = ex
-                        };
-                    }
-
-                    this.Cancel.Cancel();
+                    this.Peer.State = NetworkPeerState.Failed;
+                    this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                    {
+                        Reason = "Unexpected exception while waiting for a message",
+                        Exception = ex
+                    };
                 }
 
-                this.logger.LogTrace("(-)");
-            }).Start();
+                this.Cancel.Cancel();
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -326,7 +331,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (this.Cancel.IsCancellationRequested == false)
                 this.Cancel.Cancel();
 
+            this.receiveMessageTask.Wait();
             this.Disconnected.WaitOne();
+
             this.Disconnected.Dispose();
             this.Cancel.Dispose();
             this.cancelRegistration.Dispose();
