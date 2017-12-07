@@ -275,6 +275,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Binary message received from the connected counterparty.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        /// <remarks>
+        /// TODO: Currently we rely on <see cref="Message.ReadNext(System.IO.Stream, Network, ProtocolVersion, CancellationToken, byte[], out PerformanceCounter)"/>
+        /// for parsing the message from binary data. That method need stream to read from, so to achieve that we create a memory stream from our data,
+        /// which is not efficient. This should be improved.
+        /// </remarks>
         public async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("()");
