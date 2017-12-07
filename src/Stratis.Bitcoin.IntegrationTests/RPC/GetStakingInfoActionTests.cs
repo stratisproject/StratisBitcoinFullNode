@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
                 MiningRPCController controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
 
-                Assert.NotNull(fullNode.NodeService<PosMinting>(true));
+                Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
                 GetStakingInfoModel info = controller.GetStakingInfo();
 
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 // create the wallet
                 var mnemonic = walletManager.CreateWallet(password, "test");
 
-                Assert.NotNull(fullNode.NodeService<PosMinting>(true));
+                Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
                 GetStakingInfoModel info = controller.GetStakingInfo();
 

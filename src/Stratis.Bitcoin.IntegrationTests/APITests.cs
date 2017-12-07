@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var fullNode = this.apiTestsFixture.stratisStakeNode.FullNode;
                 var ApiURI = fullNode.Settings.ApiUri;
 
-                Assert.NotNull(fullNode.NodeService<PosMinting>(true));
+                    Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
                 using (client = new HttpClient())
                 {
