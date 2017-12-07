@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.receiveMessageTask = Task.Run(() => ReceiveMessages());
+            this.receiveMessageTask = ReceiveMessagesAsync();
 
             this.logger.LogTrace("(-)");
         }
@@ -250,28 +250,25 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Reads messages from the connection stream.
         /// </summary>
-        public void ReceiveMessages()
+        public async Task ReceiveMessagesAsync()
         { 
             this.logger.LogTrace("()");
 
-            this.logger.LogTrace("Start listenting.");
-            byte[] buffer = new byte[1024 * 1024];
             try
             {
                 while (!this.Cancel.Token.IsCancellationRequested)
                 {
-                    PerformanceCounter counter;
-                    Message message = Message.ReadNext(this.Client.Stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
+                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.Cancel.Token);
 
-                    this.logger.LogTrace("Receiving message: '{0}'", message);
+                    this.logger.LogTrace("Received message: '{0}'", message);
 
                     this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
-                    this.Peer.Counter.Add(counter);
+                    this.Peer.Counter.AddRead(message.MessageSize);
                     this.Peer.OnMessageReceived(new IncomingMessage()
                     {
                         Message = message,
                         Client = this.Client,
-                        Length = counter.ReadBytes,
+                        Length = message.MessageSize,
                         NetworkPeer = this.Peer
                     });
                 }
@@ -427,7 +424,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// The negociated protocol version (minimum of supported version between MyVersion and the PeerVersion).
+        /// The negotiated protocol version (minimum of supported version between <see cref="MyVersion"/> and the <see cref="PeerVersion"/>).
         /// </summary>
         public ProtocolVersion Version
         {
@@ -890,7 +887,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
-                this.SendMessageVoidAsync(this.MyVersion);
+                //this.SendMessageVoidAsync(this.MyVersion);
+                this.SendMessageAsync(this.MyVersion).GetAwaiter().GetResult();
                 Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
                 if (payload is RejectPayload)
                 {
