@@ -691,7 +691,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
                 {
-                    Task unused = message.NetworkPeer.SendMessageAsync(new RejectPayload()
+                    message.NetworkPeer.SendMessageVoidAsync(new RejectPayload()
                     {
                         Code = RejectCode.DUPLICATE
                     });
@@ -794,6 +794,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
+        /// Send a message to the peer asynchronously and ignores the returned task.
+        /// </summary>
+        /// <param name="payload">The payload to send.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected.</param>
+        public void SendMessageVoidAsync(Payload payload)
+        {
+            Task unused = this.SendMessageAsync(payload);
+        }
+
+        /// <summary>
         /// Send a message to the peer asynchronously.
         /// </summary>
         /// <param name="payload">The payload to send.</param>
@@ -826,7 +836,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                SendMessageAsync(payload).Wait(cancellation);
+                this.SendMessageAsync(payload).Wait(cancellation);
             }
             catch (AggregateException aex)
             {
@@ -906,7 +916,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
-                Task unused = this.SendMessageAsync(this.MyVersion);
+                this.SendMessageVoidAsync(this.MyVersion);
                 Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
                 if (payload is RejectPayload)
                 {
@@ -937,12 +947,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                     return;
                 }
 
-                unused = this.SendMessageAsync(new VerAckPayload());
+                this.SendMessageVoidAsync(new VerAckPayload());
                 listener.ReceivePayload<VerAckPayload>(cancellationToken);
                 this.State = NetworkPeerState.HandShaked;
                 if (this.Advertize && this.MyVersion.AddressFrom.Address.IsRoutable(true))
                 {
-                    unused = this.SendMessageAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
+                    this.SendMessageVoidAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
                     {
                         Time = this.dateTimeProvider.GetTimeOffset()
                     }));
@@ -963,7 +973,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             using (NetworkPeerListener list = this.CreateListener().Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
             {
                 this.logger.LogTrace("Responding to handshake.");
-                Task unused = this.SendMessageAsync(this.MyVersion);
+                this.SendMessageVoidAsync(this.MyVersion);
                 IncomingMessage message = list.ReceiveMessage(cancellation);
 
                 if (message.Message.Payload is RejectPayload reject)
@@ -973,7 +983,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     throw new ProtocolException("Version rejected " + reject.Code + " : " + reject.Reason);
                 }
 
-                unused = this.SendMessageAsync(new VerAckPayload());
+                this.SendMessageVoidAsync(new VerAckPayload());
                 this.State = NetworkPeerState.HandShaked;
             }
 

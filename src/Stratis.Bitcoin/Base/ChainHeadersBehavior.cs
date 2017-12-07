@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        Task unused = this.AttachedPeer.SendMessageAsync(headers);
+                        this.AttachedPeer.SendMessageVoidAsync(headers);
                         break;
                     }
 
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Base
             {
                 if ((peer.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
                 {
-                    Task unused = peer.SendMessageAsync(new GetHeadersPayload()
+                    peer.SendMessageVoidAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });

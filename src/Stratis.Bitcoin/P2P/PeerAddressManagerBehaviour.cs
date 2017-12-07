@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
                 {
-                    Task unused = peer.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
+                    peer.SendMessageVoidAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
                 }
             }
 
