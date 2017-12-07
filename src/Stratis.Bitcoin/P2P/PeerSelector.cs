@@ -51,12 +51,13 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public PeerAddress SelectPeer()
         {
-            if (this.peerAddressManager.Peers.Tried().Any() == true &&
-                (this.peerAddressManager.Peers.New().Any() == false || new Random().Next(2) == 0))
-                return this.peerAddressManager.Peers.Tried().Random();
+            var tried = this.peerAddressManager.Peers.Attempted().Concat(this.peerAddressManager.Peers.Connected());
 
-            if (this.peerAddressManager.Peers.New().Any() == true)
-                return this.peerAddressManager.Peers.New().Random();
+            if (tried.Any() == true && (!this.peerAddressManager.Peers.Fresh().Any() || new Random().Next(2) == 0))
+                return tried.Random();
+
+            if (this.peerAddressManager.Peers.Fresh().Any())
+                return this.peerAddressManager.Peers.Fresh().Random();
 
             return null;
         }
@@ -71,22 +72,39 @@ namespace Stratis.Bitcoin.P2P
     public static class PeerSelectorExtensions
     {
         /// <summary>
-        /// Return peers where they have never had a connection attempt or have been connected to.
+        /// Return peers which've had connection attempts but none successful. 
         /// </summary>
-        public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        public static IEnumerable<PeerAddress> Attempted(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var isNew = peers.Skip(0).Where(p => p.Value.IsNew).Select(p => p.Value);
-            return isNew;
+            var result = peers.Skip(0).Where(p => p.Value.Attempted).Select(p => p.Value);
+            return result;
         }
 
         /// <summary>
-        /// Return peers where they have had connection attempts, successful or not.
+        /// Return peers which've had successful connection attempts.
         /// </summary>
-        public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        public static IEnumerable<PeerAddress> Connected(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var tried = peers.Skip(0).Where(p => !p.Value.IsNew).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p => p.Value.Connected).Select(p => p.Value);
+            return result;
+        }
 
-            return tried;
+        /// <summary>
+        /// Return peers which've never had connection attempts. 
+        /// </summary>
+        public static IEnumerable<PeerAddress> Fresh(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        {
+            var result = peers.Skip(0).Where(p => p.Value.Fresh).Select(p => p.Value);
+            return result;
+        }
+
+        /// <summary>
+        /// Return peers where a successful connection and handshake was achieved.
+        /// </summary>
+        public static IEnumerable<PeerAddress> Handshaked(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        {
+            var result = peers.Skip(0).Where(p => p.Value.Handshaked).Select(p => p.Value);
+            return result;
         }
 
         /// <summary>

@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
                 return;
 
-            peer.Attempted(peerAttemptedAt);
+            peer.SetAttempted(peerAttemptedAt);
         }
 
         /// <inheritdoc/>
