@@ -376,7 +376,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if ((value == NetworkPeerState.Failed) || (value == NetworkPeerState.Offline))
                     {
                         this.logger.LogTrace("Communication closed.");
-                        this.OnDisconnected();
                     }
                 }
             }
@@ -495,9 +494,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <seealso cref="Stratis.Bitcoin.Base.ChainHeadersBehavior.AttachCore"/>
         /// <remarks>TODO: Remove this once the events are refactored.</remarks>
         public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
-
-        /// <summary>Event handler that is triggered when the network state of a peer was changed.</summary>
-        public event NetworkPeerDisconnectedEventHandler Disconnected;
 
         /// <summary>
         /// Dummy constructor for testing only.
@@ -741,32 +737,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Calls event handlers when the peer is disconnected from the node.
-        /// </summary>
-        private void OnDisconnected()
-        {
-            this.logger.LogTrace("()");
-
-            NetworkPeerDisconnectedEventHandler disconnected = Disconnected;
-            if (disconnected != null)
-            {
-                foreach (NetworkPeerDisconnectedEventHandler handler in disconnected.GetInvocationList().Cast<NetworkPeerDisconnectedEventHandler>())
-                {
-                    try
-                    {
-                        handler.DynamicInvoke(this);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
-                    }
-                }
-            }
 
             this.logger.LogTrace("(-)");
         }
