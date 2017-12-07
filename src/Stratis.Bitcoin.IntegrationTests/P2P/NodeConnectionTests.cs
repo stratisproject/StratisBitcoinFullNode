@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
+            INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(Network.Main, DateTimeProvider.Default, loggerFactory);
             var peerDiscoveryLoop = new PeerDiscoveryLoop(
                 new AsyncLoopFactory(loggerFactory),
                 Network.Main,

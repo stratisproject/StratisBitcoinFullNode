@@ -465,7 +465,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode CreateNode(bool start = false)
         {
             string child = this.CreateNewEmptyFolder();
-            var node = new CoreNode(child, new BitcoinCoreRunner(this.BitcoinD), this);
+            var node = new CoreNode(child, new BitcoinCoreRunner(this.BitcoinD), this, Network.RegTest);
             this.Nodes.Add(node);
             if (start)
                 node.Start();
@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = this.CreateNewEmptyFolder();
-            var node = new CoreNode(child, new StratisBitcoinPowRunner(callback), this);
+            var node = new CoreNode(child, new StratisBitcoinPowRunner(callback), this, Network.RegTest);
             this.Nodes.Add(node);
             if (start)
                 node.Start();
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = this.CreateNewEmptyFolder();
-            var node = new CoreNode(child, new StratisBitcoinPosRunner(callback), this, configfile: "stratis.conf");
+            var node = new CoreNode(child, new StratisBitcoinPosRunner(callback), this, Network.RegTest, configfile: "stratis.conf");
             this.Nodes.Add(node);
             if (start)
                 node.Start();
@@ -494,7 +494,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)
         {
-            var node = new CoreNode(cloneNode.Folder, new StratisBitcoinPowRunner(), this, false);
+            var node = new CoreNode(cloneNode.Folder, new StratisBitcoinPowRunner(), this, Network.RegTest, false);
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
@@ -557,7 +557,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, bool cleanfolders = true, string configfile = "bitcoin.conf")
+        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
             this.builder = builder;
@@ -579,7 +579,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(network, DateTimeProvider.Default, loggerFactory);
         }
 
         /// <summary>Get stratis full node if possible.</summary>
