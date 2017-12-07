@@ -5,6 +5,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
@@ -19,6 +22,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Instance logger.</summary>
         private ILogger logger;
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        private readonly Network network;
 
         /// <summary>Unique identifier of a client.</summary>
         public int Id { get; private set; }
@@ -54,13 +60,17 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="Id">Unique identifier of a client.</param>
         /// <param name="tcpClient">Initialized TCP client, which may or may not be already connected.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerClient(int Id, TcpClient tcpClient, ILoggerFactory loggerFactory)
+        public NetworkPeerClient(int Id, TcpClient tcpClient, Network network, ILoggerFactory loggerFactory)
         {
             this.tcpClient = tcpClient;
 
             this.loggerFactory = loggerFactory;
+            this.Id = Id;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, string.Format("[{0}{1}] ", this.Id, this.RemoteEndPoint != null ? "-" + this.RemoteEndPoint.ToString() : ""));
+
+            this.network = network;
 
             this.Stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
             this.ProcessingCompletion = new TaskCompletionSource<bool>();
@@ -108,7 +118,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="data">Data to send.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the operation.</param>
         /// <exception cref="OperationCanceledException">Thrown when the connection was terminated or the cancellation token was cancelled.</exception>
-        public async Task SendAsync(byte[] data, CancellationToken cancellation)
+        public async Task SendAsync(byte[] data, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(data), nameof(data.Length), data.Length);
 
@@ -144,6 +154,100 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Reads raw message in binary form from the connection stream.
+        /// </summary>
+        /// <param name="protocolVersion">Version of the protocol that defines the message format.</param>
+        /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
+        /// <returns>Binary message received from the connected counterparty.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
+        /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        public async Task<byte[]> ReadMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
+
+            int checksumSize = protocolVersion >= ProtocolVersion.MEMPOOL_GD_VERSION ? Message.ChecksumSize : 0;
+            int headerSize = this.network.MagicBytes.Length + Message.CommandSize + Message.LengthSize + checksumSize;
+
+            // First read the header, which is formed of network magic, command, length, and possibly also a checksum.
+            byte[] messageHeader = new byte[headerSize];
+            await this.ReadBytesAsync(messageHeader, 0, headerSize, cancellation);
+
+            // Then extract the length, which is the message payload size.
+            int lengthOffset = this.network.MagicBytes.Length + Message.CommandSize;
+            uint length = BitConverter.ToUInt32(messageHeader, lengthOffset);
+
+            // 32 MB limit on message size from Bitcoin Core.
+            if (length > 0x02000000)
+                throw new FormatException("Message payload too big (over 0x02000000 bytes)");
+
+            // Read the payload.
+            byte[] message = new byte[headerSize + length];
+            int remainsToRead = message.Length - headerSize;
+            await this.ReadBytesAsync(message, headerSize, remainsToRead, cancellation);
+
+            // And copy the header to form a complete message.
+            Array.Copy(messageHeader, 0, message, 0, headerSize);
+
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(message.Length), message.Length);
+            return message;
+        }
+
+        /// <summary>
+        /// Reads a specific number of bytes from the connection stream into a buffer.
+        /// </summary>
+        /// <param name="buffer">Buffer to read incoming data to.</param>
+        /// <param name="offset">Position in the buffer where to write the data.</param>
+        /// <param name="bytesToRead">Number of bytes to read.</param>
+        /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
+        /// <returns>Binary data received from the connected counterparty.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
+        private async Task ReadBytesAsync(byte[] buffer, int offset, int bytesToRead, CancellationToken cancellation = default(CancellationToken))
+        {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(offset), offset, nameof(bytesToRead), bytesToRead);
+
+            while (bytesToRead > 0)
+            {
+                int chunkSize = await this.Stream.ReadAsync(buffer, offset, bytesToRead, cancellation);
+                if (chunkSize == 0)
+                {
+                    this.logger.LogTrace("(-)[STREAM_END]");
+                    throw new OperationCanceledException();
+                }
+
+                offset += chunkSize;
+                bytesToRead -= chunkSize;
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Reads a raw binary message from the connection stream and formats it to a structured message.
+        /// </summary>
+        /// <param name="protocolVersion">Version of the protocol that defines the message format.</param>
+        /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
+        /// <returns>Binary message received from the connected counterparty.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
+        /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        public async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
+        {
+            this.logger.LogTrace("()");
+
+            Message message = null;
+
+            byte[] rawMessage = await this.ReadMessageAsync(protocolVersion, cancellation);
+            using (var memoryStream = new MemoryStream(rawMessage))
+            {
+                PerformanceCounter counter;
+                message = Message.ReadNext(memoryStream, this.network, protocolVersion, cancellation, null, out counter);
+                message.MessageSize = (uint)rawMessage.Length;
+            }
+
+            this.logger.LogTrace("(-):'{0}'", message);
+            return message;
         }
 
         /// <inheritdoc />
