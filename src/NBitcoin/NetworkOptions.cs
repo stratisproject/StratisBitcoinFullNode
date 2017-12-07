@@ -1,26 +1,41 @@
-﻿namespace NBitcoin
+﻿using System;
+
+namespace NBitcoin
 {
     /// <summary>
     /// The current use-case for this class is to provide option-dependent serialization.
     /// It is a drop-in replacement for the legacy TransactionOptions enumeration.
-    /// 
+    /// </summary>
+    /// <remarks>
     /// The NetworkOptions instance is intended to be relayed from the Network object to 
     /// the child objects: Network => Block => Transaction => TxIn/TxOut => Coin => ...
     /// It can also be used on repository or stream objects that need to deserialize the 
     /// above objects or passed as a parameter futher down the call-hierarchy as needed.
-    /// </summary>
+    /// </remarks>
     public class NetworkOptions
     {
         public const uint None = 0x00000000;
         public const uint Witness = 0x40000000;
         public const uint All = Witness;
 
+        /// <summary>ProofOfStake flags.</summary>
+        public bool IsProofOfStake = false;
+
         //TODO?: Could be used by Block:
-        //public Action<NetworkOptions, Block> SetBlockSpecificFlags { get; set; } = null;
+        //public virtual SetBlockSpecificFlags(Block block);
         //TODO?: Could be used by Transaction:
-        //public Action<NetworkOptions, Transaction> SetTransactionSpecificFlags { get; set; } = null;
+        //public virtual SetTransactionSpecificFlags(Transaction transaction);
 
         private uint flags = All;
+
+        /// <summary>TODO: To be used as placeholder until static flags have been completely removed - i.e. from the tests as well...</summary>
+        public static NetworkOptions TemporaryOptions
+        {
+            get
+            {
+                return new NetworkOptions() { IsProofOfStake = Transaction.TimeStamp };
+            }
+        }
 
         /// <summary>
         /// Creates a NetworkOptions object.
@@ -32,13 +47,28 @@
         }
 
         /// <summary>
+        /// Get/Set Witness flag.
+        /// </summary>
+        public bool IsWitness
+        {
+            get
+            {
+                return (this.flags & Witness) != 0;
+            }
+            set
+            {
+                this.flags = value ? (this.flags | Witness) : (this.flags & ~Witness);
+            }
+        }
+        /// <summary>
         /// Clones the NetworkOptions object.
         /// </summary>
         /// <returns>The cloned NetworkOptions object.</returns>
-        public NetworkOptions Clone()
+        public virtual NetworkOptions Clone()
         {
             var clone = new NetworkOptions();
             clone.flags = this.flags;
+            clone.IsProofOfStake = this.IsProofOfStake;
             return clone;
         }
 
@@ -122,7 +152,8 @@
         /// <returns>Returns true iff the two objects are the same.</returns>
         public override bool Equals(object obj)
         {
-            return (uint)(obj as NetworkOptions) == (uint)this;
+            return (uint)(obj as NetworkOptions) == (uint)this &&
+                   (obj as NetworkOptions).IsProofOfStake == this.IsProofOfStake;
         }
 
         /// <summary>
@@ -131,7 +162,7 @@
         /// <returns>The hash code.</returns>
         public override int GetHashCode()
         {
-            return (int)(uint)this;
+            return (int)(uint)this ^ this.IsProofOfStake.GetHashCode();
         }
 
         /// <summary>

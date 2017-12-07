@@ -6,7 +6,12 @@ namespace NBitcoin
 {
     public class InMemoryNoSqlRepository : NoSqlRepository
     {
-        Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
+        Dictionary<string, byte[]> table = new Dictionary<string, byte[]>();
+
+        public InMemoryNoSqlRepository(NetworkOptions options = null)
+            :base(options)
+        {
+        }
 
         protected override Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
         {
@@ -14,10 +19,10 @@ namespace NBitcoin
             {
                 if(data.Item2 == null)
                 {
-                    _Table.Remove(data.Item1);
+                    this.table.Remove(data.Item1);
                 }
                 else
-                    _Table.AddOrReplace(data.Item1, data.Item2);
+                    this.table.AddOrReplace(data.Item1, data.Item2);
             }
             return Task.FromResult(true);
         }
@@ -25,7 +30,7 @@ namespace NBitcoin
         protected override Task<byte[]> GetBytes(string key)
         {
             byte[] result = null;
-            _Table.TryGetValue(key, out result);
+            this.table.TryGetValue(key, out result);
             return Task.FromResult(result);
         }
     }
