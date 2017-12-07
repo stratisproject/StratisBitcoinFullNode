@@ -157,9 +157,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Registration of callback routine to shutdown the connection when <see cref="Cancel"/> is cancelled.</summary>
         private CancellationTokenRegistration cancelRegistration;
 
-        /// <summary>Set to <c>1</c> when a cleanup has been initiated, otherwise <c>0</c>.</summary>
-        private int cleaningUp;
-
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -175,7 +172,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Peer = peer;
             this.Client = client;
             this.Cancel = new CancellationTokenSource();
-            this.cancelRegistration = this.Cancel.Token.Register(() => this.EndListen(null));
+            this.cancelRegistration = this.Cancel.Token.Register(this.InitiateShutdown);
             this.Disconnected = new ManualResetEvent(false);
         }
 
@@ -209,19 +206,32 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex)
             {
-                if (ex is OperationCanceledException) this.logger.LogTrace("Sending cancelled.");
-                else this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-                this.EndListen(ex);
+                if (ex is OperationCanceledException)
+                {
+                    this.logger.LogTrace("Sending cancelled.");
+                }
+                else
+                {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+
+                    this.Peer.State = NetworkPeerState.Failed;
+                    this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                    {
+                        Reason = "Unexpected exception while sending a message",
+                        Exception = ex
+                    };
+                }
+
+                this.Cancel.Cancel();
             }
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Starts two threads, one is responsible for receiving incoming message from the peer 
-        /// and the other is responsible for sending node's message, which are waiting in a queue, to the peer.
+        /// Starts waiting for incoming messages.
         /// </summary>
-        public void BeginListen()
+        public void StartReceiveMessages()
         {
             this.logger.LogTrace("()");
 
@@ -233,7 +243,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("()");
 
                 this.logger.LogTrace("Start listenting.");
-                Exception unhandledException = null;
                 byte[] buffer = new byte[1024 * 1024];
                 try
                 {
@@ -255,18 +264,26 @@ namespace Stratis.Bitcoin.P2P.Peer
                         });
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    this.logger.LogTrace("Listening cancelled.");
-                }
                 catch (Exception ex)
                 {
-                    this.logger.LogTrace("Exception occurred: {0}", ex);
-                    unhandledException = ex;
-                }
+                    if (ex is OperationCanceledException)
+                    {
+                        this.logger.LogTrace("Receiving cancelled.");
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                this.logger.LogDebug("Terminating listening thread.");
-                this.EndListen(unhandledException);
+                        this.Peer.State = NetworkPeerState.Failed;
+                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        {
+                            Reason = "Unexpected exception while waiting for a message",
+                            Exception = ex
+                        };
+                    }
+
+                    this.Cancel.Cancel();
+                }
 
                 this.logger.LogTrace("(-)");
             }).Start();
@@ -277,34 +294,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// When the connection is terminated, this method cleans up and informs connected behaviors about the termination.
         /// </summary>
-        /// <param name="unhandledException">Error exception explaining why the termination occurred, or <c>null</c> if the connection was closed gracefully.</param>
-        private void EndListen(Exception unhandledException)
+        private void InitiateShutdown()
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.cleaningUp, 1, 0) == 1)
-            {
-                this.logger.LogTrace("(-)[CLEANING_UP]");
-                return;
-            }
-
-            if (!this.Cancel.IsCancellationRequested)
-            {
-                this.logger.LogDebug("Connection to server stopped unexpectedly, error message '{0}'.", unhandledException?.Message);
-
-                this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                {
-                    Reason = "Unexpected exception while connecting to socket",
-                    Exception = unhandledException
-                };
-                this.Peer.State = NetworkPeerState.Failed;
-            }
-
             if (this.Peer.State != NetworkPeerState.Failed)
                 this.Peer.State = NetworkPeerState.Offline;
-
-            if (this.Cancel.IsCancellationRequested == false)
-                this.Cancel.Cancel();
 
             if (this.Disconnected.GetSafeWaitHandle().IsClosed == false)
                 this.Disconnected.Set();
@@ -562,7 +557,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ConnectAsync(parameters.ConnectCancellation).GetAwaiter().GetResult();
 
             this.InitDefaultBehaviors(parameters);
-            this.Connection.BeginListen();
+            this.Connection.StartReceiveMessages();
 
             this.logger.LogTrace("(-)");
         }
@@ -594,7 +589,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.State = NetworkPeerState.Connected;
 
             this.InitDefaultBehaviors(parameters);
-            this.Connection.BeginListen();
+            this.Connection.StartReceiveMessages();
 
             this.logger.LogTrace("(-)");
         }
