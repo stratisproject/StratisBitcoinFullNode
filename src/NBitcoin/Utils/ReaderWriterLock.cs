@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Stratis.Bitcoin.Utilities
+namespace NBitcoin
 {
     /// <summary>
     /// Wraps ReaderWriterLockSlim with disposable interface so that
