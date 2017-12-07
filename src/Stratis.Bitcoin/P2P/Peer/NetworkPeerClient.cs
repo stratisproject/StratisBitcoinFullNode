@@ -168,15 +168,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
 
-            int checksumSize = protocolVersion >= ProtocolVersion.MEMPOOL_GD_VERSION ? Message.ChecksumSize : 0;
-            int headerSize = this.network.MagicBytes.Length + Message.CommandSize + Message.LengthSize + checksumSize;
+            // First find and read the magic.
+            await this.ReadMagicAsync(this.network.MagicBytes, cancellation);
 
-            // First read the header, which is formed of network magic, command, length, and possibly also a checksum.
+            // Then read the header, which is formed of command, length, and possibly also a checksum.
+            int checksumSize = protocolVersion >= ProtocolVersion.MEMPOOL_GD_VERSION ? Message.ChecksumSize : 0;
+            int headerSize = Message.CommandSize + Message.LengthSize + checksumSize;
+
             byte[] messageHeader = new byte[headerSize];
             await this.ReadBytesAsync(messageHeader, 0, headerSize, cancellation);
 
             // Then extract the length, which is the message payload size.
-            int lengthOffset = this.network.MagicBytes.Length + Message.CommandSize;
+            int lengthOffset = Message.CommandSize;
             uint length = BitConverter.ToUInt32(messageHeader, lengthOffset);
 
             // 32 MB limit on message size from Bitcoin Core.
@@ -184,15 +187,55 @@ namespace Stratis.Bitcoin.P2P.Peer
                 throw new FormatException("Message payload too big (over 0x02000000 bytes)");
 
             // Read the payload.
-            byte[] message = new byte[headerSize + length];
-            int remainsToRead = message.Length - headerSize;
-            await this.ReadBytesAsync(message, headerSize, remainsToRead, cancellation);
+            int magicLength = this.network.MagicBytes.Length;
+            byte[] message = new byte[magicLength + headerSize + length];
 
-            // And copy the header to form a complete message.
-            Array.Copy(messageHeader, 0, message, 0, headerSize);
+            await this.ReadBytesAsync(message, magicLength + headerSize, (int)length, cancellation);
+
+            // And copy the magic and the header to form a complete message.
+            Array.Copy(this.network.MagicBytes, 0, message, 0, this.network.MagicBytes.Length);
+            Array.Copy(messageHeader, 0, message, this.network.MagicBytes.Length, headerSize);
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(message.Length), message.Length);
             return message;
+        }
+
+        /// <summary>
+        /// Seeks and reads the magic value from the connection stream.
+        /// </summary>
+        /// <param name="magic">Magic value that starts the message.</param>
+        /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
+        /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
+        /// <remarks>
+        /// Each networkm message starts with the magic value. If the connection stream is in unknown state,
+        /// the next bytes to read might not be the magic. Therefore we read from the stream until we find the magic value.
+        /// </remarks>
+        public async Task ReadMagicAsync(byte[] magic, CancellationToken cancellation)
+        {
+            this.logger.LogTrace("()");
+
+            byte[] bytes = new byte[1];
+            for (int i = 0; i < magic.Length; i++)
+            {
+                byte expectedByte = magic[i];
+
+                await this.ReadBytesAsync(bytes, 0, bytes.Length, cancellation);
+
+                byte receivedByte = bytes[0];
+                if (expectedByte != receivedByte)
+                {
+                    // If we did not receive the next byte we expected
+                    // we either received the first byte of the magic value
+                    // or not. If yes, we set index to 0 here, which is then
+                    // incremented in for loop to 1 and we thus continue 
+                    // with the second byte. Otherwise, we set index to -1 
+                    // here, which means that after the loop incrementation,
+                    // we will start from first byte of magic.
+                    i = receivedByte == magic[0] ? 0 : -1;
+                }
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
