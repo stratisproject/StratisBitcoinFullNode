@@ -62,6 +62,8 @@ namespace Stratis.Bitcoin.P2P
         /// If the maximum amount of connections has been reached (<see cref="MaximumNodeConnections"/>), the action gets skipped.
         /// </para>
         /// </summary>
+        /// <param name="parameters">Cloned parameters injected by the connection manager.</param>
+        /// <param name="mode">The mode the address manager should exhibit (Advertise, Discover or None).</param>
         void StartConnectAsync(NetworkPeerConnectionParameters parameters, PeerAddressManagerBehaviourMode mode);
     }
 

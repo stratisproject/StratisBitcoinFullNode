@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Connection
         /// Adds a peer to the address manager's collection as well as
         /// the connection manager's add node collection.
         /// </summary>
-        void AddNodeAddress(IPEndPoint endpoint);
+        void AddNodeAddress(IPEndPoint ipEndpoint);
 
         /// <summary>Used when the -addnode argument is passed when running the node.</summary>
         IPeerConnector AddNodePeerConnector { get; }
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Connection
 
         NetworkPeer FindLocalNode();
 
-        NetworkPeer FindNodeByEndpoint(IPEndPoint endpoint);
+        NetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint);
 
         NetworkPeer FindNodeByIp(IPAddress ip);
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Connection
 
         string GetStats();
 
-        void RemoveNodeAddress(IPEndPoint endpoint);
+        void RemoveNodeAddress(IPEndPoint ipEndpoint);
 
         void Start();
     }
@@ -368,9 +368,9 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public NetworkPeer FindNodeByEndpoint(IPEndPoint endpoint)
+        public NetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint)
         {
-            return this.connectedNodes.FindByEndpoint(endpoint);
+            return this.connectedNodes.FindByEndpoint(ipEndpoint);
         }
 
         public NetworkPeer FindNodeByIp(IPAddress ip)
@@ -383,31 +383,45 @@ namespace Stratis.Bitcoin.Connection
             return this.connectedNodes.FindLocal();
         }
 
-        public void AddNodeAddress(IPEndPoint endPoint)
+        /// <summary>
+        /// Adds a node to the -addnode collection.
+        /// <para>
+        /// Usually called via RPC.
+        /// </para>
+        /// </summary>
+        /// <param name="ipEndpoint">The endpoint of the peer to add.</param>
+        public void AddNodeAddress(IPEndPoint ipEndpoint)
         {
-            Guard.NotNull(endPoint, nameof(endPoint));
+            Guard.NotNull(ipEndpoint, nameof(ipEndpoint));
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(endPoint), endPoint);
+            this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
-            this.peerAddressManager.AddPeer(new NetworkAddress(endPoint.MapToIpv6()), IPAddress.Loopback);
+            this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
 
-            if (!this.NodeSettings.ConnectionManager.AddNode.Any(p => p.Match(endPoint)))
+            if (!this.NodeSettings.ConnectionManager.AddNode.Any(p => p.Match(ipEndpoint)))
             {
-                this.NodeSettings.ConnectionManager.AddNode.Add(endPoint);
+                this.NodeSettings.ConnectionManager.AddNode.Add(ipEndpoint);
                 this.AddNodePeerConnector.MaximumNodeConnections++;
             }
             else
-                this.logger.LogTrace("The end point already exists in the add node collection.");
+                this.logger.LogTrace("The endpoint already exists in the add node collection.");
 
             this.logger.LogTrace("(-)");
         }
 
-        public void RemoveNodeAddress(IPEndPoint endpoint)
+        /// <summary>
+        /// Disconnect a peer.
+        /// <para>
+        /// Usually called via RPC.
+        /// </para>
+        /// </summary>
+        /// <param name="ipEndpoint">The endpoint of the peer to disconnect.</param>
+        public void RemoveNodeAddress(IPEndPoint ipEndpoint)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
+            this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
-            NetworkPeer node = this.connectedNodes.FindByEndpoint(endpoint);
-            node?.DisconnectWithException("Requested by user");
+            NetworkPeer peer = this.connectedNodes.FindByEndpoint(ipEndpoint);
+            peer?.DisconnectWithException("Requested by user");
 
             this.logger.LogTrace("(-)");
         }
@@ -422,12 +436,12 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            NetworkPeer node = this.networkPeerFactory.CreateConnectedNetworkPeer(this.Network, endpoint, cloneParameters);
+            NetworkPeer peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.Network, endpoint, cloneParameters);
             this.peerAddressManager.PeerAttempted(endpoint, this.dateTimeProvider.GetUtcNow());
-            node.VersionHandshake();
+            peer.VersionHandshake();
 
             this.logger.LogTrace("(-)");
-            return node;
+            return peer;
         }
     }
 }
