@@ -301,11 +301,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (this.Peer.State != NetworkPeerState.Failed)
                 this.Peer.State = NetworkPeerState.Offline;
 
-            if (this.Disconnected.GetSafeWaitHandle().IsClosed == false)
-                this.Disconnected.Set();
-
             this.Client.Dispose();
             this.Client.ProcessingCompletion.SetResult(true);
+            this.Disconnected.Set();
 
             foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
             {
@@ -328,6 +326,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (this.Cancel.IsCancellationRequested == false)
                 this.Cancel.Cancel();
 
+            this.Disconnected.WaitOne();
             this.Disconnected.Dispose();
             this.Cancel.Dispose();
             this.cancelRegistration.Dispose();
