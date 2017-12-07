@@ -1041,13 +1041,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadVersion.Throw();
             }
 
-            // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.Checkpoints.CheckHardened(height, header.GetHash()))
-            {
-                this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
-                ConsensusErrors.CheckpointViolation.Throw();
-            }
-
             this.logger.LogTrace("(-)[OK]");
         }
     }

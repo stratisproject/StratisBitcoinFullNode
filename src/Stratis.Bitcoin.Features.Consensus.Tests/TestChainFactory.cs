@@ -47,6 +47,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public Mock<IConnectionManager> MockConnectionManager { get; set; }
 
         public Mock<IReadOnlyNetworkPeerCollection> MockReadOnlyNodesCollection { get; set; }
+
+        public Checkpoints Checkpoints { get; set; }
     }
 
     /// <summary>
@@ -72,10 +74,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.LoggerFactory = new ExtendedLoggerFactory();
             testChainContext.LoggerFactory.AddConsoleWithFilters();
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
-
             network.Consensus.Options = new PowConsensusOptions();
+
             ConsensusSettings consensusSettings = new ConsensusSettings(testChainContext.NodeSettings, testChainContext.LoggerFactory);
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network, consensusSettings), testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
+            testChainContext.Checkpoints = new Checkpoints();
+
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, testChainContext.Checkpoints, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
             testChainContext.Chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock), DateTimeProvider.Default, testChainContext.LoggerFactory);
 
@@ -89,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, new LoggerFactory());
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.NodeSettings);
             NodeDeployments deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
-            ConsensusRules consensusRules = new ConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments).Register(new FullNodeBuilderConsensusExtension.BaseConsensusRules());
+            ConsensusRules consensusRules = new ConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());
             testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), consensusValidator, new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning, consensusRules);
             await testChainContext.Consensus.StartAsync();
 

@@ -149,14 +149,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                     UseCheckpoints = this.useCheckpoints
                 };
 
-                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, consensusSettings), dateTimeProvider, loggerFactory);
+                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(dateTimeProvider, loggerFactory);
 
                 var connectionManager = new ConnectionManager(this.network, new NetworkPeerConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider, networkPeerFactory);
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
                 NodeDeployments deployments = new NodeDeployments(this.network, this.chain);
-                ConsensusRules consensusRules = new ConsensusRules(this.network, loggerFactory, dateTimeProvider, chain, deployments).Register(new FullNodeBuilderConsensusExtension.BaseConsensusRules());
+                ConsensusRules consensusRules = new ConsensusRules(this.network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings, nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();
 

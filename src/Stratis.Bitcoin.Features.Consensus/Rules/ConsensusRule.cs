@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
@@ -18,12 +19,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         public ConsensusRules Parent { get; set; }
 
         /// <summary>
-        /// A collection of rules that the current rule depends on.
+        /// Allow a rule to initialize itself.
+        /// The rule can verify that other rules are present using the <see cref="IConsensusRules.Rules"/>.
+        /// The rule can internally initialize its state.
         /// </summary>
-        /// <returns>A collection of rules this rule depends on.</returns>
-        public virtual IEnumerable<Type> Dependencies()
+        public virtual void Initialize()
         {
-            return Enumerable.Empty<Type>();
         }
 
         /// <summary>

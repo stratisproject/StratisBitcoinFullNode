@@ -136,6 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Handles the banning of peers.</summary>
         private readonly IPeerBanning peerBanning;
 
+        /// <summary>Consensus rules engine.</summary>
         private readonly IConsensusRules consensusRules;
 
         /// <summary>Provider of time functions.</summary>
@@ -486,25 +487,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Calculate the consensus flags and check they are valid.
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
-
-                // Check whether to use checkpoint to skip block validation.
-                context.SkipValidation = false;
-                if (this.consensusSettings.UseCheckpoints)
-                {
-                    int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-                    context.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
-                    if (context.SkipValidation)
-                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
-                }
-
-                // Check whether to use assumevalid switch to skip validation.
-                if (!context.SkipValidation && (this.consensusSettings.BlockAssumedValid != null))
-                {
-                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.consensusSettings.BlockAssumedValid);
-                    context.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
-                    if (context.SkipValidation)
-                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
-                }
 
                 if (!context.SkipValidation)
                 {

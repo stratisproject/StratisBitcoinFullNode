@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             network.Consensus.Options = new PowConsensusOptions();
             ConsensusSettings consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory);
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network, consensusSettings), dateTimeProvider, loggerFactory);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(), dateTimeProvider, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
             NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(dateTimeProvider, loggerFactory);
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
             NodeDeployments deployments = new NodeDeployments(network, chain);
-            ConsensusRules consensusRules = new ConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments).Register(new FullNodeBuilderConsensusExtension.BaseConsensusRules());
+            ConsensusRules consensusRules = new ConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());
             ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensus.StartAsync();
 

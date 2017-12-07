@@ -19,6 +19,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public interface IConsensusRules
     {
         /// <summary>
+        /// Collection of all the rules that are registered with the engine.
+        /// </summary>
+        IEnumerable<ConsensusRule> Rules { get; }
+
+        /// <summary>
         /// Register a new rule to the engine
         /// </summary>
         /// <param name="ruleRegistration">A container of rules to register.</param>
@@ -82,21 +87,31 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>The main loop of the consensus execution engine.</summary>
         public ConsensusLoop ConsensusLoop { get; set; }
 
+        /// <summary>Consensus settings for the full node.</summary>
+        public ConsensusSettings ConsensusSettings { get; }
+
+        /// <summary>Provider of block header hash checkpoints.</summary>
+        public ICheckpoints Checkpoints { get; }
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments)
+        public ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
         {
             this.Network = network;
             this.DateTimeProvider = dateTimeProvider;
             this.Chain = chain;
             this.NodeDeployments = nodeDeployments;
             this.loggerFactory = loggerFactory;
+            this.ConsensusSettings = consensusSettings;
+            this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
-
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.consensusRules = new Dictionary<string, ConsensusRule>();
         }
+        
+        /// <inheritdoc />
+        public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
 
         /// <inheritdoc />
         public ConsensusRules Register(IRuleRegistration ruleRegistration)
@@ -105,17 +120,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             {
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
-
-                foreach (var dependency in consensusRule.Dependencies())
-                {
-                    var depdendency = this.consensusRules.Keys.SingleOrDefault(w => w.GetType() == dependency);
-
-                    if (depdendency == null)
-                    {
-                        throw new Exception(); // todo
-                    }
-                }
-
+                consensusRule.Initialize();
+                
                 this.consensusRules.Add(consensusRule.GetType().FullName, consensusRule);
             }
 
@@ -179,6 +185,38 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                     await rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
             }
+        }
+    }
+
+    public static class ConsensusRulesExtension
+    {
+        /// <summary>
+        /// Try to find a consensus rule in the rules collection.
+        /// </summary>
+        /// <typeparam name="T">The type of rule to find.</typeparam>
+        /// <param name="rules">The rules to look in.</param>
+        /// <returns>The rule or <c>null</c> if not found in the list.</returns>
+        public static T TryFindRule<T>(this IEnumerable<ConsensusRule> rules) where T : ConsensusRule
+        {
+            return rules.OfType<T>().FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Find a consensus rule in the rules collection or throw an exception of not found.
+        /// </summary>
+        /// <typeparam name="T">The type of rule to find.</typeparam>
+        /// <param name="rules">The rules to look in.</param>
+        /// <returns>The rule or <c>null</c> if not found in the list.</returns>
+        public static T FindRule<T>(this IEnumerable<ConsensusRule> rules) where T : ConsensusRule
+        {
+            T rule = rules.TryFindRule<T>();
+
+            if (rule == null)
+            {
+                throw new Exception(); // todo:
+            }
+
+            return rule;
         }
     }
 }
