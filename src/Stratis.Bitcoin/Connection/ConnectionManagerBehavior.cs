@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.ConnectionManager.AddConnectedNode(node);
                 this.infoLogger.LogInformation("Node '{0}' connected ({1}), agent '{2}', height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
-                Task unused = node.SendMessageAsync(new SendHeadersPayload());
+                node.SendMessageVoidAsync(new SendHeadersPayload());
             }
 
             if ((node.State == NetworkPeerState.Failed) || (node.State == NetworkPeerState.Offline))

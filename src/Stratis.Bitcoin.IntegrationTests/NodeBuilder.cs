@@ -744,8 +744,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var peer = this.CreateNetworkPeerClient())
             {
                 peer.VersionHandshake();
-                Task unused = peer.SendMessageAsync(new InvPayload(transaction));
-                unused = peer.SendMessageAsync(new TxPayload(transaction));
+                peer.SendMessageVoidAsync(new InvPayload(transaction));
+                peer.SendMessageVoidAsync(new TxPayload(transaction));
                 this.PingPong(peer);
             }
         }
@@ -766,7 +766,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 DateTimeOffset before = DateTimeOffset.UtcNow;
-                Task unused = peer.SendMessageAsync(ping);
+                peer.SendMessageVoidAsync(ping);
 
                 while (listener.ReceivePayload<PongPayload>(cancellation).Nonce != ping.Nonce)
                 {
@@ -941,7 +941,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     // Get before last so, at the end, we should only receive 1 header equals to this one (so we will not have race problems with concurrent GetChains).
                     BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
-                    Task unused = peer.SendMessageAsync(new GetHeadersPayload()
+                    peer.SendMessageVoidAsync(new GetHeadersPayload()
                     {
                         BlockLocators = awaited,
                         HashStop = hashStop
@@ -1108,8 +1108,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             Block lastSent = null;
             foreach (var block in blocks)
             {
-                Task unused = peer.SendMessageAsync(new InvPayload(block));
-                unused = peer.SendMessageAsync(new BlockPayload(block));
+                peer.SendMessageVoidAsync(new InvPayload(block));
+                peer.SendMessageVoidAsync(new BlockPayload(block));
                 lastSent = block;
             }
             this.PingPong(peer);

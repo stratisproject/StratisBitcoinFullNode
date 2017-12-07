@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace NBitcoin
@@ -16,8 +15,8 @@ namespace NBitcoin
             this.repository = repository;
         }
 
-        public NoSqlBlockRepository()
-            : this(new InMemoryNoSqlRepository())
+        public NoSqlBlockRepository(NetworkOptions options = null)
+            : this(new InMemoryNoSqlRepository(options))
         {
 
         }
@@ -26,7 +25,7 @@ namespace NBitcoin
 
         public Task<Block> GetBlockAsync(uint256 blockId)
         {
-            return repository.GetAsync<Block>(blockId.ToString());
+            return this.repository.GetAsync<Block>(blockId.ToString());
         }
 
         #endregion
@@ -37,7 +36,7 @@ namespace NBitcoin
         }
         public Task PutAsync(uint256 blockId, Block block)
         {
-            return repository.PutAsync(blockId.ToString(), block);
+            return this.repository.PutAsync(blockId.ToString(), block);
         }
     }
 
@@ -55,8 +54,8 @@ namespace NBitcoin
             this.repository = repository;
         }
 
-        public BlockTransactionMapStore()
-            : this(new InMemoryNoSqlRepository())
+        public BlockTransactionMapStore(NetworkOptions options = null)
+            : this(new InMemoryNoSqlRepository(options))
         {
 
         }
