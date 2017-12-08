@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Implements loop accepting connections from newly connected clients.
+        /// Implements loop accepting new connections.
         /// </summary>
         private async void AcceptClientsAsync()
         {
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 catch (Exception e)
                 {
                     if (e is OperationCanceledException) this.logger.LogDebug("Shutdown detected, stop accepting connections.");
-                    else this.logger.LogDebug("Exception occurred: {0}");
+                    else this.logger.LogDebug("Exception occurred: {0}", e.ToString());
 
                     int taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
                     this.logger.LogTrace("Accepting task aborted or failed, there are {0} unfinished tasks now.", taskCount);
