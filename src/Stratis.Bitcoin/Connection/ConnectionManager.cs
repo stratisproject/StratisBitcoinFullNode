@@ -202,8 +202,6 @@ namespace Stratis.Bitcoin.Connection
             {
                 NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
                 NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(this.Network);
-                server.LocalEndpoint = listen.Endpoint;
-                server.ExternalEndpoint = this.NodeSettings.ConnectionManager.ExternalEndpoint;
 
                 this.Servers.Add(server);
                 cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this, this.LoggerFactory)
