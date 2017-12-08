@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (GetBlockWeight(context.BlockValidationContext.Block, options) > options.MaxBlockWeight)
+            if (GetBlockWeight(context.BlockValidationContext.Block, options, context.Consensus.NetworkOptions) > options.MaxBlockWeight)
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
@@ -29,7 +29,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             Block block = context.BlockValidationContext.Block;
 
             // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || (GetSize(block, NetworkOptions.None) > options.MaxBlockBaseSize))
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || (GetSize(block, 
+                context.Consensus.NetworkOptions & ~NetworkOptions.All) > options.MaxBlockBaseSize))
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -48,9 +49,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block that we get weight of.</param>
         /// <param name="options">Options for POW networks.</param>
         /// <returns>Block weight.</returns>
-        public long GetBlockWeight(Block block, PowConsensusOptions options)
+        public long GetBlockWeight(Block block, PowConsensusOptions powOptions, NetworkOptions options)
         {
-            return GetSize(block, NetworkOptions.None) * (options.WitnessScaleFactor - 1) + GetSize(block, NetworkOptions.Witness);
+            return GetSize(block, options & ~NetworkOptions.Witness) * (powOptions.WitnessScaleFactor - 1) + GetSize(block, options);
         }
 
         /// <summary>
