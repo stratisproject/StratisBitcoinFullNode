@@ -190,7 +190,7 @@ namespace NBitcoin
             var heightCorrect = chainedBlock.Height == 0 || chainedBlock.Height == chainedBlock.Previous.Height + 1;
             var genesisCorrect = chainedBlock.Height != 0 || chainedBlock.HashBlock == network.GetGenesis().GetHash();
             var hashPrevCorrect = chainedBlock.Height == 0 || chainedBlock.Header.HashPrevBlock == chainedBlock.Previous.HashBlock;
-            var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash();
+            var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash(network.NetworkOptions);
 
             if (stakeChain == null)
                 return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
@@ -230,7 +230,7 @@ namespace NBitcoin
             if (chainedBlock.Height == 0)
                 return true;
 
-            if (blockStake.IsProofOfWork() && !chainedBlock.Header.CheckProofOfWork())
+            if (blockStake.IsProofOfWork() && !chainedBlock.Header.CheckProofOfWork(consensus))
                 return false;
 
             return chainedBlock.Header.Bits == this.GetWorkRequired(chainedBlock, blockStake, consensus);
