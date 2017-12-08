@@ -412,10 +412,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-)");
             return this.stakingLoop;
         }
-
-        /// <summary>
-        /// Stop the main POS staking loop.
-        /// </summary>
+        
+        ///<inheritdoc/>
         public void StopStake()
         {
             this.logger.LogTrace("()");

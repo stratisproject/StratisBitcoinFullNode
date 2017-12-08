@@ -40,6 +40,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="fullNode">Full Node.</param>
         public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
+            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletManager = walletManager;

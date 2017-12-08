@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.posMinting = new Mock<IPosMinting>();
             this.walletManager = new Mock<IWalletManager>();
 
-            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, this.posMinting.Object);
+            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, this.posMinting.Object);
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         }
 
         [Fact]
-        public void StartStaking_WalletNotFound_ReturnsNotFound()
+        public void StartStaking_WalletNotFound_ReturnsBadRequest()
         {
             this.walletManager.Setup(w => w.GetWallet("myWallet"))
                 .Throws(new WalletException("Wallet not found."));
@@ -113,28 +113,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(404, error.Status);
-            Assert.Equal("Wallet not found", error.Message);
-        }
-
-        [Fact]
-        public void StartStaking_WalletNull_ReturnsNotFound()
-        {
-            this.walletManager.Setup(w => w.GetWallet("myWallet"))
-                .Returns((Wallet.Wallet)null);
-
-            this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
-                .Returns(this.walletManager.Object);
-
-            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet" });
-
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(404, error.Status);
-            Assert.Equal("Wallet not found", error.Message);
+            Assert.Equal(400, error.Status);
+            Assert.Equal("Wallet not found.", error.Message);
         }
 
         [Fact]
