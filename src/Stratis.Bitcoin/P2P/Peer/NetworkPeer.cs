@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -258,7 +257,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.Cancel.Token.IsCancellationRequested)
                 {
-                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.Cancel.Token);
+                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.Cancel.Token).ConfigureAwait(false);
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 

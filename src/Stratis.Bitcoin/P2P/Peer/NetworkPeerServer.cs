@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
-                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token);
+                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token).ConfigureAwait(false);
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
                     this.AddConnectedClient(client);
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         while (true)
                         {
                             cancel.Token.ThrowIfCancellationRequested();
-                            Message message = await client.ReadAndParseMessageAsync(this.Version, cancel.Token);
+                            Message message = await client.ReadAndParseMessageAsync(this.Version, cancel.Token).ConfigureAwait(false);
                             
                             this.messageProducer.PushMessage(new IncomingMessage()
                             {

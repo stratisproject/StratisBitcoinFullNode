@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                await Task.Run(async () => await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port), cancellation);
+                await Task.Run(async () => await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port), cancellation).ConfigureAwait(false);
                 this.Stream = this.tcpClient.GetStream();
             }
             catch (Exception e)
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(data), nameof(data.Length), data.Length);
 
-            using (await this.writeLock.LockAsync(cancellation))
+            using (await this.writeLock.LockAsync(cancellation).ConfigureAwait(false))
             {
                 if (this.Stream == null)
                 {
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 try
                 {
-                    await this.Stream.WriteAsync(data, 0, data.Length, cancellation);
+                    await this.Stream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -169,14 +169,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
 
             // First find and read the magic.
-            await this.ReadMagicAsync(this.network.MagicBytes, cancellation);
+            await this.ReadMagicAsync(this.network.MagicBytes, cancellation).ConfigureAwait(false);
 
             // Then read the header, which is formed of command, length, and possibly also a checksum.
             int checksumSize = protocolVersion >= ProtocolVersion.MEMPOOL_GD_VERSION ? Message.ChecksumSize : 0;
             int headerSize = Message.CommandSize + Message.LengthSize + checksumSize;
 
             byte[] messageHeader = new byte[headerSize];
-            await this.ReadBytesAsync(messageHeader, 0, headerSize, cancellation);
+            await this.ReadBytesAsync(messageHeader, 0, headerSize, cancellation).ConfigureAwait(false);
 
             // Then extract the length, which is the message payload size.
             int lengthOffset = Message.CommandSize;
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             int magicLength = this.network.MagicBytes.Length;
             byte[] message = new byte[magicLength + headerSize + length];
 
-            await this.ReadBytesAsync(message, magicLength + headerSize, (int)length, cancellation);
+            await this.ReadBytesAsync(message, magicLength + headerSize, (int)length, cancellation).ConfigureAwait(false);
 
             // And copy the magic and the header to form a complete message.
             Array.Copy(this.network.MagicBytes, 0, message, 0, this.network.MagicBytes.Length);
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 byte expectedByte = magic[i];
 
-                await this.ReadBytesAsync(bytes, 0, bytes.Length, cancellation);
+                await this.ReadBytesAsync(bytes, 0, bytes.Length, cancellation).ConfigureAwait(false);
 
                 byte receivedByte = bytes[0];
                 if (expectedByte != receivedByte)
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             while (bytesToRead > 0)
             {
-                int chunkSize = await this.Stream.ReadAsync(buffer, offset, bytesToRead, cancellation);
+                int chunkSize = await this.Stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
                 if (chunkSize == 0)
                 {
                     this.logger.LogTrace("(-)[STREAM_END]");
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             Message message = null;
 
-            byte[] rawMessage = await this.ReadMessageAsync(protocolVersion, cancellation);
+            byte[] rawMessage = await this.ReadMessageAsync(protocolVersion, cancellation).ConfigureAwait(false);
             using (var memoryStream = new MemoryStream(rawMessage))
             {
                 PerformanceCounter counter;
