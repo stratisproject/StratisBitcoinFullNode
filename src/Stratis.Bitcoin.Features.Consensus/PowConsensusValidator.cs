@@ -570,7 +570,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) ||
-                (this.GetSize(block, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
+                (this.GetSize(block, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -744,7 +744,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Block weight.</returns>
         public long GetBlockWeight(Block block)
         {
-            return this.GetSize(block, NetworkOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, NetworkOptions.Witness);
+            var options = NetworkOptions.TemporaryOptions;
+            return this.GetSize(block, options & ~NetworkOptions.Witness) * (this.ConsensusOptions.WitnessScaleFactor - 1) + 
+                   this.GetSize(block, options | NetworkOptions.Witness);
         }
 
         /// <summary>
@@ -1042,7 +1044,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.Checkpoints.CheckHardened(height, header.GetHash()))
+            if (!this.Checkpoints.CheckHardened(height, header.GetHash(this.ConsensusParams.NetworkOptions)))
             {
                 this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
                 ConsensusErrors.CheckpointViolation.Throw();
