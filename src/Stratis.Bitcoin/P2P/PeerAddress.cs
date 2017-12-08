@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
@@ -21,12 +22,12 @@ namespace Stratis.Bitcoin.P2P
         private const int PeerMaximumConnectionRetries = 3;
 
         /// <summary>EndPoint of this peer.</summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "endpoint")]
         [JsonConverter(typeof(IPEndPointConverter))]
         private IPEndPoint endpoint;
 
         /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "addressTime", NullValueHandling = NullValueHandling.Ignore)]
         private DateTimeOffset? addressTime;
 
         /// <summary>The <see cref="NetworkAddress"/> of this peer.</summary>
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>The source address of this peer.</summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "loopback")]
         private string loopback;
 
         [JsonIgnore]
@@ -66,7 +67,7 @@ namespace Stratis.Bitcoin.P2P
         /// <para>
         /// This gets reset when a connection was successful.</para>
         /// </summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "connectionAttempts")]
         public int ConnectionAttempts { get; private set; }
 
         /// <summary>
@@ -75,7 +76,7 @@ namespace Stratis.Bitcoin.P2P
         /// This is set when the connection attempt was successful and a handshake was done.
         /// </para>
         /// </summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "lastConnectionHandshake", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.P2P
         /// This is set regardless of whether or not the connection attempt was successful or not.
         /// </para>
         /// </summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "lastConnectionAttempt", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? LastConnectionAttempt { get; private set; }
 
         /// <summary>
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.P2P
         /// This is set when the connection attempt was successful (but not necessarily handshaked).
         /// </para>
         /// </summary>
-        [JsonProperty]
+        [JsonProperty(PropertyName = "lastConnectionSuccess", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
         /// <summary>
