@@ -43,15 +43,15 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create())
             {
                 var genesis = ctx.Network.GetGenesis();
-                var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
-                var chained = this.MakeNext(genesisChainedBlock);
+                var genesisChainedBlock = new ChainedBlock(genesis.Header, ctx.Network.GenesisHash ,0);
+                var chained = this.MakeNext(genesisChainedBlock, ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
                 var previous = chained;
-                chained = this.MakeNext(this.MakeNext(genesisChainedBlock));
-                chained = this.MakeNext(this.MakeNext(genesisChainedBlock));
+                chained = this.MakeNext(this.MakeNext(genesisChainedBlock, ctx.Network), ctx.Network);
+                chained = this.MakeNext(this.MakeNext(genesisChainedBlock, ctx.Network), ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).Wait();
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
                 ctx.ReloadPersistentCoinView();
@@ -67,8 +67,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create())
             {
                 var genesis = ctx.Network.GetGenesis();
-                var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
-                var chained = this.MakeNext(genesisChainedBlock);
+                var genesisChainedBlock = new ChainedBlock(genesis.Header, ctx.Network.GenesisHash, 0);
+                var chained = this.MakeNext(genesisChainedBlock, ctx.Network);
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
 
                 cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
@@ -248,11 +248,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private ChainedBlock MakeNext(ChainedBlock previous)
+        private ChainedBlock MakeNext(ChainedBlock previous, Network network)
         {
             var header = previous.Header.Clone();
             header.HashPrevBlock = previous.HashBlock;
-            return new ChainedBlock(header, null, previous);
+            return new ChainedBlock(header, header.GetHash(network.NetworkOptions), previous);
         }
 
         [Fact]

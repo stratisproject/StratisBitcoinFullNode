@@ -24,9 +24,9 @@ namespace NBitcoin
         {
         }
 
-        public ConcurrentChain(BlockHeader genesis)
+        public ConcurrentChain(BlockHeader genesisHeader)
         {
-            this.SetTip(new ChainedBlock(genesis, 0));
+            this.SetTip(new ChainedBlock(genesisHeader, genesisHeader.GetHash(), 0));
         }
 
         public ConcurrentChain(Network network)
@@ -34,7 +34,7 @@ namespace NBitcoin
             if (network != null)
             {
                 Block genesis = network.GetGenesis();
-                this.SetTip(new ChainedBlock(genesis.Header, 0));
+                this.SetTip(new ChainedBlock(genesis.Header, genesis.Header.GetHash(), 0));
             }
         }
 
@@ -71,7 +71,7 @@ namespace NBitcoin
                             this.blocksByHeight.Clear();
                             this.blocksById.Clear();
                             this.tip = null;
-                            this.SetTipLocked(new ChainedBlock(header, 0));
+                            this.SetTipLocked(new ChainedBlock(header, header.GetHash(), 0));
                         }
                         else this.SetTipLocked(new ChainedBlock(header, id.Value, this.Tip));
 

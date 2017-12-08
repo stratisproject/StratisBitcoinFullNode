@@ -47,7 +47,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     });
 
                 var chain = new Mock<ConcurrentChain>();
-                chain.Setup(c => c.Tip).Returns(new ChainedBlock(new BlockHeader(), 1));
+                var block = new BlockHeader();
+                chain.Setup(c => c.Tip).Returns(new ChainedBlock(block, block.GetHash(), 1));
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain.Object, NodeSettings.Default(),
                     new DataFolder(new NodeSettings { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
