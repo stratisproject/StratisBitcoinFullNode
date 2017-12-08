@@ -9,8 +9,10 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -33,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IPosMinting posMinting;
 
         /// <summary>Manager providing operations on wallets.</summary>
-        private readonly WalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -60,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             PowMining powMining,
             IPosMinting posMinting = null,
-            WalletManager walletManager = null)
+            IWalletManager walletManager = null)
         {
             this.network = network;
             this.minerSettings = minerSettings;

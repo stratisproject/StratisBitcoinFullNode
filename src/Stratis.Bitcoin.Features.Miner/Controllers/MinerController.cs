@@ -5,6 +5,7 @@ using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -50,13 +51,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
-                // checks the request is valid
-                if (!this.ModelState.IsValid)
-                {
-                    var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
-                }
-
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
 
                 return this.Json(model);
@@ -85,9 +79,8 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
 
-                WalletManager walletManager = this.fullNode.NodeService<IWalletManager>() as WalletManager;
-
-                Wallet.Wallet wallet = walletManager.Wallets.FirstOrDefault(w => w.Name == request.Name);
+                IWalletManager walletManager = this.fullNode.NodeService<IWalletManager>();
+                Wallet.Wallet wallet = this.GetWallet(walletManager, request);
 
                 if (wallet == null)
                 {
@@ -116,6 +109,18 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        private Wallet.Wallet GetWallet(IWalletManager walletManager, StartStakingRequest request)
+        {
+            try
+            {
+                return walletManager.GetWallet(request.Name);
+            }
+            catch (WalletException)
+            {
+                return null;
             }
         }
     }
