@@ -10,95 +10,93 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
-    public class RpcTests
+    public class RpcTests : IClassFixture<RPCTestFixture>
     {
+        private readonly RPCTestFixture rpcTestFixture;
+
+        public RpcTests(RPCTestFixture RpcTestFixture)
+        {
+            this.rpcTestFixture = RpcTestFixture;
+        }
+
         /// <summary>
-        /// Tests whether the RPC method "addnode" adds a network peer to the .
+        /// Tests whether the RPC method "addnode" adds a network peer to the connection manager.
         /// </summary>
         [Fact]
         public void CanAddNodeToConnectionManager()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode();
+            var connectionManager = this.rpcTestFixture.Node.FullNode.NodeService<IConnectionManager>();
+            Assert.Empty(connectionManager.NodeSettings.ConnectionManager.AddNode);
 
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
-                {
-                    nodeB.VersionHandshake();
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var networkAddress = new NetworkAddress(ipAddress, 80);
+            this.rpcTestFixture.RpcClient.AddNode(networkAddress.Endpoint);
 
-                    var connectionManager = nodeA.FullNode.NodeService<IConnectionManager>();
-                    Assert.Empty(connectionManager.NodeSettings.ConnectionManager.AddNode);
-
-                    var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-                    var networkAddress = new NetworkAddress(ipAddress, 80);
-                    rpc.AddNode(networkAddress.Endpoint);
-
-                    Assert.Single(connectionManager.NodeSettings.ConnectionManager.AddNode);
-                }
-            }
+            Assert.Single(connectionManager.NodeSettings.ConnectionManager.AddNode);
         }
 
         [Fact]
         public void CheckRPCFailures()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateStratisPowNode();
-                builder.StartAll();
-                var client = node.CreateRPCClient();
-                var hash = client.GetBestBlockHash();
-                try
-                {
-                    client.SendCommand("lol");
-                    Assert.True(false, "should throw");
-                }
-                catch (RPCException ex)
-                {
-                    Assert.Equal(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.RPCCode);
-                }
-                Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
-                var oldClient = client;
-                client = new RPCClient("abc:def", client.Address, client.Network);
-                try
-                {
-                    client.GetBestBlockHash();
-                    Assert.True(false, "should throw");
-                }
-                catch (Exception ex)
-                {
-                    Assert.Contains("401", ex.Message);
-                }
-                client = oldClient;
+            var hash = this.rpcTestFixture.RpcClient.GetBestBlockHash();
 
-                try
-                {
-                    client.SendCommand("addnode", "regreg", "addr");
-                    Assert.True(false, "should throw");
-                }
-                catch (RPCException ex)
-                {
-                    Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
-                }
+            try
+            {
+                this.rpcTestFixture.RpcClient.SendCommand("lol");
+                Assert.True(false, "should throw");
             }
+            catch (RPCException ex)
+            {
+                Assert.Equal(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.RPCCode);
+            }
+            Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
+            var oldClient = this.rpcTestFixture.RpcClient;
+            var client = new RPCClient("abc:def", this.rpcTestFixture.RpcClient.Address, this.rpcTestFixture.RpcClient.Network);
+            try
+            {
+                client.GetBestBlockHash();
+                Assert.True(false, "should throw");
+            }
+            catch (Exception ex)
+            {
+                Assert.Contains("401", ex.Message);
+            }
+            client = oldClient;
+
+            try
+            {
+                client.SendCommand("addnode", "regreg", "addr");
+                Assert.True(false, "should throw");
+            }
+            catch (RPCException ex)
+            {
+                Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
+            }
+        }
+
+        /// <summary>
+        /// Tests RPC get genesis block hash.
+        /// </summary>
+        [Fact]
+        public void CanGetGenesisBlockHashFromRPC()
+        {
+            RPCResponse response = this.rpcTestFixture.RpcClient.SendCommand(RPCOperations.getblockhash, 0);
+
+            string actualGenesis = (string)response.Result;
+            Assert.Equal(Network.RegTest.GetGenesis().GetHash().ToString(), actualGenesis);
         }
 
         /// <summary>
         /// Tests RPC getbestblockhash.
         /// </summary>
         [Fact]
-        public void CanGetGenesisFromRPC()
+        public void CanGetGetBestBlockHashFromRPC()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                RPCClient rpc = builder.CreateStratisPowNode().CreateRPCClient();
-                builder.StartAll();
-                RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
-                string actualGenesis = (string)response.Result;
-                Assert.Equal(Network.RegTest.GetGenesis().GetHash().ToString(), actualGenesis);
-                Assert.Equal(Network.RegTest.GetGenesis().GetHash(), rpc.GetBestBlockHash());
-            }
+            uint256 expected = this.rpcTestFixture.Node.FullNode.Chain.Tip.Header.GetHash();
+
+            uint256 response = this.rpcTestFixture.RpcClient.GetBestBlockHash();
+            
+            Assert.Equal(expected, response);
         }
 
         /// <summary>
@@ -107,27 +105,20 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetBlockHeaderFromRPC()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode node = builder.CreateStratisPowNode();
-                RPCClient rpc = node.CreateRPCClient();
-                builder.StartAll();
+            uint256 hash = this.rpcTestFixture.RpcClient.GetBlockHash(0);
+            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.Chain?.GetBlock(hash)?.Header;
+            BlockHeader actualHeader = this.rpcTestFixture.RpcClient.GetBlockHeader(0);
 
-                uint256 hash = rpc.GetBlockHash(0);
-                BlockHeader expectedHeader = node.FullNode.Chain?.GetBlock(hash)?.Header;
-                BlockHeader actualHeader = rpc.GetBlockHeader(0);
+            // Assert block header fields match.
+            Assert.Equal(expectedHeader.Version, actualHeader.Version);
+            Assert.Equal(expectedHeader.HashPrevBlock, actualHeader.HashPrevBlock);
+            Assert.Equal(expectedHeader.HashMerkleRoot, actualHeader.HashMerkleRoot);
+            Assert.Equal(expectedHeader.Time, actualHeader.Time);
+            Assert.Equal(expectedHeader.Bits, actualHeader.Bits);
+            Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
-                // Assert block header fields match.
-                Assert.Equal(expectedHeader.Version, actualHeader.Version);
-                Assert.Equal(expectedHeader.HashPrevBlock, actualHeader.HashPrevBlock);
-                Assert.Equal(expectedHeader.HashMerkleRoot, actualHeader.HashMerkleRoot);
-                Assert.Equal(expectedHeader.Time, actualHeader.Time);
-                Assert.Equal(expectedHeader.Bits, actualHeader.Bits);
-                Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
-
-                // Assert header hash matches genesis hash.
-                Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
-            }
+            // Assert header hash matches genesis hash.
+            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
         }
 
         /// <summary>
@@ -136,18 +127,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetPeersInfo()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode();
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
-                {
-                    nodeB.VersionHandshake();
-                    PeerInfo[] peers = rpc.GetPeersInfo();
-                    Assert.NotEmpty(peers);
-                }
-            }
+            PeerInfo[] peers = this.rpcTestFixture.RpcClient.GetPeersInfo();
+            Assert.NotEmpty(peers);
         }
 
         /// <summary>
@@ -157,18 +138,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetPeersInfoByStringArgs()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode();
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
-                {
-                    nodeB.VersionHandshake();
-                    var resp = rpc.SendCommand("getpeerinfo").ResultString;
-                    Assert.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"[", resp);
-                }
-            }
+            var resp = this.rpcTestFixture.RpcClient.SendCommand("getpeerinfo").ResultString;
+            Assert.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"[", resp);
         }
 
         /// <summary>
@@ -178,18 +149,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetBlockHashByStringArgs()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode();
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
-                {
-                    nodeB.VersionHandshake();
-                    var resp = rpc.SendCommand("getblockhash", "0").ResultString;
-                    Assert.Equal("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", resp);
-                }
-            }
+            var resp = this.rpcTestFixture.RpcClient.SendCommand("getblockhash", "0").ResultString;
+            Assert.Equal("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", resp);
         }
 
         /// <summary>
@@ -199,19 +160,36 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGenerateByStringArgs()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode();
-                this.InitializeTestWallet(nodeA);
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (NetworkPeer nodeB = nodeA.CreateNetworkPeerClient())
-                {
-                    nodeB.VersionHandshake();
-                    string resp = rpc.SendCommand("generate", "1").ResultString;
-                    Assert.StartsWith("[" + Environment.NewLine + "  \"", resp);
-                }
-            }
+            string resp = this.rpcTestFixture.RpcClient.SendCommand("generate", "1").ResultString;
+            Assert.StartsWith("[" + Environment.NewLine + "  \"", resp);
+        }
+    }
+
+    public class RPCTestFixture : IDisposable
+    {
+        private readonly NodeBuilder builder;
+        public readonly CoreNode Node;
+        public readonly RPCClient RpcClient;
+        public readonly NetworkPeer NetworkPeerClient;
+
+        public RPCTestFixture()
+        {
+            this.builder = NodeBuilder.Create();
+            this.Node = this.builder.CreateStratisPowNode();
+            this.InitializeTestWallet(this.Node);
+            this.builder.StartAll();
+
+            this.RpcClient = this.Node.CreateRPCClient();
+
+            this.NetworkPeerClient = this.Node.CreateNetworkPeerClient();
+            this.NetworkPeerClient.VersionHandshake();
+        }
+
+        // note: do not call this dispose in the class itself xunit will handle it.
+        public void Dispose()
+        {
+            this.builder.Dispose();
+            this.NetworkPeerClient.Dispose();
         }
 
         /// <summary>
