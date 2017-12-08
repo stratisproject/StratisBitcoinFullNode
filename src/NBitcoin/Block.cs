@@ -107,6 +107,11 @@ namespace NBitcoin
 
         public uint256 GetHash()
         {
+            return GetHash(NetworkOptions.TemporaryOptions);
+        }
+
+        public uint256 GetHash(NetworkOptions options)
+        {
             uint256 hash = null;
             uint256[] hashes = this.hashes;
 
@@ -116,7 +121,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            if (Block.BlockSignature)
+            if ((options ?? NetworkOptions.TemporaryOptions).IsProofOfStake)
             {
                 if (this.version > 6)
                     hash = Hashes.Hash256(this.ToBytes());
@@ -162,21 +167,22 @@ namespace NBitcoin
 
         public bool CheckProofOfWork(Consensus consensus)
         {
-            consensus = consensus ?? Network.Main.Consensus;
+            NetworkOptions options = consensus?.NetworkOptions ?? NetworkOptions.TemporaryOptions;
+            consensus = consensus ?? Network.Main.Consensus; // TODO: Not always set correctly from BlockValidator.CheckBlock..
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
                 return false;
 
             // Check proof of work matches claimed amount.
-            if (Block.BlockSignature) // Note this can only be called on a POW block.
+            if (options.IsProofOfStake) // Note this can only be called on a POW block.
                 return this.GetPoWHash() <= this.Bits.ToUInt256();
 
-            return consensus.GetPoWHash(this) <= this.Bits.ToUInt256();
+            return consensus.GetPoWHash(consensus.NetworkOptions, this) <= this.Bits.ToUInt256();
         }
 
         public override string ToString()
         {
-            return GetHash().ToString();
+            return GetHash(NetworkOptions.TemporaryOptions).ToString();
         }
 
         /// <summary>
@@ -217,7 +223,7 @@ namespace NBitcoin
 
         public Target GetWorkRequired(Consensus consensus, ChainedBlock prev)
         {
-            return new ChainedBlock(this, null, prev).GetWorkRequired(consensus);
+            return new ChainedBlock(this, this.GetHash(consensus.NetworkOptions), prev).GetWorkRequired(consensus);
         }
     }
 
@@ -252,12 +258,11 @@ namespace NBitcoin
             this.ReadWrite(bytes);
         }
 
-
         public void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
-            if (Block.BlockSignature)
+            if ((stream.TransactionOptions ?? NetworkOptions.TemporaryOptions).IsProofOfStake)
                 stream.ReadWrite(ref this.blockSignature);
         }
 
@@ -282,10 +287,16 @@ namespace NBitcoin
                 return this.header;
             }
         }
+
         public uint256 GetHash()
         {
+            return GetHash(NetworkOptions.TemporaryOptions);
+        }
+
+        public uint256 GetHash(NetworkOptions options)
+        {
             // Block's hash is his header's hash.
-            return this.header.GetHash();
+            return this.header.GetHash(options);
         }
 
         public void ReadWrite(byte[] array, int startIndex)
@@ -357,7 +368,7 @@ namespace NBitcoin
         /// <returns></returns>
         public bool Check(Consensus consensus)
         {
-            if (Block.BlockSignature)
+            if ((consensus?.NetworkOptions ?? NetworkOptions.TemporaryOptions).IsProofOfStake)
                 return BlockStake.Check(this);
 
             return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);
