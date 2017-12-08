@@ -11,11 +11,14 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public class DBreezeSerializer
     {
+        public NetworkOptions NetworkOptions { get; private set; }
+
         /// <summary>
         /// Initializes custom serializers for DBreeze engine.
         /// </summary>
-        public void Initialize()
+        public void Initialize(NetworkOptions networkOptions = null) // TODO: Make the NetworkOptions required
         {
+            this.NetworkOptions = networkOptions;
             CustomSerializator.ByteArraySerializator = this.Serializer;
             CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
         }
@@ -29,7 +32,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             IBitcoinSerializable serializable = obj as IBitcoinSerializable;
             if (serializable != null)
-                return serializable.ToBytes();
+                return serializable.ToBytes(options: this.NetworkOptions);
 
             uint256 u256 = obj as uint256;
             if (u256 != null)
@@ -89,21 +92,21 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(Coins))
             {
                 Coins coin = new Coins();
-                coin.ReadWrite(bytes);
+                coin.ReadWrite(bytes, options:this.NetworkOptions);
                 return coin;
             }
 
             if (type == typeof(BlockHeader))
             {
                 BlockHeader header = new BlockHeader();
-                header.ReadWrite(bytes);
+                header.ReadWrite(bytes, options: this.NetworkOptions);
                 return header;
             }
 
             if (type == typeof(RewindData))
             {
                 RewindData rewind = new RewindData();
-                rewind.ReadWrite(bytes);
+                rewind.ReadWrite(bytes, options: this.NetworkOptions);
                 return rewind;
             }
 
@@ -111,7 +114,7 @@ namespace Stratis.Bitcoin.Utilities
                 return new uint256(bytes);
 
             if (type == typeof(Block))
-                return new Block(bytes);
+                return new Block(bytes/*, options:this.NetworkOptions*/);
 
             if (type == typeof(BlockStake))
                 return new BlockStake(bytes);

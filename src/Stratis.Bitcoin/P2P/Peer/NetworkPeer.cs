@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Starts two threads, one is responsible for receiving incoming message from the peer 
+        /// Starts two threads, one is responsible for receiving incoming messages from the peer 
         /// and the other is responsible for sending node's message, which are waiting in a queue, to the peer.
         /// </summary>
         public void BeginListen()
