@@ -266,12 +266,13 @@ namespace NBitcoin
         }
 
         private static Network InitStratisMain()
-        {            
+        {
             Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
             var consensus = new Consensus();
 
+            consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
@@ -302,7 +303,7 @@ namespace NBitcoin
             consensus.DefaultAssumeValid = new uint256("0x5acb513b96dcb727fbe85c7d50a1266e6414cdd4c3ae66d01313c34a81b466a2"); // 602240
 
             Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
-            consensus.HashGenesisBlock = genesis.GetHash();
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -388,11 +389,11 @@ namespace NBitcoin
             messageStart[3] = 0x11;
             var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
-            var genesis = Network.StratisMain.GetGenesis().Clone();
+            var genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash();
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
@@ -449,11 +450,11 @@ namespace NBitcoin
             messageStart[3] = 0xef;
             var magic = BitConverter.ToUInt32(messageStart, 0); 
 
-            var genesis = Network.StratisMain.GetGenesis().Clone();
+            var genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash();
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
 
