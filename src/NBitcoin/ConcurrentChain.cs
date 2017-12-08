@@ -243,32 +243,4 @@ namespace NBitcoin
             return this.Tip == null ? "no tip" : this.Tip.Height.ToString();
         }
     }
-
-    internal class ReaderWriterLock
-    {
-        ReaderWriterLockSlim lockObject = new ReaderWriterLockSlim();
-
-        public IDisposable LockRead()
-        {
-            return new ActionDisposable(() => this.lockObject.EnterReadLock(), () => this.lockObject.ExitReadLock());
-        }
-        public IDisposable LockWrite()
-        {
-            return new ActionDisposable(() => this.lockObject.EnterWriteLock(), () => this.lockObject.ExitWriteLock());
-        }
-
-        internal bool TryLockWrite(out IDisposable locked)
-        {
-            locked = null;
-            if (this.lockObject.TryEnterWriteLock(0))
-            {
-                locked = new ActionDisposable(() =>
-                {
-                }, () => this.lockObject.ExitWriteLock());
-                return true;
-            }
-
-            return false;
-        }
-    }
 }
