@@ -68,10 +68,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <para>When created, the server is ready to be started, but this method does not start listening.</para>
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="localEndpoint">IP address and port to listen on, or <c>null</c> to listen on all available interfaces and default port.</param>
+        /// <param name="externalEndpoint">IP address and port that the server is reachable from the Internet on, or <c>null</c> to use the same value as <paramref name="localEndpoint"/>.</param>
         /// <param name="version">Version of the network protocol that the server should run.</param>
-        /// <param name="internalPort">Port on which the server will listen, or -1 to use the default port for the selected network.</param>
         /// <returns>Newly created network peer server, which is ready to be started.</returns>
-        NetworkPeerServer CreateNetworkPeerServer(Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, int internalPort = -1);
+        NetworkPeerServer CreateNetworkPeerServer(Network network, IPEndPoint localEndpoint = null, IPEndPoint externalEndpoint = null, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
     }
 
     /// <summary>
@@ -146,9 +147,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public NetworkPeerServer CreateNetworkPeerServer(Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, int internalPort = -1)
+        public NetworkPeerServer CreateNetworkPeerServer(Network network, IPEndPoint localEndpoint, IPEndPoint externalEndpoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            return new NetworkPeerServer(network, version, internalPort, this.dateTimeProvider, this.loggerFactory, this);
+            localEndpoint = localEndpoint ?? new IPEndPoint(IPAddress.Any, network.DefaultPort);
+            externalEndpoint = externalEndpoint ?? localEndpoint;
+            return new NetworkPeerServer(network, localEndpoint, externalEndpoint, version, this.dateTimeProvider, this.loggerFactory, this);
         }
     }
 }
