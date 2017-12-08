@@ -4,8 +4,11 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -21,10 +24,23 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>The parameters cloned from the connection manager.</summary>
+        private NetworkPeerConnectionParameters currentParameters;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        private readonly NetworkPeerConnectionParameters parameters;
+        /// <summary>User defined node settings.</summary>
+        private readonly NodeSettings nodeSettings;
+
+        /// <summary>The network peer parameters that is injected by <see cref="IConnectionManager"/>.</summary>
+        private readonly NetworkPeerConnectionParameters parentParameters;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
@@ -38,31 +54,40 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        public PeerDiscoveryLoop(
-            IAsyncLoopFactory asyncLoopFactory,
-            Network network,
-            NetworkPeerConnectionParameters connectionParameters,
-            INodeLifetime nodeLifetime,
-            IPeerAddressManager peerAddressManager,
-            INetworkPeerFactory networkPeerFactory)
+        public PeerDiscoveryLoop(IConnectionManager connectionManager)
         {
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(connectionManager, nameof(connectionManager));
 
-            this.asyncLoopFactory = asyncLoopFactory;
-            this.parameters = connectionParameters;
-            this.peerAddressManager = peerAddressManager;
-            this.peersToFind = this.parameters.PeerAddressManagerBehaviour().PeersToDiscover;
-            this.network = network;
-            this.nodeLifetime = nodeLifetime;
-            this.networkPeerFactory = networkPeerFactory;
+            this.asyncLoopFactory = connectionManager.AsyncLoopFactory;
+            this.loggerFactory = connectionManager.LoggerFactory;
+            this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName);
+            this.parentParameters = connectionManager.Parameters;
+            this.peerAddressManager = connectionManager.PeerAddressManager;
+            this.peersToFind = this.parentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
+            this.network = connectionManager.Network;
+            this.nodeLifetime = connectionManager.NodeLifetime;
+            this.nodeSettings = connectionManager.NodeSettings;
+            this.networkPeerFactory = connectionManager.NetworkPeerFactory;
+
+            this.currentParameters = this.parentParameters.Clone();
+            this.currentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
         }
 
         /// <summary>
-        /// Starts an asynchronous loop that periodicly tries to discover new peers to add to the
-        /// <see cref="PeerAddressManager"/>.
+        /// Starts an asynchronous loop that periodicly tries to discover 
+        /// new peers to add to the <see cref="IPeerAddressManager"/>.
         /// </summary>
         public void DiscoverPeers()
         {
+            // If peers are specified in the -connect arg then discovery
+            // does not happen.
+            if (this.nodeSettings.ConnectionManager.Connect.Any())
+                return;
+
+            if (!this.currentParameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+                return;
+
+            this.logger.LogInformation("Starting peer discovery...");
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.DiscoverPeersAsync), async token =>
             {
                 if (this.peerAddressManager.Peers.Count < this.peersToFind)
@@ -82,15 +107,15 @@ namespace Stratis.Bitcoin.P2P
 
             if (peersToDiscover.Count == 0)
             {
-                this.PopulateTableWithDNSNodes(peersToDiscover);
-                this.PopulateTableWithHardNodes(peersToDiscover);
+                this.AddDNSSeedNodes(peersToDiscover);
+                this.AddSeedNodes(peersToDiscover);
 
                 peersToDiscover = new List<NetworkAddress>(peersToDiscover.OrderBy(a => RandomUtils.GetInt32()));
                 if (peersToDiscover.Count == 0)
                     return Task.CompletedTask;
             }
 
-            var clonedParameters = this.parameters.Clone();
+            var clonedParameters = this.currentParameters.Clone();
 
             Parallel.ForEach(peersToDiscover, new ParallelOptions()
             {
@@ -132,7 +157,10 @@ namespace Stratis.Bitcoin.P2P
             return Task.CompletedTask;
         }
 
-        private void PopulateTableWithDNSNodes(List<NetworkAddress> peers)
+        /// <summary>
+        /// Add peers to the address manager from the network DNS's seed nodes.
+        /// </summary>
+        private void AddDNSSeedNodes(List<NetworkAddress> peers)
         {
             peers.AddRange(this.network.DNSSeeds.SelectMany(seed =>
             {
@@ -148,7 +176,10 @@ namespace Stratis.Bitcoin.P2P
             .Select(d => new NetworkAddress(d, this.network.DefaultPort)));
         }
 
-        private void PopulateTableWithHardNodes(List<NetworkAddress> peers)
+        /// <summary>
+        /// Add peers to the address manager from the network's seed nodes.
+        /// </summary>
+        private void AddSeedNodes(List<NetworkAddress> peers)
         {
             peers.AddRange(this.network.SeedNodes);
         }

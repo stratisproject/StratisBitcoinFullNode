@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnInitialize()
+        internal override void OnInitialize()
         {
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.Connect.Count;
@@ -38,6 +39,18 @@ namespace Stratis.Bitcoin.P2P
             {
                 this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
             }
+        }
+
+        /// <summary>This connector is only started if there are peers in the -connect args.</summary>
+        internal override bool OnCanStartConnectAsync
+        {
+            get { return this.NodeSettings.ConnectionManager.Connect.Any(); }
+        }
+
+        /// <inheritdoc/>
+        internal override void OnStartConnectAsync()
+        {
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
         }
 
         /// <inheritdoc/>

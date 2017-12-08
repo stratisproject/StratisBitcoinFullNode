@@ -308,7 +308,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IPeerConnector>(new PeerConnectorAddNode());
                     services.AddSingleton<IPeerConnector>(new PeerConnectorConnectNode());
                     services.AddSingleton<IPeerConnector>(new PeerConnectorDiscovery());
-                });
+                })
+                ;
             });
 
             return fullNodeBuilder;
