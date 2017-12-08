@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             pchMessageStart[3] = 0xef;
             var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570;
 
-            var genesis = Network.StratisMain.GetGenesis().Clone();
+            var genesis = Network.StratisMain.GetGenesis().Clone(options:Network.StratisMain.NetworkOptions);
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
