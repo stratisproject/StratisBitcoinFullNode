@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Adds a peer to the <see cref="Peers"/> dictionary.
         /// <para>
-        /// Only routable IP addresses will be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
+        /// Only routable IP addresses will be added. See <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>.
         /// </para>
         /// </summary>
         void AddPeer(NetworkAddress networkAddress, IPAddress source);
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath.AddressManagerFilePath);
-            fileStorage.SaveToFile(this.Peers.Select(p => p.Value).ToList(), PeerFileName);
+            fileStorage.SaveToFile(this.Peers.OrderByDescending(p => p.Value.LastConnectionSuccess).Select(p => p.Value).ToList(), PeerFileName);
         }
 
         /// <inheritdoc/>

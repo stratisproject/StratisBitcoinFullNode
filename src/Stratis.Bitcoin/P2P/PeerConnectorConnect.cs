@@ -1,11 +1,8 @@
 ﻿using System.Net;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -14,38 +11,33 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorConnectNode : PeerConnector
     {
+        /// <summary>Parameterless constructor for dependency injection.</summary>
+        public PeerConnectorConnectNode()
+            : base()
+        {
+        }
+
         /// <summary>Constructor used for unit testing.</summary>
         public PeerConnectorConnectNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
             : base(nodeSettings, peerAddressManager)
         {
         }
 
-        /// <summary>Constructor used by <see cref="Connection.ConnectionManager"/>.</summary>
-        public PeerConnectorConnectNode(
-            IAsyncLoopFactory asyncLoopFactory,
-            ILogger logger,
-            Network network,
-            INetworkPeerFactory networkPeerFactory,
-            INodeLifetime nodeLifeTime,
-            NodeSettings nodeSettings,
-            NetworkPeerConnectionParameters parameters,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, logger, network, networkPeerFactory, nodeLifeTime, nodeSettings, parameters, peerAddressManager)
+        /// <inheritdoc/>
+        public override void OnInitialize()
         {
-            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
-            this.MaximumNodeConnections = nodeSettings.ConnectionManager.Connect.Count;
+            this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.Connect.Count;
             this.Requirements = new NetworkPeerRequirement
             {
-                MinVersion = nodeSettings.ProtocolVersion,
+                MinVersion = this.NodeSettings.ProtocolVersion,
                 RequiredServices = NetworkPeerServices.Nothing
             };
 
-            // Add the end points from the -connect arg to the address manager
-            foreach (var endPoint in this.NodeSettings.ConnectionManager.Connect)
+            // Add the endpoints from the -connect arg to the address manager
+            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
             {
-                this.peerAddressManager.AddPeer(new NetworkAddress(endPoint.MapToIpv6()), IPAddress.Loopback);
+                this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
             }
         }
 
