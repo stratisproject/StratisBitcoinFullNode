@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
             NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(dateTimeProvider, loggerFactory);
 
-            var connectionManager = new ConnectionManager(network, new NetworkPeerConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider, networkPeerFactory);
+            var connectionManager = new ConnectionManager(network, new NetworkPeerConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager(), dateTimeProvider, networkPeerFactory, new IPeerConnector[] { });
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
             NodeDeployments deployments = new NodeDeployments(network, chain);
