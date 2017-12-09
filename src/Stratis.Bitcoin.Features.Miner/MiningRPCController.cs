@@ -165,6 +165,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return res;
         }
 
+        /// <summary>
+        /// Attempts to retrieve the <see cref="Wallet.Wallet"/> with the given name from the <see cref="IWalletManager"/>.
+        /// </summary>
+        /// <param name="walletManager">The wallet manager to get the wallet from.</param>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>The wallet with the given name if found. Otherwise null.</returns>
         private Wallet.Wallet GetWallet(IWalletManager walletManager, string walletName)
         {
             try
