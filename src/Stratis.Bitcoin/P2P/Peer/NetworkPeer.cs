@@ -113,22 +113,6 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// <param name="oldState">Previous network state of the peer.</param>
     public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
 
-    /// <summary>Information about a message that the node sent to a peer.</summary>
-    public class SentMessage
-    {
-        /// <summary>Payload of the sent message.</summary>
-        public Payload Payload;
-
-        /// <summary>
-        /// Completion of the send message task. 
-        /// </summary>
-        /// <remarks>
-        /// The result of the operation is set to <c>true</c> when the message is successfully sent to the peer.
-        /// It is never set to <c>false</c>, it can only fail if the peer is disconnected, in which case an exception is set on the completion.
-        /// </remarks>
-        public TaskCompletionSource<bool> Completion;
-    }
-
     /// <summary>
     /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer 
     /// and sending messages from the node to the peer.
