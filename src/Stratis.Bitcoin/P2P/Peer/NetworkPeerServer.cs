@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>Consumer of messages coming from connected clients.</summary>
-        /// <seealso cref="ProcessMessage(IncomingMessage)"/>
+        /// <seealso cref="ProcessMessageAsync(IncomingMessage)"/>
         private readonly EventLoopMessageListener<IncomingMessage> listener;
 
         /// <summary>List of connected clients mapped by their unique identifiers.</summary>
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Version = version;
 
-            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
+            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
             this.messageProducer = new MessageProducer<IncomingMessage>();
             this.messageProducer.AddMessageListener(this.listener);
 
@@ -284,23 +284,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Callback that is called when a new message is received from a connected client peer.
-        /// </summary>
-        /// <param name="message">Message received from the client.</param>
-        private void ProcessMessage(IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
-
-            this.ProcessMessageCore(message);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
         /// Processes a new message received from a connected client peer.
         /// </summary>
         /// <param name="message">Message received from the client.</param>
-        private void ProcessMessageCore(IncomingMessage message)
+        private async Task ProcessMessageAsync(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
@@ -339,7 +326,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNetworkPeerConnectionParameters(), message.Client, version);
                     if (connectedToSelf)
                     {
-                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset()));
+                        VersionPayload versionPayload = CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
+                        await networkPeer.SendMessageAsync(versionPayload);
                         networkPeer.Disconnect();
 
                         this.logger.LogTrace("(-)[CONNECTED_TO_SELF_2]");
@@ -353,7 +341,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
                             networkPeer.StateChanged += Peer_StateChanged;
-                            networkPeer.RespondToHandShake(cancel.Token);
+                            await networkPeer.RespondToHandShakeAsync(cancel.Token);
                         }
                         catch (OperationCanceledException)
                         {
