@@ -196,13 +196,13 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
-        private Task ConnectAsync()
+        private async Task ConnectAsync()
         {
             if (!this.peerAddressManager.Peers.Any())
-                return Task.CompletedTask;
+                return;
 
             if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
-                return Task.CompletedTask;
+                return;
 
             NetworkPeer peer = null;
 
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 NetworkAddress peerAddress = this.FindPeerToConnectTo();
                 if (peerAddress == null)
-                    return Task.CompletedTask;
+                    return;
 
                 using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
@@ -222,9 +222,8 @@ namespace Stratis.Bitcoin.P2P
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
                     peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peerAddress, clonedConnectParamaters);
+                    await peer.ConnectAsync(clonedConnectParamaters.ConnectCancellation).ConfigureAwait(false);
                     peer.VersionHandshake(this.Requirements, timeoutTokenSource.Token);
-
-                    return Task.CompletedTask;
                 }
             }
             catch (Exception exception)
@@ -232,8 +231,6 @@ namespace Stratis.Bitcoin.P2P
                 if (peer != null)
                     peer.DisconnectWithException("Error while connecting", exception);
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>

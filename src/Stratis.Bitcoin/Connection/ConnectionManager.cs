@@ -426,6 +426,7 @@ namespace Stratis.Bitcoin.Connection
             });
 
             NetworkPeer peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.Network, ipEndpoint, cloneParameters);
+            peer.ConnectAsync(cloneParameters.ConnectCancellation).GetAwaiter().GetResult();
             this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
             peer.VersionHandshake();
 

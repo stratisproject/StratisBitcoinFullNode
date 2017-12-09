@@ -479,6 +479,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <remarks>TODO: Remove this once the events are refactored.</remarks>
         public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
 
+        /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
+        private readonly NetworkPeerConnectionParameters parameters;
+
         /// <summary>
         /// Dummy constructor for testing only.
         /// </summary>
@@ -520,8 +523,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
 
-            parameters = parameters ?? new NetworkPeerConnectionParameters();
-            this.MyVersion = parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
+            this.parameters = parameters ?? new NetworkPeerConnectionParameters();
+            this.MyVersion = this.parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
         }
 
         /// <summary>
@@ -540,10 +543,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
             this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
-            this.ConnectAsync(parameters.ConnectCancellation).GetAwaiter().GetResult();
-
-            this.InitDefaultBehaviors(parameters);
-            this.Connection.StartReceiveMessages();
 
             this.logger.LogTrace("(-)");
         }
@@ -581,10 +580,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Connects the node to an outbound peer using already initialized information about the peer.
+        /// Connects the node to an outbound peer using already initialized information about the peer and starts receiving messages in a separate task.
         /// </summary>
         /// <param name="cancellation">Cancellation that allows aborting establishing the connection with the peer.</param>
-        private async Task ConnectAsync(CancellationToken cancellation)
+        /// <exception cref="OperationCanceledException">Thrown when the cancellation token has been cancelled.</exception>
+        public async Task ConnectAsync(CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
@@ -600,6 +600,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.State = NetworkPeerState.Connected;
                 this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
+
+                this.InitDefaultBehaviors(this.parameters);
+                this.Connection.StartReceiveMessages();
 
                 this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerAddress.Endpoint);
             }

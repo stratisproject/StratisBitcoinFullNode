@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.P2P
                 MaxDegreeOfParallelism = 5,
                 CancellationToken = this.nodeLifetime.ApplicationStopping,
             },
-            peer =>
+            async peer =>
             {
                 using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
@@ -114,6 +114,7 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
                         networkPeer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
+                        await networkPeer.ConnectAsync(clonedParameters.ConnectCancellation).ConfigureAwait(false);
                         networkPeer.VersionHandshake(connectTokenSource.Token);
                         networkPeer.SendMessageVoidAsync(new GetAddrPayload());
 
