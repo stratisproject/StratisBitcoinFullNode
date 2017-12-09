@@ -927,7 +927,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogTrace("Responding to handshake.");
                 await this.SendMessageAsync(this.MyVersion);
-                IncomingMessage message = list.ReceiveMessage(cancellation);
+                IncomingMessage message = listener.ReceiveMessage(cancellation);
 
                 if (message.Message.Payload is RejectPayload reject)
                 {
