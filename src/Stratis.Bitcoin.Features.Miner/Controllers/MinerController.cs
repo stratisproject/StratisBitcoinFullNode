@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 }
 
                 IWalletManager walletManager = this.fullNode.NodeService<IWalletManager>();
-                Wallet.Wallet wallet = this.GetWallet(walletManager, request);
+                Wallet.Wallet wallet = this.GetWallet(walletManager, request.Name);
 
                 if (wallet == null)
                 {
@@ -116,11 +116,17 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
         }
 
-        private Wallet.Wallet GetWallet(IWalletManager walletManager, StartStakingRequest request)
+        /// <summary>
+        /// Attempts to retrieve the <see cref="Wallet.Wallet"/> with the given name from the <see cref="IWalletManager"/>.
+        /// </summary>
+        /// <param name="walletManager">The wallet manager to get the wallet from.</param>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>The wallet with the given name if found. Otherwise null.</returns>
+        private Wallet.Wallet GetWallet(IWalletManager walletManager, string walletName)
         {
             try
             {
-                return walletManager.GetWallet(request.Name);
+                return walletManager.GetWallet(walletName);
             }
             catch (WalletException)
             {
