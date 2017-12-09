@@ -12,10 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             ChainedBlock highest = newTip.Height > tip.Height ? newTip : tip;
             ChainedBlock lowest = highest == newTip ? tip : newTip;
-            while (lowest.Height != highest.Height)
-            {
-                highest = highest.Previous;
-            }
+
+            highest = highest.GetAncestor(lowest.Height);
 
             while (lowest.HashBlock != highest.HashBlock)
             {
