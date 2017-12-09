@@ -8,15 +8,27 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
+    /// <summary>
+    /// Contract for <see cref="PeerDiscovery"/>.
+    /// </summary>
+    public interface IPeerDiscovery : IDisposable
+    {
+        /// <summary>
+        /// Starts the peer discovery process.
+        /// </summary>
+        /// <param name="parentParameters">The parent parameters as injected by <see cref="Connection.ConnectionManager"/>.</param>
+        /// <param name="cloneParameters">A delegate that clones the parent parameters and adds the connection manager behaviour.</param>
+        void DiscoverPeers(NetworkPeerConnectionParameters parentParameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters);
+    }
+
     /// <summary>Async loop that discovers new peers to connect to.</summary>
-    public sealed class PeerDiscoveryLoop : IDisposable
+    public sealed class PeerDiscovery : IPeerDiscovery
     {
         /// <summary>The async loop we need to wait upon before we can shut down this connector.</summary>
         private IAsyncLoop asyncLoop;
@@ -39,14 +51,11 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>User defined node settings.</summary>
         private readonly NodeSettings nodeSettings;
 
-        /// <summary>The network peer parameters that is injected by <see cref="IConnectionManager"/>.</summary>
-        private readonly NetworkPeerConnectionParameters parentParameters;
-
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
         /// <summary>The amount of peers to find.</summary>
-        private readonly int peersToFind;
+        private int peersToFind;
 
         /// <summary>The network the node is running on.</summary>
         private readonly Network network;
@@ -54,38 +63,37 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        public PeerDiscoveryLoop(IConnectionManager connectionManager)
+        public PeerDiscovery(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager)
         {
-            Guard.NotNull(connectionManager, nameof(connectionManager));
-
-            this.asyncLoopFactory = connectionManager.AsyncLoopFactory;
-            this.loggerFactory = connectionManager.LoggerFactory;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.loggerFactory = loggerFactory;
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName);
-            this.parentParameters = connectionManager.Parameters;
-            this.peerAddressManager = connectionManager.PeerAddressManager;
-            this.peersToFind = this.parentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
-            this.network = connectionManager.Network;
-            this.nodeLifetime = connectionManager.NodeLifetime;
-            this.nodeSettings = connectionManager.NodeSettings;
-            this.networkPeerFactory = connectionManager.NetworkPeerFactory;
-
-            this.currentParameters = this.parentParameters.Clone();
-            this.currentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
+            this.peerAddressManager = peerAddressManager;
+            this.network = network;
+            this.networkPeerFactory = networkPeerFactory;
+            this.nodeLifetime = nodeLifetime;
+            this.nodeSettings = nodeSettings;
         }
 
-        /// <summary>
-        /// Starts an asynchronous loop that periodicly tries to discover 
-        /// new peers to add to the <see cref="IPeerAddressManager"/>.
-        /// </summary>
-        public void DiscoverPeers()
+        /// <inheritdoc/>
+        public void DiscoverPeers(NetworkPeerConnectionParameters parameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters)
         {
-            // If peers are specified in the -connect arg then discovery
-            // does not happen.
+            // If peers are specified in the -connect arg then discovery does not happen.
             if (this.nodeSettings.ConnectionManager.Connect.Any())
                 return;
 
-            if (!this.currentParameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+            if (!parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 return;
+
+            this.currentParameters = cloneParameters(parameters);
+            this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
 
             this.logger.LogInformation("Starting peer discovery...");
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.DiscoverPeersAsync), async token =>

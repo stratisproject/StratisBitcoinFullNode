@@ -1,8 +1,11 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -11,9 +14,17 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorAddNode : PeerConnector
     {
-        /// <summary>Parameterless constructor for dependency injection.</summary>
-        public PeerConnectorAddNode()
-            : base()
+        /// <summary>Constructor for dependency injection.</summary
+        public PeerConnectorAddNode(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager)
+            :
+            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
@@ -42,7 +53,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>This connector is always started </summary>
-        internal override bool OnCanStartConnectAsync
+        internal override bool CanStartConnect
         {
             get { return true; }
         }
@@ -56,9 +67,9 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override NetworkAddress FindPeerToConnectTo()
         {
-            foreach (var endPoint in this.NodeSettings.ConnectionManager.AddNode)
+            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
-                PeerAddress peerAddress = this.peerAddressManager.FindPeer(endPoint);
+                PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
                     return peerAddress.NetworkAddress;
             }

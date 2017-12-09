@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -36,15 +37,47 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
+            var networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
 
-            ConnectionManager connectionManager = new ConnectionManager(
-                Network.Main, parameters, nodeSettings, loggerFactory, new NodeLifetime(),
-                new AsyncLoopFactory(loggerFactory), peerAddressManager, new DateTimeProvider(),
-                networkPeerFactory, new IPeerConnector[] { new PeerConnectorDiscovery() });
+            var peerConnectorDiscovery = new PeerConnectorDiscovery(
+                new AsyncLoopFactory(loggerFactory),
+                loggerFactory,
+                Network.Main,
+                networkPeerFactory,
+                new NodeLifetime(),
+                nodeSettings,
+                peerAddressManager);
 
-            var peerDiscoveryLoop = new PeerDiscoveryLoop(connectionManager);
-            peerDiscoveryLoop.DiscoverPeers();
+            var peerDiscovery = new PeerDiscovery(
+                new AsyncLoopFactory(loggerFactory),
+                loggerFactory,
+                Network.Main,
+                networkPeerFactory,
+                new NodeLifetime(),
+                nodeSettings,
+                peerAddressManager);
+
+            IConnectionManager connectionManager = new ConnectionManager(
+                new AsyncLoopFactory(loggerFactory),
+                new DateTimeProvider(),
+                loggerFactory,
+                Network.Main,
+                networkPeerFactory,
+                nodeSettings,
+                new NodeLifetime(),
+                parameters,
+                peerAddressManager,
+                new IPeerConnector[] { peerConnectorDiscovery },
+                peerDiscovery);
+
+            var initDiscovery = new Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters>((init) =>
+            {
+                NetworkPeerConnectionParameters cloned = init.Clone();
+                cloned.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, loggerFactory));
+                return cloned;
+            });
+
+            peerDiscovery.DiscoverPeers(parameters, initDiscovery);
 
             // Wait until we have discovered 3 peers.
             TestHelper.WaitLoop(() => peerAddressManager.Peers.Count > 3);

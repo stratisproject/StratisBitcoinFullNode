@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
@@ -27,8 +26,12 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         NetworkAddress FindPeerToConnectTo();
 
-        /// <summary>Peer connector initialization as called by the <see cref="Connection.ConnectionManager"/>.</summary>
-        void Initialize(IConnectionManager connectionManager);
+        /// <summary>
+        /// Peer connector initialization as called by the <see cref="Connection.ConnectionManager"/>.
+        /// </summary>
+        /// <param name="parentParameters">The parent parameters as injected by <see cref="Connection.ConnectionManager"/>.</param>
+        /// <param name="cloneParameters">A delegate that clones the parent parameters and adds the connection manager behaviour.</param>
+        void Initialize(NetworkPeerConnectionParameters parentParameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters);
 
         /// <summary>The maximum amount of peers the node can connect to (defaults to 8).</summary>
         int MaximumNodeConnections { get; set; }
@@ -83,7 +86,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public NetworkPeerCollection ConnectedPeers { get; private set; }
 
-        /// <summary>The cloned parameters used to connect to peers. </summary>
+        /// <summary>The parameters cloned from the connection manager.</summary>
         public NetworkPeerConnectionParameters CurrentParameters { get; private set; }
 
         /// <summary>How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
@@ -107,9 +110,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The network the node is running on.</summary>
         private Network network;
 
-        /// <summary>The network peer parameters that is injected by <see cref="IConnectionManager"/>.</summary>
-        private NetworkPeerConnectionParameters parentParameters;
-
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
 
@@ -123,8 +123,23 @@ namespace Stratis.Bitcoin.P2P
         public NetworkPeerRequirement Requirements { get; internal set; }
 
         /// <summary>Parameterless constructor for dependency injection.</summary>
-        protected PeerConnector()
+        protected PeerConnector(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager)
         {
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.ConnectedPeers = new NetworkPeerCollection();
+            this.loggerFactory = loggerFactory;
+            this.network = network;
+            this.networkPeerFactory = networkPeerFactory;
+            this.nodeLifetime = nodeLifetime;
+            this.NodeSettings = nodeSettings;
+            this.peerAddressManager = peerAddressManager;
         }
 
         /// <summary>Constructor used for unit testing.</summary>
@@ -140,21 +155,9 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void Initialize(IConnectionManager connectionManager)
+        public void Initialize(NetworkPeerConnectionParameters parameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters)
         {
-            this.asyncLoopFactory = connectionManager.AsyncLoopFactory;
-            this.ConnectedPeers = new NetworkPeerCollection();
-            this.loggerFactory = connectionManager.LoggerFactory;
-            this.network = connectionManager.Network;
-            this.networkPeerFactory = connectionManager.NetworkPeerFactory;
-            this.nodeLifetime = connectionManager.NodeLifetime;
-            this.NodeSettings = connectionManager.NodeSettings;
-            this.peerAddressManager = connectionManager.PeerAddressManager;
-
-            this.parentParameters = connectionManager.Parameters;
-            this.CurrentParameters = this.parentParameters.Clone();
-            this.CurrentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
-            this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
+            this.CurrentParameters = cloneParameters(parameters);
             this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
 
             OnInitialize();
@@ -169,7 +172,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Determines whether or not a connector can be started.</summary>
-        internal abstract bool OnCanStartConnectAsync { get; }
+        internal abstract bool CanStartConnect { get; }
 
         /// <summary>Specific peer connector initialization for each concrete implementation of this class.</summary>
         internal abstract void OnInitialize();
@@ -199,7 +202,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void StartConnectAsync()
         {
-            if (!this.OnCanStartConnectAsync)
+            if (!this.CanStartConnect)
                 return;
 
             this.OnStartConnectAsync();
