@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -142,19 +141,6 @@ namespace NBitcoin
         public Target GetWorkRequired(Network network, int height)
         {
             return this.GetBlock(height).GetWorkRequired(network);
-        }
-
-        /// <summary>
-        /// Returns the first common chained block header between two chains.
-        /// </summary>
-        /// <param name="chain">The other chain.</param>
-        /// <returns>First common chained block header or <c>null</c>.</returns>
-        public ChainedBlock FindFork(ChainBase chain)
-        {
-            if (chain == null)
-                throw new ArgumentNullException("chain");
-
-            return this.FindFork(chain.Tip.EnumerateToGenesis().Select(o => o.HashBlock));
         }
 
         /// <summary>
