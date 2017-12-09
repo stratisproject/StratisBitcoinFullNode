@@ -311,7 +311,7 @@ namespace NBitcoin
                 pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
             }
 
-            ChainedBlock firstChainedBlock = this.EnumerateToGenesis().FirstOrDefault(o => o.Height == pastHeight);
+            ChainedBlock firstChainedBlock = this.GetAncestor((int)pastHeight);
             if (firstChainedBlock == null)
                 throw new NotSupportedException("Can only calculate work of a full chain");
 

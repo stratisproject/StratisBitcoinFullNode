@@ -234,7 +234,7 @@ namespace NBitcoin
 
             while (true)
             {
-                ChainedBlock b = GetBlock(i);
+                ChainedBlock b = this.GetBlock(i);
                 if ((b == null) || (b.Previous != prev))
                     yield break;
 
