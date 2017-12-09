@@ -758,7 +758,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <returns>Latency.</returns>
         public TimeSpan PingPong(NetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            using (NetworkPeerListener listener = peer.CreateListener().OfType<PongPayload>())
+            using (var listener = new NetworkPeerListener(peer).OfType<PongPayload>())
             {
                 var ping = new PingPayload()
                 {
@@ -934,7 +934,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.AssertState(peer, NetworkPeerState.HandShaked, cancellationToken);
 
-            using (NetworkPeerListener listener = peer.CreateListener().OfType<HeadersPayload>())
+            using (var listener = new NetworkPeerListener(peer).OfType<HeadersPayload>())
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)

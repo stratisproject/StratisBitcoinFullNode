@@ -863,7 +863,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (NetworkPeerListener listener = this.CreateListener().Where(p => (p.Message.Payload is VersionPayload)
+            using (var listener = new NetworkPeerListener(this).Where(p => (p.Message.Payload is VersionPayload)
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
@@ -923,7 +923,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            using (NetworkPeerListener list = this.CreateListener().Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
+            using (var listener = new NetworkPeerListener(this).Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
             {
                 this.logger.LogTrace("Responding to handshake.");
                 await this.SendMessageAsync(this.MyVersion);
@@ -1026,15 +1026,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         public override string ToString()
         {
             return string.Format("{0} ({1})", this.State, this.PeerAddress.Endpoint);
-        }
-
-        /// <summary>
-        /// Create a listener that will queue messages received from the peer until it is disposed.
-        /// </summary>
-        /// <returns>The listener.</returns>
-        public NetworkPeerListener CreateListener()
-        {
-            return new NetworkPeerListener(this);
         }
 
         /// <summary>
