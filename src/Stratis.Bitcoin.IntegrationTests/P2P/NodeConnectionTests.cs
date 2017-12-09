@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Threading.Tasks;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
@@ -11,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
     public sealed class NodeConnectionTests
     {
         [Fact]
-        public void CanDiscoverAndConnectToPeersOnTheNetwork()
+        public async Task CanDiscoverAndConnectToPeersOnTheNetworkAsync()
         {
             var parameters = new NetworkPeerConnectionParameters();
 
@@ -56,9 +57,9 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 try
                 {
                     var peerOne = addressManager.SelectPeerToConnectTo();
-                    NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
-                    node.VersionHandshake();
-                    node.Disconnect();
+                    NetworkPeer peer = await networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.Main, peerOne, parameters);
+                    peer.VersionHandshake();
+                    peer.Disconnect();
 
                     break;
                 }
