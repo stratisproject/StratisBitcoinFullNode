@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        internal override void OnInitialize()
+        public override void OnInitialize()
         {
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
@@ -53,13 +53,13 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>This connector is always started </summary>
-        internal override bool CanStartConnect
+        public override bool CanStartConnect
         {
             get { return true; }
         }
 
         /// <inheritdoc/>
-        internal override void OnStartConnectAsync()
+        public override void OnStartConnectAsync()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }

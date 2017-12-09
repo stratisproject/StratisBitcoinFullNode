@@ -172,13 +172,13 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Determines whether or not a connector can be started.</summary>
-        internal abstract bool CanStartConnect { get; }
+        public abstract bool CanStartConnect { get; }
 
         /// <summary>Specific peer connector initialization for each concrete implementation of this class.</summary>
-        internal abstract void OnInitialize();
+        public abstract void OnInitialize();
 
         /// <summary>Start up logic specific to each concrete implementation of this class.</summary>
-        internal abstract void OnStartConnectAsync();
+        public abstract void OnStartConnectAsync();
 
         /// <inheritdoc/>
         public void RemovePeer(NetworkPeer peer)
