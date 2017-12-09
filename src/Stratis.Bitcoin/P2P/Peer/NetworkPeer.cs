@@ -846,9 +846,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        public void VersionHandshake(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task VersionHandshakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.VersionHandshake(null, cancellationToken);
+            await this.VersionHandshakeAsync(null, cancellationToken);
         }
 
         /// <summary>
@@ -858,7 +858,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        public void VersionHandshake(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
@@ -867,8 +867,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
-                //this.SendMessageVoidAsync(this.MyVersion);
-                this.SendMessageAsync(this.MyVersion).GetAwaiter().GetResult();
+                await this.SendMessageAsync(this.MyVersion).ConfigureAwait(false);
                 Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
                 if (payload is RejectPayload)
                 {
@@ -899,9 +898,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                     return;
                 }
 
-                this.SendMessageVoidAsync(new VerAckPayload());
+                await this.SendMessageAsync(new VerAckPayload()).ConfigureAwait(false);
                 listener.ReceivePayload<VerAckPayload>(cancellationToken);
                 this.State = NetworkPeerState.HandShaked;
+
                 if (this.Advertize && this.MyVersion.AddressFrom.Address.IsRoutable(true))
                 {
                     this.SendMessageVoidAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)

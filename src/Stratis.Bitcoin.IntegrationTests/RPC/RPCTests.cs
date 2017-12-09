@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             this.RpcClient = this.Node.CreateRPCClient();
 
             this.NetworkPeerClient = this.Node.CreateNetworkPeerClient();
-            this.NetworkPeerClient.VersionHandshake();
+            this.NetworkPeerClient.VersionHandshakeAsync().GetAwaiter().GetResult();
         }
 
         // note: do not call this dispose in the class itself xunit will handle it.
