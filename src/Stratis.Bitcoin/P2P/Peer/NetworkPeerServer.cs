@@ -323,10 +323,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                         Time = this.dateTimeProvider.GetUtcNow()
                     };
 
-                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNetworkPeerConnectionParameters(), message.Client, version);
+                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, message.Client, version, this.CreateNetworkPeerConnectionParameters());
                     if (connectedToSelf)
                     {
-                        VersionPayload versionPayload = CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
+                        VersionPayload versionPayload = this.CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
                         await networkPeer.SendMessageAsync(versionPayload);
                         networkPeer.Disconnect();
 

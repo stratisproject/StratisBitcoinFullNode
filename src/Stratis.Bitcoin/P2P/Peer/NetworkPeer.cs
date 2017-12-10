@@ -495,7 +495,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
 
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
-        private readonly NetworkPeerConnectionParameters parameters;
+        public NetworkPeerConnectionParameters Parameters { get; private set; }
 
         /// <summary>
         /// Dummy constructor for testing only.
@@ -538,8 +538,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
 
-            this.parameters = parameters ?? new NetworkPeerConnectionParameters();
-            this.MyVersion = this.parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
+            this.Parameters = parameters ?? new NetworkPeerConnectionParameters();
+            this.MyVersion = this.Parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
         }
 
         /// <summary>
@@ -588,7 +588,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
             this.State = NetworkPeerState.Connected;
 
-            this.InitDefaultBehaviors(parameters);
+            this.InitDefaultBehaviors(this.Parameters);
             this.Connection.StartReceiveMessages();
 
             this.logger.LogTrace("(-)");
@@ -616,7 +616,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.State = NetworkPeerState.Connected;
                 this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
-                this.InitDefaultBehaviors(this.parameters);
+                this.InitDefaultBehaviors(this.Parameters);
                 this.Connection.StartReceiveMessages();
 
                 this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerAddress.Endpoint);
