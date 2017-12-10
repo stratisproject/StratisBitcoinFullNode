@@ -257,40 +257,35 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         headers.Add(chainedBlock.Header);
                     }
-                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
+                    else
                     {
-                        // Check if peer has the same block hashes at the target height. If those hashes
-                        // are different then peer don't have our header and we need to send it.
                         ChainedBlock peersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Height);
-                        if (peersBlock.HashBlock == chainedBlock.HashBlock)
-                            continue;
 
-                        headers.Add(chainedBlock.Header);
-                    }
-                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
-                    {
-                        ChainedBlock prevPeersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height);
-
-                        if (prevPeersBlock.HashBlock == chainedBlock.Previous.HashBlock)
+                        if (peersBlock != null)
                         {
-                            // Peer doesn't have this header but they do have the prior one.
-                            // Start sending headers.
-                            foundStartingHeader = true;
+                            if (peersBlock.HashBlock == chainedBlock.HashBlock)
+                                continue;
+
                             headers.Add(chainedBlock.Header);
                         }
                         else
                         {
-                            // Peer doesn't have this header or the prior one -- nothing will connect, so bail out.
-                            revertToInv = true;
-                            break;
+                            ChainedBlock prevPeersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height);
+
+                            if (prevPeersBlock == null || prevPeersBlock.HashBlock != chainedBlock.Previous.HashBlock)
+                            {
+                                // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
+                                revertToInv = true;
+                                break;
+                            }
+                            else
+                            {
+                                // Peer doesn't have this header but they do have the prior one that is equal to ours and at the same height.
+                                // Start sending headers.
+                                foundStartingHeader = true;
+                                headers.Add(chainedBlock.Header);
+                            }
                         }
-                    }
-                    else
-                    {
-                        // Peer doesn't have this header or the prior one -- nothing will
-                        // connect, so bail out.
-                        revertToInv = true;
-                        break;
                     }
                 }
             }
