@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             public IEnumerable<ConsensusRule> GetRules()
             {
-                yield return new BlockPreviousHeaderRule();
+                yield return new BlockHeaderRule();
 
                 // rules that are inside the method ContextualCheckBlockHeader
                 yield return new CheckpointsRule();

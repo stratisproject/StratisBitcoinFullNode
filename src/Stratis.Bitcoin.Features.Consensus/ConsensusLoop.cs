@@ -460,33 +460,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
                 }
 
-                // Check that the current block has not been reorged.
-                // Catching a reorg at this point will not require a rewind.
-                if (context.BlockValidationContext.Block.Header.HashPrevBlock != this.Tip.HashBlock)
-                {
-                    this.logger.LogTrace("Reorganization detected.");
-                    ConsensusErrors.InvalidPrevTip.Throw();
-                }
-
-                this.logger.LogTrace("Validating new block.");
-
-                // Build the next block in the chain of headers. The chain header is most likely already created by
-                // one of the peers so after we create a new chained block (mainly for validation)
-                // we ask the chain headers for its version (also to prevent memory leaks).
-                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
-
-                // Liberate from memory the block created above if possible.
-                context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-                context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
-
-                // == Validation flow ==
-
                 // Check the block header is correct.
                 this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
-
-                // Calculate the consensus flags and check they are valid.
-                context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
                 if (!context.SkipValidation)
                 {
