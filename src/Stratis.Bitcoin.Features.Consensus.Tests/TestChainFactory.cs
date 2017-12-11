@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     /// <summary>
     /// Concrete instance of the test chain.
     /// </summary>
-    internal class TestChainContext 
+    internal class TestChainContext
     {
         public List<Block> Blocks { get; set; }
 
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// </summary>
         public static async Task<TestChainContext> CreateAsync(Network network, string dataDir)
         {
-            var testChainContext = new TestChainContext() {Network = network};
+            var testChainContext = new TestChainContext() { Network = network };
 
             testChainContext.NodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" });
 
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 if (maxTries == 0)
                     throw new XunitException("Test failed no blocks found");
 
-                var context = new BlockValidationContext {Block = newBlock.Block};
+                var context = new BlockValidationContext { Block = newBlock.Block };
                 await testChainContext.Consensus.AcceptBlockAsync(context);
                 Assert.Null(context.Error);
 
