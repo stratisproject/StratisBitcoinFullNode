@@ -23,8 +23,7 @@ namespace Stratis.Bitcoin.P2P
         /// Starts the peer discovery process.
         /// </summary>
         /// <param name="parentParameters">The parent parameters as injected by <see cref="Connection.ConnectionManager"/>.</param>
-        /// <param name="cloneParameters">A delegate that clones the parent parameters and adds the connection manager behaviour.</param>
-        void DiscoverPeers(NetworkPeerConnectionParameters parentParameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters);
+        void DiscoverPeers(NetworkPeerConnectionParameters parentParameters);
     }
 
     /// <summary>Async loop that discovers new peers to connect to.</summary>
@@ -83,7 +82,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void DiscoverPeers(NetworkPeerConnectionParameters parameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters)
+        public void DiscoverPeers(NetworkPeerConnectionParameters parameters)
         {
             // If peers are specified in the -connect arg then discovery does not happen.
             if (this.nodeSettings.ConnectionManager.Connect.Any())
@@ -92,7 +91,7 @@ namespace Stratis.Bitcoin.P2P
             if (!parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 return;
 
-            this.currentParameters = cloneParameters(parameters);
+            this.currentParameters = parameters;
             this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
 
             this.logger.LogInformation("Starting peer discovery...");

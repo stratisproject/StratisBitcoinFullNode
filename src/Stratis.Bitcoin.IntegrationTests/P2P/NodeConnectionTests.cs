@@ -1,5 +1,4 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -70,14 +69,10 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new IPeerConnector[] { peerConnectorDiscovery },
                 peerDiscovery);
 
-            var initDiscovery = new Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters>((init) =>
-            {
-                NetworkPeerConnectionParameters cloned = init.Clone();
-                cloned.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, loggerFactory));
-                return cloned;
-            });
+            NetworkPeerConnectionParameters cloned = parameters.Clone();
+            cloned.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, loggerFactory));
 
-            peerDiscovery.DiscoverPeers(parameters, initDiscovery);
+            peerDiscovery.DiscoverPeers(cloned);
 
             // Wait until we have discovered 3 peers.
             TestHelper.WaitLoop(() => peerAddressManager.Peers.Count > 3);

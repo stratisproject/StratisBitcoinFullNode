@@ -158,11 +158,11 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.peerDiscovery.DiscoverPeers(this.Parameters, CloneParameters());
+            this.peerDiscovery.DiscoverPeers(CloneParameters(this.Parameters));
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
             {
-                peerConnector.Initialize(this.Parameters, CloneParameters());
+                peerConnector.Initialize(CloneParameters(this.Parameters));
                 peerConnector.StartConnectAsync();
             }
 
@@ -182,16 +182,13 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// Delegate that clones a set of parameters and adds the connection manager beahviour.
+        /// Clones the set of connection parameters and adds the connection manager beahviour.
         /// </summary>
-        private Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> CloneParameters()
+        private NetworkPeerConnectionParameters CloneParameters(NetworkPeerConnectionParameters parameters)
         {
-            return new Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters>((parameters) =>
-            {
-                NetworkPeerConnectionParameters cloned = parameters.Clone();
-                cloned.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
-                return cloned;
-            });
+            NetworkPeerConnectionParameters cloned = parameters.Clone();
+            cloned.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
+            return cloned;
         }
 
         private void StartNodeServer()

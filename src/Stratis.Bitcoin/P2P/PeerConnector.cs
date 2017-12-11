@@ -30,8 +30,7 @@ namespace Stratis.Bitcoin.P2P
         /// Peer connector initialization as called by the <see cref="Connection.ConnectionManager"/>.
         /// </summary>
         /// <param name="parentParameters">The parent parameters as injected by <see cref="Connection.ConnectionManager"/>.</param>
-        /// <param name="cloneParameters">A delegate that clones the parent parameters and adds the connection manager behaviour.</param>
-        void Initialize(NetworkPeerConnectionParameters parentParameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters);
+        void Initialize(NetworkPeerConnectionParameters parentParameters);
 
         /// <summary>The maximum amount of peers the node can connect to (defaults to 8).</summary>
         int MaximumNodeConnections { get; set; }
@@ -155,9 +154,9 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void Initialize(NetworkPeerConnectionParameters parameters, Func<NetworkPeerConnectionParameters, NetworkPeerConnectionParameters> cloneParameters)
+        public void Initialize(NetworkPeerConnectionParameters parameters)
         {
-            this.CurrentParameters = cloneParameters(parameters);
+            this.CurrentParameters = parameters;
             this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
 
             OnInitialize();
