@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that after a peer has had a connection attempt,
-        /// that it doesn't get selected to be connected to again.
+        /// it doesn't get returned in the fresh set of peers.
         /// </summary>
         [Fact]
         public void CanSelectRandomPeerToConnectTo_AllPeersAreNew()
@@ -122,10 +122,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
             addressManager.AddPeer(addressFour, IPAddress.Loopback);
 
-            var randomPeer = addressManager.SelectPeerToConnectTo();
-            addressManager.PeerAttempted(randomPeer.Endpoint, DateTimeOffset.Now);
+            var randomPeer = addressManager.Selector.SelectPeer();
+            addressManager.PeerAttempted(randomPeer.NetworkAddress.Endpoint, DateTimeOffset.Now);
 
-            var selected = addressManager.Peers.New().FirstOrDefault(p => p.NetworkAddress.Endpoint.Match(randomPeer.Endpoint));
+            var selected = addressManager.Peers.Fresh().FirstOrDefault(p => p.NetworkAddress.Endpoint.Match(randomPeer.NetworkAddress.Endpoint));
             Assert.Null(selected);
         }
 
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(3, networkAddresses.Count());
         }
 
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now);
 
-            var peers = addressManager.SelectPeersToConnectTo();
+            var peers = addressManager.Selector.SelectPeers();
             Assert.Equal(3, peers.Count());
         }
 
@@ -224,10 +224,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now);
             addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now - TimeSpan.FromSeconds(70));
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(2, networkAddresses.Count());
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.Endpoint.Address.ToString() == addressTwo.Endpoint.Address.ToString()));
+            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressTwo.Endpoint.Address.ToString()));
         }
 
         /// <summary>
@@ -261,10 +261,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now.AddSeconds(-65));
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(2, networkAddresses.Count());
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
+            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
         }
 
         /// <summary>
@@ -299,10 +299,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(2, networkAddresses.Count());
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
+            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
         }
 
         /// <summary>
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             addressManager.PeerConnected(addressThree.Endpoint, DateTimeOffset.Now);
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(3, networkAddresses.Count());
         }
 
@@ -371,10 +371,10 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             addressManager.PeerConnected(addressThree.Endpoint, DateTimeOffset.Now.AddDays(-8));
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(2, networkAddresses.Count());
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.Endpoint.Address.ToString() == addressThree.Endpoint.Address.ToString()));
+            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressThree.Endpoint.Address.ToString()));
         }
 
         /// <summary>
@@ -413,10 +413,10 @@ namespace Stratis.Bitcoin.Tests.P2P
                 addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
             }
 
-            var networkAddresses = addressManager.SelectPeersToConnectTo();
+            var networkAddresses = addressManager.Selector.SelectPeers();
             Assert.Equal(2, networkAddresses.Count());
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
+            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
         }
 
         [Fact]
@@ -430,10 +430,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressOne, IPAddress.Loopback);
 
             var peer = addressManager.FindPeer(addressOne.Endpoint);
-            peer.Attempted(DateTimeOffset.Now);
+            peer.SetAttempted(DateTimeOffset.Now);
             var resultOne = peer.Selectability;
 
-            peer.Attempted(DateTimeOffset.Now);
+            peer.SetAttempted(DateTimeOffset.Now);
             var resultTwo = peer.Selectability;
 
             Assert.True(resultOne > resultTwo);

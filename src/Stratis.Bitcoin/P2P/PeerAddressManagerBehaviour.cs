@@ -48,7 +48,10 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
-                    peer.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
+                {
+                    var peers = this.peerAddressManager.Selector.SelectPeers().Take(1000).Select(p => p.NetworkAddress).ToArray();
+                    peer.SendMessageAsync(new AddrPayload(peers));
+                }
             }
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)

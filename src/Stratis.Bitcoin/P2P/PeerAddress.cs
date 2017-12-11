@@ -80,11 +80,38 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
         /// <summary>
-        /// <c>True</c> if <see cref="LastConnectionAttempt"/>, <see cref="LastConnectionSuccess"/> and
-        /// <see cref="LastConnectionHandshake"/> is null.
+        /// <c>True</c> if the peer has had connection attempts but none successful.
         /// </summary>
         [JsonIgnore]
-        public bool IsNew
+        public bool Attempted
+        {
+            get
+            {
+                return
+                    this.LastConnectionAttempt != null &&
+                    this.LastConnectionSuccess == null;
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has had a successful connection attempt.
+        /// </summary>
+        [JsonIgnore]
+        public bool Connected
+        {
+            get
+            {
+                return
+                    this.LastConnectionAttempt == null &&
+                    this.LastConnectionSuccess != null;
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has never had connection attempts.
+        /// </summary>
+        [JsonIgnore]
+        public bool Fresh
         {
             get
             {
@@ -92,6 +119,21 @@ namespace Stratis.Bitcoin.P2P
                     this.LastConnectionAttempt == null &&
                     this.LastConnectionSuccess == null &&
                     this.LastConnectionHandshake == null;
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has had a successful connection attempt and handshaked.
+        /// </summary>
+        [JsonIgnore]
+        public bool Handshaked
+        {
+            get
+            {
+                return
+                    this.LastConnectionAttempt == null &&
+                    this.LastConnectionSuccess != null &&
+                    this.LastConnectionHandshake != null;
             }
         }
 
@@ -116,7 +158,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
         /// </summary>
-        internal void Attempted(DateTimeOffset peerAttemptedAt)
+        internal void SetAttempted(DateTimeOffset peerAttemptedAt)
         {
             this.ConnectionAttempts += 1;
             this.LastConnectionAttempt = peerAttemptedAt;
