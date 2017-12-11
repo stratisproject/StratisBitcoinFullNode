@@ -443,8 +443,16 @@ namespace NBitcoin
 
             while (highChain.HashBlock != lowChain.HashBlock)
             {
-                lowChain = lowChain.Previous;
-                highChain = highChain.Previous;
+                if (highChain.Skip != lowChain.Skip)
+                {
+                    highChain = highChain.Skip;
+                    lowChain = lowChain.Skip;
+                }
+                else
+                {
+                    lowChain = lowChain.Previous;
+                    highChain = highChain.Previous;
+                }
                 if ((lowChain == null) || (highChain == null))
                     return null;
             }
