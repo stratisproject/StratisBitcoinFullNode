@@ -805,14 +805,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.Broadcast(tx);
         }
 
-        public void Kill(bool cleanFolder = true)
+        public void Kill()
         {
             lock (this.lockObject)
             {
                 this.runner.Kill();
                 this.State = CoreNodeState.Killed;
-                if (cleanFolder)
-                    this.CleanFolder();
             }
         }
 
