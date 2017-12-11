@@ -74,6 +74,7 @@ namespace NBitcoin
         /// Constructs a chained block at the start of a chain.
         /// </summary>
         /// <param name="header">The header for the block.</param>
+        /// <param name="headerHash">The hash computed according to NetworkOptions.</param>
         /// <param name="height">The height of the block.</param>
         public ChainedBlock(BlockHeader header, uint256 headerHash, int height)
         {

@@ -29,8 +29,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             Block block = context.BlockValidationContext.Block;
 
             // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || (GetSize(block, 
-                context.Consensus.NetworkOptions & ~NetworkOptions.All) > options.MaxBlockBaseSize))
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || 
+                (GetSize(block, context.Consensus.NetworkOptions & ~NetworkOptions.All) > options.MaxBlockBaseSize))
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
