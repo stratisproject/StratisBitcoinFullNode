@@ -197,7 +197,7 @@ namespace NBitcoin
         public ChainedBlock FindAncestor(ChainedBlock chainedBlockHeader)
         {
             ChainedBlock found = this.GetAncestor(chainedBlockHeader.Height);
-            if (found.HashBlock == chainedBlockHeader.HashBlock)
+            if (found != null && (found.HashBlock == chainedBlockHeader.HashBlock))
                 return found;
             return this.FindAncestorOrSelf(chainedBlockHeader.HashBlock);
         }
