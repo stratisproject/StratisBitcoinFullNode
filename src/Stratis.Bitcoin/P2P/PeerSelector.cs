@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
@@ -32,6 +33,14 @@ namespace Stratis.Bitcoin.P2P
 
     public sealed class PeerSelector : IPeerSelector
     {
+        private const double PeerSuccessRatioThreshold = 0.1;
+
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
         /// The address manager instance that holds the peer list to be queried. 
         /// </summary>
@@ -41,31 +50,148 @@ namespace Stratis.Bitcoin.P2P
         /// Constructor for the peer selector.
         /// </summary>
         /// <param name="peerAddressManager">The singleton peer address manager instance.</param>
-        public PeerSelector(IPeerAddressManager peerAddressManager)
+        public PeerSelector(ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager)
         {
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
 
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddressManager = peerAddressManager;
         }
 
         /// <inheritdoc/>
         public PeerAddress SelectPeer()
         {
-            var tried = this.peerAddressManager.Peers.Attempted().Concat(this.peerAddressManager.Peers.Connected());
+            this.logger.LogTrace("()");
 
-            if (tried.Any() == true && (!this.peerAddressManager.Peers.Fresh().Any() || new Random().Next(2) == 0))
-                return tried.Random();
+            PeerAddress peerAddress = null;
 
-            if (this.peerAddressManager.Peers.Fresh().Any())
-                return this.peerAddressManager.Peers.Fresh().Random();
+            var peers = SelectPeers();
+            if (peers.Any())
+            {
+                if (peers.Count() == 1)
+                    peerAddress = peers.First();
+                else
+                    peerAddress = peers.Random();
 
-            return null;
+                this.logger.LogTrace("(-):{0}={1}", nameof(peerAddress), peerAddress.NetworkAddress.Endpoint.ToString());
+            }
+            else
+                this.logger.LogTrace("(-):{0} [NULL]", nameof(peerAddress));
+
+            return peerAddress;
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeers()
         {
-            return this.peerAddressManager.Peers.Where(p => p.Value.Preferred).Select(p => p.Value);
+            this.logger.LogTrace("()");
+
+            // First check to see if there are handshaked peers. If so,
+            // give them a 75% chance to be picked over all the other peers.
+            if (this.peerAddressManager.Peers.Handshaked().Any() && new Random().Next(5) <= 3)
+            {
+                this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
+                return this.peerAddressManager.Peers.Handshaked();
+            }
+
+            // If there are peers that have recently connected, give them
+            // a 75% chance to be picked over fresh and/or attempted peers.
+            if (this.peerAddressManager.Peers.Connected().Any() && new Random().Next(5) <= 3)
+            {
+                this.logger.LogTrace("(-)[RETURN_CONNECTED]");
+                return this.peerAddressManager.Peers.Connected();
+            }
+
+            // At this point, if neither selecting handshaked or connected
+            // was successful, we will select from fresh or attempted.
+            //
+            // If both sets exist, pick 50/50 between the two.
+            if (this.peerAddressManager.Peers.Attempted().Any() && this.peerAddressManager.Peers.Fresh().Any())
+            {
+                if (new Random().Next(2) == 0)
+                {
+                    this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
+                    return this.peerAddressManager.Peers.Attempted();
+                }
+                else
+                {
+                    this.logger.LogTrace("(-)[RETURN_FRESH]");
+                    return this.peerAddressManager.Peers.Fresh();
+                }
+            }
+
+            // If there are only fresh peers, return them.
+            if (this.peerAddressManager.Peers.Fresh().Any() && !this.peerAddressManager.Peers.Attempted().Any())
+            {
+                this.logger.LogTrace("(-)[RETURN_ONLY_FRESH_EXIST]");
+                return this.peerAddressManager.Peers.Fresh();
+            }
+
+            // If there are only attempted peers, return them.
+            if (!this.peerAddressManager.Peers.Fresh().Any() && this.peerAddressManager.Peers.Attempted().Any())
+            {
+                this.logger.LogTrace("(-)[RETURN_ONLY_ATTEMPTED_EXIST]");
+                return this.peerAddressManager.Peers.Attempted();
+            }
+
+            // If all the selection criteria failed to return a set of peers,
+            // then let the caller try again.
+            this.logger.LogTrace("(-)[RETURN_NO_PEERS]");
+            return new PeerAddress[] { };
+        }
+
+        private IEnumerable<PeerAddress> SelectFromConnectedOrHandShaked()
+        {
+
+
+            return new PeerAddress[] { };
+        }
+
+        /// <summary>
+        /// Pick a peer from the attempted/successful list of peers.
+        /// </summary>
+        private IEnumerable<PeerAddress> SelectPeersFromAttempedOrSuccessful()
+        {
+            var prefferedAttempted = this.peerAddressManager.Peers.Attempted().Where(p =>
+                                        p.ConnectionAttempts <= 10 &&
+                                        p.LastConnectionAttempt < DateTimeOffset.Now.AddSeconds(-60));
+
+            var prefferedSucceeded = this.peerAddressManager.Peers.Connected().Where(p =>
+                                        p.LastConnectionSuccess < DateTimeOffset.Now.AddSeconds(-60) &&
+                                        p.LastConnectionSuccess > DateTimeOffset.Now.AddDays(-30));
+
+            // If there are attempted AND successful peers, we need to randomly
+            // pick between the two.
+            //
+            // HOWEVER, if the ratio of successful to attempted peers is less 
+            // than 10%, we can't just randomly do a 50/50 pick.
+            //
+            // Imagine a scenario where the peer set is split between a 1000 attempted
+            // ones and only 20 has had successful attempts. If we 50/50 pick between 
+            // these two it will take quite a while for the address manager to 
+            // return a preferred peer (we want to start connecting to successful)
+            // peers as soon as we can.
+            //
+            // To achieve this we check a success ratio and if its below a threshold,
+            // we only pick from the success peers.
+            //
+            // Over time the sucessful peer set will grow, causing the ratio
+            // to increase, thus allowing 50/50 selection from the two sets again.
+            //
+            // I.e. the address manager will try and restore some balance to the 
+            // amount of attempted and successful peers.
+            if (prefferedSucceeded.Any())
+            {
+                var successfullRatio = (double)prefferedSucceeded.Count() / (double)prefferedAttempted.Count();
+                if (successfullRatio < PeerSuccessRatioThreshold)
+                    return prefferedSucceeded;
+
+                var random = new Random().Next(2);
+                return random == 0 ? prefferedAttempted : prefferedSucceeded;
+            }
+            else
+                return prefferedAttempted;
         }
     }
 

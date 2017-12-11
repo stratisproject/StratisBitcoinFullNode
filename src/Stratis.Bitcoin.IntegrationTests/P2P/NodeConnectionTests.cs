@@ -22,18 +22,18 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 DataDir = testFolder.FolderName
             };
 
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
-            var addressManager = new PeerAddressManager(nodeSettings.DataFolder);
+            var addressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
             var addressManagerBehaviour = new PeerAddressManagerBehaviour(new DateTimeProvider(), addressManager)
             {
                 PeersToDiscover = 3
             };
 
             parameters.TemplateBehaviors.Add(addressManagerBehaviour);
-
-            var loggerFactory = new ExtendedLoggerFactory();
-            loggerFactory.AddConsoleWithFilters();
 
             INetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
             var peerDiscoveryLoop = new PeerDiscoveryLoop(

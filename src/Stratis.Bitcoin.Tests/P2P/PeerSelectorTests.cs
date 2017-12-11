@@ -1,13 +1,15 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {
-    public sealed class PeerSelectorTests
+    public sealed class PeerSelectorTests : TestBase
     {
         [Fact]
         public void PeerSelection_NoConnectionAttempts_ReturnFromFresh()
@@ -15,7 +17,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerSelectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
             peerAddressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var result = peerAddressManager.Peers.Fresh().FirstOrDefault();
@@ -28,7 +31,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerSelectorTests"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
             peerAddressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var peer = peerAddressManager.FindPeer(networkAddress.Endpoint);
@@ -44,7 +49,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerSelectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
             peerAddressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var peer = peerAddressManager.FindPeer(networkAddress.Endpoint);
@@ -61,7 +68,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerSelectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
             peerAddressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var peer = peerAddressManager.FindPeer(networkAddress.Endpoint);
@@ -78,7 +87,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerSelectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
             peerAddressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var peer = peerAddressManager.FindPeer(networkAddress.Endpoint);
@@ -94,7 +105,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerSelectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
             peerAddressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var peer = peerAddressManager.FindPeer(networkAddress.Endpoint);

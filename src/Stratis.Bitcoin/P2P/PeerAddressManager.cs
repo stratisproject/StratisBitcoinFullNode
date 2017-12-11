@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
@@ -81,18 +82,23 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
     {
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Peer selector instance, used to select peers to connect to.</summary>
         public IPeerSelector Selector { get; private set; }
 
-        public PeerAddressManager()
+        /// <summary>Constructor used by dependency injection.</summary>
+        public PeerAddressManager(DataFolder peerFilePath, ILoggerFactory loggerFactory)
         {
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
-            this.Selector = new PeerSelector(this);
-        }
-
-        public PeerAddressManager(DataFolder peerFilePath) : this()
-        {
             this.PeerFilePath = peerFilePath;
+            this.Selector = new PeerSelector(this.loggerFactory, this);
         }
 
         /// <inheritdoc />

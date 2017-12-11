@@ -1,4 +1,7 @@
-﻿using System.Net;
+﻿using System;
+using System.IO;
+using System.Net;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
@@ -6,12 +9,13 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {
-    public sealed class PeerConnectorTests
+    public sealed class PeerConnectorTests : TestBase
     {
         [Fact]
         public void PeerConnectorAddNode_FindPeerToConnectTo_Returns_AddNodePeers()
         {
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
 
             var ipAddressOne = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddressAddNode = new NetworkAddress(ipAddressOne, 80);
@@ -36,7 +40,8 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorConnect_FindPeerToConnectTo_Returns_ConnectNodePeers()
         {
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
 
             var ipAddressOne = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddressAddNode = new NetworkAddress(ipAddressOne, 80);
@@ -65,7 +70,8 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorDiscovery_FindPeerToConnectTo_Returns_DiscoveredPeers()
         {
-            var peerAddressManager = new PeerAddressManager();
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
 
             var ipAddressOne = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddressAddNode = new NetworkAddress(ipAddressOne, 80);

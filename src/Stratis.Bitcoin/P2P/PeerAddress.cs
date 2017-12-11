@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Net;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
@@ -103,7 +102,8 @@ namespace Stratis.Bitcoin.P2P
             {
                 return
                     this.LastConnectionAttempt == null &&
-                    this.LastConnectionSuccess != null;
+                    this.LastConnectionSuccess != null &&
+                    this.LastConnectionHandshake == null;
             }
         }
 
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 return
                     this.LastConnectionAttempt == null &&
-                    this.LastConnectionSuccess != null &&
+                    this.LastConnectionSuccess == null &&
                     this.LastConnectionHandshake != null;
             }
         }
@@ -162,6 +162,8 @@ namespace Stratis.Bitcoin.P2P
         {
             this.ConnectionAttempts += 1;
             this.LastConnectionAttempt = peerAttemptedAt;
+            this.LastConnectionSuccess = null;
+            this.LastConnectionHandshake = null;
         }
 
         /// <summary>
@@ -188,6 +190,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
+            this.LastConnectionSuccess = null;
             this.LastConnectionHandshake = peerHandshakedAt;
         }
 
