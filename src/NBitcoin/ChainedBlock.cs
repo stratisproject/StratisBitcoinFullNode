@@ -186,7 +186,11 @@ namespace NBitcoin
 
         /// <summary>
         /// Finds the ancestor of this entry in the chain that matches the chained block header specified.
-        /// <remarks>Will first search assuming on existing chain if not then will assume might be a different chain and then will linearly search for the hash.</remarks>
+        /// This can be used when you not sure whether the <paramref name="chainedBlockHeader"/> is on
+        /// the same chain as this block header or not.
+        /// <remarks>Will first search assuming on same chain and looking up height using skiplist, 
+        /// if doesn't match then will assume might be a different chain and then will linearly search 
+        /// for the hash.</remarks>
         /// </summary>
         /// <param name="chainedBlockHeader">The chained block header to search for.</param>
         /// <returns>The chained block header or null if can't be found.</returns>
