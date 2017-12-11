@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// State in this context is the manipulation of information in the consensus data store based on actions specified <see cref="Block"/> and <see cref="Transaction"/>.
         /// This will allow to ability to run validation checks on blocks (during mining for example) without change the underline store.
         /// </remarks>
-        public virtual bool ValidationRule => true;
+        public virtual bool ValidationOnlyRule => true;
 
         /// <summary>
         /// Execute the logic in the current rule.
@@ -48,6 +49,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public abstract class ExecutionConsensusRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override bool ValidationRule => false;
+        public override bool ValidationOnlyRule => false;
     }
 }

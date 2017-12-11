@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 {
                     var rule = consensusRule.Value;
 
-                    if (context.SkipValidation && rule.ValidationRule)
+                    if (context.SkipValidation && rule.ValidationOnlyRule)
                     {
                         this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(rule), blockValidationContext.ChainedBlock.Height);
                     }
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             {
                 var rule = consensusRule.Value;
 
-                if (rule.ValidationRule)
+                if (rule.ValidationOnlyRule)
                 {
                     await rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
