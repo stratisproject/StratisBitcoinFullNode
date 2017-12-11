@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin
@@ -183,6 +182,20 @@ namespace NBitcoin
         public override string ToString()
         {
             return this.Height + "-" + this.HashBlock;
+        }
+
+        /// <summary>
+        /// Finds the ancestor of this entry in the chain that matches the chained block header specified.
+        /// <remarks>Will first search assuming on existing chain if not then will assume might be a different chain and then will linearly search for the hash.</remarks>
+        /// </summary>
+        /// <param name="chainedBlockHeader">The chained block header to search for.</param>
+        /// <returns>The chained block header or null if can't be found.</returns>
+        public ChainedBlock FindAncestor(ChainedBlock chainedBlockHeader)
+        {
+            ChainedBlock found = this.GetAncestor(chainedBlockHeader.Height);
+            if (found.HashBlock == chainedBlockHeader.HashBlock)
+                return found;
+            return this.FindAncestorOrSelf(chainedBlockHeader.HashBlock);
         }
 
         /// <summary>

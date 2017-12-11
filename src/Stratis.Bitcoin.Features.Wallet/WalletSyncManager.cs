@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 if (newTip.Height > this.walletTip.Height)
                 {
-                    ChainedBlock findTip = newTip.GetAncestor(this.walletTip.Height);
+                    ChainedBlock findTip = newTip.FindAncestor(this.walletTip);
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
