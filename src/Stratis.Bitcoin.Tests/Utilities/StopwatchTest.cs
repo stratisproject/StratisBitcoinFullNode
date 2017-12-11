@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return;
 
-            int epsilonMs = 50;
+            int epsilonMs = 100;
             int expectedElapsedMs = 0;
             long elapsedTicksByDispStopwatch = 0;
 
