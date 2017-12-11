@@ -34,9 +34,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>A collection of consensus constants.</summary>
         public NBitcoin.Consensus ConsensusParams { get; }
 
-        /// <summary>The main loop of the consensus execution engine.</summary>
-        public ConsensusLoop ConsensusLoop { get; set; }
-
         /// <summary>Consensus settings for the full node.</summary>
         public ConsensusSettings ConsensusSettings { get; }
 
