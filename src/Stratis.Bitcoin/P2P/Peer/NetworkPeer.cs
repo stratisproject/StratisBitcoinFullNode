@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -429,7 +428,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>IP address and port of the connected peer.</summary>
-        public IPEndPoint RemoteSocketEndpoint { get; private set; }
+        public IPEndPoint RemoteSocketEndpoint { get; set; }
 
         /// <summary>IP address part of <see cref="RemoteSocketEndpoint"/>.</summary>
         public IPAddress RemoteSocketAddress { get; private set; }

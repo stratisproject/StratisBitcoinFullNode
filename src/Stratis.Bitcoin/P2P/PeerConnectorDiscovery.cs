@@ -29,15 +29,14 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+        public PeerConnectorDiscovery(ILoggerFactory loggerFactory, NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
+            : base(loggerFactory, nodeSettings, peerAddressManager)
         {
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByNetwork;
             this.MaximumNodeConnections = 8;
             this.Requirements = new NetworkPeerRequirement
             {
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnStartConnectAsync()
+        public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
