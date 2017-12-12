@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -37,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
-        private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce;// maybe replace with a task scheduler
+        private readonly ConcurrentDictionary<int, uint256> blockHashesToAnnounce;
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
@@ -52,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             string name = "BlockStore")
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
+            this.blockHashesToAnnounce = new ConcurrentDictionary<int, uint256>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.storeSettings = storeSettings;
         }
 
-        protected override void OnNextCore(Block value)
+        protected override void OnNextCore(Block block)
         {
             this.logger.LogTrace("()");
             if (this.storeSettings.Prune)
@@ -74,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // ensure the block is written to disk before relaying
-            this.blockStoreLoop.AddToPending(value);
+            this.blockStoreLoop.AddToPending(block);
 
             if (this.chainState.IsInitialBlockDownload)
             {
@@ -82,9 +83,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            uint256 blockHash = value.GetHash();
+            uint256 blockHash = block.GetHash();
+            ChainedBlock chainedBlock = this.chain.GetBlock(block.GetHash());
+
             this.logger.LogTrace("Block hash is '{0}'.", blockHash);
-            this.blockHashesToAnnounce.TryAdd(blockHash, blockHash);
+            this.blockHashesToAnnounce.TryAdd(chainedBlock.Height, blockHash);
 
             this.logger.LogTrace("(-)");
         }
@@ -114,19 +117,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
             {
                 this.logger.LogTrace("()");
-                List<uint256> blocks = this.blockHashesToAnnounce.Keys.ToList();
+                List<KeyValuePair<int, uint256>> blockHeightPairs = this.blockHashesToAnnounce.OrderBy(i => i.Key).ToList();
 
-                if (!blocks.Any())
+                if (!blockHeightPairs.Any())
                 {
                     this.logger.LogTrace("(-)[NO_BLOCKS]");
                     return;
                 }
 
                 var broadcastItems = new List<uint256>();
-                foreach (uint256 blockHash in blocks)
+                foreach (KeyValuePair <int, uint256> blockHeightPair in blockHeightPairs)
                 {
                     // The first block that is not in disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
+                    if (!await this.blockRepository.ExistAsync(blockHeightPair.Value).ConfigureAwait(false))
                     {
                         // NOTE: there is a very minimal possibility a reorg would happen
                         // and post reorg blocks will now be in the 'blockHashesToAnnounce',
@@ -135,13 +138,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                         // If the hash is not on disk and not in the best chain
                         // we assume all the following blocks are also discardable
-                        if (!this.chain.Contains(blockHash))
+                        if (!this.chain.Contains(blockHeightPair.Value))
                             this.blockHashesToAnnounce.Clear();
 
                         break;
                     }
 
-                    if (this.blockHashesToAnnounce.TryRemove(blockHash, out uint256 hashToBroadcast))
+                    if (this.blockHashesToAnnounce.TryRemove(blockHeightPair.Key, out uint256 hashToBroadcast))
                         broadcastItems.Add(hashToBroadcast);
                 }
 
@@ -161,7 +164,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // Announce the blocks to each of the peers.
                 var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
                 foreach (var behaviour in behaviours)
-                    await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
+                    await behaviour.AnnounceBlocks(broadcastItems).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
