@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -14,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // These tests are for mostly for POW. Set the flags to the expected values.
             Transaction.TimeStamp = false;
-            Block.BlockSignature = false;        
+            Block.BlockSignature = false;
         }
 
         [Fact]
@@ -294,6 +297,79 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Transaction.TimeStamp = false;
                 Block.BlockSignature = false;
             }
+        }
+
+        /// <summary>
+        /// This test simulates scenario from issue #862.
+        /// <para>
+        /// Connection scheme:
+        /// Network - Node1 - MiningNode
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void MiningNodeWithOneConnectionAlwaysSynced()
+        {
+            NetworkSimulator simulator = new NetworkSimulator();
+
+            simulator.Initialize(4);
+
+            var miner = simulator.Nodes[0];
+            var connector = simulator.Nodes[1];
+            var networkNode1 = simulator.Nodes[2];
+            var networkNode2 = simulator.Nodes[3];
+
+            //TODO comment
+            miner.CreateRPCClient().AddNode(connector.Endpoint, true);
+            connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);
+            connector.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
+            networkNode1.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
+
+            simulator.MakeSureEachNodeCanMineAndSync();
+
+            int networkHeight = miner.FullNode.Chain.Height;
+            Assert.True(networkHeight == simulator.Nodes.Count);
+
+            //random node on network generates a block
+            networkNode1.GenerateStratis(1);
+
+            //wait until connector get the hash of network's block
+            while (connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
+                Thread.Sleep(1);
+
+            //make sure that miner did not advance yet but connector did
+            Assert.True(miner.FullNode.Chain.Tip.HashBlock != networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.True(connector.FullNode.Chain.Tip.HashBlock == networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.True(miner.FullNode.Chain.Tip.Height == networkHeight);
+            Assert.True(connector.FullNode.Chain.Tip.Height == networkHeight+1);
+
+            //miner mines the block
+            miner.GenerateStratis(1);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
+
+            networkHeight++;
+
+            //make sure that at this moment miner's tip != network's and connector's tip
+            Assert.True(miner.FullNode.Chain.Tip.HashBlock != networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.True(connector.FullNode.Chain.Tip.HashBlock == networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.True(miner.FullNode.Chain.Tip.Height == networkHeight);
+            Assert.True(connector.FullNode.Chain.Tip.Height == networkHeight);
+
+            connector.GenerateStratis(1);
+            networkHeight++;
+
+            int delay = 0;
+
+            while (true)
+            {
+                Thread.Sleep(50);
+                if (simulator.DidAllNodesReachHeight(networkHeight))
+                    break;
+                delay += 50;
+
+                Assert.True(delay < 10 * 1000, "Miner node was not able to advance!");
+            }
+
+            Assert.True(networkNode1.FullNode.Chain.Tip.HashBlock == miner.FullNode.Chain.Tip.HashBlock);
         }
     }
 }

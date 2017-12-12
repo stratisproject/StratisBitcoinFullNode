@@ -11,8 +11,8 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.P2P.Peer;
@@ -550,34 +550,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);
                 if (broadcast)
-                {
-                    uint256 blockHash = block.GetHash();
-                    var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
-                    var oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new BlockPuller.DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-
-                    //try
-                    //{
-                    //    var blockResult = new BlockResult { Block = block };
-                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
-
-                    //    // similar logic to what's in the full node code
-                    //    if (blockResult.Error == null)
-                    //    {
-                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
-                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
-                    //        //{
-                    //        //    var unused = cache.FlushAsync();
-                    //        //}
-                    //        fullNode.Signals.Blocks.Broadcast(block);
-                    //    }
-                    //}
-                    //catch (ConsensusErrorException)
-                    //{
-                    //    // set back the old tip
-                    //    fullNode.Chain.SetTip(oldTip);
-                    //}
-                }
+                    fullNode.ConsensusLoop().AcceptBlockAsync(new BlockValidationContext() { Block = block }).GetAwaiter().GetResult();
             }
 
             return blocks.ToArray();
