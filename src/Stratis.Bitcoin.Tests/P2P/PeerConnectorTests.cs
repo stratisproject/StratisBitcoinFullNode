@@ -38,6 +38,21 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
+        public void PeerConnectorAddNode_CanAlwaysStart()
+        {
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
+            var nodeSettings = new NodeSettings
+            {
+                ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
+            };
+
+            var connector = new PeerConnectorAddNode(nodeSettings, peerAddressManager);
+            Assert.True(connector.CanStartConnect);
+        }
+
+        [Fact]
         public void PeerConnectorConnect_FindPeerToConnectTo_Returns_ConnectNodePeers()
         {
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
@@ -65,6 +80,40 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peer = connector.FindPeerToConnectTo();
             Assert.Equal(networkAddressConnectNode.Endpoint, peer.NetworkAddress.Endpoint);
+        }
+
+        [Fact]
+        public void PeerConnectorConnect_WithConnectPeersSpecified_CanStart()
+        {
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
+            var ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
+            var networkAddressConnectNode = new NetworkAddress(ipAddressThree, 80);
+
+            var nodeSettings = new NodeSettings
+            {
+                ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
+            };
+
+            nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
+
+            var connector = new PeerConnectorConnectNode(nodeSettings, peerAddressManager);
+            Assert.True(connector.CanStartConnect);
+        }
+
+        [Fact]
+        public void PeerConnectorConnect_WithNoConnectPeersSpecified_CanNotStart()
+        {
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+            var nodeSettings = new NodeSettings
+            {
+                ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
+            };
+
+            var connector = new PeerConnectorConnectNode(nodeSettings, peerAddressManager);
+            Assert.False(connector.CanStartConnect);
         }
 
         [Fact]
@@ -96,6 +145,41 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peer = connector.FindPeerToConnectTo();
             Assert.Equal(networkAddressDiscoverNode.Endpoint, peer.NetworkAddress.Endpoint);
+        }
+
+        [Fact]
+        public void PeerConnectorDiscover_WithNoConnectPeersSpecified_CanStart()
+        {
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
+            var nodeSettings = new NodeSettings
+            {
+                ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
+            };
+
+            var connector = new PeerConnectorDiscovery(nodeSettings, peerAddressManager);
+            Assert.True(connector.CanStartConnect);
+        }
+
+        [Fact]
+        public void PeerConnectorDiscover_WithConnectPeersSpecified_CanNotStart()
+        {
+            var nodeSettings = new NodeSettings
+            {
+                ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
+            };
+
+            var ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
+            var networkAddressConnectNode = new NetworkAddress(ipAddressThree, 80);
+
+            nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
+            var peerAddressManager = new PeerAddressManager(peerFolder, new LoggerFactory());
+
+            var connector = new PeerConnectorDiscovery(nodeSettings, peerAddressManager);
+            Assert.False(connector.CanStartConnect);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class BlockMerkleRootRule : ConsensusRule
     {        
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             if (context.CheckMerkleRoot)
             {
