@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -14,39 +15,53 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorConnectNode : PeerConnector
     {
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorConnectNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+        /// <summary>Constructor for dependency injection.</summary>
+        public PeerConnectorConnectNode(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager)
+            :
+            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
-        /// <summary>Constructor used by <see cref="Connection.ConnectionManager"/>.</summary>
-        public PeerConnectorConnectNode(
-            IAsyncLoopFactory asyncLoopFactory,
-            ILogger logger,
-            Network network,
-            INetworkPeerFactory networkPeerFactory,
-            INodeLifetime nodeLifeTime,
-            NodeSettings nodeSettings,
-            NetworkPeerConnectionParameters parameters,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, logger, network, networkPeerFactory, nodeLifeTime, nodeSettings, parameters, peerAddressManager)
+        /// <summary>Constructor used for unit testing.</summary>
+        public PeerConnectorConnectNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
+                : base(nodeSettings, peerAddressManager)
         {
-            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
+        }
+
+        /// <inheritdoc/>
+        public override void OnInitialize()
+        {
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
-            this.MaximumNodeConnections = nodeSettings.ConnectionManager.Connect.Count;
+            this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.Connect.Count;
             this.Requirements = new NetworkPeerRequirement
             {
-                MinVersion = nodeSettings.ProtocolVersion,
+                MinVersion = this.NodeSettings.ProtocolVersion,
                 RequiredServices = NetworkPeerServices.Nothing
             };
 
-            // Add the end points from the -connect arg to the address manager
-            foreach (var endPoint in this.NodeSettings.ConnectionManager.Connect)
+            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
             {
-                this.peerAddressManager.AddPeer(new NetworkAddress(endPoint.MapToIpv6()), IPAddress.Loopback);
+                this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
             }
+        }
+
+        /// <summary>This connector is only started if there are peers in the -connect args.</summary>
+        public override bool CanStartConnect
+        {
+            get { return this.NodeSettings.ConnectionManager.Connect.Any(); }
+        }
+
+        /// <inheritdoc/>
+        public override void OnStartConnectAsync()
+        {
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
         }
 
         /// <summary>
@@ -54,9 +69,9 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override PeerAddress FindPeerToConnectTo()
         {
-            foreach (var endPoint in this.NodeSettings.ConnectionManager.Connect)
+            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
             {
-                PeerAddress peerAddress = this.peerAddressManager.FindPeer(endPoint);
+                PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
                     return peerAddress;
             }

@@ -7,10 +7,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public class BlockSizeRule : ConsensusRule
     {
-        public override bool CanSkipValidation => true;
-
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             var options = context.Consensus.Option<PowConsensusOptions>();
 
@@ -20,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (GetBlockWeight(context.BlockValidationContext.Block, options) > options.MaxBlockWeight)
+            if (this.GetBlockWeight(context.BlockValidationContext.Block, options) > options.MaxBlockWeight)
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();

@@ -1,13 +1,12 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Wallet.Helpers
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Contains a collection of helpers methods.
     /// </summary>
-    public static class WalletHelpers
+    public static class NetworkHelpers
     {
         /// <summary>
         /// Get the network on which to operate.

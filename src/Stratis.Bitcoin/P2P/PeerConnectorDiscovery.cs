@@ -13,37 +13,51 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorDiscovery : PeerConnector
     {
+        /// <summary>Parameterless constructor for dependency injection.</summary>
+        public PeerConnectorDiscovery(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager)
+            :
+            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
+        {
+        }
+
         /// <summary>Constructor used for unit testing.</summary>
         public PeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
             : base(nodeSettings, peerAddressManager)
         {
         }
 
-        /// <summary>Constructor used by <see cref="Connection.ConnectionManager"/>.</summary>
-        public PeerConnectorDiscovery(
-            IAsyncLoopFactory asyncLoopFactory,
-            ILogger logger,
-            Network network,
-            INetworkPeerFactory networkPeerFactory,
-            INodeLifetime nodeLifeTime,
-            NodeSettings nodeSettings,
-            NetworkPeerConnectionParameters parameters,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, logger, network, networkPeerFactory, nodeLifeTime, nodeSettings, parameters, peerAddressManager)
+        /// <inheritdoc/>
+        public override void OnInitialize()
         {
             this.GroupSelector = WellKnownPeerConnectorSelectors.ByNetwork;
             this.MaximumNodeConnections = 8;
             this.Requirements = new NetworkPeerRequirement
             {
-                MinVersion = nodeSettings.ProtocolVersion,
+                MinVersion = this.NodeSettings.ProtocolVersion,
                 RequiredServices = NetworkPeerServices.Network
             };
         }
 
-        /// <summary>
-        /// Return discovered nodes from the <see cref="IPeerSelector"/>.
-        /// </summary>
+        /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>
+        public override bool CanStartConnect
+        {
+            get { return !this.NodeSettings.ConnectionManager.Connect.Any(); }
+        }
+
+        /// <inheritdoc/>
+        public override void OnStartConnectAsync()
+        {
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
+        }
+
+        /// <inheritdoc/>
         public override PeerAddress FindPeerToConnectTo()
         {
             int peerSelectionFailed = 0;

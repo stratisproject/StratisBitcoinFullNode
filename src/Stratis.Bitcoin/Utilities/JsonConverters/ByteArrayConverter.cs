@@ -1,32 +1,30 @@
 ﻿using System;
-using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.Wallet.Helpers;
 
-namespace Stratis.Bitcoin.Features.Wallet.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     /// <summary>
-    /// Converter used to convert <see cref="Network"/> to and from JSON.
+    /// Converter used to convert <see cref="byte"/> arrays to and from JSON.
     /// </summary>
     /// <seealso cref="Newtonsoft.Json.JsonConverter" />
-    public class NetworkConverter : JsonConverter
+    public class ByteArrayConverter : JsonConverter
     {
         /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(Network);
+            return objectType == typeof(byte[]);
         }
 
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return WalletHelpers.GetNetwork((string)reader.Value);
+            return Convert.FromBase64String((string)reader.Value);
         }
 
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            writer.WriteValue(((Network)value).ToString());
+            writer.WriteValue(Convert.ToBase64String((byte[])value));
         }
     }
 }
