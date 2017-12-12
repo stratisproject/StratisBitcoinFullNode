@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>IP address and port of the connected peer.</summary>
-        public IPEndPoint RemoteSocketEndpoint { get; set; }
+        public IPEndPoint RemoteSocketEndpoint { get; private set; }
 
         /// <summary>IP address part of <see cref="RemoteSocketEndpoint"/>.</summary>
         public IPAddress RemoteSocketAddress { get; private set; }

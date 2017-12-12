@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P
                     await this.DiscoverPeersAsync();
             },
             this.nodeLifetime.ApplicationStopping,
-            TimeSpans.Ms100);
+            TimeSpans.Second);
         }
 
         /// <summary>

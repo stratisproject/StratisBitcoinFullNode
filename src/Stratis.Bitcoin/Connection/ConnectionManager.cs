@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>
         /// Adds a peer to the address manager's connected nodes collection.
         /// <para>
-        /// The peer connectors inspects this list to determine if the peer
+        /// This list is inspected by the peer connectors to determine if the peer
         /// isn't already connected.
         /// </para>
         /// </summary>
