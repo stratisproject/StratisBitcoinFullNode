@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Threading;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new AsyncLoopFactory(loggerFactory),
                 DateTimeProvider.Default,
                 loggerFactory,
-                Network.Main,
+                Network.StratisMain,
                 networkPeerFactory,
                 new NodeLifetime(),
                 nodeSettings,
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             var peerDiscovery = new PeerDiscovery(
                 new AsyncLoopFactory(loggerFactory),
                 loggerFactory,
-                Network.Main,
+                Network.StratisMain,
                 networkPeerFactory,
                 new NodeLifetime(),
                 nodeSettings,
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new AsyncLoopFactory(loggerFactory),
                 DateTimeProvider.Default,
                 loggerFactory,
-                Network.Main,
+                Network.StratisMain,
                 networkPeerFactory,
                 nodeSettings,
                 new NodeLifetime(),
@@ -83,12 +84,20 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             {
                 try
                 {
-                    var peerOne = peerAddressManager.SelectPeerToConnectTo();
-                    NetworkPeer node = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerOne, parameters);
-                    node.VersionHandshake();
-                    node.Disconnect();
+                    using (CancellationTokenSource cancel = CancellationTokenSource.CreateLinkedTokenSource(parameters.ConnectCancellation))
+                    {
+                        cancel.CancelAfter((int)TimeSpans.FiveSeconds.TotalMilliseconds);
 
-                    break;
+                        var connectParameters = parameters.Clone();
+                        connectParameters.ConnectCancellation = cancel.Token;
+
+                        var peerAddress = peerAddressManager.SelectPeerToConnectTo();
+                        NetworkPeer peer = networkPeerFactory.CreateConnectedNetworkPeer(Network.StratisMain, peerAddress, connectParameters);
+                        peer.VersionHandshake();
+                        peer.Disconnect();
+
+                        break;
+                    }
                 }
                 catch
                 {
