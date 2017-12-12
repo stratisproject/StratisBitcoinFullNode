@@ -135,9 +135,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         public ManualResetEvent Disconnected { get; private set; }
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
-        public CancellationTokenSource Cancel { get; private set; }
+        public CancellationTokenSource CancellationSource { get; private set; }
 
-        /// <summary>Registration of callback routine to shutdown the connection when <see cref="Cancel"/> is cancelled.</summary>
+        /// <summary>Registration of callback routine to shutdown the connection when <see cref="CancellationSource"/>'s token is cancelled.</summary>
         private CancellationTokenRegistration cancelRegistration;
 
         /// <summary>Task responsible for reading incoming messages from the stream.</summary>
@@ -157,8 +157,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Peer = peer;
             this.Client = client;
-            this.Cancel = new CancellationTokenSource();
-            this.cancelRegistration = this.Cancel.Token.Register(this.InitiateShutdown);
+            this.CancellationSource = new CancellationTokenSource();
+            this.cancelRegistration = this.CancellationSource.Token.Register(this.InitiateShutdown);
             this.Disconnected = new ManualResetEvent(false);
         }
 
@@ -175,10 +175,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             CancellationTokenSource cts = null;
             if (cancellation != default(CancellationToken))
             {
-                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.Cancel.Token);
+                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
                 cancellation = cts.Token;
             }
-            else cancellation = this.Cancel.Token;
+            else cancellation = this.CancellationSource.Token;
 
             try
             {
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     };
                 }
 
-                this.Cancel.Cancel();
+                this.CancellationSource.Cancel();
             }
             finally
             {
@@ -254,9 +254,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                while (!this.Cancel.Token.IsCancellationRequested)
+                while (!this.CancellationSource.Token.IsCancellationRequested)
                 {
-                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.Cancel.Token).ConfigureAwait(false);
+                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     };
                 }
 
-                this.Cancel.Cancel();
+                this.CancellationSource.Cancel();
             }
 
             this.logger.LogTrace("(-)");
@@ -327,14 +327,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            if (this.Cancel.IsCancellationRequested == false)
-                this.Cancel.Cancel();
+            if (this.CancellationSource.IsCancellationRequested == false)
+                this.CancellationSource.Cancel();
 
             this.receiveMessageTask.Wait();
             this.Disconnected.WaitOne();
 
             this.Disconnected.Dispose();
-            this.Cancel.Dispose();
+            this.CancellationSource.Dispose();
             this.cancelRegistration.Dispose();
 
             this.logger.LogTrace("(-)");
@@ -1015,7 +1015,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.State = NetworkPeerState.Disconnecting;
-            this.Connection.Cancel.Cancel();
+            this.Connection.CancellationSource.Cancel();
 
             if (this.DisconnectReason == null)
             {

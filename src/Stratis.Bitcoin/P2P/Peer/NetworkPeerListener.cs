@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             Queue<IncomingMessage> pushedAside = new Queue<IncomingMessage>();
             try
             {
-                using (CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Peer.Connection.Cancel.Token))
+                using (CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Peer.Connection.CancellationSource.Token))
                 {
                     while (true)
                     {
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
-                if (this.Peer.Connection.Cancel.IsCancellationRequested)
+                if (this.Peer.Connection.CancellationSource.IsCancellationRequested)
                     throw new InvalidOperationException("The peer is not in a connected state");
 
                 throw;
