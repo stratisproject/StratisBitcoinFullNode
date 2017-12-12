@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class Bip113ActivationRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;
             int nHeight = context.BestBlock?.Height + 1 ?? 0;

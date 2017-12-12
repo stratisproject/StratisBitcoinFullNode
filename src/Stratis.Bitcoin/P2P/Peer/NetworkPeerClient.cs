@@ -94,18 +94,16 @@ namespace Stratis.Bitcoin.P2P.Peer
                 await Task.Run(async () => await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port), cancellation).ConfigureAwait(false);
                 this.Stream = this.tcpClient.GetStream();
             }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
+                this.logger.LogTrace("(-)[CANCELLED]");
+                throw;
+            }
             catch (Exception e)
             {
-                if (e is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
-                    this.logger.LogTrace("(-)[CANCELLED]");
-                }
-                else
-                {
-                    this.logger.LogDebug("Error connecting to '{0}', exception: {1}", endPoint, e.ToString());
-                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                }
+                this.logger.LogDebug("Error connecting to '{0}', exception: {1}", endPoint, e.ToString());
+                this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                 throw;
             }
 

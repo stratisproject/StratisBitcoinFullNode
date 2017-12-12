@@ -879,7 +879,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (payload is RejectPayload)
                 {
                     this.logger.LogTrace("(-)[HANDSHAKE_REJECTED]");
-                    throw new ProtocolException("Handshake rejected : " + ((RejectPayload)payload).Reason);
+                    throw new ProtocolException("Handshake rejected: " + ((RejectPayload)payload).Reason);
                 }
 
                 var version = (VersionPayload)payload;

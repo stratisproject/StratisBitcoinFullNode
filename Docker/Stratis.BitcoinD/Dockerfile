@@ -1,0 +1,16 @@
+FROM microsoft/dotnet:2.0.0-sdk-jessie
+
+RUN git clone https://github.com/stratisproject/StratisBitcoinFullNode.git \
+    && cd /StratisBitcoinFullNode/src/Stratis.BitcoinD \
+    && dotnet restore \
+	&& dotnet build
+	
+VOLUME /root/.stratisbitcoin
+
+WORKDIR /StratisBitcoinFullNode/src/Stratis.BitcoinD
+
+COPY bitcoin.conf.docker /root/.stratisnode/bitcoin/TestNet/bitcoin.conf
+
+EXPOSE 8333 8332 18333 18332
+
+CMD ["dotnet", "run", "-testnet"]

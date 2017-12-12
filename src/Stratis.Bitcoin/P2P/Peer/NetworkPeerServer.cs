@@ -183,10 +183,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                     Task unused = Task.Run(async () => await this.ProcessNewClientAsync(client));
                 }
             }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogDebug("Shutdown detected, stop accepting connections.");
+            }
             catch (Exception e)
             {
-                if (e is OperationCanceledException) this.logger.LogDebug("Shutdown detected, stop accepting connections.");
-                else this.logger.LogDebug("Exception occurred: {0}");
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
             
             this.logger.LogTrace("(-)");
