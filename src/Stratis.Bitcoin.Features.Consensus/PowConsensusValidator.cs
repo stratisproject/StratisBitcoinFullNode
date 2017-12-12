@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
         public virtual void CheckBlockHeader(ContextInformation context)
         {
-            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
                 ConsensusErrors.HighHash.Throw();
 
             context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);

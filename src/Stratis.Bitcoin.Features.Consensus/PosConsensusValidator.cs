@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (context.Stake.BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
                 {
                     this.logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();

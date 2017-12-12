@@ -862,7 +862,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         this.transactions.Clear();
                     }
                     block.UpdateMerkleRoot();
-                    while (!block.CheckProofOfWork())
+                    while (!block.CheckProofOfWork(rpc.Network.Consensus))
                         block.Header.Nonce = ++nonce;
                     blocks.Add(block);
                     chain.SetTip(block.Header);
@@ -1056,7 +1056,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.Transactions.AddRange(passedTransactions);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork())
+                while (!block.CheckProofOfWork(fullNode.Network.Consensus))
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);
                 if (broadcast)

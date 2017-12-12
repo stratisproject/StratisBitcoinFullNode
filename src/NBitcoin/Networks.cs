@@ -273,6 +273,8 @@ namespace NBitcoin
             var consensus = new Consensus();
 
             consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
+            consensus.GetPoWHash = (n, h) => Crypto.HashX13.Instance.Hash(h.ToBytes(options:n)); 
+
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;

@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.AddTransaction(tx);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork())
+                while (!block.CheckProofOfWork(this.network.Consensus))
                     block.Header.Nonce = ++nonce;
                 block.Header.CacheHashes();
                 blocks.Add(block);

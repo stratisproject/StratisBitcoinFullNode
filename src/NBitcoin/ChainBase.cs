@@ -104,7 +104,7 @@ namespace NBitcoin
             if (prev == null)
                 return false;
 
-            chainedHeader = new ChainedBlock(header, header.GetHash(), this.GetBlock(header.HashPrevBlock));
+            chainedHeader = new ChainedBlock(header, header.GetHash(NetworkOptions.TemporaryOptions), this.GetBlock(header.HashPrevBlock));
             this.SetTip(chainedHeader);
             return true;
         }

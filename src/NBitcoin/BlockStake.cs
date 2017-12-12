@@ -133,15 +133,15 @@ namespace NBitcoin
                 this.Flags |= BlockFlag.BLOCK_STAKE_MODIFIER;
         }
 
-        public static bool Check(Block block)
+        public static bool Check(Block block, Consensus consensus)
         {
-            return block.CheckMerkleRoot() && BlockStake.CheckProofOfWork(block) && BlockStake.CheckProofOfStake(block);
+            return block.CheckMerkleRoot() && BlockStake.CheckProofOfWork(block, consensus) && BlockStake.CheckProofOfStake(block);
         }
 
-        public static bool CheckProofOfWork(Block block)
+        public static bool CheckProofOfWork(Block block, Consensus consensus)
         {
             // if POS return true else check POW algo
-            return IsProofOfStake(block) || block.Header.CheckProofOfWork();
+            return IsProofOfStake(block) || block.Header.CheckProofOfWork(consensus);
         }
 
         public static bool CheckProofOfStake(Block block)

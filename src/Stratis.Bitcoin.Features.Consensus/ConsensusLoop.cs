@@ -472,7 +472,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // one of the peers so after we create a new chained block (mainly for validation)
                 // we ask the chain headers for its version (also to prevent memory leaks).
                 context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, 
-                    context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
+                    context.BlockValidationContext.Block.Header.GetHash(this.nodeSettings.Network.NetworkOptions), this.Tip);
 
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;

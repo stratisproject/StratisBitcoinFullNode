@@ -26,6 +26,7 @@ namespace NBitcoin
 
         public ConcurrentChain(BlockHeader genesisHeader)
         {
+            // TODO: Pass NetworkOptions to GetHash
             this.SetTip(new ChainedBlock(genesisHeader, genesisHeader.GetHash(), 0));
         }
 
@@ -33,8 +34,8 @@ namespace NBitcoin
         {
             if (network != null)
             {
-                Block genesis = network.GetGenesis();
-                this.SetTip(new ChainedBlock(genesis.Header, genesis.Header.GetHash(), 0));
+                Block genesis = network.GetGenesis();                
+                this.SetTip(new ChainedBlock(genesis.Header, genesis.Header.GetHash(network.NetworkOptions), 0));
             }
         }
 

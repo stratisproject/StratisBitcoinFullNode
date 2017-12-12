@@ -121,7 +121,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            if ((options ?? NetworkOptions.TemporaryOptions).IsProofOfStake)
+            if (options.IsProofOfStake)
             {
                 if (this.version > 6)
                     hash = Hashes.Hash256(this.ToBytes());
@@ -160,22 +160,11 @@ namespace NBitcoin
             this.hashes = new uint256[1];
         }
 
-        public bool CheckProofOfWork()
-        {
-            return this.CheckProofOfWork(null);
-        }
-
         public bool CheckProofOfWork(Consensus consensus)
         {
-            NetworkOptions options = consensus?.NetworkOptions ?? NetworkOptions.TemporaryOptions;
-            consensus = consensus ?? Network.Main.Consensus; // TODO: Not always set correctly from BlockValidator.CheckBlock..
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
                 return false;
-
-            // Check proof of work matches claimed amount.
-            if (options.IsProofOfStake) // Note this can only be called on a POW block.
-                return this.GetPoWHash() <= this.Bits.ToUInt256();
 
             return consensus.GetPoWHash(consensus.NetworkOptions, this) <= this.Bits.ToUInt256();
         }
@@ -262,7 +251,7 @@ namespace NBitcoin
         {
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
-            if ((stream.TransactionOptions ?? NetworkOptions.TemporaryOptions).IsProofOfStake)
+            if (stream.TransactionOptions.IsProofOfStake)
                 stream.ReadWrite(ref this.blockSignature);
         }
 
@@ -355,28 +344,14 @@ namespace NBitcoin
         /// <summary>
         /// Check proof of work and merkle root
         /// </summary>
-        /// <returns></returns>
-        public bool Check()
-        {
-            return this.Check(null);
-        }
-
-        /// <summary>
-        /// Check proof of work and merkle root
-        /// </summary>
         /// <param name="consensus"></param>
         /// <returns></returns>
         public bool Check(Consensus consensus)
         {
-            if ((consensus?.NetworkOptions ?? NetworkOptions.TemporaryOptions).IsProofOfStake)
-                return BlockStake.Check(this);
+            if (consensus.NetworkOptions.IsProofOfStake)
+                return BlockStake.Check(this, consensus);
 
             return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);
-        }
-
-        public bool CheckProofOfWork()
-        {
-            return this.CheckProofOfWork(null);
         }
 
         public bool CheckProofOfWork(Consensus consensus)
