@@ -8,10 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -328,7 +326,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = new Wallet
             {
                 Name = "myWallet",
-                Network = WalletHelpers.GetNetwork("mainnet")
+                Network = NetworkHelpers.GetNetwork("mainnet")
             };
 
             var mockWalletWrapper = new Mock<IWalletManager>();
@@ -469,7 +467,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = new Wallet
             {
                 Name = "myWallet",
-                Network = WalletHelpers.GetNetwork("mainnet")
+                Network = NetworkHelpers.GetNetwork("mainnet")
             };
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
@@ -595,7 +593,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = new Wallet
             {
                 Name = "myWallet",
-                Network = WalletHelpers.GetNetwork("mainnet"),
+                Network = NetworkHelpers.GetNetwork("mainnet"),
                 CreationTime = new DateTime(2017, 6, 19, 1, 1, 1),
                 AccountsRoot = new List<AccountRoot> {
                     new AccountRoot()
