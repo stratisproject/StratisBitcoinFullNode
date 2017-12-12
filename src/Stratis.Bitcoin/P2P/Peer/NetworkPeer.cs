@@ -886,8 +886,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
-                //this.SendMessageVoidAsync(this.MyVersion);
-                this.SendMessageAsync(this.MyVersion).GetAwaiter().GetResult();
+                this.SendMessageVoidAsync(this.MyVersion);
                 Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
                 if (payload is RejectPayload)
                 {
