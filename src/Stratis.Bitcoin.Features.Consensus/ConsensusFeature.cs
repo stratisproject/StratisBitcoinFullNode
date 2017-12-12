@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, ConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, BaseConsensusRules>();
+                    services.AddSingleton<IRuleRegistration, CoreConsensusRules>();
                 });
             });
 
@@ -248,18 +248,22 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRules, ConsensusRules>();
-                        services.AddSingleton<IRuleRegistration, BaseConsensusRules>();
+                        services.AddSingleton<IRuleRegistration, CoreConsensusRules>();
                     });
             });
 
             return fullNodeBuilder;
         }
 
-        public class BaseConsensusRules : IRuleRegistration
+        public class CoreConsensusRules : IRuleRegistration
         {
             public IEnumerable<ConsensusRule> GetRules()
             {
                 yield return new BlockPreviousHeaderRule();
+
+                // rules that are inside the method ContextualCheckBlockHeader
+                yield return new CheckpointsRule();
+                yield return new AssumeValidRule();
 
                 // rules that are inside the method ContextualCheckBlock
                 yield return new Bip113ActivationRule();

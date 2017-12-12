@@ -139,6 +139,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
+        public Checkpoints()
+        {
+            this.checkpoints = new Dictionary<int, CheckpointInfo>();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet/stratis test/main.</param>
         /// <param name="settings">Consensus settings for node - used to see if checkpoints have been disabled or not.</param>
         public Checkpoints(Network network, ConsensusSettings settings)
