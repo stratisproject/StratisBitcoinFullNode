@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             context.BlockValidationContext.Block = new Block(new BlockHeader { HashPrevBlock = uint256.Zero });
             var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await blockHeaderRule.RunAsync(context));
 
-            Assert.True(error.ConsensusError == ConsensusErrors.InvalidPrevTip);
+            Assert.Equal(ConsensusErrors.InvalidPrevTip, error.ConsensusError);
         }
     }
 }
