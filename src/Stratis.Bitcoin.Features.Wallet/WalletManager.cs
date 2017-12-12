@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -496,17 +495,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {
             return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-        }
-
-        /// <inheritdoc />
-        public string GetWalletFilePath(string walletName)
-        {
-            Guard.NotEmpty(walletName, nameof(walletName));
-            this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
-            string walletFilePath = Path.Combine(this.fileStorage.FolderPath, walletName);
-            walletFilePath = Path.ChangeExtension(walletFilePath, this.GetWalletFileExtension());
-            this.logger.LogTrace("(-):'{1}')", walletFilePath);
-            return walletFilePath;
         }
 
         /// <inheritdoc />

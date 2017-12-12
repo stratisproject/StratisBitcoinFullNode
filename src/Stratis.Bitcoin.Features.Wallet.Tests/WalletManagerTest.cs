@@ -2920,22 +2920,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotEqual(chainedBlock.HashBlock, walletManager.WalletTipHash);
         }
 
-        [Fact]
-        public void GetWalletFilePathWithExistingWalletReturnsPath()
-        {
-            string walletName = "testWallet";
-            DataFolder dataFolder = CreateDataFolder(this);
-
-            var wallet = this.walletFixture.GenerateBlankWallet(walletName, "password");
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
-
-            var result = walletManager.GetWalletFilePath(walletName);
-            Assert.Equal(Path.ChangeExtension(walletName, walletManager.GetWalletFileExtension()), Path.GetFileName(result));
-            Assert.Equal(dataFolder.WalletPath, Path.GetDirectoryName(result));
-        }
-
         private (Mnemonic mnemonic, Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
         {
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(),

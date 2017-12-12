@@ -239,12 +239,5 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         DateTimeOffset GetOldestWalletCreationTime();
-
-        /// <summary>
-        /// Gets the full path to the given wallet name.
-        /// </summary>
-        /// <param name="walletName">The wallet name to search for.</param>
-        /// <returns>The full path to the wallet.</returns>
-        string GetWalletFilePath(string walletName);
     }
 }
