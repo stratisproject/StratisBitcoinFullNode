@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var addressManager = new PeerAddressManager(peerFolder);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
-            var applicableDate = DateTimeOffset.UtcNow.Date;
+            var applicableDate = DateTimeProvider.Default.GetUtcNow().Date;
 
             addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate);
             addressManager.PeerConnected(networkAddress.Endpoint, applicableDate);
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var addressManager = new PeerAddressManager(peerFolder);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
-            var applicableDate = DateTimeOffset.UtcNow.Date;
+            var applicableDate = DateTimeProvider.Default.GetUtcNow().Date;
 
             addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate);
             addressManager.PeerConnected(networkAddress.Endpoint, applicableDate);
@@ -81,13 +82,13 @@ namespace Stratis.Bitcoin.Tests.P2P
             var addressManager = new PeerAddressManager(peerFolder);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
-            addressManager.PeerConnected(networkAddress.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerConnected(networkAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
-            addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeOffset.Now);
-            addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeOffset.Now);
-            addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
+            addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
+            addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
-            addressManager.PeerConnected(networkAddress.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerConnected(networkAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
             var peerOne = addressManager.FindPeer(networkAddress.Endpoint);
 
@@ -123,7 +124,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressFour, IPAddress.Loopback);
 
             var randomPeer = addressManager.SelectPeerToConnectTo();
-            addressManager.PeerAttempted(randomPeer.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerAttempted(randomPeer.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
             var selected = addressManager.Peers.New().FirstOrDefault(p => p.NetworkAddress.Endpoint.Match(randomPeer.Endpoint));
             Assert.Null(selected);
@@ -187,7 +188,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
             var peers = addressManager.SelectPeersToConnectTo();
             Assert.Equal(3, peers.Count());
@@ -221,8 +222,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now);
-            addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now - TimeSpan.FromSeconds(70));
+            addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeProvider.Default.GetUtcNow());
+            addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeProvider.Default.GetUtcNow() - TimeSpan.FromSeconds(70));
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
             Assert.Equal(2, networkAddresses.Count());
@@ -258,8 +259,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now.AddSeconds(-65));
+            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow());
+            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow().AddSeconds(-65));
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
             Assert.Equal(2, networkAddresses.Count());
@@ -295,9 +296,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow());
+            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow());
+            addressManager.PeerAttempted(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
             Assert.Equal(2, networkAddresses.Count());
@@ -333,7 +334,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerConnected(addressThree.Endpoint, DateTimeOffset.Now);
+            addressManager.PeerConnected(addressThree.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
             Assert.Equal(3, networkAddresses.Count());
@@ -369,7 +370,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerConnected(addressThree.Endpoint, DateTimeOffset.Now.AddDays(-8));
+            addressManager.PeerConnected(addressThree.Endpoint, DateTimeProvider.Default.GetUtcNow().AddDays(-8));
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
             Assert.Equal(2, networkAddresses.Count());
@@ -407,10 +408,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressTwo, IPAddress.Loopback);
             addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerConnected(addressOne.Endpoint, DateTimeOffset.Now.AddDays(-5));
+            addressManager.PeerConnected(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow().AddDays(-5));
             for (int i = 0; i < 11; i++)
             {
-                addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
+                addressManager.PeerAttempted(addressOne.Endpoint, DateTimeProvider.Default.GetUtcNow());
             }
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
@@ -430,10 +431,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(addressOne, IPAddress.Loopback);
 
             var peer = addressManager.FindPeer(addressOne.Endpoint);
-            peer.Attempted(DateTimeOffset.Now);
+            peer.Attempted(DateTimeProvider.Default.GetUtcNow());
             var resultOne = peer.Selectability;
 
-            peer.Attempted(DateTimeOffset.Now);
+            peer.Attempted(DateTimeProvider.Default.GetUtcNow());
             var resultTwo = peer.Selectability;
 
             Assert.True(resultOne > resultTwo);

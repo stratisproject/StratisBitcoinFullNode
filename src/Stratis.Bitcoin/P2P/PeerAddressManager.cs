@@ -110,6 +110,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Constructor used by dependency injection.</summary>
+        /// <param name="peerFilePath">The file path the peer file is saved to.</param>
         public PeerAddressManager(DataFolder peerFilePath)
             : this()
         {

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
             var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder);
-            var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(new DateTimeProvider(), peerAddressManager)
+            var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, peerAddressManager)
             {
                 PeersToDiscover = 3
             };
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             var peerConnectorDiscovery = new PeerConnectorDiscovery(
                 new AsyncLoopFactory(loggerFactory),
-                new DateTimeProvider(),
+                DateTimeProvider.Default,
                 loggerFactory,
                 Network.Main,
                 networkPeerFactory,
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             IConnectionManager connectionManager = new ConnectionManager(
                 new AsyncLoopFactory(loggerFactory),
-                new DateTimeProvider(),
+                DateTimeProvider.Default,
                 loggerFactory,
                 Network.Main,
                 networkPeerFactory,
