@@ -259,32 +259,36 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
                     else
                     {
+                        // Block that peer has at the same height as our block (the one which hash is equal to the hash that will be announced).
                         ChainedBlock peersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Height);
 
+                        // Peer don't have a block at this height?
                         if (peersBlock != null)
                         {
+                            // Check if the block that peer has have the same hash as block that we have.
                             if (peersBlock.HashBlock == chainedBlock.HashBlock)
                                 continue;
 
+                            foundStartingHeader = true;
                             headers.Add(chainedBlock.Header);
                         }
                         else
                         {
+                            // Block that peer has at height of (block that has target hash).height - 1.
                             ChainedBlock prevPeersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height);
 
-                            if (prevPeersBlock == null || prevPeersBlock.HashBlock != chainedBlock.Previous.HashBlock)
+                            // Check if the block that peer has have the same hash as block that we have.
+                            if ((prevPeersBlock == null) || (prevPeersBlock.HashBlock != chainedBlock.Previous.HashBlock))
                             {
                                 // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
                                 revertToInv = true;
                                 break;
                             }
-                            else
-                            {
-                                // Peer doesn't have this header but they do have the prior one that is equal to ours and at the same height.
-                                // Start sending headers.
-                                foundStartingHeader = true;
-                                headers.Add(chainedBlock.Header);
-                            }
+
+                            // Peer doesn't have this header but they do have the prior one that is equal to ours and at the same height.
+                            // Start sending headers.
+                            foundStartingHeader = true;
+                            headers.Add(chainedBlock.Header);
                         }
                     }
                 }
