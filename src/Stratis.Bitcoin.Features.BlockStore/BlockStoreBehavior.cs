@@ -279,11 +279,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                                 break;
                             }
                         }
+
+                        foundStartingHeader = true;
                     }
 
                     // If we reached here then it means that we've found starting header.
                     // Start sending headers.
-                    foundStartingHeader = true;
                     headers.Add(chainedBlock.Header);
                 }
             }
