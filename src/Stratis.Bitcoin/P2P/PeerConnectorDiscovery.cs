@@ -1,8 +1,10 @@
 ﻿using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -12,8 +14,16 @@ namespace Stratis.Bitcoin.P2P
     public sealed class PeerConnectorDiscovery : PeerConnector
     {
         /// <summary>Parameterless constructor for dependency injection.</summary>
-        public PeerConnectorDiscovery()
-            : base()
+        public PeerConnectorDiscovery(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager)
+            :
+            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
@@ -35,9 +45,19 @@ namespace Stratis.Bitcoin.P2P
             };
         }
 
-        /// <summary>
-        /// Return discovered nodes from the <see cref="IPeerSelector"/>.
-        /// </summary>
+        /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>
+        public override bool CanStartConnect
+        {
+            get { return !this.NodeSettings.ConnectionManager.Connect.Any(); }
+        }
+
+        /// <inheritdoc/>
+        public override void OnStartConnectAsync()
+        {
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
+        }
+
+        /// <inheritdoc/>
         public override PeerAddress FindPeerToConnectTo()
         {
             int peerSelectionFailed = 0;

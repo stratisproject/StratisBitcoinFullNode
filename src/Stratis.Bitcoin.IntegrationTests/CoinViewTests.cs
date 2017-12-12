@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 EnforceBIP34 = true
             };
 
-            var context = new ContextInformation
+            var context = new RuleContext
             {
                 BestBlock = new ContextBlockInformation
                 {
