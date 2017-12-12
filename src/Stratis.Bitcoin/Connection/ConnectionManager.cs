@@ -428,7 +428,7 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            NetworkPeer peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
+            NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
             this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
             await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
