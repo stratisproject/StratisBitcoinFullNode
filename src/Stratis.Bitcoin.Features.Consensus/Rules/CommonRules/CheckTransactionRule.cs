@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class CheckTransactionRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
             var options = context.Consensus.Option<PowConsensusOptions>();
