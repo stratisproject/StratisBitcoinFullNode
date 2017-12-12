@@ -253,11 +253,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
 
                     bestIndex = chainedBlock;
-                    if (foundStartingHeader)
-                    {
-                        headers.Add(chainedBlock.Header);
-                    }
-                    else
+
+                    if (!foundStartingHeader)
                     {
                         // Block that peer has at the same height as our block (the one which hash is equal to the hash that will be announced).
                         ChainedBlock peersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Height);
@@ -270,7 +267,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                                 continue;
 
                             foundStartingHeader = true;
-                            headers.Add(chainedBlock.Header);
                         }
                         else
                         {
@@ -288,9 +284,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             // Peer doesn't have this header but they do have the prior one that is equal to ours and at the same height.
                             // Start sending headers.
                             foundStartingHeader = true;
-                            headers.Add(chainedBlock.Header);
                         }
                     }
+
+                    headers.Add(chainedBlock.Header);
                 }
             }
 
