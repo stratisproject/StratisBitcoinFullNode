@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     ChainedBlock chainedBlock = this.chain.GetBlock(hash);
                     if (chainedBlock == null)
                     {
-                        // Bail out if we reorged away from this block
+                        // Bail out if we reorged away from this block.
                         revertToInv = true;
                         break;
                     }
@@ -265,8 +265,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             // Check if the block that peer has have the same hash as block that we have.
                             if (peersBlock.HashBlock == chainedBlock.HashBlock)
                                 continue;
-
-                            foundStartingHeader = true;
                         }
                         else
                         {
@@ -280,13 +278,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                                 revertToInv = true;
                                 break;
                             }
-
-                            // Peer doesn't have this header but they do have the prior one that is equal to ours and at the same height.
-                            // Start sending headers.
-                            foundStartingHeader = true;
                         }
                     }
 
+                    // If we reached here then it means that we've found starting header.
+                    // Start sending headers.
+                    foundStartingHeader = true;
                     headers.Add(chainedBlock.Header);
                 }
             }
