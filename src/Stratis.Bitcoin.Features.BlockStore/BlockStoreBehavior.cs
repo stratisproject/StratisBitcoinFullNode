@@ -284,7 +284,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
 
                     // If we reached here then it means that we've found starting header.
-                    // Start sending headers.
                     headers.Add(chainedBlock.Header);
                 }
             }
