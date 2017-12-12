@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                stratisSender.GenerateStratis(1, new List<Transaction>(new[] {trx.Clone()}));
+                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { trx.Clone() }));
                 stratisSender.GenerateStratis(1);
 
                 // wait for block repo for block sync to work
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any());
                 var newamount = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 110, newamount);
-                Assert.True(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any(b => b.Transaction.BlockHeight == null));
+                Assert.Contains(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet"), b => b.Transaction.BlockHeight == null);
 
                 // mine more blocks so its included in the chain
 

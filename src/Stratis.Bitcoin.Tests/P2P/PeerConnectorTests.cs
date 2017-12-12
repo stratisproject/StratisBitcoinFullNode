@@ -2,6 +2,7 @@
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
             };
             nodeSettings.ConnectionManager.AddNode.Add(networkAddressAddNode.Endpoint);
-            var connector = new PeerConnectorAddNode(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorAddNode(new DateTimeProvider(), nodeSettings, peerAddressManager);
 
             var peer = connector.FindPeerToConnectTo();
             Assert.Equal(networkAddressAddNode.Endpoint, peer.Endpoint);
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
             };
 
-            var connector = new PeerConnectorAddNode(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorAddNode(new DateTimeProvider(), nodeSettings, peerAddressManager);
             Assert.True(connector.CanStartConnect);
         }
 
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
             };
             nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
-            var connector = new PeerConnectorConnectNode(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorConnectNode(new DateTimeProvider(), nodeSettings, peerAddressManager);
 
             var peer = connector.FindPeerToConnectTo();
             Assert.Equal(networkAddressConnectNode.Endpoint, peer.Endpoint);
@@ -91,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
 
-            var connector = new PeerConnectorConnectNode(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorConnectNode(new DateTimeProvider(), nodeSettings, peerAddressManager);
             Assert.True(connector.CanStartConnect);
         }
 
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
             };
 
-            var connector = new PeerConnectorConnectNode(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorConnectNode(new DateTimeProvider(), nodeSettings, peerAddressManager);
             Assert.False(connector.CanStartConnect);
         }
 
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             };
             nodeSettings.ConnectionManager.AddNode.Add(networkAddressAddNode.Endpoint);
             nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
-            var connector = new PeerConnectorDiscovery(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorDiscovery(new DateTimeProvider(), nodeSettings, peerAddressManager);
 
             var peer = connector.FindPeerToConnectTo();
             Assert.Equal(networkAddressDiscoverNode.Endpoint, peer.Endpoint);
@@ -148,7 +149,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
             };
 
-            var connector = new PeerConnectorDiscovery(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorDiscovery(new DateTimeProvider(), nodeSettings, peerAddressManager);
             Assert.True(connector.CanStartConnect);
         }
 
@@ -166,7 +167,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
 
             var peerAddressManager = new PeerAddressManager();
-            var connector = new PeerConnectorDiscovery(nodeSettings, peerAddressManager);
+            var connector = new PeerConnectorDiscovery(new DateTimeProvider(), nodeSettings, peerAddressManager);
             Assert.False(connector.CanStartConnect);
         }
     }

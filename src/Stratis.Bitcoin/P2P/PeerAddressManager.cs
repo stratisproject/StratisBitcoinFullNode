@@ -94,22 +94,27 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
     {
+        /// <inheritdoc />
+        public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
+
+        /// <summary>The file name of the peers file.</summary>
+        internal const string PeerFileName = "peers.json";
+
+        /// <inheritdoc />
+        public DataFolder PeerFilePath { get; set; }
+
+        /// <summary>Constructor used by unit tests.</summary>
         public PeerAddressManager()
         {
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
         }
 
-        public PeerAddressManager(DataFolder peerFilePath) : this()
+        /// <summary>Constructor used by dependency injection.</summary>
+        public PeerAddressManager(DataFolder peerFilePath)
+            : this()
         {
             this.PeerFilePath = peerFilePath;
         }
-
-        /// <inheritdoc />
-        public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
-
-        internal const string PeerFileName = "peers.json";
-
-        public DataFolder PeerFilePath { get; set; }
 
         /// <inheritdoc />
         public void LoadPeers()

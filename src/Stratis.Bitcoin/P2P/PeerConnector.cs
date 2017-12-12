@@ -88,6 +88,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The parameters cloned from the connection manager.</summary>
         public NetworkPeerConnectionParameters CurrentParameters { get; private set; }
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
         public Func<IPEndPoint, byte[]> GroupSelector { get; internal set; }
 
@@ -95,7 +98,7 @@ namespace Stratis.Bitcoin.P2P
         private ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
-        public readonly ILogger Logger;
+        private readonly ILogger logger;
 
         /// <inheritdoc/>
         public int MaximumNodeConnections { get; set; }
@@ -124,6 +127,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Parameterless constructor for dependency injection.</summary>
         protected PeerConnector(
             IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
@@ -133,7 +137,9 @@ namespace Stratis.Bitcoin.P2P
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.ConnectedPeers = new NetworkPeerCollection();
+            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.networkPeerFactory = networkPeerFactory;
             this.nodeLifetime = nodeLifetime;
@@ -142,11 +148,13 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Constructor used for unit testing.</summary>
-        protected PeerConnector(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
+        protected PeerConnector(IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
 
+            this.dateTimeProvider = dateTimeProvider;
             this.peerAddressManager = peerAddressManager;
             this.NodeSettings = nodeSettings;
             this.nodeLifetime = new NodeLifetime();
@@ -235,7 +243,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     timeoutTokenSource.CancelAfter(5000);
 
-                    this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, DateTimeProvider.Default.GetUtcNow());
+                    this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
                     var clonedConnectParamaters = this.CurrentParameters.Clone();
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;

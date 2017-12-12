@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Parameterless constructor for dependency injection.</summary>
         public PeerConnectorDiscovery(
             IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
@@ -24,13 +25,13 @@ namespace Stratis.Bitcoin.P2P
             NodeSettings nodeSettings,
             IPeerAddressManager peerAddressManager)
             :
-            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
         /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+        public PeerConnectorDiscovery(IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
+            : base(dateTimeProvider, nodeSettings, peerAddressManager)
         {
         }
 

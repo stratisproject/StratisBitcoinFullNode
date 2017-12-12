@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             var peerConnectorDiscovery = new PeerConnectorDiscovery(
                 new AsyncLoopFactory(loggerFactory),
+                new DateTimeProvider(),
                 loggerFactory,
                 Network.Main,
                 networkPeerFactory,
