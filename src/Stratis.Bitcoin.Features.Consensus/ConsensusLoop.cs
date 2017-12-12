@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 try
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext).ConfigureAwait(false);
+                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -481,11 +481,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        internal async Task ValidateAndExecuteBlockAsync(RuleContext context)
+        internal async Task ValidateAndExecuteBlockAsync(RuleContext context, bool skipRules = false)
         {
             this.logger.LogTrace("()");
 
-            this.ValidateBlock(context, true);
+            this.ValidateBlock(context, skipRules);
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
