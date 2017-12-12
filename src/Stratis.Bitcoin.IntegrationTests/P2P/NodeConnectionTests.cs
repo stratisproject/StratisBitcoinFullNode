@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new AsyncLoopFactory(loggerFactory),
                 DateTimeProvider.Default,
                 loggerFactory,
-                Network.StratisMain,
+                Network.Main,
                 networkPeerFactory,
                 new NodeLifetime(),
                 nodeSettings,
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             var peerDiscovery = new PeerDiscovery(
                 new AsyncLoopFactory(loggerFactory),
                 loggerFactory,
-                Network.StratisMain,
+                Network.Main,
                 networkPeerFactory,
                 new NodeLifetime(),
                 nodeSettings,
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new AsyncLoopFactory(loggerFactory),
                 DateTimeProvider.Default,
                 loggerFactory,
-                Network.StratisMain,
+                Network.Main,
                 networkPeerFactory,
                 nodeSettings,
                 new NodeLifetime(),
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                         connectParameters.ConnectCancellation = cancel.Token;
 
                         var peerAddress = peerAddressManager.SelectPeerToConnectTo();
-                        NetworkPeer peer = networkPeerFactory.CreateConnectedNetworkPeer(Network.StratisMain, peerAddress, connectParameters);
+                        NetworkPeer peer = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerAddress, connectParameters);
                         peer.VersionHandshake();
                         peer.Disconnect();
 
