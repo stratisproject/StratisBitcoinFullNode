@@ -99,6 +99,9 @@ namespace Stratis.Bitcoin.P2P
         }
     }
 
+    /// <summary>
+    /// Specifies how messages related to network peer discovery are handled.
+    /// </summary>
     [Flags]
     public enum PeerAddressManagerBehaviourMode
     {
