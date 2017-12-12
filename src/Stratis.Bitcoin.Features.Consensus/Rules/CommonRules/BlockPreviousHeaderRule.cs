@@ -10,11 +10,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class BlockPreviousHeaderRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override Task RunAsync(ContextInformation context)
+        public override Task RunAsync(RuleContext context)
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
-            if (context.BlockValidationContext.Block.Header.HashPrevBlock != context.BlockValidationContext.ConsensusTip.HashBlock)
+            if (context.BlockValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
             {
                 this.Logger.LogTrace("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // we ask the chain headers for its version (also to prevent memory leaks).
             context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, 
                 context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), 
-                context.BlockValidationContext.ConsensusTip);
+                context.ConsensusTip);
 
             // Liberate from memory the block created above if possible.
             context.BlockValidationContext.ChainedBlock = this.Parent.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;

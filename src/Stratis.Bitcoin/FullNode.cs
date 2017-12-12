@@ -195,8 +195,8 @@ namespace Stratis.Bitcoin
             // Initialize all registered features.
             this.fullNodeFeatureExecutor.Initialize();
 
-            // Start connecting to peers.
-            this.ConnectionManager.Start();
+            // Initialize peer connection.
+            this.ConnectionManager.Initialize();
 
             // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();

@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
-        public virtual void CheckBlockHeader(ContextInformation context)
+        public virtual void CheckBlockHeader(RuleContext context)
         {
             if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
                 ConsensusErrors.HighHash.Throw();
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
-        public virtual void ContextualCheckBlock(ContextInformation context)
+        public virtual void ContextualCheckBlock(RuleContext context)
         {
             this.logger.LogTrace("()");
 
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if transaction's height or time is lower then provided by SequenceLock for this block.</exception>
         /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
-        public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler = null)
+        public virtual void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
-            if (!context.BlockValidationContext.SkipValidation)
+            if (!context.SkipValidation)
             {
                 if (flags.EnforceBIP30)
                 {
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
-                if (!context.BlockValidationContext.SkipValidation)
+                if (!context.SkipValidation)
                 {
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.UpdateCoinView(context, tx);
             }
 
-            if (!context.BlockValidationContext.SkipValidation)
+            if (!context.SkipValidation)
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 
@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
-        protected virtual void UpdateCoinView(ContextInformation context, Transaction transaction)
+        protected virtual void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.logger.LogTrace("()");
 
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="height">Block's height.</param>
         /// <param name="block">Block for which reward amount is checked.</param>
         /// <exception cref="ConsensusErrors.BadCoinbaseAmount">Thrown if coinbase transaction output value is larger than expected.</exception>
-        protected virtual void CheckBlockReward(ContextInformation context, Money fees, int height, Block block)
+        protected virtual void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             this.logger.LogTrace("()");
 
@@ -539,7 +539,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.BadCoinbaseMissing">Thrown if block's first transaction is not coinbase.</exception>
         /// <exception cref="ConsensusErrors.BadMultipleCoinbase">Thrown if block contains more then one coinbase transactions.</exception>
         /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if block's signature operation cost is greater than maximum allowed one.</exception>
-        public virtual void CheckBlock(ContextInformation context)
+        public virtual void CheckBlock(RuleContext context)
         {
             this.logger.LogTrace("()");
 
@@ -1003,7 +1003,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         /// <exception cref="ConsensusErrors.CheckpointViolation">Thrown if block header hash does not match the checkpointed value.</exception>
-        public virtual void ContextualCheckBlockHeader(ContextInformation context)
+        public virtual void ContextualCheckBlockHeader(RuleContext context)
         {
             Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
             this.logger.LogTrace("()");
@@ -1041,13 +1041,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
-            }
-
-            // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.Checkpoints.CheckHardened(height, header.GetHash(this.ConsensusParams.NetworkOptions)))
-            {
-                this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
-                ConsensusErrors.CheckpointViolation.Throw();
             }
 
             this.logger.LogTrace("(-)[OK]");

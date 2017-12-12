@@ -64,14 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </remarks>
         public int BanDurationSeconds { get; set; }
 
-        /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
-        public bool SkipValidation { get; set; }
-
         /// <summary>The context of the validation processes.</summary>
-        public ContextInformation Context { get; set; }
-
-        /// <summary>The current tip of the chain that has been validated.</summary>
-        public ChainedBlock ConsensusTip { get; set; }
+        public RuleContext RuleContext { get; set; }
     }
 
     /// <summary>
@@ -142,6 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Handles the banning of peers.</summary>
         private readonly IPeerBanning peerBanning;
 
+        /// <summary>Consensus rules engine.</summary>
         private readonly IConsensusRules consensusRules;
 
         /// <summary>Provider of time functions.</summary>
@@ -362,13 +357,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
-                blockValidationContext.ConsensusTip = this.Tip;
+                blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
 
-                await this.consensusRules.ExectueAsync(blockValidationContext);
+                await this.consensusRules.ExecuteAsync(blockValidationContext);
 
                 try
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.Context).ConfigureAwait(false);
+                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -452,12 +447,19 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Validates a block using the consensus rules.
         /// </summary>
-        public void ValidateBlock(ContextInformation context)
+        public void ValidateBlock(RuleContext context, bool skipRules = false)
         {
             this.logger.LogTrace("()");
 
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
             {
+                // TODO: Remove the flag skipRules when all rules where migrated to the ConesnsusRules framework.
+                // The skip rules is here temporary while we run both old and new consensus rules side by side
+                if (!skipRules)
+                {
+                    this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
+                }
+
                 // Check that the current block has not been reorged.
                 // Catching a reorg at this point will not require a rewind.
                 if (context.BlockValidationContext.Block.Header.HashPrevBlock != this.Tip.HashBlock)
@@ -487,26 +489,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Calculate the consensus flags and check they are valid.
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
-                // Check whether to use checkpoint to skip block validation.
-                context.BlockValidationContext.SkipValidation = false;
-                if (this.consensusSettings.UseCheckpoints)
-                {
-                    int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-                    context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
-                    if (context.BlockValidationContext.SkipValidation)
-                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
-                }
-
-                // Check whether to use assumevalid switch to skip validation.
-                if (!context.BlockValidationContext.SkipValidation && (this.consensusSettings.BlockAssumedValid != null))
-                {
-                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.consensusSettings.BlockAssumedValid);
-                    context.BlockValidationContext.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
-                    if (context.BlockValidationContext.SkipValidation)
-                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
-                }
-
-                if (!context.BlockValidationContext.SkipValidation)
+                if (!context.SkipValidation)
                 {
                     this.Validator.ContextualCheckBlock(context);
 
@@ -523,11 +506,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        internal async Task ValidateAndExecuteBlockAsync(ContextInformation context)
+        internal async Task ValidateAndExecuteBlockAsync(RuleContext context)
         {
             this.logger.LogTrace("()");
 
-            this.ValidateBlock(context);
+            this.ValidateBlock(context, true);
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.

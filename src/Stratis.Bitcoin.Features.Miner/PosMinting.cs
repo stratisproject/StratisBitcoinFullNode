@@ -871,13 +871,16 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
 
-                        var contextInformation = new ContextInformation(new BlockValidationContext { Block = block }, this.network.Consensus);
-                        contextInformation.SetStake();
-                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation.Stake, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        var contextInformation = new ContextStakeInformation
+                        {
+                            BlockStake = new BlockStake(block)
+                        };
+
+                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
-                            context.Logger.LogTrace("Kernel found with solution hash '{0}'.", contextInformation.Stake.HashProofOfStake);
+                            context.Logger.LogTrace("Kernel found with solution hash '{0}'.", contextInformation.HashProofOfStake);
 
                             Wallet.Wallet wallet = this.walletManager.GetWalletByName(utxoStakeInfo.Secret.WalletName);
                             context.CoinstakeContext.Key = wallet.GetExtendedPrivateKeyForAddress(utxoStakeInfo.Secret.WalletPassword, utxoStakeInfo.Address).PrivateKey;

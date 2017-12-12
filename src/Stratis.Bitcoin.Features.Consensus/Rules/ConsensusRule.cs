@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
@@ -19,18 +16,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         public ConsensusRules Parent { get; set; }
 
         /// <summary>
-        /// A collection of rules that the current rule depends on.
+        /// Allow a rule to initialize itself.
+        /// The rule can verify that other rules are present using the <see cref="IConsensusRules.Rules"/>.
+        /// The rule can internally initialize its state.
         /// </summary>
-        /// <returns>A collection of rules this rule depends on.</returns>
-        public virtual IEnumerable<Type> Dependencies()
+        public virtual void Initialize()
         {
-            return Enumerable.Empty<Type>();
         }
 
         /// <summary>
-        /// An indicator whether this rule is allowed to skip validation when the <see cref="BlockValidationContext.SkipValidation"/> is set to <c>true</c>.
+        /// Whether the rule will be considered a rule that only does validation and does not manipulate state in any way.
+        /// When <c>true</c> rule is allowed to skip validation when the <see cref="BlockValidationContext.SkipValidation"/> is set to <c>true</c>.
         /// </summary>
-        public virtual bool CanSkipValidation => false;
+        /// <remarks>
+        /// State in this context is the manipulation of information in the consensus data store based on actions specified <see cref="Block"/> and <see cref="Transaction"/>.
+        /// This will allow to ability to run validation checks on blocks (during mining for example) without change the underline store.
+        /// </remarks>
+        public virtual bool ValidationOnlyRule => true;
 
         /// <summary>
         /// Execute the logic in the current rule.
@@ -38,22 +40,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         /// <param name="context">The context that has all info that needs to be validated.</param>
         /// <returns>The execution task.</returns>
-        public abstract Task RunAsync(ContextInformation context);
+        public abstract Task RunAsync(RuleContext context);
     }
 
     /// <summary>
-    /// Rules that override this base will always allow to skip validation.
-    /// The property <see cref="ConsensusRule.CanSkipValidation"/> will default to true.
+    /// Rules that are manipulating state.
     /// </summary>
-    public abstract class SkipValidationConsensusRule : ConsensusRule
+    public abstract class ExecutionConsensusRule : ConsensusRule
     {
         /// <inheritdoc />
-        public override bool CanSkipValidation => true;
-
-        /// <inheritdoc />
-        public override IEnumerable<Type> Dependencies()
-        {
-            yield return typeof(BlockPreviousHeaderRule);
-        }
+        public override bool ValidationOnlyRule => false;
     }
 }
