@@ -61,7 +61,7 @@ The general rules:
    ```   
 19. We declare only one type per file.  
     A few exceptions exist, which are permitted, although not enforced:
-    - inclusion of small behaviorless classes into the same file
+    - inclusion of small POCO classes if they're closely related in functionality (like API model classes)
     - inclusion of small classes, interfaces and enums inside the hosting file, if and only if they're only used by the hosting type
     The name of the file should be that of the hosting type.
 20. We prefix all interfaces with an "I".
