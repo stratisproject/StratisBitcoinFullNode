@@ -431,6 +431,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    continue;
                 }
 
                 ChainedBlock chainTip = this.chain.Tip;
