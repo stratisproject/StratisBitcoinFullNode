@@ -257,11 +257,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     if (!foundStartingHeader)
                     {
                         // Peer don't have a block at the height of our block and with the same hash?
-                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.HashBlock)?.Height == chainedBlock.Height)
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) == null)
                             continue;
 
-                        // Peer don't have a block at the height of our block.prev and with the same hash?
-                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous.HashBlock)?.Height != chainedBlock.Previous.Height)
+                        // Peer don't have a block at the height of our block.Previous and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous) == null)
                         {
                             // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
                             revertToInv = true;
