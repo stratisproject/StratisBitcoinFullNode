@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin
@@ -186,6 +185,22 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Finds the ancestor of this entry in the chain that matches the chained block header specified.
+        /// </summary>
+        /// <param name="chainedBlockHeader">The chained block header to search for.</param>
+        /// <returns>The chained block header or <c>null</c> if can't be found.</returns>
+        /// <remarks>This method compares the hash of the block header at the same height in the current chain 
+        /// to verify the correct chained block header has been found.</remarks>
+        public ChainedBlock FindAncestorOrSelf(ChainedBlock chainedBlockHeader)
+        {
+            ChainedBlock found = this.GetAncestor(chainedBlockHeader.Height);
+            if ((found != null) && (found.HashBlock == chainedBlockHeader.HashBlock))
+                return found;
+
+            return null;
+        }
+
+        /// <summary>
         /// Finds the ancestor of this entry in the chain that matches the block hash given.
         /// </summary>
         /// <param name="blockHash">The block hash to search for.</param>
@@ -311,7 +326,7 @@ namespace NBitcoin
                 pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
             }
 
-            ChainedBlock firstChainedBlock = this.EnumerateToGenesis().FirstOrDefault(o => o.Height == pastHeight);
+            ChainedBlock firstChainedBlock = this.GetAncestor((int)pastHeight);
             if (firstChainedBlock == null)
                 throw new NotSupportedException("Can only calculate work of a full chain");
 
@@ -430,8 +445,17 @@ namespace NBitcoin
 
             while (highChain.HashBlock != lowChain.HashBlock)
             {
-                lowChain = lowChain.Previous;
-                highChain = highChain.Previous;
+                if (highChain.Skip != lowChain.Skip)
+                {
+                    highChain = highChain.Skip;
+                    lowChain = lowChain.Skip;
+                }
+                else
+                {
+                    lowChain = lowChain.Previous;
+                    highChain = highChain.Previous;
+                }
+
                 if ((lowChain == null) || (highChain == null))
                     return null;
             }

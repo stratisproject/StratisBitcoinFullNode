@@ -16,27 +16,20 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Parameterless constructor for dependency injection.</summary>
         public PeerConnectorDiscovery(
             IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
-        {
-        }
-
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+            IPeerAddressManager peerAddressManager) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByNetwork;
             this.MaximumNodeConnections = 8;
             this.Requirements = new NetworkPeerRequirement
             {
@@ -52,7 +45,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnStartConnectAsync()
+        public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }

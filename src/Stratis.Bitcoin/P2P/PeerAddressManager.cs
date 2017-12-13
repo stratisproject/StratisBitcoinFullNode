@@ -82,11 +82,20 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        /// <inheritdoc />
+        public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
+
+        /// <summary>The file name of the peers file.</summary>
+        internal const string PeerFileName = "peers.json";
+
+        /// <inheritdoc />
+        public DataFolder PeerFilePath { get; set; }
 
         /// <summary>Peer selector instance, used to select peers to connect to.</summary>
         public IPeerSelector Selector { get; private set; }
@@ -100,13 +109,6 @@ namespace Stratis.Bitcoin.P2P
             this.PeerFilePath = peerFilePath;
             this.Selector = new PeerSelector(this.loggerFactory, this);
         }
-
-        /// <inheritdoc />
-        public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
-
-        internal const string PeerFileName = "peers.json";
-
-        public DataFolder PeerFilePath { get; set; }
 
         /// <inheritdoc />
         public void LoadPeers()

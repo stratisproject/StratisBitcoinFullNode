@@ -14,30 +14,23 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorAddNode : PeerConnector
     {
-        /// <summary>Constructor for dependency injection.</summary
+        /// <summary>Constructor for dependency injection.</summary>
         public PeerConnectorAddNode(
             IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
-        {
-        }
-
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorAddNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+            IPeerAddressManager peerAddressManager) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
 
             this.Requirements = new NetworkPeerRequirement
@@ -52,14 +45,14 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        /// <summary>This connector is always started </summary>
+        /// <summary>This connector is always started.</summary>
         public override bool CanStartConnect
         {
             get { return true; }
         }
 
         /// <inheritdoc/>
-        public override void OnStartConnectAsync()
+        public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }

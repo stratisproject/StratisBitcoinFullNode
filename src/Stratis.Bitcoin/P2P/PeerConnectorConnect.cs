@@ -18,27 +18,20 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Constructor for dependency injection.</summary>
         public PeerConnectorConnectNode(
             IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
-        {
-        }
-
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorConnectNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-                : base(nodeSettings, peerAddressManager)
+            IPeerAddressManager peerAddressManager) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.Connect.Count;
             this.Requirements = new NetworkPeerRequirement
             {
@@ -60,7 +53,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnStartConnectAsync()
+        public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
         }
