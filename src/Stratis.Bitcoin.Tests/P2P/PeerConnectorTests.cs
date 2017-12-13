@@ -12,10 +12,10 @@ namespace Stratis.Bitcoin.Tests.P2P
 {
     public sealed class PeerConnectorTests
     {
-        IAsyncLoopFactory asyncLoopFactory;
-        ExtendedLoggerFactory loggerFactory;
-        NetworkPeerFactory networkPeerFactory;
-        NodeLifetime nodeLifeTime;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly ExtendedLoggerFactory loggerFactory;
+        private readonly NetworkPeerFactory networkPeerFactory;
+        private readonly NodeLifetime nodeLifeTime;
 
         public PeerConnectorTests()
         {
