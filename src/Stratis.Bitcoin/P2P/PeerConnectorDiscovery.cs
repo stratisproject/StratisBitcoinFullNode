@@ -28,12 +28,6 @@ namespace Stratis.Bitcoin.P2P
         {
         }
 
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorDiscovery(IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(dateTimeProvider, nodeSettings, peerAddressManager)
-        {
-        }
-
         /// <inheritdoc/>
         public override void OnInitialize()
         {

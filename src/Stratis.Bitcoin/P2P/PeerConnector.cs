@@ -147,20 +147,6 @@ namespace Stratis.Bitcoin.P2P
             this.peerAddressManager = peerAddressManager;
         }
 
-        /// <summary>Constructor used for unit testing.</summary>
-        protected PeerConnector(IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-        {
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
-
-            this.dateTimeProvider = dateTimeProvider;
-            this.peerAddressManager = peerAddressManager;
-            this.NodeSettings = nodeSettings;
-            this.nodeLifetime = new NodeLifetime();
-            this.RelatedPeerConnector = new RelatedPeerConnectors();
-        }
-
         /// <inheritdoc/>
         public void Initialize(NetworkPeerConnectionParameters parameters)
         {
