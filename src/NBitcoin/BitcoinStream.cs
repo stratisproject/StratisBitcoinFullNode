@@ -374,7 +374,7 @@ namespace NBitcoin
             }
             set
             {
-                this.transactionSupportedOptions = value;
+                this.transactionSupportedOptions = value ?? throw new ArgumentNullException("A null network options should not be passed here.");
             }
         }
 

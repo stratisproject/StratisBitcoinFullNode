@@ -18,7 +18,7 @@ namespace NBitcoin
     /// in the block is a special one that creates a new coin owned by the creator
     /// of the block.
     /// </summary>
-    public class BlockHeader : IBitcoinSerializable
+    public class BlockHeader : IBitcoinSerializable, IHaveNetworkOptions
     {
         internal const int Size = 80;
 
@@ -41,6 +41,8 @@ namespace NBitcoin
 
         private uint nonce;
         public uint Nonce { get { return this.nonce; } set { this.nonce = value; } }
+
+        private NetworkOptions networkOptions = null;
 
         private uint256 hashMerkleRoot;
         public uint256 HashMerkleRoot { get { return this.hashMerkleRoot; } set { this.hashMerkleRoot = value; } }
@@ -66,14 +68,26 @@ namespace NBitcoin
             this.SetNull();
         }
 
-        public BlockHeader(string hex)
-            : this(Encoders.Hex.DecodeData(hex))
+        public BlockHeader(NetworkOptions networkOptions)
+        {
+            this.SetNull();
+            this.networkOptions = networkOptions;
+        }
+
+        public BlockHeader(string hex, NetworkOptions networkOptions = null)
+            : this(Encoders.Hex.DecodeData(hex), networkOptions)
         {
         }
 
-        public BlockHeader(byte[] bytes)
+        public BlockHeader(byte[] bytes, NetworkOptions networkOptions = null)
+            : this(networkOptions)
         {
-            this.ReadWrite(bytes);
+            this.ReadWrite(bytes, options:GetNetworkOptions());
+        }
+
+        public NetworkOptions GetNetworkOptions()
+        {
+            return this.networkOptions ?? NetworkOptions.TemporaryOptions;
         }
 
         public static BlockHeader Parse(string hex)
@@ -95,6 +109,9 @@ namespace NBitcoin
 
         public void ReadWrite(BitcoinStream stream)
         {
+            if (!stream.Serializing)
+                this.networkOptions = stream.TransactionOptions;
+
             stream.ReadWrite(ref this.version);
             stream.ReadWrite(ref this.hashPrevBlock);
             stream.ReadWrite(ref this.hashMerkleRoot);
@@ -116,7 +133,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            if (Block.BlockSignature)
+            if (this.GetNetworkOptions().IsProofOfStake)
             {
                 if (this.version > 6)
                     hash = Hashes.Hash256(this.ToBytes());
@@ -168,7 +185,7 @@ namespace NBitcoin
                 return false;
 
             // Check proof of work matches claimed amount.
-            if (Block.BlockSignature) // Note this can only be called on a POW block.
+            if (this.GetNetworkOptions().IsProofOfStake) // Note this can only be called on a POW block.
                 return this.GetPoWHash() <= this.Bits.ToUInt256();
 
             return consensus.GetPoWHash(this) <= this.Bits.ToUInt256();
@@ -221,7 +238,7 @@ namespace NBitcoin
         }
     }
 
-    public partial class Block : IBitcoinSerializable
+    public partial class Block : IBitcoinSerializable, IHaveNetworkOptions
     {
         public const uint MaxBlockSize = 1000 * 1000;
 
@@ -241,23 +258,36 @@ namespace NBitcoin
             this.SetNull();
         }
 
+        public Block(NetworkOptions networkOptions)
+            :this(new BlockHeader(networkOptions))
+        {            
+        }
+
         public Block(BlockHeader blockHeader)
         {
-            this.SetNull();
             this.header = blockHeader;
         }
 
-        public Block(byte[] bytes)
+        public Block(byte[] bytes, NetworkOptions networkOptions = null)
+            :this(networkOptions)
         {
-            this.ReadWrite(bytes);
+            this.ReadWrite(bytes, options:this.GetNetworkOptions());
         }
 
+        public NetworkOptions GetNetworkOptions()
+        {
+            return this.header.GetNetworkOptions();
+        }
 
         public void ReadWrite(BitcoinStream stream)
         {
+            if (stream.Serializing)
+                stream.TransactionOptions = this.GetNetworkOptions();
+
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
-            if (Block.BlockSignature)
+
+            if (stream.TransactionOptions.IsProofOfStake)
                 stream.ReadWrite(ref this.blockSignature);
         }
 
@@ -318,7 +348,7 @@ namespace NBitcoin
             if ((options == NetworkOptions.None) && !this.Transactions[0].HasWitness)
                 return this;
 
-            var instance = new Block();
+            var instance = new Block(options);
             var ms = new MemoryStream();
             var bms = new BitcoinStream(ms, true)
             {
@@ -357,7 +387,7 @@ namespace NBitcoin
         /// <returns></returns>
         public bool Check(Consensus consensus)
         {
-            if (Block.BlockSignature)
+            if (this.GetNetworkOptions().IsProofOfStake)
                 return BlockStake.Check(this);
 
             return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);
@@ -388,7 +418,7 @@ namespace NBitcoin
             if (address == null)
                 throw new ArgumentNullException("address");
 
-            Block block = new Block();
+            Block block = new Block(this.GetNetworkOptions());
             block.Header.Nonce = RandomUtils.GetUInt32();
             block.Header.HashPrevBlock = this.GetHash();
             block.Header.BlockTime = now;
@@ -414,7 +444,7 @@ namespace NBitcoin
 
         public Block CreateNextBlockWithCoinbase(PubKey pubkey, Money value, DateTimeOffset now)
         {
-            Block block = new Block();
+            Block block = new Block(this.GetNetworkOptions());
             block.Header.Nonce = RandomUtils.GetUInt32();
             block.Header.HashPrevBlock = this.GetHash();
             block.Header.BlockTime = now;
@@ -434,12 +464,12 @@ namespace NBitcoin
             return block;
         }
 
-        public static Block ParseJson(string json)
+        public static Block ParseJson(string json, NetworkOptions networkOptions = null)
         {
             var formatter = new BlockExplorerFormatter();
             JObject block = JObject.Parse(json);
             JArray txs = (JArray)block["tx"];
-            Block blk = new Block();
+            Block blk = new Block(networkOptions);
             blk.Header.Bits = new Target((uint)block["bits"]);
             blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);
             blk.Header.Nonce = (uint)block["nonce"];
@@ -449,15 +479,15 @@ namespace NBitcoin
 
             foreach (JToken tx in txs)
             {
-                blk.AddTransaction(formatter.Parse((JObject)tx));
+                blk.AddTransaction(formatter.Parse((JObject)tx /*, networkOptions */)); // TODO
             }
 
             return blk;
         }
 
-        public static Block Parse(string hex)
+        public static Block Parse(string hex, NetworkOptions networkOptions = null)
         {
-            return new Block(Encoders.Hex.DecodeData(hex));
+            return new Block(Encoders.Hex.DecodeData(hex), networkOptions);
         }
 
         public MerkleBlock Filter(params uint256[] txIds)

@@ -19,13 +19,13 @@ namespace NBitcoin
             NetworkOptions options = null)
         {
             // If no options have been provided then take the options from the serializable
-            if (options == null && serializing && serializable is IHaveNetworkOptions)
-                options = (serializable as IHaveNetworkOptions).GetNetworkOptions();
+            if (options == null && serializing && serializable is IHaveNetworkOptions haveNetworkOptions)
+                options = haveNetworkOptions.GetNetworkOptions();
 
             serializable.ReadWrite(new BitcoinStream(stream, serializing)
             {
                 ProtocolVersion = version,
-                TransactionOptions = options
+                TransactionOptions = options ?? NetworkOptions.TemporaryOptions
             });
         }
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
@@ -72,7 +72,7 @@ namespace NBitcoin
             var bms = new BitcoinStream(bytes)
             {
                 ProtocolVersion = version,
-                TransactionOptions = options
+                TransactionOptions = options ?? NetworkOptions.TemporaryOptions
             };
             serializable.ReadWrite(bms);
         }
