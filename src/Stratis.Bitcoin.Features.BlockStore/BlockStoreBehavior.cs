@@ -247,34 +247,32 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     ChainedBlock chainedBlock = this.chain.GetBlock(hash);
                     if (chainedBlock == null)
                     {
-                        // Bail out if we reorged away from this block
+                        // Bail out if we reorged away from this block.
                         revertToInv = true;
                         break;
                     }
 
                     bestIndex = chainedBlock;
-                    if (foundStartingHeader)
+
+                    if (!foundStartingHeader)
                     {
-                        headers.Add(chainedBlock.Header);
-                    }
-                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
-                    {
-                        continue;
-                    }
-                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
-                    {
-                        // Peer doesn't have this header but they do have the prior one.
-                        // Start sending headers.
+                        // Peer doesn't have a block at the height of our block and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) == null)
+                            continue;
+
+                        // Peer doesn't have a block at the height of our block.Previous and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous) == null)
+                        {
+                            // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
+                            revertToInv = true;
+                            break;
+                        }
+
                         foundStartingHeader = true;
-                        headers.Add(chainedBlock.Header);
                     }
-                    else
-                    {
-                        // Peer doesn't have this header or the prior one -- nothing will
-                        // connect, so bail out.
-                        revertToInv = true;
-                        break;
-                    }
+
+                    // If we reached here then it means that we've found starting header.
+                    headers.Add(chainedBlock.Header);
                 }
             }
 
