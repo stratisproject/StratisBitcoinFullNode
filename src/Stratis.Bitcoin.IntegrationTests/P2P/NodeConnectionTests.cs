@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Threading;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
             var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder);
-            var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(new DateTimeProvider(), peerAddressManager)
+            var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, peerAddressManager)
             {
                 PeersToDiscover = 3
             };
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             var peerConnectorDiscovery = new PeerConnectorDiscovery(
                 new AsyncLoopFactory(loggerFactory),
+                DateTimeProvider.Default,
                 loggerFactory,
                 Network.Main,
                 networkPeerFactory,
@@ -58,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             IConnectionManager connectionManager = new ConnectionManager(
                 new AsyncLoopFactory(loggerFactory),
-                new DateTimeProvider(),
+                DateTimeProvider.Default,
                 loggerFactory,
                 Network.Main,
                 networkPeerFactory,
@@ -82,12 +84,20 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             {
                 try
                 {
-                    var peerAddress = peerAddressManager.Selector.SelectPeer();
-                    NetworkPeer peer = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerAddress.NetworkAddress, parameters);
-                    peer.VersionHandshake();
-                    peer.Disconnect();
+                    using (CancellationTokenSource cancel = CancellationTokenSource.CreateLinkedTokenSource(parameters.ConnectCancellation))
+                    {
+                        cancel.CancelAfter((int)TimeSpans.FiveSeconds.TotalMilliseconds);
 
-                    break;
+                        var connectParameters = parameters.Clone();
+                        connectParameters.ConnectCancellation = cancel.Token;
+
+                        var peerAddress = peerAddressManager.Selector.SelectPeer();
+                        NetworkPeer peer = networkPeerFactory.CreateConnectedNetworkPeer(Network.Main, peerAddress.NetworkAddress, connectParameters);
+                        peer.VersionHandshake();
+                        peer.Disconnect();
+
+                        break;
+                    }
                 }
                 catch
                 {
