@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -194,7 +195,7 @@ namespace NBitcoin.Tests
 
         private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedBlock expectedFork)
         {
-            var fork = chain.FindFork(chain2);
+            var fork = this.FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
@@ -203,7 +204,7 @@ namespace NBitcoin.Tests
             chain = chain2;
             chain2 = temp;
 
-            fork = chain.FindFork(chain2);
+            fork = this.FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
@@ -573,5 +574,18 @@ namespace NBitcoin.Tests
             return AppendBlock(index, chains);
         }
 
+        /// <summary>
+        /// Returns the first common chained block header between two chains.
+        /// </summary>
+        /// <param name="chainSrc">The source chain.</param>
+        /// <param name="otherChain">The other chain.</param>
+        /// <returns>First common chained block header or <c>null</c>.</returns>
+        private ChainedBlock FindFork(ChainBase chainSrc, ChainBase otherChain)
+        {
+            if (otherChain == null)
+                throw new ArgumentNullException("otherChain");
+
+            return chainSrc.FindFork(otherChain.Tip.EnumerateToGenesis().Select(o => o.HashBlock));
+        }
     }
 }
