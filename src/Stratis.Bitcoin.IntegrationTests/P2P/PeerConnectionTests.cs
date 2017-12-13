@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 new AsyncLoopFactory(this.loggerFactory),
                 DateTimeProvider.Default,
                 this.loggerFactory,
-                Network.StratisTest,
+                Network.StratisMain,
                 this.networkPeerFactory,
                 this.nodeSettings,
                 this.nodeLifetime,
@@ -77,6 +77,9 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
         private void CreateTestContext(string folder)
         {
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
+
             this.parameters = new NetworkPeerConnectionParameters();
 
             var testFolder = TestDirectory.Create(folder);
@@ -88,16 +91,13 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             this.nodeSettings.DataFolder = new DataFolder(this.nodeSettings);
 
-            this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder);
+            this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder, this.loggerFactory);
             var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(new DateTimeProvider(), this.peerAddressManager)
             {
                 PeersToDiscover = 10
             };
 
             this.parameters.TemplateBehaviors.Add(peerAddressManagerBehaviour);
-
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
 
             this.networkPeerFactory = new NetworkPeerFactory(new DateTimeProvider(), this.loggerFactory);
             this.nodeLifetime = new NodeLifetime();
