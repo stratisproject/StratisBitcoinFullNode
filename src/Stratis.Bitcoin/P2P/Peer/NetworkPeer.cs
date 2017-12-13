@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -241,7 +242,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.receiveMessageTask = ReceiveMessagesAsync();
+            this.receiveMessageTask = Task.Run(() => ReceiveMessages());
 
             this.logger.LogTrace("(-)");
         }
@@ -249,25 +250,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Reads messages from the connection stream.
         /// </summary>
-        public async Task ReceiveMessagesAsync()
+        public void ReceiveMessages()
         { 
             this.logger.LogTrace("()");
 
+            this.logger.LogTrace("Start listenting.");
+            byte[] buffer = new byte[1024 * 1024];
             try
             {
                 while (!this.Cancel.Token.IsCancellationRequested)
                 {
-                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.Cancel.Token).ConfigureAwait(false);
+                    PerformanceCounter counter;
+                    Message message = Message.ReadNext(this.Client.Stream, this.Peer.Network, this.Peer.Version, this.Cancel.Token, buffer, out counter);
 
-                    this.logger.LogTrace("Received message: '{0}'", message);
+                    this.logger.LogTrace("Receiving message: '{0}'", message);
 
                     this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
-                    this.Peer.Counter.AddRead(message.MessageSize);
+                    this.Peer.Counter.Add(counter);
                     this.Peer.OnMessageReceived(new IncomingMessage()
                     {
                         Message = message,
                         Client = this.Client,
-                        Length = message.MessageSize,
+                        Length = counter.ReadBytes,
                         NetworkPeer = this.Peer
                     });
                 }
@@ -376,6 +380,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if ((value == NetworkPeerState.Failed) || (value == NetworkPeerState.Offline))
                     {
                         this.logger.LogTrace("Communication closed.");
+                        this.OnDisconnected();
                     }
                 }
             }
@@ -423,7 +428,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// The negotiated protocol version (minimum of supported version between <see cref="MyVersion"/> and the <see cref="PeerVersion"/>).
+        /// The negociated protocol version (minimum of supported version between MyVersion and the PeerVersion).
         /// </summary>
         public ProtocolVersion Version
         {
@@ -494,6 +499,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <seealso cref="Stratis.Bitcoin.Base.ChainHeadersBehavior.AttachCore"/>
         /// <remarks>TODO: Remove this once the events are refactored.</remarks>
         public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
+
+        /// <summary>Event handler that is triggered when the network state of a peer was changed.</summary>
+        public event NetworkPeerDisconnectedEventHandler Disconnected;
 
         /// <summary>
         /// Dummy constructor for testing only.
@@ -742,6 +750,32 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
+        /// Calls event handlers when the peer is disconnected from the node.
+        /// </summary>
+        private void OnDisconnected()
+        {
+            this.logger.LogTrace("()");
+
+            NetworkPeerDisconnectedEventHandler disconnected = Disconnected;
+            if (disconnected != null)
+            {
+                foreach (NetworkPeerDisconnectedEventHandler handler in disconnected.GetInvocationList().Cast<NetworkPeerDisconnectedEventHandler>())
+                {
+                    try
+                    {
+                        handler.DynamicInvoke(this);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
+                    }
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
         /// Initializes behaviors from the default template.
         /// </summary>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, including the default behaviors template.</param>
@@ -891,7 +925,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (payload is RejectPayload)
                 {
                     this.logger.LogTrace("(-)[HANDSHAKE_REJECTED]");
-                    throw new ProtocolException("Handshake rejected: " + ((RejectPayload)payload).Reason);
+                    throw new ProtocolException("Handshake rejected : " + ((RejectPayload)payload).Reason);
                 }
 
                 var version = (VersionPayload)payload;

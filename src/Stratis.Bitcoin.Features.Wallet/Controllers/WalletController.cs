@@ -284,6 +284,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     IsChainSynced = this.chain.IsDownloaded(),
                     IsDecrypted = true
                 };
+
+                // Get the wallet's file path.
+                (string folder, IEnumerable<string> fileNameCollection) = this.walletManager.GetWalletsFiles();
+                string searchFile = Path.ChangeExtension(request.Name, this.walletManager.GetWalletFileExtension());
+                string fileName = fileNameCollection.FirstOrDefault(i => i.Equals(searchFile));
+                if (folder != null && fileName != null)
+                    model.WalletFilePath = Path.Combine(folder, fileName);
+
                 return this.Json(model);
             }
             catch (Exception e)
