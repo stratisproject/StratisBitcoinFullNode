@@ -763,7 +763,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Check if the outputs contain one of our addresses.
                     if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
                     {
-                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
                         foundTrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
                     }
                 }
@@ -812,17 +812,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="transactionHash">The transaction hash.</param>
         /// <param name="time">The time.</param>
+        /// <param name="isCoinStake">A value indicating whether this is a coin stake transaction or not.</param>
         /// <param name="index">The index.</param>
         /// <param name="amount">The amount.</param>
         /// <param name="script">The script.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
-        private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, int index, Money amount, Script script,
+        private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, bool isCoinStake, int index, Money amount, Script script,
             int? blockHeight = null, Block block = null)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11})", nameof(transactionHex), transactionHex,
-                nameof(transactionHash), transactionHash, nameof(time), time, nameof(index), index, nameof(amount), amount, nameof(blockHeight), blockHeight);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11},{12}:{13})", nameof(transactionHex), transactionHex,
+                nameof(transactionHash), transactionHash, nameof(time), time, nameof(isCoinStake), isCoinStake, nameof(index), index, nameof(amount), amount, nameof(blockHeight), blockHeight);
 
             // Get the collection of transactions to add to.
             this.keysLookup.TryGetValue(script, out HdAddress address);
@@ -837,6 +838,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
+                    IsCoinStake = isCoinStake,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
                     Id = transactionHash,
