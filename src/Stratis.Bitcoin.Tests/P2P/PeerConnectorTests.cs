@@ -3,6 +3,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -13,9 +14,11 @@ namespace Stratis.Bitcoin.Tests.P2P
     public sealed class PeerConnectorTests
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IConnectionManager connectionManager;
         private readonly ExtendedLoggerFactory loggerFactory;
         private readonly NetworkPeerFactory networkPeerFactory;
-        private readonly NodeLifetime nodeLifeTime;
+        private readonly NetworkPeerConnectionParameters networkPeerParameters;
+        private readonly NodeLifetime nodeLifetime;
 
         public PeerConnectorTests()
         {
@@ -24,7 +27,8 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
             this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, this.loggerFactory);
-            this.nodeLifeTime = new NodeLifetime();
+            this.networkPeerParameters = new NetworkPeerConnectionParameters();
+            this.nodeLifetime = new NodeLifetime();
         }
 
         [Fact]
@@ -187,29 +191,50 @@ namespace Stratis.Bitcoin.Tests.P2P
             nodeSettings.ConnectionManager.Connect.Add(networkAddressConnectNode.Endpoint);
 
             var peerAddressManager = new PeerAddressManager();
-            var connector = CreatePeerConnectorDiscovery(nodeSettings, peerAddressManager);
+            var connector = this.CreatePeerConnectorDiscovery(nodeSettings, peerAddressManager);
             Assert.False(connector.CanStartConnect);
         }
 
         private PeerConnectorAddNode CreatePeerConnecterAddNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
-            var connector = new PeerConnectorAddNode(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, Network.StratisTest, this.networkPeerFactory, this.nodeLifeTime, nodeSettings, peerAddressManager);
-            connector.RelatedPeerConnector = new RelatedPeerConnectors();
-            return connector;
+            var peerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, Network.StratisTest, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
+            var connectionManager = CreateConnectionManager(nodeSettings, peerAddressManager, peerConnector);
+            peerConnector.Initialize(connectionManager);
+            return peerConnector;
         }
 
         private PeerConnectorConnectNode CreatePeerConnectorConnectNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
-            var connector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, Network.StratisTest, this.networkPeerFactory, this.nodeLifeTime, nodeSettings, peerAddressManager);
-            connector.RelatedPeerConnector = new RelatedPeerConnectors();
-            return connector;
+            var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, Network.StratisTest, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
+            var connectionManager = CreateConnectionManager(nodeSettings, peerAddressManager, peerConnector);
+            peerConnector.Initialize(connectionManager);
+            return peerConnector;
         }
 
         private PeerConnectorDiscovery CreatePeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
-            var connector = new PeerConnectorDiscovery(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, Network.StratisTest, this.networkPeerFactory, this.nodeLifeTime, nodeSettings, peerAddressManager);
-            connector.RelatedPeerConnector = new RelatedPeerConnectors();
-            return connector;
+            var peerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, Network.StratisTest, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
+            var connectionManager = CreateConnectionManager(nodeSettings, peerAddressManager, peerConnector);
+            peerConnector.Initialize(connectionManager);
+            return peerConnector;
+        }
+
+        private IConnectionManager CreateConnectionManager(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager, IPeerConnector peerConnector)
+        {
+            var connectionManager = new ConnectionManager(
+                new AsyncLoopFactory(this.loggerFactory),
+                DateTimeProvider.Default,
+                this.loggerFactory,
+                Network.StratisTest,
+                this.networkPeerFactory,
+                nodeSettings,
+                this.nodeLifetime,
+                this.networkPeerParameters,
+                peerAddressManager,
+                new IPeerConnector[] { peerConnector },
+                null);
+
+            return connectionManager;
         }
     }
 }
