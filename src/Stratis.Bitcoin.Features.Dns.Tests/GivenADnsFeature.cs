@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     {
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void WhenConstructorCalledAndPeerAddressManagerIsNullThenArgumentNullExceptionIsThrown()
+        public void WhenConstructorCalled_AndPeerAddressManagerIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
             Action a = () => { new DnsFeature(null, null); };
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void WhenConstructorCalledAndLoggerFactoryIsNullThenArgumentNullExceptionIsThrown()
+        public void WhenConstructorCalled_AndLoggerFactoryIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void WhenConstructorCalledAndAllParametersValidThenTypeCreated()
+        public void WhenConstructorCalled_AndAllParametersValid_ThenTypeCreated()
         {
             // Arrange.
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;

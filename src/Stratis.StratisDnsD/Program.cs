@@ -18,13 +18,25 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisDnsD
 {
+    /// <summary>
+    /// Main entry point.
+    /// </summary>
     public class Program
     {
+        /// <summary>
+        /// The entry point for the Stratis Dns process.
+        /// </summary>
+        /// <param name="args">Command line arguments.</param>
         public static void Main(string[] args)
         {
             MainAsync(args).Wait();
         }
 
+        /// <summary>
+        /// The async entry point for the Stratis Dns process.
+        /// </summary>
+        /// <param name="args">Command line arguments.</param>
+        /// <returns>A task used to await the operation.</returns>
         public static async Task MainAsync(string[] args)
         {
             try
@@ -41,6 +53,7 @@ namespace Stratis.StratisDnsD
                      .UseDns()
                      .Build();
                 
+                // TODO: add the functionality to run a full node with Dns.
                 await node.RunAsync();
             }
             catch (Exception ex)

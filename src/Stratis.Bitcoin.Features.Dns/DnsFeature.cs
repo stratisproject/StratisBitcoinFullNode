@@ -10,8 +10,14 @@ namespace Stratis.Bitcoin.Features.Dns
     /// </summary>
     public class DnsFeature : FullNodeFeature
     {
+        /// <summary>
+        /// Defines the peer address manager.
+        /// </summary>
         private readonly IPeerAddressManager peerAddressManager;
 
+        /// <summary>
+        /// Defines the logger.
+        /// </summary>
         private readonly ILogger logger;
 
         /// <summary>
@@ -28,11 +34,13 @@ namespace Stratis.Bitcoin.Features.Dns
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Initializes the Dns feature.
+        /// </summary>
         public override void Initialize()
         {
             this.logger.LogInformation("Starting DNS");
-            // todo: add implementation.            
+            // TODO: add implementation.            
         }
     }
 }
