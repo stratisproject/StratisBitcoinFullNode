@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Base
         /// <summary>The fullnode interface.</summary>
         private readonly IFullNode fullNode;
 
-        /// <summary>The last time the <see cref="ibdLastResult"/> was updated.</summary>
-        private long ibdLastUpdate;
+        /// <summary>The last time in UTC the <see cref="ibdLastResult"/> was updated.</summary>
+        private DateTime ibdLastUpdate;
 
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdLastResult;
@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Base
             this.fullNode = fullNode;
             this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
             this.invalidBlockHashStore = invalidBlockHashStore;
+            this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow();
         }
 
         /// <summary>
@@ -73,24 +74,30 @@ namespace Stratis.Bitcoin.Base
         {
             get
             {
-                if (this.ibdLastUpdate < this.dateTimeProvider?.GetUtcNow().Ticks)
+                DateTime now = this.dateTimeProvider.GetUtcNow();
+                if (this.ibdLastUpdate < now)
                 {
                     // Sample every minute.
-                    this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
+                    this.ibdLastUpdate = now.AddMinutes(1);
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.
-                    IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
-                    this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
+                    IBlockDownloadState ibdStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
+                    this.ibdLastResult = ibdStateProvider == null ? false : ibdStateProvider.IsInitialBlockDownload();
                 }
 
                 return this.ibdLastResult;
             }
         }
 
-        // For testing to be able to move the IBD.
+        /// <summary>
+        /// Sets last IBD status update time and result.
+        /// <para>Used in tests only.</para>
+        /// </summary>
+        /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
+        /// <param name="time">New value for the last check of IBD status.</param>
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
-            this.ibdLastUpdate = time.Ticks;
+            this.ibdLastUpdate = time;
             this.ibdLastResult = val;
         }
     }
