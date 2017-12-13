@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.Base
                     this.ibdLastUpdate = now.AddMinutes(1);
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.
-                    IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
-                    this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
+                    IBlockDownloadState ibdStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
+                    this.ibdLastResult = ibdStateProvider == null ? false : ibdStateProvider.IsInitialBlockDownload();
                 }
 
                 return this.ibdLastResult;
