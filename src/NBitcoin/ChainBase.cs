@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -145,19 +144,6 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Returns the first common chained block header between two chains.
-        /// </summary>
-        /// <param name="chain">The other chain.</param>
-        /// <returns>First common chained block header or <c>null</c>.</returns>
-        public ChainedBlock FindFork(ChainBase chain)
-        {
-            if (chain == null)
-                throw new ArgumentNullException("chain");
-
-            return this.FindFork(chain.Tip.EnumerateToGenesis().Select(o => o.HashBlock));
-        }
-
-        /// <summary>
         /// Returns the first chained block header that exists in the chain from the list of block hashes.
         /// </summary>
         /// <param name="hashes">Hash to search for.</param>
@@ -248,7 +234,7 @@ namespace NBitcoin
 
             while (true)
             {
-                ChainedBlock b = GetBlock(i);
+                ChainedBlock b = this.GetBlock(i);
                 if ((b == null) || (b.Previous != prev))
                     yield break;
 
