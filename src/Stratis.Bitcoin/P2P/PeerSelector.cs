@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Contract interface for <see cref="PeerSelector"/>.
+    /// Contract for <see cref="PeerSelector"/>.
     /// </summary>
     public interface IPeerSelector
     {
@@ -30,6 +30,9 @@ namespace Stratis.Bitcoin.P2P
         IEnumerable<PeerAddress> SelectPeers();
     }
 
+    /// <summary>
+    /// Class that solely deals with providing the peer connectors a peer to connect to.
+    /// </summary>
     public sealed class PeerSelector : IPeerSelector
     {
         /// <summary>
@@ -68,6 +71,10 @@ namespace Stratis.Bitcoin.P2P
         }
     }
 
+    /// <summary>
+    /// Extension methods that helps group a set of peers by various attempted,
+    /// connected or handshaked states.
+    /// </summary>
     public static class PeerSelectorExtensions
     {
         /// <summary>
