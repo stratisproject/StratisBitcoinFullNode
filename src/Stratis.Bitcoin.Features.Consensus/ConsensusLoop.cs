@@ -272,6 +272,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </remarks>
         private async Task PullerLoopAsync()
         {
+            this.logger.LogTrace("()");
+
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
                 BlockValidationContext blockValidationContext = new BlockValidationContext();
@@ -280,6 +282,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     // Save the current consensus tip to later check if it changed.
                     ChainedBlock consensusTip = this.Tip;
+
+                    this.logger.LogTrace("Asking block puller to deliver next block.");
 
                     // This method will block until the next block is downloaded.
                     LookaheadResult lookaheadResult = this.Puller.NextBlock(this.nodeLifetime.ApplicationStopping);
@@ -310,6 +314,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.logger.LogTrace("Block received from puller.");
                 await this.AcceptBlockAsync(blockValidationContext).ConfigureAwait(false);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

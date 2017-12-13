@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -207,7 +208,7 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        this.AttachedPeer.SendMessageAsync(headers);
+                        this.AttachedPeer.SendMessageVoidAsync(headers);
                         break;
                     }
 
@@ -338,7 +339,7 @@ namespace Stratis.Bitcoin.Base
             {
                 if ((peer.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
                 {
-                    peer.SendMessageAsync(new GetHeadersPayload()
+                    peer.SendMessageVoidAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });

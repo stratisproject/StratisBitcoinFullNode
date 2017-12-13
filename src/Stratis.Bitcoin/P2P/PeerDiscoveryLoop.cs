@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -22,8 +23,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Starts the peer discovery process.
         /// </summary>
-        /// <param name="parentParameters">The parent parameters as injected by <see cref="Connection.ConnectionManager"/>.</param>
-        void DiscoverPeers(NetworkPeerConnectionParameters parentParameters);
+        void DiscoverPeers(IConnectionManager connectionManager);
     }
 
     /// <summary>Async loop that discovers new peers to connect to.</summary>
@@ -82,16 +82,18 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void DiscoverPeers(NetworkPeerConnectionParameters parameters)
+        public void DiscoverPeers(IConnectionManager connectionManager)
         {
             // If peers are specified in the -connect arg then discovery does not happen.
             if (this.nodeSettings.ConnectionManager.Connect.Any())
                 return;
 
-            if (!parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+            if (!connectionManager.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 return;
 
-            this.currentParameters = parameters;
+            this.currentParameters = connectionManager.Parameters.Clone();
+            this.currentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
+
             this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
 
             this.logger.LogInformation("Starting peer discovery...");
@@ -101,7 +103,7 @@ namespace Stratis.Bitcoin.P2P
                     await this.DiscoverPeersAsync();
             },
             this.nodeLifetime.ApplicationStopping,
-            TimeSpans.Minute);
+            TimeSpans.Second);
         }
 
         /// <summary>
@@ -147,7 +149,7 @@ namespace Stratis.Bitcoin.P2P
 
                         networkPeer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
                         networkPeer.VersionHandshake(connectTokenSource.Token);
-                        networkPeer.SendMessageAsync(new GetAddrPayload());
+                        networkPeer.SendMessageVoidAsync(new GetAddrPayload());
 
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }
