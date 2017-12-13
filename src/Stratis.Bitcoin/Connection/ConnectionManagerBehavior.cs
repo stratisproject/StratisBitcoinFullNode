@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.P2P.Peer;
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.ConnectionManager.AddConnectedPeer(peer);
                 this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
-                peer.SendMessageAsync(new SendHeadersPayload());
+                peer.SendMessageVoidAsync(new SendHeadersPayload());
             }
 
             if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))

@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -163,7 +164,9 @@ namespace Stratis.Bitcoin.BlockPulling
 
             uint256 block = null;
             if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
-                attachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+            {
+                attachedNode.SendMessageVoidAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -187,7 +190,7 @@ namespace Stratis.Bitcoin.BlockPulling
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
-            attachedNode.SendMessageAsync(getDataPayload);
+            attachedNode.SendMessageVoidAsync(getDataPayload);
 
             this.logger.LogTrace("(-)");
         }
