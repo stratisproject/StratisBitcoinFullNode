@@ -584,7 +584,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
-        public async Task<IActionResult> SendTransactionAsync([FromBody] SendTransactionRequest request)
+        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
