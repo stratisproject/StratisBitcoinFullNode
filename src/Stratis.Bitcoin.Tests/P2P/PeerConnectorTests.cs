@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Tests.P2P
     public sealed class PeerConnectorTests
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly IConnectionManager connectionManager;
         private readonly ExtendedLoggerFactory loggerFactory;
         private readonly NetworkPeerFactory networkPeerFactory;
         private readonly NetworkPeerConnectionParameters networkPeerParameters;
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.loggerFactory.AddConsoleWithFilters();
 
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
-            this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, this.loggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(Network.Main, DateTimeProvider.Default, this.loggerFactory);
             this.networkPeerParameters = new NetworkPeerConnectionParameters();
             this.nodeLifetime = new NodeLifetime();
         }
