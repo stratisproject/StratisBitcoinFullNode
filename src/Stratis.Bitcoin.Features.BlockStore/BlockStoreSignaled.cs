@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
-        private readonly ConcurrentDictionary<int, uint256> blockHashesToAnnounce;
+        private readonly ConcurrentQueue<uint256> blockHashesToAnnounce;
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             string name = "BlockStore")
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockHashesToAnnounce = new ConcurrentDictionary<int, uint256>();
+            this.blockHashesToAnnounce = new ConcurrentQueue<uint256>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
@@ -84,10 +84,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             uint256 blockHash = block.GetHash();
-            ChainedBlock chainedBlock = this.chain.GetBlock(block.GetHash());
-
             this.logger.LogTrace("Block hash is '{0}'.", blockHash);
-            this.blockHashesToAnnounce.TryAdd(chainedBlock.Height, blockHash);
+            this.blockHashesToAnnounce.Enqueue(blockHash);
 
             this.logger.LogTrace("(-)");
         }
@@ -117,34 +115,37 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
             {
                 this.logger.LogTrace("()");
-                List<KeyValuePair<int, uint256>> blockHeightPairs = this.blockHashesToAnnounce.OrderBy(i => i.Key).ToList();
 
-                if (!blockHeightPairs.Any())
+                if (!this.blockHashesToAnnounce.Any())
                 {
                     this.logger.LogTrace("(-)[NO_BLOCKS]");
                     return;
                 }
 
                 var broadcastItems = new List<uint256>();
-                foreach (KeyValuePair <int, uint256> blockHeightPair in blockHeightPairs)
+
+                while (this.blockHashesToAnnounce.TryPeek(out uint256 blockHash))
                 {
                     // The first block that is not in disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(blockHeightPair.Value).ConfigureAwait(false))
+                    if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
                     {
-                        // NOTE: there is a very minimal possibility a reorg would happen
-                        // and post reorg blocks will now be in the 'blockHashesToAnnounce',
-                        // current logic will discard those blocks, I suspect this will be unlikely
-                        // to happen. In case it does a block will just not be relays.
+                        // There is a small possibility that a reorg happened and 'blockHashesToAnnounce'
+                        // contains hashes of blocks that we've reorged away from.
+                        // Current logic will discard all blocks waiting for being announced if we've encountered a block that we've reorged from.
 
-                        // If the hash is not on disk and not in the best chain
-                        // we assume all the following blocks are also discardable
-                        if (!this.chain.Contains(blockHeightPair.Value))
-                            this.blockHashesToAnnounce.Clear();
+                        // If the hash is not on disk and not in the best chain we assume all the following blocks are also discardable.
+                        if (!this.chain.Contains(blockHash))
+                        {
+                            // Clear queue.
+                            while (this.blockHashesToAnnounce.TryDequeue(out uint256 item))
+                            {
+                            }
+                        }
 
                         break;
                     }
 
-                    if (this.blockHashesToAnnounce.TryRemove(blockHeightPair.Key, out uint256 hashToBroadcast))
+                    if (this.blockHashesToAnnounce.TryDequeue(out uint256 hashToBroadcast))
                         broadcastItems.Add(hashToBroadcast);
                 }
 
