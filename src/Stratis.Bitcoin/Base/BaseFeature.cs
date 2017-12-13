@@ -305,9 +305,10 @@ namespace Stratis.Bitcoin.Base
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorAddNode());
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorConnectNode());
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorDiscovery());
+                    services.AddSingleton<IPeerConnector, PeerConnectorAddNode>();
+                    services.AddSingleton<IPeerConnector, PeerConnectorConnectNode>();
+                    services.AddSingleton<IPeerConnector, PeerConnectorDiscovery>();
+                    services.AddSingleton<IPeerDiscovery, PeerDiscovery>();
                 });
             });
 

@@ -1,9 +1,11 @@
 ﻿using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -13,27 +15,40 @@ namespace Stratis.Bitcoin.P2P
     public sealed class PeerConnectorDiscovery : PeerConnector
     {
         /// <summary>Parameterless constructor for dependency injection.</summary>
-        public PeerConnectorDiscovery()
-            : base()
-        {
-        }
-
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+        public PeerConnectorDiscovery(
+            IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByNetwork;
             this.MaximumNodeConnections = 8;
             this.Requirements = new NetworkPeerRequirement
             {
                 MinVersion = this.NodeSettings.ProtocolVersion,
                 RequiredServices = NetworkPeerServices.Network
             };
+        }
+
+        /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>
+        public override bool CanStartConnect
+        {
+            get { return !this.NodeSettings.ConnectionManager.Connect.Any(); }
+        }
+
+        /// <inheritdoc/>
+        public override void OnStartConnect()
+        {
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
         /// <inheritdoc/>

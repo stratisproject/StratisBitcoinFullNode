@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             uint256 expected = this.rpcTestFixture.Node.FullNode.Chain.Tip.Header.GetHash();
 
             uint256 response = this.rpcTestFixture.RpcClient.GetBestBlockHash();
-            
+
             Assert.Equal(expected, response);
         }
 
