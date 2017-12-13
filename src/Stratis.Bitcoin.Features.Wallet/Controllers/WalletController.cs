@@ -594,6 +594,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
+            if (!this.connectionManager.ConnectedNodes.Any())
+            {
+                throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
+            }
+
             try
             {
                 var transaction = new Transaction(request.Hex);
