@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.MinerScriptPubKey = this.MinerKey.PubKey.Hash.ScriptPubKey;
         }
 
-        public ConcurrentChain Chain { get; } = new ConcurrentChain();
+        public ConcurrentChain Chain { get; private set; }
 
         public Key MinerKey
         {

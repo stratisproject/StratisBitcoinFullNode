@@ -994,7 +994,7 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = new ConcurrentChain(new BlockHeader()
             {
                 BlockTime = first
-            });
+            }, Network.StratisMain);
             first = first + TimeSpan.FromMinutes(10);
             while (currentHeight != chain.Height)
             {

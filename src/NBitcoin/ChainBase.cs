@@ -24,6 +24,9 @@ namespace NBitcoin
         /// <summary>Gets the chained block header at the tip of the chain.</summary>
         public abstract ChainedBlock Tip { get; }
 
+        /// <summary>The network associated with the chain.</summary>
+        public abstract Network Network { get; }
+
         /// <summary>Gets the height of the chain.</summary>
         public abstract int Height { get; }
 
@@ -104,7 +107,7 @@ namespace NBitcoin
             if (prev == null)
                 return false;
 
-            chainedHeader = new ChainedBlock(header, header.GetHash(NetworkOptions.TemporaryOptions), this.GetBlock(header.HashPrevBlock));
+            chainedHeader = new ChainedBlock(header, header.GetHash(this.Network.NetworkOptions), this.GetBlock(header.HashPrevBlock));
             this.SetTip(chainedHeader);
             return true;
         }
