@@ -39,7 +39,7 @@ namespace Stratis.StratisDnsD
                      .UseApi()
                      .AddRPC()
                      .UseDns()
-                     .Build;
+                     .Build();
                 
                 await node.RunAsync();
             }
