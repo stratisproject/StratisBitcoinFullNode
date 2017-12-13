@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Stratis.StratisDnsD": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
+    },
+    "Stratis.StratisDnsD Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -stake=1 -walletname=wallet1 -walletpassword=123456 -debug=1"
+    }
+  }
+}
