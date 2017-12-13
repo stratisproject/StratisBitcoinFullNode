@@ -256,28 +256,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (!foundStartingHeader)
                     {
-                        // Block that peer has at the same height as our block (the one which hash is equal to the hash that will be announced).
-                        ChainedBlock peersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Height);
+                        // Peer don't have a block at the height of our block and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.HashBlock)?.Height == chainedBlock.Height)
+                            continue;
 
-                        // Peer don't have a block at this height?
-                        if (peersBlock != null)
+                        // Peer don't have a block at the height of our block.prev and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous.HashBlock)?.Height != chainedBlock.Previous.Height)
                         {
-                            // Check if the block that peer has have the same hash as block that we have.
-                            if (peersBlock.HashBlock == chainedBlock.HashBlock)
-                                continue;
-                        }
-                        else
-                        {
-                            // Block that peer has at height of (block that has target hash).height - 1.
-                            ChainedBlock prevPeersBlock = chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height);
-
-                            // Check if the block that peer has have the same hash as block that we have.
-                            if ((prevPeersBlock == null) || (prevPeersBlock.HashBlock != chainedBlock.Previous.HashBlock))
-                            {
-                                // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
-                                revertToInv = true;
-                                break;
-                            }
+                            // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
+                            revertToInv = true;
+                            break;
                         }
 
                         foundStartingHeader = true;
