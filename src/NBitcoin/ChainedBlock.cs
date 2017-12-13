@@ -186,16 +186,17 @@ namespace NBitcoin
 
         /// <summary>
         /// Finds the ancestor of this entry in the chain that matches the chained block header specified.
-        /// <remarks>It will compare the hash at the same height in the chain to verify the chained block
-        /// header has been found.</remarks>
         /// </summary>
         /// <param name="chainedBlockHeader">The chained block header to search for.</param>
         /// <returns>The chained block header or <c>null</c> if can't be found.</returns>
+        /// <remarks>This method compares the hash of the block header at the same height in the current chain 
+        /// to verify the correct chained block header has been found.</remarks>
         public ChainedBlock FindAncestorOrSelf(ChainedBlock chainedBlockHeader)
         {
             ChainedBlock found = this.GetAncestor(chainedBlockHeader.Height);
             if ((found != null) && (found.HashBlock == chainedBlockHeader.HashBlock))
                 return found;
+
             return null;
         }
 
