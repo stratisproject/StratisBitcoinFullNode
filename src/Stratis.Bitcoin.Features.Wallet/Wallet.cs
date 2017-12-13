@@ -799,6 +799,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string Hex { get; set; }
 
         /// <summary>
+        /// Propagation state of this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "isPropagated", NullValueHandling = NullValueHandling.Ignore)]
+        public bool IsPropagated { get; set; }
+
+        /// <summary>
         /// Gets or sets the full transaction object.
         /// </summary>
         [JsonIgnore]

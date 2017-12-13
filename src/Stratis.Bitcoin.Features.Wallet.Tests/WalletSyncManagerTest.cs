@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             walletSyncManager.ProcessTransaction(transaction);
 
-            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
+            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null, null));
         }
 
         /// <summary>

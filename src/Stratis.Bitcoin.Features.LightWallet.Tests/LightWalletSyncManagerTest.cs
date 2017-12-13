@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
             this.network = Network.StratisMain;
-            
+
             // Do not assume that the preceding line will set these flags.
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
@@ -472,7 +472,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             lightWalletSyncManager.ProcessTransaction(transaction);
 
-            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
+            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null, null));
         }
 
         /// <summary>

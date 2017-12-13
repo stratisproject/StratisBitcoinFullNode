@@ -3,26 +3,31 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConcurrentCollections;
 using NBitcoin;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Broadcasting
+namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public abstract class BroadcasterManagerBase : IBroadcasterManager
     {
         public event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
 
-        /// <summary>Connection manager for managing node connections.</summary>
+        /// <summary> Connection manager for managing node connections.</summary>
         protected readonly IConnectionManager connectionManager;
 
-        public BroadcasterManagerBase(IConnectionManager connectionManager)
+        /// <summary> Wallet manager.</summary>
+        protected readonly IWalletManager walletManager;
+
+        public BroadcasterManagerBase(IConnectionManager connectionManager, IWalletManager walletManager)
         {
             Guard.NotNull(connectionManager, nameof(connectionManager));
 
             this.connectionManager = connectionManager;
+            this.walletManager = walletManager;
             this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
         }
 
@@ -57,9 +62,11 @@ namespace Stratis.Bitcoin.Broadcasting
                 broadcastEntry.State = state;
                 this.OnTransactionStateChanged(broadcastEntry);
             }
+
+            this.walletManager.ProcessTransaction(transaction, null, null, state == State.Propagated);
         }
 
-        public abstract Task<bool> TryBroadcastAsync(Transaction transaction);
+        public abstract void BroadcastTransaction(Transaction transaction);
 
         /// <summary>
         /// Sends transaction to peers.

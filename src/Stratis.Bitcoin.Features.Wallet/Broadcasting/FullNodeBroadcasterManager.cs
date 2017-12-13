@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
 
-        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
+        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator, IWalletManager walletManager) : base(connectionManager, walletManager)
         {
             Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
 
@@ -22,24 +23,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
-        public override async Task<bool> TryBroadcastAsync(Transaction transaction)
+        public override void BroadcastTransaction(Transaction transaction)
         {
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
             if (this.IsPropagated(transaction))
-                return true;
+                return;
 
             var state = new MempoolValidationState(false);
-            if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
+            if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
             {
                 this.AddOrUpdate(transaction, State.CantBroadcast);
-                return false;
+                return;
             }
 
             this.PropagateTransactionToPeers(transaction, true);
-
-            return true;
         }
     }
 }
