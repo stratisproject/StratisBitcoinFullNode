@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                 if (newTip.Height > this.walletTip.Height)
                 {
-                    ChainedBlock findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
+                    ChainedBlock findTip = newTip.FindAncestorOrSelf(this.walletTip);
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 }
                 else
                 {
-                    ChainedBlock findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
+                    ChainedBlock findTip = this.walletTip.FindAncestorOrSelf(newTip);
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
