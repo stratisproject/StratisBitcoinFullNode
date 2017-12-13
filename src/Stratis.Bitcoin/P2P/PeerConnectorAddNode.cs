@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorAddNode : PeerConnector
     {
-        /// <summary>Constructor for dependency injection.</summary
+        /// <summary>Constructor for dependency injection.</summary>
         public PeerConnectorAddNode(
             IAsyncLoopFactory asyncLoopFactory,
             IDateTimeProvider dateTimeProvider,
