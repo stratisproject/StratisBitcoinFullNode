@@ -18,9 +18,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisDnsD
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             MainAsync(args).Wait();
         }
