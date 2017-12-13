@@ -112,8 +112,9 @@ namespace Stratis.Bitcoin.Connection
         public void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
-
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
+
+            reason = reason ?? "unknown";
 
             bool banPeer = true;
             NetworkPeer peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
@@ -122,13 +123,13 @@ namespace Stratis.Bitcoin.Connection
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason ?? "unknown");
+                    this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
                     peer.DisconnectWithException($"The peer was banned, reason: {reason}");
                 }
                 else
                 {
                     banPeer = false;
-                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
+                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason);
                 }
             }
 
