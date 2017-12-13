@@ -124,6 +124,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.powLoop?.Dispose();
             this.posLoop?.Dispose();
+            this.posLoop = null;
         }
 
         /// <inheritdoc />
