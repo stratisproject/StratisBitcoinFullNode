@@ -18,6 +18,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
         private INodeLifetime nodeLifetime;
         private NodeSettings nodeSettings;
         private IPeerAddressManager peerAddressManager;
+        private readonly Network network;
+
+        public PeerConnectionTests()
+        {
+            this.network = Network.Main;
+        }
 
         /// <summary>
         /// This tests the fact that we can't find and connect to a
@@ -28,14 +34,14 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
         {
             this.CreateTestContext("PeerConnectorAddNode_PeerAlreadyConnected_Scenario1");
 
-            var peerConnectorAddNode = new PeerConnectorAddNode(new AsyncLoopFactory(this.loggerFactory), DateTimeProvider.Default, this.loggerFactory, Network.StratisMain, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
-            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, Network.StratisMain, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
+            var peerConnectorAddNode = new PeerConnectorAddNode(new AsyncLoopFactory(this.loggerFactory), DateTimeProvider.Default, this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
+            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
 
             IConnectionManager connectionManager = new ConnectionManager(
                 new AsyncLoopFactory(this.loggerFactory),
                 DateTimeProvider.Default,
                 this.loggerFactory,
-                Network.StratisMain,
+                this.network,
                 this.networkPeerFactory,
                 this.nodeSettings,
                 this.nodeLifetime,
