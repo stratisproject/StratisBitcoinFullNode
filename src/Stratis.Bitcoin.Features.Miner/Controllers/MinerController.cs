@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// Start staking.
         /// </summary>
         /// <param name="request">The name and password of the wallet to stake.</param>
-        /// <returns>An OKResult object that produces a status code 200 HTTP response.</returns>
+        /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("startstaking")]
         [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>
         /// Stop staking.
         /// </summary>
-        /// <returns>An OKResult object that produces a status code 200 HTTP response.</returns>
+        /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("stopstaking")]
         [HttpPost]
         public IActionResult StopStaking()
