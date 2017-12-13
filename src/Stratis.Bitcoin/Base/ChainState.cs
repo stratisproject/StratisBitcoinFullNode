@@ -89,10 +89,15 @@ namespace Stratis.Bitcoin.Base
             }
         }
 
-        // For testing to be able to move the IBD.
+        /// <summary>
+        /// Sets last IBD status update time and result.
+        /// <para>Used in tests only.</para>
+        /// </summary>
+        /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
+        /// <param name="time">New value for the last check of IBD status.</param>
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
-            this.ibdLastUpdate = time.Ticks;
+            this.ibdLastUpdate = time;
             this.ibdLastResult = val;
         }
     }
