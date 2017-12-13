@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using NBitcoin;
-using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -73,8 +72,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                     var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
-
-                    Assert.NotNull(JToken.Parse(response));
+                    Assert.StartsWith("{\"walletFilePath\":\"", response);
                 }
             }
             finally
