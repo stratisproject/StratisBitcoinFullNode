@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P
                     await this.DiscoverPeersAsync();
             },
             this.nodeLifetime.ApplicationStopping,
-            TimeSpans.Second);
+            TimeSpans.TenSeconds);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.P2P
 
             Parallel.ForEach(peersToDiscover, new ParallelOptions()
             {
-                MaxDegreeOfParallelism = 5,
+                MaxDegreeOfParallelism = 2,
                 CancellationToken = this.nodeLifetime.ApplicationStopping,
             },
             peer =>
