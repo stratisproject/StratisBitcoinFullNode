@@ -55,13 +55,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
-                // checks the request is valid
-                if (!this.ModelState.IsValid)
-                {
-                    var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
-                }
-
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
 
                 return this.Json(model);
@@ -124,12 +117,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
-                if (!this.ModelState.IsValid)
-                {
-                    var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
-                }
-
                 this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
                 return this.Ok();
             }

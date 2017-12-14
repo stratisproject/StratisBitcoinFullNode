@@ -432,6 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeCancellationTokenSource.Cancel();
             this.stakingLoop.Dispose();
             this.stakingLoop = null;
+            this.stakeCancellationTokenSource.Dispose();
             this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
