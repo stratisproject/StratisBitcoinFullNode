@@ -96,6 +96,16 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
+        /// <summary>
+        /// Stop a staking wallet.
+        /// </summary>
+        public void StopStaking()
+        {
+            this.posMinting.StopStake();
+            this.posLoop = null;
+            this.logger.LogInformation("Staking stopped.");
+        }
+
         /// <inheritdoc />
         public override void Initialize()
         {

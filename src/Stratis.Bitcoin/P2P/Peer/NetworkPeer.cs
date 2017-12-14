@@ -229,6 +229,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 cts?.Dispose();
             }
+            finally
+            {
+                cts?.Dispose();
+            }
 
             this.logger.LogTrace("(-)");
         }
