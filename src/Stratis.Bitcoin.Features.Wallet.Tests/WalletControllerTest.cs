@@ -614,6 +614,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.GetWallet("myWallet")).Returns(wallet);
 
+            string walletFileExtension = "wallet.json";
+            string testWalletFileName = Path.ChangeExtension("myWallet", walletFileExtension);
+            string testWalletPath = Path.Combine(AppContext.BaseDirectory, "stratisnode", testWalletFileName);
+            string folder = Path.GetDirectoryName(testWalletPath);
+            string[] files = new string[] { testWalletFileName };
+            mockWalletWrapper.Setup(w => w.GetWalletsFiles()).Returns((folder, files));
+            mockWalletWrapper.Setup(w => w.GetWalletFileExtension()).Returns(walletFileExtension);
+
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, concurrentChain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GetGeneralInfo(new WalletName
@@ -631,6 +639,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(0, resultValue.ConnectedNodes);
             Assert.Equal(tip.Height, resultValue.ChainTip);
             Assert.True(resultValue.IsDecrypted);
+            Assert.Equal(testWalletPath, resultValue.WalletFilePath);
         }
 
         [Fact]

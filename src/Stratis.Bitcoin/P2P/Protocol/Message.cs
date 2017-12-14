@@ -13,10 +13,22 @@ namespace Stratis.Bitcoin.P2P.Protocol
 {
     public class Message : IBitcoinSerializable
     {
+        /// <summary>Size of the "command" part of the message in bytes.</summary>
+        public const int CommandSize = 12;
+
+        /// <summary>Size of the "length" part of the message in bytes.</summary>
+        public const int LengthSize = 4;
+
+        /// <summary>Size of the "checksum" part of the message in bytes, if it is present.</summary>
+        public const int ChecksumSize = 4;
+
+        /// <summary>Length of the message including the header.</summary>
+        public uint MessageSize { get; set; }
+
         private uint magic;
         public uint Magic { get { return this.magic; } set { this.magic = value; } }
 
-        private byte[] command = new byte[12];
+        private byte[] command = new byte[CommandSize];
         public string Command
         {
             get

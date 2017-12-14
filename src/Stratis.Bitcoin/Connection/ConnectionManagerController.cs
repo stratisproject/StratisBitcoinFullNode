@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Connection
                     break;
 
                 case "onetry":
-                    this.ConnectionManager.Connect(endpoint);
+                    this.ConnectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
                     break;
 
                 default:

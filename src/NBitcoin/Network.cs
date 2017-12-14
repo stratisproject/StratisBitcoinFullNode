@@ -146,6 +146,7 @@ namespace NBitcoin
         }
 
         public ConsensusOptions Options { get; set; }
+        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
 
         public class BuriedDeploymentsArray
         {
@@ -195,7 +196,7 @@ namespace NBitcoin
 
         public int SubsidyHalvingInterval { get; set; }
 
-        public Func<BlockHeader, uint256> GetPoWHash { get; set; } = h => h.GetHash();
+        public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
 
         public int MajorityEnforceBlockUpgrade { get; set; }
 
@@ -271,7 +272,8 @@ namespace NBitcoin
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
-                DefaultAssumeValid = this.DefaultAssumeValid
+                DefaultAssumeValid = this.DefaultAssumeValid,
+                NetworkOptions = this.NetworkOptions.Clone()
             };
         }
     }
@@ -285,6 +287,14 @@ namespace NBitcoin
         private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
         private Block genesis;
         private Consensus consensus = new Consensus();
+
+        public NetworkOptions NetworkOptions
+        {
+            get
+            {
+                return consensus.NetworkOptions;
+            }
+        }
 
         private Network()
         {
@@ -703,9 +713,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            var block = new Block();
-            block.ReadWrite(this.genesis.ToBytes());
-            return block;
+            return this.genesis.Clone(options:this.NetworkOptions);
         }
 
         public uint256 GenesisHash => this.consensus.HashGenesisBlock;

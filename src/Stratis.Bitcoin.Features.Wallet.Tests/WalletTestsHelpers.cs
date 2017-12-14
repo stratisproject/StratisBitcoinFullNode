@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static (ConcurrentChain chain, uint256 blockhash, Block block) CreateChainAndCreateFirstBlockWithPaymentToAddress(Network network, HdAddress address)
         {
-            var chain = new ConcurrentChain(network.GetGenesis().Header);
+            var chain = new ConcurrentChain(network);
 
             Block block = new Block();
             block.Header.HashPrevBlock = chain.Tip.HashBlock;

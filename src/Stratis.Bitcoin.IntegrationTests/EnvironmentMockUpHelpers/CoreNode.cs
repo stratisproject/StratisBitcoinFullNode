@@ -1,9 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,13 +17,21 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -47,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, bool cleanfolders = true, string configfile = "bitcoin.conf")
+        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
             this.builder = builder;
@@ -69,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, loggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(network, DateTimeProvider.Default, loggerFactory);
         }
 
         /// <summary>Get stratis full node if possible.</summary>
@@ -132,12 +146,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public NetworkPeer CreateNetworkPeerClient()
         {
-            return this.networkPeerFactory.CreateConnectedNetworkPeer(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString());
+            return this.networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
         public NetworkPeer CreateNodeClient(NetworkPeerConnectionParameters parameters)
         {
-            return this.networkPeerFactory.CreateConnectedNetworkPeer(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters);
+            return this.networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters).GetAwaiter().GetResult();
         }
 
         public async Task StartAsync()
@@ -233,10 +247,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var peer = this.CreateNetworkPeerClient())
             {
-                peer.VersionHandshake();
-                peer.SendMessageAsync(new InvPayload(transaction));
-                peer.SendMessageAsync(new TxPayload(transaction));
-                this.PingPong(peer);
+                peer.VersionHandshakeAsync().GetAwaiter().GetResult();
+                peer.SendMessageAsync(new InvPayload(transaction)).GetAwaiter().GetResult();
+                peer.SendMessageAsync(new TxPayload(transaction)).GetAwaiter().GetResult();
+                this.PingPongAsync(peer).GetAwaiter().GetResult();
             }
         }
 
@@ -246,9 +260,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <param name="cancellation"></param>
         /// <param name="peer"></param>
         /// <returns>Latency.</returns>
-        public TimeSpan PingPong(NetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
+        public async Task<TimeSpan> PingPongAsync(NetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            using (NetworkPeerListener listener = peer.CreateListener().OfType<PongPayload>())
+            using (var listener = new NetworkPeerListener(peer).OfType<PongPayload>())
             {
                 var ping = new PingPayload()
                 {
@@ -256,7 +270,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 DateTimeOffset before = DateTimeOffset.UtcNow;
-                peer.SendMessageAsync(ping);
+                await peer.SendMessageAsync(ping);
 
                 while (listener.ReceivePayload<PongPayload>(cancellation).Nonce != ping.Nonce)
                 {
@@ -319,7 +333,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public BitcoinSecret MinerSecret { get; private set; }
 
-        public Block[] Generate(int blockCount, bool includeUnbroadcasted = true, bool broadcast = true)
+        public async Task<Block[]> GenerateAsync(int blockCount, bool includeUnbroadcasted = true, bool broadcast = true)
         {
             var rpc = this.CreateRPCClient();
             BitcoinSecret dest = this.GetFirstSecret(rpc);
@@ -327,11 +341,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             ConcurrentChain chain = null;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
-#if !NOSOCKET
-            using (var node = this.CreateNetworkPeerClient())
+
+            using (var peer = this.CreateNetworkPeerClient())
             {
-                node.VersionHandshake();
-                chain = bestBlock == node.Network.GenesisHash ? new ConcurrentChain(node.Network) : this.GetChain(node);
+                peer.VersionHandshakeAsync().GetAwaiter().GetResult();
+                chain = bestBlock == peer.Network.GenesisHash ? new ConcurrentChain(peer.Network) : this.GetChain(peer);
                 for (int i = 0; i < blockCount; i++)
                 {
                     uint nonce = 0;
@@ -350,16 +364,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                         this.transactions.Clear();
                     }
                     block.UpdateMerkleRoot();
-                    while (!block.CheckProofOfWork())
+                    while (!block.CheckProofOfWork(rpc.Network.Consensus))
                         block.Header.Nonce = ++nonce;
                     blocks.Add(block);
                     chain.SetTip(block.Header);
                 }
                 if (broadcast)
-                    this.BroadcastBlocks(blocks.ToArray(), node);
+                    await this.BroadcastBlocksAsync(blocks.ToArray(), peer);
             }
             return blocks.ToArray();
-#endif
         }
 
         /// <summary>
@@ -409,27 +422,27 @@ namespace Stratis.Bitcoin.IntegrationTests
             return headers;
         }
 
-        private void AssertState(NetworkPeer peer, NetworkPeerState nodeState, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task AssertStateAsync(NetworkPeer peer, NetworkPeerState peerState, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if ((nodeState == NetworkPeerState.HandShaked) && (peer.State == NetworkPeerState.Connected))
-                peer.VersionHandshake(cancellationToken);
+            if ((peerState == NetworkPeerState.HandShaked) && (peer.State == NetworkPeerState.Connected))
+                await peer.VersionHandshakeAsync(cancellationToken);
 
-            if (nodeState != peer.State)
-                throw new InvalidOperationException("Invalid Node state, needed=" + nodeState + ", current= " + this.State);
+            if (peerState != peer.State)
+                throw new InvalidOperationException("Invalid Node state, needed=" + peerState + ", current= " + this.State);
         }
 
         public IEnumerable<ChainedBlock> GetHeadersFromFork(NetworkPeer peer, ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.AssertState(peer, NetworkPeerState.HandShaked, cancellationToken);
+            this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
 
-            using (NetworkPeerListener listener = peer.CreateListener().OfType<HeadersPayload>())
+            using (var listener = new NetworkPeerListener(peer).OfType<HeadersPayload>())
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)
                 {
                     // Get before last so, at the end, we should only receive 1 header equals to this one (so we will not have race problems with concurrent GetChains).
                     BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
-                    peer.SendMessageAsync(new GetHeadersPayload()
+                    peer.SendMessageVoidAsync(new GetHeadersPayload()
                     {
                         BlockLocators = awaited,
                         HashStop = hashStop
@@ -544,42 +557,69 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.Transactions.AddRange(passedTransactions);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork())
+                while (!block.CheckProofOfWork(fullNode.Network.Consensus))
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);
                 if (broadcast)
-                    fullNode.ConsensusLoop().AcceptBlockAsync(new BlockValidationContext() { Block = block }).GetAwaiter().GetResult();
+                {
+                    uint256 blockHash = block.GetHash();
+                    var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
+                    var oldTip = fullNode.Chain.SetTip(newChain);
+                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+
+                    //try
+                    //{
+                    //    var blockResult = new BlockResult { Block = block };
+                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
+
+                    //    // similar logic to what's in the full node code
+                    //    if (blockResult.Error == null)
+                    //    {
+                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
+                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
+                    //        //{
+                    //        //    var unused = cache.FlushAsync();
+                    //        //}
+                    //        fullNode.Signals.Blocks.Broadcast(block);
+                    //    }
+                    //}
+                    //catch (ConsensusErrorException)
+                    //{
+                    //    // set back the old tip
+                    //    fullNode.Chain.SetTip(oldTip);
+                    //}
+                }
             }
 
             return blocks.ToArray();
 #endif
         }
 
-        public void BroadcastBlocks(Block[] blocks)
+        public async Task BroadcastBlocksAsync(Block[] blocks)
         {
-            using (var node = this.CreateNetworkPeerClient())
+            using (var peer = this.CreateNetworkPeerClient())
             {
-                node.VersionHandshake();
-                this.BroadcastBlocks(blocks, node);
+                await peer.VersionHandshakeAsync();
+                await this.BroadcastBlocksAsync(blocks, peer);
             }
         }
 
-        public void BroadcastBlocks(Block[] blocks, NetworkPeer peer)
+        public async Task BroadcastBlocksAsync(Block[] blocks, NetworkPeer peer)
         {
             Block lastSent = null;
             foreach (var block in blocks)
             {
-                peer.SendMessageAsync(new InvPayload(block));
-                peer.SendMessageAsync(new BlockPayload(block));
+                await peer.SendMessageAsync(new InvPayload(block));
+                await peer.SendMessageAsync(new BlockPayload(block));
                 lastSent = block;
             }
-            this.PingPong(peer);
+            await this.PingPongAsync(peer);
         }
 
         public Block[] FindBlock(int blockCount = 1, bool includeMempool = true)
         {
             this.SelectMempoolTransactions();
-            return this.Generate(blockCount, includeMempool);
+            return this.GenerateAsync(blockCount, includeMempool).GetAwaiter().GetResult();
         }
 
         private class TransactionNode

@@ -72,8 +72,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                     var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
-
-                    Assert.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\"", response);
+                    Assert.StartsWith("{\"walletFilePath\":\"", response);
                 }
             }
             finally

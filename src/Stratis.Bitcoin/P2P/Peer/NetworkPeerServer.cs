@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>Consumer of messages coming from connected clients.</summary>
-        /// <seealso cref="ProcessMessage(IncomingMessage)"/>
+        /// <seealso cref="ProcessMessageAsync(IncomingMessage)"/>
         private readonly EventLoopMessageListener<IncomingMessage> listener;
 
         /// <summary>List of connected clients mapped by their unique identifiers.</summary>
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Version = version;
 
-            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
+            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
             this.messageProducer = new MessageProducer<IncomingMessage>();
             this.messageProducer.AddMessageListener(this.listener);
 
@@ -168,27 +168,28 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.logger.LogTrace("Accepting incoming connections.");
 
-            while (!this.serverCancel.IsCancellationRequested)
+            try
             {
-                try
+                while (!this.serverCancel.IsCancellationRequested)
                 {
-                    this.serverCancel.Token.ThrowIfCancellationRequested();
-
-                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token);
+                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token).ConfigureAwait(false);
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
                     this.AddConnectedClient(client);
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
-                    Task unused = Task.Run(() => this.ProcessNewClient(client));
-                }
-                catch (Exception e)
-                {
-                    if (e is OperationCanceledException) this.logger.LogDebug("Shutdown detected, stop accepting connections.");
-                    else this.logger.LogDebug("Exception occurred: {0}");
 
-                    break;
+                    // This should be cheaper for the accept loop thread than just calling ProcessNewClientAsync without awaiting.
+                    Task unused = Task.Run(async () => await this.ProcessNewClientAsync(client));
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogDebug("Shutdown detected, stop accepting connections.");
+            }
+            catch (Exception e)
+            {
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
             
             this.logger.LogTrace("(-)");
@@ -229,7 +230,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Handles a newly accepted client's connection.
         /// </summary>
         /// <param name="client">Newly accepted client.</param>
-        private void ProcessNewClient(NetworkPeerClient client)
+        private async Task ProcessNewClientAsync(NetworkPeerClient client)
         {
             this.logger.LogTrace("({0}:{1})", nameof(client), client.RemoteEndPoint);
 
@@ -238,8 +239,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             EndPoint clientEndPoint = client.RemoteEndPoint;
             try
             {
-                this.serverCancel.Token.ThrowIfCancellationRequested();
-
                 if (this.ConnectedNetworkPeers.Count < this.MaxConnections)
                 {
                     using (var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
@@ -249,14 +248,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                         while (true)
                         {
                             cancel.Token.ThrowIfCancellationRequested();
-
-                            PerformanceCounter counter;
-                            Message message = Message.ReadNext(client.Stream, this.Network, this.Version, cancel.Token, out counter);
+                            Message message = await client.ReadAndParseMessageAsync(this.Version, cancel.Token).ConfigureAwait(false);
+                            
                             this.messageProducer.PushMessage(new IncomingMessage()
                             {
                                 Client = client,
                                 Message = message,
-                                Length = counter.ReadBytes,
+                                Length = message.MessageSize,
                                 NetworkPeer = null,
                             });
 
@@ -276,7 +274,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (OperationCanceledException)
             {
                 if (this.serverCancel.Token.IsCancellationRequested) this.logger.LogTrace("Shutdown detected.");
-                else this.logger.LogTrace("Inbound client '{0}' failed to send a message within 10 seconds, dropping connection.", client.RemoteEndPoint);
+                else this.logger.LogTrace("Inbound client '{0}' failed to send a version message within 10 seconds, dropping connection.", client.RemoteEndPoint);
             }
             catch (Exception ex)
             {
@@ -289,23 +287,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Callback that is called when a new message is received from a connected client peer.
-        /// </summary>
-        /// <param name="message">Message received from the client.</param>
-        private void ProcessMessage(IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
-
-            this.ProcessMessageCore(message);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
         /// Processes a new message received from a connected client peer.
         /// </summary>
         /// <param name="message">Message received from the client.</param>
-        private void ProcessMessageCore(IncomingMessage message)
+        private async Task ProcessMessageAsync(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
@@ -341,10 +326,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                         Time = this.dateTimeProvider.GetUtcNow()
                     };
 
-                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNetworkPeerConnectionParameters(), message.Client, version);
+                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, message.Client, version, this.CreateNetworkPeerConnectionParameters());
                     if (connectedToSelf)
                     {
-                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset()));
+                        VersionPayload versionPayload = this.CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
+                        await networkPeer.SendMessageAsync(versionPayload);
                         networkPeer.Disconnect();
 
                         this.logger.LogTrace("(-)[CONNECTED_TO_SELF_2]");
@@ -358,7 +344,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
                             networkPeer.StateChanged += Peer_StateChanged;
-                            networkPeer.RespondToHandShake(cancel.Token);
+                            await networkPeer.RespondToHandShakeAsync(cancel.Token);
                         }
                         catch (OperationCanceledException)
                         {
