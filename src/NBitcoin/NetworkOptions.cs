@@ -116,7 +116,7 @@ namespace NBitcoin
             if (ReferenceEquals(null, left))
                 Swap(ref left, ref right); 
             NetworkOptions clone = left?.Clone();
-            if (clone != null)
+            if (!ReferenceEquals(null, clone))
                 clone.flags |= (right?.flags ?? All);
             return clone;
         }
@@ -130,10 +130,9 @@ namespace NBitcoin
         public static NetworkOptions operator &(NetworkOptions left, NetworkOptions right)
         {
             if (ReferenceEquals(null, left))
-                Swap(ref left, ref right); 
-            NetworkOptions clone = left?.Clone();
-            if (clone != null)
-                clone.flags &= (right?.flags ?? All);
+                return right?.Clone(); 
+            NetworkOptions clone = left.Clone();
+            clone.flags &= (right?.flags ?? All);
             return clone;
         }
 
