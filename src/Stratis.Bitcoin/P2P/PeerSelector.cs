@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Contract interface for <see cref="PeerSelector"/>.
+    /// Contract for <see cref="PeerSelector"/>.
     /// </summary>
     public interface IPeerSelector
     {
@@ -33,8 +33,6 @@ namespace Stratis.Bitcoin.P2P
 
     public sealed class PeerSelector : IPeerSelector
     {
-        private const double PeerSuccessRatioThreshold = 0.1;
-
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -69,11 +67,7 @@ namespace Stratis.Bitcoin.P2P
             var peers = SelectPeers();
             if (peers.Any())
             {
-                if (peers.Count() == 1)
-                    peerAddress = peers.First();
-                else
-                    peerAddress = peers.Random();
-
+                peerAddress = peers.Random();
                 this.logger.LogTrace("(-):{0}={1}", nameof(peerAddress), peerAddress.NetworkAddress.Endpoint.ToString());
             }
             else
@@ -89,18 +83,26 @@ namespace Stratis.Bitcoin.P2P
 
             // First check to see if there are handshaked peers. If so,
             // give them a 75% chance to be picked over all the other peers.
-            if (this.peerAddressManager.Peers.Handshaked().Any() && new Random().Next(5) <= 3)
+            if (this.peerAddressManager.Peers.Handshaked().Any())
             {
-                this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
-                return this.peerAddressManager.Peers.Handshaked();
+                var chance = new Random().Next(100);
+                if (chance <= 75)
+                {
+                    this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
+                    return this.peerAddressManager.Peers.Handshaked();
+                }
             }
 
             // If there are peers that have recently connected, give them
             // a 75% chance to be picked over fresh and/or attempted peers.
-            if (this.peerAddressManager.Peers.Connected().Any() && new Random().Next(5) <= 3)
+            if (this.peerAddressManager.Peers.Connected().Any())
             {
-                this.logger.LogTrace("(-)[RETURN_CONNECTED]");
-                return this.peerAddressManager.Peers.Connected();
+                var chance = new Random().Next(100);
+                if (chance <= 75)
+                {
+                    this.logger.LogTrace("(-)[RETURN_CONNECTED]");
+                    return this.peerAddressManager.Peers.Connected();
+                }
             }
 
             // At this point, if neither selecting handshaked or connected
@@ -140,78 +142,38 @@ namespace Stratis.Bitcoin.P2P
             this.logger.LogTrace("(-)[RETURN_NO_PEERS]");
             return new PeerAddress[] { };
         }
-
-        private IEnumerable<PeerAddress> SelectFromConnectedOrHandShaked()
-        {
-
-
-            return new PeerAddress[] { };
-        }
-
-        /// <summary>
-        /// Pick a peer from the attempted/successful list of peers.
-        /// </summary>
-        private IEnumerable<PeerAddress> SelectPeersFromAttempedOrSuccessful()
-        {
-            var prefferedAttempted = this.peerAddressManager.Peers.Attempted().Where(p =>
-                                        p.ConnectionAttempts <= 10 &&
-                                        p.LastConnectionAttempt < DateTimeOffset.Now.AddSeconds(-60));
-
-            var prefferedSucceeded = this.peerAddressManager.Peers.Connected().Where(p =>
-                                        p.LastConnectionSuccess < DateTimeOffset.Now.AddSeconds(-60) &&
-                                        p.LastConnectionSuccess > DateTimeOffset.Now.AddDays(-30));
-
-            // If there are attempted AND successful peers, we need to randomly
-            // pick between the two.
-            //
-            // HOWEVER, if the ratio of successful to attempted peers is less 
-            // than 10%, we can't just randomly do a 50/50 pick.
-            //
-            // Imagine a scenario where the peer set is split between a 1000 attempted
-            // ones and only 20 has had successful attempts. If we 50/50 pick between 
-            // these two it will take quite a while for the address manager to 
-            // return a preferred peer (we want to start connecting to successful)
-            // peers as soon as we can.
-            //
-            // To achieve this we check a success ratio and if its below a threshold,
-            // we only pick from the success peers.
-            //
-            // Over time the sucessful peer set will grow, causing the ratio
-            // to increase, thus allowing 50/50 selection from the two sets again.
-            //
-            // I.e. the address manager will try and restore some balance to the 
-            // amount of attempted and successful peers.
-            if (prefferedSucceeded.Any())
-            {
-                var successfullRatio = (double)prefferedSucceeded.Count() / (double)prefferedAttempted.Count();
-                if (successfullRatio < PeerSuccessRatioThreshold)
-                    return prefferedSucceeded;
-
-                var random = new Random().Next(2);
-                return random == 0 ? prefferedAttempted : prefferedSucceeded;
-            }
-            else
-                return prefferedAttempted;
-        }
     }
 
     public static class PeerSelectorExtensions
     {
         /// <summary>
         /// Return peers which've had connection attempts but none successful. 
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds and that has had more than 10 failed attempts.
+        /// </para>
         /// </summary>
         public static IEnumerable<PeerAddress> Attempted(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var result = peers.Skip(0).Where(p => p.Value.Attempted).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p =>
+                                p.Value.Attempted &&
+                                p.Value.ConnectionAttempts <= 10 &&
+                                p.Value.LastConnectionAttempt < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
         }
 
         /// <summary>
         /// Return peers which've had successful connection attempts.
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds.
+        /// </para>
         /// </summary>
         public static IEnumerable<PeerAddress> Connected(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var result = peers.Skip(0).Where(p => p.Value.Connected).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p =>
+                                p.Value.Connected &&
+                                p.Value.LastConnectionSuccess < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
         }
 
@@ -226,10 +188,16 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>
         /// Return peers where a successful connection and handshake was achieved.
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds.
+        /// </para>
         /// </summary>
         public static IEnumerable<PeerAddress> Handshaked(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var result = peers.Skip(0).Where(p => p.Value.Handshaked).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p =>
+                                p.Value.Handshaked &&
+                                p.Value.LastConnectionHandshake < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
         }
 
@@ -238,22 +206,14 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
         {
-            var chanceFactor = 1.0;
             var random = new Random();
 
-            while (true)
-            {
-                if (peers.Count() == 1)
-                    return peers.ToArray()[0];
+            if (peers.Count() == 1)
+                return peers.First();
 
-                var randomPeerIndex = random.Next(peers.Count() - 1);
-                var randomPeer = peers.ToArray()[randomPeerIndex];
-
-                if (random.Next(1 << 30) < chanceFactor * randomPeer.Selectability * (1 << 30))
-                    return randomPeer;
-
-                chanceFactor *= 1.2;
-            }
+            var randomPeerIndex = random.Next(peers.Count() - 1);
+            var randomPeer = peers.ToArray()[randomPeerIndex];
+            return randomPeer;
         }
     }
 }

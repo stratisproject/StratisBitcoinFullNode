@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         private PeerConnectorAddNode CreatePeerConnecterAddNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
-            var peerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
+            var peerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
             var connectionManager = CreateConnectionManager(nodeSettings, peerAddressManager, peerConnector);
             peerConnector.Initialize(connectionManager);
             return peerConnector;
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         private PeerConnectorConnectNode CreatePeerConnectorConnectNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
-            var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
+            var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
             var connectionManager = CreateConnectionManager(nodeSettings, peerAddressManager, peerConnector);
             peerConnector.Initialize(connectionManager);
             return peerConnector;
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         private PeerConnectorDiscovery CreatePeerConnectorDiscovery(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
         {
-            var peerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, DateTimeProvider.Default, this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
+            var peerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, nodeSettings, peerAddressManager);
             var connectionManager = CreateConnectionManager(nodeSettings, peerAddressManager, peerConnector);
             peerConnector.Initialize(connectionManager);
             return peerConnector;

@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Tests.P2P
     public sealed class PeerAddressManagerTests : TestBase
     {
         [Fact]
-        public void CanSaveAndLoadPeerAddressFile_PeerConnected()
+        public void PeerFile_CanSaveAndLoadPeers_PeerConnected()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
-        public void CanSaveAndLoadPeerAddressFile_PeerHandshaked()
+        public void PeerFile_CanSaveAndLoadPeers_PeerHandshaked()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
@@ -65,13 +65,13 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(applicableDate, savedPeer.NetworkAddress.Time);
             Assert.Equal(80, savedPeer.NetworkAddress.Endpoint.Port);
             Assert.Equal(0, savedPeer.ConnectionAttempts);
-            Assert.Null(savedPeer.LastConnectionSuccess);
+            Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);
             Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
         }
 
         [Fact]
-        public void PeerConnected_AllConnectionDataGetsReset()
+        public void PeerState_AllConnectionDataGetsReset()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
@@ -96,346 +96,202 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         /// <summary>
-        /// Ensures that after a peer has had a connection attempt,
-        /// it doesn't get returned in the fresh set of peers.
-        /// </summary>
-        [Fact]
-        public void CanSelectRandomPeerToConnectTo_AllPeersAreNew()
-        {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.4");
-            var addressFour = new NetworkAddress(ipAddress, 80);
-
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-            addressManager.AddPeer(addressFour, IPAddress.Loopback);
-
-            var randomPeer = addressManager.Selector.SelectPeer();
-            addressManager.PeerAttempted(randomPeer.NetworkAddress.Endpoint, DateTime.UtcNow);
-
-            var selected = addressManager.Peers.Fresh().FirstOrDefault(p => p.NetworkAddress.Endpoint.Match(randomPeer.NetworkAddress.Endpoint));
-            Assert.Null(selected);
-        }
-
-        /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred.
+        /// Ensures that a particular peer is returned from the fresh peers
+        /// set.
         ///
         /// Scenario 1:
-        /// No peers in the database has had a connection attempted to or previously connected to.
-        ///
+        /// Peer 1 has had no connection attempts.
+        /// Peer 2 has had no connection attempts.
+        /// Peer 3 has had no connection attempts.
+        /// 
         /// Result:
-        /// All 3 peers can be connected to.
+        /// All 3 peers are in the Fresh set.
         /// </summary>
         [Fact]
-        public void PeerCanBeReturnedAsPreferred_NeverBeenConnectedTo_Scenario1()
+        public void PeerState_TestReturnFromPeerFreshSet()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
+            var networkAddressOne = new NetworkAddress(ipAddress, 80);
 
             ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
+            var networkAddressTwo = new NetworkAddress(ipAddress, 80);
 
             ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
+            var networkAddressThree = new NetworkAddress(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(3, networkAddresses.Count());
-        }
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            peerAddressManager.AddPeer(networkAddressOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
-        /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred.
-        ///
-        /// Scenario 2:
-        /// Peer 2 has had a connection attempted to.
-        ///
-        /// Result:
-        /// All 3 peers can be connected to.
-        /// </summary>
-        [Fact]
-        public void PeerCanBeReturnedAsPreferred_NeverBeenConnectedTo_Scenario2()
-        {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
-
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-
-            addressManager.PeerAttempted(addressTwo.Endpoint, DateTime.UtcNow);
-
-            var peers = addressManager.Selector.SelectPeers();
+            var peers = peerAddressManager.Peers.Fresh();
             Assert.Equal(3, peers.Count());
         }
 
         /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred.
+        /// Ensures that a particular peer is returned from the attempted peers
+        /// set.
         ///
-        /// Scenario 3:
-        /// Peer 2 has had 2 connection attempts.
-        /// Peer 2 has last attempted more than 60 secs ago.
-        ///
+        /// Scenario:
+        /// Peer 1 has had a connection attempt (in the last 60 seconds).
+        /// Peer 2 has had a connection attempt (more than 60 seconds ago).
+        /// Peer 3 has had a connection attempt (more than 60 seconds ago).
+        /// 
         /// Result:
-        /// All 3 peers can be connected to.
+        /// Peers 2 & 3 are in the attempted set.
         /// </summary>
         [Fact]
-        public void PeerCanBeReturnedAsPreferred_NeverBeenConnectedTo_Scenario3()
+        public void PeerState_TestReturnFromPeerAttemptedSet_Scenario1()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
+            var networkAddressOne = new NetworkAddress(ipAddress, 80);
 
             ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
+            var networkAddressTwo = new NetworkAddress(ipAddress, 80);
 
             ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
+            var networkAddressThree = new NetworkAddress(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerAttempted(addressTwo.Endpoint, DateTime.UtcNow);
-            addressManager.PeerAttempted(addressTwo.Endpoint, DateTime.UtcNow - TimeSpan.FromSeconds(70));
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            peerAddressManager.AddPeer(networkAddressOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(2, networkAddresses.Count());
+            peerAddressManager.PeerAttempted(networkAddressOne.Endpoint, DateTime.UtcNow);
+            peerAddressManager.PeerAttempted(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow.AddSeconds(-80));
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressTwo.Endpoint.Address.ToString()));
+            var peers = peerAddressManager.Peers.Attempted();
+            Assert.Equal(2, peers.Count());
+            Assert.DoesNotContain(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressOne.Endpoint));
         }
 
         /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred.
+        /// Ensures that a particular peer is returned from the attempted peers
+        /// set.
         ///
-        /// Scenario 3:
-        /// Peer 1 has had 2 connection attempts.
-        /// Peer 1 has attempted within the last 60 secs.
-        ///
+        /// Scenario:
+        /// Peer 1 has had a connection attempt (more than 60 seconds ago).
+        /// Peer 2 has had a connection attempt (more than 60 seconds ago).
+        /// Peer 3 was attempted unsuccessfully more than 10 times.
+        /// 
         /// Result:
-        /// Peer 1 is filtered out.
+        /// Peers 1 & 2 are in the attempted set.
         /// </summary>
         [Fact]
-        public void PeerCanBeReturnedAsPreferred_NeverBeenConnectedTo_Scenario4()
+        public void PeerState_TestReturnFromPeerAttemptedSet_Scenario2()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
+            var networkAddressOne = new NetworkAddress(ipAddress, 80);
 
             ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
+            var networkAddressTwo = new NetworkAddress(ipAddress, 80);
 
             ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
+            var networkAddressThree = new NetworkAddress(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
 
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTime.UtcNow);
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTime.UtcNow.AddSeconds(-65));
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            peerAddressManager.AddPeer(networkAddressOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(2, networkAddresses.Count());
+            peerAddressManager.PeerAttempted(networkAddressOne.Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerAttempted(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
 
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
-        }
-
-        /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred.
-        ///
-        /// Scenario 4:
-        /// Peer 2 has had more than the maximum amount of connection attempts.
-        ///
-        /// Result:
-        /// There are 2 peers to connect to.
-        /// Peer 1 has been filtered out.
-        /// </summary>
-        [Fact]
-        public void PeerCanBeReturnedAsPreferred_NeverBeenConnectedTo_Scenario5()
-        {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
-
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTime.UtcNow);
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTime.UtcNow);
-            addressManager.PeerAttempted(addressOne.Endpoint, DateTime.UtcNow);
-
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(2, networkAddresses.Count());
-
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
-        }
-
-        /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred after it has been
-        /// connected to before.
-        ///
-        /// Scenario 1:
-        /// Peer 3 has had a successful connection made to it.
-        ///
-        /// Result:
-        /// All 3 peers can be connected to.
-        /// </summary>
-        [Fact]
-        public void PeerCanBeReturnedAsPreferred_HasBeenConnectedTo_Scenario1()
-        {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
-
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-
-            addressManager.PeerConnected(addressThree.Endpoint, DateTime.UtcNow);
-
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(3, networkAddresses.Count());
-        }
-
-        /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred after it has been
-        /// connected to before.
-        ///
-        /// Scenario 2:
-        /// Peer 3 has had a successful connection made to it but it
-        /// last happened 8 days ago.
-        ///
-        /// Result:
-        /// There are 2 peers to connect to.
-        /// Peer 3 has been filtered out.
-        /// </summary>
-        [Fact]
-        public void PeerCanBeReturnedAsPreferred_HasBeenConnectedTo_Scenario2()
-        {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
-
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-
-            addressManager.PeerConnected(addressThree.Endpoint, DateTime.UtcNow.AddDays(-8));
-
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(2, networkAddresses.Count());
-
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressThree.Endpoint.Address.ToString()));
-        }
-
-        /// <summary>
-        /// Ensures that a particular peer can be regarded as preferred after it has been
-        /// connected to before.
-        ///
-        /// Scenario 3:
-        /// Peer 1 has had a successful connection made to.
-        /// Peer 1 has had 11 unsuccessful attempts since then.
-        ///
-        /// Result:
-        /// There are 2 peers to connect to.
-        /// Peer 1 has been filtered out.
-        /// </summary>
-        [Fact]
-        public void PeerCanBeReturnedAsPreferred_HasBeenConnectedTo_Scenario3()
-        {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
-            var addressTwo = new NetworkAddress(ipAddress, 80);
-
-            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
-            var addressThree = new NetworkAddress(ipAddress, 80);
-
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-
-            addressManager.PeerConnected(addressOne.Endpoint, DateTime.UtcNow.AddDays(-5));
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 15; i++)
             {
-                addressManager.PeerAttempted(addressOne.Endpoint, DateTime.UtcNow);
+                peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
             }
 
-            var networkAddresses = addressManager.Selector.SelectPeers();
-            Assert.Equal(2, networkAddresses.Count());
-
-            Assert.Null(networkAddresses.FirstOrDefault(n => n.NetworkAddress.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
+            var peers = peerAddressManager.Peers.Attempted();
+            Assert.Equal(2, peers.Count());
+            Assert.DoesNotContain(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressThree.Endpoint));
         }
 
+        /// <summary>
+        /// Ensures that a particular peer is returned from the connected peers
+        /// set.
+        ///
+        /// Scenario 1:
+        /// Peer 1 has had a successful connection made to it (in the last 60 seconds).
+        /// Peer 2 has had a successful connection made to it (more than 60 seconds ago).
+        /// Peer 3 has only had an unsuccessful connection attempt.
+        /// 
+        /// Result:
+        /// Peer 2 gets returned in the Connected set.
+        /// </summary>
         [Fact]
-        public void PeerSelectability_Decreases_AfterEachFailedAttempt()
+        public void PeerState_TestReturnFromPeerConnectedSet()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var addressOne = new NetworkAddress(ipAddress, 80);
+            var networkAddressOne = new NetworkAddress(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
+            var networkAddressTwo = new NetworkAddress(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
+            var networkAddressThree = new NetworkAddress(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
 
-            var peer = addressManager.FindPeer(addressOne.Endpoint);
-            peer.SetAttempted(DateTime.UtcNow);
-            var resultOne = peer.Selectability;
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            peerAddressManager.AddPeer(networkAddressOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
-            peer.SetAttempted(DateTime.UtcNow);
-            var resultTwo = peer.Selectability;
+            peerAddressManager.PeerConnected(networkAddressOne.Endpoint, DateTime.UtcNow);
+            peerAddressManager.PeerConnected(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
 
-            Assert.True(resultOne > resultTwo);
+            var peers = peerAddressManager.Peers.Connected();
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressTwo.Endpoint));
+        }
+
+        /// <summary>
+        /// Ensures that a particular peer is returned from the handshaked peers
+        /// set.
+        ///
+        /// Scenario 1:
+        /// Peer 1 has had a successful handshake (in the last 60 seconds).
+        /// Peer 2 has had a successful handshake (more than 60 seconds ago).
+        /// Peer 3 has only had an unsuccessful connection attempt.
+        /// 
+        /// Result:
+        /// Peer 2 gets returned in the Connected set.
+        /// </summary>
+        [Fact]
+        public void PeerState_TestReturnFromPeerHandshakedSet()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var networkAddressOne = new NetworkAddress(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
+            var networkAddressTwo = new NetworkAddress(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.3");
+            var networkAddressThree = new NetworkAddress(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            peerAddressManager.AddPeer(networkAddressOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
+            peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
+
+            peerAddressManager.PeerHandshaked(networkAddressOne.Endpoint, DateTime.UtcNow);
+            peerAddressManager.PeerHandshaked(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
+
+            var peers = peerAddressManager.Peers.Handshaked();
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressTwo.Endpoint));
         }
     }
 }

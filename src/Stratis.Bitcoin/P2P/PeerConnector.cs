@@ -208,21 +208,20 @@ namespace Stratis.Bitcoin.P2P
             if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
                 return Task.CompletedTask;
 
+            PeerAddress peerAddress = this.FindPeerToConnectTo();
+            if (peerAddress == null)
+                return Task.CompletedTask;
+
             NetworkPeer peer = null;
 
             try
             {
-                PeerAddress peerAddress = this.FindPeerToConnectTo();
-                if (peerAddress == null)
-                    return Task.CompletedTask;
-
                 using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
-                    timeoutTokenSource.CancelAfter(5000);
-
                     this.peerAddressManager.PeerAttempted(peerAddress.NetworkAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
                     var clonedConnectParamaters = this.CurrentParameters.Clone();
+                    timeoutTokenSource.CancelAfter(2000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
                     peer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peerAddress.NetworkAddress, clonedConnectParamaters);
@@ -230,6 +229,12 @@ namespace Stratis.Bitcoin.P2P
 
                     return Task.CompletedTask;
                 }
+            }
+            catch (OperationCanceledException timeout)
+            {
+                this.logger.LogInformation("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
+                peer?.DisconnectWithException("Timeout", timeout);
+
             }
             catch (Exception exception)
             {
