@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
         public virtual void CheckBlockHeader(RuleContext context)
         {
-            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
                 ConsensusErrors.HighHash.Throw();
 
             context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
@@ -570,7 +570,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) ||
-                (this.GetSize(block, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize))
+                (this.GetSize(block, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness) > this.ConsensusOptions.MaxBlockBaseSize))
             {
                 this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -744,7 +744,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Block weight.</returns>
         public long GetBlockWeight(Block block)
         {
-            return this.GetSize(block, NetworkOptions.None) * (this.ConsensusOptions.WitnessScaleFactor - 1) + this.GetSize(block, NetworkOptions.Witness);
+            var options = NetworkOptions.TemporaryOptions;
+            return this.GetSize(block, options & ~NetworkOptions.Witness) * (this.ConsensusOptions.WitnessScaleFactor - 1) + 
+                   this.GetSize(block, options | NetworkOptions.Witness);
         }
 
         /// <summary>
