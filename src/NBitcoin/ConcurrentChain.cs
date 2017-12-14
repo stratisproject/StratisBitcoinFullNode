@@ -38,7 +38,7 @@ namespace NBitcoin
         }
 
         public ConcurrentChain(byte[] bytes, Network network = null)
-            :this(network)
+            :this(network ?? Network.Main)
         {
             this.Load(bytes);
         }
