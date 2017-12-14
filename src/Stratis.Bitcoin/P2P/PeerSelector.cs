@@ -76,19 +76,32 @@ namespace Stratis.Bitcoin.P2P
     {
         /// <summary>
         /// Return peers which've had connection attempts but none successful. 
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds and that has had more than 10 failed attempts.
+        /// </para>
         /// </summary>
         public static IEnumerable<PeerAddress> Attempted(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var result = peers.Skip(0).Where(p => p.Value.Attempted).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p =>
+                                p.Value.Attempted &&
+                                p.Value.ConnectionAttempts <= 10 &&
+                                p.Value.LastConnectionAttempt < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
         }
 
         /// <summary>
         /// Return peers which've had successful connection attempts.
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds.
+        /// </para>
         /// </summary>
         public static IEnumerable<PeerAddress> Connected(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var result = peers.Skip(0).Where(p => p.Value.Connected).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p =>
+                                p.Value.Connected &&
+                                p.Value.LastConnectionSuccess < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
         }
 
@@ -103,10 +116,16 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>
         /// Return peers where a successful connection and handshake was achieved.
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds.
+        /// </para>
         /// </summary>
         public static IEnumerable<PeerAddress> Handshaked(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var result = peers.Skip(0).Where(p => p.Value.Handshaked).Select(p => p.Value);
+            var result = peers.Skip(0).Where(p =>
+                                p.Value.Handshaked &&
+                                p.Value.LastConnectionHandshake < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
         }
 
@@ -115,22 +134,14 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
         {
-            var chanceFactor = 1.0;
             var random = new Random();
 
-            while (true)
-            {
-                if (peers.Count() == 1)
-                    return peers.ToArray()[0];
+            if (peers.Count() == 1)
+                return peers.First();
 
-                var randomPeerIndex = random.Next(peers.Count() - 1);
-                var randomPeer = peers.ToArray()[randomPeerIndex];
-
-                if (random.Next(1 << 30) < chanceFactor * randomPeer.Selectability * (1 << 30))
-                    return randomPeer;
-
-                chanceFactor *= 1.2;
-            }
+            var randomPeerIndex = random.Next(peers.Count() - 1);
+            var randomPeer = peers.ToArray()[randomPeerIndex];
+            return randomPeer;
         }
     }
 }
