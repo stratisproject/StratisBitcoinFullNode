@@ -27,6 +27,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.extendedLoggerFactory = new ExtendedLoggerFactory();
             this.extendedLoggerFactory.AddConsoleWithFilters();
 
+            this.network = Network.Main;
+
             this.asyncLoopFactory = new AsyncLoopFactory(this.extendedLoggerFactory);
             this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.loggerFactory);
             this.networkPeerParameters = new NetworkPeerConnectionParameters();
