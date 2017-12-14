@@ -23,22 +23,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
-        public override void BroadcastTransaction(Transaction transaction)
+        public override async Task BroadcastTransactionAsync(Transaction transaction)
         {
-            if (transaction == null)
-                throw new ArgumentNullException(nameof(transaction));
+            Guard.NotNull(transaction, nameof(transaction));
 
             if (this.IsPropagated(transaction))
                 return;
 
             var state = new MempoolValidationState(false);
-            if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-            {
+            if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction))
                 this.AddOrUpdate(transaction, State.CantBroadcast);
-                return;
-            }
-
-            this.PropagateTransactionToPeers(transaction, true);
+            else
+                await this.PropagateTransactionToPeersAsync(transaction, true);
         }
     }
 }

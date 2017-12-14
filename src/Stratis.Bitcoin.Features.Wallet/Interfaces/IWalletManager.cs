@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="transaction">The transaction.</param>
         /// <param name="blockHeight">The height of the block this transaction came from. Null if it was not a transaction included in a block.</param>
         /// <param name="block">The block in which this transaction was included.</param>
-        /// <param name="isPropagated">Transaction propagation state. Null if unknown.</param>
+        /// <param name="isPropagated">Transaction propagation state.</param>
         void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
 
         /// <summary>

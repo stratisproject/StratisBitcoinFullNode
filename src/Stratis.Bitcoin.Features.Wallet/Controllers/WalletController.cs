@@ -618,7 +618,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 this.walletManager.ProcessTransaction(transaction, null, null, false);
 
-                this.broadcasterManager.BroadcastTransaction(transaction);
+                this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
                 return this.Json(model);
             }

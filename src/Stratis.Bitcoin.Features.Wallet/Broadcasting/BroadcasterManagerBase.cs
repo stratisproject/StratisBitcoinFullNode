@@ -60,14 +60,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             }
         }
 
-        public abstract void BroadcastTransaction(Transaction transaction);
+        public abstract Task BroadcastTransactionAsync(Transaction transaction);
 
         /// <summary>
         /// Sends transaction to peers.
         /// </summary>
         /// <param name="transaction">Transaction that will be propagated.</param>
         /// <param name="skipHalfOfThePeers">If set to <c>true</c> transaction will be send to all the peers we are connected to. Otherwise it will be sent to half of them.</param>
-        protected void PropagateTransactionToPeers(Transaction transaction, bool skipHalfOfThePeers = false)
+        protected async Task PropagateTransactionToPeersAsync(Transaction transaction, bool skipHalfOfThePeers = false)
         {
             this.AddOrUpdate(transaction, State.ToBroadcast);
 
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             int propagateToCount = skipHalfOfThePeers ? (int)Math.Ceiling(peers.Count / 2.0) : peers.Count;
 
             for (int i = 0; i < propagateToCount; ++i)
-                peers[i].SendMessageAsync(invPayload).GetAwaiter().GetResult();
+                await peers[i].SendMessageAsync(invPayload);
         }
 
         protected bool IsPropagated(Transaction transaction)
