@@ -168,27 +168,28 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.logger.LogTrace("Accepting incoming connections.");
 
-            while (!this.serverCancel.IsCancellationRequested)
+            try
             {
-                try
+                while (!this.serverCancel.IsCancellationRequested)
                 {
-                    this.serverCancel.Token.ThrowIfCancellationRequested();
-
-                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token);
+                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token).ConfigureAwait(false);
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
                     this.AddConnectedClient(client);
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
-                    Task unused = Task.Run(() => this.ProcessNewClient(client));
-                }
-                catch (Exception e)
-                {
-                    if (e is OperationCanceledException) this.logger.LogDebug("Shutdown detected, stop accepting connections.");
-                    else this.logger.LogDebug("Exception occurred: {0}");
 
-                    break;
+                    // This should be cheaper for the accept loop thread than just calling ProcessNewClientAsync without awaiting.
+                    Task unused = Task.Run(async () => await this.ProcessNewClientAsync(client));
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogDebug("Shutdown detected, stop accepting connections.");
+            }
+            catch (Exception e)
+            {
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
             
             this.logger.LogTrace("(-)");
@@ -229,7 +230,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Handles a newly accepted client's connection.
         /// </summary>
         /// <param name="client">Newly accepted client.</param>
-        private void ProcessNewClient(NetworkPeerClient client)
+        private async Task ProcessNewClientAsync(NetworkPeerClient client)
         {
             this.logger.LogTrace("({0}:{1})", nameof(client), client.RemoteEndPoint);
 
@@ -238,8 +239,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             EndPoint clientEndPoint = client.RemoteEndPoint;
             try
             {
-                this.serverCancel.Token.ThrowIfCancellationRequested();
-
                 if (this.ConnectedNetworkPeers.Count < this.MaxConnections)
                 {
                     using (var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
@@ -249,14 +248,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                         while (true)
                         {
                             cancel.Token.ThrowIfCancellationRequested();
-
-                            PerformanceCounter counter;
-                            Message message = Message.ReadNext(client.Stream, this.Network, this.Version, cancel.Token, out counter);
+                            Message message = await client.ReadAndParseMessageAsync(this.Version, cancel.Token).ConfigureAwait(false);
+                            
                             this.messageProducer.PushMessage(new IncomingMessage()
                             {
                                 Client = client,
                                 Message = message,
-                                Length = counter.ReadBytes,
+                                Length = message.MessageSize,
                                 NetworkPeer = null,
                             });
 
@@ -276,7 +274,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (OperationCanceledException)
             {
                 if (this.serverCancel.Token.IsCancellationRequested) this.logger.LogTrace("Shutdown detected.");
-                else this.logger.LogTrace("Inbound client '{0}' failed to send a message within 10 seconds, dropping connection.", client.RemoteEndPoint);
+                else this.logger.LogTrace("Inbound client '{0}' failed to send a version message within 10 seconds, dropping connection.", client.RemoteEndPoint);
             }
             catch (Exception ex)
             {
