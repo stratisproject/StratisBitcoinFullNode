@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Base
         public ChainState(IFullNode fullNode, IInvalidBlockHashStore invalidBlockHashStore)
         {
             this.fullNode = fullNode;
-            this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
+            this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true) ?? DateTimeProvider.Default;
             this.invalidBlockHashStore = invalidBlockHashStore;
             this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow();
         }
