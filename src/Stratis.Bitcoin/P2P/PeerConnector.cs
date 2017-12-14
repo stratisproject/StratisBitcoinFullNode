@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
@@ -20,12 +19,16 @@ namespace Stratis.Bitcoin.P2P
         NetworkPeerCollection ConnectedPeers { get; }
 
         /// <summary>
-        /// Selects a peer from the address manager.
+        /// Selects a peer from the peer selector.
         /// <para>
-        /// Refer to <see cref="IPeerAddressManager.SelectPeerToConnectTo()"/> for details on how this is done.
+        /// Each implementation of <see cref="PeerConnector"/> will have its own implementation
+        /// of this method.
+        /// </para>
+        /// <para>
+        /// Refer to <see cref="IPeerSelector.SelectPeer()"/> for more details.
         /// </para>
         /// </summary>
-        NetworkAddress FindPeerToConnectTo();
+        PeerAddress FindPeerToConnectTo();
 
         /// <summary>Peer connector initialization as called by the <see cref="ConnectionManager"/>.</summary>
         void Initialize(IConnectionManager connectionManager);
@@ -209,7 +212,7 @@ namespace Stratis.Bitcoin.P2P
 
             try
             {
-                NetworkAddress peerAddress = this.FindPeerToConnectTo();
+                PeerAddress peerAddress = this.FindPeerToConnectTo();
                 if (peerAddress == null)
                     return;
 
@@ -217,7 +220,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     timeoutTokenSource.CancelAfter(5000);
 
-                    this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                    this.peerAddressManager.PeerAttempted(peerAddress.NetworkAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
                     var clonedConnectParamaters = this.CurrentParameters.Clone();
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
@@ -239,7 +242,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public abstract NetworkAddress FindPeerToConnectTo();
+        public abstract PeerAddress FindPeerToConnectTo();
 
         /// <inheritdoc/>
         public void Dispose()

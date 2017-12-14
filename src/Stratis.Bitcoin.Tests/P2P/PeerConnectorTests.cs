@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var connector = this.CreatePeerConnecterAddNode(nodeSettings, peerAddressManager);
 
             var peer = connector.FindPeerToConnectTo();
-            Assert.Equal(networkAddressAddNode.Endpoint, peer.Endpoint);
+            Assert.Equal(networkAddressAddNode.Endpoint, peer.NetworkAddress.Endpoint);
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var connector = this.CreatePeerConnectorConnectNode(nodeSettings, peerAddressManager);
 
             var peer = connector.FindPeerToConnectTo();
-            Assert.Equal(networkAddressConnectNode.Endpoint, peer.Endpoint);
+            Assert.Equal(networkAddressConnectNode.Endpoint, peer.NetworkAddress.Endpoint);
         }
 
         [Fact]
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var connector = this.CreatePeerConnectorDiscovery(nodeSettings, peerAddressManager);
 
             var peer = connector.FindPeerToConnectTo();
-            Assert.Equal(networkAddressDiscoverNode.Endpoint, peer.Endpoint);
+            Assert.Equal(networkAddressDiscoverNode.Endpoint, peer.NetworkAddress.Endpoint);
         }
 
         [Fact]

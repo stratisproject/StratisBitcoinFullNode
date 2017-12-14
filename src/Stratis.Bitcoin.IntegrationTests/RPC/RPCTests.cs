@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
             // Assert header hash matches genesis hash.
-            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
+            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash(Network.RegTest.NetworkOptions));
         }
 
         /// <summary>

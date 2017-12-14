@@ -69,27 +69,14 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
 
-        /// <summary>
-        /// Selects a random peer to connect to.
-        /// <para>
-        /// Use a 50% chance for choosing between tried and new peers.
-        /// </para>
-        /// </summary>
-        NetworkAddress SelectPeerToConnectTo();
-
-        /// <summary>
-        /// Selects a random set of preferred peers to connects to.
-        /// <para>
-        /// See <see cref="PeerAddressExtensions.Random(IEnumerable{PeerAddress})"/>.
-        /// </para>
-        /// </summary>
-        IEnumerable<NetworkAddress> SelectPeersToConnectTo();
+        /// <summary>Peer selector instance, used to select peers to connect to.</summary>
+        IPeerSelector PeerSelector { get; }
     }
 
     /// <summary>
     /// This manager keeps a set of peers discovered on the network in cache and on disk.
     /// <para>
-    /// The manager updates their states according to how recent they have been connected to.
+    /// The manager updates peer state according to how recent they have been connected to or not.
     /// </para>
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
@@ -103,10 +90,14 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc />
         public DataFolder PeerFilePath { get; set; }
 
+        /// <inheritdoc />
+        public IPeerSelector PeerSelector { get; private set; }
+
         /// <summary>Constructor used by unit tests.</summary>
         public PeerAddressManager()
         {
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
+            this.PeerSelector = new PeerSelector(this);
         }
 
         /// <summary>Constructor used by dependency injection.</summary>
@@ -197,76 +188,9 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc />
-        public NetworkAddress SelectPeerToConnectTo()
-        {
-            if (this.Peers.Tried().Any() == true &&
-                (this.Peers.New().Any() == false || GetRandomInteger(2) == 0))
-                return this.Peers.Tried().Random().NetworkAddress;
-
-            if (this.Peers.New().Any() == true)
-                return this.Peers.New().Random().NetworkAddress;
-
-            return null;
-        }
-
-        /// <inheritdoc />
-        public IEnumerable<NetworkAddress> SelectPeersToConnectTo()
-        {
-            return this.Peers.Where(p => p.Value.Preferred).Select(p => p.Value.NetworkAddress);
-        }
-
-        internal static int GetRandomInteger(int max)
-        {
-            return (int)(RandomUtils.GetUInt32() % (uint)max);
-        }
-
-        /// <inheritdoc />
         public void Dispose()
         {
             this.SavePeers();
-        }
-    }
-
-    public static class PeerAddressExtensions
-    {
-        /// <summary>
-        /// Return peers where they have never had a connection attempt or have been connected to.
-        /// </summary>
-        public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
-        {
-            var isNew = peers.Skip(0).Where(p => p.Value.IsNew).Select(p => p.Value);
-            return isNew;
-        }
-
-        /// <summary>
-        /// Return peers where they have had connection attempts, successful or not.
-        /// </summary>
-        public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
-        {
-            var tried = peers.Skip(0).Where(p => !p.Value.IsNew).Select(p => p.Value);
-
-            return tried;
-        }
-
-        /// <summary>
-        /// Return a random peer from a given set of peers.
-        /// </summary>
-        public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
-        {
-            var chanceFactor = 1.0;
-            while (true)
-            {
-                if (peers.Count() == 1)
-                    return peers.ToArray()[0];
-
-                var randomPeerIndex = PeerAddressManager.GetRandomInteger(peers.Count() - 1);
-                var randomPeer = peers.ToArray()[randomPeerIndex];
-
-                if (PeerAddressManager.GetRandomInteger(1 << 30) < chanceFactor * randomPeer.Selectability * (1 << 30))
-                    return randomPeer;
-
-                chanceFactor *= 1.2;
-            }
         }
     }
 }
