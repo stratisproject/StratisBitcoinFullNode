@@ -214,7 +214,10 @@ namespace Stratis.Bitcoin.P2P
             {
                 PeerAddress peerAddress = this.FindPeerToConnectTo();
                 if (peerAddress == null)
+                {
+                    Task.Delay(TimeSpans.TenSeconds.Milliseconds);
                     return Task.CompletedTask;
+                }
 
                 using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
