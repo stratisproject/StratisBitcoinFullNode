@@ -69,7 +69,7 @@ namespace NBitcoin.Tests
 
             foreach(var stored in StoredBlock.EnumerateFile(@"data\blocks\blk00000.dat"))
             {
-                Assert.True(stored.Item.Header.CheckProofOfWork());
+                Assert.True(stored.Item.Header.CheckProofOfWork(Network.Main.Consensus));
                 Assert.True(stored.Item.CheckMerkleRoot());
                 count++;
             }
@@ -349,7 +349,7 @@ namespace NBitcoin.Tests
                     Assert.Equal(blk0[0].Item.GetHash(), stored.Item.GetHash());
                 if(count == 300)
                     Assert.Equal(blk1[0].Item.GetHash(), stored.Item.GetHash());
-                Assert.True(stored.Item.Header.CheckProofOfWork());
+                Assert.True(stored.Item.Header.CheckProofOfWork(Network.Main.Consensus));
                 Assert.True(stored.Item.CheckMerkleRoot());
                 count++;
             }

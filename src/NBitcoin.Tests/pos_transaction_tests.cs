@@ -77,10 +77,10 @@ namespace NBitcoin.Tests
             if (chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, null, chain.Tip);
+                return new ChainedBlock(b.Header, b.Header.GetHash(Network.StratisMain.NetworkOptions), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, 0);
+                return new ChainedBlock(b.Header, b.Header.GetHash(Network.StratisMain.NetworkOptions), 0);
         }
 
         [Fact]
@@ -994,7 +994,7 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = new ConcurrentChain(new BlockHeader()
             {
                 BlockTime = first
-            });
+            }, Network.StratisMain);
             first = first + TimeSpan.FromMinutes(10);
             while (currentHeight != chain.Height)
             {

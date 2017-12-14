@@ -201,7 +201,7 @@ namespace NBitcoin
         }
 
         // a method to check a block, this may be moved to the full node.
-        public static bool CheckBlock(Block block, bool checkPow = true, bool checkMerkleRoot = true, bool checkSig = true)
+        public static bool CheckBlock(Consensus consensus, Block block, bool checkPow = true, bool checkMerkleRoot = true, bool checkSig = true)
         {
             // These are checks that are independent of context
             // that can be verified before saving an orphan block.
@@ -211,7 +211,7 @@ namespace NBitcoin
                 return false; // DoS(100, error("CheckBlock() : size limits failed"));
 
             // Check proof of work matches claimed amount
-            if (checkPow && BlockStake.IsProofOfWork(block) && !block.CheckProofOfWork())
+            if (checkPow && BlockStake.IsProofOfWork(block) && !block.CheckProofOfWork(consensus))
                 return false; //DoS(50, error("CheckBlock() : proof of work failed"));
 
             // Check timestamp
