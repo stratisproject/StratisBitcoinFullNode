@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.P2P
         private Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<NetworkAddress>();
-            peersToDiscover.AddRange(this.peerAddressManager.Selector.SelectPeers().Select(p => p.NetworkAddress));
+            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeers().Select(p => p.NetworkAddress));
 
             if (peersToDiscover.Count == 0)
             {

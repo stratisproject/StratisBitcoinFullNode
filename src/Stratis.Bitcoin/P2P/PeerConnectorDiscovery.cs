@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.P2P
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested && peerSelectionFailed < 50)
             {
-                peer = this.peerAddressManager.Selector.SelectPeer();
+                peer = this.peerAddressManager.PeerSelector.SelectPeer();
 
                 if (!peer.NetworkAddress.Endpoint.Address.IsValid())
                 {

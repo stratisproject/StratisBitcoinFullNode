@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.P2P
         void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
 
         /// <summary>Peer selector instance, used to select peers to connect to.</summary>
-        IPeerSelector Selector { get; }
+        IPeerSelector PeerSelector { get; }
     }
 
     /// <summary>
@@ -90,6 +90,9 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc />
         public DataFolder PeerFilePath { get; set; }
 
+        /// <inheritdoc />
+        public IPeerSelector PeerSelector { get; private set; }
+
         /// <summary>Constructor used by unit tests.</summary>
         /// <summary>Peer selector instance, used to select peers to connect to.</summary>
         public IPeerSelector Selector { get; private set; }
@@ -97,7 +100,7 @@ namespace Stratis.Bitcoin.P2P
         public PeerAddressManager()
         {
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
-            this.Selector = new PeerSelector(this);
+            this.PeerSelector = new PeerSelector(this.Peers);
         }
 
         /// <summary>Constructor used by dependency injection.</summary>

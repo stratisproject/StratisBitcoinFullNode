@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Contract interface for <see cref="PeerSelector"/>.
+    /// Contract for <see cref="PeerSelector"/>.
     /// </summary>
     public interface IPeerSelector
     {
@@ -35,29 +35,32 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// The address manager instance that holds the peer list to be queried. 
         /// </summary>
-        private readonly IPeerAddressManager peerAddressManager;
+        private readonly ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses;
 
         /// <summary>
         /// Constructor for the peer selector.
         /// </summary>
-        /// <param name="peerAddressManager">The singleton peer address manager instance.</param>
-        public PeerSelector(IPeerAddressManager peerAddressManager)
+        /// <param name="peerAddresses">
+        /// The collection of peer address as managed by the
+        /// peer address manager.
+        /// </param>
+        public PeerSelector(ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses)
         {
-            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+            Guard.NotNull(peerAddresses, nameof(peerAddresses));
 
-            this.peerAddressManager = peerAddressManager;
+            this.peerAddresses = peerAddresses;
         }
 
         /// <inheritdoc/>
         public PeerAddress SelectPeer()
         {
-            var tried = this.peerAddressManager.Peers.Attempted().Concat(this.peerAddressManager.Peers.Connected());
+            var tried = this.peerAddresses.Attempted().Concat(this.peerAddresses.Connected());
 
-            if (tried.Any() == true && (!this.peerAddressManager.Peers.Fresh().Any() || new Random().Next(2) == 0))
+            if (tried.Any() == true && (!this.peerAddresses.Fresh().Any() || new Random().Next(2) == 0))
                 return tried.Random();
 
-            if (this.peerAddressManager.Peers.Fresh().Any())
-                return this.peerAddressManager.Peers.Fresh().Random();
+            if (this.peerAddresses.Fresh().Any())
+                return this.peerAddresses.Fresh().Random();
 
             return null;
         }
@@ -65,7 +68,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeers()
         {
-            return this.peerAddressManager.Peers.Where(p => p.Value.Preferred).Select(p => p.Value);
+            return this.peerAddresses.Where(p => p.Value.Preferred).Select(p => p.Value);
         }
     }
 
