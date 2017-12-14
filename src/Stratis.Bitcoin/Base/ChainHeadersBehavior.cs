@@ -252,34 +252,38 @@ namespace Stratis.Bitcoin.Base
                         if (pendingTipBefore != this.pendingTip)
                             this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-                        // Long reorganization protection on POS networks.
-                        bool reorgPrevented = false;
-                        uint maxReorgLength = this.chainState.MaxReorgLength;
-                        if (maxReorgLength != 0)
+                        if (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork)
                         {
-                            Network network = this.AttachedPeer?.Network;
-                            ChainedBlock consensusTip = this.chainState.ConsensusTip;
-                            if ((network != null) && (consensusTip != null))
+                            // Long reorganization protection on POS networks.
+                            bool reorgPrevented = false;
+                            uint maxReorgLength = this.chainState.MaxReorgLength;
+                            if (maxReorgLength != 0)
                             {
-                                ChainedBlock fork = this.pendingTip.FindFork(consensusTip);
-                                if ((fork != null) && (fork != consensusTip))
+                                Network network = this.AttachedPeer?.Network;
+                                ChainedBlock consensusTip = this.chainState.ConsensusTip;
+                                if ((network != null) && (consensusTip != null))
                                 {
-                                    int reorgLength = consensusTip.Height - fork.Height;
-                                    if (reorgLength > maxReorgLength)
+                                    ChainedBlock fork = this.pendingTip.FindFork(consensusTip);
+                                    if ((fork != null) && (fork != consensusTip))
                                     {
-                                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                                        this.InvalidHeaderReceived = true;
-                                        reorgPrevented = true;
+                                        int reorgLength = consensusTip.Height - fork.Height;
+                                        if (reorgLength > maxReorgLength)
+                                        {
+                                            this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
+                                            this.InvalidHeaderReceived = true;
+                                            reorgPrevented = true;
+                                        }
+                                        else this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                                     }
-                                    else this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                                 }
                             }
-                        }
 
-                        if (!reorgPrevented && (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork))
-                        {
-                            this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", this.pendingTip, this.pendingTip.ChainWork);
-                            this.Chain.SetTip(this.pendingTip);
+                            // Switch to better chain.
+                            if (!reorgPrevented)
+                            {
+                                this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", this.pendingTip, this.pendingTip.ChainWork);
+                                this.Chain.SetTip(this.pendingTip);
+                            }
                         }
 
                         ChainedBlock chainedPendingTip = this.Chain.GetBlock(this.pendingTip.HashBlock);

@@ -616,7 +616,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             string walletFileExtension = "wallet.json";
             string testWalletFileName = Path.ChangeExtension("myWallet", walletFileExtension);
-            string testWalletPath = "c:\\stratisnode\\" + testWalletFileName;
+            string testWalletPath = Path.Combine(AppContext.BaseDirectory, "stratisnode", testWalletFileName);
             string folder = Path.GetDirectoryName(testWalletPath);
             string[] files = new string[] { testWalletFileName };
             mockWalletWrapper.Setup(w => w.GetWalletsFiles()).Returns((folder, files));
