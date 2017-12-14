@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     while (true)
                     {
-                        IncomingMessage message = ReceiveMessage(cancellation.Token);
+                        IncomingMessage message = this.ReceiveMessage(cancellation.Token);
                         if (this.predicates.All(p => p(message)))
                         {
                             if (message.Message.Payload is TPayload)
