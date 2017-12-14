@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.P2P
                     var clonedConnectParamaters = this.CurrentParameters.Clone();
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peerAddress, clonedConnectParamaters).ConfigureAwait(false);
+                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peerAddress.NetworkAddress, clonedConnectParamaters).ConfigureAwait(false);
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                 }
             }
