@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                await Task.Run(async () => await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port), cancellation).ConfigureAwait(false);
+                await Task.Run(() => this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).Wait(cancellation)).ConfigureAwait(false);
                 this.Stream = this.tcpClient.GetStream();
             }
             catch (OperationCanceledException)
@@ -102,9 +102,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
+                if (e is AggregateException) e = e.InnerException;
                 this.logger.LogDebug("Error connecting to '{0}', exception: {1}", endPoint, e.ToString());
                 this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                throw;
+                throw e;
             }
 
             this.logger.LogTrace("(-)");
@@ -161,7 +162,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
         /// <returns>Binary message received from the connected counterparty.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
-        /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        /// <exception cref="ProtocolViolationException">Thrown if the incoming message is too big.</exception>
         public async Task<byte[]> ReadMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
@@ -182,7 +183,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             // 32 MB limit on message size from Bitcoin Core.
             if (length > 0x02000000)
-                throw new FormatException("Message payload too big (over 0x02000000 bytes)");
+                throw new ProtocolViolationException("Message payload too big (over 0x02000000 bytes)");
 
             // Read the payload.
             int magicLength = this.network.MagicBytes.Length;
@@ -278,9 +279,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// for parsing the message from binary data. That method need stream to read from, so to achieve that we create a memory stream from our data,
         /// which is not efficient. This should be improved.
         /// </remarks>
-        public async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
+        public async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
 
             Message message = null;
 

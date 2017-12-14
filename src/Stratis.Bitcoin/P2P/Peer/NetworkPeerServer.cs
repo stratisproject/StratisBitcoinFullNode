@@ -172,7 +172,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
-                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token).ConfigureAwait(false);
+                    TcpClient tcpClient = await Task.Run(() =>
+                    {
+                        Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
+                        acceptTask.Wait(this.serverCancel.Token);
+                        return acceptTask.Result;
+                    }).ConfigureAwait(false);
+
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
                     this.AddConnectedClient(client);
@@ -337,14 +343,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                         return;
                     }
 
-                    using (CancellationTokenSource cancel = new CancellationTokenSource())
+                    using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
                     {
-                        cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
+                        cancellationSource.CancelAfter(TimeSpan.FromSeconds(10.0));
                         try
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
                             networkPeer.StateChanged += Peer_StateChanged;
-                            await networkPeer.RespondToHandShakeAsync(cancel.Token);
+                            await networkPeer.RespondToHandShakeAsync(cancellationSource.Token);
                         }
                         catch (OperationCanceledException)
                         {
@@ -415,7 +421,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.acceptTask.Wait();
 
             ICollection<NetworkPeerClient> connectedClients = this.clientsById.Values;
-            this.logger.LogTrace("Waiting for {0} newly connected clients to accepting task to complete.", connectedClients.Count);
+            this.logger.LogTrace("Waiting for {0} newly connected clients to complete.", connectedClients.Count);
             foreach (NetworkPeerClient client in connectedClients)
             {
                 TaskCompletionSource<bool> completion = client.ProcessingCompletion;
