@@ -26,7 +26,7 @@ namespace NBitcoin
             this.network = Network.Main;
         }
         
-        public ConcurrentChain(BlockHeader genesisHeader, Network network = null)
+        public ConcurrentChain(BlockHeader genesisHeader, Network network = null) // TODO: Remove the null default
         {
             this.network = network ?? Network.Main;
             this.SetTip(new ChainedBlock(genesisHeader, genesisHeader.GetHash(this.network.NetworkOptions), 0));
@@ -37,8 +37,8 @@ namespace NBitcoin
         {
         }
 
-        public ConcurrentChain(byte[] bytes, Network network = null)
-            :this(network ?? Network.Main)
+        public ConcurrentChain(byte[] bytes, Network network = null) // TODO: Remove the null default
+            : this(network ?? Network.Main)
         {
             this.Load(bytes);
         }
