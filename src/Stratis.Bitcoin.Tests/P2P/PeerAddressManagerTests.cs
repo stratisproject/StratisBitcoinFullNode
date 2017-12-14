@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
         /// <summary>
         /// Ensures that after a peer has had a connection attempt,
-        /// that it doesn't get selected to be connected to again.
+        /// it doesn't get returned in the fresh set of peers.
         /// </summary>
         [Fact]
         public void CanSelectRandomPeerToConnectTo_AllPeersAreNew()
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var randomPeer = addressManager.PeerSelector.SelectPeer();
             addressManager.PeerAttempted(randomPeer.NetworkAddress.Endpoint, DateTime.UtcNow);
 
-            var selected = addressManager.Peers.New().FirstOrDefault(p => p.NetworkAddress.Endpoint.Match(randomPeer.NetworkAddress.Endpoint));
+            var selected = addressManager.Peers.Fresh().FirstOrDefault(p => p.NetworkAddress.Endpoint.Match(randomPeer.NetworkAddress.Endpoint));
             Assert.Null(selected);
         }
 
@@ -430,10 +430,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(addressOne, IPAddress.Loopback);
 
             var peer = peerAddressManager.FindPeer(addressOne.Endpoint);
-            peer.Attempted(DateTime.UtcNow);
+            peer.SetAttempted(DateTime.UtcNow);
             var resultOne = peer.Selectability;
 
-            peer.Attempted(DateTime.UtcNow);
+            peer.SetAttempted(DateTime.UtcNow);
             var resultTwo = peer.Selectability;
 
             Assert.True(resultOne > resultTwo);
