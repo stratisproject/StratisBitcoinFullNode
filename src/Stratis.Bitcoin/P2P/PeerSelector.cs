@@ -40,10 +40,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Constructor for the peer selector.
         /// </summary>
-        /// <param name="peerAddresses">
-        /// The collection of peer address as managed by the
-        /// peer address manager.
-        /// </param>
+        /// <param name="peerAddresses">The collection of peer address as managed by the peer address manager.</param>
         public PeerSelector(ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses)
         {
             Guard.NotNull(peerAddresses, nameof(peerAddresses));
@@ -55,7 +52,6 @@ namespace Stratis.Bitcoin.P2P
         public PeerAddress SelectPeer()
         {
             var tried = this.peerAddresses.Attempted().Concat(this.peerAddresses.Connected());
-
             if (tried.Any() == true && (!this.peerAddresses.Fresh().Any() || new Random().Next(2) == 0))
                 return tried.Random();
 
