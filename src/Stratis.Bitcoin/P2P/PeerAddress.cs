@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Net;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
@@ -80,11 +79,38 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
         /// <summary>
-        /// <c>True</c> if <see cref="LastConnectionAttempt"/>, <see cref="LastConnectionSuccess"/> and
-        /// <see cref="LastConnectionHandshake"/> is null.
+        /// <c>True</c> if the peer has had connection attempts but none successful.
         /// </summary>
         [JsonIgnore]
-        public bool IsNew
+        public bool Attempted
+        {
+            get
+            {
+                return
+                    this.LastConnectionAttempt != null &&
+                    this.LastConnectionSuccess == null;
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has had a successful connection attempt.
+        /// </summary>
+        [JsonIgnore]
+        public bool Connected
+        {
+            get
+            {
+                return
+                    this.LastConnectionAttempt == null &&
+                    this.LastConnectionSuccess != null;
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has never had connection attempts.
+        /// </summary>
+        [JsonIgnore]
+        public bool Fresh
         {
             get
             {
@@ -92,6 +118,20 @@ namespace Stratis.Bitcoin.P2P
                     this.LastConnectionAttempt == null &&
                     this.LastConnectionSuccess == null &&
                     this.LastConnectionHandshake == null;
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has had a successful connection attempt and handshaked.
+        /// </summary>
+        [JsonIgnore]
+        public bool Handshaked
+        {
+            get
+            {
+                return
+                    this.LastConnectionAttempt == null &&
+                    this.LastConnectionHandshake != null;
             }
         }
 
@@ -116,10 +156,12 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
         /// </summary>
-        internal void Attempted(DateTimeOffset peerAttemptedAt)
+        internal void SetAttempted(DateTimeOffset peerAttemptedAt)
         {
             this.ConnectionAttempts += 1;
             this.LastConnectionAttempt = peerAttemptedAt;
+            this.LastConnectionSuccess = null;
+            this.LastConnectionHandshake = null;
         }
 
         /// <summary>
@@ -132,6 +174,12 @@ namespace Stratis.Bitcoin.P2P
         /// https://github.com/stratisproject/NStratis/blob/2b0fbc3f6b809d92aaf43a8ee12f8baa724e5ccf/NBitcoin/Protocol/AddressManager.cs#L1014
         /// </para>
         /// </summary>
+        /// <remarks>
+        /// TODO: Currently the node calls this method BEFORE
+        /// <see cref="SetConnected(DateTimeOffset)"/>.
+        /// This needs to be refactored and once done we need to set<see cref="LastConnectionSuccess"/>
+        /// to null when the node was handshaked.
+        /// </remarks>
         internal void SetConnected(DateTimeOffset peerConnectedAt)
         {
             this.addressTime = peerConnectedAt;
@@ -144,6 +192,12 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
+        /// <remarks>
+        /// TODO: Currently the node calls this method BEFORE
+        /// <see cref="SetConnected(DateTimeOffset)"/>.
+        /// This needs to be refactored and once done we need to set<see cref="LastConnectionSuccess"/>
+        /// to null when the node was handshaked.
+        /// </remarks>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
             this.LastConnectionHandshake = peerHandshakedAt;

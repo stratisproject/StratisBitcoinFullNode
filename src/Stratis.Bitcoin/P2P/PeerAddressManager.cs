@@ -94,10 +94,13 @@ namespace Stratis.Bitcoin.P2P
         public IPeerSelector PeerSelector { get; private set; }
 
         /// <summary>Constructor used by unit tests.</summary>
+        /// <summary>Peer selector instance, used to select peers to connect to.</summary>
+        public IPeerSelector Selector { get; private set; }
+
         public PeerAddressManager()
         {
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
-            this.PeerSelector = new PeerSelector(this);
+            this.PeerSelector = new PeerSelector(this.Peers);
         }
 
         /// <summary>Constructor used by dependency injection.</summary>
@@ -155,7 +158,7 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
                 return;
 
-            peer.Attempted(peerAttemptedAt);
+            peer.SetAttempted(peerAttemptedAt);
         }
 
         /// <inheritdoc/>
