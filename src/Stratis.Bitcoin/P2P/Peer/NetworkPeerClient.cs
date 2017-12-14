@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                await Task.Run(async () => await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port), cancellation).ConfigureAwait(false);
+                await Task.Run(() => this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).Wait(cancellation)).ConfigureAwait(false);
                 this.Stream = this.tcpClient.GetStream();
             }
             catch (OperationCanceledException)

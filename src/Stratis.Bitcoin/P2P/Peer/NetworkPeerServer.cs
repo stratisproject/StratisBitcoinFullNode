@@ -172,7 +172,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
-                    TcpClient tcpClient = await Task.Run(async () => await this.tcpListener.AcceptTcpClientAsync(), this.serverCancel.Token).ConfigureAwait(false);
+                    TcpClient tcpClient = await Task.Run(() =>
+                    {
+                        Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
+                        acceptTask.Wait(this.serverCancel.Token);
+                        return acceptTask.Result;
+                    }).ConfigureAwait(false);
+
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
                     this.AddConnectedClient(client);
