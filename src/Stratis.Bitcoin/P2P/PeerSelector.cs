@@ -130,14 +130,22 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
         {
+            var chanceFactor = 1.0;
             var random = new Random();
 
-            if (peers.Count() == 1)
-                return peers.First();
+            while (true)
+            {
+                if (peers.Count() == 1)
+                    return peers.ToArray()[0];
 
-            var randomPeerIndex = random.Next(peers.Count() - 1);
-            var randomPeer = peers.ToArray()[randomPeerIndex];
-            return randomPeer;
+                var randomPeerIndex = random.Next(peers.Count() - 1);
+                var randomPeer = peers.ToArray()[randomPeerIndex];
+
+                if (random.Next(1 << 30) < chanceFactor * randomPeer.Selectability * (1 << 30))
+                    return randomPeer;
+
+                chanceFactor *= 1.2;
+            }
         }
     }
 }
