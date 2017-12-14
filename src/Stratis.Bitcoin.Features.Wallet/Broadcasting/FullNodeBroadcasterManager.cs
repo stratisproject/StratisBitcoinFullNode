@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
 
-        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator, IWalletManager walletManager) : base(connectionManager, walletManager)
+        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
         {
             Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
 

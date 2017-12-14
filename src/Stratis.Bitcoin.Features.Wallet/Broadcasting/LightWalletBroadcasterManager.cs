@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
     {
         private TimeSpan broadcastMaxTime = TimeSpan.FromSeconds(21);
 
-        public LightWalletBroadcasterManager(IConnectionManager connectionManager, IWalletManager walletManager) : base(connectionManager, walletManager)
+        public LightWalletBroadcasterManager(IConnectionManager connectionManager) : base(connectionManager)
         {
         }
 

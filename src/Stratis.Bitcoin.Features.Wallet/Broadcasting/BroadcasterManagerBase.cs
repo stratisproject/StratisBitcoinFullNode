@@ -17,17 +17,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         public event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
 
         /// <summary> Connection manager for managing node connections.</summary>
-        protected readonly IConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
 
-        /// <summary> Wallet manager.</summary>
-        protected readonly IWalletManager walletManager;
-
-        public BroadcasterManagerBase(IConnectionManager connectionManager, IWalletManager walletManager)
+        public BroadcasterManagerBase(IConnectionManager connectionManager)
         {
             Guard.NotNull(connectionManager, nameof(connectionManager));
 
             this.connectionManager = connectionManager;
-            this.walletManager = walletManager;
             this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();
         }
 
@@ -62,8 +58,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 broadcastEntry.State = state;
                 this.OnTransactionStateChanged(broadcastEntry);
             }
-
-            this.walletManager.ProcessTransaction(transaction, null, null, state == State.Propagated);
         }
 
         public abstract void BroadcastTransaction(Transaction transaction);
