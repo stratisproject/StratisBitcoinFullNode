@@ -33,8 +33,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var checkExistsStep = new CheckNextChainedBlockExistStep(fluent.Loop, this.loggerFactory);
                 checkExistsStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block04.Header.GetHash());
-                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash());
+                var options = NetworkOptions.TemporaryOptions;
+                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(options), block04.Header.GetHash(options));
+                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash(options));
             }
         }
     }

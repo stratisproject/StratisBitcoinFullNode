@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds != BlockValidationContext.BanDurationNoBan))
                     {
                         int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.nodeSettings.ConnectionManager.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration);
+                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
                     }
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
@@ -479,7 +479,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Build the next block in the chain of headers. The chain header is most likely already created by
                 // one of the peers so after we create a new chained block (mainly for validation)
                 // we ask the chain headers for its version (also to prevent memory leaks).
-                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
+                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, 
+                    context.BlockValidationContext.Block.Header.GetHash(this.nodeSettings.Network.NetworkOptions), this.Tip);
 
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
@@ -589,7 +590,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>List of transaction ids.</returns>
         public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(), nameof(enforceBIP30), enforceBIP30);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(NetworkOptions.TemporaryOptions), nameof(enforceBIP30), enforceBIP30);
 
             HashSet<uint256> ids = new HashSet<uint256>();
             foreach (Transaction tx in block.Transactions)

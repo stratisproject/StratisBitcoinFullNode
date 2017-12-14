@@ -13,6 +13,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     public class PeerBanningTest
     {
+        public PeerBanningTest()
+        {
+            Block.BlockSignature = false;
+            Transaction.TimeStamp = false;
+        }
+
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerDiconnected_ThePeerGetsBanned_Async()
         {
