@@ -535,8 +535,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
 
-            this.preferredTransactionOptions = NetworkOptions.All;
-            this.SupportedTransactionOptions = NetworkOptions.None;
+            this.preferredTransactionOptions = network.NetworkOptions;
+            this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
 
             this.Inbound = inbound;
             this.LastSeen = peerAddress.Time.UtcDateTime;

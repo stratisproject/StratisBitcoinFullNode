@@ -19,7 +19,22 @@ namespace NBitcoin
         public const uint All = Witness;
 
         /// <summary>ProofOfStake flags.</summary>
-        public bool IsProofOfStake = false;
+        private bool isProofOfStake = false;
+
+        public bool IsProofOfStake
+        {
+            get
+            {
+                if (this.isProofOfStake != Block.BlockSignature)
+                    throw new InvalidOperationException($"IsProofOfStake { this.isProofOfStake } mismatches expected value { Block.BlockSignature }");
+
+                return this.isProofOfStake;
+            }
+            set
+            {
+                this.isProofOfStake = value;
+            }
+        }
 
         //TODO?: Could be used by Block:
         //public virtual SetBlockSpecificFlags(Block block);
@@ -98,10 +113,10 @@ namespace NBitcoin
         /// <returns>A NetworkOptions object that represents the union of the input object.</returns>
         public static NetworkOptions operator |(NetworkOptions left, NetworkOptions right)
         {
-            if (left == null)
+            if (ReferenceEquals(null, left))
                 Swap(ref left, ref right); 
             NetworkOptions clone = left?.Clone();
-            if (clone != null)
+            if (!ReferenceEquals(null, clone))
                 clone.flags |= (right?.flags ?? All);
             return clone;
         }
@@ -114,11 +129,10 @@ namespace NBitcoin
         /// <returns>A NetworkOptions object that represents the intersection of the input object.</returns>
         public static NetworkOptions operator &(NetworkOptions left, NetworkOptions right)
         {
-            if (left == null)
-                Swap(ref left, ref right); 
-            NetworkOptions clone = left?.Clone();
-            if (clone != null)
-                clone.flags &= (right?.flags ?? All);
+            if (ReferenceEquals(null, left))
+                return right?.Clone(); 
+            NetworkOptions clone = left.Clone();
+            clone.flags &= (right?.flags ?? All);
             return clone;
         }
 

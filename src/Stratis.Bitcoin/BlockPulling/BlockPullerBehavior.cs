@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 // even if the origin of the message was from the other puller behavior.
                 // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash();
+                uint256 blockHash = block.Obj.Header.GetHash(node.Network.NetworkOptions);
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
                     this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);

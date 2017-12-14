@@ -25,7 +25,7 @@ namespace NBitcoin
             serializable.ReadWrite(new BitcoinStream(stream, serializing)
             {
                 ProtocolVersion = version,
-                TransactionOptions = options
+                TransactionOptions = options ?? NetworkOptions.TemporaryOptions
             });
         }
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
@@ -77,9 +77,9 @@ namespace NBitcoin
             serializable.ReadWrite(bms);
         }
 
-        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
+        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, NetworkOptions options = null) where T : IBitcoinSerializable, new()
         {
-            NetworkOptions options = NetworkOptions.All;
+            options = options ?? NetworkOptions.TemporaryOptions;
             var instance = new T();
             if (serializable is IHaveNetworkOptions haveNetworkOptions)
                 options = haveNetworkOptions.GetNetworkOptions();
