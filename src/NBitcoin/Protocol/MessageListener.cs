@@ -51,7 +51,7 @@ namespace NBitcoin.Protocol
 
         private CancellationTokenSource cancellationSource = new CancellationTokenSource();
 
-        public EventLoopMessageListener(Func<T, Task> processMessage)
+        public EventLoopMessageListener(Func<T, Task> processMessageAsync)
         {
             new Thread(new ThreadStart(async () =>
             {
@@ -64,7 +64,7 @@ namespace NBitcoin.Protocol
                         {
                             try
                             {
-                                await processMessage(message);
+                                await processMessageAsync(message);
                             }
                             catch (Exception ex)
                             {
