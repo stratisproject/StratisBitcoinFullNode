@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             lightWalletSyncManager.ProcessTransaction(transaction);
 
-            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null, null));
+            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null, true));
         }
 
         /// <summary>

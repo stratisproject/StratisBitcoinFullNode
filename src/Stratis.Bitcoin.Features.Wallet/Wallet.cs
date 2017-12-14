@@ -801,8 +801,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Propagation state of this transaction.
         /// </summary>
+        /// <remarks>Assume it's <c>true</c> if the field is <c>null</c>.</remarks>
         [JsonProperty(PropertyName = "isPropagated", NullValueHandling = NullValueHandling.Ignore)]
-        public bool IsPropagated { get; set; }
+        public bool? IsPropagated { get; set; }
 
         /// <summary>
         /// Gets or sets the full transaction object.

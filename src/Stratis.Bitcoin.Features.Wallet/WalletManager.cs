@@ -143,10 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
-            if (transactionEntry.State == State.Propagated)
-            {
-                this.ProcessTransaction(transactionEntry.Transaction, null, null, true);
-            }
+            this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
         }
 
         public void Start()
@@ -743,7 +740,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool? isPropagated = null)
+        public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
@@ -764,7 +761,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
                     {
                         this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, transaction.Outputs.IndexOf(utxo),
-                            utxo.Value, utxo.ScriptPubKey, blockHeight, block, isPropagated ?? block != null);
+                            utxo.Value, utxo.ScriptPubKey, blockHeight, block, isPropagated);
                         foundTrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
                     }
                 }
@@ -822,7 +819,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
         /// <param name="isPropagated">Propagation state of the transaction.</param>
         private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, bool isCoinStake, int index, Money amount, Script script,
-            int? blockHeight = null, Block block = null, bool isPropagated = false)
+            int? blockHeight = null, Block block = null, bool isPropagated = true)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11},{12}:{13})", nameof(transactionHex), transactionHex,
                 nameof(transactionHash), transactionHash, nameof(time), time, nameof(isCoinStake), isCoinStake, nameof(index), index, nameof(amount), amount, nameof(blockHeight), blockHeight);
@@ -847,9 +844,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transactionHex,
-                    IsPropagated = isPropagated
+                    Hex = transactionHex
                 };
+
+                if (!isPropagated)
+                    newTransaction.IsPropagated = false;
 
                 // add the Merkle proof to the (non-spending) transaction
                 if (block != null)
@@ -882,10 +881,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                 }
 
-                if (foundTransaction.IsPropagated != isPropagated)
-                {
-                    foundTransaction.IsPropagated = isPropagated;
-                }
+                if (isPropagated)
+                    foundTransaction.IsPropagated = null;
             }
 
             this.TransactionFoundInternal(script);

@@ -17,10 +17,6 @@
     <Version>1.0.6-alpha</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Broadcasting\BroadcasterManagerBase.cs" />
-  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ConcurrentHashSet" Version="1.0.2" />
     <PackageReference Include="DBreeze" Version="1.89.0" />
