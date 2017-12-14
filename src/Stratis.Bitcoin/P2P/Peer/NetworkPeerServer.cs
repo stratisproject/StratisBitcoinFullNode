@@ -343,14 +343,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                         return;
                     }
 
-                    using (CancellationTokenSource cancel = new CancellationTokenSource())
+                    using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
                     {
-                        cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
+                        cancellationSource.CancelAfter(TimeSpan.FromSeconds(10.0));
                         try
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
                             networkPeer.StateChanged += Peer_StateChanged;
-                            await networkPeer.RespondToHandShakeAsync(cancel.Token);
+                            await networkPeer.RespondToHandShakeAsync(cancellationSource.Token);
                         }
                         catch (OperationCanceledException)
                         {
