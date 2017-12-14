@@ -22,8 +22,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly BlockStoreLoop blockStoreLoop;
 
-        private readonly ConcurrentChain chain;
-
         private readonly ChainState chainState;
 
         private readonly IConnectionManager connection;
@@ -42,7 +40,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
-            ConcurrentChain chain,
             StoreSettings storeSettings,
             ChainState chainState,
             IConnectionManager connection,
@@ -56,7 +53,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockHashesToAnnounce = new ConcurrentQueue<uint256>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
-            this.chain = chain;
             this.chainState = chainState;
             this.connection = connection;
             this.name = name;
@@ -134,7 +130,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         // Current logic will discard all blocks waiting for being announced if we've encountered a block that we've reorged from.
 
                         // If the hash is not on disk and not in the best chain we assume all the following blocks are also discardable.
-                        if (!this.chain.Contains(blockHash))
+                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(blockHash) == null)
                         {
                             // Clear queue.
                             while (this.blockHashesToAnnounce.TryDequeue(out uint256 item))
