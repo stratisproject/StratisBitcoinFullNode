@@ -844,11 +844,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transactionHex
+                    Hex = transactionHex,
+                    IsPropagated = isPropagated
                 };
-
-                if (!isPropagated)
-                    newTransaction.IsPropagated = false;
 
                 // add the Merkle proof to the (non-spending) transaction
                 if (block != null)
@@ -882,7 +880,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 if (isPropagated)
-                    foundTransaction.IsPropagated = null;
+                    foundTransaction.IsPropagated = true;
             }
 
             this.TransactionFoundInternal(script);
