@@ -60,7 +60,7 @@ namespace NBitcoin.Tests
             int count = 0;
             foreach (StoredBlock stored in StoredBlock.EnumerateFile(TestDataLocations.DataBlockFolder("blk0001.dat"), network:Network.StratisMain))
             {
-                Assert.True(stored.Item.Check());
+                Assert.True(stored.Item.Check(Network.StratisMain.Consensus));
                 count++;
             }
             Assert.Equal(2000, count);
@@ -260,7 +260,7 @@ namespace NBitcoin.Tests
                 if (count == 2000)
                     Assert.Equal(blk1[0].Item.GetHash(), stored.Item.GetHash());
 
-                Assert.True(stored.Item.Check());
+                Assert.True(stored.Item.Check(Network.StratisMain.Consensus));
                 count++;
             }
             Assert.Equal(4000, count);
@@ -494,7 +494,7 @@ namespace NBitcoin.Tests
             {
                 uint256 hash = block.Item.GetHash();
                 listAll.Add(hash.ToString(), block);
-                Assert.True(block.Item.Check());
+                Assert.True(block.Item.Check(Network.StratisMain.Consensus));
             }
 
             // walk the chain and check that all block are loaded correctly 
@@ -539,7 +539,7 @@ namespace NBitcoin.Tests
             foreach (ChainedBlock item in chain.ToEnumerable(false))
             {
                 Block block = indexStore.Get(item.HashBlock);
-                Assert.True(BlockValidator.CheckBlock(block));
+                Assert.True(BlockValidator.CheckBlock(Network.StratisMain.Consensus, block));
             }            
         }
 

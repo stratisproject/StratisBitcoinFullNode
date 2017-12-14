@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Base
                             if (prev == null)
                                 break;
 
-                            tip = new ChainedBlock(header, header.GetHash(), prev);
+                            tip = new ChainedBlock(header, header.GetHash(this.AttachedPeer.Network.NetworkOptions), prev);
                             bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedPeer.Network);
                             validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                             if (!validated)
