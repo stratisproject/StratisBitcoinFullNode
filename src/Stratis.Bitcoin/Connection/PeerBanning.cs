@@ -123,7 +123,6 @@ namespace Stratis.Bitcoin.Connection
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
                     peer.DisconnectWithException($"The peer was banned, reason: {reason}");
                 }
                 else
@@ -135,6 +134,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (banPeer)
             {
+                this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
                 this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds));
             }
 
