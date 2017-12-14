@@ -25,11 +25,11 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
+            this.network = Network.Main;
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
-            this.networkPeerFactory = new NetworkPeerFactory(DateTimeProvider.Default, this.loggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.loggerFactory);
             this.networkPeerParameters = new NetworkPeerConnectionParameters();
             this.nodeLifetime = new NodeLifetime();
-            this.network = Network.Main;
         }
 
         [Fact]
