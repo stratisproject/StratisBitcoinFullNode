@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
         /// <returns>Binary message received from the connected counterparty.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
-        /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        /// <exception cref="ProtocolViolationException">Thrown if the incoming message is too big.</exception>
         public async Task<byte[]> ReadMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
