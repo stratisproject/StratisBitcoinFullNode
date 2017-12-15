@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                this.UpdateWhenChainDownloaded(wallet, DateTime.Now);
+                this.UpdateWhenChainDownloaded(new[] { wallet }, DateTime.Now);
             }
 
             // Save the changes to the file and add addresses to be tracked.
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                this.UpdateWhenChainDownloaded(wallet, creationTime);
+                this.UpdateWhenChainDownloaded(new[] { wallet }, creationTime);
             }
 
             // Save the changes to the file and add addresses to be tracked.
@@ -1215,25 +1215,33 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
         /// </summary>
-        /// <param name="wallet">The wallet to update.</param>
+        /// <param name="wallets">The wallets to update when the chain has downloaded.</param>
         /// <param name="date">The creation date of the block with which to update the wallet.</param>
-        private void UpdateWhenChainDownloaded(Wallet wallet, DateTime date)
+        private void UpdateWhenChainDownloaded(IEnumerable<Wallet> wallets, DateTime date)
         {
             this.asyncLoopFactory.RunUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
                 () => this.chain.IsDownloaded(),
                 () =>
                 {
                     int heightAtDate = this.chain.GetHeightAtTime(date);
-                    this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
-                    this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(heightAtDate));
-                    this.SaveWallet(wallet);
+
+                    foreach (var wallet in wallets)
+                    {
+                        this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
+                        this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(heightAtDate));
+                        this.SaveWallet(wallet);
+                    }
                 },
                 (ex) =>
                 {
                     // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
                     // sync from the current height.
                     this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
-                    this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+
+                    foreach (var wallet in wallets)
+                    {
+                        this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+                    }
                 },
                 TimeSpans.FiveSeconds);
         }
