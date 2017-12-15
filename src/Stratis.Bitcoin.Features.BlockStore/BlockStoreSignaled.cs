@@ -125,17 +125,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // The first block that is not in disk will abort the loop.
                     if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
                     {
-                        // There is a small possibility that a reorg happened and 'blockHashesToAnnounce'
-                        // contains hashes of blocks that we've reorged away from.
-                        // Current logic will discard all blocks waiting for being announced if we've encountered a block that we've reorged from.
+                        // In cases when the node had a reorg the 'blockHashesToAnnounce' will contain blocks
+                        // that are not anymore on the main chain, those blocks are removed from 'blockHashesToAnnounce'.
 
-                        // If the hash is not on disk and not in the best chain we assume all the following blocks are also discardable.
+                        // Check if the reason why we don't have a block is a reorg or it wasn't just downloaded yet.
                         if (this.chainState.ConsensusTip.FindAncestorOrSelf(blockHash) == null)
                         {
-                            // Clear queue.
-                            while (this.blockHashesToAnnounce.TryDequeue(out uint256 item))
-                            {
-                            }
+                            // Remove hash that we've reorged away from.
+                            this.blockHashesToAnnounce.TryDequeue(out uint256 item);
+                            continue;
                         }
 
                         break;
