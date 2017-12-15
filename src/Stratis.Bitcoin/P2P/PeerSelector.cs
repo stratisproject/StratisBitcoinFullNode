@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -42,19 +41,18 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// The address manager instance that holds the peer list to be queried. 
         /// </summary>
-        private readonly IPeerAddressManager peerAddressManager;
+        private readonly ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses;
 
         /// <summary>
         /// Constructor for the peer selector.
         /// </summary>
-        /// <param name="peerAddressManager">The singleton peer address manager instance.</param>
-        public PeerSelector(ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager)
+        /// <param name="peerAddresses">The collection of peer address as managed by the peer address manager.</param>
+        public PeerSelector(ILoggerFactory loggerFactory, ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses)
         {
-            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
-
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.peerAddressManager = peerAddressManager;
+
+            this.peerAddresses = peerAddresses;
         }
 
         /// <inheritdoc/>
@@ -83,25 +81,25 @@ namespace Stratis.Bitcoin.P2P
 
             // First check to see if there are handshaked peers. If so,
             // give them a 75% chance to be picked over all the other peers.
-            if (this.peerAddressManager.Peers.Handshaked().Any())
+            if (this.peerAddresses.Handshaked().Any())
             {
                 var chance = new Random().Next(100);
                 if (chance <= 75)
                 {
                     this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
-                    return this.peerAddressManager.Peers.Handshaked();
+                    return this.peerAddresses.Handshaked();
                 }
             }
 
             // If there are peers that have recently connected, give them
             // a 75% chance to be picked over fresh and/or attempted peers.
-            if (this.peerAddressManager.Peers.Connected().Any())
+            if (this.peerAddresses.Connected().Any())
             {
                 var chance = new Random().Next(100);
                 if (chance <= 75)
                 {
                     this.logger.LogTrace("(-)[RETURN_CONNECTED]");
-                    return this.peerAddressManager.Peers.Connected();
+                    return this.peerAddresses.Connected();
                 }
             }
 
@@ -109,32 +107,32 @@ namespace Stratis.Bitcoin.P2P
             // was successful, we will select from fresh or attempted.
             //
             // If both sets exist, pick 50/50 between the two.
-            if (this.peerAddressManager.Peers.Attempted().Any() && this.peerAddressManager.Peers.Fresh().Any())
+            if (this.peerAddresses.Attempted().Any() && this.peerAddresses.Fresh().Any())
             {
                 if (new Random().Next(2) == 0)
                 {
                     this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
-                    return this.peerAddressManager.Peers.Attempted();
+                    return this.peerAddresses.Attempted();
                 }
                 else
                 {
                     this.logger.LogTrace("(-)[RETURN_FRESH]");
-                    return this.peerAddressManager.Peers.Fresh();
+                    return this.peerAddresses.Fresh();
                 }
             }
 
             // If there are only fresh peers, return them.
-            if (this.peerAddressManager.Peers.Fresh().Any() && !this.peerAddressManager.Peers.Attempted().Any())
+            if (this.peerAddresses.Fresh().Any() && !this.peerAddresses.Attempted().Any())
             {
                 this.logger.LogTrace("(-)[RETURN_ONLY_FRESH_EXIST]");
-                return this.peerAddressManager.Peers.Fresh();
+                return this.peerAddresses.Fresh();
             }
 
             // If there are only attempted peers, return them.
-            if (!this.peerAddressManager.Peers.Fresh().Any() && this.peerAddressManager.Peers.Attempted().Any())
+            if (!this.peerAddresses.Fresh().Any() && this.peerAddresses.Attempted().Any())
             {
                 this.logger.LogTrace("(-)[RETURN_ONLY_ATTEMPTED_EXIST]");
-                return this.peerAddressManager.Peers.Attempted();
+                return this.peerAddresses.Attempted();
             }
 
             // If all the selection criteria failed to return a set of peers,

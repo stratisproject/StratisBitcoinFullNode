@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 nodeSettings.DataDir = dataDir;
             }
 
-            LoggerFactory loggerFactory = new LoggerFactory();
+            var loggerFactory = new ExtendedLoggerFactory();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();

@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
         internal Dictionary<Script, HdAddress> keysLookup;
-        
+
         public WalletManager(
             ILoggerFactory loggerFactory,
             Network network,
@@ -143,10 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
-            if (transactionEntry.State == State.Propagated)
-            {
-                this.ProcessTransaction(transactionEntry.Transaction);
-            }
+            this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
         }
 
         public void Start()
@@ -733,7 +730,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 foreach (Transaction transaction in block.Transactions)
-                    this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                    this.ProcessTransaction(transaction, chainedBlock.Height, block, true);
 
                 // Update the wallets with the last processed block height.
                 this.UpdateLastBlockSyncedHeight(chainedBlock);
@@ -743,7 +740,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
+        public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
@@ -763,7 +760,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Check if the outputs contain one of our addresses.
                     if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
                     {
-                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, transaction.Outputs.IndexOf(utxo),
+                            utxo.Value, utxo.ScriptPubKey, blockHeight, block, isPropagated);
                         foundTrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
                     }
                 }
@@ -819,8 +817,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
+        /// <param name="isPropagated">Propagation state of the transaction.</param>
         private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, bool isCoinStake, int index, Money amount, Script script,
-            int? blockHeight = null, Block block = null)
+            int? blockHeight = null, Block block = null, bool isPropagated = true)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11},{12}:{13})", nameof(transactionHex), transactionHex,
                 nameof(transactionHash), transactionHash, nameof(time), time, nameof(isCoinStake), isCoinStake, nameof(index), index, nameof(amount), amount, nameof(blockHeight), blockHeight);
@@ -845,7 +844,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transactionHex
+                    Hex = transactionHex,
+                    IsPropagated = isPropagated
                 };
 
                 // add the Merkle proof to the (non-spending) transaction
@@ -878,6 +878,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                 }
+
+                if (isPropagated)
+                    foundTransaction.IsPropagated = true;
             }
 
             this.TransactionFoundInternal(script);

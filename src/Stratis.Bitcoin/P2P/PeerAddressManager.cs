@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.P2P
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             this.PeerFilePath = peerFilePath;
-            this.PeerSelector = new PeerSelector(this.loggerFactory, this);
+            this.PeerSelector = new PeerSelector(this.loggerFactory, this.Peers);
         }
 
         /// <inheritdoc />
