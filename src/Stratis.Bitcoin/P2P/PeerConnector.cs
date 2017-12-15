@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (OperationCanceledException timeout)
             {
-                this.logger.LogInformation("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
+                this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
                 peer?.DisconnectWithException("Timeout", timeout);
 
             }
