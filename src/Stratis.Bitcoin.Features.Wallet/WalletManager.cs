@@ -518,6 +518,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return items;
         }
 
+        /// <summary>
+        /// Gets a collection of addresses that have transactions associated with them.
+        /// </summary>
+        /// <param name="wallet">The wallet to get the history from.</param>
+        /// <returns>A collection of addresses that have transactions associated with them.</returns>
         private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
         {
             IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
