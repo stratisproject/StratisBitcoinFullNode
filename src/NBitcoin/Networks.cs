@@ -304,7 +304,7 @@ namespace NBitcoin
 
             consensus.DefaultAssumeValid = new uint256("0x5acb513b96dcb727fbe85c7d50a1266e6414cdd4c3ae66d01313c34a81b466a2"); // 602240
 
-            Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
+            Block genesis = CreateStratisGenesisBlock(consensus, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             // The message start string is designed to be unlikely to occur in normal data.
@@ -515,15 +515,15 @@ namespace NBitcoin
             return genesis;
         }
 
-        private static Block CreateStratisGenesisBlock(uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        private static Block CreateStratisGenesisBlock(Consensus consensus, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string pszTimestamp = "http://www.theonion.com/article/olympics-head-priestess-slits-throat-official-rio--53466";
-            return CreateStratisGenesisBlock(pszTimestamp, nTime, nNonce, nBits, nVersion, genesisReward);
+            return CreateStratisGenesisBlock(consensus, pszTimestamp, nTime, nNonce, nBits, nVersion, genesisReward);
         }
 
-        private static Block CreateStratisGenesisBlock(string pszTimestamp, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        private static Block CreateStratisGenesisBlock(Consensus consensus, string pszTimestamp, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
-            Transaction txNew = new Transaction();
+            Transaction txNew = new Transaction(consensus.NetworkOptions);
             txNew.Version = 1;
             txNew.Time = nTime;
             txNew.AddInput(new TxIn()
