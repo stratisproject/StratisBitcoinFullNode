@@ -69,6 +69,9 @@ namespace NBitcoin
         public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
             NetworkOptions options = null)
         {
+            if (ReferenceEquals(null, options) && serializable is IHaveNetworkOptions haveNetworkOptions)
+                options = haveNetworkOptions.GetNetworkOptions();
+            options = options ?? NetworkOptions.TemporaryOptions;
             var bms = new BitcoinStream(bytes)
             {
                 ProtocolVersion = version,
@@ -79,10 +82,10 @@ namespace NBitcoin
 
         public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, NetworkOptions options = null) where T : IBitcoinSerializable, new()
         {
+            if (ReferenceEquals(null, options) && serializable is IHaveNetworkOptions haveNetworkOptions)
+                options = haveNetworkOptions.GetNetworkOptions();
             options = options ?? NetworkOptions.TemporaryOptions;
             var instance = new T();
-            if (serializable is IHaveNetworkOptions haveNetworkOptions)
-                options = haveNetworkOptions.GetNetworkOptions();
             instance.FromBytes(serializable.ToBytes(version, options), version, options);
             return instance;
         }
