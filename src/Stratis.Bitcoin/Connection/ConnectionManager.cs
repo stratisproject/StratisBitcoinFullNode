@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Connection
                 ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
                 ChainHeadersBehavior chainHeadersBehavior = node.Behavior<ChainHeadersBehavior>();
                 builder.AppendLine(
-                    "Node:" + (node.RemoteInfo() + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
+                    "Peer:" + (node.RemoteInfo() + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LoggingConfiguration.ColumnLength + 7) +
                     (" agent " + node.PeerVersion.UserAgent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
                     " height=" + chainHeadersBehavior.PendingTip.Height);

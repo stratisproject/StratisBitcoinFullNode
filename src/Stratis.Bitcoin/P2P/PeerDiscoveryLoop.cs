@@ -151,8 +151,6 @@ namespace Stratis.Bitcoin.P2P
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
                         await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
-                        this.logger.LogInformation("Peer {0} discovered.", networkPeer.RemoteSocketEndpoint);
-
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(2));
                     }
                     catch
