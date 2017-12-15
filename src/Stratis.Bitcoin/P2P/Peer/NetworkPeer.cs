@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerClient Client { get; private set; }
 
         /// <summary>Event that is set when the connection is closed.</summary>
-        public ManualResetEvent Disconnected { get; private set; }
+        public ManualResetEventSlim Disconnected { get; private set; }
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource CancellationSource { get; private set; }
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Client = client;
             this.CancellationSource = new CancellationTokenSource();
             this.cancelRegistration = this.CancellationSource.Token.Register(this.InitiateShutdown);
-            this.Disconnected = new ManualResetEvent(false);
+            this.Disconnected = new ManualResetEventSlim(false);
         }
 
         /// <summary>
@@ -320,6 +320,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -331,7 +333,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.CancellationSource.Cancel();
 
             this.receiveMessageTask.Wait();
-            this.Disconnected.WaitOne();
+            this.Disconnected.WaitHandle.WaitOne();
 
             this.Disconnected.Dispose();
             this.CancellationSource.Dispose();
@@ -969,7 +971,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.Connection.Disconnected.WaitOne();
+                this.Connection.Disconnected.WaitHandle.WaitOne();
             }
             finally
             {
