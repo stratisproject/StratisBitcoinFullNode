@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the name of the masterfile on disk.
         /// </summary>
-        private const string DnsMasterFileName = "masterfile.dat";
+        public const string DnsMasterFileName = "masterfile.dat";
 
         /// <summary>
         /// Defines the DNS server.
@@ -96,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.logger.LogTrace("()");
 
             // Create long running task for DNS service
-            this.dnsTask = Task.Factory.StartNew(this.RunDnsServiceAsync, TaskCreationOptions.LongRunning);
+            this.dnsTask = Task.Factory.StartNew(this.RunDnsService, TaskCreationOptions.LongRunning);
 
             this.logger.LogTrace("(-)");
         }
@@ -105,16 +106,18 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Runs the DNS service until the node is stopped.
         /// </summary>
         /// <returns>A task used to allow the caller to await the operation.</returns>
-        private async Task RunDnsServiceAsync()
+        private void RunDnsService()
         {
             this.logger.LogTrace("()");
 
             try
             {
                 // Load masterfile from disk if it exists
-                string path = Path.Combine(this.dataFolders.DnsMasterFilePath + DnsMasterFileName);
+                string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
                 if (File.Exists(path))
                 {
+                    this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
+
                     using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         this.masterFile.Load(stream);
@@ -127,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
 
                 // Start
-                await this.dnsServer.ListenAsync(this.nodeSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping);
+                this.dnsServer.ListenAsync(this.nodeSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
             }
             catch (OperationCanceledException)
             {
