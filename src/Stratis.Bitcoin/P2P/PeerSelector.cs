@@ -66,10 +66,10 @@ namespace Stratis.Bitcoin.P2P
             if (peers.Any())
             {
                 peerAddress = peers.Random();
-                this.logger.LogTrace("(-):{0}={1}", nameof(peerAddress), peerAddress.NetworkAddress.Endpoint.ToString());
+                this.logger.LogTrace("(-):'{0}'", peerAddress.NetworkAddress.Endpoint);
             }
             else
-                this.logger.LogTrace("(-):{0} [NULL]", nameof(peerAddress));
+                this.logger.LogTrace("(-)[NO_PEER]");
 
             return peerAddress;
         }
@@ -79,11 +79,13 @@ namespace Stratis.Bitcoin.P2P
         {
             this.logger.LogTrace("()");
 
+            var random = new Random();
+
             // First check to see if there are handshaked peers. If so,
             // give them a 75% chance to be picked over all the other peers.
             if (this.peerAddresses.Handshaked().Any())
             {
-                var chance = new Random().Next(100);
+                var chance = random.Next(100);
                 if (chance <= 75)
                 {
                     this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
@@ -95,7 +97,7 @@ namespace Stratis.Bitcoin.P2P
             // a 75% chance to be picked over fresh and/or attempted peers.
             if (this.peerAddresses.Connected().Any())
             {
-                var chance = new Random().Next(100);
+                var chance = random.Next(100);
                 if (chance <= 75)
                 {
                     this.logger.LogTrace("(-)[RETURN_CONNECTED]");
@@ -109,7 +111,7 @@ namespace Stratis.Bitcoin.P2P
             // If both sets exist, pick 50/50 between the two.
             if (this.peerAddresses.Attempted().Any() && this.peerAddresses.Fresh().Any())
             {
-                if (new Random().Next(2) == 0)
+                if (random.Next(2) == 0)
                 {
                     this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
                     return this.peerAddresses.Attempted();
