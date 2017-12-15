@@ -418,12 +418,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.acceptTask.Wait();
 
             ICollection<NetworkPeerClient> connectedClients = this.clientsById.Values;
-            this.logger.LogInformation("Waiting for {0} connected clients to finish.", connectedClients.Count);
-            foreach (NetworkPeerClient client in connectedClients)
+            if (connectedClients.Count > 0)
             {
-                TaskCompletionSource<bool> completion = client.ProcessingCompletion;
-                client.Dispose();
-                completion.Task.Wait();
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", connectedClients.Count);
+                foreach (NetworkPeerClient client in connectedClients)
+                {
+                    TaskCompletionSource<bool> completion = client.ProcessingCompletion;
+                    client.Dispose();
+                    completion.Task.Wait();
+                }
             }
 
             this.logger.LogTrace("(-)");
