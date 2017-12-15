@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 3 has had a connection attempt (more than 60 seconds ago).
         /// 
         /// Result:
-        /// Peers 2 & 3 are in the attempted set.
+        /// Peers 2 and 3 are in the attempted set.
         /// </summary>
         [Fact]
         public void PeerState_TestReturnFromPeerAttemptedSet_Scenario1()
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 3 was attempted unsuccessfully more than 10 times.
         /// 
         /// Result:
-        /// Peers 1 & 2 are in the attempted set.
+        /// Peers 1 and 2 are in the attempted set.
         /// </summary>
         [Fact]
         public void PeerState_TestReturnFromPeerAttemptedSet_Scenario2()

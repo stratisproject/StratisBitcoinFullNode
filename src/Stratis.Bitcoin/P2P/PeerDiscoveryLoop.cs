@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
-                    connectTokenSource.CancelAfter(TimeSpan.FromSeconds(2));
+                    connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
                     NetworkPeer networkPeer = null;
 
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.P2P
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
                         await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
-                        connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(2));
+                        connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }
                     catch
                     {
