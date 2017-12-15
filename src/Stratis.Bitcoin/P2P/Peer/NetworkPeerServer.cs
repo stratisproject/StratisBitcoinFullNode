@@ -210,6 +210,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
 
             this.clientsById.AddOrReplace(client.Id, client);
+            client.ProcessingCompletion.Task.ContinueWith(unused => this.RemoveConnectedClient(client));
 
             this.logger.LogTrace("(-)");
         }
@@ -218,16 +219,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Removes a client from the list of clients and disconnects it.
         /// </summary>
         /// <param name="client">Client to remove and disconnect.</param>
-        private void RemoveAndDisconnectConnectedClient(NetworkPeerClient client)
+        private void RemoveConnectedClient(NetworkPeerClient client)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
 
             if (!this.clientsById.TryRemove(client.Id, out NetworkPeerClient unused))
                 this.logger.LogError("Internal data integration error.");
-
-            TaskCompletionSource<bool> completion = client.ProcessingCompletion;
-            client.Dispose();
-            completion.SetResult(true);
 
             this.logger.LogTrace("(-)");
         }
@@ -287,7 +284,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("Exception occurred while processing message from client '{0}': {1}", client.RemoteEndPoint, ex.ToString());
             }
 
-            if (!keepClientConnected) this.RemoveAndDisconnectConnectedClient(client);
+            if (!keepClientConnected) client.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -421,7 +418,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.acceptTask.Wait();
 
             ICollection<NetworkPeerClient> connectedClients = this.clientsById.Values;
-            this.logger.LogTrace("Waiting for {0} newly connected clients to complete.", connectedClients.Count);
+            this.logger.LogInformation("Waiting for {0} connected clients to finish.", connectedClients.Count);
             foreach (NetworkPeerClient client in connectedClients)
             {
                 TaskCompletionSource<bool> completion = client.ProcessingCompletion;
