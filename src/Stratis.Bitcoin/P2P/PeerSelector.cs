@@ -16,17 +16,11 @@ namespace Stratis.Bitcoin.P2P
         /// Selects a random peer, via a selection algorithm, from the address 
         /// manager to connect to.
         /// </summary>
-        /// <remarks>
-        /// See the inline comments for specifics on how the peer is selected.
-        /// </remarks>
         PeerAddress SelectPeer();
 
         /// <summary>
         /// Select preferred peers from the address manager for peer discovery.
         /// </summary>
-        /// <remarks>
-        /// See the inline comments for specifics on how the peers are selected.
-        /// </remarks>
         IEnumerable<PeerAddress> SelectPeers();
     }
 
@@ -85,7 +79,7 @@ namespace Stratis.Bitcoin.P2P
             // give them a 75% chance to be picked over all the other peers.
             if (this.peerAddresses.Handshaked().Any())
             {
-                var chance = random.Next(100);
+                int chance = random.Next(100);
                 if (chance <= 75)
                 {
                     this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
@@ -97,7 +91,7 @@ namespace Stratis.Bitcoin.P2P
             // a 75% chance to be picked over fresh and/or attempted peers.
             if (this.peerAddresses.Connected().Any())
             {
-                var chance = random.Next(100);
+                int chance = random.Next(100);
                 if (chance <= 75)
                 {
                     this.logger.LogTrace("(-)[RETURN_CONNECTED]");
