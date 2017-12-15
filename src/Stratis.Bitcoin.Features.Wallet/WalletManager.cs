@@ -609,7 +609,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                     .OrderBy(o => o.LastBlockSyncedHeight)
                     .FirstOrDefault()?.LastBlockSyncedHash;
 
-                Guard.Assert(lastBlockSyncedHash != null);
+                // If details about the last block synced are not present in the wallet,
+                // find out which is the oldest wallet and set the last block synced to be the one at this date.
+                if (lastBlockSyncedHash == null)
+                {
+                    this.logger.LogWarning("There were no details about the last block synced in the wallets.");
+                    DateTimeOffset earliestWalletDate = this.Wallets.Min(c => c.CreationTime);
+                    this.UpdateWhenChainDownloaded(this.Wallets, earliestWalletDate.DateTime);
+                    lastBlockSyncedHash = this.chain.Tip.HashBlock;
+                }
             }
 
             this.logger.LogTrace("(-):'{0}'", lastBlockSyncedHash);
