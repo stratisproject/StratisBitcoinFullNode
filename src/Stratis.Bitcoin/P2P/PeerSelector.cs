@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.P2P
                 return peers.First();
 
             var randomPeerIndex = random.Next(peers.Count() - 1);
-            var randomPeer = peers.ToArray()[randomPeerIndex];
+            var randomPeer = peers.ElementAt(randomPeerIndex);
             return randomPeer;
         }
     }
