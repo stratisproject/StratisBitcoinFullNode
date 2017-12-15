@@ -404,7 +404,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.ConnectedNetworkPeers.DisconnectAll();
+                this.ConnectedNetworkPeers.DisconnectAll("Node shutdown");
             }
             catch (Exception e)
             {
