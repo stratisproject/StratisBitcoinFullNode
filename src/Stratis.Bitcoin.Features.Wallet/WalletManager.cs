@@ -850,7 +850,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
-                    IsCoinStake = isCoinStake,
+                    IsCoinStake = isCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
                     Id = transactionHash,
@@ -952,7 +952,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     BlockHeight = blockHeight,
                     Hex = transactionHex,
-                    IsCoinStake = isCoinStake
+                    IsCoinStake = isCoinStake == false ? (bool?)null : true
                 };
 
                 spentTransaction.SpendingDetails = spendingDetails;

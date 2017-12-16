@@ -740,8 +740,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// A value indicating whether this is a coin stake transaction or not.
         /// </summary>
-        [JsonProperty(PropertyName = "isCoinStake")]
-        public bool IsCoinStake { get; set; }
+        [JsonProperty(PropertyName = "isCoinStake", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsCoinStake { get; set; }
 
         /// <summary>
         /// A list of payments made out in this transaction.
@@ -907,8 +907,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// A value indicating whether this is a coin stake transaction or not.
         /// </summary>
-        [JsonProperty(PropertyName = "isCoinStake")]
-        public bool IsCoinStake { get; set; }
+        [JsonProperty(PropertyName = "isCoinStake", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsCoinStake { get; set; }
 
         /// <summary>
         /// Gets or sets the creation time.

@@ -342,10 +342,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                     // First we look for staking transaction as they require special attention.
                     // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
-                    if (transaction.SpendingDetails != null && transaction.SpendingDetails.IsCoinStake)
+                    if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
                     {
                         // We look for the 2 outputs related to our spending input.
-                        List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake).ToList();
+                        List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
                         if (relatedOutputs.Count == 2)
                         {
                             // Add staking transaction details.
