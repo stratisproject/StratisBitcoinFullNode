@@ -905,6 +905,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public int? BlockHeight { get; set; }
 
         /// <summary>
+        /// A value indicating whether this is a coin stake transaction or not.
+        /// </summary>
+        [JsonProperty(PropertyName = "isCoinStake")]
+        public bool IsCoinStake { get; set; }
+
+        /// <summary>
         /// Gets or sets the creation time.
         /// </summary>
         [JsonProperty(PropertyName = "creationTime")]
