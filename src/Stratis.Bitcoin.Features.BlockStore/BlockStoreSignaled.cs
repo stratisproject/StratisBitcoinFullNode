@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
-        private readonly ConcurrentQueue<uint256> blockHashesToAnnounce;
+        private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             string name = "BlockStore")
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockHashesToAnnounce = new ConcurrentQueue<uint256>();
+            this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
@@ -75,7 +75,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // ensure the block is written to disk before relaying
-            this.blockStoreLoop.AddToPending(block);
+            this.blockStoreLoop.AddToPending(block, out ChainedBlock chainedBlock);
+
+            if (chainedBlock == null)
+            {
+                this.logger.LogTrace("(-)[REORG]");
+                return;
+            }
 
             if (this.chainState.IsInitialBlockDownload)
             {
@@ -83,19 +89,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            uint256 blockHash = block.GetHash();
-            this.logger.LogTrace("Block hash is '{0}'.", blockHash);
-            this.blockHashesToAnnounce.Enqueue(blockHash);
+            this.logger.LogTrace("Block hash is '{0}'.", chainedBlock.HashBlock);
+            this.blocksToAnnounce.Enqueue(chainedBlock);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// A loop method that continuously relays blocks found in <see cref="blockHashesToAnnounce"/> to connected peers on the network.
+        /// A loop method that continuously relays blocks found in <see cref="blocksToAnnounce"/> to connected peers on the network.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The dictionary <see cref="blockHashesToAnnounce"/> contains
+        /// The dictionary <see cref="blocksToAnnounce"/> contains
         /// hashes of blocks that were validated by the consensus rules.
         /// </para>
         /// <para>
@@ -121,35 +126,35 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 this.logger.LogTrace("()");
 
-                if (!this.blockHashesToAnnounce.Any())
+                if (!this.blocksToAnnounce.Any())
                 {
                     this.logger.LogTrace("(-)[NO_BLOCKS]");
                     return;
                 }
 
-                var broadcastItems = new List<uint256>(this.blockHashesToAnnounce.Count + 4);
+                var broadcastItems = new List<uint256>(this.blocksToAnnounce.Count + 4);
 
-                while (this.blockHashesToAnnounce.TryPeek(out uint256 blockHash))
+                while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
                 {
                     // The first block that is not on disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
+                    if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
                     {
-                        // In cases when the node had a reorg the 'blockHashesToAnnounce' will contain blocks
-                        // that are not anymore on the main chain, those blocks are removed from 'blockHashesToAnnounce'.
+                        // In cases when the node had a reorg the 'blocksToAnnounce' will contain blocks
+                        // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
 
                         // Check if the reason why we don't have a block is a reorg or it wasn't just downloaded yet.
-                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(this.chain.GetBlock(blockHash)) == null)
+                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                         {
                             // Remove hash that we've reorged away from.
-                            this.blockHashesToAnnounce.TryDequeue(out uint256 item);
+                            this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
                             continue;
                         }
 
                         break;
                     }
 
-                    if (this.blockHashesToAnnounce.TryDequeue(out uint256 hashToBroadcast))
-                        broadcastItems.Add(hashToBroadcast);
+                    if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
+                        broadcastItems.Add(blockToBroadcast.HashBlock);
                 }
 
                 if (!broadcastItems.Any())

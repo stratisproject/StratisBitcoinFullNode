@@ -181,12 +181,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="block">The block to add to pending storage</param>
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
-        public void AddToPending(Block block)
+        public void AddToPending(Block block, out ChainedBlock chainedBlock)
         {
             uint256 blockHash = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
 
-            ChainedBlock chainedBlock = this.Chain.GetBlock(blockHash);
+            chainedBlock = this.Chain.GetBlock(blockHash);
             if (chainedBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
