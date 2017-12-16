@@ -1,11 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
+        /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
         public BlockStoreSignaled(
@@ -81,9 +82,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
+            this.logger.LogTrace("Block hash is '{0}'.", chainedBlock.HashBlock);
+
             BlockPair blockPair = new BlockPair(block, chainedBlock);
 
-            // ensure the block is written to disk before relaying
+            // Ensure the block is written to disk before relaying.
             this.blockStoreLoop.AddToPending(blockPair);
 
             if (this.chainState.IsInitialBlockDownload)
@@ -92,7 +95,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("Block hash is '{0}'.", chainedBlock.HashBlock);
             this.blocksToAnnounce.Enqueue(chainedBlock);
 
             this.logger.LogTrace("(-)");
@@ -103,7 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The dictionary <see cref="blocksToAnnounce"/> contains
+        /// The queue <see cref="blocksToAnnounce"/> contains
         /// hashes of blocks that were validated by the consensus rules.
         /// </para>
         /// <para>
@@ -135,6 +137,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     return;
                 }
 
+                // Initialize this list with default size of 'blocksToAnnounce.Count + 4' to prevent it from autoresizing during adding new items.
+                // This +4 extra size is in case new items will be added to the queue during the loop.
                 var broadcastItems = new List<ChainedBlock>(this.blocksToAnnounce.Count + 4);
 
                 while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
@@ -142,10 +146,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // The first block that is not on disk will abort the loop.
                     if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
                     {
-                        // In cases when the node had a reorg the 'blocksToAnnounce' will contain blocks
+                        // In cases when the node had a reorg the 'blocksToAnnounce' contain blocks
                         // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
 
-                        // Check if the reason why we don't have a block is a reorg or it wasn't just downloaded yet.
+                        // Check if the reason why we don't have a block is a reorg or it hasn't been downloaded yet.
                         if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                         {
                             // Remove hash that we've reorged away from.
@@ -166,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     return;
                 }
 
-                var nodes = this.connection.ConnectedNodes;
+                IReadOnlyNetworkPeerCollection nodes = this.connection.ConnectedNodes;
                 if (!nodes.Any())
                 {
                     this.logger.LogTrace("(-)[NO_NODES]");
@@ -174,8 +178,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
 
                 // Announce the blocks to each of the peers.
-                var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
-                foreach (var behaviour in behaviours)
+                IEnumerable<BlockStoreBehavior> behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
+                foreach (BlockStoreBehavior behaviour in behaviours)
                     await behaviour.AnnounceBlocks(broadcastItems).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,

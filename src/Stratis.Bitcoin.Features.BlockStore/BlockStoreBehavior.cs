@@ -210,8 +210,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public Task AnnounceBlocks(List<ChainedBlock> blocksToAnnounce)
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce?.Count);
             Guard.NotNull(blocksToAnnounce, nameof(blocksToAnnounce));
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce.Count);
 
             if (!blocksToAnnounce.Any())
             {
@@ -238,9 +238,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!revertToInv)
             {
                 bool foundStartingHeader = false;
-                // Try to find first header that our peer doesn't have, and
-                // then send all headers past that one.  If we come across any
-                // headers that aren't on chainActive, give up.
+                // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
 
                 foreach (ChainedBlock chainedBlock in blocksToAnnounce)
                 {
@@ -293,8 +291,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (revertToInv)
             {
                 // If falling back to using an inv, just try to inv the tip.
-                // The last entry in vBlockHashesToAnnounce was our tip at some point
-                // in the past.
+                // The last entry in 'blocksToAnnounce' was our tip at some point in the past.
 
                 if (blocksToAnnounce.Any())
                 {
