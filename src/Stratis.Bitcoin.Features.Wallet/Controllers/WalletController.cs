@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 WalletHistoryModel model = new WalletHistoryModel();
 
                 // Get a list of all the transactions, with the addresses associated with them.
-                List<FlatHistory> items = this.walletManager.GetHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(100).ToList();
+                List<FlatHistory> items = this.walletManager.GetHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(200).ToList();
 
                 // Represents a sublist containing only the transactions that have already been spent. 
                 List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
@@ -339,6 +339,33 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transaction = item.Transaction;
                     var address = item.Address;
+
+                    // First we look for staking transaction as they require special attention.
+                    // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
+                    if (transaction.SpendingDetails != null && transaction.SpendingDetails.IsCoinStake)
+                    {
+                        // We look for the 2 outputs related to our spending input.
+                        List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake).ToList();
+                        if (relatedOutputs.Count == 2)
+                        {
+                            // Add staking transaction details.
+                            // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
+                            TransactionItemModel stakingItem = new TransactionItemModel
+                            {
+                                Type = TransactionItemType.Mined,
+                                ToAddress = address.Address,
+                                Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
+                                Id = transaction.SpendingDetails.TransactionId,
+                                Timestamp = transaction.SpendingDetails.CreationTime,
+                                ConfirmedInBlock = transaction.SpendingDetails.BlockHeight
+                            };
+
+                            model.TransactionsHistory.Add(stakingItem);
+                        }
+
+                        // No need for further processing. 
+                        continue;
+                    }
 
                     // Create a record for a 'receive' transaction.
                     if (!address.IsChangeAddress())
