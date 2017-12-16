@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     return;
                 }
 
-                var broadcastItems = new List<uint256>();
+                var broadcastItems = new List<uint256>(this.blockHashesToAnnounce.Count + 4);
 
                 while (this.blockHashesToAnnounce.TryPeek(out uint256 blockHash))
                 {
@@ -137,10 +137,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         // In cases when the node had a reorg the 'blockHashesToAnnounce' will contain blocks
                         // that are not anymore on the main chain, those blocks are removed from 'blockHashesToAnnounce'.
 
-                        ChainedBlock chainedBlock = this.chain.GetBlock(blockHash);
-
                         // Check if the reason why we don't have a block is a reorg or it wasn't just downloaded yet.
-                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(chainedBlock) == null)
+                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(this.chain.GetBlock(blockHash)) == null)
                         {
                             // Remove hash that we've reorged away from.
                             this.blockHashesToAnnounce.TryDequeue(out uint256 item);
