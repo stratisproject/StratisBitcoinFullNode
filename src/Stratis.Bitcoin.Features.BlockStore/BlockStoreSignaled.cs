@@ -86,7 +86,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // ensure the block is written to disk before relaying
             this.blockStoreLoop.AddToPending(blockPair);
 
-
             if (this.chainState.IsInitialBlockDownload)
             {
                 this.logger.LogTrace("(-)[IBD]");
@@ -136,7 +135,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     return;
                 }
 
-                var broadcastItems = new List<uint256>(this.blocksToAnnounce.Count + 4);
+                var broadcastItems = new List<ChainedBlock>(this.blocksToAnnounce.Count + 4);
 
                 while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
                 {
@@ -158,7 +157,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
 
                     if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
-                        broadcastItems.Add(blockToBroadcast.HashBlock);
+                        broadcastItems.Add(blockToBroadcast);
                 }
 
                 if (!broadcastItems.Any())
