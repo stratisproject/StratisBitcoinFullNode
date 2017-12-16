@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Api.Models;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
@@ -120,7 +119,6 @@ namespace Stratis.Bitcoin.Features.Api
             {
                 features
                 .AddFeature<ApiFeature>()
-                .DependOn<WalletFeature>()
                 .FeatureServices(services =>
                     {
                         services.AddSingleton(fullNodeBuilder);
