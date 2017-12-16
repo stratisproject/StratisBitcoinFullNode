@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Api
                     {
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
-                    });                
+                    });
             });
 
             return fullNodeBuilder;
