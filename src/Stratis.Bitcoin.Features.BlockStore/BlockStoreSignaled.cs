@@ -74,14 +74,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            // ensure the block is written to disk before relaying
-            this.blockStoreLoop.AddToPending(block, out ChainedBlock chainedBlock);
-
+            ChainedBlock chainedBlock = this.chain.GetBlock(block.GetHash());
             if (chainedBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
                 return;
             }
+
+            BlockPair blockPair = new BlockPair(block, chainedBlock);
+
+            // ensure the block is written to disk before relaying
+            this.blockStoreLoop.AddToPending(blockPair);
+
 
             if (this.chainState.IsInitialBlockDownload)
             {
