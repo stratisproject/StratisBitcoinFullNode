@@ -17,6 +17,24 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManagerBehaviour : NetworkPeerBehavior
     {
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// See <see cref="PeerAddressManagerBehaviourMode"/> for the different modes and their
+        /// explanations.
+        /// </summary>
+        public PeerAddressManagerBehaviourMode Mode { get; set; }
+
+        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        private readonly IPeerAddressManager peerAddressManager;
+
+        /// <summary>
+        /// The amount of peers that can be discovered before
+        /// <see cref="PeerDiscovery"/> stops finding new ones.
+        /// </summary>
+        public int PeersToDiscover { get; set; }
+
         public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -27,15 +45,6 @@ namespace Stratis.Bitcoin.P2P
             this.peerAddressManager = peerAddressManager;
             this.PeersToDiscover = 1000;
         }
-
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        public int PeersToDiscover { get; set; }
-
-        public PeerAddressManagerBehaviourMode Mode { get; set; }
-
-        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
-        private readonly IPeerAddressManager peerAddressManager;
 
         protected override void AttachCore()
         {
@@ -48,7 +57,10 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
-                    peer.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
+                {
+                    var peers = this.peerAddressManager.PeerSelector.SelectPeers().Take(1000).Select(p => p.NetworkAddress).ToArray();
+                    peer.SendMessageVoidAsync(new AddrPayload(peers));
+                }
             }
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
@@ -90,6 +102,9 @@ namespace Stratis.Bitcoin.P2P
         }
     }
 
+    /// <summary>
+    /// Specifies how messages related to network peer discovery are handled.
+    /// </summary>
     [Flags]
     public enum PeerAddressManagerBehaviourMode
     {

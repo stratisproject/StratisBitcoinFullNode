@@ -284,6 +284,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     IsChainSynced = this.chain.IsDownloaded(),
                     IsDecrypted = true
                 };
+
+                // Get the wallet's file path.
+                (string folder, IEnumerable<string> fileNameCollection) = this.walletManager.GetWalletsFiles();
+                string searchFile = Path.ChangeExtension(request.Name, this.walletManager.GetWalletFileExtension());
+                string fileName = fileNameCollection.FirstOrDefault(i => i.Equals(searchFile));
+                if (folder != null && fileName != null)
+                    model.WalletFilePath = Path.Combine(folder, fileName);
+
                 return this.Json(model);
             }
             catch (Exception e)
@@ -576,7 +584,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
-        public async Task<IActionResult> SendTransactionAsync([FromBody] SendTransactionRequest request)
+        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -585,6 +593,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 return BuildErrorResponse(this.ModelState);
             }
+
+            if (!this.connectionManager.ConnectedNodes.Any())
+                throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
 
             try
             {
@@ -605,14 +616,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
-                bool broadcasted = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
+                this.walletManager.ProcessTransaction(transaction, null, null, false);
 
-                if (broadcasted)
-                    return this.Json(model);
-                else
-                {
-                    throw new Exception(string.Format("Transaction was not sent correctly. Investigate current instance of {0} for more information.", typeof(IBroadcasterManager).Name));
-                }
+                this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+                return this.Json(model);
             }
             catch (Exception e)
             {

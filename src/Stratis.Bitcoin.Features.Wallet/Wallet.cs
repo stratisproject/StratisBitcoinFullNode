@@ -738,6 +738,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Money Amount { get; set; }
 
         /// <summary>
+        /// A value indicating whether this is a coin stake transaction or not.
+        /// </summary>
+        [JsonProperty(PropertyName = "isCoinStake")]
+        public bool IsCoinStake { get; set; }
+
+        /// <summary>
         /// A list of payments made out in this transaction.
         /// </summary>
         [JsonProperty(PropertyName = "payments", NullValueHandling = NullValueHandling.Ignore)]
@@ -791,6 +797,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
+
+        /// <summary>
+        /// Propagation state of this transaction.
+        /// </summary>
+        /// <remarks>Assume it's <c>true</c> if the field is <c>null</c>.</remarks>
+        [JsonProperty(PropertyName = "isPropagated", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsPropagated { get; set; }
 
         /// <summary>
         /// Gets or sets the full transaction object.

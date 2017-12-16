@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -27,9 +28,18 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         void AddNodeAddress(IPEndPoint ipEndpoint);
 
+        /// <summary>
+        /// Adds a peer to the address manager's connected nodes collection.
+        /// <para>
+        /// This list is inspected by the peer connectors to determine if the peer
+        /// isn't already connected.
+        /// </para>
+        /// </summary>
+        void AddConnectedPeer(NetworkPeer peer);
+
         void AddDiscoveredNodesRequirement(NetworkPeerServices services);
 
-        NetworkPeer Connect(IPEndPoint ipEndpoint);
+        Task<NetworkPeer> ConnectAsync(IPEndPoint ipEndpoint);
 
         IReadOnlyNetworkPeerCollection ConnectedNodes { get; }
 
@@ -158,37 +168,17 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.peerDiscovery.DiscoverPeers(CloneParameters(this.Parameters));
+            this.peerDiscovery.DiscoverPeers(this);
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
             {
-                peerConnector.Initialize(CloneParameters(this.Parameters));
+                peerConnector.Initialize(this);
                 peerConnector.StartConnectAsync();
             }
-
-            var peerConnectorAddNode = this.PeerConnectors.First(pc => pc is PeerConnectorAddNode);
-            var peerConnectorConnectNode = this.PeerConnectors.First(pc => pc is PeerConnectorConnectNode);
-            var peerConnectorDiscovery = this.PeerConnectors.First(pc => pc is PeerConnectorDiscovery);
-
-            // Relate the peer connectors to each other to prevent duplicate connections.
-            var relatedPeerConnectors = new RelatedPeerConnectors();
-            relatedPeerConnectors.Register("AddNode", peerConnectorAddNode);
-            relatedPeerConnectors.Register("Connect", peerConnectorConnectNode);
-            relatedPeerConnectors.Register("Discovery", peerConnectorDiscovery);
 
             this.StartNodeServer();
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Clones the set of connection parameters and adds the connection manager beahviour.
-        /// </summary>
-        private NetworkPeerConnectionParameters CloneParameters(NetworkPeerConnectionParameters parameters)
-        {
-            NetworkPeerConnectionParameters cloned = parameters.Clone();
-            cloned.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
-            return cloned;
         }
 
         private void StartNodeServer()
@@ -341,7 +331,8 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        internal void AddConnectedNode(NetworkPeer peer)
+        /// <inheritdoc />
+        public void AddConnectedPeer(NetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
 
@@ -417,7 +408,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public NetworkPeer Connect(IPEndPoint ipEndpoint)
+        public async Task<NetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
@@ -427,9 +418,9 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            NetworkPeer peer = this.NetworkPeerFactory.CreateConnectedNetworkPeer(this.Network, ipEndpoint, cloneParameters);
+            NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
             this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
-            peer.VersionHandshake();
+            await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
             return peer;

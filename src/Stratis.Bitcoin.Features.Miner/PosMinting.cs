@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
-        private readonly Models.GetStakingInfoModel rpcGetStakingInfoModel;
+        private Models.GetStakingInfoModel rpcGetStakingInfoModel;
 
         /// <summary>Estimation of the total staking weight of all nodes on the network.</summary>
         private long networkWeight;
@@ -284,6 +284,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </para>
         /// </summary>
         private uint256 lastCoinStakeSearchPrevBlockHash;
+
+        /// <summary>
+        /// A cancellation token source that can cancel the staking processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>. 
+        /// </summary>
+        private CancellationTokenSource stakeCancellationTokenSource;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
@@ -365,6 +370,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
+            this.stakeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
             this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
             {
@@ -402,12 +408,36 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.logger.LogTrace("(-)");
             },
-            this.nodeLifetime.ApplicationStopping,
+            this.stakeCancellationTokenSource.Token,
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
             startAfter: TimeSpans.TenSeconds);
 
             this.logger.LogTrace("(-)");
             return this.stakingLoop;
+        }
+
+        /// <summary>
+        /// Stop the main POS staking loop.
+        /// </summary>
+        public void StopStake()
+        {
+            this.logger.LogTrace("()");
+
+            if (this.stakingLoop == null)
+            {
+                this.logger.LogTrace("(-)[NOT_MINING]");
+                return;
+            }
+
+            this.stakeCancellationTokenSource.Cancel();
+            this.stakingLoop.Dispose();
+            this.stakingLoop = null;
+            this.stakeCancellationTokenSource.Dispose();
+            this.stakeCancellationTokenSource = null;
+            this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
+            this.rpcGetStakingInfoModel.Enabled = false;
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -423,14 +453,14 @@ namespace Stratis.Bitcoin.Features.Miner
 
             BlockTemplate blockTemplate = null;
 
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
                 while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
                 {
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
 
                 ChainedBlock chainTip = this.chain.Tip;
@@ -511,7 +541,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 else
                 {
                     this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
             }
         }
@@ -842,7 +872,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         break;
                     }
 
-                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    if (this.stakeCancellationTokenSource.Token.IsCancellationRequested)
                     {
                         context.Logger.LogTrace("Application shutdown detected, stopping work.");
                         stopWork = true;

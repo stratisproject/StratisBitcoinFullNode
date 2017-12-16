@@ -365,7 +365,7 @@ namespace NBitcoin
             }
         }
 
-        NetworkOptions transactionSupportedOptions = NetworkOptions.All;
+        NetworkOptions transactionSupportedOptions = NetworkOptions.TemporaryOptions;
         public NetworkOptions TransactionOptions
         {
             get
