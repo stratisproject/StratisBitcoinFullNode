@@ -20,6 +20,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         bool CanRespondToGetBlocksPayload { get; set; }
 
+        /// <summary>
+        /// Sends information about newly discovered blocks to network peers using "headers" or "inv" message.
+        /// </summary>
+        /// <param name="blocksToAnnounce">List of block headers to announce.</param>
         Task AnnounceBlocks(List<ChainedBlock> blocksToAnnounce);
     }
 
