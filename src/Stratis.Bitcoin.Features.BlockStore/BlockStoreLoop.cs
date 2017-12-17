@@ -175,11 +175,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if the store's tip is behind the given block.
         /// </para>
         /// </summary>
-        /// <param name="blockPair">The block & chained block pair to be added to pending storage.</param>
+        /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
         public void AddToPending(BlockPair blockPair)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair.Block), blockPair.ChainedBlock.HashBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
 
             if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
                 this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
