@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
                             TransactionItemModel stakingItem = new TransactionItemModel
                             {
-                                Type = TransactionItemType.Mined,
+                                Type = TransactionItemType.Staked,
                                 ToAddress = address.Address,
                                 Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
                                 Id = transaction.SpendingDetails.TransactionId,

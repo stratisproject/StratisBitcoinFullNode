@@ -83,6 +83,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         Received,
         Send,
-        Mined
+        Staked
     }
 }
