@@ -19,9 +19,11 @@ namespace Stratis.Bitcoin.P2P
         PeerAddress SelectPeer();
 
         /// <summary>
-        /// Select preferred peers from the address manager for peer discovery.
+        /// Select preferred peers from the address manager for sending
+        /// via address payload and peer discovery.
         /// </summary>
-        IEnumerable<PeerAddress> SelectPeers();
+        /// <param name="amountPeers">The amount of peers to return.</param>
+        IEnumerable<PeerAddress> SelectPeers(int amountPeers);
     }
 
     public sealed class PeerSelector : IPeerSelector
@@ -56,7 +58,7 @@ namespace Stratis.Bitcoin.P2P
 
             PeerAddress peerAddress = null;
 
-            var peers = SelectPeers();
+            var peers = SelectPreferredPeers();
             if (peers.Any())
             {
                 peerAddress = peers.Random();
@@ -68,8 +70,10 @@ namespace Stratis.Bitcoin.P2P
             return peerAddress;
         }
 
-        /// <inheritdoc/>
-        public IEnumerable<PeerAddress> SelectPeers()
+        /// <summary>
+        /// Filtering logic for selecting peers to connect to via the <see cref="PeerConnector"/> classes.
+        /// </summary>
+        private IEnumerable<PeerAddress> SelectPreferredPeers()
         {
             this.logger.LogTrace("()");
 
@@ -135,6 +139,145 @@ namespace Stratis.Bitcoin.P2P
             // then let the caller try again.
             this.logger.LogTrace("(-)[RETURN_NO_PEERS]");
             return new PeerAddress[] { };
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> SelectPeers(int amountOfPeers)
+        {
+            // If there are no peers, just one or if the amount peers is less than
+            // the amount of peers asked for, just return the list.
+            if (!this.peerAddresses.Any() || this.peerAddresses.Count == 1 || this.peerAddresses.Count < amountOfPeers)
+                return this.peerAddresses.Select(pa => pa.Value);
+
+            // If there are more peers than what we asked for, apply a fill ratio.
+            var random = new Random();
+
+            // Randomly order the set of handshaked peers.
+            var handshaked = this.peerAddresses.Handshaked().OrderBy(p => random.Next());
+
+            // Randomly order the set of connected peers.
+            var connected = this.peerAddresses.Connected().OrderBy(p => random.Next());
+
+            // Randomly order the set of attempted and fresh peers.
+            var attemptedAndFresh = this.peerAddresses.Attempted().Concat(this.peerAddresses.Fresh()).OrderBy(p => random.Next());
+
+            // If handshaked, connected and attempted or fresh peers exist, apply the
+            // default ratio.
+            if (handshaked.Any() && connected.Any() && attemptedAndFresh.Any())
+                return FillWithDefaultRatios(amountOfPeers, handshaked, connected, attemptedAndFresh);
+
+            // If only 2 sets exist, apply the secondary ratio.
+            if (!handshaked.Any() && connected.Any() && attemptedAndFresh.Any())
+            {
+                return FillWithSecondaryRatios(amountOfPeers, connected, attemptedAndFresh);
+            }
+
+            // If only 2 sets exist, apply the secondary ratio.
+            if (handshaked.Any() && !connected.Any() && attemptedAndFresh.Any())
+            {
+                return FillWithSecondaryRatios(amountOfPeers, handshaked, attemptedAndFresh);
+            }
+
+            // If only 2 sets exist, apply the secondary ratio.
+            if (handshaked.Any() && connected.Any() && !attemptedAndFresh.Any())
+            {
+                return FillWithSecondaryRatios(amountOfPeers, handshaked, connected);
+            }
+
+            // If there is only 1 set, take the amount of peers requested.
+            if (!handshaked.Any() && !connected.Any() && attemptedAndFresh.Any())
+            {
+                return attemptedAndFresh.Take(amountOfPeers);
+            }
+
+            // If there is only 1 set, take the amount of peers requested.
+            if (handshaked.Any() && !connected.Any() && !attemptedAndFresh.Any())
+            {
+                return handshaked.Take(amountOfPeers);
+            }
+
+            // If there is only 1 set, take the amount of peers requested.
+            if (!handshaked.Any() && connected.Any() && !attemptedAndFresh.Any())
+            {
+                return connected.Take(amountOfPeers);
+            }
+
+            return new PeerAddress[] { };
+        }
+
+        /// <summary>
+        /// This returns a list populated by a 70 / 20 / 10 ratio.
+        /// </summary>
+        private IEnumerable<PeerAddress> FillWithDefaultRatios(int amountOfPeers, IEnumerable<PeerAddress> first, IEnumerable<PeerAddress> second, IEnumerable<PeerAddress> third)
+        {
+            var peersToReturn = new List<PeerAddress>();
+
+            // If the first list of peers is less than 70% amount of the total,
+            // just add all of them.
+            if (first.Count() < (amountOfPeers * 0.7))
+                peersToReturn.AddRange(first);
+            else
+            {
+                // Else only take 70% of the first list.
+                var firstCount = (int)(first.Count() * 0.7);
+                peersToReturn.AddRange(first.Take(firstCount));
+            }
+
+            // If the second list of peers is less than 20% amount of the total,
+            // just add all of them.
+            if (second.Count() < (amountOfPeers * 0.2))
+                peersToReturn.AddRange(second);
+            else
+            {
+                // Else only take 20% of the second list.
+                var secondCount = (int)(second.Count() * 0.2);
+                peersToReturn.AddRange(second.Take(secondCount));
+            }
+
+            // If the third list of peers is less than 10% amount of the total,
+            // just add all of them.
+            if (third.Count() < (amountOfPeers * 0.1))
+                peersToReturn.AddRange(third);
+            else
+            {
+                // Else only take 10% of the third list.
+                var thirdCount = (int)(third.Count() * 0.1);
+                peersToReturn.AddRange(third.Take(thirdCount));
+            }
+
+            return peersToReturn.Take(amountOfPeers);
+        }
+
+        /// <summary>
+        /// This returns a list populated by a 70 / 30 ratio.
+        /// </summary>
+        private IEnumerable<PeerAddress> FillWithSecondaryRatios(int amountOfPeers, IEnumerable<PeerAddress> first, IEnumerable<PeerAddress> second)
+        {
+            var peersToReturn = new List<PeerAddress>();
+
+            // If the first list of peers is less than 70% amount of the total,
+            // just add all of them.
+            if (first.Count() < (amountOfPeers * 0.7))
+                peersToReturn.AddRange(first);
+            else
+            {
+                // Else only take 70% of the third list.
+                var firstCount = (int)(first.Count() * 0.7);
+                peersToReturn.AddRange(first.Take(firstCount));
+            }
+
+            // If the second list of peers is less than 30% amount of the total,
+            // just add all of them.
+            if (second.Count() < (amountOfPeers * 0.3))
+                peersToReturn.AddRange(second);
+            else
+            {
+                // Else only take 30% of the second list.
+                var secondCount = (int)(second.Count() * 0.3);
+                peersToReturn.AddRange(second.Take(secondCount));
+            }
+
+            return peersToReturn.Take(amountOfPeers);
         }
     }
 
