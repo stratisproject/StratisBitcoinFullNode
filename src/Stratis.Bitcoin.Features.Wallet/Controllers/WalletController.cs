@@ -331,7 +331,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
                 List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
-                
+
                 // Represents a sublist of 'change' transactions.
                 List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
@@ -339,6 +339,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transaction = item.Transaction;
                     var address = item.Address;
+
+                    // We don't show in history transactions that are outputs of staking transactions.
+                    if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
+                    {
+                        continue;
+                    }
 
                     // First we look for staking transaction as they require special attention.
                     // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
@@ -363,8 +369,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             model.TransactionsHistory.Add(stakingItem);
                         }
 
-                        // No need for further processing. 
-                        continue;
+                        // No need for further processing if the transaction itself is the output of a staking transaction. 
+                        if (transaction.IsCoinStake != null)
+                        {
+                            continue;
+                        }
                     }
 
                     // Create a record for a 'receive' transaction.
@@ -384,8 +393,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         model.TransactionsHistory.Add(receivedItem);
                     }
 
-                    // If this transaction has been spent, add outgoing fund transaction details.
-                    if (transaction.SpendingDetails != null)
+                    // If this is a normal transaction (not staking) that has been spent, add outgoing fund transaction details.
+                    if (transaction.SpendingDetails != null && transaction.SpendingDetails.IsCoinStake == null)
                     {
                         // Create a record for a 'send' transaction.
                         var spendingTransactionId = transaction.SpendingDetails.TransactionId;
