@@ -518,6 +518,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return items;
         }
 
+        /// <summary>
+        /// Gets a collection of addresses that have transactions associated with them.
+        /// </summary>
+        /// <param name="wallet">The wallet to get the history from.</param>
+        /// <returns>A collection of addresses that have transactions associated with them.</returns>
         private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
         {
             IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
@@ -800,7 +805,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         return !addr.IsChangeAddress();
                     });
 
-                    this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
+                    this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                 }
             }
 
@@ -845,7 +850,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
-                    IsCoinStake = isCoinStake,
+                    IsCoinStake = isCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
                     Id = transactionHash,
@@ -901,17 +906,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="transactionHash">The transaction hash.</param>
         /// <param name="time">The time.</param>
+        /// <param name="isCoinStake">A value indicating whether this is a coin stake transaction or not.</param>
         /// <param name="paidToOutputs">A list of payments made out</param>
         /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
         /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
-        private void AddSpendingTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs,
+        private void AddSpendingTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, bool isCoinStake, IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId, int? spendingTransactionIndex, int? blockHeight = null, Block block = null)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:'{7}',{8}:{9},{10}:{11})", nameof(transactionHex), transactionHex,
-                nameof(transactionHash), transactionHash, nameof(time), time, nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:'{7}',{8}:{9},{10}:{11},{12}:{13})", nameof(transactionHex), transactionHex,
+                nameof(transactionHash), transactionHash, nameof(time), time, nameof(isCoinStake), isCoinStake, nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
 
             // Get the transaction being spent.
             TransactionData spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
@@ -945,7 +951,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     BlockHeight = blockHeight,
-                    Hex = transactionHex
+                    Hex = transactionHex,
+                    IsCoinStake = isCoinStake == false ? (bool?)null : true
                 };
 
                 spentTransaction.SpendingDetails = spendingDetails;

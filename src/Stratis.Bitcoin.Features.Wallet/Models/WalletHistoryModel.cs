@@ -82,6 +82,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     public enum TransactionItemType
     {
         Received,
-        Send
+        Send,
+        Staked
     }
 }
