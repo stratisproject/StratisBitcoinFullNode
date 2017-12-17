@@ -4,13 +4,15 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     /// <summary>
-    /// BlockPair is a structure made of a block and a ChainedBlock that represents the block.
+    /// Structure made of a block and its chained header.
     /// </summary>
     public sealed class BlockPair
     {
         /// <summary>
-        /// Creates instance of <see cref="BlockPair"/>.
+        /// Creates instance of <see cref="BlockPair" />.
         /// </summary>
+        /// <param name="block">The block.</param>
+        /// <param name="chainedBlock">Chained header of the <paramref name="block"/>.</param>
         public BlockPair(Block block, ChainedBlock chainedBlock)
         {
             Guard.NotNull(block, nameof(block));
