@@ -39,8 +39,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <remarks>Write operations on the stream have to be protected by <see cref="writeLock"/>.</remarks>
         public NetworkStream Stream { get; private set; }
 
-        /// <summary>Task that cares about the client once its connection is accepted up until the communication is terminated.</summary>
-        /// <remarks>The client is being processed as long as this task is not complete.</remarks>
+        /// <summary>Task completion that is completed when the client processing is finished.</summary>
         public TaskCompletionSource<bool> ProcessingCompletion { get; private set; }
 
         /// <summary><c>1</c> if the instance of the object has been disposed or disposing is in progress, <c>0</c> otherwise.</summary>
