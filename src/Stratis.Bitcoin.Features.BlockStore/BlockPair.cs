@@ -8,6 +8,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public sealed class BlockPair
     {
+        /// <summary>The block.</summary>
+        public Block Block { get; private set; }
+
+        /// <summary>Chained header of the <see cref="Block"/>.</summary>
+        public ChainedBlock ChainedBlock { get; private set; }
+
         /// <summary>
         /// Creates instance of <see cref="BlockPair" />.
         /// </summary>
@@ -22,9 +28,5 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.Block = block;
             this.ChainedBlock = chainedBlock;
         }
-
-        public Block Block { get; private set; }
-
-        public ChainedBlock ChainedBlock { get; private set; }
     }
 }
