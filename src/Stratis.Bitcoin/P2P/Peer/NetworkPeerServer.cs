@@ -210,6 +210,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
 
             this.clientsById.AddOrReplace(client.Id, client);
+            client.ProcessingCompletion.Task.ContinueWith(unused => this.RemoveConnectedClient(client));
 
             this.logger.LogTrace("(-)");
         }
@@ -218,16 +219,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Removes a client from the list of clients and disconnects it.
         /// </summary>
         /// <param name="client">Client to remove and disconnect.</param>
-        private void RemoveAndDisconnectConnectedClient(NetworkPeerClient client)
+        private void RemoveConnectedClient(NetworkPeerClient client)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
 
             if (!this.clientsById.TryRemove(client.Id, out NetworkPeerClient unused))
                 this.logger.LogError("Internal data integration error.");
-
-            TaskCompletionSource<bool> completion = client.ProcessingCompletion;
-            client.Dispose();
-            completion.SetResult(true);
 
             this.logger.LogTrace("(-)");
         }
@@ -287,7 +284,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("Exception occurred while processing message from client '{0}': {1}", client.RemoteEndPoint, ex.ToString());
             }
 
-            if (!keepClientConnected) this.RemoveAndDisconnectConnectedClient(client);
+            if (!keepClientConnected)
+            {
+                // NetworkPeer is not created for this client here yet.
+                // This is why we need to finish its completion.
+                client.Dispose();
+                client.ProcessingCompletion.SetResult(true);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -309,7 +312,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if ((message.NetworkPeer != null) && connectedToSelf)
                 {
-                    message.NetworkPeer.DisconnectWithException();
+                    message.NetworkPeer.DisconnectWithException("Connected to self");
 
                     this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                     return;
@@ -337,7 +340,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     {
                         VersionPayload versionPayload = this.CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
                         await networkPeer.SendMessageAsync(versionPayload);
-                        networkPeer.Disconnect();
+                        networkPeer.Disconnect("Connected to self");
 
                         this.logger.LogTrace("(-)[CONNECTED_TO_SELF_2]");
                         return;
@@ -350,13 +353,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
                             networkPeer.StateChanged += Peer_StateChanged;
-                            await networkPeer.RespondToHandShakeAsync(cancellationSource.Token);
+                            await networkPeer.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
                             this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
 
-                            networkPeer.DisconnectWithException();
+                            networkPeer.DisconnectWithException("Handshake timeout");
 
                             this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                             throw;
@@ -365,7 +368,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
 
-                            networkPeer.DisconnectWithException();
+                            networkPeer.DisconnectWithException("Handshake exception");
 
                             this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                             throw;
@@ -407,7 +410,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.ConnectedNetworkPeers.DisconnectAll();
+                this.ConnectedNetworkPeers.DisconnectAll("Node shutdown");
             }
             catch (Exception e)
             {
@@ -421,12 +424,16 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.acceptTask.Wait();
 
             ICollection<NetworkPeerClient> connectedClients = this.clientsById.Values;
-            this.logger.LogTrace("Waiting for {0} newly connected clients to complete.", connectedClients.Count);
-            foreach (NetworkPeerClient client in connectedClients)
+            if (connectedClients.Count > 0)
             {
-                TaskCompletionSource<bool> completion = client.ProcessingCompletion;
-                client.Dispose();
-                completion.Task.Wait();
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", connectedClients.Count);
+                foreach (NetworkPeerClient client in connectedClients)
+                {
+                    this.logger.LogTrace("Disposing and waiting for client ID {0}.", client.Id);
+                    TaskCompletionSource<bool> completion = client.ProcessingCompletion;
+                    client.Dispose();
+                    completion.Task.Wait();
+                }
             }
 
             this.logger.LogTrace("(-)");

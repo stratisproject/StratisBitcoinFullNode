@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>
         private void Disconnect()
         {
-            this.ConnectedPeers.DisconnectAll();
+            this.ConnectedPeers.DisconnectAll("Node shutdown");
         }
 
         /// <inheritdoc/>
