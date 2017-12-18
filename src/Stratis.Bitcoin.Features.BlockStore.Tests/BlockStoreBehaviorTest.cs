@@ -28,19 +28,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void AnnounceBlocksWithoutBlocksReturns()
         {
-            List<uint256> blocks = new List<uint256>();
-
-            var task = this.behavior.AnnounceBlocks(blocks);
-
-            Assert.Equal(TaskStatus.RanToCompletion, task.Status);
-            Assert.Null(this.behavior.AttachedPeer);
-        }
-
-        [Fact]
-        public void AnnounceBlocksWithoutAttachedNodeWithoutBlocksReturns()
-        {
-            List<uint256> blocks = new List<uint256>();
-            blocks.Add(new uint256(1254175239823));
+            List<ChainedBlock> blocks = new List<ChainedBlock>();
 
             var task = this.behavior.AnnounceBlocks(blocks);
 
