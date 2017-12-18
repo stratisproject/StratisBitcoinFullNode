@@ -117,11 +117,11 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Async loop that discovers new peers to connect to.</summary>
         private IPeerDiscovery peerDiscovery;
 
-        private readonly NetworkPeerCollection connectedNodes;
+        private readonly NetworkPeerCollection connectedPeers;
 
         public IReadOnlyNetworkPeerCollection ConnectedNodes
         {
-            get { return this.connectedNodes; }
+            get { return this.connectedPeers; }
         }
 
         private readonly Dictionary<NetworkPeer, PerformanceSnapshot> downloads = new Dictionary<NetworkPeer, PerformanceSnapshot>();
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Connection
             IPeerDiscovery peerDiscovery)
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.connectedNodes = new NetworkPeerCollection();
+            this.connectedPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
-            foreach (NetworkPeer peer in this.connectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
+            foreach (NetworkPeer peer in this.connectedPeers.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
                 peer.Disconnect();
 
             this.logger.LogTrace("(-)");
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
 
-            this.connectedNodes.Add(peer);
+            this.connectedPeers.Add(peer);
 
             this.logger.LogTrace("(-)");
         }
@@ -345,24 +345,24 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
 
-            this.connectedNodes.Remove(peer);
+            this.connectedPeers.Remove(peer);
 
             this.logger.LogTrace("(-)");
         }
 
         public NetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint)
         {
-            return this.connectedNodes.FindByEndpoint(ipEndpoint);
+            return this.connectedPeers.FindByEndpoint(ipEndpoint);
         }
 
         public NetworkPeer FindNodeByIp(IPAddress ipAddress)
         {
-            return this.connectedNodes.FindByIp(ipAddress);
+            return this.connectedPeers.FindByIp(ipAddress);
         }
 
         public NetworkPeer FindLocalNode()
         {
-            return this.connectedNodes.FindLocal();
+            return this.connectedPeers.FindLocal();
         }
 
         /// <summary>
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
-            NetworkPeer peer = this.connectedNodes.FindByEndpoint(ipEndpoint);
+            NetworkPeer peer = this.connectedPeers.FindByEndpoint(ipEndpoint);
             peer?.DisconnectWithException("Requested by user");
 
             this.logger.LogTrace("(-)");
