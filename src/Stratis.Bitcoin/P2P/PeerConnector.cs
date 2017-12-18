@@ -234,6 +234,7 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (Exception exception)
             {
+                this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
                 peer?.DisconnectWithException("Error while connecting", exception);
             }
         }
