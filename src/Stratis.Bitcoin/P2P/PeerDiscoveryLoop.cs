@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P
                     await this.DiscoverPeersAsync();
             },
             this.nodeLifetime.ApplicationStopping,
-            TimeSpans.Second);
+            TimeSpans.TenSeconds);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.P2P
         private Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<NetworkAddress>();
-            peersToDiscover.AddRange(this.peerAddressManager.SelectPeersToConnectTo());
+            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeers().Select(p => p.NetworkAddress));
 
             if (peersToDiscover.Count == 0)
             {
@@ -128,10 +128,10 @@ namespace Stratis.Bitcoin.P2P
 
             Parallel.ForEach(peersToDiscover, new ParallelOptions()
             {
-                MaxDegreeOfParallelism = 5,
+                MaxDegreeOfParallelism = 2,
                 CancellationToken = this.nodeLifetime.ApplicationStopping,
             },
-            peer =>
+            async peer =>
             {
                 using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
@@ -147,9 +147,9 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Clear();
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-                        networkPeer = this.networkPeerFactory.CreateConnectedNetworkPeer(this.network, peer.Endpoint, clonedParameters);
-                        networkPeer.VersionHandshake(connectTokenSource.Token);
-                        networkPeer.SendMessageVoidAsync(new GetAddrPayload());
+                        networkPeer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peer.Endpoint, clonedParameters).ConfigureAwait(false);
+                        await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
+                        await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }

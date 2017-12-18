@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Connection
 
         void AddDiscoveredNodesRequirement(NetworkPeerServices services);
 
-        NetworkPeer Connect(IPEndPoint ipEndpoint);
+        Task<NetworkPeer> ConnectAsync(IPEndPoint ipEndpoint);
 
         IReadOnlyNetworkPeerCollection ConnectedNodes { get; }
 
@@ -324,8 +325,8 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
-            foreach (NetworkPeer node in this.connectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
-                node.Disconnect();
+            foreach (NetworkPeer peer in this.connectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
+                peer.Disconnect();
 
             this.logger.LogTrace("(-)");
         }
@@ -407,7 +408,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public NetworkPeer Connect(IPEndPoint ipEndpoint)
+        public async Task<NetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
@@ -417,9 +418,9 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            NetworkPeer peer = this.NetworkPeerFactory.CreateConnectedNetworkPeer(this.Network, ipEndpoint, cloneParameters);
+            NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
             this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
-            peer.VersionHandshake();
+            await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
             return peer;

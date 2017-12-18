@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -52,17 +51,25 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override NetworkAddress FindPeerToConnectTo()
+        public override PeerAddress FindPeerToConnectTo()
         {
             int peerSelectionFailed = 0;
 
-            NetworkAddress peer = null;
+            PeerAddress peer = null;
 
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested && peerSelectionFailed < 50)
+            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                peer = this.peerAddressManager.SelectPeerToConnectTo();
+                if (peerSelectionFailed > 50)
+                {
+                    peerSelectionFailed = 0;
+                    peer = null;
 
-                if (!peer.Endpoint.Address.IsValid())
+                    break;
+                }
+
+                peer = this.peerAddressManager.PeerSelector.SelectPeer();
+
+                if (!peer.NetworkAddress.Endpoint.Address.IsValid())
                 {
                     peerSelectionFailed++;
                     continue;
@@ -70,7 +77,7 @@ namespace Stratis.Bitcoin.P2P
 
                 // If the peer exists in the -addnode collection don't 
                 // try and connect to it.
-                var peerExistsInAddNode = this.NodeSettings.ConnectionManager.AddNode.Any(p => p.MapToIpv6().Match(peer.Endpoint));
+                var peerExistsInAddNode = this.NodeSettings.ConnectionManager.AddNode.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInAddNode)
                 {
                     peerSelectionFailed++;
@@ -79,7 +86,7 @@ namespace Stratis.Bitcoin.P2P
 
                 // If the peer exists in the -connect collection don't 
                 // try and connect to it.
-                var peerExistsInConnectNode = this.NodeSettings.ConnectionManager.Connect.Any(p => p.MapToIpv6().Match(peer.Endpoint));
+                var peerExistsInConnectNode = this.NodeSettings.ConnectionManager.Connect.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInConnectNode)
                 {
                     peerSelectionFailed++;
@@ -87,7 +94,7 @@ namespace Stratis.Bitcoin.P2P
                 }
 
                 // If the peer is already connected just continue.
-                if (this.IsPeerConnected(peer.Endpoint))
+                if (this.IsPeerConnected(peer.NetworkAddress.Endpoint))
                 {
                     peerSelectionFailed++;
                     continue;
