@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.P2P
         /// Each implementation of <see cref="PeerConnector"/> will have its own implementation
         /// of this method.
         /// </para>
-        /// <seealso cref="IPeerSelector.SelectPeer()"/>
         /// </summary>
+        /// <seealso cref="IPeerSelector.SelectPeer()"/>
         PeerAddress FindPeerToConnectTo();
 
         /// <summary>Peer connector initialization as called by the <see cref="ConnectionManager"/>.</summary>
