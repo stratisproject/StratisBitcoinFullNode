@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.receiveMessageTask = ReceiveMessagesAsync();
+            this.receiveMessageTask = this.ReceiveMessagesAsync();
 
             this.logger.LogTrace("(-)");
         }
@@ -262,13 +262,16 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
                     this.Peer.Counter.AddRead(message.MessageSize);
-                    this.Peer.OnMessageReceived(new IncomingMessage()
+
+                    var incommingMessage = new IncomingMessage()
                     {
                         Message = message,
                         Client = this.Client,
                         Length = message.MessageSize,
                         NetworkPeer = this.Peer
-                    });
+                    };
+
+                    this.Peer.MessageProducer.PushMessage(incommingMessage);
                 }
             }
             catch (Exception ex)
@@ -499,6 +502,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         public NetworkPeerConnectionParameters Parameters { get; private set; }
 
+        /// <summary>Consumer of messages coming from connected clients.</summary>
+        /// <seealso cref="ProcessMessageAsync(IncomingMessage)"/>
+        private readonly EventLoopMessageListener<IncomingMessage> messageListener;
+
         /// <summary>
         /// Dummy constructor for testing only.
         /// </summary>
@@ -512,6 +519,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.MessageProducer = new MessageProducer<IncomingMessage>();
+            this.messageListener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
         }
 
         /// <summary>
@@ -529,6 +538,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
+            this.messageListener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
+            this.MessageProducer.AddMessageListener(this.messageListener);
 
             this.preferredTransactionOptions = network.NetworkOptions;
             this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
@@ -574,7 +585,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peerVersion">Version message payload received from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, NetworkPeerClient client, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, NetworkPeerClient client, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
@@ -584,7 +595,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
             this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
-            this.PeerVersion = peerVersion;
             this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
             this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
@@ -660,7 +670,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
 
-            NetworkPeerStateChangedEventHandler stateChanged = StateChanged;
+            NetworkPeerStateChangedEventHandler stateChanged = this.StateChanged;
             if (stateChanged != null)
             {
                 foreach (NetworkPeerStateChangedEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateChangedEventHandler>())
@@ -683,34 +693,48 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Calls event handlers when a new message is received from the peer.
         /// </summary>
         /// <param name="message">Message that was received.</param>
-        public void OnMessageReceived(IncomingMessage message)
+        public async Task ProcessMessageAsync(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
-            var version = message.Message.Payload as VersionPayload;
-            if ((version != null) && (this.State == NetworkPeerState.HandShaked))
+            switch (message.Message.Payload)
             {
-                if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
-                {
-                    message.NetworkPeer.SendMessageVoidAsync(new RejectPayload()
+                case VersionPayload versionPayload:
                     {
-                        Code = RejectCode.DUPLICATE
-                    });
-                }
-            }
+                        this.logger.LogTrace("Peer's state is {0}.", this.State);
 
-            if (version != null)
-            {
-                this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
-                if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
+                        switch (this.State)
+                        {
+                            case NetworkPeerState.Connected:
+                                if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(versionPayload).ConfigureAwait(false);
+                                break;
+
+                            case NetworkPeerState.HandShaked:
+                                if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
+                                {
+                                    var rejectPayload = new RejectPayload()
+                                    {
+                                        Code = RejectCode.DUPLICATE
+                                    };
+
+                                    await message.NetworkPeer.SendMessageAsync(rejectPayload).ConfigureAwait(false);
+                                }
+                                break;
+                        }
+
+                        this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - versionPayload.Timestamp;
+                        if ((versionPayload.Services & NetworkPeerServices.NODE_WITNESS) != 0)
+                            this.SupportedTransactionOptions |= NetworkOptions.Witness;
+
+                        break;
+                    }
+
+                case HaveWitnessPayload unused:
                     this.SupportedTransactionOptions |= NetworkOptions.Witness;
+                    break;
             }
 
-            if (message.Message.Payload is HaveWitnessPayload)
-                this.SupportedTransactionOptions |= NetworkOptions.Witness;
-
-            this.MessageProducer.PushMessage(message);
-            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = MessageReceivedPriority;
+            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = this.MessageReceivedPriority;
             if (messageReceivedPriority != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
@@ -726,7 +750,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
+            NetworkPeerMessageReceivedEventHandler messageReceived = this.MessageReceived;
             if (messageReceived != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
@@ -742,6 +766,61 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Processes an initial "version" message received from a peer.
+        /// </summary>
+        /// <param name="version">Version message received from a peer.</param>
+        /// <exception cref="OperationCanceledException">Thrown if the response to our "version" message is not received on time.</exception>
+        private async Task ProcessInitialVersionPayloadAsync(VersionPayload version)
+        {
+            this.logger.LogTrace("()");
+
+            this.PeerVersion = version;
+            bool connectedToSelf = version.Nonce == this.Parameters.Nonce;
+
+            this.logger.LogDebug("First message received from peer '{0}'.", version.AddressFrom);
+
+            if (connectedToSelf)
+            {
+                this.logger.LogDebug("Connection to self detected and will be aborted.");
+
+                VersionPayload versionPayload = this.Parameters.CreateVersion(this.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
+                await this.SendMessageAsync(versionPayload);
+                this.Disconnect("Connected to self");
+
+                this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
+                return;
+            }
+
+            using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token))
+            {
+                cancellationSource.CancelAfter(TimeSpan.FromSeconds(10.0));
+                try
+                {
+                    await this.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
+
+                    this.DisconnectWithException("Handshake timeout");
+
+                    this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+
+                    this.DisconnectWithException("Handshake exception");
+
+                    this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
+                    throw;
+                }
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -822,7 +901,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             using (var source = new CancellationTokenSource())
             {
                 source.CancelAfter(timeout);
-                TPayload res = ReceiveMessage<TPayload>(source.Token);
+                TPayload res = this.ReceiveMessage<TPayload>(source.Token);
 
                 this.logger.LogTrace("(-):'{0}'", res);
                 return res;
@@ -877,7 +956,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                 || (p.Message.Payload is RejectPayload)
                 || (p.Message.Payload is VerAckPayload)))
             {
+                this.logger.LogTrace("Sending my version.");
                 await this.SendMessageAsync(this.MyVersion).ConfigureAwait(false);
+
+                this.logger.LogTrace("Waiting for version or rejection message.");
                 Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
                 if (payload is RejectPayload)
                 {
@@ -908,7 +990,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                     return;
                 }
 
+                this.logger.LogTrace("Sending version acknowledgement.");
                 await this.SendMessageAsync(new VerAckPayload()).ConfigureAwait(false);
+
+                this.logger.LogTrace("Waiting for version acknowledgement.");
                 listener.ReceivePayload<VerAckPayload>(cancellationToken);
                 this.State = NetworkPeerState.HandShaked;
 
@@ -935,17 +1020,20 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             using (var listener = new NetworkPeerListener(this).Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
             {
-                this.logger.LogTrace("Responding to handshake.");
+                this.logger.LogTrace("Responding to handshake with my version.");
                 await this.SendMessageAsync(this.MyVersion);
+
+                this.logger.LogTrace("Waiting for version acknowledgement or rejection message.");
                 IncomingMessage message = listener.ReceiveMessage(cancellation);
 
                 if (message.Message.Payload is RejectPayload reject)
                 {
-                    this.logger.LogTrace("Version rejected: code {0}, reason {1}.", reject.Code, reject.Reason);
+                    this.logger.LogTrace("Version rejected: code {0}, reason '{1}'.", reject.Code, reject.Reason);
                     this.logger.LogTrace("(-)[VERSION_REJECTED]");
-                    throw new ProtocolException("Version rejected " + reject.Code + " : " + reject.Reason);
+                    throw new ProtocolException("Version rejected " + reject.Code + ": " + reject.Reason);
                 }
 
+                this.logger.LogTrace("Sending version acknowledgement.");
                 await this.SendMessageAsync(new VerAckPayload());
                 this.State = NetworkPeerState.HandShaked;
             }
@@ -1054,7 +1142,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public void Dispose()
         {
+            this.logger.LogTrace("()");
+
+            this.messageListener.Dispose();
             this.Disconnect("Node disposed");
+
+            this.logger.LogTrace("(-)");
         }
     }
 }

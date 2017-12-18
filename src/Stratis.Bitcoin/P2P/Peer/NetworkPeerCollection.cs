@@ -116,6 +116,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 peer.MessageProducer.RemoveMessageListener(this.bridge);
                 this.OnPeerRemoved(old);
+                peer.Dispose();
                 return true;
             }
 

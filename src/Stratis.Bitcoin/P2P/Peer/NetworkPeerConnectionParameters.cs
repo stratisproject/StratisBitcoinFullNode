@@ -46,6 +46,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.SendBufferSize = 1000 * 1000;
             this.UserAgent = VersionPayload.GetNBitcoinUserAgent();
             this.PreferredTransactionOptions = NetworkOptions.TemporaryOptions;
+            this.Nonce = RandomUtils.GetUInt64();
         }
 
         public NetworkPeerConnectionParameters(NetworkPeerConnectionParameters other)
