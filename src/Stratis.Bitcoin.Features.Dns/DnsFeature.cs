@@ -16,6 +16,11 @@ namespace Stratis.Bitcoin.Features.Dns
     public class DnsFeature : FullNodeFeature
     {
         /// <summary>
+        /// Defines a back-off interval in milliseconds if the DNS server fails whilst operating, before it restarts.
+        /// </summary>
+        public const int DnsServerBackoffInterval = 2000;
+
+        /// <summary>
         /// Defines the name of the masterfile on disk.
         /// </summary>
         public const string DnsMasterFileName = "masterfile.dat";
@@ -110,32 +115,54 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             this.logger.LogTrace("()");
 
-            try
+            while (true)
             {
-                // Load masterfile from disk if it exists
-                string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
-                if (File.Exists(path))
+                try
                 {
-                    this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
-
-                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    // Load masterfile from disk if it exists
+                    string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
+                    if (File.Exists(path))
                     {
-                        this.masterFile.Load(stream);
+                        this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
+
+                        using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        {
+                            this.masterFile.Load(stream);
+                        }
+
+                        // Swap in masterfile from disk into DNS server
+                        this.dnsServer.SwapMasterfile(this.masterFile);
                     }
 
-                    // Swap in masterfile from disk into DNS server
-                    this.dnsServer.SwapMasterfile(this.masterFile);
+                    this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
+
+                    // Start
+                    this.dnsServer.ListenAsync(this.nodeSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
+                catch (OperationCanceledException)
+                {
+                    // Node shutting down, expected
+                    this.logger.LogInformation("Stopping DNS");
+                    break;
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogError(e, "Failed whilst running the DNS server with: {0}", e.Message);
 
-                this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
+                    try
+                    {
+                        // Back-off before restart
+                        Task.Delay(DnsServerBackoffInterval, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Node shutting down, expected
+                        this.logger.LogInformation("Stopping DNS");
+                        break;
+                    }
 
-                // Start
-                this.dnsServer.ListenAsync(this.nodeSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                // Node shutting down, expected
-                this.logger.LogInformation("Stopping DNS");
+                    this.logger.LogTrace("Restarting DNS server following previous failure.");
+                }
             }
 
             this.logger.LogTrace("(-)");

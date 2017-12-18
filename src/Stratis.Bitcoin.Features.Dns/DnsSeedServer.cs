@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Dns
             }
             catch (SocketException e)
             {
-                this.logger.LogError(e, "Failed to create UDP client for DNS service.");
+                this.logger.LogError(e, "Socket exception {0} whilst creating UDP client for DNS service.", e.ErrorCode);
                 throw;
             }
 
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 }
                 catch (SocketException e)
                 {
-                    this.logger.LogError(e, "Failed whilst receiving UDP request.");
+                    this.logger.LogError(e, "Socket exception {0} whilst receiving UDP request.", e.ErrorCode);
                 }
             }
         }
@@ -180,6 +180,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 {
                     response.AnswerRecords.Union(answers);
                 }
+
+                this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
             }
 
             return response;

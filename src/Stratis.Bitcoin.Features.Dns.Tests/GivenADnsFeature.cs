@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
@@ -317,6 +318,54 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             masterFile.Verify(m => m.Load(It.IsAny<Stream>()), Times.Never);
             dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
             dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public void WhenDnsServerFailsToStart_ThenDnsFeatureRetries()
+        {
+            // Arrange.
+            Mock<IDnsServer> dnsServer = new Mock<IDnsServer>();
+            Action<int, CancellationToken> action = (port, token) =>
+            {
+                throw new ArgumentException("Bad port");
+            };
+            dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
+            dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
+
+            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
+            masterFile.Setup(m => m.Load(It.IsAny<Stream>())).Verifiable();
+
+            IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
+
+            CancellationTokenSource source = new CancellationTokenSource(3000);
+            Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
+            nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
+            nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
+            INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
+
+            NodeSettings nodeSettings = NodeSettings.Default();
+            nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
+
+            Mock<ILogger> logger = new Mock<ILogger>();
+            bool serverError = false;
+            logger.Setup(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) => serverError = state.ToString().StartsWith("Failed whilst running the DNS server"));
+            Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+
+            // Act.
+            DnsFeature feature = new DnsFeature(dnsServer.Object, masterFile.Object, peerAddressManager, loggerFactory.Object, nodeLifetimeObject, nodeSettings, dataFolders);
+            feature.Initialize();
+            bool waited = source.Token.WaitHandle.WaitOne(5000);
+
+            // Assert.
+            feature.Should().NotBeNull();
+            waited.Should().BeTrue();
+            masterFile.Verify(m => m.Load(It.IsAny<Stream>()), Times.Never);
+            dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
+            dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+            serverError.Should().BeTrue();
         }
     }
 }
