@@ -91,30 +91,43 @@ namespace Stratis.Bitcoin.Features.Dns
                 throw;
             }
 
-            while (true)
+            try
             {
-                UdpReceiveResult request;
-
-                // Have we been cancelled?
-                if (token.IsCancellationRequested)
+                ((MasterFile)this.masterFile).AddIPAddressResourceRecord("google.com", "127.0.0.1");
+                while (true)
                 {
-                    this.logger.LogTrace("Cancellation requested, shutting down DNS listener.");
-                    token.ThrowIfCancellationRequested();
-                }
+                    UdpReceiveResult request;
 
-                try
-                {
-                    request = await this.udpClient.ReceiveAsync();
+                    // Have we been cancelled?
+                    if (token.IsCancellationRequested)
+                    {
+                        this.logger.LogTrace("Cancellation requested, shutting down DNS listener.");
+                        token.ThrowIfCancellationRequested();
+                    }
 
-                    this.logger.LogTrace("DNS request received from {0}.", request.RemoteEndPoint);
+                    try
+                    {
+                        request = await this.udpClient.ReceiveAsync();
 
-                    // Received a request, now handle it
-                    await this.HandleRequestAsync(request);
+                        this.logger.LogTrace("DNS request received from {0}.", request.RemoteEndPoint);
+
+                        // Received a request, now handle it
+                        await this.HandleRequestAsync(request);
+                    }
+                    catch (ArgumentException e)
+                    {
+                        this.logger.LogWarning(e, "Failed to process DNS request.");
+                    }
+                    catch (SocketException e)
+                    {
+                        this.logger.LogError(e, "Socket exception {0} whilst receiving UDP request.", e.ErrorCode);
+                    }
                 }
-                catch (SocketException e)
-                {
-                    this.logger.LogError(e, "Socket exception {0} whilst receiving UDP request.", e.ErrorCode);
-                }
+            }
+            finally
+            {
+                // Dispose of UDP client, in case of restarting as port stays in use
+                this.udpClient.Dispose();
             }
         }
 
@@ -178,7 +191,10 @@ namespace Stratis.Bitcoin.Features.Dns
                 IList<IResourceRecord> answers = this.masterFile.Get(question);
                 if (answers.Count > 0)
                 {
-                    response.AnswerRecords.Union(answers);
+                    foreach (IResourceRecord answer in answers)
+                    {
+                        response.AnswerRecords.Add(answer);
+                    }
                 }
 
                 this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
@@ -197,8 +213,26 @@ namespace Stratis.Bitcoin.Features.Dns
 
             try
             {
+                // Get request from received message (would use 3rd party library Request.FromArray but it doesn't handle additional record
+                // flag properly, which dig requests).
+                Header header = Header.FromArray(udpRequest.Buffer);
+                if (header.Response)
+                {
+                    throw new ArgumentException("Request message is actually flagged as a response.");
+                }
+
+                if (header.QuestionCount == 0)
+                {
+                    throw new ArgumentException("Request message contains no questions.");
+                }
+
+                if (header.ResponseCode != ResponseCode.NoError)
+                {
+                    throw new ArgumentException($"Request message contains a non-error response code of {header.ResponseCode}.");
+                }
+
                 // Resolve request against masterfile
-                request = Request.FromArray(udpRequest.Buffer);
+                request = new Request(header, Question.GetAllFromArray(udpRequest.Buffer, header.Size, header.QuestionCount));
                 IResponse response = this.Resolve(request);
 
                 // Send response
