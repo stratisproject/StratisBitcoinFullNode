@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.P2P
             this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
             this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
 
-            OnInitialize();
+            this.OnInitialize();
         }
 
         /// <inheritdoc/>
@@ -233,7 +233,6 @@ namespace Stratis.Bitcoin.P2P
             {
                 this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
                 peer?.DisconnectWithException("Timeout", timeout);
-
             }
             catch (Exception exception)
             {

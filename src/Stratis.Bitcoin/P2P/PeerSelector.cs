@@ -39,6 +39,9 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private readonly ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses;
 
+        /// <summary>Random number generator used when selecting and ordering peers.</summary>
+        private readonly Random random;
+
         /// <summary>
         /// Constructor for the peer selector.
         /// </summary>
@@ -47,8 +50,8 @@ namespace Stratis.Bitcoin.P2P
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
             this.peerAddresses = peerAddresses;
+            this.random = new Random();
         }
 
         /// <inheritdoc/>
@@ -58,7 +61,7 @@ namespace Stratis.Bitcoin.P2P
 
             PeerAddress peerAddress = null;
 
-            var peers = SelectPreferredPeers();
+            var peers = this.SelectPreferredPeers();
             if (peers.Any())
             {
                 peerAddress = peers.Random();
@@ -77,13 +80,11 @@ namespace Stratis.Bitcoin.P2P
         {
             this.logger.LogTrace("()");
 
-            var random = new Random();
-
             // First check to see if there are handshaked peers. If so,
             // give them a 50% chance to be picked over all the other peers.
             if (this.peerAddresses.Handshaked().Any())
             {
-                int chance = random.Next(100);
+                int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
                     this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
@@ -95,7 +96,7 @@ namespace Stratis.Bitcoin.P2P
             // a 50% chance to be picked over fresh and/or attempted peers.
             if (this.peerAddresses.Connected().Any())
             {
-                int chance = random.Next(100);
+                int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
                     this.logger.LogTrace("(-)[RETURN_CONNECTED]");
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.P2P
             // If both sets exist, pick 50/50 between the two.
             if (this.peerAddresses.Attempted().Any() && this.peerAddresses.Fresh().Any())
             {
-                if (random.Next(2) == 0)
+                if (this.random.Next(2) == 0)
                 {
                     this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
                     return this.peerAddresses.Attempted();
@@ -151,8 +152,7 @@ namespace Stratis.Bitcoin.P2P
 
             // Randomly order the list of peers and return the amount
             // asked for.
-            var random = new Random();
-            var allPeers = this.peerAddresses.OrderBy(p => random.Next());
+            var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
             return allPeers.Select(p => p.Value).Take(1000);
         }
     }
