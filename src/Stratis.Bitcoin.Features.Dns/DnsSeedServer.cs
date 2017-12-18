@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the client used to listen for incoming DNS requests.
         /// </summary>
-        private UdpClient udpClient;
+        private IUdpClient udpClient;
 
         /// <summary>
         /// Defines the logger.
@@ -54,13 +55,16 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Initializes a new instance of the <see cref="DnsSeedServer"/> class with the port to listen on.
         /// </summary>
+        /// <param name="client">The UDP client to use to receive DNS requests and send DNS responses.</param>
         /// <param name="masterFile">The initial DNS masterfile.</param>
         /// <param name="loggerFactory">The logger factory.</param>
-        public DnsSeedServer(IMasterFile masterFile, ILoggerFactory loggerFactory)
+        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, ILoggerFactory loggerFactory)
         {
+            Guard.NotNull(client, nameof(client));
             Guard.NotNull(masterFile, nameof(masterFile));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
+            this.udpClient = client;
             this.masterFile = masterFile;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -83,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             try
             {
-                this.udpClient = new UdpClient(dnsListenPort);
+                this.udpClient.StartListening(dnsListenPort);
             }
             catch (SocketException e)
             {
@@ -93,10 +97,9 @@ namespace Stratis.Bitcoin.Features.Dns
 
             try
             {
-                ((MasterFile)this.masterFile).AddIPAddressResourceRecord("google.com", "127.0.0.1");
                 while (true)
                 {
-                    UdpReceiveResult request;
+                    Tuple<IPEndPoint, byte[]> request;
 
                     // Have we been cancelled?
                     if (token.IsCancellationRequested)
@@ -109,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     {
                         request = await this.udpClient.ReceiveAsync();
 
-                        this.logger.LogTrace("DNS request received from {0}.", request.RemoteEndPoint);
+                        this.logger.LogTrace("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
 
                         // Received a request, now handle it
                         await this.HandleRequestAsync(request);
@@ -126,8 +129,7 @@ namespace Stratis.Bitcoin.Features.Dns
             }
             finally
             {
-                // Dispose of UDP client, in case of restarting as port stays in use
-                this.udpClient.Dispose();
+                this.udpClient.StopListening();
             }
         }
 
@@ -170,7 +172,8 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 if (disposing)
                 {
-                    this.udpClient?.Dispose();
+                    IDisposable disposableClient = this.udpClient as IDisposable;
+                    disposableClient?.Dispose();
                 }
 
                 this.disposed = true;
@@ -207,7 +210,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Handles a DNS request received by the UDP client.
         /// </summary>
         /// <param name="udpRequest">The DNS request received from the UDP client.</param>
-        private async Task HandleRequestAsync(UdpReceiveResult udpRequest)
+        private async Task HandleRequestAsync(Tuple<IPEndPoint, byte[]> udpRequest)
         {
             Request request = null;
 
@@ -215,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 // Get request from received message (would use 3rd party library Request.FromArray but it doesn't handle additional record
                 // flag properly, which dig requests).
-                Header header = Header.FromArray(udpRequest.Buffer);
+                Header header = Header.FromArray(udpRequest.Item2);
                 if (header.Response)
                 {
                     throw new ArgumentException("Request message is actually flagged as a response.");
@@ -232,23 +235,23 @@ namespace Stratis.Bitcoin.Features.Dns
                 }
 
                 // Resolve request against masterfile
-                request = new Request(header, Question.GetAllFromArray(udpRequest.Buffer, header.Size, header.QuestionCount));
+                request = new Request(header, Question.GetAllFromArray(udpRequest.Item2, header.Size, header.QuestionCount));
                 IResponse response = this.Resolve(request);
 
                 // Send response
-                await this.udpClient.SendAsync(response.ToArray(), response.Size, udpRequest.RemoteEndPoint).WithCancellationTimeout(UdpTimeout);
+                await this.udpClient.SendAsync(response.ToArray(), response.Size, udpRequest.Item1).WithCancellationTimeout(UdpTimeout);
             }
             catch (SocketException e)
             {
-                this.logger.LogError(e, "Socket error {0} whilst sending DNS response to {1}", e.ErrorCode, udpRequest.RemoteEndPoint);
+                this.logger.LogError(e, "Socket error {0} whilst sending DNS response to {1}", e.ErrorCode, udpRequest.Item1);
             }
             catch (OperationCanceledException e)
             {
-                this.logger.LogError(e, "Sending DNS response to {0} timed out.", udpRequest.RemoteEndPoint);
+                this.logger.LogError(e, "Sending DNS response to {0} timed out.", udpRequest.Item1);
             }
             catch (ResponseException e)
             {
-                this.logger.LogError(e, "Received error {0} when sending DNS response to {1}, trying again.", e.Response.ResponseCode, udpRequest.RemoteEndPoint);
+                this.logger.LogError(e, "Received error {0} when sending DNS response to {1}, trying again.", e.Response.ResponseCode, udpRequest.Item1);
 
                 // Try and send response one more time
                 IResponse response = e.Response;
@@ -259,15 +262,15 @@ namespace Stratis.Bitcoin.Features.Dns
 
                 try
                 {
-                    await this.udpClient.SendAsync(response.ToArray(), response.Size, udpRequest.RemoteEndPoint).WithCancellationTimeout(UdpTimeout);
+                    await this.udpClient.SendAsync(response.ToArray(), response.Size, udpRequest.Item1).WithCancellationTimeout(UdpTimeout);
                 }
                 catch (SocketException ex)
                 {
-                    this.logger.LogError(ex, "Socket error {0} whilst sending DNS response to {1}", ex.ErrorCode, udpRequest.RemoteEndPoint);
+                    this.logger.LogError(ex, "Socket error {0} whilst sending DNS response to {1}", ex.ErrorCode, udpRequest.Item1);
                 }
                 catch (OperationCanceledException ex)
                 {
-                    this.logger.LogError(ex, "Sending DNS response to {0} timed out.", udpRequest.RemoteEndPoint);
+                    this.logger.LogError(ex, "Sending DNS response to {0} timed out.", udpRequest.Item1);
                 }
             }
         }

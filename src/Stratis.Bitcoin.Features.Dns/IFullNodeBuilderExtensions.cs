@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton(fullNodeBuilder);
                     services.AddSingleton<IMasterFile, DnsSeedMasterFile>();
                     services.AddSingleton<IDnsServer, DnsSeedServer>();
+                    services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
                 });
             });
            
