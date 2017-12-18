@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.Base
             fullNode.Setup(f => f.NodeService<IDateTimeProvider>(true))
                 .Returns(DateTimeProvider.Default);
 
-            var chainState = new ChainState(fullNode.Object, new InvalidBlockHashStore(DateTimeProvider.Default));
+            var chainState = new ChainState(DateTimeProvider.Default, fullNode.Object, new InvalidBlockHashStore(DateTimeProvider.Default));
 
             // Create some hashes that will be banned forever.
             uint256[] hashesBannedPermanently = new uint256[]

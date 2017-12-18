@@ -37,12 +37,13 @@ namespace Stratis.Bitcoin.Base
         /// <summary>
         /// Initialize instance of the object.
         /// </summary>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="fullNode">The full node using this feature.</param>
         /// <param name="invalidBlockHashStore">Store of block header hashes that are to be considered invalid.</param>
-        public ChainState(IFullNode fullNode, IInvalidBlockHashStore invalidBlockHashStore)
+        public ChainState(IDateTimeProvider dateTimeProvider, IFullNode fullNode, IInvalidBlockHashStore invalidBlockHashStore)
         {
+            this.dateTimeProvider = dateTimeProvider;
             this.fullNode = fullNode;
-            this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true) ?? DateTimeProvider.Default;
             this.invalidBlockHashStore = invalidBlockHashStore;
             this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow();
         }
