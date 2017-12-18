@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void Start(string dataDir)
         {
             this.process = Process.Start(new FileInfo(this.bitcoinD).FullName,
-                "-conf=bitcoin.conf" + " -datadir=" + dataDir + " -debug=net");
+                $"-conf=bitcoin.conf -datadir={dataDir} -debug=net");
         }
     }
 

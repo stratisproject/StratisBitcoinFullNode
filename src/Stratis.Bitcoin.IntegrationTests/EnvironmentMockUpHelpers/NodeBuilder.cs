@@ -98,6 +98,27 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class NodeBuilder : IDisposable
     {
+        public string BitcoinD { get; }
+
+        public List<CoreNode> Nodes { get; }
+
+        public NodeConfigParameters ConfigParameters { get; }
+
+        private int last;
+        private string root;
+        private List<IDisposable> disposables;
+
+        public NodeBuilder(string root, string bitcoindPath)
+        {
+            this.last = 0;
+            this.Nodes = new List<CoreNode>();
+            this.ConfigParameters = new NodeConfigParameters();
+            this.disposables = new List<IDisposable>();
+
+            this.root = root;
+            this.BitcoinD = bitcoindPath;
+        }
+
         /// <summary>
         /// Deletes test folders. Stops "bitcoind" if required.
         /// </summary>
@@ -200,21 +221,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private int last = 0;
-        private string root;
-
-        public NodeBuilder(string root, string bitcoindPath)
-        {
-            this.root = root;
-            this.BitcoinD = bitcoindPath;
-        }
-
-        public string BitcoinD { get; }
-
-        public List<CoreNode> Nodes { get; } = new List<CoreNode>();
-
-        public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
-
         public CoreNode CreateNode(bool start = false)
         {
             string child = this.CreateNewEmptyFolder();
@@ -275,8 +281,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             foreach (var disposable in this.disposables)
                 disposable.Dispose();
         }
-
-        private List<IDisposable> disposables = new List<IDisposable>();
 
         internal void AddDisposable(IDisposable group)
         {

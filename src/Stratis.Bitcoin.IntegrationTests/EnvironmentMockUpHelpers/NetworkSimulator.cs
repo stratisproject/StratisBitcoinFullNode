@@ -43,14 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public bool AreAllNodesAtSameHeight()
         {
-            var height = this.Nodes.First().FullNode.Chain.Height;
-
-            foreach (var node in this.Nodes)
-            {
-                if (node.FullNode.Chain.Height != height)
-                    return false;
-            }
-            return true;
+            return this.Nodes.Select(i => i.FullNode.Chain.Height).Distinct().Count() == 1;
         }
 
         public void Dispose()
@@ -60,12 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public bool DidAllNodesReachHeight(int height)
         {
-            foreach (var node in this.Nodes)
-            {
-                if (node.FullNode.Chain.Height < height)
-                    return false;
-            }
-            return true;
+            return this.Nodes.All(i => i.FullNode.Chain.Height >= height);
         }
 
         public void MakeSureEachNodeCanMineAndSync()
