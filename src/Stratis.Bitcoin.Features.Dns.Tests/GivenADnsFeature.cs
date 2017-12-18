@@ -24,35 +24,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndDnsServerIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsFeature(null, masterFile, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, dataFolders); };
+            Action a = () => { new DnsFeature(null, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dnsServer");
-        }
-
-        [Fact]
-        [Trait("DNS", "UnitTest")]
-        public void WhenConstructorCalled_AndMasterFileIsNull_ThenArgumentNullExceptionIsThrown()
-        {
-            // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            nodeSettings.DataDir = @"C:\";
-            DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsFeature(dnsServer, null, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, dataFolders); };
-
-            // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("masterFile");
         }
 
         [Fact]
@@ -61,13 +42,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsFeature(dnsServer, masterFile, null, loggerFactory, nodeLifetime, nodeSettings, dataFolders); };
+            Action a = () => { new DnsFeature(dnsServer, null, loggerFactory, nodeLifetime, nodeSettings, dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("peerAddressManager");
@@ -79,13 +59,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsFeature(dnsServer, masterFile, peerAddressManager, null, nodeLifetime, nodeSettings, dataFolders); };
+            Action a = () => { new DnsFeature(dnsServer, peerAddressManager, null, nodeLifetime, nodeSettings, dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
@@ -97,13 +76,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsFeature(dnsServer, masterFile, peerAddressManager, loggerFactory, null, nodeSettings, dataFolders); };
+            Action a = () => { new DnsFeature(dnsServer, peerAddressManager, loggerFactory, null, nodeSettings, dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
@@ -115,14 +93,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsFeature(dnsServer, masterFile, peerAddressManager, loggerFactory, nodeLifetime, null, dataFolders); };
+            Action a = () => { new DnsFeature(dnsServer, peerAddressManager, loggerFactory, nodeLifetime, null, dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeSettings");
@@ -134,12 +111,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = new Mock<NodeSettings>("bitcoin", null, NodeSettings.SupportedProtocolVersion, "StratisBitcoin").Object;
-            Action a = () => { new DnsFeature(dnsServer, masterFile, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, null); };
+            Action a = () => { new DnsFeature(dnsServer, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, null); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dataFolders");
@@ -151,7 +127,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IMasterFile masterFile = new Mock<IMasterFile>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
@@ -160,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
 
             // Act.
-            DnsFeature feature = new DnsFeature(dnsServer, masterFile, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, dataFolders);
+            DnsFeature feature = new DnsFeature(dnsServer, peerAddressManager, loggerFactory, nodeLifetime, nodeSettings, dataFolders);
 
             // Assert.
             feature.Should().NotBeNull();
@@ -196,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
             // Act.
-            DnsFeature feature = new DnsFeature(dnsServer.Object, masterFile.Object, peerAddressManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders);
+            DnsFeature feature = new DnsFeature(dnsServer.Object, peerAddressManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders);
             feature.Initialize();
             bool waited = waitObject.Wait(5000);
 
@@ -223,9 +198,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
             dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
 
-            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
-            masterFile.Setup(m => m.Load(It.IsAny<Stream>())).Verifiable();
-
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
 
             Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
@@ -249,14 +221,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 }
 
                 // Run feature
-                DnsFeature feature = new DnsFeature(dnsServer.Object, masterFile.Object, peerAddressManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders);
+                DnsFeature feature = new DnsFeature(dnsServer.Object, peerAddressManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders);
                 feature.Initialize();
                 bool waited = waitObject.Wait(5000);
 
                 // Assert.
                 feature.Should().NotBeNull();
                 waited.Should().BeTrue();
-                masterFile.Verify(m => m.Load(It.IsAny<Stream>()), Times.Once);
                 dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Once);
                 dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
             }
@@ -287,9 +258,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
             dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
 
-            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
-            masterFile.Setup(m => m.Load(It.IsAny<Stream>())).Verifiable();
-
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
 
             CancellationTokenSource source = new CancellationTokenSource();
@@ -307,7 +275,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
             // Act.
-            DnsFeature feature = new DnsFeature(dnsServer.Object, masterFile.Object, peerAddressManager, loggerFactory.Object, nodeLifetimeObject, nodeSettings, dataFolders);
+            DnsFeature feature = new DnsFeature(dnsServer.Object, peerAddressManager, loggerFactory.Object, nodeLifetimeObject, nodeSettings, dataFolders);
             feature.Initialize();
             nodeLifetimeObject.StopApplication();
             bool waited = source.Token.WaitHandle.WaitOne(5000);
@@ -315,7 +283,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            masterFile.Verify(m => m.Load(It.IsAny<Stream>()), Times.Never);
             dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
             dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -332,9 +299,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             };
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
             dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
-
-            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
-            masterFile.Setup(m => m.Load(It.IsAny<Stream>())).Verifiable();
 
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
 
@@ -355,14 +319,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
             // Act.
-            DnsFeature feature = new DnsFeature(dnsServer.Object, masterFile.Object, peerAddressManager, loggerFactory.Object, nodeLifetimeObject, nodeSettings, dataFolders);
+            DnsFeature feature = new DnsFeature(dnsServer.Object, peerAddressManager, loggerFactory.Object, nodeLifetimeObject, nodeSettings, dataFolders);
             feature.Initialize();
             bool waited = source.Token.WaitHandle.WaitOne(5000);
 
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            masterFile.Verify(m => m.Load(It.IsAny<Stream>()), Times.Never);
             dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
             dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             serverError.Should().BeTrue();

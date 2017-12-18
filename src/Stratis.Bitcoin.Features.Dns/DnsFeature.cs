@@ -31,11 +31,6 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly IDnsServer dnsServer;
 
         /// <summary>
-        /// Defines the DNS masterfile.
-        /// </summary>
-        private readonly IMasterFile masterFile;
-
-        /// <summary>
         /// Defines the peer address manager.
         /// </summary>
         private readonly IPeerAddressManager peerAddressManager;
@@ -69,16 +64,14 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Initializes a new instance of the <see cref="DnsFeature"/> class.
         /// </summary>
         /// <param name="dnsServer">The DNS server.</param>
-        /// <param name="masterFile">The DNS masterfile.</param>
         /// <param name="peerAddressManager">The peer address manager.</param>
         /// <param name="loggerFactory">The factory to create the logger.</param>
         /// <param name="nodeLifetime">The node lifetime object used for graceful shutdown.</param>
         /// <param name="nodeSettings">The node settings object containing node configuration.</param>
         /// <param name="dataFolders">The data folders of the system.</param>
-        public DnsFeature(IDnsServer dnsServer, IMasterFile masterFile, IPeerAddressManager peerAddressManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, NodeSettings nodeSettings, DataFolder dataFolders)
+        public DnsFeature(IDnsServer dnsServer, IPeerAddressManager peerAddressManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, NodeSettings nodeSettings, DataFolder dataFolders)
         {
             Guard.NotNull(dnsServer, nameof(dnsServer));
-            Guard.NotNull(masterFile, nameof(masterFile));
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -86,7 +79,6 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(dataFolders, nameof(dataFolders));
 
             this.dnsServer = dnsServer;
-            this.masterFile = masterFile;
             this.peerAddressManager = peerAddressManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
@@ -127,11 +119,12 @@ namespace Stratis.Bitcoin.Features.Dns
 
                         using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                         {
-                            this.masterFile.Load(stream);
-                        }
+                            IMasterFile masterFile = new DnsSeedMasterFile();
+                            masterFile.Load(stream);
 
-                        // Swap in masterfile from disk into DNS server
-                        this.dnsServer.SwapMasterfile(this.masterFile);
+                            // Swap in masterfile from disk into DNS server
+                            this.dnsServer.SwapMasterfile(masterFile);
+                        }
                     }
 
                     this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
