@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerClient Client { get; private set; }
 
         /// <summary>Event that is set when the connection is closed.</summary>
-        public ManualResetEvent Disconnected { get; private set; }
+        public ManualResetEventSlim Disconnected { get; private set; }
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource CancellationSource { get; private set; }
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Client = client;
             this.CancellationSource = new CancellationTokenSource();
             this.cancelRegistration = this.CancellationSource.Token.Register(this.InitiateShutdown);
-            this.Disconnected = new ManualResetEvent(false);
+            this.Disconnected = new ManualResetEventSlim(false);
         }
 
         /// <summary>
@@ -320,6 +320,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -331,7 +333,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.CancellationSource.Cancel();
 
             this.receiveMessageTask.Wait();
-            this.Disconnected.WaitOne();
+            this.Disconnected.WaitHandle.WaitOne();
 
             this.Disconnected.Dispose();
             this.CancellationSource.Dispose();
@@ -524,7 +526,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         private NetworkPeer(bool inbound, NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peerAddress.Endpoint}] ");
             this.dateTimeProvider = dateTimeProvider;
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
@@ -554,9 +555,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
+            NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
-            NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
             this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
 
             this.logger.LogTrace("(-)");
@@ -575,6 +577,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, NetworkPeerClient client, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
             this.RemoteSocketEndpoint = client.RemoteEndPoint;
@@ -968,7 +971,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.Connection.Disconnected.WaitOne();
+                this.Connection.Disconnected.WaitHandle.WaitOne();
             }
             finally
             {

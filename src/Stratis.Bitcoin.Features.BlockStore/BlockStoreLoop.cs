@@ -170,31 +170,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Adds a block to Pending Storage
+        /// Adds a block to Pending Storage.
         /// <para>
-        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if:
+        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if the store's tip is behind the given block.
         /// </para>
-        /// <list>
-        ///     <item>1: The block does exist on the chain.</item>
-        ///     <item>2: The store's tip is behind the given block.</item>
-        /// </list>
         /// </summary>
-        /// <param name="block">The block to add to pending storage</param>
+        /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
-        public void AddToPending(Block block)
+        public void AddToPending(BlockPair blockPair)
         {
-            uint256 blockHash = block.GetHash();
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
 
-            ChainedBlock chainedBlock = this.Chain.GetBlock(blockHash);
-            if (chainedBlock == null)
-            {
-                this.logger.LogTrace("(-)[REORG]");
-                return;
-            }
-
-            if (this.StoreTip.Height < chainedBlock.Height)
-                this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
+            if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
+                this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
 
             this.logger.LogTrace("(-)");
         }
