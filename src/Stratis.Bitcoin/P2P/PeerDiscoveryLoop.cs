@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.P2P
 
                     try
                     {
-                        var clonedParameters = this.currentParameters.Clone();
+                        NetworkPeerConnectionParameters clonedParameters = this.currentParameters.Clone();
                         clonedParameters.ConnectCancellation = connectTokenSource.Token;
 
                         var addressManagerBehaviour = clonedParameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
