@@ -24,10 +24,8 @@ namespace Stratis.Bitcoin.P2P
         /// Each implementation of <see cref="PeerConnector"/> will have its own implementation
         /// of this method.
         /// </para>
-        /// <para>
-        /// Refer to <see cref="IPeerSelector.SelectPeer()"/> for more details.
-        /// </para>
         /// </summary>
+        /// <seealso cref="IPeerSelector.SelectPeer()"/>
         PeerAddress FindPeerToConnectTo();
 
         /// <summary>Peer connector initialization as called by the <see cref="ConnectionManager"/>.</summary>
@@ -148,7 +146,7 @@ namespace Stratis.Bitcoin.P2P
             this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
             this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
 
-            OnInitialize();
+            this.OnInitialize();
         }
 
         /// <inheritdoc/>
@@ -208,29 +206,33 @@ namespace Stratis.Bitcoin.P2P
             if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
                 return;
 
+            PeerAddress peerAddress = this.FindPeerToConnectTo();
+            if (peerAddress == null)
+            {
+                Task.Delay(TimeSpans.TenSeconds.Milliseconds).Wait(this.nodeLifetime.ApplicationStopping);
+                return;
+            }
+
             NetworkPeer peer = null;
 
             try
             {
-                PeerAddress peerAddress = this.FindPeerToConnectTo();
-                if (peerAddress == null)
-                {
-                    Task.Delay(TimeSpans.TenSeconds.Milliseconds).Wait(this.nodeLifetime.ApplicationStopping);
-                    return;
-                }
-
                 using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
-                    timeoutTokenSource.CancelAfter(5000);
-
                     this.peerAddressManager.PeerAttempted(peerAddress.NetworkAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
                     var clonedConnectParamaters = this.CurrentParameters.Clone();
+                    timeoutTokenSource.CancelAfter(5000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
                     peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peerAddress.NetworkAddress, clonedConnectParamaters).ConfigureAwait(false);
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                 }
+            }
+            catch (OperationCanceledException timeout)
+            {
+                this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
+                peer?.DisconnectWithException("Timeout", timeout);
             }
             catch (Exception exception)
             {

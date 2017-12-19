@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             int length = 0;
             uint checksum = 0;
             bool hasChecksum = false;
-            byte[] payloadBytes = stream.Serializing ? GetPayloadBytes(stream.ProtocolVersion, out length) : null;
+            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(stream.ProtocolVersion, out length) : null;
             length = payloadBytes == null ? 0 : length;
             stream.ReadWrite(ref length);
 
@@ -150,7 +150,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
         {
             return checksum == Hashes.Hash256(payload, 0, length).GetLow32();
         }
-
 
         public override string ToString()
         {

@@ -225,6 +225,5 @@ namespace Stratis.Bitcoin.P2P.Peer
             int id = Interlocked.Increment(ref this.lastClientId);
             return new NetworkPeerClient(id, tcpClient, this.network, this.loggerFactory);
         }
-
     }
 }
