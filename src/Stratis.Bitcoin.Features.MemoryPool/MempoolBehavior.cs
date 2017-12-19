@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Connection manager for managing node connections.</summary>
         private readonly IConnectionManager connectionManager;
 
-        private readonly IBDStateProvider ibdStateProvider;
+        private readonly IBlockDownloadState blockDownloadState;
 
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolManager manager,
             MempoolOrphans orphans,
             IConnectionManager connectionManager,
-            IBDStateProvider ibdStateProvider,
+            IBlockDownloadState blockDownloadState,
             Signals.Signals signals,
             ILogger logger)
         {
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.manager = manager;
             this.orphans = orphans;
             this.connectionManager = connectionManager;
-            this.ibdStateProvider = ibdStateProvider;
+            this.blockDownloadState = blockDownloadState;
             this.signals = signals;
             this.logger = logger;
 
@@ -112,10 +113,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolManager manager,
             MempoolOrphans orphans,
             IConnectionManager connectionManager,
-            ChainState chainState,
+            IBlockDownloadState blockDownloadState,
             Signals.Signals signals,
             ILoggerFactory loggerFactory)
-            : this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
+            : this(validator, manager, orphans, connectionManager, blockDownloadState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
         {
         }
 
@@ -171,7 +172,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override object Clone()
         {
-            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.ibdStateProvider, this.signals, this.logger);
+            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.blockDownloadState, this.signals, this.logger);
         }
 
         /// <summary>
@@ -345,7 +346,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return; //error("message inv size() = %u", vInv.size());
             }
 
-            if (this.ibdStateProvider.IsInitialBlockDownload())
+            if (this.blockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IS_IBD]");
                 return;

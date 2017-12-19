@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
+        public IBlockDownloadState BlockDownloadState { get; }
 
         public ChainState ChainState { get; }
 
@@ -81,6 +83,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
+            IBlockDownloadState blockDownloadState,
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -93,6 +96,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
+            this.BlockDownloadState = blockDownloadState;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);

@@ -98,6 +98,8 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A handler that can manage the lifetime of network peers.</summary>
         private readonly IPeerBanning peerBanning;
 
+        private readonly IBlockDownloadState blockDownloadState;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -128,6 +130,7 @@ namespace Stratis.Bitcoin.Base
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
+            IBlockDownloadState blockDownloadState,
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager)
         {
@@ -144,6 +147,7 @@ namespace Stratis.Bitcoin.Base
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             this.peerAddressManager.PeerFilePath = this.dataFolder;
 
+            this.blockDownloadState = blockDownloadState;
             this.dateTimeProvider = dateTimeProvider;
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
@@ -171,7 +175,7 @@ namespace Stratis.Bitcoin.Base
 
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
-            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.blockDownloadState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);

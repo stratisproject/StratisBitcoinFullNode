@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -203,9 +204,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <remarks>Used to verify that node is connected to network before we start staking.</remarks>
         private readonly IConnectionManager connection;
 
-        /// <summary>Used to verify that node is not in a state of IBD (Initial Block Download).</summary>
-        private readonly ChainState chainState;
-
         /// <summary>Provides date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -290,6 +288,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private CancellationTokenSource stakeCancellationTokenSource;
 
+        private IBlockDownloadState blockDownloadState;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
         /// </summary>
@@ -299,7 +299,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="connection">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
         /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
-        /// <param name="chainState">Used to verify that node is not in a state of IBD (Initial Block Download).</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="coinView">Consensus' view of UTXO set.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
@@ -316,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
             AssemblerFactory blockAssemblerFactory,
-            ChainState chainState,
+            IBlockDownloadState blockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
             StakeChain stakeChain,
@@ -333,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.connection = connection;
             this.dateTimeProvider = dateTimeProvider;
             this.blockAssemblerFactory = blockAssemblerFactory;
-            this.chainState = chainState;
+            this.blockDownloadState = blockDownloadState;
             this.nodeLifetime = nodeLifetime;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
@@ -455,7 +454,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload())
+                while (!this.connection.ConnectedNodes.Any() || this.blockDownloadState.IsInitialBlockDownload())
                 {
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");

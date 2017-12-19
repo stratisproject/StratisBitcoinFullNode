@@ -28,14 +28,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdCashed;
-
-        public IBDStateProvider(ChainState chainState, Network network, NodeSettings nodeSettings, DateTimeProvider dateTimeProvider, ICheckpoints checkpoints)
+        public IBDStateProvider(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             this.network = network;
             this.nodeSettings = nodeSettings;
             this.chainState = chainState;
             this.checkpoints = checkpoints;
-            this.dateTimeProvider = dateTimeProvider;
+            this.dateTimeProvider = DateTimeProvider.Default;
 
             this.lockIbdUntil = DateTime.MinValue;
         }
