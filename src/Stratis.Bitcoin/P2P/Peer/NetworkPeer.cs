@@ -182,7 +182,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-
                 var message = new Message
                 {
                     Magic = this.Peer.Network.Magic,
@@ -240,7 +239,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.receiveMessageTask = ReceiveMessagesAsync();
+            this.receiveMessageTask = this.ReceiveMessagesAsync();
 
             this.logger.LogTrace("(-)");
         }
@@ -249,7 +248,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Reads messages from the connection stream.
         /// </summary>
         public async Task ReceiveMessagesAsync()
-        { 
+        {
             this.logger.LogTrace("()");
 
             try
@@ -660,7 +659,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
 
-            NetworkPeerStateChangedEventHandler stateChanged = StateChanged;
+            NetworkPeerStateChangedEventHandler stateChanged = this.StateChanged;
             if (stateChanged != null)
             {
                 foreach (NetworkPeerStateChangedEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateChangedEventHandler>())
@@ -710,7 +709,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.SupportedTransactionOptions |= NetworkOptions.Witness;
 
             this.MessageProducer.PushMessage(message);
-            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = MessageReceivedPriority;
+            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = this.MessageReceivedPriority;
             if (messageReceivedPriority != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
@@ -726,7 +725,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
+            NetworkPeerMessageReceivedEventHandler messageReceived = this.MessageReceived;
             if (messageReceived != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
@@ -741,7 +740,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                 }
             }
-
 
             this.logger.LogTrace("(-)");
         }
@@ -822,7 +820,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             using (var source = new CancellationTokenSource())
             {
                 source.CancelAfter(timeout);
-                TPayload res = ReceiveMessage<TPayload>(source.Token);
+                TPayload res = this.ReceiveMessage<TPayload>(source.Token);
 
                 this.logger.LogTrace("(-):'{0}'", res);
                 return res;
@@ -847,7 +845,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("(-):'{0}'", res);
                 return res;
             }
-
         }
 
         /// <summary>

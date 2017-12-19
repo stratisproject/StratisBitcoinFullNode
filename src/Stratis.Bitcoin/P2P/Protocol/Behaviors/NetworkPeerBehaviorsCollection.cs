@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.peer = peer;
         }
 
-        bool CanAttach
+        private bool CanAttach
         {
             get
             {
