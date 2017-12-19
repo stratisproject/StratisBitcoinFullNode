@@ -249,7 +249,7 @@ namespace NBitcoin.Tests
         }
         */
 
-        Process _Process;
+        Process _Process = null;
 
         private void FindPorts(int[] ports)
         {
@@ -392,7 +392,6 @@ namespace NBitcoin.Tests
             var rpc = CreateRPCClient();
             BitcoinSecret dest = GetFirstSecret(rpc);
             var bestBlock = rpc.GetBestBlockHash();
-            ConcurrentChain chain = null;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
 #if !NOSOCKET

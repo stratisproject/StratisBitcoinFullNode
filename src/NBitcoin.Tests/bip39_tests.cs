@@ -163,7 +163,7 @@ namespace NBitcoin.Tests
     public class bip39_Codegen
     {
         //[Fact]
-        public void GenerateHardcodedBIP39Dictionary()
+        private void GenerateHardcodedBIP39Dictionary()
         {
             StringBuilder builder = new StringBuilder();
             foreach(var lang in new[] { Language.ChineseSimplified, Language.ChineseTraditional, Language.English, Language.Japanese, Language.Spanish, Language.French })

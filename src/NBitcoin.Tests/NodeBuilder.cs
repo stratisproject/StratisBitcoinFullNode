@@ -530,7 +530,6 @@ namespace NBitcoin.Tests
             var rpc = CreateRPCClient();
             BitcoinSecret dest = GetFirstSecret(rpc);
             var bestBlock = rpc.GetBestBlockHash();
-            ConcurrentChain chain = null;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
 #if !NOSOCKET
