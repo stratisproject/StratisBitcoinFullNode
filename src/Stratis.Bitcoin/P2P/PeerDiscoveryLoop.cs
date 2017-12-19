@@ -124,8 +124,6 @@ namespace Stratis.Bitcoin.P2P
                     return Task.CompletedTask;
             }
 
-            var clonedParameters = this.currentParameters.Clone();
-
             Parallel.ForEach(peersToDiscover, new ParallelOptions()
             {
                 MaxDegreeOfParallelism = 2,
@@ -141,6 +139,7 @@ namespace Stratis.Bitcoin.P2P
 
                     try
                     {
+                        NetworkPeerConnectionParameters clonedParameters = this.currentParameters.Clone();
                         clonedParameters.ConnectCancellation = connectTokenSource.Token;
 
                         var addressManagerBehaviour = clonedParameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
