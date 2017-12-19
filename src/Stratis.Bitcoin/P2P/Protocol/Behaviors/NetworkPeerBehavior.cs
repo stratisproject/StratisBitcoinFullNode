@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         INetworkPeerBehavior INetworkPeerBehavior.Clone()
         {
-            return (INetworkPeerBehavior)Clone();
+            return (INetworkPeerBehavior)this.Clone();
         }
     }
 }
