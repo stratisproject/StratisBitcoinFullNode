@@ -161,7 +161,7 @@ namespace NBitcoin.Tests
             Assert.Equal(expectedResult, spending.Inputs.AsIndexedInputs().First().VerifyScript(tx.Outputs[0].ScriptPubKey));
 
             spending.Inputs[0].Sequence = uint.MaxValue;
-            Assert.Equal(false, spending.Inputs.AsIndexedInputs().First().VerifyScript(tx.Outputs[0].ScriptPubKey));
+            Assert.False(spending.Inputs.AsIndexedInputs().First().VerifyScript(tx.Outputs[0].ScriptPubKey));
         }
 
 
@@ -245,7 +245,7 @@ namespace NBitcoin.Tests
             var result = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript);
             Assert.Equal(2, result.PubKeys.Length);
             Assert.Equal(2, result.SignatureCount);
-            Assert.Equal(1, result.InvalidPubKeys.Length);
+            Assert.Single(result.InvalidPubKeys);
         }
 
         [Fact]
