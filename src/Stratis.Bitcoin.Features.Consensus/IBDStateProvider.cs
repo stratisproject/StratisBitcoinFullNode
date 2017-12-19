@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -19,16 +21,25 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        private readonly ChainState chainState;
+
+        private readonly Network network;
+
+        private readonly NodeSettings nodeSettings;
+
         /// <summary>Time until IBD state can be checked.</summary>
         private DateTime lockIbdUntil;
 
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdCashed;
 
-        public IBDStateProvider()
+        public IBDStateProvider(ChainState chainState, Network network, NodeSettings nodeSettings, DateTimeProvider dateTimeProvider, ICheckpoints checkpoints)
         {
-            //TODO
-            //dateTimeProvider =
+            this.network = network;
+            this.nodeSettings = nodeSettings;
+            this.chainState = chainState;
+            this.checkpoints = checkpoints;
+            this.dateTimeProvider = dateTimeProvider;
 
             this.lockIbdUntil = DateTime.MinValue;
         }
@@ -42,22 +53,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
                 return this.ibdCashed;
 
-            /*
-            if (this.ConsensusLoop == null)
+            if (this.chainState == null)
                 return false;
 
-            if (this.ConsensusLoop.Tip == null)
+            if (this.chainState.ConsensusTip == null)
                 return true;
 
-            if (this.checkpoints.GetLastCheckpointHeight() > this.ConsensusLoop.Tip.Height)
+            if (this.checkpoints.GetLastCheckpointHeight() > this.chainState.ConsensusTip.Height)
                 return true;
 
-            if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
+            if (this.chainState.ConsensusTip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
                 return true;
 
-            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.NodeSettings.MaxTipAge))
+            if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.nodeSettings.MaxTipAge))
                 return true;
-            */
 
             return false;
         }
