@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private uint256 lastCoinStakeSearchPrevBlockHash;
 
         /// <summary>
-        /// A cancellation token source that can cancel the staking processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>. 
+        /// A cancellation token source that can cancel the staking processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
         /// </summary>
         private CancellationTokenSource stakeCancellationTokenSource;
 
@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
+                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload())
                 {
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");

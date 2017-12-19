@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Base
     /// The data are provided by different components and the chaine state is a mechanism that allows
     /// these components to share that data without creating extra dependencies.
     /// </summary>
-    public class ChainState
+    public class ChainState : IBlockDownloadState
     {
         /// <summary>The fullnode interface.</summary>
         private readonly IFullNode fullNode;
@@ -68,25 +68,22 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// This method will check if the node is in a state of IBD (Initial Block Download)
+        /// This method will check if the node is in a state of IBD (Initial Block Download).
         /// </summary>
-        public bool IsInitialBlockDownload
+        public bool IsInitialBlockDownload()
         {
-            get
+            DateTime now = this.dateTimeProvider.GetUtcNow();
+            if (this.ibdLastUpdate < now)
             {
-                DateTime now = this.dateTimeProvider.GetUtcNow();
-                if (this.ibdLastUpdate < now)
-                {
-                    // Sample every minute.
-                    this.ibdLastUpdate = now.AddMinutes(1);
+                // Sample every minute.
+                this.ibdLastUpdate = now.AddMinutes(1);
 
-                    // If consensus is not present IBD has no meaning. Set to false to match legacy code.
-                    IBlockDownloadState ibdStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
-                    this.ibdLastResult = ibdStateProvider == null ? false : ibdStateProvider.IsInitialBlockDownload();
-                }
-
-                return this.ibdLastResult;
+                // If consensus is not present IBD has no meaning. Set to false to match legacy code.
+                IBlockDownloadState ibdStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
+                this.ibdLastResult = ibdStateProvider == null ? false : ibdStateProvider.IsInitialBlockDownload();
             }
+
+            return this.ibdLastResult;
         }
 
         /// <summary>

@@ -124,14 +124,14 @@ namespace Stratis.Bitcoin.Base
 
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
 
-            // TODO: Previously, this has been implemented using filters, which guaranteed 
+            // TODO: Previously, this has been implemented using filters, which guaranteed
             // that ChainHeadersBehavior will be first to be notified about the message.
-            // This is no longer EXPLICITLY guaranteed with event approach, 
-            // and the order of notifications only depends on the order of component 
-            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior 
+            // This is no longer EXPLICITLY guaranteed with event approach,
+            // and the order of notifications only depends on the order of component
+            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior
             // is first to go again.
             //
-            // To guarantee that priority for ChainHeadersBehavior until events are refactored 
+            // To guarantee that priority for ChainHeadersBehavior until events are refactored
             // we use special MessageReceivedPriority now instead of normal MessageReceived event.
             this.AttachedPeer.MessageReceivedPriority += this.AttachedPeer_MessageReceived;
 
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Base
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.chainState.IsInitialBlockDownload && !this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
+                        if (this.chainState.IsInitialBlockDownload() && !this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;

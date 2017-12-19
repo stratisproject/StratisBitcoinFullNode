@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Ensure the block is written to disk before relaying.
             this.blockStoreLoop.AddToPending(blockPair);
 
-            if (this.chainState.IsInitialBlockDownload)
+            if (this.chainState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IBD]");
                 return;

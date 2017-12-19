@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return; //error("message inv size() = %u", vInv.size());
             }
 
-            if (this.chainState.IsInitialBlockDownload)
+            if (this.chainState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IS_IBD]");
                 return;
