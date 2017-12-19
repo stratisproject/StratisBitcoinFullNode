@@ -108,32 +108,34 @@ namespace Stratis.Bitcoin.P2P
             // was successful, we will select from fresh or attempted.
             //
             // If both sets exist, pick 50/50 between the two.
-            if (this.peerAddresses.Attempted().Any() && this.peerAddresses.Fresh().Any())
+            var attempted = this.peerAddresses.Attempted();
+            var fresh = this.peerAddresses.Fresh();
+            if (attempted.Any() && fresh.Any())
             {
                 if (this.random.Next(2) == 0)
                 {
                     this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
-                    return this.peerAddresses.Attempted();
+                    return attempted;
                 }
                 else
                 {
                     this.logger.LogTrace("(-)[RETURN_FRESH]");
-                    return this.peerAddresses.Fresh();
+                    return fresh;
                 }
             }
 
             // If there are only fresh peers, return them.
-            if (this.peerAddresses.Fresh().Any() && !this.peerAddresses.Attempted().Any())
+            if (fresh.Any() && !attempted.Any())
             {
                 this.logger.LogTrace("(-)[RETURN_ONLY_FRESH_EXIST]");
-                return this.peerAddresses.Fresh();
+                return fresh;
             }
 
             // If there are only attempted peers, return them.
-            if (!this.peerAddresses.Fresh().Any() && this.peerAddresses.Attempted().Any())
+            if (!fresh.Any() && attempted.Any())
             {
                 this.logger.LogTrace("(-)[RETURN_ONLY_ATTEMPTED_EXIST]");
-                return this.peerAddresses.Attempted();
+                return attempted;
             }
 
             // If all the selection criteria failed to return a set of peers,
