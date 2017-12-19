@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             mock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
             this.blockDownloadState = mock.Object;
 
-            this.chainState = new Mock<ChainState>(fullNode, new InvalidBlockHashStore(fullNode.DateTimeProvider));
+            this.chainState = new Mock<ChainState>(new InvalidBlockHashStore(fullNode.DateTimeProvider));
 
             this.nodeLifeTime = new Mock<INodeLifetime>();
         }
