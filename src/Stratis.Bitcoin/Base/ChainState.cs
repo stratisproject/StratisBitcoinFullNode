@@ -15,11 +15,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>The fullnode interface.</summary>
         private readonly IFullNode fullNode;
 
-        /// <summary>The last time in UTC the <see cref="ibdLastResult"/> was updated.</summary>
-        private DateTime ibdLastUpdate;
+        /// <summary>Time until IBD state can be checked.</summary>
+        private DateTime lockIbdUntil;
 
         /// <summary>A cached result of the IBD method.</summary>
-        private bool ibdLastResult;
+        private bool ibdCashed;
 
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Base
             this.fullNode = fullNode;
             this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true) ?? DateTimeProvider.Default;
             this.invalidBlockHashStore = invalidBlockHashStore;
-            this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow();
+            this.lockIbdUntil = DateTime.MinValue;
         }
 
         /// <summary>
@@ -72,18 +72,27 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         public bool IsInitialBlockDownload()
         {
-            DateTime now = this.dateTimeProvider.GetUtcNow();
-            if (this.ibdLastUpdate < now)
-            {
-                // Sample every minute.
-                this.ibdLastUpdate = now.AddMinutes(1);
+            if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
+                return this.ibdCashed;
 
-                // If consensus is not present IBD has no meaning. Set to false to match legacy code.
-                IBlockDownloadState ibdStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
-                this.ibdLastResult = ibdStateProvider == null ? false : ibdStateProvider.IsInitialBlockDownload();
-            }
+            /*
+            if (this.ConsensusLoop == null)
+                return false;
 
-            return this.ibdLastResult;
+            if (this.ConsensusLoop.Tip == null)
+                return true;
+
+            if (this.checkpoints.GetLastCheckpointHeight() > this.ConsensusLoop.Tip.Height)
+                return true;
+
+            if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
+                return true;
+
+            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.NodeSettings.MaxTipAge))
+                return true;
+            */
+
+            return false;
         }
 
         /// <summary>
@@ -91,11 +100,11 @@ namespace Stratis.Bitcoin.Base
         /// <para>Used in tests only.</para>
         /// </summary>
         /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
-        /// <param name="time">New value for the last check of IBD status.</param>
+        /// <param name="time">Time until IBD state can be checked.</param>
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
-            this.ibdLastUpdate = time;
-            this.ibdLastResult = val;
+            this.lockIbdUntil = time;
+            this.ibdCashed = val;
         }
     }
 }
