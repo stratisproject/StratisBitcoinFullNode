@@ -428,7 +428,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
+            context.NextWorkRequired = this.StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
                 context.Stake.BlockStake.IsProofOfStake());
 
             this.logger.LogTrace("(-)[OK]");
