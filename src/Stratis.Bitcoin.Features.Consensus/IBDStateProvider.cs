@@ -4,15 +4,11 @@ using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public interface IBlockDownloadState
-    {
-        bool IsInitialBlockDownload();
-    }
-
     public class IBDStateProvider : IBlockDownloadState
     {
         /// <summary>Provider of block header hash checkpoints.</summary>
