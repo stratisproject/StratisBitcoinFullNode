@@ -23,17 +23,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public PowConsensusValidator ConsensusValidator { get; private set; }
 
-        public ChainState ChainState { get; private set; }
-
         public ConsensusManager(ICheckpoints checkpoints, ConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
-            PowConsensusValidator consensusValidator = null, ChainState chainState = null)
+            PowConsensusValidator consensusValidator = null)
         {
             this.ConsensusLoop = consensusLoop;
             this.DateTimeProvider = dateTimeProvider;
             this.NodeSettings = nodeSettings;
             this.Network = network;
             this.ConsensusValidator = consensusValidator;
-            this.ChainState = chainState;
             this.checkpoints = checkpoints;
         }
 
@@ -63,8 +60,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Target GetNetworkDifficulty()
         {
-            if ((this.ConsensusValidator?.ConsensusParams != null) && (this.ChainState?.ConsensusTip != null))
-                return this.ChainState?.ConsensusTip?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
+            if ((this.ConsensusValidator?.ConsensusParams != null) && (this.ConsensusLoop?.Tip != null))
+                return this.ConsensusLoop?.Tip?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
             else
                 return null;
         }
