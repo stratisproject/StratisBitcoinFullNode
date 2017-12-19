@@ -1,6 +1,6 @@
-﻿using NBitcoin.Crypto;
+﻿using System;
+using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-using System;
 
 namespace NBitcoin
 {

@@ -1,17 +1,4 @@
 ﻿#if !NOSOCKET
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Payloads;
-using Xunit;
-
 namespace NBitcoin.Tests
 {
     public class pos_ProtocolTests

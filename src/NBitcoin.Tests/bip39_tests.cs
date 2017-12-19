@@ -1,12 +1,11 @@
-﻿using NBitcoin.DataEncoders;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace NBitcoin.Tests

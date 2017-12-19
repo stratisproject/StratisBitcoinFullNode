@@ -1,13 +1,7 @@
-﻿using NBitcoin.BouncyCastle.Crypto.Digests;
-using NBitcoin.BouncyCastle.Crypto.Parameters;
-using NBitcoin.BouncyCastle.Security;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+using NBitcoin.BouncyCastle.Crypto.Digests;
 #if !WINDOWS_UWP && !USEBC
 using System.Security.Cryptography;
 #endif

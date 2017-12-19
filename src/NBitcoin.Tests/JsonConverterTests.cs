@@ -1,10 +1,6 @@
-﻿using NBitcoin.JsonConverters;
+﻿using System;
+using NBitcoin.JsonConverters;
 using NBitcoin.OpenAsset;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace NBitcoin.Tests

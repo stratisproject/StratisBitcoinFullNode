@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-
 using NBitcoin.BouncyCastle.Math.EC.Abc;
 using NBitcoin.BouncyCastle.Math.EC.Endo;
 using NBitcoin.BouncyCastle.Math.EC.Multiplier;

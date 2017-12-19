@@ -7,8 +7,6 @@ using Hashes = NBitcoin.Crypto.Hashes;
 
 namespace NBitcoin.Tests
 {
-    using Hashes = Hashes;
-
     public class pos_hash_tests
     {
         public pos_hash_tests()

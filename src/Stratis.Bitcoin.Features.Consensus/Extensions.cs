@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NBitcoin;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 

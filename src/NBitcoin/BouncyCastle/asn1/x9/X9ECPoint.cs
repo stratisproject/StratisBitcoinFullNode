@@ -1,5 +1,4 @@
 using NBitcoin.BouncyCastle.Math.EC;
-
 using NBitcoin.BouncyCastle.Utilities;
 
 namespace NBitcoin.BouncyCastle.Asn1.X9

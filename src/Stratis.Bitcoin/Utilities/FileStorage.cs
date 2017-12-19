@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Stratis.Bitcoin.Utilities.FileStorage
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Class providing methods to save objects as files on the file system.

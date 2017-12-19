@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
+using uint256 = NBitcoin.uint256;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {

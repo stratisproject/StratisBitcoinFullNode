@@ -5,6 +5,7 @@ using System.Net;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -52,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 1 has had no connection attempts.
         /// Peer 2 has had no connection attempts.
         /// Peer 3 has had no connection attempts.
-        /// 
+        ///
         /// Result:
         /// All 3 peers are in the Fresh set.
         /// </summary>
@@ -87,7 +88,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 1 has had a connection attempt (in the last 60 seconds).
         /// Peer 2 has had a connection attempt (more than 60 seconds ago).
         /// Peer 3 has had a connection attempt (more than 60 seconds ago).
-        /// 
+        ///
         /// Result:
         /// Peers 2 and 3 are in the attempted set.
         /// </summary>
@@ -127,7 +128,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 1 has had a connection attempt (more than 60 seconds ago).
         /// Peer 2 has had a connection attempt (more than 60 seconds ago).
         /// Peer 3 was attempted unsuccessfully more than 10 times.
-        /// 
+        ///
         /// Result:
         /// Peers 1 and 2 are in the attempted set.
         /// </summary>
@@ -171,7 +172,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 1 has had a successful connection made to it (in the last 60 seconds).
         /// Peer 2 has had a successful connection made to it (more than 60 seconds ago).
         /// Peer 3 has only had an unsuccessful connection attempt.
-        /// 
+        ///
         /// Result:
         /// Peer 2 gets returned in the Connected set.
         /// </summary>
@@ -211,7 +212,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 1 has had a successful handshake (in the last 60 seconds).
         /// Peer 2 has had a successful handshake (more than 60 seconds ago).
         /// Peer 3 has only had an unsuccessful connection attempt.
-        /// 
+        ///
         /// Result:
         /// Peer 2 gets returned in the Connected set.
         /// </summary>
