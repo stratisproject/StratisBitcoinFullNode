@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdCashed;
+
         public IBDStateProvider(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             this.network = network;
@@ -39,10 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.lockIbdUntil = DateTime.MinValue;
         }
 
-        /// <summary>
-        /// Checks whether the node is currently in the process of initial block download.
-        /// </summary>
-        /// <returns><c>true</c> if the node is currently doing IBD, <c>false</c> otherwise.</returns>
+        /// <inheritdoc />
         public bool IsInitialBlockDownload()
         {
             if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
@@ -66,12 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return false;
         }
 
-        /// <summary>
-        /// Sets last IBD status update time and result.
-        /// <para>Used in tests only.</para>
-        /// </summary>
-        /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
-        /// <param name="time">Time until IBD state can be checked.</param>
+        /// <inheritdoc />
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
             this.lockIbdUntil = time;
