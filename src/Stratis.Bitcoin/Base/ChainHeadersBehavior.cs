@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Information about node's chain.</summary>
         private readonly ChainState chainState;
 
+        /// <summary>Provider of IBD state.</summary>
         private readonly IBlockDownloadState blockDownloadState;
 
         /// <summary><c>true</c> if the chain should be kept in sync, <c>false</c> otherwise.</summary>
@@ -90,6 +91,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chain">Thread safe chain of block headers from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
+        /// <param name="blockDownloadState">Provider of IBD state.</param>
         public ChainHeadersBehavior(ConcurrentChain chain, ChainState chainState, IBlockDownloadState blockDownloadState, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));

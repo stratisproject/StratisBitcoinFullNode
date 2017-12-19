@@ -32,6 +32,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
+
+        /// <summary>Provider of IBD state.</summary>
         public IBlockDownloadState BlockDownloadState { get; }
 
         public ChainState ChainState { get; }
@@ -73,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
 
-        /// <summary>Public constructor for unit testing</summary>
+        /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,

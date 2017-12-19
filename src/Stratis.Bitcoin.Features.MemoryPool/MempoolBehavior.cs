@@ -46,6 +46,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Connection manager for managing node connections.</summary>
         private readonly IConnectionManager connectionManager;
 
+        /// <summary>Provider of IBD state.</summary>
         private readonly IBlockDownloadState blockDownloadState;
 
         /// <summary>Node notifications available to subscribe to.</summary>
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="manager">Memory pool manager for managing the memory pool.</param>
         /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
-        /// <param name="ibdStateProvider">Provider of IBD state.</param>
+        /// <param name="blockDownloadState">Provider of IBD state.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="logger">Instance logger for memory pool behavior.</param>
         public MempoolBehavior(
@@ -105,7 +106,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="manager">Memory pool manager for managing the memory pool.</param>
         /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
-        /// <param name="chainState">Current block chain state.</param>
+        /// <param name="blockDownloadState">Provider of IBD state.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="loggerFactory">Logger factory for creating logger.</param>
         public MempoolBehavior(

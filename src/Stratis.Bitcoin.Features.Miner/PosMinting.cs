@@ -288,6 +288,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private CancellationTokenSource stakeCancellationTokenSource;
 
+        /// <summary>Provider of IBD state.</summary>
         private IBlockDownloadState blockDownloadState;
 
         /// <summary>
@@ -299,6 +300,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="connection">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
         /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
+        /// <param name="blockDownloadState">Provider of IBD state.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="coinView">Consensus' view of UTXO set.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>

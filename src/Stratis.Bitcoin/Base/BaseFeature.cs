@@ -98,6 +98,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A handler that can manage the lifetime of network peers.</summary>
         private readonly IPeerBanning peerBanning;
 
+        /// <summary>Provider of IBD state.</summary>
         private readonly IBlockDownloadState blockDownloadState;
 
         /// <summary>
@@ -116,6 +117,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="blockDownloadState">Provider of IBD state.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
