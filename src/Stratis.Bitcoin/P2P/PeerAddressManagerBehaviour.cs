@@ -50,6 +50,12 @@ namespace Stratis.Bitcoin.P2P
         {
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
             this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
+
+            if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
+            {
+                if (this.AttachedPeer.State == NetworkPeerState.Connected)
+                    this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+            }
         }
 
         private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
@@ -70,18 +76,10 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        // TODO: We need to refactor this as the StateChanged event handlers only gets attached
-        // AFTER the peer has connected, which means that we can never go:
-        // if (peer.State == NetworkPeerState.Connected)
-        // which is more intuitive.
-        // This happens in PeerDiscovery as well where we connect and then disconnect straight after.
         private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
-                if (peer.State <= NetworkPeerState.Disconnecting && previousState == NetworkPeerState.HandShaked)
-                    this.peerAddressManager.PeerConnected(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
-
                 if (peer.State == NetworkPeerState.HandShaked)
                     this.peerAddressManager.PeerHandshaked(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
             }
