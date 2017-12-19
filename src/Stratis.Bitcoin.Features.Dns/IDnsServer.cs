@@ -18,6 +18,16 @@ namespace Stratis.Bitcoin.Features.Dns
         IMasterFile MasterFile { get; }
 
         /// <summary>
+        /// Gets the metrics for the DNS server.
+        /// </summary>
+        DnsMetric Metrics { get; }
+
+        /// <summary>
+        /// Initializes the DNS Server.
+        /// </summary>
+        void Initialize();
+
+        /// <summary>
         /// Starts listening for DNS requests.
         /// </summary>
         /// <param name="dnsListenPort">The port to listen on.</param>

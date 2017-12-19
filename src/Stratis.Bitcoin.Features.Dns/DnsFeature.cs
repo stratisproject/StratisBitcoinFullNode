@@ -107,23 +107,32 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             this.logger.LogTrace("()");
 
+            // Initialize DNS server
+            this.dnsServer.Initialize();
+
+            bool restarted = false;
+
             while (true)
             {
                 try
                 {
-                    // Load masterfile from disk if it exists
-                    string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
-                    if (File.Exists(path))
+                    // Only load if we are starting up for the first time
+                    if (!restarted)
                     {
-                        this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
-
-                        using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        // Load masterfile from disk if it exists
+                        string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
+                        if (File.Exists(path))
                         {
-                            IMasterFile masterFile = new DnsSeedMasterFile();
-                            masterFile.Load(stream);
+                            this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
 
-                            // Swap in masterfile from disk into DNS server
-                            this.dnsServer.SwapMasterfile(masterFile);
+                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            {
+                                IMasterFile masterFile = new DnsSeedMasterFile();
+                                masterFile.Load(stream);
+
+                                // Swap in masterfile from disk into DNS server
+                                this.dnsServer.SwapMasterfile(masterFile);
+                            }
                         }
                     }
 
@@ -155,6 +164,8 @@ namespace Stratis.Bitcoin.Features.Dns
                     }
 
                     this.logger.LogTrace("Restarting DNS server following previous failure.");
+
+                    restarted = true;
                 }
             }
 
