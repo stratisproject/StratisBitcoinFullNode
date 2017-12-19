@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.P2P
 
                 if (!peer.NetworkAddress.Endpoint.Address.IsValid())
                 {
-                    this.logger.LogTrace("Peer selection failed, peer endpoint is not valid {0}.", peer.NetworkAddress.Endpoint);
+                    this.logger.LogTrace("Peer selection failed, peer endpoint is not valid '{0}'.", peer.NetworkAddress.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.P2P
                 var peerExistsInAddNode = this.NodeSettings.ConnectionManager.AddNode.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInAddNode)
                 {
-                    this.logger.LogTrace("Peer selection failed, peer exists in -addnode args {0}.", peer.NetworkAddress.Endpoint);
+                    this.logger.LogTrace("Peer selection failed, peer exists in -addnode args '{0}'.", peer.NetworkAddress.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.P2P
                 var peerExistsInConnectNode = this.NodeSettings.ConnectionManager.Connect.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInConnectNode)
                 {
-                    this.logger.LogTrace("Peer selection failed, peer exists in -connect args {0}.", peer.NetworkAddress.Endpoint);
+                    this.logger.LogTrace("Peer selection failed, peer exists in -connect args '{0}'.", peer.NetworkAddress.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.P2P
                 // If the peer is already connected just continue.
                 if (this.IsPeerConnected(peer.NetworkAddress.Endpoint))
                 {
-                    this.logger.LogTrace("Peer selection failed, peer is already connected {0}.", peer.NetworkAddress.Endpoint);
+                    this.logger.LogTrace("Peer selection failed, peer is already connected '{0}'.", peer.NetworkAddress.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -120,11 +120,7 @@ namespace Stratis.Bitcoin.P2P
                 break;
             }
 
-            if (peer != null)
-                this.logger.LogTrace("(-):'{0}'", peer.NetworkAddress.Endpoint);
-            else
-                this.logger.LogTrace("(-)[PEER_NULL]");
-
+            this.logger.LogTrace("(-):'{0}'", peer?.NetworkAddress.Endpoint);
             return peer;
         }
     }
