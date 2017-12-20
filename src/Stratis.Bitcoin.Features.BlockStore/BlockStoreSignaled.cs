@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
                 foreach (BlockStoreBehavior behaviour in behaviours)
-                    await behaviour.AnnounceBlocks(broadcastItems).ConfigureAwait(false);
+                    await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,

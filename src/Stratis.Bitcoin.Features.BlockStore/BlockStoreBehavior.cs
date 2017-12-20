@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Sends information about newly discovered blocks to network peers using "headers" or "inv" message.
         /// </summary>
         /// <param name="blocksToAnnounce">List of block headers to announce.</param>
-        Task AnnounceBlocks(List<ChainedBlock> blocksToAnnounce);
+        Task AnnounceBlocksAsync(List<ChainedBlock> blocksToAnnounce);
     }
 
     public class BlockStoreBehavior : NetworkPeerBehavior, IBlockStoreBehavior
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (peer.IsConnected)
                 {
                     this.logger.LogTrace("Sending inventory message to peer '{0}'.", peer.RemoteSocketEndpoint);
-                    await peer.SendMessageAsync(new InvPayload(items));
+                    await peer.SendMessageAsync(new InvPayload(items)).ConfigureAwait(false);
                 }
             }
 
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task AnnounceBlocks(List<ChainedBlock> blocksToAnnounce)
+        public async Task AnnounceBlocksAsync(List<ChainedBlock> blocksToAnnounce)
         {
             Guard.NotNull(blocksToAnnounce, nameof(blocksToAnnounce));
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce.Count);
@@ -220,14 +220,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!blocksToAnnounce.Any())
             {
                 this.logger.LogTrace("(-)[NO_BLOCKS]");
-                return Task.CompletedTask;
+                return;
             }
 
             NetworkPeer peer = this.AttachedPeer;
             if (peer == null)
             {
                 this.logger.LogTrace("(-)[NO_PEER]");
-                return Task.CompletedTask;
+                return;
             }
 
             bool revertToInv = ((!this.PreferHeaders &&
@@ -291,9 +291,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
                     chainBehavior.SetPendingTip(bestIndex);
-                    Task res = peer.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+                    await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
                     this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
-                    return res;
+                    return;
                 }
                 else
                 {
@@ -322,13 +322,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (inventoryBlockToSend.Any())
             {
-                Task res = this.SendAsBlockInventoryAsync(peer, inventoryBlockToSend);
+                await this.SendAsBlockInventoryAsync(peer, inventoryBlockToSend).ConfigureAwait(false);
                 this.logger.LogTrace("(-)[SEND_INVENTORY]");
-                return res;
+                return;
             }
 
             this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
         }
 
         public override object Clone()

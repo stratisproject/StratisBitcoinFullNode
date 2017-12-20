@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             List<ChainedBlock> blocks = new List<ChainedBlock>();
 
-            var task = this.behavior.AnnounceBlocks(blocks);
+            var task = this.behavior.AnnounceBlocksAsync(blocks);
 
             Assert.Equal(TaskStatus.RanToCompletion, task.Status);
             Assert.Null(this.behavior.AttachedPeer);
