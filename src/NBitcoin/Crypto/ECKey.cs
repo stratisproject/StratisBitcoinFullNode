@@ -1,9 +1,9 @@
-﻿using NBitcoin.BouncyCastle.Asn1.X9;
+﻿using System;
+using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.BouncyCastle.Crypto.Signers;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
-using System;
 using NBitcoin.BouncyCastle.Math.EC.Custom.Sec;
 
 namespace NBitcoin.Crypto

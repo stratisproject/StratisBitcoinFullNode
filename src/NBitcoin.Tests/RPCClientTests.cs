@@ -1,15 +1,12 @@
-﻿using NBitcoin.DataEncoders;
-using NBitcoin.RPC;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin.RPC;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Sdk;
 
@@ -82,7 +79,7 @@ namespace NBitcoin.Tests
                 node.Generate(101);
                 var txid = rpc.SendToAddress(new Key().PubKey.GetAddress(rpc.Network), Money.Coins(1.0m), "hello", "world");
                 var ids = rpc.GetRawMempool();
-                Assert.Equal(1, ids.Length);
+                Assert.Single(ids);
                 Assert.Equal(txid, ids[0]);
             }
         }
@@ -192,7 +189,7 @@ namespace NBitcoin.Tests
                 });
                 TestFundRawTransactionResult(tx, result);
                 Assert.True(result1.Fee < result.Fee);
-                Assert.True(result.Transaction.Outputs.Any(o => o.ScriptPubKey == change.ScriptPubKey));
+                Assert.Contains(result.Transaction.Outputs, o => o.ScriptPubKey == change.ScriptPubKey);
             }
         }
 
@@ -352,7 +349,7 @@ namespace NBitcoin.Tests
             var unspentTransaction = new UnspentTransaction(testData);
             Assert.Equal(1, unspentTransaction.confirmations);
             Assert.Equal(1, unspentTransaction.scriptPubKey.reqSigs);
-            Assert.Equal(1, unspentTransaction.scriptPubKey.addresses.Count);
+            Assert.Single(unspentTransaction.scriptPubKey.addresses);
             Assert.Equal(7.744E-05m, unspentTransaction.value);
         }
 
@@ -632,7 +629,7 @@ namespace NBitcoin.Tests
                 WaitAssert(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
-                    Assert.Equal(0, info.Count());
+                    Assert.Empty(info);
                 });
             }
         }

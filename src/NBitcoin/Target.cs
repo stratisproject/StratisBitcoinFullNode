@@ -1,7 +1,7 @@
-﻿using NBitcoin.BouncyCastle.Math;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
+using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin
 {

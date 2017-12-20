@@ -132,12 +132,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerClient Client { get; private set; }
 
         /// <summary>Event that is set when the connection is closed.</summary>
-        public ManualResetEvent Disconnected { get; private set; }
+        public ManualResetEventSlim Disconnected { get; private set; }
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
-        public CancellationTokenSource Cancel { get; private set; }
+        public CancellationTokenSource CancellationSource { get; private set; }
 
-        /// <summary>Registration of callback routine to shutdown the connection when <see cref="Cancel"/> is cancelled.</summary>
+        /// <summary>Registration of callback routine to shutdown the connection when <see cref="CancellationSource"/>'s token is cancelled.</summary>
         private CancellationTokenRegistration cancelRegistration;
 
         /// <summary>Task responsible for reading incoming messages from the stream.</summary>
@@ -157,9 +157,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Peer = peer;
             this.Client = client;
-            this.Cancel = new CancellationTokenSource();
-            this.cancelRegistration = this.Cancel.Token.Register(this.InitiateShutdown);
-            this.Disconnected = new ManualResetEvent(false);
+            this.CancellationSource = new CancellationTokenSource();
+            this.cancelRegistration = this.CancellationSource.Token.Register(this.InitiateShutdown);
+            this.Disconnected = new ManualResetEventSlim(false);
         }
 
         /// <summary>
@@ -175,14 +175,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             CancellationTokenSource cts = null;
             if (cancellation != default(CancellationToken))
             {
-                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.Cancel.Token);
+                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
                 cancellation = cts.Token;
             }
-            else cancellation = this.Cancel.Token;
+            else cancellation = this.CancellationSource.Token;
 
             try
             {
-
                 var message = new Message
                 {
                     Magic = this.Peer.Network.Magic,
@@ -223,7 +222,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     };
                 }
 
-                this.Cancel.Cancel();
+                this.CancellationSource.Cancel();
             }
             finally
             {
@@ -240,7 +239,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.receiveMessageTask = ReceiveMessagesAsync();
+            this.receiveMessageTask = this.ReceiveMessagesAsync();
 
             this.logger.LogTrace("(-)");
         }
@@ -249,14 +248,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Reads messages from the connection stream.
         /// </summary>
         public async Task ReceiveMessagesAsync()
-        { 
+        {
             this.logger.LogTrace("()");
 
             try
             {
-                while (!this.Cancel.Token.IsCancellationRequested)
+                while (!this.CancellationSource.Token.IsCancellationRequested)
                 {
-                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.Cancel.Token).ConfigureAwait(false);
+                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
@@ -289,7 +288,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     };
                 }
 
-                this.Cancel.Cancel();
+                this.CancellationSource.Cancel();
             }
 
             this.logger.LogTrace("(-)");
@@ -320,6 +319,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -327,14 +328,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            if (this.Cancel.IsCancellationRequested == false)
-                this.Cancel.Cancel();
+            if (this.CancellationSource.IsCancellationRequested == false)
+                this.CancellationSource.Cancel();
 
             this.receiveMessageTask.Wait();
-            this.Disconnected.WaitOne();
+            this.Disconnected.WaitHandle.WaitOne();
 
             this.Disconnected.Dispose();
-            this.Cancel.Dispose();
+            this.CancellationSource.Dispose();
             this.cancelRegistration.Dispose();
 
             this.logger.LogTrace("(-)");
@@ -524,7 +525,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         private NetworkPeer(bool inbound, NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peerAddress.Endpoint}] ");
             this.dateTimeProvider = dateTimeProvider;
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
@@ -554,9 +554,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
+            NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
-            NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
             this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
 
             this.logger.LogTrace("(-)");
@@ -575,6 +576,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, NetworkPeerClient client, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
             this.RemoteSocketEndpoint = client.RemoteEndPoint;
@@ -657,7 +659,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
 
-            NetworkPeerStateChangedEventHandler stateChanged = StateChanged;
+            NetworkPeerStateChangedEventHandler stateChanged = this.StateChanged;
             if (stateChanged != null)
             {
                 foreach (NetworkPeerStateChangedEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateChangedEventHandler>())
@@ -707,7 +709,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.SupportedTransactionOptions |= NetworkOptions.Witness;
 
             this.MessageProducer.PushMessage(message);
-            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = MessageReceivedPriority;
+            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = this.MessageReceivedPriority;
             if (messageReceivedPriority != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
@@ -723,7 +725,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            NetworkPeerMessageReceivedEventHandler messageReceived = MessageReceived;
+            NetworkPeerMessageReceivedEventHandler messageReceived = this.MessageReceived;
             if (messageReceived != null)
             {
                 foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
@@ -738,7 +740,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                 }
             }
-
 
             this.logger.LogTrace("(-)");
         }
@@ -819,7 +820,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             using (var source = new CancellationTokenSource())
             {
                 source.CancelAfter(timeout);
-                TPayload res = ReceiveMessage<TPayload>(source.Token);
+                TPayload res = this.ReceiveMessage<TPayload>(source.Token);
 
                 this.logger.LogTrace("(-):'{0}'", res);
                 return res;
@@ -844,7 +845,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("(-):'{0}'", res);
                 return res;
             }
-
         }
 
         /// <summary>
@@ -968,7 +968,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.Connection.Disconnected.WaitOne();
+                this.Connection.Disconnected.WaitHandle.WaitOne();
             }
             finally
             {
@@ -1015,7 +1015,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.State = NetworkPeerState.Disconnecting;
-            this.Connection.Cancel.Cancel();
+            this.Connection.CancellationSource.Cancel();
 
             if (this.DisconnectReason == null)
             {

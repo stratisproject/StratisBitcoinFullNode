@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public Script reserveSfullNodecript { get; set; }
     }
 
-    public class PowMining
+    public class PowMining : IPowMining
     {
         /// <summary>Default for "-blockmintxfee", which sets the minimum feerate for a transaction in blocks created by mining code.</summary>
         public const int DefaultBlockMinTxFee = 1000;
@@ -115,13 +116,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.mining;
         }
 
-        /// <summary>
-        /// Generates up to a specified number of blocks with a limited number of attempts.
-        /// </summary>
-        /// <param name="reserveScript"></param>
-        /// <param name="generate">Number of blocks to generate. It is possible that less than the required number of blocks will be mined.</param>
-        /// <param name="maxTries">Maximum number of attempts the miner will calculate PoW hash in order to find suitable ones to generate specified amount of blocks.</param>
-        /// <returns>List with generated block's hashes</returns>
+        ///<inheritdoc/>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong generate, ulong maxTries)
         {
             ulong nHeightStart = 0;

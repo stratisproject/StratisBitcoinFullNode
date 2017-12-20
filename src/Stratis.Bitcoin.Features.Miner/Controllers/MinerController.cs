@@ -5,6 +5,7 @@ using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         private readonly ILogger logger;
 
         /// <summary>PoS staker.</summary>
-        private readonly PosMinting posMinting;
+        private readonly IPosMinting posMinting;
 
         /// <summary>Full Node.</summary>
         private readonly IFullNode fullNode;
@@ -33,12 +34,15 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
+        /// <param name="fullNode">Full Node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
-        /// <param name="fullNode">Full Node.</param>
-        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, PosMinting posMinting = null)
+        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
+            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletManager = walletManager;

@@ -1,5 +1,4 @@
 ﻿#if !NOJSONNET
-using NBitcoin;
 using System;
 using System.Reflection;
 using Newtonsoft.Json;

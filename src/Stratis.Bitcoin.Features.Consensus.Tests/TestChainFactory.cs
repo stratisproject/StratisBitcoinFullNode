@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.ConnectionManager = testChainContext.MockConnectionManager.Object;
 
-            LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, new LoggerFactory());
+            LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, testChainContext.LoggerFactory);
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.NodeSettings);
             NodeDeployments deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
             ConsensusRules consensusRules = new ConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());

@@ -1,15 +1,10 @@
-﻿using NBitcoin.DataEncoders;
-using NBitcoin.OpenAsset;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.DataEncoders;
+using NBitcoin.OpenAsset;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -100,7 +95,7 @@ namespace NBitcoin.Tests
 
 #if !PORTABLE
         //[Fact]
-        public void TestFun()
+        private void TestFun()
         {
             var repo = new NoSqlColoredTransactionRepository(new BlockrTransactionRepository());
             var colored = ColoredTransaction.FetchColors(uint256.Parse("b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a6"), repo);
