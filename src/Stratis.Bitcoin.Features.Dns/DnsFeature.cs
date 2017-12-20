@@ -29,12 +29,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Defines the DNS server.
         /// </summary>
         private readonly IDnsServer dnsServer;
-
-        /// <summary>
-        /// Defines the peer address manager.
-        /// </summary>
-        private readonly IPeerAddressManager peerAddressManager;
-
+        
         /// <summary>
         /// Defines the logger.
         /// </summary>
@@ -79,7 +74,6 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(dataFolders, nameof(dataFolders));
 
             this.dnsServer = dnsServer;
-            this.peerAddressManager = peerAddressManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
             this.nodeSettings = nodeSettings;
