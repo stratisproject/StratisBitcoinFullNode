@@ -193,18 +193,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private async Task SendAsBlockInventoryAsync(NetworkPeer node, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventoryAsync(NetworkPeer peer, IEnumerable<uint256> blocks)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(node), node?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
+            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
             var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
             while (queue.Count > 0)
             {
                 var items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
-                if (node.IsConnected)
+                if (peer.IsConnected)
                 {
-                    this.logger.LogTrace("Sending inventory message to peer '{0}'.", node.RemoteSocketEndpoint);
-                    await node.SendMessageAsync(new InvPayload(items));
+                    this.logger.LogTrace("Sending inventory message to peer '{0}'.", peer.RemoteSocketEndpoint);
+                    await peer.SendMessageAsync(new InvPayload(items));
                 }
             }
 
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 else if (this.PreferHeaders)
                 {
                     if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
-                    else this.logger.LogDebug("Sending header {0} to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
+                    else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
                     chainBehavior.SetPendingTip(bestIndex);
                     Task res = peer.SendMessageAsync(new HeadersPayload(headers.ToArray()));
