@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Base
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.chainState.IsInitialBlockDownload && !this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
+                        if (this.chainState.IsInitialBlockDownload && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        this.AttachedPeer.SendMessageVoidAsync(headers);
+                        peer.SendMessageVoidAsync(headers);
                         break;
                     }
 
@@ -264,8 +264,8 @@ namespace Stratis.Bitcoin.Base
                                 // Now we know the previous block header and thus we can connect the new header.
                             }
 
-                            tip = new ChainedBlock(header, header.GetHash(this.AttachedPeer.Network.NetworkOptions), prev);
-                            bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedPeer.Network);
+                            tip = new ChainedBlock(header, header.GetHash(peer.Network.NetworkOptions), prev);
+                            bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
                             validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                             if (!validated)
                             {
@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.Base
                             uint maxReorgLength = this.chainState.MaxReorgLength;
                             if (maxReorgLength != 0)
                             {
-                                Network network = this.AttachedPeer?.Network;
+                                Network network = peer.Network;
                                 ChainedBlock consensusTip = this.chainState.ConsensusTip;
                                 if ((network != null) && (consensusTip != null))
                                 {
