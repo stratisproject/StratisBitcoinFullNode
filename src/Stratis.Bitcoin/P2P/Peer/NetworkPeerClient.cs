@@ -90,7 +90,25 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                await Task.Run(() => this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).Wait(cancellation)).ConfigureAwait(false);
+                // This variable records any error occurring in the thread pool task's context.
+                Exception err = null;
+
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).Wait(cancellation);
+                    }
+                    catch (Exception e)
+                    {
+                        // Record the error occurring in the thread pool's context.
+                        err = e;
+                    }
+                }).ConfigureAwait(false);
+
+                // Throw the error within this error handling context.
+                if (err != null) throw err;
+            
                 this.Stream = this.tcpClient.GetStream();
             }
             catch (OperationCanceledException)
