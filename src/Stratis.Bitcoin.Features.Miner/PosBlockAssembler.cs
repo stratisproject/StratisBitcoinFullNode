@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolLock,
-            TxMempool mempool,
+            ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             StakeChain stakeChain,
             StakeValidator stakeValidator,

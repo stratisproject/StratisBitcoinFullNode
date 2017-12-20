@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="memPool">The transaction memory pool.</param>
         /// <param name="fileName">The filename to persist to. Default filename is used if null.</param>
         /// <returns>Result of saving the memory pool.</returns>
-        MemPoolSaveResult Save(TxMempool memPool, string fileName = null);
+        MemPoolSaveResult Save(ITxMempool memPool, string fileName = null);
 
         /// <summary>
         /// Loads the memory pool from a persisted file.
@@ -177,7 +178,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public MemPoolSaveResult Save(TxMempool memPool, string fileName = null)
+        public MemPoolSaveResult Save(ITxMempool memPool, string fileName = null)
         {
             fileName = fileName ?? DefaultFilename;
             IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));

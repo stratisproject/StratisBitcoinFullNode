@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly CoinView coinView;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
-        private readonly TxMempool memPool;
+        private readonly ITxMempool memPool;
 
         /// <summary>Proof of work consensus validator.</summary>
         private readonly PowConsensusValidator consensusValidator;
@@ -159,7 +160,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
-            TxMempool memPool,
+            ITxMempool memPool,
             MempoolSchedulerLock mempoolLock,
             PowConsensusValidator consensusValidator,
             IDateTimeProvider dateTimeProvider,

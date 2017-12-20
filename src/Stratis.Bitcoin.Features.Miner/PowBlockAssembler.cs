@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -129,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected readonly MempoolSchedulerLock mempoolLock;
 
-        protected readonly TxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -181,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolLock,
-            TxMempool mempool,
+            ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,

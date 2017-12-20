@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int OrphanTxExpireInterval = 5 * 60;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
-        private readonly TxMempool memPool;
+        private readonly ITxMempool memPool;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -82,7 +83,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
             MempoolSchedulerLock mempoolLock,
-            TxMempool memPool,
+            ITxMempool memPool,
             ConcurrentChain chain,
             Signals.Signals signals,
             IMempoolValidator validator,

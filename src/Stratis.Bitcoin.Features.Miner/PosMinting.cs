@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -254,7 +255,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>Memory pool of pending transactions.</summary>
-        protected readonly TxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
@@ -324,7 +325,7 @@ namespace Stratis.Bitcoin.Features.Miner
             StakeChain stakeChain,
             StakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
-            TxMempool mempool,
+            ITxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
