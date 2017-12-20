@@ -246,7 +246,18 @@ namespace Stratis.Bitcoin.Base
 
                                 if (prev == null)
                                 {
-                                    this.logger.LogTrace("Previous header of the new header '{0}' was not found on our chain either, probably a reorg happened recently.", header);
+                                    this.logger.LogTrace("Previous header of the new header '{0}' was not found on our chain either.", header);
+
+                                    // If we can't connect the header we received from the peer, we might be on completely different chain or 
+                                    // a reorg happened recently. If we ignored it, we would have invalid view of the peer and the propagation 
+                                    // of blocks would not work well. So we ask the peer for headers using "getheaders" message.
+                                    var getHeadersPayload = new GetHeadersPayload()
+                                    {
+                                        BlockLocators = pendingTipBefore.GetLocator(),
+                                        HashStop = null
+                                    };
+
+                                    peer.SendMessageVoidAsync(getHeadersPayload);
                                     break;
                                 }
 
