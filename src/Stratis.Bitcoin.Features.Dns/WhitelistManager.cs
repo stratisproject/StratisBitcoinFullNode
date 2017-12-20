@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines if DNS server daemon is running as full node <c>true</c> or not <c>false</c>.
         /// </summary>
-        private readonly bool fullNodeMode = false;
+        private readonly bool fullNodeMode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WhitelistManager"/> class.

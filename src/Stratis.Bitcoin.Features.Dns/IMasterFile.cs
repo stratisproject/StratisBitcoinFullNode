@@ -11,9 +11,9 @@ namespace Stratis.Bitcoin.Features.Dns
     public interface IMasterFile
     {
         /// <summary>
-        /// Adds a entry to the master file.
+        /// Adds <see cref="IResourceRecord"/> to the master file.
         /// </summary>
-        /// <param name="entry">The resource record to add.</param>
+        /// <param name="entry">The resource record to add to the masterfile so that the IP address of the peer can be returned in a DNS resolve request.</param>
         void Add(IResourceRecord entry);
 
         /// <summary>

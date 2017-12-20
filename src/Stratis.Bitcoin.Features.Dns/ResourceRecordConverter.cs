@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Determines whether this instance can convert the specified object type.
         /// </summary>
         /// <param name="objectType">The type of object to convert.</param>
-        /// <returns><c>True</c> if the object can be converted otherwise returns false.</returns>
+        /// <returns><c>True</c> if the object can be converted otherwise returns <c>false</c>.</returns>
         public override bool CanConvert(Type objectType)
         {
             return (typeof(IResourceRecord).IsAssignableFrom(objectType));
