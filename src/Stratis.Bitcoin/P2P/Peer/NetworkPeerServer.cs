@@ -172,12 +172,28 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
+                    // Used to record any errors occurrring in the thread pool task.
+                    Exception err = null;
+
                     TcpClient tcpClient = await Task.Run(() =>
                     {
-                        Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
-                        acceptTask.Wait(this.serverCancel.Token);
-                        return acceptTask.Result;
+                        try
+                        {
+                            Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
+                            acceptTask.Wait(this.serverCancel.Token);
+                            return acceptTask.Result;
+                        }
+                        catch (Exception e)
+                        {
+                            // Record the error.
+                            err = e;
+                            return null;                            
+                        }
                     }).ConfigureAwait(false);
+
+                    // Raise the error.
+                    if (err != null)
+                        throw err;
 
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
