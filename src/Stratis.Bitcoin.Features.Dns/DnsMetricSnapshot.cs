@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="requestFailed">True if the request failed, otherwise False.</param>
         public void CaptureRequestMetrics(int peerCount, long elapsedTicks, bool requestFailed)
         {
-            // Utmost accuracy isn't important, but useful to do this with as few instructions as possible
+            // Utmost accuracy isn't important, but useful to do this with as few instructions as possible.
             Interlocked.Increment(ref this.requestCount);
             Interlocked.Add(ref this.peerCount, peerCount);
             Interlocked.Add(ref this.elapsedTicks, elapsedTicks);
