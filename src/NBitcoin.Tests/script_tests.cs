@@ -1,20 +1,16 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
+using Newtonsoft.Json.Linq;
+using Xunit;
 #if !NOCONSENSUSLIB
 using System.Net.Http;
 #endif
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using Newtonsoft.Json.Linq;
-using System.Runtime.InteropServices;
 
 namespace NBitcoin.Tests
 {

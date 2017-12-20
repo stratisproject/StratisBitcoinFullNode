@@ -1,14 +1,13 @@
-﻿using NBitcoin.BouncyCastle.Math;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.JsonConverters;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace NBitcoin.Tests

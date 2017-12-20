@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.LightWallet;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.MemoryPool.Tests
+namespace Stratis.Bitcoin.Features.LightWallet.Tests
 {
     /// <summary>
     /// Unit tests for light wallet's fixed fee policy.

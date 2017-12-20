@@ -1,5 +1,4 @@
 using System;
-
 using NBitcoin.BouncyCastle.Math.EC.Abc;
 
 namespace NBitcoin.BouncyCastle.Math.EC.Multiplier

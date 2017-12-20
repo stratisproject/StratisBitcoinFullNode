@@ -1,19 +1,11 @@
 ﻿#if !NOFILEIO
-using NBitcoin.DataEncoders;
-using NBitcoin.Payment;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-#if !PORTABLE
-using System.Net.Http;
-#endif
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using NBitcoin.Payment;
 using Xunit;
+#if !PORTABLE
+#endif
 
 namespace NBitcoin.Tests
 {

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;

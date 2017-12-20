@@ -1,12 +1,12 @@
-﻿using NBitcoin.BouncyCastle.Math;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace NBitcoin
 {

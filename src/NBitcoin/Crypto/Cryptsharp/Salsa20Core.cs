@@ -17,8 +17,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #endregion
 
-using NBitcoin.Crypto.Internal;
 using System;
+using NBitcoin.Crypto.Internal;
 
 namespace NBitcoin.Crypto
 {

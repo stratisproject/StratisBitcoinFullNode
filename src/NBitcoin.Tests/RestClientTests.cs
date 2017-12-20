@@ -1,6 +1,5 @@
-﻿using NBitcoin.RPC;
-using System;
-using System.Linq;
+﻿using System.Linq;
+using NBitcoin.RPC;
 using Xunit;
 
 namespace NBitcoin.Tests
