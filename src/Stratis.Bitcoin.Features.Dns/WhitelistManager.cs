@@ -106,9 +106,6 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 Domain domain = new Domain(this.dnsHostName);
 
-                // TODO: remove
-                this.logger.LogInformation($"Adding a Peer to the resource records.");
-
                 IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.NetworkAddress.Endpoint.Address);
                 masterFile.Add(resourceRecord);
             }

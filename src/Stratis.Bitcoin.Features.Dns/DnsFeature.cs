@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the name of the masterfile on disk.
         /// </summary>
-        public const string DnsMasterFileName = "masterfile.dat";
+        public const string DnsMasterFileName = "masterfile.json";
 
         /// <summary>
         /// Defines the DNS server.
