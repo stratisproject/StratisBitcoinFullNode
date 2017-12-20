@@ -130,9 +130,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (this.chainState?.ConsensusTip != null)
             {
-                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                      this.chainState.ConsensusTip.Height.ToString().PadRight(8) +
-                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                                      this.chainState.ConsensusTip.HashBlock);
             }
         }

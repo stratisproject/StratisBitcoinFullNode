@@ -1,7 +1,4 @@
 ﻿#if !NOSOCKET
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using NBitcoin.RPC;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,6 +12,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin.DataEncoders;
+using NBitcoin.RPC;
 
 namespace NBitcoin.Tests
 {
@@ -86,7 +85,7 @@ namespace NBitcoin.Tests
             return false;
         }
 
-        public static NodeBuilder Create([CallerMemberNameAttribute]string caller = null, string version = "0.13.1")
+        public static NodeBuilder Create([CallerMemberName]string caller = null, string version = "0.13.1")
         {
             CleanupTestFolder(caller);
             Directory.CreateDirectory(caller);    
@@ -530,7 +529,6 @@ namespace NBitcoin.Tests
             var rpc = CreateRPCClient();
             BitcoinSecret dest = GetFirstSecret(rpc);
             var bestBlock = rpc.GetBestBlockHash();
-            ConcurrentChain chain = null;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
 #if !NOSOCKET

@@ -161,9 +161,9 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                     this.chain.Tip.Height.ToString().PadRight(8) +
-                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.chain.Tip.HashBlock);
+                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.chain.Tip.HashBlock);
         }
 
         /// <inheritdoc />

@@ -10,7 +10,8 @@
 // (C) 2005-2010 Novell, Inc (http://novell.com/)
 //
 
-using NBitcoin.DataEncoders;
+using System.IO;
+
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -31,11 +32,7 @@ using NBitcoin.DataEncoders;
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Text;
+
 #if NET_4_0 && !MOBILE
 using System.Web.Configuration;
 #endif
