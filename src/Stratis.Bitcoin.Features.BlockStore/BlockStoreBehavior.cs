@@ -256,9 +256,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                         // Peer doesn't have a block at the height of our block and with the same hash?
                         if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) != null)
+                        {
+                            this.logger.LogTrace("Peer '{0}' does not have header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
                             continue;
-
-                        this.logger.LogTrace("Checking is the peer can connect previous header '{0}'.", chainedBlock.Previous);
+                        }
 
                         // Peer doesn't have a block at the height of our block.Previous and with the same hash?
                         if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous) == null)
@@ -269,6 +270,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             break;
                         }
 
+                        this.logger.LogTrace("Peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
                         foundStartingHeader = true;
                     }
 
