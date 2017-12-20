@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -144,6 +147,58 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             notification.SyncFrom(blockId2);
             Assert.Equal(blockId2, notification.StartHash);
+        }
+
+        [Fact]
+        public void SyncFrom_StartHashIsNull_SetsStartHashToBlockNotification()
+        {
+            var lifetime = new NodeLifetime();
+            var chain = new Mock<ConcurrentChain>();
+            var stub = new Mock<ILookaheadBlockPuller>();
+            var signals = new Mock<ISignals>();
+
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+
+            notification.SyncFrom(null);
+
+            Assert.Null(notification.StartHash);
+        }
+
+        [Fact]
+        public void Start_RunsAsyncLoop()
+        {
+            var lifetime = new NodeLifetime();
+            var chain = new Mock<ConcurrentChain>();
+            var stub = new Mock<ILookaheadBlockPuller>();
+            var signals = new Mock<ISignals>();
+            var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
+
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, stub.Object, signals.Object, asyncLoopFactory.Object, lifetime);
+
+            notification.Start();
+
+            asyncLoopFactory.Verify(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null));
+        }
+
+        [Fact]
+        public void Stop_DisposesAsyncLoop()
+        {
+
+            var lifetime = new NodeLifetime();
+            var chain = new Mock<ConcurrentChain>();
+            var stub = new Mock<ILookaheadBlockPuller>();
+            var signals = new Mock<ISignals>();
+            var asyncLoop = new Mock<IAsyncLoop>();
+            var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
+            asyncLoopFactory.Setup(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null))
+                .Returns(asyncLoop.Object);
+
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, stub.Object, signals.Object, asyncLoopFactory.Object, lifetime);
+
+            notification.Start();
+            notification.Stop();
+
+            asyncLoop.Verify(a => a.Dispose());
         }
     }
 }
