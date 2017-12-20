@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
-using DNS.Server;
-using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
@@ -15,16 +11,10 @@ namespace Stratis.Bitcoin.Features.Dns
     public interface IMasterFile
     {
         /// <summary>
-        /// Adds a <see cref="NetworkPeer"/> object to the masterfile.
+        /// Adds a entry to the master file.
         /// </summary>
-        /// <param name="peer">The peer to add to the masterfile so that the IP address of the peer can be returned in a DNS resolve request.</param>
-        void AddPeer(NetworkPeer peer);
-
-        /// <summary>
-        /// Adds a collection of <see cref="NetworkPeer"/> objects to the masterfile.
-        /// </summary>
-        /// <param name="peers">The peers to add to the masterfile so that the IP address of the peer can be returned in a DNS resolve request.</param>
-        void AddPeers(IEnumerable<NetworkPeer> peers);
+        /// <param name="entry">The resource record to add.</param>
+        void Add(IResourceRecord entry);
 
         /// <summary>
         /// Gets a list of resource records that match the question.

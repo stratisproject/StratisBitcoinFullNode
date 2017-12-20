@@ -1,11 +1,11 @@
 {
-  "profiles": {
-    "Stratis.StratisDnsD": {
-      "commandName": "Project"
-    },
-    "Stratis.StratisDnsD Test": {
-      "commandName": "Project",
-      "commandLineArgs": "-testnet -dnslistenport=5399"
+    "profiles": {
+        "Stratis.StratisDnsD": {
+            "commandName": "Project"
+        },
+        "Stratis.StratisDnsD Test": {
+            "commandName": "Project",
+            "commandLineArgs": "-testnet -dnslistenport=5399 -dnshostname=dns.stratisplatform.com"
+        }
     }
-  }
 }

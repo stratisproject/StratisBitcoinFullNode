@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Dns
         public static IFullNodeBuilder UseDns(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<DnsFeature>("dns");
-            
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -28,9 +28,10 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton<IMasterFile, DnsSeedMasterFile>();
                     services.AddSingleton<IDnsServer, DnsSeedServer>();
                     services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
+                    services.AddSingleton<IWhitelistManager, WhitelistManager>();
                 });
             });
-           
+
             return fullNodeBuilder;
         }
     }
