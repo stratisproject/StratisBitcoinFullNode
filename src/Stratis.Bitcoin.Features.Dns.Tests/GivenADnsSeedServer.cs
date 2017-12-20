@@ -30,8 +30,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IMasterFile masterFile = new Mock<IMasterFile>().Object;
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            Action a = () => { new DnsSeedServer(null, masterFile, loggerFactory); };
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+            Action a = () => { new DnsSeedServer(null, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("client");
@@ -43,11 +46,46 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         {
             // Arrange.
             IUdpClient udpClient = new Mock<IUdpClient>().Object;
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            Action a = () => { new DnsSeedServer(udpClient, null, loggerFactory); };
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+            Action a = () => { new DnsSeedServer(udpClient, null, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("masterFile");
+        }
+
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public void WhenConstructorCalled_AndAsyncLoopFactoryIsNull_ThenArgumentNullExceptionIsThrown()
+        {
+            // Arrange.
+            IUdpClient udpClient = new Mock<IUdpClient>().Object;
+            IMasterFile masterFile = new Mock<IMasterFile>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
+            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, null, nodeLifetime, loggerFactory, dateTimeProvider); };
+
+            // Act and Assert.
+            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("asyncLoopFactory");
+        }
+
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public void WhenConstructorCalled_AndNodeLifetimeIsNull_ThenArgumentNullExceptionIsThrown()
+        {
+            // Arrange.
+            IUdpClient udpClient = new Mock<IUdpClient>().Object;
+            IMasterFile masterFile = new Mock<IMasterFile>().Object;
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, null, loggerFactory, dateTimeProvider); };
+
+            // Act and Assert.
+            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
         }
 
         [Fact]
@@ -57,10 +95,29 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Arrange.
             IUdpClient udpClient = new Mock<IUdpClient>().Object;
             IMasterFile masterFile = new Mock<IMasterFile>().Object;
-            Action a = () => { new DnsSeedServer(udpClient, masterFile, null); };
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, null, dateTimeProvider); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
+        }
+
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public void WhenConstructorCalled_AndDateTimeProviderIsNull_ThenArgumentNullExceptionIsThrown()
+        {
+            // Arrange.
+            IUdpClient udpClient = new Mock<IUdpClient>().Object;
+            IMasterFile masterFile = new Mock<IMasterFile>().Object;
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
+            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, null); };
+
+            // Act and Assert.
+            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dateTimeProvider");
         }
 
         [Fact]
@@ -70,10 +127,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Arrange.
             IUdpClient udpClient = new Mock<IUdpClient>().Object;
             IMasterFile masterFile = new Mock<IMasterFile>().Object;
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
 
             // Act.
-            DnsSeedServer server = new DnsSeedServer(udpClient, masterFile, loggerFactory);
+            DnsSeedServer server = new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider);
 
             // Assert.
             server.Should().NotBeNull();
@@ -89,18 +149,25 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
 
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
+
             Mock<ILogger> logger = new Mock<ILogger>(MockBehavior.Loose);
             Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+
             // Act.
             CancellationTokenSource source = new CancellationTokenSource();
-            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, loggerFactory.Object);
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory, nodeLifetime, loggerFactory.Object, dateTimeProvider);
             Func<Task> func = async () => await server.ListenAsync(53, source.Token);
 
             // Assert.
             server.Should().NotBeNull();
             func.ShouldThrow<SocketException>();
+            server.Metrics.DnsServerFailureCountSinceStart.Should().Be(1);
+            server.Metrics.CurrentSnapshot.DnsServerFailureCountSinceLastPeriod.Should().Be(1);
         }
 
         [Fact]
@@ -114,6 +181,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             udpClient.Setup(c => c.ReceiveAsync()).ThrowsAsync(new SocketException());
 
             Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
+
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
 
             Mock<ILogger> logger = new Mock<ILogger>(MockBehavior.Loose);
             bool receivedSocketException = false;
@@ -129,9 +199,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+
             // Act.
             CancellationTokenSource source = new CancellationTokenSource(2000);
-            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, loggerFactory.Object);
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory, nodeLifetime, loggerFactory.Object, dateTimeProvider);
 
             try
             {
@@ -146,6 +218,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             server.Should().NotBeNull();
             startedListening.Should().BeTrue();
             receivedSocketException.Should().BeTrue();
+            server.Metrics.DnsRequestCountSinceStart.Should().BeGreaterThan(0);
+            server.Metrics.DnsRequestFailureCountSinceStart.Should().BeGreaterThan(0);
+            server.Metrics.DnsServerFailureCountSinceStart.Should().Be(0);
+            server.Metrics.CurrentSnapshot.DnsRequestCountSinceLastPeriod.Should().BeGreaterThan(0);
+            server.Metrics.CurrentSnapshot.DnsRequestFailureCountSinceLastPeriod.Should().BeGreaterThan(0);
+            server.Metrics.CurrentSnapshot.DnsServerFailureCountSinceLastPeriod.Should().Be(0);
         }
 
         [Fact]
@@ -160,6 +238,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
             masterFile.Setup(m => m.Get(It.IsAny<Question>())).Returns(new List<IResourceRecord>() { new IPAddressResourceRecord(Domain.FromString("google.com"), IPAddress.Loopback) });
+
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
 
             Mock<ILogger> logger = new Mock<ILogger>();
             bool receivedRequest = false;
@@ -186,9 +267,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+
             // Act.
             CancellationTokenSource source = new CancellationTokenSource(2000);
-            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, loggerFactory.Object);
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory, nodeLifetime, loggerFactory.Object, dateTimeProvider);
 
             try
             {
@@ -204,6 +287,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             startedListening.Should().BeTrue();
             receivedRequest.Should().BeTrue();
             receivedBadRequest.Should().BeTrue();
+            server.Metrics.DnsRequestCountSinceStart.Should().BeGreaterThan(0);
+            server.Metrics.DnsRequestFailureCountSinceStart.Should().BeGreaterThan(0);
+            server.Metrics.DnsServerFailureCountSinceStart.Should().Be(0);
+            server.Metrics.CurrentSnapshot.DnsRequestCountSinceLastPeriod.Should().BeGreaterThan(0);
+            server.Metrics.CurrentSnapshot.DnsRequestFailureCountSinceLastPeriod.Should().BeGreaterThan(0);
+            server.Metrics.CurrentSnapshot.DnsServerFailureCountSinceLastPeriod.Should().Be(0);
         }
 
         [Fact]
@@ -221,6 +310,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
             masterFile.Setup(m => m.Get(It.IsAny<Question>())).Returns(new List<IResourceRecord>() { new IPAddressResourceRecord(Domain.FromString("google.com"), IPAddress.Loopback) });
 
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
+
             Mock<ILogger> logger = new Mock<ILogger>();
             bool receivedRequest = false;
             logger.Setup(l => l.Log(LogLevel.Trace, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
@@ -235,9 +327,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+
             // Act.
             CancellationTokenSource source = new CancellationTokenSource(2000);
-            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, loggerFactory.Object);
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory, nodeLifetime, loggerFactory.Object, dateTimeProvider);
 
             try
             {
@@ -253,6 +347,50 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             startedListening.Should().BeTrue();
             receivedRequest.Should().BeTrue();
             sentResponse.Should().BeTrue();
+            server.Metrics.DnsRequestCountSinceStart.Should().BeGreaterThan(0);
+            server.Metrics.DnsRequestFailureCountSinceStart.Should().Be(0);
+            server.Metrics.DnsServerFailureCountSinceStart.Should().Be(0);
+            server.Metrics.CurrentSnapshot.DnsRequestCountSinceLastPeriod.Should().BeGreaterThan(0);
+            server.Metrics.CurrentSnapshot.DnsRequestFailureCountSinceLastPeriod.Should().Be(0);
+            server.Metrics.CurrentSnapshot.DnsServerFailureCountSinceLastPeriod.Should().Be(0);
+            server.Metrics.CurrentSnapshot.DnsRequestElapsedTicksSinceLastPeriod.Should().BeGreaterThan(0);
+            server.Metrics.CurrentSnapshot.LastDnsRequestElapsedTicks.Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public void WhenDnsServerInitialized_ThenMetricsLoopStarted()
+        {
+            // Arrange.
+            Mock<IUdpClient> udpClient = new Mock<IUdpClient>();
+            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
+
+            CancellationTokenSource source = new CancellationTokenSource(5000);
+            Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
+            nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
+
+            Mock<ILogger> logger = new Mock<ILogger>();
+            bool startedLoop = false;
+            logger.Setup(l => l.Log(LogLevel.Information, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
+            {
+                startedLoop = state.ToString().Contains("DNS Metrics");
+            });
+            Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+
+            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
+
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+
+            // Act.
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory, nodeLifetime.Object, loggerFactory.Object, dateTimeProvider);
+            server.Initialize();
+            bool waited = source.Token.WaitHandle.WaitOne();
+
+            // Assert.
+            server.Should().NotBeNull();
+            waited.Should().BeTrue();
+            startedLoop.Should().BeTrue();
         }
 
         /// <summary>

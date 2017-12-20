@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             this.logger.LogTrace("()");
 
-            // Create long running task for DNS service
+            // Create long running task for DNS service.
             this.dnsTask = Task.Factory.StartNew(this.RunDnsService, TaskCreationOptions.LongRunning);
 
             this.logger.LogTrace("(-)");
@@ -107,34 +107,43 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             this.logger.LogTrace("()");
 
+            // Initialize DNS server.
+            this.dnsServer.Initialize();
+
+            bool restarted = false;
+
             while (true)
             {
                 try
                 {
-                    // Load masterfile from disk if it exists
-                    string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
-                    if (File.Exists(path))
+                    // Only load if we are starting up for the first time.
+                    if (!restarted)
                     {
-                        this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
-
-                        using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        // Load masterfile from disk if it exists.
+                        string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
+                        if (File.Exists(path))
                         {
-                            IMasterFile masterFile = new DnsSeedMasterFile();
-                            masterFile.Load(stream);
+                            this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
 
-                            // Swap in masterfile from disk into DNS server
-                            this.dnsServer.SwapMasterfile(masterFile);
+                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            {
+                                IMasterFile masterFile = new DnsSeedMasterFile();
+                                masterFile.Load(stream);
+
+                                // Swap in masterfile from disk into DNS server.
+                                this.dnsServer.SwapMasterfile(masterFile);
+                            }
                         }
                     }
 
                     this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
 
-                    // Start
+                    // Start.
                     this.dnsServer.ListenAsync(this.nodeSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
                 catch (OperationCanceledException)
                 {
-                    // Node shutting down, expected
+                    // Node shutting down, expected.
                     this.logger.LogInformation("Stopping DNS");
                     break;
                 }
@@ -144,17 +153,19 @@ namespace Stratis.Bitcoin.Features.Dns
 
                     try
                     {
-                        // Back-off before restart
+                        // Back-off before restart.
                         Task.Delay(DnsServerBackoffInterval, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                     }
                     catch (OperationCanceledException)
                     {
-                        // Node shutting down, expected
+                        // Node shutting down, expected.
                         this.logger.LogInformation("Stopping DNS");
                         break;
                     }
 
                     this.logger.LogTrace("Restarting DNS server following previous failure.");
+
+                    restarted = true;
                 }
             }
 

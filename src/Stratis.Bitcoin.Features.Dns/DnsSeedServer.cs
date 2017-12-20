@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -13,6 +14,7 @@ using DNS.Protocol.ResourceRecords;
 using DNS.Protocol.Utils;
 using DNS.Server;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
@@ -26,6 +28,16 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Sets the timeout at 2 seconds.
         /// </summary>
         private const int UdpTimeout = 2000;
+
+        /// <summary>
+        /// Sets the period by which metrics are logged (secs).
+        /// </summary>
+        private const int MetricsLogRate = 20;
+
+        /// <summary>
+        /// Defines the output format for a metric row.
+        /// </summary>
+        private readonly string MetricsOutputFormat = "{0,-60}: {1,20}" + Environment.NewLine;
 
         /// <summary>
         /// Defines a flag used to indicate whether the object has been disposed or not.
@@ -45,7 +57,17 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the client used to listen for incoming DNS requests.
         /// </summary>
-        private IUdpClient udpClient;
+        private readonly IUdpClient udpClient;
+
+        /// <summary>
+        /// Defines a factory for creating async loops.
+        /// </summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>
+        /// Defines a node lifetime object.
+        /// </summary>
+        private readonly INodeLifetime nodeLifetime;
 
         /// <summary>
         /// Defines the logger.
@@ -53,20 +75,44 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly ILogger logger;
 
         /// <summary>
+        /// Defines the date-time provider.
+        /// </summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// Defines a metrics async loop.
+        /// </summary>
+        private IAsyncLoop metricsLoop;
+
+        /// <summary>
+        /// Defines an entity that holds the metrics for the DNS server.
+        /// </summary>
+        private DnsMetric metrics;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DnsSeedServer"/> class with the port to listen on.
         /// </summary>
         /// <param name="client">The UDP client to use to receive DNS requests and send DNS responses.</param>
         /// <param name="masterFile">The initial DNS masterfile.</param>
+        /// <param name="asyncLoopFactory">The async loop factory.</param>
         /// <param name="loggerFactory">The logger factory.</param>
-        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, ILoggerFactory loggerFactory)
+        /// <param name="dateTimeProvider">The <see cref="DateTime"/> provider.</param>
+        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(client, nameof(client));
             Guard.NotNull(masterFile, nameof(masterFile));
+            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.udpClient = client;
             this.masterFile = masterFile;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
+            this.metrics = new DnsMetric();
         }
 
         /// <summary>
@@ -78,6 +124,27 @@ namespace Stratis.Bitcoin.Features.Dns
         }
 
         /// <summary>
+        /// Gets the metrics for the DNS server.
+        /// </summary>
+        public DnsMetric Metrics
+        {
+            get { return this.metrics; }
+        }
+
+        /// <summary>
+        /// Initializes the DNS Server.
+        /// </summary>
+        public void Initialize()
+        {
+            this.logger.LogTrace("()");
+
+            // Create async loop for outputting metrics.
+            this.metricsLoop = this.asyncLoopFactory.Run(nameof(this.LogMetrics), async (token) => await Task.Run(() => this.LogMetrics()), this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(MetricsLogRate));
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
         /// Starts listening for DNS requests.
         /// </summary>
         /// <param name="dnsListenPort">The port to listen on.</param>
@@ -85,51 +152,58 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>A task used to await the listen operation.</returns>
         public async Task ListenAsync(int dnsListenPort, CancellationToken token)
         {
+            this.logger.LogTrace("()");
+
             try
             {
+                // Start listening on UDP port.
                 this.udpClient.StartListening(dnsListenPort);
-            }
-            catch (SocketException e)
-            {
-                this.logger.LogError(e, "Socket exception {0} whilst creating UDP client for DNS service.", e.ErrorCode);
-                throw;
-            }
 
-            try
-            {
-                while (true)
+                while (!token.IsCancellationRequested)
                 {
-                    Tuple<IPEndPoint, byte[]> request;
-
-                    // Have we been cancelled?
-                    if (token.IsCancellationRequested)
-                    {
-                        this.logger.LogTrace("Cancellation requested, shutting down DNS listener.");
-                        token.ThrowIfCancellationRequested();
-                    }
-
                     try
                     {
-                        request = await this.udpClient.ReceiveAsync();
+                        Tuple<IPEndPoint, byte[]> request = await this.udpClient.ReceiveAsync();
 
                         this.logger.LogTrace("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
 
-                        // Received a request, now handle it
+                        // Received a request, now handle it.
+                        Stopwatch stopWatch = new Stopwatch();
+                        stopWatch.Start();
+
                         await this.HandleRequestAsync(request);
+
+                        stopWatch.Stop();
+
+                        // TODO - get list of peers from masterfile.
+                        this.metrics.CaptureRequestMetrics(0, stopWatch.ElapsedTicks, false);
                     }
                     catch (ArgumentException e)
                     {
+                        this.metrics.CaptureRequestMetrics(0, 0, true);
                         this.logger.LogWarning(e, "Failed to process DNS request.");
                     }
                     catch (SocketException e)
                     {
+                        this.metrics.CaptureRequestMetrics(0, 0, true);
                         this.logger.LogError(e, "Socket exception {0} whilst receiving UDP request.", e.ErrorCode);
                     }
                 }
+
+                // We've been cancelled.
+                this.logger.LogTrace("Cancellation requested, shutting down DNS listener.");
+                token.ThrowIfCancellationRequested();
+            }
+            catch (Exception e) when (!(e is OperationCanceledException))
+            {
+                this.metrics.CaptureServerFailedMetric();
+                throw;
             }
             finally
             {
                 this.udpClient.StopListening();
+
+                this.logger.LogTrace("(-)");
             }
         }
 
@@ -145,12 +219,16 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="masterFile">The new masterfile to swap in.</param>
         public void SwapMasterfile(IMasterFile masterFile)
         {
+            this.logger.LogTrace("()");
+
             Guard.NotNull(masterFile, nameof(masterFile));
 
             lock (this.masterFileLock)
             {
                 this.masterFile = masterFile;
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -174,6 +252,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 {
                     IDisposable disposableClient = this.udpClient as IDisposable;
                     disposableClient?.Dispose();
+
+                    this.metricsLoop?.Dispose();
                 }
 
                 this.disposed = true;
@@ -187,6 +267,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>A DNS response.</returns>
         private IResponse Resolve(Request request)
         {
+            this.logger.LogTrace("()");
+
             Response response = Response.FromRequest(request);
 
             foreach (Question question in request.Questions)
@@ -203,6 +285,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
             }
 
+            this.logger.LogTrace("(-)");
+
             return response;
         }
 
@@ -212,6 +296,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="udpRequest">The DNS request received from the UDP client.</param>
         private async Task HandleRequestAsync(Tuple<IPEndPoint, byte[]> udpRequest)
         {
+            this.logger.LogTrace("()");
+
             Request request = null;
 
             try
@@ -234,11 +320,11 @@ namespace Stratis.Bitcoin.Features.Dns
                     throw new ArgumentException($"Request message contains a non-error response code of {header.ResponseCode}.");
                 }
 
-                // Resolve request against masterfile
+                // Resolve request against masterfile.
                 request = new Request(header, Question.GetAllFromArray(udpRequest.Item2, header.Size, header.QuestionCount));
                 IResponse response = this.Resolve(request);
 
-                // Send response
+                // Send response.
                 await this.udpClient.SendAsync(response.ToArray(), response.Size, udpRequest.Item1).WithCancellationTimeout(UdpTimeout);
             }
             catch (SocketException e)
@@ -253,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 this.logger.LogError(e, "Received error {0} when sending DNS response to {1}, trying again.", e.Response.ResponseCode, udpRequest.Item1);
 
-                // Try and send response one more time
+                // Try and send response one more time.
                 IResponse response = e.Response;
                 if (response == null)
                 {
@@ -273,6 +359,62 @@ namespace Stratis.Bitcoin.Features.Dns
                     this.logger.LogError(ex, "Sending DNS response to {0} timed out.", udpRequest.Item1);
                 }
             }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Logs metrics periodically to the console.
+        /// </summary>
+        private void LogMetrics()
+        {
+            this.logger.LogTrace("()");
+
+            try
+            {
+                // Print out total and period values.
+                StringBuilder metricOutput = new StringBuilder();
+                metricOutput.AppendLine("==========DNS Metrics==========");
+                metricOutput.AppendLine();
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Snapshot Time", this.dateTimeProvider.GetAdjustedTime());
+                metricOutput.AppendLine();
+
+                // Metrics since start.
+                metricOutput.AppendLine(">>> Metrics since start");
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Total DNS Requests", this.metrics.DnsRequestCountSinceStart);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Total DNS Server Failures (Restarted)", this.metrics.DnsServerFailureCountSinceStart);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Total DNS Request Failures", this.metrics.DnsRequestFailureCountSinceStart);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Maximum Peer Count in DNS Response", this.metrics.DnsRequestFailureCountSinceStart);
+                metricOutput.AppendLine();
+
+                // Reset period values.
+                DnsMetricSnapshot snapshot = this.metrics.ResetSnapshot();
+
+                // Calculate averages.
+                double averagePeerCount = snapshot.DnsRequestCountSinceLastPeriod == 0 ? 0 : snapshot.PeerCountSinceLastPeriod / snapshot.DnsRequestCountSinceLastPeriod;
+                double averageElapsedTicks = snapshot.DnsRequestCountSinceLastPeriod == 0 ? 0 : snapshot.DnsRequestElapsedTicksSinceLastPeriod / snapshot.DnsRequestCountSinceLastPeriod;
+
+                // Metrics since last period.
+                metricOutput.AppendLine($">>> Metrics for last period ({MetricsLogRate} secs)");
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "DNS Requests", snapshot.DnsRequestCountSinceLastPeriod);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "DNS Server Failures (Restarted)", snapshot.DnsServerFailureCountSinceLastPeriod);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "DNS Request Failures", snapshot.DnsRequestFailureCountSinceLastPeriod);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Average Peer Count in DNS Response", averagePeerCount);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Last Peer Count in DNS Response", snapshot.LastPeerCount);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Average Elapsed Time Processing DNS Requests (ms)", new TimeSpan((long)averageElapsedTicks).TotalMilliseconds);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Last Elapsed Time Processing DNS Requests (ms)", new TimeSpan(snapshot.LastDnsRequestElapsedTicks).TotalMilliseconds);
+                metricOutput.AppendLine();
+
+                // Output.
+                this.logger.LogInformation(metricOutput.ToString());
+            }
+            catch (Exception e)
+            {
+                // If metrics fail, just log.
+                this.logger.LogWarning(e, "Failed to output DNS metrics.");
+            }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
