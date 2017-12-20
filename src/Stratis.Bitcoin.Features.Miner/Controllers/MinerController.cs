@@ -34,10 +34,10 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
+        /// <param name="fullNode">Full Node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
-        /// <param name="fullNode">Full Node.</param>
         public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));

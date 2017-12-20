@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
                 .Returns(this.walletManager.Object);
 
-            this.controller = new MiningRPCController(this.powMining.Object, this.fullNode.Object, this.LoggerFactory.Object, this.posMinting.Object);
+            this.controller = new MiningRPCController(this.powMining.Object, this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, this.posMinting.Object);
         }
 
 
@@ -106,9 +106,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public void StartStaking_WalletNotFound_ThrowsRPCServerException()
+        public void StartStaking_WalletNotFound_ThrowsWalletException()
         {
-            Assert.Throws<RPCServerException>(() =>
+            Assert.Throws<WalletException>(() =>
             {
                 this.walletManager.Setup(w => w.GetWallet("myWallet"))
                 .Throws(new WalletException("Wallet not found."));
@@ -116,19 +116,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.controller.StartStaking("myWallet", "password");
             });  
         }
-
-        [Fact]
-        public void StartStaking_WalletNull_ThrowsRPCServerException()
-        {
-            Assert.Throws<RPCServerException>(() =>
-            {
-                this.walletManager.Setup(w => w.GetWallet("myWallet"))
-                    .Returns((Wallet.Wallet)null);
-
-                this.controller.StartStaking("myWallet", "password");
-            });
-        }
-
+   
         [Fact]
         public void StartStaking_InvalidWalletPassword_ThrowsSecurityException()
         {
@@ -159,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetStakingInfo_WithoutPosMinting_ReturnsEmptyStakingInfoModel()
         {
-            this.controller = new MiningRPCController(this.powMining.Object, this.fullNode.Object, this.LoggerFactory.Object, null);
+            this.controller = new MiningRPCController(this.powMining.Object, this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, null);
 
             var result = this.controller.GetStakingInfo(true);
 
