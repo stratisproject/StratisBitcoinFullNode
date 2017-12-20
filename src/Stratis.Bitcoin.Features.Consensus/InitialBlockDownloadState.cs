@@ -37,8 +37,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         private bool ibdCached;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="InitialBlockDownloadState"/> class.
+        /// Creates a new instance of the <see cref="InitialBlockDownloadState" /> class.
         /// </summary>
+        /// <param name="chainState">Information about node's chain.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="nodeSettings">User defined node settings.</param>
+        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         public InitialBlockDownloadState(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             this.network = network;
