@@ -14,6 +14,7 @@ using DNS.Protocol.ResourceRecords;
 using DNS.Protocol.Utils;
 using DNS.Server;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 
@@ -80,6 +81,16 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
+        /// Defines the configuration settings for the node.
+        /// </summary>
+        private readonly NodeSettings nodeSettings;
+
+        /// <summary>
+        /// Defines the data folders of the system.
+        /// </summary>
+        private readonly DataFolder dataFolders;
+
+        /// <summary>
         /// Defines a metrics async loop.
         /// </summary>
         private IAsyncLoop metricsLoop;
@@ -97,7 +108,9 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="asyncLoopFactory">The async loop factory.</param>
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="dateTimeProvider">The <see cref="DateTime"/> provider.</param>
-        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
+        /// <param name="nodeSettings">The node settings object containing node configuration.</param>
+        /// <param name="dataFolders">The data folders of the system.</param>
+        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings, DataFolder dataFolders)
         {
             Guard.NotNull(client, nameof(client));
             Guard.NotNull(masterFile, nameof(masterFile));
@@ -105,6 +118,8 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(dataFolders, nameof(dataFolders));
 
             this.udpClient = client;
             this.masterFile = masterFile;
@@ -112,6 +127,8 @@ namespace Stratis.Bitcoin.Features.Dns
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
+            this.nodeSettings = nodeSettings;
+            this.dataFolders = dataFolders;
             this.metrics = new DnsMetric();
         }
 
@@ -137,6 +154,26 @@ namespace Stratis.Bitcoin.Features.Dns
         public void Initialize()
         {
             this.logger.LogTrace("()");
+
+            // Load masterfile from disk if it exists.
+            lock (this.masterFileLock)
+            {
+                string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsFeature.DnsMasterFileName);
+                if (File.Exists(path))
+                {
+                    this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
+
+                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        this.MasterFile.Load(stream);
+                    }
+                }
+                else
+                {
+                    // Seed with SOA and NS resource records when this is a new masterfile.
+                    this.SeedMasterFile();
+                }
+            }
 
             // Create async loop for outputting metrics.
             this.metricsLoop = this.asyncLoopFactory.Run(nameof(this.LogMetrics), async (token) => await Task.Run(() => this.LogMetrics()), this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(MetricsLogRate));
@@ -226,6 +263,9 @@ namespace Stratis.Bitcoin.Features.Dns
             lock (this.masterFileLock)
             {
                 this.masterFile = masterFile;
+
+                // Seed with SOA and NS resource records when this is a new masterfile.
+                this.SeedMasterFile();
             }
 
             this.logger.LogTrace("(-)");
@@ -361,6 +401,32 @@ namespace Stratis.Bitcoin.Features.Dns
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Seeds the masterfile with the SOA and NS DNS records with the DNS specific settings.
+        /// </summary>
+        private void SeedMasterFile()
+        {
+            this.logger.LogInformation("Seeding DNS masterfile with SOA and NS resource records: Host = {0}, Nameserver = {1}, Mailbox = {2}", this.nodeSettings.DnsHostName, this.nodeSettings.DnsNameServer, this.nodeSettings.DnsMailBox);
+
+            // Check if SOA record exists for host.
+            int count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.SOA)).Count;
+            if (count == 0)
+            {
+                // TODO: Remove cast
+                // Add SOA record for host.
+                ((DnsSeedMasterFile)this.MasterFile).Add(new StartOfAuthorityResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer), new Domain(this.nodeSettings.DnsMailBox.Replace('@', '.'))));
+            }
+
+            // Check if NS record exists for host.
+            count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.NS)).Count;
+            if (count == 0)
+            {
+                // TODO: Remove cast
+                // Add NS record for host.
+                ((DnsSeedMasterFile)this.MasterFile).Add(new NameServerResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer)));
+            }
         }
 
         /// <summary>

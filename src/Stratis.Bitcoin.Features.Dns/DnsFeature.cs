@@ -128,32 +128,10 @@ namespace Stratis.Bitcoin.Features.Dns
             // Initialize DNS server.
             this.dnsServer.Initialize();
 
-            bool restarted = false;
-
             while (true)
             {
                 try
                 {
-                    // Only load if we are starting up for the first time.
-                    if (!restarted)
-                    {
-                        // Load masterfile from disk if it exists.
-                        string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
-                        if (File.Exists(path))
-                        {
-                            this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
-
-                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            {
-                                IMasterFile masterFile = new DnsSeedMasterFile();
-                                masterFile.Load(stream);
-
-                                // Swap in masterfile from disk into DNS server.
-                                this.dnsServer.SwapMasterfile(masterFile);
-                            }
-                        }
-                    }
-
                     this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
 
                     // Start.
@@ -182,8 +160,6 @@ namespace Stratis.Bitcoin.Features.Dns
                     }
 
                     this.logger.LogTrace("Restarting DNS server following previous failure.");
-
-                    restarted = true;
                 }
             }
 
