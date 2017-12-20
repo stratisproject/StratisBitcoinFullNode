@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Initialized connection parameters.</returns>
         private NetworkPeerConnectionParameters CreateNetworkPeerConnectionParameters()
         {
-            IPEndPoint myExternal = Utils.EnsureIPv6(this.ExternalEndpoint);
+            IPEndPoint myExternal = this.ExternalEndpoint;
             NetworkPeerConnectionParameters param2 = this.InboundNetworkPeerConnectionParameters.Clone();
             param2.Nonce = this.Nonce;
             param2.Version = this.Version;
