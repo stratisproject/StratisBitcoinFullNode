@@ -233,7 +233,25 @@ namespace Stratis.Bitcoin.Base
                         {
                             ChainedBlock prev = tip.FindAncestorOrSelf(header.HashPrevBlock);
                             if (prev == null)
-                                break;
+                            {
+                                this.logger.LogTrace("Previous header of the new header '{0}' was not found on the peer's chain, the view of the peer's chain is probably outdated.", header);
+
+                                // We have received a header from the peer for which we don't register a previous header.
+                                // This can happen if our information about where the peer is is invalid.
+                                // However, if the previous header is on the chain that we recognize, 
+                                // we can fix it.
+
+                                // Try to find the header's previous hash on our best chain.
+                                prev = this.Chain.GetBlock(header.HashPrevBlock);
+
+                                if (prev == null)
+                                {
+                                    this.logger.LogTrace("Previous header of the new header '{0}' was not found on our chain either, probably a reorg happened recently.", header);
+                                    break;
+                                }
+
+                                // Now we know the previous block header and thus we can connect the new header.
+                            }
 
                             tip = new ChainedBlock(header, header.GetHash(this.AttachedPeer.Network.NetworkOptions), prev);
                             bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedPeer.Network);
