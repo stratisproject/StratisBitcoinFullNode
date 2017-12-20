@@ -95,6 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
+            this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedBlock);
             this.blocksToAnnounce.Enqueue(chainedBlock);
 
             this.logger.LogTrace("(-)");
@@ -131,37 +132,51 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 this.logger.LogTrace("()");
 
-                if (!this.blocksToAnnounce.Any())
+                int announceBlockCount = this.blocksToAnnounce.Count;
+                if (announceBlockCount == 0)
                 {
                     this.logger.LogTrace("(-)[NO_BLOCKS]");
                     return;
                 }
 
-                // Initialize this list with default size of 'blocksToAnnounce.Count + 4' to prevent it from autoresizing during adding new items.
+                this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
+
+                // Initialize this list with default size of 'announceBlockCount + 4' to prevent it from autoresizing during adding new items.
                 // This +4 extra size is in case new items will be added to the queue during the loop.
-                var broadcastItems = new List<ChainedBlock>(this.blocksToAnnounce.Count + 4);
+                var broadcastItems = new List<ChainedBlock>(announceBlockCount + 4);
 
                 while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
                 {
+                    this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
+
                     // The first block that is not on disk will abort the loop.
                     if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
                     {
+                        this.logger.LogTrace("Block '{0}' not found in the store.", block);
+
                         // In cases when the node had a reorg the 'blocksToAnnounce' contain blocks
                         // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
 
                         // Check if the reason why we don't have a block is a reorg or it hasn't been downloaded yet.
                         if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                         {
+                            this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
+
                             // Remove hash that we've reorged away from.
                             this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
                             continue;
                         }
+                        else this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
 
                         break;
                     }
 
                     if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
+                    {
+                        this.logger.LogTrace("Block '{0}' moved from the announce queue to broadcast list.", block);
                         broadcastItems.Add(blockToBroadcast);
+                    }
+                    else this.logger.LogTrace("Unable to removing block '{0}' from the announce queue.", block);
                 }
 
                 if (!broadcastItems.Any())
@@ -179,6 +194,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 // Announce the blocks to each of the peers.
                 IEnumerable<BlockStoreBehavior> behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
+
+                this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
                 foreach (BlockStoreBehavior behaviour in behaviours)
                     await behaviour.AnnounceBlocks(broadcastItems).ConfigureAwait(false);
             },
