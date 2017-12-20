@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.logger.LogTrace("Checking is the peer can connect header '{0}'.", chainedBlock);
 
                         // Peer doesn't have a block at the height of our block and with the same hash?
-                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) == null)
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) != null)
                             continue;
 
                         this.logger.LogTrace("Checking is the peer can connect previous header '{0}'.", chainedBlock.Previous);
