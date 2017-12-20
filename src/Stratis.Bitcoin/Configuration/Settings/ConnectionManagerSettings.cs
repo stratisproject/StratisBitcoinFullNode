@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Configuration.Settings
 {
@@ -16,16 +17,16 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </summary>
         public ConnectionManagerSettings()
         {
-            this.Connect = new List<IPEndPoint>();
-            this.AddNode = new List<IPEndPoint>();
+            this.Connect = new IPEndPointSet();
+            this.AddNode = new IPEndPointSet();
             this.Listen = new List<NodeServerEndpoint>();
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
-        public List<IPEndPoint> Connect { get; set; }
+        public IPEndPointSet Connect { get; set; }
 
         /// <summary>List of end points that the node should try to connect to.</summary>
-        public List<IPEndPoint> AddNode { get; set; }
+        public IPEndPointSet AddNode { get; set; }
 
         /// <summary>List of network interfaces on which the node should listen on.</summary>
         public List<NodeServerEndpoint> Listen { get; set; }
