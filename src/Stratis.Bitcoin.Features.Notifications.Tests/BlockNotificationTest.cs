@@ -1,13 +1,11 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -62,16 +60,16 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void Notify_WithSync_SetPullerLocationToPreviousBlockMatchingStartHash()
         {
-            var blocks = CreateBlocks(3);
+            var blocks = this.CreateBlocks(3);
 
             var chain = new ConcurrentChain(blocks[0].Header);
-            AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
+            this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
-            var dataPath = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "BlockNotification", "Notify_WithSync_ScenarioOne"));
+            var dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
-            connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.FromArguments(new string[] { $"-datadir={dataPath.WalletPath}" }));
-            connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
+            connectionManager.Setup(c => c.ConnectedNodes).Returns(new NetworkPeerCollection());
+            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={dataFolder.WalletPath}" }));
+            connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
 
             var lookAheadBlockPuller = new LookaheadBlockPuller(chain, connectionManager.Object, new Mock<ILoggerFactory>().Object);
             var lifetime = new NodeLifetime();
@@ -95,15 +93,15 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             var lifetime = new NodeLifetime();
 
-            var blocks = CreateBlocks(2);
+            var blocks = this.CreateBlocks(2);
 
             var chain = new ConcurrentChain(blocks[0].Header);
-            AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
+            this.AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
             var stub = new Mock<ILookaheadBlockPuller>();
             stub.SetupSequence(s => s.NextBlock(lifetime.ApplicationStopping))
-                .Returns(blocks[0])
-                .Returns(blocks[1])
+                .Returns(new LookaheadResult { Block = blocks[0] })
+                .Returns(new LookaheadResult { Block = blocks[1] })
                 .Returns(null);
 
             var signals = new Mock<ISignals>();
@@ -122,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
 
         /// <summary>
-        /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated 
+        /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated
         /// every time <see cref="BlockNotification.SyncFrom(uint256)"/> gets called.
         /// </summary>
         [Fact]

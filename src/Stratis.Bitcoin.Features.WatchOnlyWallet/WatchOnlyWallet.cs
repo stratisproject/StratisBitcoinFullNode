@@ -5,12 +5,12 @@ using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.JsonConverters;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
     /// <summary>
-    /// Represents a watch-only wallet. 
+    /// Represents a watch-only wallet.
     /// </summary>
     public class WatchOnlyWallet
     {
@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public WatchOnlyWallet()
         {
             this.WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>();
+            this.WatchedTransactions = new ConcurrentDictionary<string, TransactionData>();
         }
 
         /// <summary>
@@ -48,6 +49,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "watchedAddresses")]
         [JsonConverter(typeof(WatchedAddressesConcurrentDictionaryConverter))]
         public ConcurrentDictionary<string, WatchedAddress> WatchedAddresses { get; set; }
+
+        /// <summary>
+        /// The list of transactions being watched.
+        /// </summary>
+        [JsonProperty(PropertyName = "watchedTransactions")]
+        [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
+        public ConcurrentDictionary<string, TransactionData> WatchedTransactions { get; set; }
     }
 
     /// <summary>
@@ -85,7 +93,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "transactions")]
         [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
         public ConcurrentDictionary<string, TransactionData> Transactions { get; set; }
-
     }
 
     /// <summary>
@@ -126,8 +133,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonConverter(typeof(BitcoinSerializableJsonConverter))]
         public PartialMerkleTree MerkleProof { get; set; }
     }
-
-    #region Json Converters
 
     /// <summary>
     /// Converter used to convert a <see cref="ConcurrentDictionary{TKey,TValue}"/> (where TKey is <see cref="string"/> and TValue is <see cref="WatchedAddress"/>) to and from a collection of its values.
@@ -198,6 +203,4 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             serializer.Serialize(writer, transactionsDictionary.Values);
         }
     }
-
-    #endregion    
 }

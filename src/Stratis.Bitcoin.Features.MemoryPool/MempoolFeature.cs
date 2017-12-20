@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -88,7 +85,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             this.mempoolManager.LoadPoolAsync().GetAwaiter().GetResult();
 
@@ -98,7 +95,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             if (this.mempoolManager != null)
             {

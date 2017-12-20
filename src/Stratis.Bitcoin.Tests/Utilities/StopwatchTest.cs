@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -12,26 +13,34 @@ namespace Stratis.Bitcoin.Tests.Utilities
     {
         /// <summary>
         /// Previously the disposable stopwatch implementation was based on <see cref="System.DateTimeOffset.UtcNow"/>
-        /// instead of <see cref="System.Diagnostics.Stopwatch"/>. It was argued that there was some kind of measurement 
+        /// instead of <see cref="System.Diagnostics.Stopwatch"/>. It was argued that there was some kind of measurement
         /// error when the later was used. Most likely the problem was in mixing <see cref="System.DateTime.Ticks"/>
         /// units with incompatible <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
         /// <para>
         /// This test aims to verify that the time measurement with the disposable stopwatch achieves correct results.
-        /// It performs a series of small work simlating delays which represent a measured code block. Each delay 
+        /// It performs a series of small work simlating delays which represent a measured code block. Each delay
         /// is measured using 4 different measurement methods and the total elapsed time of all three methods is then compared.
         /// It is expected that all 4 methods will produce roughly the same results.
         /// </para>
         /// <para>
-        /// The first method we use is using two <see cref="System.DateTime.UtcNow"/> calls, one done before and one done after. 
-        /// The second method is using <see cref="System.Diagnostics.Stopwatch"/>, which we start before the work and stop after 
-        /// the work is done. The third method is using the actual disposable watch that we want to test. The fourth method 
+        /// The first method we use is using two <see cref="System.DateTime.UtcNow"/> calls, one done before and one done after.
+        /// The second method is using <see cref="System.Diagnostics.Stopwatch"/>, which we start before the work and stop after
+        /// the work is done. The third method is using the actual disposable watch that we want to test. The fourth method
         /// is just calculating the expected delay without actually measuring it.
         /// </para>
         /// </summary>
         [Fact]
         public void StopwatchDisposable_MeasuresPerformanceCorrectly()
         {
-            int epsilonMs = 50;
+            // Don't run this test in a Mac environment as it takes too long,
+            // skewing the results.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
+            // Give the testing environment a chance to settle down a little bit.
+            Thread.Sleep(5000);
+
+            int epsilonMs = 100;
             int expectedElapsedMs = 0;
             long elapsedTicksByDispStopwatch = 0;
 

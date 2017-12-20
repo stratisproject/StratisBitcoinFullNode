@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -24,31 +25,48 @@ namespace Stratis.Bitcoin.Features.Miner
         public Script reserveSfullNodecript { get; set; }
     }
 
-    public class PowMining
+    public class PowMining : IPowMining
     {
-        // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code.
+        /// <summary>Default for "-blockmintxfee", which sets the minimum feerate for a transaction in blocks created by mining code.</summary>
         public const int DefaultBlockMinTxFee = 1000;
 
-        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create.
+        /// <summary>Default for "-blockmaxsize", which controls the maximum size of block the mining code will create.</summary>
         public const int DefaultBlockMaxSize = 750000;
 
-        // Default for -blockmaxweight, which controls the range of block weights the mining code will create.
+        /// <summary>
+        /// Default for "-blockmaxweight", which controls the maximum block weight the mining code can create.
+        /// Block is measured in weight units. Data which touches the UTXO (What addresses are involved in the transaction, how many coins are being transferred) costs
+        /// 4 weight units (WU) per byte. Witness data (signatures used to unlock existing coins so that they can be spent) costs 1 WU per byte.
+        /// <seealso cref="http://learnmeabitcoin.com/faq/segregated-witness"/>
+        /// </summary>
         public const int DefaultBlockMaxWeight = 3000000;
 
-        const int InnerLoopCount = 0x10000;
+        private const int InnerLoopCount = 0x10000;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
+
         private readonly ConcurrentChain chain;
+
         private readonly Network network;
+
         private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly AssemblerFactory blockAssemblerFactory;
+
         private readonly IBlockRepository blockRepository;
+
         private readonly ChainState chainState;
+
         private readonly Signals.Signals signals;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private uint256 hashPrevBlock;
+
         private IAsyncLoop mining;
 
         /// <summary>Instance logger.</summary>
@@ -98,6 +116,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.mining;
         }
 
+        ///<inheritdoc/>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong generate, ulong maxTries)
         {
             ulong nHeightStart = 0;
@@ -123,9 +142,10 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
 
-                if (Block.BlockSignature)
+                if (this.network.NetworkOptions.IsProofOfStake)
                 {
-                    // POS: make sure the POS consensus rules are valid 
+                    // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
+                    // where it is possible to generate multiple blocks within one second.
                     if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
                     {
                         continue;
@@ -135,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                 Block pblock = pblockTemplate.Block;
 
-                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
+                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
                 {
                     this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 

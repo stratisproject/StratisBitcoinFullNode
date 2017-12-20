@@ -8,14 +8,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Determines whether the chain is downloaded and up to date.
         /// </summary>
-        /// <param name="chain">The chain.</param>        
+        /// <param name="chain">The chain.</param>
         public static bool IsDownloaded(this ConcurrentChain chain)
         {
             return chain.Tip.Header.BlockTime.ToUnixTimeSeconds() > (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - TimeSpan.FromHours(1).TotalSeconds);
         }
 
         /// <summary>
-        /// Gets the height of the first block created after this date.
+        /// Gets the height of the first block created at or after this date.
         /// </summary>
         /// <param name="chain">The chain of blocks.</param>
         /// <param name="date">The date.</param>
@@ -29,13 +29,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             while (!found)
             {
                 int check = lowerLimit + (upperLimit - lowerLimit) / 2;
-                if (chain.GetBlock(check).Header.BlockTime >= date)
+                DateTime blockTimeAtCheck = chain.GetBlock(check).Header.BlockTime.DateTime;
+
+                if (blockTimeAtCheck > date)
                 {
                     upperLimit = check;
                 }
-                else if (chain.GetBlock(check).Header.BlockTime < date)
+                else if (blockTimeAtCheck < date)
                 {
                     lowerLimit = check;
+                }
+                else
+                {
+                    return check;
                 }
 
                 if (upperLimit - lowerLimit <= 1)

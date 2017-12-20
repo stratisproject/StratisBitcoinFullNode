@@ -24,10 +24,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private IAsyncLoop asyncLoop;
 
         public StoreBlockPuller BlockPuller { get; }
+
         public IBlockRepository BlockRepository { get; }
+
         private readonly BlockStoreStats blockStoreStats;
 
-        /// <summary> Best chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
 
         public ChainState ChainState { get; }
@@ -47,6 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
@@ -58,7 +61,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
-        public virtual string StoreName { get { return "BlockStore"; } }
+        public virtual string StoreName
+        {
+            get { return "BlockStore"; }
+        }
 
         private readonly StoreSettings storeSettings;
 
@@ -84,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState = chainState;
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
 
@@ -101,9 +107,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///     <item>2. The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found 
+        /// To recover we walk back the chain until a common block header is found
         /// and set the BlockStore's StoreTip to that.
-        /// </para>                
+        /// </para>
         /// </summary>
         public async Task InitializeAsync()
         {
@@ -164,31 +170,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Adds a block to Pending Storage
+        /// Adds a block to Pending Storage.
         /// <para>
-        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if:
+        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if the store's tip is behind the given block.
         /// </para>
-        /// <list>
-        ///     <item>1: The block does exist on the chain.</item>
-        ///     <item>2: The store's tip is behind the given block.</item>
-        /// </list>
         /// </summary>
-        /// <param name="block">The block to add to pending storage</param>
+        /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
-        public void AddToPending(Block block)
+        public void AddToPending(BlockPair blockPair)
         {
-            uint256 blockHash = block.GetHash();
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
 
-            ChainedBlock chainedBlock = this.Chain.GetBlock(blockHash);
-            if (chainedBlock == null)
-            {
-                this.logger.LogTrace("(-)[REORG]");
-                return;
-            }
-
-            if (this.StoreTip.Height < chainedBlock.Height)
-                this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
+            if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
+                this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
 
             this.logger.LogTrace("(-)");
         }
@@ -213,7 +207,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
             {
-                await DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
+                await this.DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
@@ -241,9 +235,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>
         /// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
         /// When in IBD we may need many reads for the block key without fetching the block
-        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
-        /// a read is normally done when a peer is asking for the entire block (not just the key) 
-        /// then if LazyLoadingOn = false the read will be faster on the entire block      
+        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD
+        /// a read is normally done when a peer is asking for the entire block (not just the key)
+        /// then if LazyLoadingOn = false the read will be faster on the entire block
         /// </remarks>
         private async Task DownloadAndStoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
         {

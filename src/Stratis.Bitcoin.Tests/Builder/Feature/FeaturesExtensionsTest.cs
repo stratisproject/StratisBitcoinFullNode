@@ -19,13 +19,13 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureA : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }
@@ -42,13 +42,13 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureB : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             }
         }
 
-        #endregion
+        #endregion Mock Features
 
         #region Tests
 
@@ -87,9 +87,9 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             features.Add(new FeatureA());
 
             features.EnsureFeature<FeatureA>();
-            Assert.Throws<MissingDependencyException>(() => features.EnsureFeature<FeatureB>());           
+            Assert.Throws<MissingDependencyException>(() => features.EnsureFeature<FeatureB>());
         }
 
-        #endregion
+        #endregion Tests
     }
 }

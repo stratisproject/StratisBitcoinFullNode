@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_PushToRepository()
         {
-            var blocks = CreateBlocks(10);
+            var blocks = this.CreateBlocks(10);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_CanBreakExecutionOnStallCountReached()
         {
-            var blocks = CreateBlocks(3);
+            var blocks = this.CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void BlockStoreInnerStepReadBlocks_CanBreakExecution_DownloadStackIsEmpty()
         {
-            var blocks = CreateBlocks(2);
+            var blocks = this.CreateBlocks(2);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 2 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
                 // Create block store loop
                 fluent.Create(chain);

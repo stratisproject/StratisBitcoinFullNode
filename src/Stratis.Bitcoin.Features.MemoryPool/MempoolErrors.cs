@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Memory pool error state.
     /// </summary>
-    public class MempoolError 
+    public class MempoolError
     {
         /// <summary>
         /// Default constructor for a memory pool error.
@@ -69,8 +69,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public static class MempoolErrors
     {
-        #region Public reject codes
-
         /// <summary>Public reject code for malformed transaction.</summary>
         public const int RejectMalformed = 0x01;
 
@@ -95,10 +93,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Public reject code for Transaction failed checkpoint.</summary>
         public const int RejectCheckpoint = 0x43;
 
-        #endregion
-
-        #region Internal reject codes
-
         // Reject codes greater or equal to this can be returned by AcceptToMemPool
         // for transactions, to signal internal conditions. They cannot and should not
         // be sent over the P2P network.
@@ -120,8 +114,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Internal rejection code for transaction conflicts with a transaction already known.</summary>
         public const int RejectConflict = 0x102;
-
-        #endregion
 
         /// <summary>'coinbase' error returns a <see cref="RejectInvalid"/> reject code.</summary>
         public static MempoolError Coinbase = new MempoolError(RejectInvalid, "coinbase");
@@ -160,7 +152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public static MempoolError NonBIP68Final = new MempoolError(RejectNonstandard, "non-BIP68-final");
 
         /// <summary>'mempool-min-fee-not-met' error returns a <see cref="RejectInsufficientfee"/> reject code.</summary>
-        public static MempoolError MinFeeNotMet = new MempoolError(RejectInsufficientfee,"mempool-min-fee-not-met");
+        public static MempoolError MinFeeNotMet = new MempoolError(RejectInsufficientfee, "mempool-min-fee-not-met");
 
         /// <summary>'insufficient-priority' error returns a <see cref="RejectInsufficientfee"/> reject code.</summary>
         public static MempoolError InsufficientPriority = new MempoolError(RejectInsufficientfee, "insufficient-priority");
@@ -207,5 +199,4 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>'multi-op-return' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
         public static MempoolError MultiOpReturn = new MempoolError(RejectNonstandard, "multi-op-return");
     }
-
 }

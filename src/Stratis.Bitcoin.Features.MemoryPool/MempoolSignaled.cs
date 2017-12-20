@@ -32,9 +32,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private readonly IConnectionManager connection;
 
-        /// <summary>
-        /// Node lifetime injected dependency.
-        /// </summary>
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>
@@ -64,7 +62,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var task = this.manager.RemoveForBlock(value, blockHeader?.Height ?? -1);
 
             // wait for the mempool code to complete
-            // until the signaler becomes async 
+            // until the signaler becomes async
             task.GetAwaiter().GetResult();
         }
 

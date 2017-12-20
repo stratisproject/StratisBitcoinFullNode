@@ -1,16 +1,16 @@
-﻿using HashLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using HashLib;
 
 namespace NBitcoin.Crypto
 {
-	// this hashing class is not thread safe to use with static instances.
-	// the hashing objects maintain state during hash calculation.
-	// to use in a multi threaded environment create a new instance for every hash.
+    // this hashing class is not thread safe to use with static instances.
+    // the hashing objects maintain state during hash calculation.
+    // to use in a multi threaded environment create a new instance for every hash.
 
-	public sealed class HashX13
+    public sealed class HashX13
     {
         private readonly List<IHash> hashers;
 

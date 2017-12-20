@@ -22,6 +22,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletSyncManagerTest()
         {
+            // These tests use Network.StratisMain.
+            // Ensure that these static flags have the expected values.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+
             this.storeSettings = new StoreSettings
             {
                 Prune = false
@@ -249,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             walletSyncManager.ProcessTransaction(transaction);
 
-            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
+            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null, true));
         }
 
         /// <summary>
@@ -355,7 +360,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             public void SetWalletTip(ChainedBlock tip)
             {
-                base.walletTip = tip;
+                this.walletTip = tip;
             }
         }
     }

@@ -7,7 +7,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <Version>4.0.0.33</Version>
+    <Version>4.0.0.34</Version>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -27,6 +27,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Protocol\AddressManager.cs" />
+    <Compile Remove="Protocol\NodesGroup.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="BitcoinStream.Partial.tt" />
   </ItemGroup>
 
@@ -43,6 +48,10 @@
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Protocol\Payloads\" />
   </ItemGroup>
 
 </Project>

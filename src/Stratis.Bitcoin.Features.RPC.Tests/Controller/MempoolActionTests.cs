@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task CanCall_GetRawMempoolAsync()
         {
-            string dir = AssureEmptyDir("TestData/GetRawMempoolActionTest/CanCall_GetRawMempool");
+            string dir = CreateTestDir(this);
             IFullNode fullNode = this.BuildServicedNode(dir);
             MempoolController controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
 

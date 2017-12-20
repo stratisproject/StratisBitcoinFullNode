@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Generic circular array is a fixed length array which stores collection 
-    /// of items. Once the array is full, adding a new item removes the oldest entry. 
+    /// Generic circular array is a fixed length array which stores collection
+    /// of items. Once the array is full, adding a new item removes the oldest entry.
     /// </summary>
     /// <typeparam name="T">Type of the items stored in the array.</typeparam>
     /// <remarks>
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="capacity">Maximal number of items that can be stored in the circular array.</param>
-        /// <param name="preinitializeItems">If set to <c>true</c>, all items in the array will be initialized using their default constructor. 
+        /// <param name="preinitializeItems">If set to <c>true</c>, all items in the array will be initialized using their default constructor.
         /// This can be used to prevent further allocations when the structure is used.</param>
         public CircularArray(int capacity, bool preinitializeItems = true)
         {
@@ -76,6 +76,26 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
+        /// Removes the first item from the circular array, which is the oldest entry in the array.
+        /// </summary>
+        /// <param name="firstItem">If the function returns <c>true</c>, this is filled with the oldest item that was removed.</param>
+        /// <returns><c>true</c> if the oldest item was removed, <c>false</c> if there were no items.</returns>
+        public bool RemoveFirst(out T firstItem)
+        {
+            bool res = false;
+            firstItem = default(T);
+            if (this.Count > 0)
+            {
+                firstItem = this.items[this.Index];
+                this.Index = (this.Index + 1) % this.Capacity;
+                this.Count--;
+                res = true;
+            }
+
+            return res;
+        }
+
+        /// <summary>
         /// Access to an item at specific index.
         /// </summary>
         /// <param name="i">Zero-based index of the item to access. Index must be an integer between 0 and <see cref="Capacity"/> - 1.</param>
@@ -85,7 +105,7 @@ namespace Stratis.Bitcoin.Utilities
             get { return this.items[i]; }
             set { this.items[i] = value; }
         }
-        
+
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator()
         {

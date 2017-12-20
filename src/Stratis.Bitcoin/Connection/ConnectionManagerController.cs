@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Connection
         public bool AddNode(string endpointStr, string command)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
-            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
+            IPEndPoint endpoint = NodeSettings.ConvertIpAddressToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Connection
                     break;
 
                 case "onetry":
-                    this.ConnectionManager.Connect(endpoint);
+                    this.ConnectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
                     break;
 
                 default:
@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Connection
         {
             List<PeerNodeModel> peerList = new List<PeerNodeModel>();
 
-            List<Node> nodes = this.ConnectionManager.ConnectedNodes.ToList();
-            foreach (Node node in nodes)
+            List<NetworkPeer> nodes = this.ConnectionManager.ConnectedNodes.ToList();
+            foreach (NetworkPeer node in nodes)
             {
                 if ((node != null) && (node.RemoteSocketAddress != null))
                 {

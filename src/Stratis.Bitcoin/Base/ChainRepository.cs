@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Base
     public interface IChainRepository : IDisposable
     {
         Task LoadAsync(ConcurrentChain chain);
+
         Task SaveAsync(ConcurrentChain chain);
     }
 
@@ -43,21 +44,27 @@ namespace Stratis.Bitcoin.Base
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
+                    transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
-                    bool first = true;
+                    Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
 
-                    foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain"))
+                    if (!firstRow.Exists)
+                        return;
+
+                    BlockHeader previousHeader = firstRow.Value;
+                    Guard.Assert(previousHeader.GetHash(NetworkOptions.TemporaryOptions) == chain.Genesis.HashBlock); // can't swap networks
+
+                    foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
                     {
-                        if ((tip != null) && (row.Value.HashPrevBlock != tip.HashBlock))
+                        if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
-                        tip = new ChainedBlock(row.Value, null, tip);
-                        if (first)
-                        {
-                            first = false;
-                            Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
-                        }
+                        tip = new ChainedBlock(previousHeader, row.Value.HashPrevBlock, tip);
+                        previousHeader = row.Value;
                     }
+
+                    if (previousHeader != null)
+                        tip = new ChainedBlock(previousHeader, previousHeader.GetHash(NetworkOptions.TemporaryOptions), tip);
 
                     if (tip == null)
                         return;
@@ -104,6 +111,7 @@ namespace Stratis.Bitcoin.Base
             return task;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.dbreeze.Dispose();

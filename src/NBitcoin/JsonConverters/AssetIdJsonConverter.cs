@@ -1,22 +1,17 @@
 ﻿#if !NOJSONNET
+using System;
+using System.Reflection;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Reflection;
-using System.Threading.Tasks;
-using NBitcoin;
 
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class AssetIdJsonConverter : JsonConverter
+    class AssetIdJsonConverter : JsonConverter
     {
         public AssetIdJsonConverter(Network network)
         {

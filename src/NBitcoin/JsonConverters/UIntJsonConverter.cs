@@ -1,21 +1,16 @@
 ﻿#if !NOJSONNET
-using NBitcoin;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class UInt160JsonConverter : JsonConverter
+    class UInt160JsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -45,11 +40,11 @@ namespace NBitcoin.JsonConverters
         }
     }
 #if !NOJSONNET
-	public
+    public
 #else
-	internal
+    internal
 #endif
-	class UInt256JsonConverter : JsonConverter
+    class UInt256JsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {

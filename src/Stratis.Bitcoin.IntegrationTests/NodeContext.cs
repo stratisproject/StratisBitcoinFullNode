@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -13,53 +13,39 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
-        List<IDisposable> _CleanList = new List<IDisposable>();
-        TestDirectory _TestDirectory;
+        private List<IDisposable> cleanList = new List<IDisposable>();
+        private TestDirectory testDirectory;
+
         public NodeContext(string name, Network network, bool clean)
         {
             network = network ?? Network.RegTest;
             this.loggerFactory = new LoggerFactory();
-            this._Network = network;
-            this._TestDirectory = TestDirectory.Create(name, clean);
-            this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
-            this._PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
-            this._CleanList.Add(this._PersistentCoinView);
+            this.Network = network;
+            this.testDirectory = TestDirectory.Create(name, clean);
+            this.PersistentCoinView = new DBreezeCoinView(network, this.testDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
+            this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
+            this.cleanList.Add(this.PersistentCoinView);
         }
 
+        public Network Network { get; }
 
-        private readonly Network _Network;
-        public Network Network
-        {
-            get
-            {
-                return this._Network;
-            }
-        }
+        private ChainBuilder chainBuilder;
 
-
-        private ChainBuilder _ChainBuilder;
         public ChainBuilder ChainBuilder
         {
             get
             {
-                return this._ChainBuilder = this._ChainBuilder ?? new ChainBuilder(this.Network);
+                return this.chainBuilder = this.chainBuilder ?? new ChainBuilder(this.Network);
             }
         }
 
-        DBreezeCoinView _PersistentCoinView;
-        public DBreezeCoinView PersistentCoinView
-        {
-            get
-            {
-                return this._PersistentCoinView;
-            }
-        }
+        public DBreezeCoinView PersistentCoinView { get; private set; }
 
         public string FolderName
         {
             get
             {
-                return this._TestDirectory.FolderName;
+                return this.testDirectory.FolderName;
             }
         }
 
@@ -70,18 +56,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Dispose()
         {
-            foreach (var item in this._CleanList)
+            foreach (var item in this.cleanList)
                 item.Dispose();
-            this._TestDirectory.Dispose(); //Not into cleanlist because it must run last
+            this.testDirectory.Dispose(); //Not into cleanlist because it must run last
         }
 
         public void ReloadPersistentCoinView()
         {
-            this._PersistentCoinView.Dispose();
-            this._CleanList.Remove(this._PersistentCoinView);
-            this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
-            this._PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
-            this._CleanList.Add(this._PersistentCoinView);
+            this.PersistentCoinView.Dispose();
+            this.cleanList.Remove(this.PersistentCoinView);
+            this.PersistentCoinView = new DBreezeCoinView(this.Network, this.testDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
+            this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
+            this.cleanList.Add(this.PersistentCoinView);
         }
     }
 }

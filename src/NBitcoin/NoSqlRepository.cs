@@ -6,60 +6,66 @@ using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public abstract class NoSqlRepository
-	{
+    public abstract class NoSqlRepository
+    {
+        public NetworkOptions TransactionOptions { get; private set; }
 
-		public Task PutAsync(string key, IBitcoinSerializable obj)
-		{
-			return PutBytes(key, obj == null ? null : obj.ToBytes());
-		}
+        public NoSqlRepository(NetworkOptions options = null)
+        {
+            this.TransactionOptions = options ?? NetworkOptions.TemporaryOptions;
+        }
 
-		public void Put(string key, IBitcoinSerializable obj)
-		{
-			try
-			{
-				PutAsync(key, obj).Wait();
-			}
-			catch(AggregateException aex)
-			{
-				ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-			}
-		}
+        public Task PutAsync(string key, IBitcoinSerializable obj)
+        {
+            return PutBytes(key, obj == null ? null : obj.ToBytes(options:this.TransactionOptions));
+        }
 
-		public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
-		{
-			var data = await GetBytes(key).ConfigureAwait(false);
-			if(data == null)
-				return default(T);
-			T obj = new T();
-			obj.ReadWrite(data);
-			return obj;
-		}
+        public void Put(string key, IBitcoinSerializable obj)
+        {
+            try
+            {
+                PutAsync(key, obj).Wait();
+            }
+            catch(AggregateException aex)
+            {
+                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
+            }
+        }
 
-		public T Get<T>(string key) where T : IBitcoinSerializable, new()
-		{
-			try
-			{
-				return GetAsync<T>(key).Result;
-			}
-			catch(AggregateException aex)
-			{
-				ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-				return default(T);
-			}
-		}
+        public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
+        {
+            var data = await GetBytes(key).ConfigureAwait(false);
+            if(data == null)
+                return default(T);
+            T obj = new T();
+            obj.ReadWrite(data, options:this.TransactionOptions);
+            return obj;
+        }
 
-		public virtual Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
-		{
-			return PutBytesBatch(values.Select(s => new Tuple<string, byte[]>(s.Item1, s.Item2 == null ? null : s.Item2.ToBytes())));
-		}
+        public T Get<T>(string key) where T : IBitcoinSerializable, new()
+        {
+            try
+            {
+                return GetAsync<T>(key).Result;
+            }
+            catch(AggregateException aex)
+            {
+                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
+                return default(T);
+            }
+        }
 
-		protected abstract Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable);
-		protected abstract Task<byte[]> GetBytes(string key);
+        public virtual Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
+        {
+            return PutBytesBatch(values.Select(s => new Tuple<string, byte[]>(s.Item1, s.Item2 == null ? null : s.Item2.ToBytes())));
+        }
 
-		protected virtual Task PutBytes(string key, byte[] data)
-		{
-			return PutBytesBatch(new[] { new Tuple<string, byte[]>(key, data) });
-		}
-	}
+        protected abstract Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable);
+        protected abstract Task<byte[]> GetBytes(string key);
+
+        protected virtual Task PutBytes(string key, byte[] data)
+        {
+            return PutBytesBatch(new[] { new Tuple<string, byte[]>(key, data) });
+        }
+    }
 }

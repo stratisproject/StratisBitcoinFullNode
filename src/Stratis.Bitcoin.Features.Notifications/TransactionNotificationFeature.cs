@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.Notifications
     public class TransactionNotificationFeature : FullNodeFeature
     {
         private readonly IConnectionManager connectionManager;
+
         private readonly TransactionReceiver transactionBehavior;
 
         public TransactionNotificationFeature(IConnectionManager connectionManager, TransactionReceiver transactionBehavior)
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.transactionBehavior = transactionBehavior;
         }
 
-        public override void Start()
+        public override void Initialize()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.transactionBehavior);
         }

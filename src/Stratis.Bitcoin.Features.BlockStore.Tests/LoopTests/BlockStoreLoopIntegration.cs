@@ -3,8 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void CheckNextChainedBlockExists_WithNextChainedBlock_Exists_SetStoreTipAndBlockHash()
         {
-            var blocks = CreateBlocks(5);
+            var blocks = this.CreateBlocks(5);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 4 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
 
                 // Create the last chained block without appending to the chain
                 var block03 = chain.GetBlock(blocks[3].GetHash());
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = this.CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create the last 5 chained blocks without appending to the chain
                 var block9 = chain.GetBlock(blocks[9].Header.GetHash());
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void ProcessPendingStorage_PushToRepo_BeforeDownloadingNewBlocks()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = this.CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
 
                 // Create block store loop
                 fluent.Create(chain);
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Add chained blocks 5 - 14 to PendingStorage
                 for (int i = 5; i <= 14; i++)
                 {
-                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                    this.AddBlockToPendingStorage(fluent.Loop, blocks[i]);
                 }
 
                 //Start processing pending blocks from block 5
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         [Fact]
         public void DownloadBlockStep_WithNewBlocksToDownload_DownloadBlocksAndPushToRepo()
         {
-            var blocks = CreateBlocks(10);
+            var blocks = this.CreateBlocks(10);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 fluent.Create(chain);

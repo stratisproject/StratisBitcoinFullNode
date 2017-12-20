@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace NBitcoin.BitcoinCore
 {
-	public interface IBlockProvider
-	{
-		Block GetBlock(uint256 id, List<byte[]> searchedData);
-	}
+    public interface IBlockProvider
+    {
+        Block GetBlock(uint256 id, List<byte[]> searchedData);
+    }
 }

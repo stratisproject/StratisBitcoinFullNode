@@ -1,9 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Notifications;
 
@@ -15,9 +14,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
     public class WatchOnlyWalletFeature : FullNodeFeature
     {
         private readonly IWatchOnlyWalletManager walletManager;
+
         private readonly Signals.Signals signals;
 
         private IDisposable blockSubscriberdDisposable;
+
         private IDisposable transactionSubscriberdDisposable;
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
             this.blockSubscriberdDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletManager));
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.blockSubscriberdDisposable.Dispose();
             this.transactionSubscriberdDisposable.Dispose();
@@ -67,7 +68,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 features
                     .AddFeature<WatchOnlyWalletFeature>()
-                    .DependOn<WalletFeature>()
+                    .DependOn<BlockNotificationFeature>()
+                    .DependOn<TransactionNotificationFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWatchOnlyWalletManager, WatchOnlyWalletManager>();

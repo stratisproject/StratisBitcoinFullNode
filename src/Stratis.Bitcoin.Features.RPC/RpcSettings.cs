@@ -48,11 +48,11 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         public RpcSettings(Action<RpcSettings> callback)
-            :this()
+            : this()
         {
             this.callback = callback;
         }
-        
+
         /// <summary>
         /// Loads the rpc settings from the application configuration.
         /// </summary>
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     this.DefaultBindings = config
                         .GetAll("rpcbind")
-                        .Select(p => NodeSettings.ConvertToEndpoint(p, this.RPCPort))
+                        .Select(p => NodeSettings.ConvertIpAddressToEndpoint(p, this.RPCPort))
                         .ToList();
                 }
                 catch (FormatException)
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.RPC
             if (this.RpcUser == null && this.RpcPassword != null)
                 throw new ConfigurationException("rpcuser should be provided");
 
-            // We can now safely assume that server was set to true in the config or that the 
+            // We can now safely assume that server was set to true in the config or that the
             // "AddRpc" callback provided a user and password implying that the Rpc feature will be used.
             this.Server = true;
 

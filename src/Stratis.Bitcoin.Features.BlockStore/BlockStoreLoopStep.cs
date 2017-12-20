@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     /// <summary>
     /// The result that is returned from executing each loop step.
-    /// </summary>   
+    /// </summary>
     public enum StepResult
     {
         /// <summary>Continue execution of the loop.</summary>

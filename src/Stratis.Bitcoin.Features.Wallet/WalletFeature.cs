@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
@@ -28,13 +27,19 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletFeature : FullNodeFeature, INodeStats, IFeatureStats
     {
         private readonly IWalletSyncManager walletSyncManager;
+
         private readonly IWalletManager walletManager;
+
         private readonly Signals.Signals signals;
 
         private IDisposable blockSubscriberDisposable;
+
         private IDisposable transactionSubscriberDisposable;
+
         private ConcurrentChain chain;
+
         private readonly IConnectionManager connectionManager;
+
         private readonly BroadcasterBehavior broadcasterBehavior;
 
         /// <summary>
@@ -73,9 +78,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ChainedBlock block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-                benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                         (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
+                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
             }
         }
 
@@ -98,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public override void Start()
+        public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
@@ -111,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public override void Stop()
+        public override void Dispose()
         {
             this.blockSubscriberDisposable.Dispose();
             this.transactionSubscriberDisposable.Dispose();

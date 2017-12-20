@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
@@ -44,7 +43,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx);
 
         /// <summary>
-        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>. 
+        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>.
         /// </summary>
         Task SanityCheck();
     }
@@ -91,7 +90,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int DefaultDescendantLimit = 25;
 
         /// <summary>
-        /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants. 
+        /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants.
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
         public const int DefaultDescendantSizeLimit = 101;
@@ -120,7 +119,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings from the memory pool.</summary>
         private readonly MempoolSettings mempoolSettings;
 
-        /// <summary>Chain of block headers.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Coin view of the memory pool.</summary>
@@ -138,7 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
 
-        // TODO: Implement Later with CheckRateLimit() 
+        // TODO: Implement Later with CheckRateLimit()
         //private readonly FreeLimiterSection freeLimiter;
 
         //private class FreeLimiterSection
@@ -155,26 +154,26 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="consensusValidator">Proof of work consensus validator.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
-        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
-            TxMempool memPool, 
+            TxMempool memPool,
             MempoolSchedulerLock mempoolLock,
-            PowConsensusValidator consensusValidator, 
-            IDateTimeProvider dateTimeProvider, 
+            PowConsensusValidator consensusValidator,
+            IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
-            ConcurrentChain chain, 
+            ConcurrentChain chain,
             CoinView coinView,
-            ILoggerFactory loggerFactory, 
+            ILoggerFactory loggerFactory,
             NodeSettings nodeSettings)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
             this.consensusValidator = consensusValidator;
             this.dateTimeProvider = dateTimeProvider;
-            this.mempoolSettings = mempoolSettings;;
+            this.mempoolSettings = mempoolSettings; ;
             this.chain = chain;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -212,10 +211,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 state.Error = new MempoolError(consensusError.ConsensusError);
                 return false;
             }
-
-            // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
-            //ValidationState stateDummy;
-            //FlushStateToDisk(stateDummy, FLUSH_STATE_PERIODIC);
         }
 
         /// <inheritdoc />
@@ -231,12 +226,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return this.mempoolLock.ReadAsync(() => this.memPool.Check(this.coinView));
         }
 
-        #region Static Operations
-
         /// <summary>
         /// Validates that the transaction is the final transaction."/>
         /// Validated by comparing the transaction vs chain tip.
-        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then 
+        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then
         /// use the block time at the end of the block chain for validation.
         /// Otherwise use the current time for the block time.
         /// </summary>
@@ -411,8 +404,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return nTxSize;
         }
 
-        #endregion
-
         /// <summary>
         /// Validates and then adds a transaction to memory pool.
         /// </summary>
@@ -430,7 +421,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             await context.View.LoadViewAsync(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
-             // use the sequential scheduler for that.
+            // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
                 // is it already in the memory pool?
@@ -451,11 +442,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CheckAncestors(context);
                 this.CheckReplacment(context);
                 this.CheckAllInputs(context);
-            
+
                 // Remove conflicting transactions from the mempool
                 foreach (var it in context.AllConflicting)
                     this.logger.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
-                
+
                 this.memPool.RemoveStaged(context.AllConflicting, false);
 
                 // This transaction should only count for fee estimation if
@@ -476,7 +467,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 // do this here inside the exclusive scheduler for better accuracy
-                // and to avoid springing more concurrent tasks later 
+                // and to avoid springing more concurrent tasks later
                 state.MempoolSize = this.memPool.Size;
                 state.MempoolDynamicSize = this.memPool.DynamicMemoryUsage();
 
@@ -538,7 +529,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Checks that are done before touching the memory pool.
-        /// These checks don't need to run under the memory pool lock. 
+        /// These checks don't need to run under the memory pool lock.
         /// </summary>
         /// <param name="context">Current validation context.</param>
         private void PreMempoolChecks(MempoolValidationContext context)
@@ -627,7 +618,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (script.Type == TxOutType.TX_NULL_DATA)
                     dataOut++;
                 // TODO: fIsBareMultisigStd
-                //else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd)) 
+                //else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd))
                 //{
                 //  context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
                 //}
@@ -740,7 +731,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
-            context.SigOpsCost = this.consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
+            context.SigOpsCost = this.consensusValidator.GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
                 new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
@@ -900,24 +891,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // TODO: sort this logic
             return;
-
-            // Continuously rate-limit free (really, very-low-fee) transactions
-            // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
-            // be annoying or make others' transactions take longer to confirm.
-            //if (limitFree && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize))
-            //{
-            //  var nNow = this.dateTimeProvider.GetTime();
-            //  // Use an exponentially decaying ~10-minute window:
-            //  this.freeLimiter.FreeCount *= Math.Pow(1.0 - 1.0 / 600.0, (double)(nNow - this.freeLimiter.LastTime));
-            //  this.freeLimiter.LastTime = nNow;
-            //  // -limitfreerelay unit is thousand-bytes-per-minute
-            //  // At default rate it would take over a month to fill 1GB
-            //  if (this.freeLimiter.FreeCount + context.EntrySize >= this.nodeArgs.Mempool.LimitFreeRelay * 10 * 1000)
-            //      context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "rate limited free transaction")).Throw();
-            //  this.logger.LogInformation(
-            //      $"Rate limit dFreeCount: {this.freeLimiter.FreeCount} => {this.freeLimiter.FreeCount + context.EntrySize}");
-            //  this.freeLimiter.FreeCount += context.EntrySize;
-            //}
         }
 
         /// <summary>
@@ -938,7 +911,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
                 nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
             {
-                context.State.Fail( MempoolErrors.TooLongMempoolChain, errString).Throw();
+                context.State.Fail(MempoolErrors.TooLongMempoolChain, errString).Throw();
             }
 
             // A transaction that spends outputs that would be replaced by it is invalid. Now
@@ -971,9 +944,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             List<uint256> vNoSpendsRemaining = new List<uint256>();
             this.memPool.TrimToSize(limit, vNoSpendsRemaining);
-
-            //foreach(var removed in vNoSpendsRemaining)
-            //  pcoinsTip->Uncache(removed);
         }
 
         /// <summary>
@@ -1067,47 +1037,40 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     int iiIntput = iInput;
                     TxOut txout = context.View.GetOutputFor(input);
 
-                    if (this.consensusValidator.UseConsensusLib)
+                    TransactionChecker checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
+                    ScriptEvaluationContext ctx = new ScriptEvaluationContext();
+                    ctx.ScriptVerify = scriptVerify;
+                    if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
                     {
-                        Script.BitcoinConsensusError error;
-                        return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint) iiIntput, scriptVerify, out error);
+                        return true;
                     }
                     else
                     {
-                        TransactionChecker checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
-                        ScriptEvaluationContext ctx = new ScriptEvaluationContext();
-                        ctx.ScriptVerify = scriptVerify;
-                        if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            //TODO:
+                        //TODO:
 
-                            //if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS)
-                            //{
-                            //  // Check whether the failure was caused by a
-                            //  // non-mandatory script verification check, such as
-                            //  // non-standard DER encodings or non-null dummy
-                            //  // arguments; if so, don't trigger DoS protection to
-                            //  // avoid splitting the network between upgraded and
-                            //  // non-upgraded nodes.
-                            //  CScriptCheck check2(*coins, tx, i,
-                            //          flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, &txdata);
-                            //  if (check2())
-                            //      return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
-                            //}
-                            //// Failures of other flags indicate a transaction that is
-                            //// invalid in new blocks, e.g. a invalid P2SH. We DoS ban
-                            //// such nodes as they are not following the protocol. That
-                            //// said during an upgrade careful thought should be taken
-                            //// as to the correct behavior - we may want to continue
-                            //// peering with non-upgraded nodes even after soft-fork
-                            //// super-majority signaling has occurred.
-                            context.State.Fail(MempoolErrors.MandatoryScriptVerifyFlagFailed, ctx.Error.ToString()).Throw();
-                        }
+                        //if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS)
+                        //{
+                        //  // Check whether the failure was caused by a
+                        //  // non-mandatory script verification check, such as
+                        //  // non-standard DER encodings or non-null dummy
+                        //  // arguments; if so, don't trigger DoS protection to
+                        //  // avoid splitting the network between upgraded and
+                        //  // non-upgraded nodes.
+                        //  CScriptCheck check2(*coins, tx, i,
+                        //          flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, &txdata);
+                        //  if (check2())
+                        //      return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
+                        //}
+                        //// Failures of other flags indicate a transaction that is
+                        //// invalid in new blocks, e.g. a invalid P2SH. We DoS ban
+                        //// such nodes as they are not following the protocol. That
+                        //// said during an upgrade careful thought should be taken
+                        //// as to the correct behavior - we may want to continue
+                        //// peering with non-upgraded nodes even after soft-fork
+                        //// super-majority signaling has occurred.
+                        context.State.Fail(MempoolErrors.MandatoryScriptVerifyFlagFailed, ctx.Error.ToString()).Throw();
                     }
+
                 }
             }
 

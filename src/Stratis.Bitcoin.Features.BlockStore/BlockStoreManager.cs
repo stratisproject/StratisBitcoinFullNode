@@ -2,19 +2,24 @@
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreManager
     {
         private readonly ConcurrentChain chain;
+
         private readonly IConnectionManager connection;
 
-        public IBlockRepository BlockRepository { get; } // public for testing
-        public BlockStoreLoop BlockStoreLoop { get; } // public for testing
+        public IBlockRepository BlockRepository { get; }
+
+        public BlockStoreLoop BlockStoreLoop { get; }
 
         private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly NodeSettings nodeArgs;
+
         public ChainState ChainState { get; }
 
         public BlockStoreManager(ConcurrentChain chain, IConnectionManager connection, IBlockRepository blockRepository,

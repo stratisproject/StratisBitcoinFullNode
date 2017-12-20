@@ -1,5 +1,5 @@
 ﻿using System;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
@@ -94,6 +94,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(16, snapshot2.TotalRepositoryMissCount);
             Assert.Equal(9, snapshot2.TotalRepositoryDeleteCount);
             Assert.Equal(68, snapshot2.TotalRepositoryInsertCount);
-        }        
+        }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
@@ -24,7 +26,7 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <inheritdoc />
-    public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
+    public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -37,16 +39,24 @@ namespace Stratis.Bitcoin.BlockPulling
         /// It is used during component shutdown.
         /// </summary>
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
         /// <summary>
         /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
-        public CancellationTokenSource CancellationTokenSource { get { return this.cancellationToken; } }
+        public CancellationTokenSource CancellationTokenSource
+        {
+            get { return this.cancellationToken; }
+        }
 
         /// <summary>Reference to the parent block puller.</summary>
         private readonly BlockPuller puller;
+
         /// <summary>Reference to the parent block puller.</summary>
-        public BlockPuller Puller { get { return this.puller; } }
+        public BlockPuller Puller
+        {
+            get { return this.puller; }
+        }
 
         /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
         public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
@@ -98,7 +108,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="node">Node that received the message.</param>
         /// <param name="message">Received message.</param>
-        private void Node_MessageReceived(Node node, IncomingMessage message)
+        private void Node_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -109,7 +119,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 // even if the origin of the message was from the other puller behavior.
                 // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash();
+                uint256 blockHash = block.Obj.Header.GetHash(node.Network.NetworkOptions);
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
                     this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
@@ -122,6 +132,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     {
                         Block = block.Obj,
                         Length = (int)message.Length,
+                        Peer = node.RemoteSocketEndpoint
                     };
 
                     if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
@@ -143,8 +154,8 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            Node attachedNode = this.AttachedNode;
-            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            NetworkPeer attachedNode = this.AttachedPeer;
+            if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
@@ -152,7 +163,9 @@ namespace Stratis.Bitcoin.BlockPulling
 
             uint256 block = null;
             if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
-                attachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+            {
+                attachedNode.SendMessageVoidAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -166,8 +179,8 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            Node attachedNode = this.AttachedNode;
-            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            NetworkPeer attachedNode = this.AttachedPeer;
+            if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
@@ -176,7 +189,7 @@ namespace Stratis.Bitcoin.BlockPulling
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
-            attachedNode.SendMessageAsync(getDataPayload);
+            attachedNode.SendMessageVoidAsync(getDataPayload);
 
             this.logger.LogTrace("(-)");
         }
@@ -188,9 +201,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += Node_MessageReceived;
-            this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-            AssignPendingVector();
+            this.AttachedPeer.MessageReceived += this.Node_MessageReceived;
+            this.ChainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
+            this.AssignPendingVector();
 
             this.logger.LogTrace("(-)");
         }
@@ -203,8 +216,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedNode.MessageReceived -= Node_MessageReceived;
-            ReleaseAll(true);
+            this.AttachedPeer.MessageReceived -= this.Node_MessageReceived;
+            this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");
         }

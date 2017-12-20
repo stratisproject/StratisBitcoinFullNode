@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
 
         /// <summary>
         /// Gets the list of addresses being watched along with the transactions affecting them.
-        /// </summary>        
+        /// </summary>
         /// <example>Request URL: /api/watchonlywallet </example>
         /// <returns>The watch-only wallet or a collection of errors, if any.</returns>
         [HttpGet]
@@ -85,6 +85,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
                     }
 
                     model.WatchedAddresses.Add(watchedAddressModel);
+                }
+
+                foreach (var transaction in watchOnlyWallet.WatchedTransactions)
+                {
+                    WatchedTransactionModel watchedTransactionModel = new WatchedTransactionModel
+                    {
+                        Transaction = new TransactionVerboseModel(transaction.Value.Transaction, watchOnlyWallet.Network)
+                    };
+
+                    model.WatchedTransactions.Add(watchedTransactionModel);
                 }
 
                 return this.Json(model);

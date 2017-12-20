@@ -4,7 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
@@ -57,7 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             object block = null;
             uint256 blockId = new uint256(2389704);
             this.cache.Setup(c => c.TryGetValue(blockId, out block))
-                .Callback(() => {
+                .Callback(() =>
+                {
                     block = new Block();
                     ((Block)block).Header.Version = 1513;
                 })

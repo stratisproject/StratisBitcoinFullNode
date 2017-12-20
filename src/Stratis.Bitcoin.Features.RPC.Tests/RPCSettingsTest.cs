@@ -1,5 +1,6 @@
 ﻿using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Tests;
 using Xunit;
 
@@ -10,17 +11,19 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         [Fact]
         public void CanSpecifyRPCSettings()
         {
-            var dir = AssureEmptyDir("TestData/StoreSettingsTest/CanSpecifyRPCSettings");
+            var dir = CreateTestDir(this);
 
-            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dir}" });
+            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
 
             var node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
-                .AddRPC(x => {
+                .UseConsensus()
+                .AddRPC(x =>
+                {
                     x.RpcUser = "abc";
                     x.RpcPassword = "def";
                     x.RPCPort = 91;
-                    })
+                })
                 .Build();
 
             var settings = node.NodeService<RpcSettings>();

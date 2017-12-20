@@ -5,11 +5,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -21,6 +21,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
         public MempoolPersistenceTest()
         {
+            Block.BlockSignature = false;
+            Transaction.TimeStamp = false;
+
             this.dir = "TestData/MempoolPersistenceTest/";
 
             if (!Directory.Exists(this.dir))
@@ -98,8 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             string fileName = "mempool.dat";
             NodeSettings settings = this.CreateSettings("LoadPoolTest_WithBadTransactions");
             IEnumerable<MempoolPersistenceEntry> toSave = this.CreateTestEntries(numTx);
-            TxMempool unused;
-            MempoolManager mempoolManager = CreateTestMempool(settings, out unused);
+            MempoolManager mempoolManager = CreateTestMempool(settings, out TxMempool unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
             mempoolManager.LoadPoolAsync(fileName).GetAwaiter().GetResult();
@@ -268,17 +270,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var mempoolSettings = new MempoolSettings(settings);
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             NodeSettings nodeSettings = NodeSettings.Default();
-            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings);
+            LoggerFactory loggerFactory = new LoggerFactory();
+            ConsensusSettings consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory);
+            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
-            var mempoolPersistence = new MempoolPersistence(settings, new LoggerFactory());
-            NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main, nodeSettings), dateTimeProvider, new LoggerFactory());
-            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, new LoggerFactory(), settings);
-            var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Bitcoin.Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, new LoggerFactory());
-            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, new LoggerFactory());
+            var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
+            Network.Main.Consensus.Options = new PosConsensusOptions();
+            var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), dateTimeProvider, loggerFactory);
+            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings);
+            var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
+            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory);
         }
-
     }
 }

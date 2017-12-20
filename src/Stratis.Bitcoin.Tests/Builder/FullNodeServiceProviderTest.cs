@@ -43,7 +43,6 @@ namespace Stratis.Bitcoin.Tests.Builder
             var types = new List<Type> {
                 typeof(TestFeatureStub2),
                 typeof(TestFeatureStub)
-
             };
 
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
@@ -57,13 +56,13 @@ namespace Stratis.Bitcoin.Tests.Builder
         private class TestFeatureStub : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }
@@ -77,13 +76,13 @@ namespace Stratis.Bitcoin.Tests.Builder
         private class TestFeatureStub2 : IFullNodeFeature
         {
             /// <inheritdoc />
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }

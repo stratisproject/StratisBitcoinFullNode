@@ -32,6 +32,49 @@ The general rules:
 `public int X { get; private set; }`  
 17. Avoid initializing instance properties outside of constructor.  
 `public int MaxItems { get; set; } = 100000;`  
+18. - Always provide a blank line after a curly brace that is not followed by another curly brace.  
+    - Opening curly brackets must not be preceded or followed by blank line
+    - Closing curly brackets must not be preceded by blank line
+    - Code must not contain multiple blank lines in a row
+
+   Therefore this is correct:
+   ```
+      if ()
+      {
+          block
+      }
+      [EMPTY LINE HERE]
+      //more code here...
+   ```   
+
+   And this is correct:
+   ```
+      if ()
+      {
+         foreach ()
+         {
+           block
+         }      
+      }
+      [EMPTY LINE HERE]
+      //more code here...
+   ```   
+19. We declare only one type per file.  
+    A few exceptions exist, which are permitted, although not enforced:
+    - inclusion of small POCO classes if they're closely related in functionality (like API model classes)
+    - inclusion of small classes, interfaces and enums inside the hosting file, if and only if they're only used by the hosting type
+    The name of the file should be that of the hosting type.
+20. We prefix all interfaces with an "I".
+21. We suffix all asynchronous methods with "-Async".
+22. We suffix extensions classes with "-Extensions" 
+22. We add parentheses to group the parts of complex boolean expressions.  
+    For example:
+	```
+	if ((x.Value > 5) && y && z.Eval() && ((a + b) > c)) // good
+	bool q = (x.Value > 5) && y && z.Eval() && ((a + b) > c); // good
+	if (x.Value > 5 && y) // parentheses needed to avoid confusion
+	bool q = (x.Value > 5); // parentheses unnecessary
+	```
 
 We have provided a Visual Studio 2017 EditorConfig file (`.editorconfig`) at the root of the full node repository, enabling C# auto-formatting and warnings conforming to some of the above guidelines.
 

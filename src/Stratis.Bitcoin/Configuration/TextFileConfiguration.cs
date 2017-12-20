@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Configuration
     /// Handling of application configuration.
     /// <para>
     /// This class provides the primary source of configuration for the application.
-    /// It is used to include both the arguments from the command line as well as 
+    /// It is used to include both the arguments from the command line as well as
     /// settings loaded from the configuration file.
     /// </para>
     /// </summary>
@@ -109,16 +110,6 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Parses configuration file contents into the argument list.
-        /// </summary>
-        /// <param name="data">Configuration file contents.</param>
-        /// <returns>Parsed configuration.</returns>
-        public static TextFileConfiguration Parse(string data)
-        {
-            return new TextFileConfiguration(data);
-        }
-
-        /// <summary>
         /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
         /// </summary>
         /// <param name="key">Name of the argument.</param>
@@ -201,29 +192,15 @@ namespace Stratis.Bitcoin.Configuration
                 return (T)(object)new Uri(str);
             }
 
+            if (typeof(T) == typeof(uint256))
+            {
+                uint256 value;
+                if (!uint256.TryParse(str, out value))
+                    throw new FormatException($"Cannot parse uint256 from {str}.");
+                return (T)(object)value;
+            }
+
             throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
         }
-
-        // TODO: Can we delete these?
-
-        //public static String CreateDefaultConfiguration(Network network)
-        //{
-        //    StringBuilder builder = new StringBuilder();
-        //    builder.AppendLine("#rpc.url=http://localhost:" + network.RPCPort + "/");
-        //    builder.AppendLine("#rpc.user=bitcoinuser");
-        //    builder.AppendLine("#rpc.password=bitcoinpassword");
-        //    builder.AppendLine("#rpc.cookiefile=yourbitcoinfolder/.cookie");
-        //    return builder.ToString();
-        //}
-
-        //public static String CreateClientDefaultConfiguration(Network network)
-        //{
-        //    StringBuilder builder = new StringBuilder();
-        //    builder.AppendLine("#rpc.url=http://localhost:" + network.RPCPort + "/");
-        //    builder.AppendLine("#rpc.user=bitcoinuser");
-        //    builder.AppendLine("#rpc.password=bitcoinpassword");
-        //    builder.AppendLine("#rpc.cookiefile=yourbitcoinfolder/.cookie");
-        //    return builder.ToString();
-        //}
     }
 }

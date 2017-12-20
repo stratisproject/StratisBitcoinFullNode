@@ -3,16 +3,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -25,7 +28,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <summary>
         /// Memory pool validator interface;
         /// </summary>
-        IMempoolValidator MempoolValidator { get;  }
+        IMempoolValidator MempoolValidator { get; }
 
         /// <summary>
         /// List of the source transactions in the test chain.
@@ -45,10 +48,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public List<Transaction> SrcTxs { get; set; }
     }
 
-   /// <summary>
-   /// Factory for creating the test chain.
-   /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
-   /// </summary>
+    /// <summary>
+    /// Factory for creating the test chain.
+    /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
+    /// </summary>
     internal class TestChainFactory
     {
         /// <summary>
@@ -59,24 +62,31 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <returns>Context object representing the test chain.</returns>
         public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dataDir}" }, network.Name, network);
+            NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" });
             if (dataDir != null)
             {
                 nodeSettings.DataDir = dataDir;
             }
 
-            LoggerFactory loggerFactory = new LoggerFactory();
+            var loggerFactory = new ExtendedLoggerFactory();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network, nodeSettings), dateTimeProvider, loggerFactory);
+            ConsensusSettings consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(), dateTimeProvider, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
+            NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory);
 
-            ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
+            var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
+            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+            var connectionManager = new ConnectionManager(new AsyncLoopFactory(loggerFactory), dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery);
+
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
-
-            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, nodeSettings));
+            PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
+            NodeDeployments deployments = new NodeDeployments(network, chain);
+            ConsensusRules consensusRules = new ConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());
+            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensus.StartAsync();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
@@ -87,7 +97,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
-            await consensus.ValidateAndExecuteBlockAsync(new ContextInformation(new BlockValidationContext { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+            await consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -119,7 +129,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                await consensus.ValidateAndExecuteBlockAsync(new ContextInformation(new BlockValidationContext { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                await consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = currentBlock }, network.Consensus, consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
                 blocks.Add(currentBlock);
             }
 

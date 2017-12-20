@@ -3,48 +3,48 @@ using NBitcoin.BouncyCastle.Math.EC;
 
 namespace NBitcoin.BouncyCastle.Asn1.X9
 {
-	/**
+    /**
      * Class for processing an ECFieldElement as a DER object.
      */
-	internal class X9FieldElement
-		: Asn1Encodable
-	{
-		private ECFieldElement f;
+    internal class X9FieldElement
+        : Asn1Encodable
+    {
+        private ECFieldElement f;
 
-		public X9FieldElement(
-			ECFieldElement f)
-		{
-			this.f = f;
-		}
+        public X9FieldElement(
+            ECFieldElement f)
+        {
+            this.f = f;
+        }
 
-		public X9FieldElement(
-			BigInteger p,
-			Asn1OctetString s)
+        public X9FieldElement(
+            BigInteger p,
+            Asn1OctetString s)
 #pragma warning disable
-			: this(new FpFieldElement(p, new BigInteger(1, s.GetOctets())))
+            : this(new FpFieldElement(p, new BigInteger(1, s.GetOctets())))
 #pragma warning restore
-		{
-		}
+        {
+        }
 
-		public X9FieldElement(
-			int m,
-			int k1,
-			int k2,
-			int k3,
-			Asn1OctetString s)
-			: this(new F2mFieldElement(m, k1, k2, k3, new BigInteger(1, s.GetOctets())))
-		{
-		}
+        public X9FieldElement(
+            int m,
+            int k1,
+            int k2,
+            int k3,
+            Asn1OctetString s)
+            : this(new F2mFieldElement(m, k1, k2, k3, new BigInteger(1, s.GetOctets())))
+        {
+        }
 
-		public ECFieldElement Value
-		{
-			get
-			{
-				return f;
-			}
-		}
+        public ECFieldElement Value
+        {
+            get
+            {
+                return f;
+            }
+        }
 
-		/**
+        /**
          * Produce an object suitable for an Asn1OutputStream.
          * <pre>
          *  FieldElement ::= OCTET STRING
@@ -61,12 +61,12 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
          * </ol>
          * </p>
          */
-		public override Asn1Object ToAsn1Object()
-		{
-			int byteCount = X9IntegerConverter.GetByteLength(f);
-			byte[] paddedBigInteger = X9IntegerConverter.IntegerToBytes(f.ToBigInteger(), byteCount);
+        public override Asn1Object ToAsn1Object()
+        {
+            int byteCount = X9IntegerConverter.GetByteLength(f);
+            byte[] paddedBigInteger = X9IntegerConverter.IntegerToBytes(f.ToBigInteger(), byteCount);
 
-			return new DerOctetString(paddedBigInteger);
-		}
-	}
+            return new DerOctetString(paddedBigInteger);
+        }
+    }
 }

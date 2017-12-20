@@ -15,12 +15,12 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>
         /// Starts all registered features of the associated full node.
         /// </summary>
-        void Start();
+        void Initialize();
 
         /// <summary>
         /// Stops all registered features of the associated full node.
         /// </summary>
-        void Stop();
+        void Dispose();
     }
 
     /// <summary>
@@ -49,12 +49,12 @@ namespace Stratis.Bitcoin.Builder
         }
 
         /// <inheritdoc />
-        public void Start()
+        public void Initialize()
         {
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.Start());
+                this.Execute(service => service.Initialize());
             }
             catch (Exception ex)
             {
@@ -64,11 +64,11 @@ namespace Stratis.Bitcoin.Builder
         }
 
         /// <inheritdoc />
-        public void Stop()
+        public void Dispose()
         {
             try
             {
-                this.Execute(service => service.Stop(), true);
+                this.Execute(feature => feature.Dispose(), true);
             }
             catch (Exception ex)
             {
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Builder
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
         /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
-        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called 
+        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called
         /// for all features, it throws AggregateException if there were any exceptions.</remarks>
         private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {

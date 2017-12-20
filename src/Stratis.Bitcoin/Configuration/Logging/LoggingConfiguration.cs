@@ -47,24 +47,23 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "alert", "" },
             //{ "cmpctblock", "" }
             //{ "coindb", "" },
-            //{ "http", "" }, 
-            //{ "libevent", "" }, 
-            //{ "lock", "" }, 
-            //{ "mempoolrej", "" }, 
-            { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" }, 
-            //{ "proxy", "" }, 
-            //{ "prune", "" }, 
-            //{ "rand", "" }, 
-            //{ "reindex", "" }, 
+            //{ "http", "" },
+            //{ "libevent", "" },
+            //{ "lock", "" },
+            //{ "mempoolrej", "" },
+            { "net", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Connection)}.*" },
+            //{ "proxy", "" },
+            //{ "prune", "" },
+            //{ "rand", "" },
+            //{ "reindex", "" },
             //{ "qt", "" },
-            //{ "selectcoins", "" }, 
-            //{ "tor", "" }, 
-            //{ "zmq", "" }, 
-            
-            // Short Names
-            { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
-            { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
+            //{ "selectcoins", "" },
+            //{ "tor", "" },
+            //{ "zmq", "" },
 
+            // Short Names
+            { "configuration", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Configuration)}.*" },
+            { "fullnode", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(FullNode)}" }
         };
 
         public static void RegisterFeatureNamespace<T>(string key)
@@ -148,14 +147,14 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LogManager.Configuration.AddTarget(mainTarget);
 
             // Default logging level is Info for all components.
-            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
+            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
 
             if (settings.DebugArgs.Any())
             {
                 if (settings.DebugArgs[0] == "1")
                 {
                     // Increase all logging to Debug level.
-                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Debug, mainTarget);
+                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", NLog.LogLevel.Debug, mainTarget);
                 }
                 else
                 {
@@ -201,11 +200,10 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// Configure the console logger and set it to filter logs not related to the fullnode.
         /// </summary>
         /// <param name="loggerFactory">The logger factory to add the console logger.</param>
-        /// <param name="consoleLoggerSettings"></param>
         /// <returns>The new console settings.</returns>
-        public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory, out ConsoleLoggerSettings consoleLoggerSettings)
+        public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory)
         {
-            consoleLoggerSettings = new ConsoleLoggerSettings
+            ConsoleLoggerSettings consoleLoggerSettings = new ConsoleLoggerSettings
             {
                 Switches =
                 {
@@ -240,7 +238,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     if (settings.DebugArgs[0] == "1")
                     {
                         // Increase all logging to Debug.
-                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Debug);
+                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Debug);
                     }
                     else
                     {

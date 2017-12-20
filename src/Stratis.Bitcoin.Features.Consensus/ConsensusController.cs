@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class ConsensusController : FeatureController
     {
         private readonly ILogger logger;
+
         public ConsensusLoop ConsensusLoop { get; private set; }
 
         public ConsensusController(ILoggerFactory loggerFactory, ChainState chainState = null,

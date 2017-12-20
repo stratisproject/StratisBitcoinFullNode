@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class UnspentOutputSet
     {
         private Dictionary<uint256, UnspentOutputs> unspents;
+
         public TxOut GetOutputFor(TxIn txIn)
         {
             var unspent = this.unspents.TryGet(txIn.PrevOut.Hash);
@@ -33,18 +34,23 @@ namespace Stratis.Bitcoin.Features.Consensus
             return tx.Inputs.Select(txin => this.GetOutputFor(txin).Value).Sum();
         }
 
-        public void Update(Transaction tx, int height)
+        /// <summary>
+        /// Adds transaction's outputs to unspent coins list and removes transaction's inputs from it.
+        /// </summary>
+        /// <param name="transcation">Transaction which inputs and outputs are used for updating unspent coins list.</param>
+        /// <param name="height">Height of a block that contains target transaction.</param>
+        public void Update(Transaction transcation, int height)
         {
-            if (!tx.IsCoinBase)
+            if (!transcation.IsCoinBase)
             {
-                foreach (var input in tx.Inputs)
+                foreach (var input in transcation.Inputs)
                 {
                     var c = this.AccessCoins(input.PrevOut.Hash);
                     c.Spend(input.PrevOut.N);
                 }
             }
 
-            this.unspents.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
+            this.unspents.AddOrReplace(transcation.GetHash(), new UnspentOutputs((uint)height, transcation));
         }
 
         public void SetCoins(UnspentOutputs[] coins)

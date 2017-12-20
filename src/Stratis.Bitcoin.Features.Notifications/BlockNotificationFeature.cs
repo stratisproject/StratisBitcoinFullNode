@@ -20,10 +20,15 @@ namespace Stratis.Bitcoin.Features.Notifications
     public class BlockNotificationFeature : FullNodeFeature
     {
         private readonly IBlockNotification blockNotification;
+
         private readonly IConnectionManager connectionManager;
+
         private readonly LookaheadBlockPuller blockPuller;
+
         private readonly ChainState chainState;
+
         private readonly ConcurrentChain chain;
+
         private readonly ILoggerFactory loggerFactory;
 
         public BlockNotificationFeature(IBlockNotification blockNotification, IConnectionManager connectionManager,
@@ -37,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.loggerFactory = loggerFactory;
         }
 
-        public override void Start()
+        public override void Initialize()
         {
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
@@ -46,7 +51,8 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.chainState.ConsensusTip = this.chain.Tip;
         }
 
-        public override void Stop()
+        /// <inheritdoc />
+        public override void Dispose()
         {
             this.blockNotification.Stop();
         }
@@ -55,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static  class FullNodeBuilderBlockNotificationExtension
+    public static class FullNodeBuilderBlockNotificationExtension
     {
         public static IFullNodeBuilder UseBlockNotification(this IFullNodeBuilder fullNodeBuilder)
         {

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
@@ -15,6 +14,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
 
+        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
+        private readonly StakeValidator stakeValidator;
+
         public PosBlockAssembler(
             ConsensusLoop consensusLoop,
             Network network,
@@ -22,6 +24,7 @@ namespace Stratis.Bitcoin.Features.Miner
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             StakeChain stakeChain,
+            StakeValidator stakeValidator,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
@@ -29,6 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
+            this.stakeValidator = stakeValidator;
         }
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
@@ -54,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Miner
             base.UpdateHeaders();
 
             var stake = new BlockStake(this.pblock);
-            this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
+            this.pblock.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }

@@ -2,6 +2,7 @@
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -13,6 +14,8 @@ namespace Stratis.Bitcoin.Features.Api
 
         public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode)
         {
+            Guard.NotNull(fullNode, nameof(fullNode));
+
             var host = new WebHostBuilder()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())

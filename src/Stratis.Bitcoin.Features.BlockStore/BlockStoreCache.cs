@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -24,7 +23,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreCache : IBlockStoreCache
     {
         private readonly IBlockRepository blockRepository;
+
         private readonly IMemoryCache cache;
+
         public BlockStoreCachePerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Instance logger.</summary>
@@ -152,6 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.cache.Dispose();

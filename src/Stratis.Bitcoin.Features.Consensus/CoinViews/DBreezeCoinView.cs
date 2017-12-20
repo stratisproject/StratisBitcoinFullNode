@@ -7,7 +7,6 @@ using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -35,8 +34,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         private readonly BackendPerformanceCounter performanceCounter;
+
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
+        public BackendPerformanceCounter PerformanceCounter
+        {
+            get { return this.performanceCounter; }
+        }
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
@@ -93,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (this.GetCurrentHash(transaction) == null)
                     {
                         this.SetBlockHash(transaction, genesis.GetHash());
-                        
+
                         // Genesis coin is unspendable so do not add the coins.
                         transaction.Commit();
                     }
@@ -240,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                                 {
                                     // We'll need to restore the original outputs.
                                     UnspentOutputs clone = coin.Clone();
-                                    clone._Outputs = original.ToArray();
+                                    clone.Outputs = original.ToArray();
                                     rewindData.OutputsToRestore.Add(clone);
                                 }
                             }
@@ -271,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
         /// <returns>Order number of the last saved rewind state, or <c>-1</c> if no rewind state is found in the database.</returns>
-        /// <remarks>TODO: Using <c>-1</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist 
+        /// <remarks>TODO: Using <c>-1</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist
         /// the order number of the first rewind data is -1 + 1 = 0.</remarks>
         private int GetRewindIndex(DBreeze.Transactions.Transaction transaction)
         {

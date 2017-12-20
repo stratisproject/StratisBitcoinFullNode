@@ -10,27 +10,24 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
     {
         public DestinationModelBinder()
         {
-
         }
-
-        #region IModelBinder Members
 
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
-            if(!SupportType(bindingContext.ModelType))
+            if (!SupportType(bindingContext.ModelType))
             {
                 return Task.CompletedTask;
             }
 
             ValueProviderResult val = bindingContext.ValueProvider.GetValue(
                 bindingContext.ModelName);
-            if(val == null)
+            if (val == null)
             {
                 return Task.CompletedTask;
             }
 
             string key = val.FirstValue as string;
-            if(key == null)
+            if (key == null)
             {
                 return Task.CompletedTask;
             }
@@ -38,7 +35,7 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
             var network = (Network)bindingContext.HttpContext.RequestServices.GetService(typeof(Network));
             //TODO: Use var data = Network.Parse(key, network); when NBitcoin is updated to latest version
             var data = BitcoinAddress.Create(key, network);
-            if(!bindingContext.ModelType.IsInstanceOfType(data))
+            if (!bindingContext.ModelType.IsInstanceOfType(data))
             {
                 throw new FormatException("Invalid destination type");
             }
@@ -54,11 +51,9 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
 
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
-            if(SupportType(context.Metadata.ModelType))
+            if (SupportType(context.Metadata.ModelType))
                 return this;
             return null;
         }
-
-        #endregion
     }
 }

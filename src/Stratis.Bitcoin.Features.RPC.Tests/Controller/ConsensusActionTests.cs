@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall_GetBestBlockHash()
         {
-            string dir = AssureEmptyDir("TestData/ConsensusActionTests/CanCall_GetBestBlockHash");
+            string dir = CreateTestDir(this);
 
             var fullNode = this.BuildServicedNode(dir);
             var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall_GetBlockHash()
         {
-            string dir = AssureEmptyDir("TestData/ConsensusActionTests/CanCall_GetBlockHash");
+            string dir = CreateTestDir(this);
 
             var fullNode = this.BuildServicedNode(dir);
             var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
@@ -41,13 +41,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall_IsInitialBlockDownload()
         {
-            string dir = AssureEmptyDir("TestData/ConsensusActionTests/CanCall_IsInitialBlockDownload");
+            string dir = CreateTestDir(this);
 
             var fullNode = this.BuildServicedNode(dir);
             var isIBDProvider = fullNode.NodeService<IBlockDownloadState>(true);
 
             Assert.NotNull(isIBDProvider);
-            Assert.True(isIBDProvider.IsInitialBlockDownload());       
+            Assert.True(isIBDProvider.IsInitialBlockDownload());
         }
     }
 }

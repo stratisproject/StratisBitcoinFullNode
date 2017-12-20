@@ -15,13 +15,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.serviceProvider = serviceProvider;
         }
 
-        IServiceProvider serviceProvider;
+        internal IServiceProvider serviceProvider;
 
-        public IWalletManager WalletManager
-        {
-            get; set;
-        }
-
+        public IWalletManager WalletManager { get; set; }
 
         [ActionName("sendtoaddress")]
         [ActionDescription("Sends money to a bitcoin address.")]
@@ -31,12 +27,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return uint256.Zero;
         }
 
-
         private WalletAccountReference GetAccount()
         {
             //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
             var w = this.WalletManager.GetWalletsNames().FirstOrDefault();
-            if(w == null)
+            if (w == null)
                 throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
             var account = this.WalletManager.GetAccounts(w).FirstOrDefault();
             return new WalletAccountReference(w, account.Name);

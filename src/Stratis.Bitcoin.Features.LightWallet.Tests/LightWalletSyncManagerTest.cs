@@ -29,7 +29,6 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
         public LightWalletSyncManagerTest()
         {
-
             this.walletManager = new Mock<IWalletManager>();
             this.chain = new ConcurrentChain();
             this.blockNotification = new Mock<IBlockNotification>();
@@ -37,6 +36,10 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
             this.network = Network.StratisMain;
+
+            // Do not assume that the preceding line will set these flags.
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         [Fact]
@@ -52,7 +55,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> does not contain a single <see cref="Wallet.Wallet"/> the <see cref="LightWalletSyncManager.WalletTip"/>
+        /// If the <see cref="WalletManager"/> does not contain a single <see cref="Wallet"/> the <see cref="LightWalletSyncManager.WalletTip"/>
         /// must be set to the <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
         [Fact]
@@ -70,7 +73,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can be found 
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can be found
         /// on the <see cref="ConcurrentChain"/> request the earliest wallet block height from the WalletManager.
         /// Start syncing from that height and set the <see cref="LightWalletSyncManager.WalletTip"/> to that block.
         /// </summary>
@@ -95,7 +98,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can be found 
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can be found
         /// on the <see cref="ConcurrentChain"/> request the earliest wallet block height from the WalletManager.
         /// Start syncing from that height and set the <see cref="LightWalletSyncManager.WalletTip"/> to that block.
         /// </summary>
@@ -112,7 +115,6 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.walletManager.Setup(w => w.GetOldestWalletCreationTime())
                 .Returns(new DateTimeOffset(new DateTime(2017, 1, 2)));
 
-
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
                 this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
@@ -123,8 +125,8 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found 
-        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore. 
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found
+        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore.
         /// Lookup the point at which the chain forked and remove all blocks after that point.
         /// Start syncing from the earliest wallet height if that is before the fork point and set the <see cref="LightWalletSyncManager.WalletTip"/> to that block.
         /// </summary>
@@ -157,8 +159,8 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found 
-        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore. 
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found
+        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore.
         /// Lookup the point at which the chain forked and remove all blocks after that point.
         /// Start syncing from the fork point if that is after the fork point and set the <see cref="LightWalletSyncManager.WalletTip"/> to that block.
         /// </summary>
@@ -191,11 +193,11 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found 
-        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore. 
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found
+        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore.
         /// Lookup the point at which the chain forked and remove all blocks after that point.
-        /// Start syncing from the oldest wallet creation time if the WalletManager does not have an earliest wallet height. 
-        /// If the blocktime of the fork block is after the earliest wallet creation time sync using the earliest wallet creation time 
+        /// Start syncing from the oldest wallet creation time if the WalletManager does not have an earliest wallet height.
+        /// If the blocktime of the fork block is after the earliest wallet creation time sync using the earliest wallet creation time
         /// and set the <see cref="LightWalletSyncManager.WalletTip"/> to that block.
         /// </summary>
         [Fact]
@@ -229,11 +231,11 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found 
-        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore. 
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="WalletManager.WalletTipHash"/> can not be found
+        /// on the <see cref="ConcurrentChain"/> we are not on the best chain anymore.
         /// Lookup the point at which the chain forked and remove all blocks after that point.
-        /// Start syncing from the oldest wallet creation time if the WalletManager does not have an earliest wallet height. 
-        /// If the blocktime of the fork block is before the earliest wallet creation time sync using fork block blocktime 
+        /// Start syncing from the oldest wallet creation time if the WalletManager does not have an earliest wallet height.
+        /// If the blocktime of the fork block is before the earliest wallet creation time sync using fork block blocktime
         /// and set the <see cref="LightWalletSyncManager.WalletTip"/> to that block.
         /// </summary>
         [Fact]
@@ -267,7 +269,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet.Wallet"/> and the <see cref="ConcurrentChain"/> does not contain any blocks
+        /// If the <see cref="WalletManager"/> contains a <see cref="Wallet"/> and the <see cref="ConcurrentChain"/> does not contain any blocks
         /// start the sync from the genesis block and set the <see cref="LightWalletSyncManager.WalletTip"/> to that.
         /// </summary>
         [Fact]
@@ -311,7 +313,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             var asyncLoop = new Mock<IAsyncLoop>();
             this.asyncLoopFactory.Setup(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromHeight",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -329,7 +331,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             asyncLoop.Verify(b => b.Dispose());
             blockSub.Verify(b => b.Dispose());
             transSub.Verify(b => b.Dispose());
-        }       
+        }
 
         [Fact]
         public void SyncFromHeight_EmptyChain_StartsAsyncLoopToCatchup()
@@ -342,7 +344,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromHeight",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -392,7 +394,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromHeight",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -412,7 +414,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                            a => a.RunUntil(
-                               "WalletFeature.DownloadChain",
+                               "LightWalletSyncManager.SyncFromDate",
                                It.IsAny<CancellationToken>(),
                                It.IsAny<Func<bool>>(),
                                It.IsAny<Action>(),
@@ -449,7 +451,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.asyncLoopFactory.Verify(
                 a => a.RunUntil(
-                    "WalletFeature.DownloadChain",
+                    "LightWalletSyncManager.SyncFromDate",
                     It.IsAny<CancellationToken>(),
                     It.IsAny<Func<bool>>(),
                     It.IsAny<Action>(),
@@ -471,11 +473,11 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             lightWalletSyncManager.ProcessTransaction(transaction);
 
-            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
+            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null, true));
         }
 
         /// <summary>
-        /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="LightWalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/> 
+        /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="LightWalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/>
         /// and set it as the new WalletTip.
         /// </summary>
         [Fact]
@@ -524,7 +526,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         /// <summary>
-        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> 
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/>
         /// and is on the best chain see if the wallettip is after the newtip.
         /// If this is the case use the old <see cref="LightWalletSyncManager.WalletTip"/> and  process the block using the <see cref="WalletManager"/>.
         /// </summary>
@@ -548,7 +550,6 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))));
         }
 
-        
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> and is not on the best chain
         /// look for the point at which the chain forked and remove blocks after that fork point from the <see cref="WalletManager"/>.
@@ -557,7 +558,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         /// </summary>
         [Fact]
         public void ProcessBlock_BlockNotOnBestChain_ReorgWalletTipBeforeNewTip_StartsSyncFromForkPointWithoutProcessingBlock()
-        {           
+        {
             var result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Network.StratisMain, 2);
             // left side chain containing the 'old' fork.
             var leftChain = result.LeftChain;
@@ -582,11 +583,10 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedBlock>()), Times.Exactly(0));
         }
 
-
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> and is not on the best chain
         /// look for the point at which the chain forked and remove blocks after that fork point from the <see cref="WalletManager"/>.
-        /// After removing those blocks set the fork block as the <see cref="LightWalletSyncManager.WalletTip"/> 
+        /// After removing those blocks set the fork block as the <see cref="LightWalletSyncManager.WalletTip"/>
         /// Process the block if the new tip is before the <see cref="LightWalletSyncManager.WalletTip"/>.
         /// </summary>
         [Fact]
@@ -637,7 +637,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             public void SetWalletTip(ChainedBlock tip)
             {
-                base.walletTip = tip;
+                this.walletTip = tip;
             }
         }
     }

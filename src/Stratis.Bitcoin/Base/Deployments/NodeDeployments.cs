@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public ThresholdConditionCache BIP9 { get; }
 
-        /// <summary>Best chain that the node is aware of.</summary>
+        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         public NodeDeployments(Network network, ConcurrentChain chain)

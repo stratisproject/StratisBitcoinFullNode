@@ -1,12 +1,13 @@
 using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
-    public class ConnectionManagerBehavior : NodeBehavior
+    public class ConnectionManagerBehavior : NetworkPeerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -21,8 +22,11 @@ namespace Stratis.Bitcoin.Connection
         private readonly ILogger infoLogger;
 
         public ConnectionManager ConnectionManager { get; private set; }
+
         public bool Inbound { get; private set; }
+
         public bool Whitelisted { get; internal set; }
+
         public bool OneTry { get; internal set; }
 
         private ChainHeadersBehavior chainHeadersBehavior;
@@ -50,45 +54,27 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-            this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
+            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private void AttachedNode_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.Whitelisted)
+            if (peer.State == NetworkPeerState.HandShaked)
             {
-                node.DisconnectAsync("Invalid block received");
+                this.ConnectionManager.AddConnectedPeer(peer);
+                this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
+                peer.SendMessageVoidAsync(new SendHeadersPayload());
             }
 
-            this.logger.LogTrace("(-)");
-        }
-
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
-
-            if (node.State == NodeState.HandShaked)
+            if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
             {
-                this.ConnectionManager.AddConnectedNode(node);
-                this.infoLogger.LogInformation("Node {0} connected ({1}), agent {2}, height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
-                node.SendMessageAsync(new SendHeadersPayload());
-            }
-
-            if ((node.State == NodeState.Failed) || (node.State == NodeState.Offline))
-            {
-                this.infoLogger.LogInformation("Node {0} offline.", node.RemoteSocketEndpoint);
-
-                NodeDisconnectReason reason = node.DisconnectReason;
-                if ((reason != null) && !string.IsNullOrEmpty(reason.Reason))
-                    this.infoLogger.LogInformation("Reason: {0}", reason.Reason);
-
-                this.ConnectionManager.RemoveConnectedNode(node);
+                this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
+                this.ConnectionManager.RemoveConnectedNode(peer);
             }
 
             this.logger.LogTrace("(-)");
@@ -98,8 +84,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
+            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
 
             this.logger.LogTrace("(-)");
         }

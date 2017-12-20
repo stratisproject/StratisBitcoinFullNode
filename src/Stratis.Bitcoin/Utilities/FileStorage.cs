@@ -3,13 +3,13 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Stratis.Bitcoin.Utilities.FileStorage
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Class providing methods to save objects as files on the file system.
     /// </summary>
     /// <typeparam name="T">The type of object to be stored in the file system.</typeparam>
-    public class FileStorage<T> where T : new()
+    public sealed class FileStorage<T> where T : new()
     {
         /// <summary> Gets the folder path. </summary>
         public string FolderPath { get; }
@@ -39,6 +39,7 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
+
             File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
         }
 
@@ -94,7 +95,6 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"No wallet file found at {filePath}");
 
-            // Load the file from the file system.
             return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
         }
 

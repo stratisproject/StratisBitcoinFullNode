@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.BitcoinD
@@ -22,7 +23,7 @@ namespace Stratis.BitcoinD
         {
             try
             {
-                NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+                NodeSettings nodeSettings = new NodeSettings().LoadArguments(args);
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
@@ -31,6 +32,7 @@ namespace Stratis.BitcoinD
                     .UseMempool()
                     .AddMining()
                     .AddRPC()
+                    .UseWallet()
                     .Build();
 
                 await node.RunAsync();

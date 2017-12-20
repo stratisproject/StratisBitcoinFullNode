@@ -55,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public int MaxBlockWeight { get; set; }
 
         public int WitnessScaleFactor { get; set; }
+
         public int SerializeTransactionNoWitness { get; set; }
 
         /// <summary>
@@ -69,12 +70,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>The maximum weight for transactions we're willing to relay/mine.</summary>
         public int MaxStandardTxWeight { get; set; }
+
         public int MaxBlockBaseSize { get; set; }
 
         /// <summary>The maximum allowed number of signature check operations in a block (network rule).</summary>
         public int MaxBlockSigopsCost { get; set; }
+
         public long MaxMoney { get; set; }
+
+        /// <summary>
+        /// How many blocks should be on top of the block with coinbase transaction until it's outputs are considered spendable.
+        /// </summary>
         public long CoinbaseMaturity { get; set; }
+
         public Money ProofOfWorkReward { get; set; }
 
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>

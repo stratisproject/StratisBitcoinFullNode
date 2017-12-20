@@ -136,8 +136,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         [Fact]
         public void DBreezeEngineAbleToAccessExistingTransactionData()
-        {            
-            var dir = AssureEmptyDir("TestData/DBreezeTest/DBreezeEngineAbleToAccessExistingTransactionData");
+        {
+            var dir = CreateTestDir(this);
             uint256[] data = SetupTransactionData(dir);
 
             using (var engine = new DBreezeEngine(dir))

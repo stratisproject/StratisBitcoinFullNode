@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -11,8 +11,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ILogger logger;
 
         private IBlockRepository repository;
+
         private BlockStoreCache cache;
+
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
+
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 
         /// <summary>Provider of time functions.</summary>

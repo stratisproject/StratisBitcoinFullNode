@@ -1,31 +1,43 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
-    /// Performance statistics used to measure the time it takes for the DBreeze backend 
+    /// Performance statistics used to measure the time it takes for the DBreeze backend
     /// to perform database operations.
     /// </summary>
     public class BackendPerformanceCounter
     {
         /// <summary>UTC timestamp when the performance counter was created.</summary>
         private readonly DateTime start;
+
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        public DateTime Start { get { return this.start; } }
+        public DateTime Start
+        {
+            get { return this.start; }
+        }
 
         /// <summary>Number of entities inserted to the database.</summary>
         private long insertedEntities;
+
         /// <summary>Number of entities inserted to the database.</summary>
-        public long InsertedEntities { get { return this.insertedEntities; } }
+        public long InsertedEntities
+        {
+            get { return this.insertedEntities; }
+        }
 
         /// <summary>Number of queried entities from the database.</summary>
         private long queriedEntities;
+
         /// <summary>Number of queried entities from the database.</summary>
-        public long QueriedEntities { get { return this.queriedEntities; } }
+        public long QueriedEntities
+        {
+            get { return this.queriedEntities; }
+        }
 
         /// <summary>Time span since the performance counter was created.</summary>
         public TimeSpan Elapsed
@@ -38,6 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Time in ticks it took the database to perform insert operations.</summary>
         private long insertTime;
+
         /// <summary>Time it took the database to perform insert operations.</summary>
         public TimeSpan InsertTime
         {
@@ -49,6 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Time in ticks it took the database to perform query operations.</summary>
         private long queryTime;
+
         /// <summary>Time it took the database to perform query operations.</summary>
         public TimeSpan QueryTime
         {
@@ -136,23 +150,39 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     {
         /// <summary>Number of queried entities from the database.</summary>
         private readonly long totalQueriedEntities;
+
         /// <summary>Number of queried entities from the database.</summary>
-        public long TotalQueriedEntities { get { return this.totalQueriedEntities; } }
+        public long TotalQueriedEntities
+        {
+            get { return this.totalQueriedEntities; }
+        }
 
         /// <summary>Time in ticks it took the database to perform query operations.</summary>
         private readonly long totalQueryTime;
+
         /// <summary>Time it took the database to perform query operations.</summary>
-        public TimeSpan TotalQueryTime { get { return TimeSpan.FromTicks(this.totalQueryTime); } }
+        public TimeSpan TotalQueryTime
+        {
+            get { return TimeSpan.FromTicks(this.totalQueryTime); }
+        }
 
         /// <summary>Time in ticks it took the database to perform insert operations.</summary>
         private readonly long totalInsertTime;
+
         /// <summary>Time it took the database to perform insert operations.</summary>
-        public TimeSpan TotalInsertTime { get { return TimeSpan.FromTicks(this.totalInsertTime); } }
+        public TimeSpan TotalInsertTime
+        {
+            get { return TimeSpan.FromTicks(this.totalInsertTime); }
+        }
 
         /// <summary>Number of entities inserted to the database.</summary>
-        readonly long totalInsertedEntities;
+        internal readonly long totalInsertedEntities;
+
         /// <summary>Number of entities inserted to the database.</summary>
-        public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
+        public long TotalInsertedEntities
+        {
+            get { return this.totalInsertedEntities; }
+        }
 
         /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
         public DateTime Start { get; set; }
@@ -187,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Creates a snapshot based on difference of two performance counter snapshots.
         /// <para>
-        /// This is used to obtain statistic information about performance of the backend 
+        /// This is used to obtain statistic information about performance of the backend
         /// during certain period.</para>
         /// </summary>
         /// <param name="end">Newer performance counter snapshot.</param>

@@ -1,5 +1,4 @@
 ﻿using System;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Utilities;
 
@@ -29,11 +28,6 @@ namespace Stratis.Bitcoin
         /// Starts the full node and all its features.
         /// </summary>
         void Start();
-
-        /// <summary>
-        /// Stops the full node and all its features.
-        /// </summary>
-        void Stop();
 
         /// <summary>
         /// Find a service of a particular type

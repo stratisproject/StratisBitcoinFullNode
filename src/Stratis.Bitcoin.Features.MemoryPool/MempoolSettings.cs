@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="nodeSettings">The node's configuration settings.</param>
         /// <param name="callback">Script applied during load to override configured settings</param>
         public MempoolSettings(NodeSettings nodeSettings, Action<MempoolSettings> callback = null)
-            :this(callback)
+            : this(callback)
         {
             this.Load(nodeSettings);
         }

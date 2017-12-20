@@ -3,7 +3,7 @@
 namespace Stratis.Bitcoin.Features.Notifications.Interfaces
 {
     public interface IBlockNotification
-    {        
+    {
         /// <summary>
         /// Notifies about blocks, starting from block with hash passed as parameter.
         /// </summary>

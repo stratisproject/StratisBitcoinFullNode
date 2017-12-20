@@ -6,6 +6,7 @@ namespace Stratis.Bitcoin.Features.Api.Controllers
     public class NodeController : Controller
     {
         private readonly IFullNode fullNode;
+
         private readonly ApiFeatureOptions apiFeatureOptions;
 
         public NodeController(IFullNode fullNode, ApiFeatureOptions apiFeatureOptions)
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Api.Controllers
         public IActionResult Shutdown()
         {
             // start the node shutdown process
-            this.fullNode.Stop();
+            this.fullNode.Dispose();
 
             return this.Ok();
         }
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Api.Controllers
         public IActionResult Keepalive()
         {
             if (this.apiFeatureOptions.KeepaliveMonitor == null)
-                return new ObjectResult("Keepalive Disabled") {StatusCode = 405}; // (405) Method Not Allowed 
+                return new ObjectResult("Keepalive Disabled") { StatusCode = 405 }; // (405) Method Not Allowed
 
             this.apiFeatureOptions.KeepaliveMonitor.LastBeat = this.fullNode.DateTimeProvider.GetUtcNow();
 

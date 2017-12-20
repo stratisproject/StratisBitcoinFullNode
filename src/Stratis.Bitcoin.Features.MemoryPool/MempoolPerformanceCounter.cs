@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Interlocked.Exchange(ref this.mempoolOrphanSize, size);
         }
-      
+
         /// <summary>
         /// Increments the memory pool hit count.
         /// </summary>
@@ -100,11 +100,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             var benchLogs = new StringBuilder();
             benchLogs.Append(
-                "MempoolSize: " + this.MempoolSize.ToString().PadRight(4) + 
+                "MempoolSize: " + this.MempoolSize.ToString().PadRight(4) +
                 " DynamicSize: " + ((this.MempoolDynamicSize / 1000) + " kb").ToString().PadRight(6) +
                 " OrphanSize: " + this.MempoolOrphanSize.ToString().PadRight(4));
             return benchLogs.ToString();
         }
     }
-
 }

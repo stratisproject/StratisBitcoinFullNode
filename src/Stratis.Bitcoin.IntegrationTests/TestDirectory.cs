@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.FolderName = name;
             this.Clean = clean;
             if (this.Clean)
-                CleanDirectory();
+                this.CleanDirectory();
         }
 
         public string FolderName
@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             get;
             private set;
         }
+
         private void CleanDirectory()
         {
             try
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void Dispose()
         {
             if (this.Clean)
-                CleanDirectory();
+                this.CleanDirectory();
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private long cacheMissCount;
 
         public string Name { get; private set; }
+
         public DateTime Start { get; private set; }
 
         /// <summary>Provider of date time functionality.</summary>
@@ -107,55 +108,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     public class BlockStoreCachePerformanceSnapshot
     {
-        private readonly long cacheHitCount;
-        private readonly long cacheMissCount;
-        private readonly long cacheRemoveCount;
-        private readonly long cacheSetCount;
+        public long TotalCacheHitCount { get; }
+
+        public long TotalCacheMissCount { get; }
+
+        public long TotalCacheRemoveCount { get; }
+
+        public long TotalCacheSetCount { get; }
+
         public string Name { get; private set; }
+
         public DateTime Start { get; set; }
+
         public DateTime Taken { get; set; }
 
         public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount, string name = "BlockStore")
         {
-            this.cacheHitCount = cacheHitCount;
-            this.cacheMissCount = cacheMissCount;
-            this.cacheRemoveCount = cacheRemoveCount;
-            this.cacheSetCount = cacheSetCount;
+            this.TotalCacheHitCount = cacheHitCount;
+            this.TotalCacheMissCount = cacheMissCount;
+            this.TotalCacheRemoveCount = cacheRemoveCount;
+            this.TotalCacheSetCount = cacheSetCount;
             this.Name = name;
         }
-
-        public long TotalCacheHitCount
-        {
-            get
-            {
-                return this.cacheHitCount;
-            }
-        }
-
-        public long TotalCacheMissCount
-        {
-            get
-            {
-                return this.cacheMissCount;
-            }
-        }
-
-        public long TotalCacheRemoveCount
-        {
-            get
-            {
-                return this.cacheRemoveCount;
-            }
-        }
-
-        public long TotalCacheSetCount
-        {
-            get
-            {
-                return this.cacheSetCount;
-            }
-        }
-
+        
         public TimeSpan Elapsed
         {
             get

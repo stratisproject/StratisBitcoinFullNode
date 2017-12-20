@@ -1,26 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
-    /// Block puller used for fast sync during initial block download (IBD). 
+    /// Block puller used for fast sync during initial block download (IBD).
     /// </summary>
     public interface ILookaheadBlockPuller
     {
         /// <summary>
         /// Tries to retrieve a block that is in front of the current puller's position by a specific height.
         /// </summary>
-        /// <param name="count">How many blocks ahead (minus one) should the returned block be ahead of the current puller's position. 
+        /// <param name="count">How many blocks ahead (minus one) should the returned block be ahead of the current puller's position.
         /// A value of zero will provide the next block, a value of one will provide a block that is 2 blocks ahead.</param>
-        /// <returns>The block which height is <paramref name="count"/>+1 higher than current puller's position, 
+        /// <returns>The block which height is <paramref name="count"/>+1 higher than current puller's position,
         /// or null if such a block is not downloaded or does not exist.</returns>
         Block TryGetLookahead(int count);
 
@@ -36,13 +37,30 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to allow the caller to cancel waiting for the next block.</param>
         /// <returns>Next block or null if a reorganization happened on the chain.</returns>
-        Block NextBlock(CancellationToken cancellationToken);
+        LookaheadResult NextBlock(CancellationToken cancellationToken);
 
         /// <summary>
         /// Adds a specific requirement to all peer nodes.
         /// </summary>
         /// <param name="transactionOptions">Specifies the requirement on nodes to add.</param>
-        void RequestOptions(TransactionOptions transactionOptions);
+        void RequestOptions(NetworkOptions transactionOptions);
+    }
+
+    /// <summary>
+    /// A result from the <see cref="ILookaheadBlockPuller"/> containing the downloaded block and the <see cref="IPEndPoint"/> of the peer that it came from.
+    /// Block will be <c>null</c> if the current chain was reorganized.
+    /// </summary>
+    public class LookaheadResult
+    {
+        /// <summary>
+        /// The downloaded <see cref="Block"/> that was requested by the puller.
+        /// </summary>
+        public Block Block { get; set; }
+
+        /// <summary>
+        /// The peer this block came from.
+        /// </summary>
+        public IPEndPoint Peer { get; set; }
     }
 
     /// <summary>
@@ -50,47 +68,47 @@ namespace Stratis.Bitcoin.BlockPulling
     /// multiple blocks from multiple peers at once, so that IBD is fast enough, but does not consume too many resources.
     /// </summary>
     /// <remarks>
-    /// The node is aware of the longest chain of block headers, which is stored in this.Chain. This is the chain the puller 
+    /// The node is aware of the longest chain of block headers, which is stored in this.Chain. This is the chain the puller
     /// needs to download. The algorithm works with following values: ActualLookahead, MinimumLookahead, MaximumLookahead,
     /// location, and lookaheadLocation.
     /// <para>
-    /// ActualLookahead is a number of blocks that we wish to download at the same time, it varies between MinimumLookahead 
-    /// and MaximumLookahead depending on the consumer's speed and node download speed. Calling AskBlocks() increases 
+    /// ActualLookahead is a number of blocks that we wish to download at the same time, it varies between MinimumLookahead
+    /// and MaximumLookahead depending on the consumer's speed and node download speed. Calling AskBlocks() increases
     /// lookaheadLocation by ActualLookahead. Here is a visualization of the block chain and how the puller sees it:
     /// </para>
     /// <para>
     /// -------A------B-------------C-----------D---------E--------
     /// </para>
     /// <para>
-    /// Each '-' represents a block and letters 'A' to 'E' represent blocks with important positions in the chain from 
-    /// the puller's perspective. The puller can be understood as a producer of the blocks (by requesting them from the peers 
+    /// Each '-' represents a block and letters 'A' to 'E' represent blocks with important positions in the chain from
+    /// the puller's perspective. The puller can be understood as a producer of the blocks (by requesting them from the peers
     /// and downloading them) for the component that uses the puller that consumes the blocks (e.g. validating them).
     /// </para>
     /// <para>
     /// A is a position of a block that we call location. Blocks in front of A were already downloaded and consumed.
     /// </para>
     /// <para>
-    /// B is a position of a block A + MinimumLookahead, and E is a position of block A + MaximumLookahead. 
-    /// Blocks between B and E are the blocks that the puller is currently interested in. Blocks after E are currently 
-    /// not considered and will only be interesting later. The lower boundary B prevents the IBD to be too slow, 
+    /// B is a position of a block A + MinimumLookahead, and E is a position of block A + MaximumLookahead.
+    /// Blocks between B and E are the blocks that the puller is currently interested in. Blocks after E are currently
+    /// not considered and will only be interesting later. The lower boundary B prevents the IBD to be too slow,
     /// while the upper boundary E prevents the puller from using too many resources.
     /// </para>
     /// <para>
     /// Blocks between A and B are blocks that have been downloaded already, but the consumer did not consume them yet.
     /// </para>
     /// <para>
-    /// C is a position of a block A + lookaheadLocation. Blocks between B and C are currently being requested by the puller, 
-    /// some of them could be already being downloaded. The block puller makes sure that if lookaheadLocation &lt; ActualLookahead 
-    /// then AskBlocks() is called. During the initialization, or when reorganisation happens, lookaheadLocation is zero/null 
+    /// C is a position of a block A + lookaheadLocation. Blocks between B and C are currently being requested by the puller,
+    /// some of them could be already being downloaded. The block puller makes sure that if lookaheadLocation &lt; ActualLookahead
+    /// then AskBlocks() is called. During the initialization, or when reorganisation happens, lookaheadLocation is zero/null
     /// and AskBlocks() needs to be called two times.
     /// </para>
     /// <para>
-    /// D is a position of a block A + ActualLookahead. ActualLookahead is a number of blocks that the puller wants 
-    /// to be downloading simultaneously. If there is a gap between C and D it means that the puller wants to start 
+    /// D is a position of a block A + ActualLookahead. ActualLookahead is a number of blocks that the puller wants
+    /// to be downloading simultaneously. If there is a gap between C and D it means that the puller wants to start
     /// downloading these blocks.
     /// </para>
     /// <para>
-    /// Blocks between D and E are currently those that the puller does not want to be downloading right now, 
+    /// Blocks between D and E are currently those that the puller does not want to be downloading right now,
     /// but should the ActualLookahead be adjusted, they can be requested in the near future.
     /// </para>
     /// </remarks>
@@ -113,6 +131,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         private int actualLookahead;
+
         /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         public int ActualLookahead
         {
@@ -163,6 +182,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Event that signals when a downloaded block is consumed.</summary>
         private readonly AutoResetEvent consumed = new AutoResetEvent(false);
+
         /// <summary>Event that signals when a new block is pushed to the list of downloaded blocks.</summary>
         private readonly AutoResetEvent pushed = new AutoResetEvent(false);
 
@@ -181,7 +201,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Initializes a new instance of the object having a chain of block headers and a connection manager. 
+        /// Initializes a new instance of the object having a chain of block headers and a connection manager.
         /// </summary>
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="connectionManager">Manager of information about the node's network connections.</param>
@@ -212,16 +232,16 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public void RequestOptions(TransactionOptions transactionOptions)
+        public void RequestOptions(NetworkOptions transactionOptions)
         {
             this.logger.LogTrace("({0}:{1})", nameof(transactionOptions), transactionOptions);
 
-            if (transactionOptions == TransactionOptions.Witness)
+            if (transactionOptions == NetworkOptions.Witness)
             {
-                this.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+                this.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (BlockPullerBehavior node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
                 {
-                    if (!this.Requirements.Check(node.AttachedNode.PeerVersion))
+                    if (!this.Requirements.Check(node.AttachedPeer.PeerVersion))
                     {
                         this.logger.LogDebug("Peer {0:x} does not meet requirements, releasing its tasks.", node.GetHashCode());
                         // Prevent this node to be assigned any more work.
@@ -234,7 +254,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public Block NextBlock(CancellationToken cancellationToken)
+        public LookaheadResult NextBlock(CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
 
@@ -249,14 +269,14 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 // Calling twice is intentional here.
                 // lookaheadLocation is null only during initialization
-                // or when reorganisation happens. Calling this twice will 
-                // make sure the initial work of the puller is away from 
+                // or when reorganisation happens. Calling this twice will
+                // make sure the initial work of the puller is away from
                 // the lower boundary.
                 this.AskBlocks();
                 this.AskBlocks();
             }
 
-            Block block = NextBlockCore(cancellationToken);
+            LookaheadResult block = this.NextBlockCore(cancellationToken);
             if (block != null)
             {
                 if ((this.lookaheadLocation.Height - this.location.Height) <= this.ActualLookahead)
@@ -297,7 +317,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Calculates a new value for this.ActualLookahead to keep it within reasonable range.
         /// <para>
-        /// This ensures that the puller is requesting enough new blocks quickly enough to 
+        /// This ensures that the puller is requesting enough new blocks quickly enough to
         /// keep with the demand, but at the same time not too quickly.
         /// </para>
         /// </summary>
@@ -335,7 +355,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 return null;
             }
 
-            DownloadedBlock block = GetDownloadedBlock(chainedBlock.HashBlock);
+            DownloadedBlock block = this.GetDownloadedBlock(chainedBlock.HashBlock);
             if (block == null)
             {
                 this.logger.LogTrace("(-)[NOT_AVAILABLE]");
@@ -444,8 +464,8 @@ namespace Stratis.Bitcoin.BlockPulling
             var requestsToAsk = new List<ChainedBlock>();
             lock (this.bufferLock)
             {
-                // We estimate the space needed for the next block as the average size of unconsumed blocks 
-                // the puller currently holds. If it holds no blocks, it does not matter, there is certainly 
+                // We estimate the space needed for the next block as the average size of unconsumed blocks
+                // the puller currently holds. If it holds no blocks, it does not matter, there is certainly
                 // a space for new block so we use dummy value 0.
                 long avgBlockSize = this.currentBufferedCount != 0 ? this.currentBufferedSize / this.currentBufferedCount : 0;
 
@@ -457,7 +477,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         ChainedBlock request = this.askBlockQueue.Peek();
                         bool isNextBlock = request.Height == this.location.Height + 1;
 
-                        // Buffer is full if the current buffered size plus expected size of all blocks we will ask, 
+                        // Buffer is full if the current buffered size plus expected size of all blocks we will ask,
                         // including the next request we are considering, is greater than the max limit.
                         bool bufferFull = this.currentBufferedSize + (requestsToAsk.Count + 1) * avgBlockSize > this.MaxBufferedSize;
 
@@ -468,8 +488,8 @@ namespace Stratis.Bitcoin.BlockPulling
                         }
                         else
                         {
-                            // The buffer is either full, so we do not want to ask for more blocks. 
-                            // Here we rely on the fact that requests in queue are ordered. Otherwise we would have to go through 
+                            // The buffer is either full, so we do not want to ask for more blocks.
+                            // Here we rely on the fact that requests in queue are ordered. Otherwise we would have to go through
                             // the whole queue to see if the next block is not present.
                             break;
                         }
@@ -491,13 +511,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to allow the caller to cancel waiting for the next block.</param>
         /// <returns>Next block or null if a reorganization happened on the chain.</returns>
-        private Block NextBlockCore(CancellationToken cancellationToken)
+        private LookaheadResult NextBlockCore(CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
 
-            Block res = null;
+            LookaheadResult res = new LookaheadResult();
 
-            while (res == null)
+            while (res.Block == null)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -507,10 +527,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 bool isDownloading = false;
                 bool isReady = false;
-                if (header != null) CheckBlockStatus(header.HashBlock, out isDownloading, out isReady);
+                if (header != null) this.CheckBlockStatus(header.HashBlock, out isDownloading, out isReady);
 
                 // If block has been downloaded and is ready to be consumed, then remove it from the list of downloaded blocks and consume it.
-                if (isReady && TryRemoveDownloadedBlock(header.HashBlock, out block))
+                if (isReady && this.TryRemoveDownloadedBlock(header.HashBlock, out block))
                 {
                     this.logger.LogTrace("Consuming block '{0}'.", header.HashBlock);
 
@@ -529,7 +549,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
                     this.consumed.Set();
 
-                    res = block.Block;
+                    res.Block = block.Block;
                 }
                 else
                 {

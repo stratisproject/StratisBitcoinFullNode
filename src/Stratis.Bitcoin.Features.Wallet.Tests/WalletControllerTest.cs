@@ -4,21 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Broadcasting;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
@@ -26,13 +22,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletControllerTest : LogsTestBase
     {
+        public WalletControllerTest()
+        {
+            // Ensure that these flags have these expected values.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         [Fact]
         public void GenerateMnemonicWithoutParametersCreatesMnemonicWithDefaults()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithoutParametersCreatesMnemonicWithDefaults");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic();
 
@@ -51,10 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithDifferentWordCountCreatesMnemonicWithCorrectNumberOfWords()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithDifferentWordCountCreatesMnemonicWithCorrectNumberOfWords");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic(wordCount: 24);
 
@@ -68,10 +65,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithStrangeLanguageCasingReturnsCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithStrangeLanguageCasingReturnsCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("eNgLiSh");
 
@@ -90,10 +84,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithEnglishWordListCreatesCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithEnglishWordListCreatesCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("english");
 
@@ -112,10 +103,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithFrenchWordListCreatesCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithFrenchWordListCreatesCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("french");
 
@@ -134,10 +122,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithSpanishWordListCreatesCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithSpanishWordListCreatesCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("spanish");
 
@@ -156,10 +141,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithJapaneseWordListCreatesCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithJapaneseWordListCreatesCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("japanese");
 
@@ -179,10 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithChineseTraditionalWordListCreatesCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithChineseTraditionalWordListCreatesCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("chinesetraditional");
 
@@ -201,10 +180,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithChineseSimplifiedWordListCreatesCorrectMnemonic()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithChineseSimplifiedWordListCreatesCorrectMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("chinesesimplified");
 
@@ -223,13 +199,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GenerateMnemonicWithUnknownLanguageReturnsBadRequest()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/GenerateMnemonicWithUnknownLanguageReturnsBadRequest");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GenerateMnemonic("invalidlanguage");
-
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -248,10 +220,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletCreate = new Mock<IWalletManager>();
             mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(mnemonic);
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/CreateWalletSuccessfullyReturnsMnemonic");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Create(new WalletCreationRequest
             {
@@ -260,7 +229,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Password = "",
                 Network = ""
             });
-
 
             mockWalletCreate.VerifyAll();
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
@@ -274,12 +242,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/CreateWalletWithInvalidModelStateReturnsBadRequest");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Name", "Name cannot be empty.");
-
 
             IActionResult result = controller.Create(new WalletCreationRequest
             {
@@ -288,7 +252,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Password = "",
                 Network = ""
             });
-
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -308,11 +271,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new WalletException(errorMessage));
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/CreateWalletWithInvalidOperationExceptionReturnsConflict");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Create(new WalletCreationRequest
             {
@@ -321,7 +280,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Password = "",
                 Network = ""
             });
-
 
             mockWalletCreate.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -341,11 +299,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new NotSupportedException("Not supported"));
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/CreateWalletWithInvalidOperationExceptionReturnsConflict");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Create(new WalletCreationRequest
             {
@@ -354,7 +308,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Password = "",
                 Network = ""
             });
-
 
             mockWalletCreate.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -369,19 +322,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void RecoverWalletSuccessfullyReturnsWalletModel()
         {
-            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
+            Wallet wallet = new Wallet
             {
                 Name = "myWallet",
-                Network = WalletHelpers.GetNetwork("mainnet")
+                Network = NetworkHelpers.GetNetwork("mainnet")
             };
 
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null)).Returns(wallet);
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletSuccessfullyReturnsWalletModel");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
@@ -392,7 +342,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Mnemonic = "mnemonic"
             });
 
-
             mockWalletWrapper.VerifyAll();
             OkResult viewResult = Assert.IsType<OkResult>(result);
             Assert.Equal(200, viewResult.StatusCode);
@@ -402,12 +351,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void RecoverWalletWithInvalidModelStateReturnsBadRequest()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletWithInvalidModelStateReturnsBadRequest");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Password", "A password is required.");
-
 
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
@@ -435,11 +381,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null))
                 .Throws(new WalletException(errorMessage));
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletWithInvalidOperationExceptionReturnsConflict");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
@@ -449,7 +391,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
-
 
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -468,11 +409,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null))
                 .Throws(new FileNotFoundException("File not found."));
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletWithFileNotFoundExceptionReturnsNotFound");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
@@ -482,7 +419,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
-
 
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -502,11 +438,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null))
                 .Throws(new FormatException("Formatting failed."));
 
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletWithExceptionReturnsBadRequest");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
@@ -531,18 +463,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void LoadWalletSuccessfullyReturnsWalletModel()
         {
-            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
+            Wallet wallet = new Wallet
             {
                 Name = "myWallet",
-                Network = WalletHelpers.GetNetwork("mainnet")
+                Network = NetworkHelpers.GetNetwork("mainnet")
             };
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletSuccessfullyReturnsWalletModel");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Load(new WalletLoadRequest
             {
@@ -560,12 +489,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void LoadWalletWithInvalidModelReturnsBadRequest()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithInvalidModelReturnsBadRequest");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Password", "A password is required.");
-
 
             IActionResult result = controller.Load(new WalletLoadRequest
             {
@@ -573,7 +499,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FolderPath = "",
                 Password = ""
             });
-
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -589,11 +514,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithFileNotFoundExceptionandReturnsNotFound");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Load(new WalletLoadRequest
             {
@@ -601,7 +523,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FolderPath = "",
                 Password = ""
             });
-
 
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -619,11 +540,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<SecurityException>();
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithSecurityExceptionandReturnsForbidden");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Load(new WalletLoadRequest
             {
@@ -631,7 +549,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FolderPath = "",
                 Password = ""
             });
-
 
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -649,11 +566,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<FormatException>();
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithOtherExceptionandReturnsBadRequest");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Load(new WalletLoadRequest
             {
@@ -661,7 +575,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FolderPath = "",
                 Password = ""
             });
-
 
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -676,10 +589,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetGeneralInfoSuccessfullyReturnsWalletGeneralInfoModel()
         {
-            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
+            Wallet wallet = new Wallet
             {
                 Name = "myWallet",
-                Network = WalletHelpers.GetNetwork("mainnet"),
+                Network = NetworkHelpers.GetNetwork("mainnet"),
                 CreationTime = new DateTime(2017, 6, 19, 1, 1, 1),
                 AccountsRoot = new List<AccountRoot> {
                     new AccountRoot()
@@ -691,23 +604,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             var concurrentChain = new ConcurrentChain(Network.Main);
-            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new [] {concurrentChain});
+            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.Setup(c => c.ConnectedNodes)
-                .Returns(new NodesCollection());
+                .Returns(new NetworkPeerCollection());
 
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.GetWallet("myWallet")).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, concurrentChain, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            string walletFileExtension = "wallet.json";
+            string testWalletFileName = Path.ChangeExtension("myWallet", walletFileExtension);
+            string testWalletPath = Path.Combine(AppContext.BaseDirectory, "stratisnode", testWalletFileName);
+            string folder = Path.GetDirectoryName(testWalletPath);
+            string[] files = new string[] { testWalletFileName };
+            mockWalletWrapper.Setup(w => w.GetWalletsFiles()).Returns((folder, files));
+            mockWalletWrapper.Setup(w => w.GetWalletFileExtension()).Returns(walletFileExtension);
 
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, concurrentChain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GetGeneralInfo(new WalletName
             {
                 Name = "myWallet"
             });
-
 
             mockWalletWrapper.VerifyAll();
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
@@ -719,12 +638,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(0, resultValue.ConnectedNodes);
             Assert.Equal(tip.Height, resultValue.ChainTip);
             Assert.True(resultValue.IsDecrypted);
+            Assert.Equal(testWalletPath, resultValue.WalletFilePath);
         }
 
         [Fact]
         public void GetGeneralInfoWithModelStateErrorReturnsBadRequest()
         {
-            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
+            Wallet wallet = new Wallet
             {
                 Name = "myWallet",
             };
@@ -732,15 +652,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.GetWallet("myWallet")).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Name", "Invalid name.");
-
 
             IActionResult result = controller.GetGeneralInfo(new WalletName
             {
                 Name = "myWallet"
             });
-
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -757,14 +675,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.GetWallet("myWallet")).Throws<FormatException>();
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.GetGeneralInfo(new WalletName
             {
                 Name = "myWallet"
             });
-
 
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -784,7 +700,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetHistory(walletName)).Returns(new List<FlatHistory>());
             mockWalletWrapper.Setup(w => w.GetWalletByName(walletName)).Returns(new Wallet());
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
@@ -806,7 +722,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1);
             address.Transactions.Add(transaction);
 
-            var addresses = new List<HdAddress> {address};
+            var addresses = new List<HdAddress> { address };
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot()
             {
@@ -822,7 +738,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetHistory(walletName)).Returns(flat);
             mockWalletWrapper.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
@@ -861,7 +777,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
-            var addresses = new List<HdAddress> {address, changeAddress};
+            var addresses = new List<HdAddress> { address, changeAddress };
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot()
             {
@@ -877,7 +793,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetHistory(walletName)).Returns(flat);
             mockWalletWrapper.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
@@ -934,7 +850,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
-            var addresses = new List<HdAddress> {address, changeAddress};
+            var addresses = new List<HdAddress> { address, changeAddress };
 
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot()
@@ -951,7 +867,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetHistory(walletName)).Returns(flat);
             mockWalletWrapper.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
@@ -1045,12 +961,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
             mockWalletManager.Setup(w => w.GetHistory(walletName)).Returns(flat);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
             });
-
 
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as WalletHistoryModel;
@@ -1080,7 +995,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetHistory("myWallet")).Throws(new InvalidOperationException("Issue retrieving wallets."));
             mockWalletWrapper.Setup(w => w.GetWalletByName(walletName)).Returns(new Wallet());
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
@@ -1128,7 +1043,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction2 = WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(275000), 2, spendingDetails2);
             changeAddress.Transactions.Add(transaction2);
 
-            var addresses = new List<HdAddress> {address, changeAddress, changeAddress2};
+            var addresses = new List<HdAddress> { address, changeAddress, changeAddress2 };
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot()
             {
@@ -1138,13 +1053,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 } }
             });
 
-            List<FlatHistory> flat = addresses.SelectMany(s =>s.Transactions.Select(t => new FlatHistory {Address = s, Transaction = t})).ToList();
+            List<FlatHistory> flat = addresses.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.GetHistory(walletName)).Returns(flat);
             mockWalletWrapper.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
@@ -1230,7 +1145,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetAccounts("myWallet"))
                 .Returns(accounts);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
             {
                 WalletName = "myWallet"
@@ -1265,7 +1180,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(w => w.GetAccounts("myWallet"))
                 .Returns(accounts);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
             {
                 WalletName = "myWallet"
@@ -1283,7 +1198,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("WalletName", "A walletname is required.");
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
             {
@@ -1306,7 +1221,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(m => m.GetAccounts("myWallet"))
                   .Throws(new InvalidOperationException("Issue retrieving accounts."));
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
             {
                 WalletName = "myWallet"
@@ -1332,7 +1247,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
                 .Returns(sentTrx);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 1",
@@ -1362,7 +1277,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
                 .Returns(sentTrx);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 1",
@@ -1387,7 +1302,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("WalletName", "A walletname is required.");
             IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
             {
@@ -1413,7 +1328,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
                 .Throws(new InvalidOperationException("Issue building transaction."));
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 1",
@@ -1436,41 +1351,52 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void SendTransactionSuccessfulReturnsOkResponse()
+        public void SendTransactionSuccessfulReturnsWalletSendTransactionModelResponse()
         {
+            string transactionHex = "010000000189c041f79aac3aa7e7a72804a9a55cd9eceba41a0586640f602eb9823540ce89010000006b483045022100ab9597b37cb8796aefa30b207abb248c8003d4d153076997e375b0daf4f9f7050220546397fee1cefe54c49210ea653e9e61fb88adf51b68d2c04ad6d2b46ddf97a30121035cc9de1f233469dad8a3bbd1e61b699a7dd8e0d8370c6f3b1f2a16167da83546ffffffff02f6400a00000000001976a914accf603142aaa5e22dc82500d3e187caf712f11588ac3cf61700000000001976a91467872601dda216fbf4cab7891a03ebace87d8e7488ac00000000";
+
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
-            mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
-                .Returns(Task.FromResult(Success.Yes));
+            var connectionManagerMock = new Mock<IConnectionManager>();
+            connectionManagerMock.Setup(c => c.ConnectedNodes).Returns(new TestReadOnlyNetworkPeerCollection());
 
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), mockWalletWrapper.Object, DateTimeProvider.Default);
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest
-            {
-                Hex = new uint256(15555).ToString()
-            }).GetAwaiter().GetResult();
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
+                new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
+            IActionResult result = controller.SendTransaction(new SendTransactionRequest(transactionHex));
 
-            Assert.IsType<OkResult>(result);
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as WalletSendTransactionModel;
+            Assert.NotNull(model);
+            Assert.Equal(new uint256("96b4f0c2f0aa2cecd43fa66b5e3227c56afd8791e18fcc572d9625ee05d6741c"), model.TransactionId);
+            Assert.Equal("1GkjeiT7Y6RdPPL3p3nUME9DLJchhLNCsJ", model.Outputs.First().Address);
+            Assert.Equal(new Money(671990), model.Outputs.First().Amount);
+            Assert.Equal("1ASQW3EkkQ1zCpq3HAVfrGyVrSwVz4cbzU", model.Outputs.ElementAt(1).Address);
+            Assert.Equal(new Money(1570364), model.Outputs.ElementAt(1).Amount);
         }
 
         [Fact]
-        public void SendTransactionFailedReturnsBadRequest()
+        public void SendTransactionFailedBecauseNoNodesConnected()
         {
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
-            mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
-                .Returns(Task.FromResult(Success.No));
 
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), mockWalletWrapper.Object, DateTimeProvider.Default);
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest
+            var connectionManagerMock = new Mock<IConnectionManager>();
+            connectionManagerMock.Setup(c => c.ConnectedNodes)
+                .Returns(new NetworkPeerCollection());
+
+            WalletController controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
+                new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
+
+            bool walletExceptionOccurred = false;
+
+            try
             {
-                Hex = new uint256(15555).ToString()
-            }).GetAwaiter().GetResult();
+                controller.SendTransaction(new SendTransactionRequest(new uint256(15555).ToString()));
+            }
+            catch (WalletException)
+            {
+                walletExceptionOccurred = true;
+            }
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.NotNull(error.Message);
+            Assert.True(walletExceptionOccurred);
         }
 
         [Fact]
@@ -1478,12 +1404,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Hex", "Hex required.");
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest
-            {
-                Hex = ""
-            }).GetAwaiter().GetResult();
+            IActionResult result = controller.SendTransaction(new SendTransactionRequest(""));
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -1495,43 +1418,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void SendTransactionWithExceptionReturnsBadRequest()
-        {
-            var mockWalletWrapper = new Mock<IBroadcasterManager>();
-            mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
-                .Throws(new InvalidOperationException("Issue building transaction."));
-
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), mockWalletWrapper.Object, DateTimeProvider.Default);
-
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest
-            {
-                Hex = new uint256(15555).ToString()
-            }).GetAwaiter().GetResult();
-
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.InvalidOperationException", error.Description);
-            Assert.Equal("Issue building transaction.", error.Message);
-        }
-
-        [Fact]
         public void ListWalletFilesWithExistingWalletFilesReturnsWalletFileModel()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/ListWalletFilesWithExistingWalletFilesReturnsWalletFileModel");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
+            string walletPath = "walletPath";
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletsFiles())
-                .Returns((dataFolder.WalletPath, new[] { "wallet1.wallet.json", "wallet2.wallet.json" }));
+                .Returns((walletPath, new[] { "wallet1.wallet.json", "wallet2.wallet.json" }));
 
             //var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletFileExtension()).Returns("wallet.json");
 
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.ListWalletsFiles();
 
@@ -1539,7 +1436,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var model = viewResult.Value as WalletFileModel;
 
             Assert.NotNull(model);
-            Assert.Equal(dir, model.WalletsPath);
+            Assert.Equal(walletPath, model.WalletsPath);
             Assert.Equal(2, model.WalletsFiles.Count());
             Assert.EndsWith("wallet1.wallet.json", model.WalletsFiles.ElementAt(0));
             Assert.EndsWith("wallet2.wallet.json", model.WalletsFiles.ElementAt(1));
@@ -1548,14 +1445,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void ListWalletFilesWithoutExistingWalletFilesReturnsWalletFileModel()
         {
-            string dir = AssureEmptyDir("TestData/WalletControllerTest/ListWalletFilesWithoutExistingWalletFilesReturnsWalletFileModel");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-
+            string walletPath = "walletPath";
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletsFiles())
-                .Returns((dataFolder.WalletPath, Enumerable.Empty<string>()));
+                .Returns((walletPath, Enumerable.Empty<string>()));
 
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.ListWalletsFiles();
 
@@ -1563,20 +1458,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var model = viewResult.Value as WalletFileModel;
 
             Assert.NotNull(model);
-            Assert.Equal(dataFolder.WalletPath, model.WalletsPath);
+            Assert.Equal(walletPath, model.WalletsPath);
             Assert.Empty(model.WalletsFiles);
         }
 
         [Fact]
         public void ListWalletFilesWithExceptionReturnsBadRequest()
         {
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = "" });
-
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletsFiles())
                 .Throws(new Exception("something happened."));
 
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.ListWalletsFiles();
 
@@ -1596,7 +1489,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(m => m.GetUnusedAccount("myWallet", "test"))
                 .Returns(new HdAccount { Name = "Account 1" });
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.CreateNewAccount(new GetUnusedAccountModel
             {
                 WalletName = "myWallet",
@@ -1612,7 +1505,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Password", "A password is required.");
 
             IActionResult result = controller.CreateNewAccount(new GetUnusedAccountModel
@@ -1637,7 +1530,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(m => m.GetUnusedAccount("myWallet", "test"))
                 .Throws(new InvalidOperationException("Wallet not found."));
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.CreateNewAccount(new GetUnusedAccountModel
             {
                 WalletName = "myWallet",
@@ -1662,7 +1555,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(m => m.GetUnusedAddress(new WalletAccountReference("myWallet", "Account 1")))
                 .Returns(address);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetUnusedAddress(new GetUnusedAddressModel
             {
                 WalletName = "myWallet",
@@ -1678,7 +1571,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("AccountName", "An account name is required.");
 
             IActionResult result = controller.GetUnusedAddress(new GetUnusedAddressModel
@@ -1703,7 +1596,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.Setup(m => m.GetUnusedAddress(new WalletAccountReference("myWallet", "Account 1")))
                 .Throws(new InvalidOperationException("Wallet not found."));
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetUnusedAddress(new GetUnusedAddressModel
             {
                 WalletName = "myWallet",
@@ -1723,7 +1616,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetMaximumBalanceWithValidModelStateReturnsMaximumBalance()
         {
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             controller.ModelState.AddModelError("Error in model", "There was an error in the model.");
             IActionResult result = controller.GetMaximumSpendableBalance(new WalletMaximumBalanceRequest
             {
@@ -1741,7 +1634,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
             Assert.Equal("There was an error in the model.", error.Message);
-
         }
 
         [Fact]
@@ -1750,7 +1642,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             mockWalletTransactionHandler.Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true)).Returns((new Money(1000000), new Money(100)));
 
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetMaximumSpendableBalance(new WalletMaximumBalanceRequest
             {
                 WalletName = "myWallet",
@@ -1773,7 +1665,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             mockWalletTransactionHandler.Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true)).Throws(new Exception("failure"));
 
-            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetMaximumSpendableBalance(new WalletMaximumBalanceRequest
             {
                 WalletName = "myWallet",
@@ -1799,7 +1691,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletTransactionHandler.Setup(m => m.EstimateFee(It.IsAny<TransactionBuildContext>()))
                 .Returns(expectedFee);
 
-            WalletController controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            WalletController controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetTransactionFeeEstimate(new TxFeeEstimateRequest
             {
                 AccountName = "Account 1",
@@ -1814,6 +1706,47 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(actualFee);
             Assert.Equal(expectedFee, actualFee);
+        }
+    }
+
+    public class TestReadOnlyNetworkPeerCollection : IReadOnlyNetworkPeerCollection
+    {
+        public event EventHandler<NetworkPeerEventArgs> Added;
+        public event EventHandler<NetworkPeerEventArgs> Removed;
+
+        private List<NetworkPeer> networkPeers;
+
+        public TestReadOnlyNetworkPeerCollection()
+        {
+            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.networkPeers = new List<NetworkPeer>();
+            this.networkPeers.Add(null);
+        }
+
+        public NetworkPeer FindByEndpoint(IPEndPoint endpoint)
+        {
+            return null;
+        }
+
+        public NetworkPeer FindByIp(IPAddress ip)
+        {
+            return null;
+        }
+
+        public NetworkPeer FindLocal()
+        {
+            return null;
+        }
+
+        public IEnumerator<NetworkPeer> GetEnumerator()
+        {
+            return this.networkPeers.GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
     }
 }

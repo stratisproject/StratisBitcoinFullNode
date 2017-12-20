@@ -4,7 +4,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.JsonConverters;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
 {
@@ -46,6 +46,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "watchedAddresses")]
         public ICollection<WatchedAddressModel> WatchedAddresses { get; set; }
+
+        /// <summary>
+        /// The list of transactions being watched.
+        /// </summary>
+        [JsonProperty(PropertyName = "watchedTransactions")]
+        public ICollection<WatchedTransactionModel> WatchedTransactions { get; set; }
     }
 
     /// <summary>
@@ -60,9 +66,9 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         {
             this.Transactions = new List<TransactionVerboseModel>();
         }
-        
+
         /// <summary>
-        /// A base58 address being watched for transactions affecting it.        
+        /// A base58 address being watched for transactions affecting it.
         /// </summary>
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
@@ -72,6 +78,17 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
         public ICollection<TransactionVerboseModel> Transactions { get; set; }
+    }
 
+    /// <summary>
+    /// An object contaning a transaction being watched.
+    /// </summary>
+    public class WatchedTransactionModel
+    {
+        /// <summary>
+        /// The transaction being watched.
+        /// </summary>
+        [JsonProperty(PropertyName = "transaction")]
+        public TransactionVerboseModel Transaction { get; set; }
     }
 }

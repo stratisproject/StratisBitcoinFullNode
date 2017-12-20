@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 
 namespace NBitcoin
 {
@@ -16,29 +15,29 @@ namespace NBitcoin
         private ReaderWriterLock lockObject = new ReaderWriterLock();
 
         private volatile ChainedBlock tip;
+        private Network network;
         public override ChainedBlock Tip { get { return this.tip; } }
-
         public override int Height { get { return this.Tip.Height; } }
-
+        public override Network Network { get { return this.network; } }
+        
         public ConcurrentChain()
         {
+            this.network = Network.Main;
         }
-
-        public ConcurrentChain(BlockHeader genesis)
+        
+        public ConcurrentChain(BlockHeader genesisHeader, Network network = null) // TODO: Remove the null default
         {
-            this.SetTip(new ChainedBlock(genesis, 0));
+            this.network = network ?? Network.Main;
+            this.SetTip(new ChainedBlock(genesisHeader, genesisHeader.GetHash(this.network.NetworkOptions), 0));
         }
 
         public ConcurrentChain(Network network)
+            :this(network.GetGenesis().Header, network)
         {
-            if (network != null)
-            {
-                Block genesis = network.GetGenesis();
-                this.SetTip(new ChainedBlock(genesis.Header, 0));
-            }
         }
 
-        public ConcurrentChain(byte[] bytes)
+        public ConcurrentChain(byte[] bytes, Network network = null) // TODO: Remove the null default
+            : this(network ?? Network.Main)
         {
             this.Load(bytes);
         }
@@ -71,7 +70,7 @@ namespace NBitcoin
                             this.blocksByHeight.Clear();
                             this.blocksById.Clear();
                             this.tip = null;
-                            this.SetTipLocked(new ChainedBlock(header, 0));
+                            this.SetTipLocked(new ChainedBlock(header, header.GetHash(), 0));
                         }
                         else this.SetTipLocked(new ChainedBlock(header, id.Value, this.Tip));
 
@@ -112,6 +111,7 @@ namespace NBitcoin
         public ConcurrentChain Clone()
         {
             ConcurrentChain chain = new ConcurrentChain();
+            chain.network = this.network;
             chain.tip = this.tip;
             using (this.lockObject.LockRead())
             {
@@ -241,34 +241,6 @@ namespace NBitcoin
         public override string ToString()
         {
             return this.Tip == null ? "no tip" : this.Tip.Height.ToString();
-        }
-    }
-
-    internal class ReaderWriterLock
-    {
-        ReaderWriterLockSlim lockObject = new ReaderWriterLockSlim();
-
-        public IDisposable LockRead()
-        {
-            return new ActionDisposable(() => this.lockObject.EnterReadLock(), () => this.lockObject.ExitReadLock());
-        }
-        public IDisposable LockWrite()
-        {
-            return new ActionDisposable(() => this.lockObject.EnterWriteLock(), () => this.lockObject.ExitWriteLock());
-        }
-
-        internal bool TryLockWrite(out IDisposable locked)
-        {
-            locked = null;
-            if (this.lockObject.TryEnterWriteLock(0))
-            {
-                locked = new ActionDisposable(() =>
-                {
-                }, () => this.lockObject.ExitWriteLock());
-                return true;
-            }
-
-            return false;
         }
     }
 }

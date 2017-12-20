@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.Connection
 {
     public static class Extensions
     {
-        public static T Behavior<T>(this Node node) where T : NodeBehavior
+        public static T Behavior<T>(this NetworkPeer node) where T : NetworkPeerBehavior
         {
             return node.Behaviors.Find<T>();
         }
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Connection
                 yield return queue.Dequeue();
         }
 
-        public static string RemoteInfo(this Node node)
+        public static string RemoteInfo(this NetworkPeer node)
         {
             return node.RemoteSocketAddress + ":" + node.RemoteSocketPort;
         }

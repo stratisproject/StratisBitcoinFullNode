@@ -30,15 +30,14 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             });
         }
 
-
         private class FeatureCollectionFullNodeFeature : IFullNodeFeature
         {
-            public void Start()
+            public void Initialize()
             {
                 throw new NotImplementedException();
             }
 
-            public void Stop()
+            public void Dispose()
             {
                 throw new NotImplementedException();
             }
