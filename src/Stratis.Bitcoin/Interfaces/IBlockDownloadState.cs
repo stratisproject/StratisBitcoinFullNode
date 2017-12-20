@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Stratis.Bitcoin.Interfaces
 {
+    /// <summary>
+    /// Provides IBD (Initial Block Download) state.
+    /// </summary>
     public interface IBlockDownloadState
     {
         /// <summary>
@@ -16,8 +19,8 @@ namespace Stratis.Bitcoin.Interfaces
         /// Sets last IBD status update time and result.
         /// <para>Used in tests only.</para>
         /// </summary>
-        /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
-        /// <param name="time">Time until IBD state can be checked.</param>
-        void SetIsInitialBlockDownload(bool val, DateTime time);
+        /// <param name="blockDownloadState">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
+        /// <param name="lockStateUntil">Time until IBD state won't be changed.</param>
+        void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil);
     }
 }

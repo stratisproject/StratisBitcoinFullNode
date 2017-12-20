@@ -9,7 +9,11 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class IBDStateProvider : IBlockDownloadState
+    /// <summary>
+    /// Provides IBD (Initial Block Download) state.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Interfaces.IBlockDownloadState" />
+    public class BlockDownloadState : IBlockDownloadState
     {
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
@@ -17,10 +21,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>Information about node's chain.</summary>
         private readonly ChainState chainState;
 
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
+        /// <summary>User defined node settings.</summary>
         private readonly NodeSettings nodeSettings;
 
         /// <summary>Time until IBD state can be checked.</summary>
@@ -29,7 +36,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdCashed;
 
-        public IBDStateProvider(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
+        /// <summary>
+        /// Creates a new instance of the <see cref="BlockDownloadState"/> class.
+        /// </summary>
+        public BlockDownloadState(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             this.network = network;
             this.nodeSettings = nodeSettings;
@@ -65,10 +75,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public void SetIsInitialBlockDownload(bool val, DateTime time)
+        public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
         {
-            this.lockIbdUntil = time;
-            this.ibdCashed = val;
+            this.lockIbdUntil = lockStateUntil;
+            this.ibdCashed = blockDownloadState;
         }
     }
 }

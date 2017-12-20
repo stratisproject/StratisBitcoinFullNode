@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
 
+        /// <summary>Provider of IBD state.</summary>
         private readonly IBlockDownloadState blockDownloadState;
 
         private readonly ConcurrentChain chain;

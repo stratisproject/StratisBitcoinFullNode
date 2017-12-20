@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<LookaheadBlockPuller>();
                     services.AddSingleton<ConsensusLoop>();
                     services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
-                    services.AddSingleton<IBlockDownloadState, IBDStateProvider>();
+                    services.AddSingleton<IBlockDownloadState, BlockDownloadState>();
                     services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<StakeValidator>();
                         services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
-                        services.AddSingleton<IBlockDownloadState, IBDStateProvider>();
+                        services.AddSingleton<IBlockDownloadState, BlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
