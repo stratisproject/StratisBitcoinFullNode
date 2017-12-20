@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (!foundStartingHeader)
                     {
-                        this.logger.LogTrace("Checking is the peer can connect header '{0}'.", chainedBlock);
+                        this.logger.LogTrace("Checking is the peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock);
 
                         // Peer doesn't have a block at the height of our block and with the same hash?
                         if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) != null)
