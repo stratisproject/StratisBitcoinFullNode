@@ -7,14 +7,14 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    public class IBDTest
+    public class InitialBlockDownloadTest
     {
         private readonly ConsensusSettings consensusSettings;
         private readonly Checkpoints checkpoints;
         private readonly NodeSettings nodeSettings;
         private readonly ChainState chainState;
 
-        public IBDTest()
+        public InitialBlockDownloadTest()
         {
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(), new LoggerFactory());
             this.checkpoints = new Checkpoints(Network.Main, this.consensusSettings);
