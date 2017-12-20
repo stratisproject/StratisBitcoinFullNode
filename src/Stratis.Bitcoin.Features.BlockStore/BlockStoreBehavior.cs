@@ -223,10 +223,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return Task.CompletedTask;
             }
 
-            NetworkPeer node = this.AttachedPeer;
-            if (node == null)
+            NetworkPeer peer = this.AttachedPeer;
+            if (peer == null)
             {
-                this.logger.LogTrace("(-)[NO_NODE]");
+                this.logger.LogTrace("(-)[NO_PEER]");
                 return Task.CompletedTask;
             }
 
@@ -234,10 +234,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                                  (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1)) ||
                                 blocksToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
 
+            this.logger.LogTrace("Block propagation preferences of the peer '{0}': prefer headers - {1}, prefer headers and IDs - {2}, will{3} revert to 'inv' now.", peer.RemoteSocketEndpoint, this.PreferHeaders, this.preferHeaderAndIDs, revertToInv ? "" : " NOT");
+
             var headers = new List<BlockHeader>();
             var inventoryBlockToSend = new List<uint256>();
 
-            var chainBehavior = node.Behavior<ChainHeadersBehavior>();
+            var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
             ChainedBlock bestIndex = null;
             if (!revertToInv)
             {
@@ -250,14 +252,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (!foundStartingHeader)
                     {
+                        this.logger.LogTrace("Checking is the peer can connect header '{0}'.", chainedBlock);
+
                         // Peer doesn't have a block at the height of our block and with the same hash?
                         if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) == null)
                             continue;
+
+                        this.logger.LogTrace("Checking is the peer can connect previous header '{0}'.", chainedBlock.Previous);
 
                         // Peer doesn't have a block at the height of our block.Previous and with the same hash?
                         if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous) == null)
                         {
                             // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
+                            this.logger.LogTrace("Neither the header nor its previous header found for peer '{0}', reverting to 'inv'.", peer.RemoteSocketEndpoint);
                             revertToInv = true;
                             break;
                         }
@@ -278,11 +285,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
                 else if (this.PreferHeaders)
                 {
-                    if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), node.RemoteSocketEndpoint);
-                    else this.logger.LogDebug("Sending header {0} to peer '{1}'.", headers.First(), node.RemoteSocketEndpoint);
+                    if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
+                    else this.logger.LogDebug("Sending header {0} to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
                     chainBehavior.SetPendingTip(bestIndex);
-                    Task res = node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+                    Task res = peer.SendMessageAsync(new HeadersPayload(headers.ToArray()));
                     this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
                     return res;
                 }
@@ -305,7 +312,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
                         {
                             inventoryBlockToSend.Add(chainedBlock.HashBlock);
-                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedBlock.HashBlock, node.RemoteSocketEndpoint);
+                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedBlock.HashBlock, peer.RemoteSocketEndpoint);
                         }
                     }
                 }
@@ -313,7 +320,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (inventoryBlockToSend.Any())
             {
-                Task res = this.SendAsBlockInventoryAsync(node, inventoryBlockToSend);
+                Task res = this.SendAsBlockInventoryAsync(peer, inventoryBlockToSend);
                 this.logger.LogTrace("(-)[SEND_INVENTORY]");
                 return res;
             }
