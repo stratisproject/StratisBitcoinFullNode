@@ -1,5 +1,4 @@
 ﻿#if !NOJSONNET
-using System.Threading.Tasks;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 #endif
