@@ -1,10 +1,9 @@
-﻿using NBitcoin.BouncyCastle.Crypto;
+﻿using System;
+using System.Linq;
+using NBitcoin.BouncyCastle.Crypto;
 using NBitcoin.BouncyCastle.Crypto.Digests;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.BouncyCastle.Crypto.Signers;
-using NBitcoin.BouncyCastle.Security;
-using System;
-using System.Linq;
 
 namespace NBitcoin.Crypto
 {

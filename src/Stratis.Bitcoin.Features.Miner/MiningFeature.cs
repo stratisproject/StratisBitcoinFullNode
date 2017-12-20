@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="minerSettings">Settings relevant to mining or staking.</param>
+        /// <param name="nodeSettings">The node's configuration settings.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="powMining">POW miner.</param>
         /// <param name="posMinting">POS staker.</param>
@@ -96,6 +97,16 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
+        /// <summary>
+        /// Stop a staking wallet.
+        /// </summary>
+        public void StopStaking()
+        {
+            this.posMinting.StopStake();
+            this.posLoop = null;
+            this.logger.LogInformation("Staking stopped.");
+        }
+
         /// <inheritdoc />
         public override void Initialize()
         {
@@ -124,6 +135,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.powLoop?.Dispose();
             this.posLoop?.Dispose();
+            this.posLoop = null;
         }
 
         /// <inheritdoc />
@@ -166,6 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
@@ -203,6 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
                     });
             });

@@ -1,12 +1,12 @@
-﻿using NBitcoin.BouncyCastle.Math;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -107,6 +107,11 @@ namespace NBitcoin
 
         public uint256 GetHash()
         {
+            return GetHash(NetworkOptions.TemporaryOptions);
+        }
+
+        public uint256 GetHash(NetworkOptions options)
+        {
             uint256 hash = null;
             uint256[] hashes = this.hashes;
 
@@ -116,7 +121,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            if (Block.BlockSignature)
+            if (options.IsProofOfStake)
             {
                 if (this.version > 6)
                     hash = Hashes.Hash256(this.ToBytes());
@@ -155,28 +160,18 @@ namespace NBitcoin
             this.hashes = new uint256[1];
         }
 
-        public bool CheckProofOfWork()
-        {
-            return this.CheckProofOfWork(null);
-        }
-
         public bool CheckProofOfWork(Consensus consensus)
         {
-            consensus = consensus ?? Network.Main.Consensus;
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
                 return false;
 
-            // Check proof of work matches claimed amount.
-            if (Block.BlockSignature) // Note this can only be called on a POW block.
-                return this.GetPoWHash() <= this.Bits.ToUInt256();
-
-            return consensus.GetPoWHash(this) <= this.Bits.ToUInt256();
+            return consensus.GetPoWHash(consensus.NetworkOptions, this) <= this.Bits.ToUInt256();
         }
 
         public override string ToString()
         {
-            return GetHash().ToString();
+            return GetHash(NetworkOptions.TemporaryOptions).ToString();
         }
 
         /// <summary>
@@ -217,7 +212,7 @@ namespace NBitcoin
 
         public Target GetWorkRequired(Consensus consensus, ChainedBlock prev)
         {
-            return new ChainedBlock(this, null, prev).GetWorkRequired(consensus);
+            return new ChainedBlock(this, this.GetHash(consensus.NetworkOptions), prev).GetWorkRequired(consensus);
         }
     }
 
@@ -252,12 +247,11 @@ namespace NBitcoin
             this.ReadWrite(bytes);
         }
 
-
         public void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
-            if (Block.BlockSignature)
+            if (stream.TransactionOptions.IsProofOfStake)
                 stream.ReadWrite(ref this.blockSignature);
         }
 
@@ -282,10 +276,16 @@ namespace NBitcoin
                 return this.header;
             }
         }
+
         public uint256 GetHash()
         {
+            return GetHash(NetworkOptions.TemporaryOptions);
+        }
+
+        public uint256 GetHash(NetworkOptions options)
+        {
             // Block's hash is his header's hash.
-            return this.header.GetHash();
+            return this.header.GetHash(options);
         }
 
         public void ReadWrite(byte[] array, int startIndex)
@@ -344,28 +344,14 @@ namespace NBitcoin
         /// <summary>
         /// Check proof of work and merkle root
         /// </summary>
-        /// <returns></returns>
-        public bool Check()
-        {
-            return this.Check(null);
-        }
-
-        /// <summary>
-        /// Check proof of work and merkle root
-        /// </summary>
         /// <param name="consensus"></param>
         /// <returns></returns>
         public bool Check(Consensus consensus)
         {
-            if (Block.BlockSignature)
-                return BlockStake.Check(this);
+            if (consensus.NetworkOptions.IsProofOfStake)
+                return BlockStake.Check(this, consensus);
 
             return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);
-        }
-
-        public bool CheckProofOfWork()
-        {
-            return this.CheckProofOfWork(null);
         }
 
         public bool CheckProofOfWork(Consensus consensus)

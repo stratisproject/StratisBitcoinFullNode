@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
@@ -16,30 +15,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
-        public override async Task<bool> TryBroadcastAsync(Transaction transaction)
+        public override async Task BroadcastTransactionAsync(Transaction transaction)
         {
-            if (transaction == null)
-                throw new ArgumentNullException(nameof(transaction));
+            Guard.NotNull(transaction, nameof(transaction));
 
             if (this.IsPropagated(transaction))
-                return true;
+                return;
 
-            this.PropagateTransactionToPeers(transaction, true);
-
-            var elapsed = TimeSpan.Zero;
-            var checkFrequency = TimeSpan.FromSeconds(1);
-
-            while (elapsed < this.broadcastMaxTime)
-            {
-                var transactionEntry = this.GetTransaction(transaction.GetHash());
-                if (transactionEntry != null && transactionEntry.State == State.Propagated)
-                    return true;
-
-                await Task.Delay(checkFrequency).ConfigureAwait(false);
-                elapsed += checkFrequency;
-            }
-
-            throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
+            await this.PropagateTransactionToPeersAsync(transaction, true);
         }
     }
 }

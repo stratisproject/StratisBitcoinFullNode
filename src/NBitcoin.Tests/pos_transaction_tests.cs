@@ -77,10 +77,10 @@ namespace NBitcoin.Tests
             if (chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, null, chain.Tip);
+                return new ChainedBlock(b.Header, b.Header.GetHash(Network.StratisMain.NetworkOptions), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, 0);
+                return new ChainedBlock(b.Header, b.Header.GetHash(Network.StratisMain.NetworkOptions), 0);
         }
 
         [Fact]
@@ -472,14 +472,14 @@ namespace NBitcoin.Tests
                 repo.Transactions.Put(tx.GetHash(), tx);
 
                 var ctx = tx.GetColoredTransaction(repo);
-                Assert.Equal(1, ctx.Issuances.Count);
+                Assert.Single(ctx.Issuances);
                 Assert.Equal(2, ctx.Transfers.Count);
             }
         }
 
         //[Fact]
         //[Trait("UnitTest", "UnitTest")]
-        public void CanBuildColoredTransaction()
+        private void CanBuildColoredTransaction()
         {
             // test is disabled for now
             // todo: not required for now if we use coloured coins we can revive this.
@@ -561,10 +561,10 @@ namespace NBitcoin.Tests
 
             Assert.True(txBuilder.Verify(tx));
             colored = tx.GetColoredTransaction(repo);
-            Assert.Equal(1, colored.Inputs.Count);
+            Assert.Single(colored.Inputs);
             Assert.Equal(goldId, colored.Inputs[0].Asset.Id);
             Assert.Equal(500, colored.Inputs[0].Asset.Quantity);
-            Assert.Equal(1, colored.Issuances.Count);
+            Assert.Single(colored.Issuances);
             Assert.Equal(2, colored.Transfers.Count);
             AssertHasAsset(tx, colored, colored.Transfers[0], goldId, 470, bob.PubKey);
             AssertHasAsset(tx, colored, colored.Transfers[1], goldId, 30, satoshi.PubKey);
@@ -994,7 +994,7 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = new ConcurrentChain(new BlockHeader()
             {
                 BlockTime = first
-            });
+            }, Network.StratisMain);
             first = first + TimeSpan.FromMinutes(10);
             while (currentHeight != chain.Height)
             {
@@ -1711,7 +1711,7 @@ namespace NBitcoin.Tests
 
         //[Trait("UnitTest", "UnitTest")]
         //[Fact]
-        public void CanMutateSignature()
+        private void CanMutateSignature()
         {
             // test is disabled for now
 
@@ -1818,13 +1818,13 @@ namespace NBitcoin.Tests
             spending.Inputs.Add(new TxIn(new OutPoint(funding, 3))); //Coins not found
             builder.Verify(spending, Money.Coins(1.0m), out errors);
             var coin = errors.OfType<CoinNotFoundPolicyError>().Single();
-            Assert.Equal(coin.InputIndex, 4UL);
-            Assert.Equal(coin.OutPoint.N, 3UL);
+            Assert.Equal(4UL, coin.InputIndex);
+            Assert.Equal(3UL, coin.OutPoint.N);
         }
 
         //[Fact]
         //[Trait("UnitTest", "UnitTest")]
-        public void CanCheckSegwitSig()
+        private void CanCheckSegwitSig()
         {
             // SegWit test disabled for now
 
@@ -1883,7 +1883,7 @@ namespace NBitcoin.Tests
 
         //[Fact]
         //[Trait("UnitTest", "UnitTest")]
-        public void bip143Test()
+        private void bip143Test()
         {
             // this test is disable dor now as it is part of SegWit
             Transaction tx = new Transaction("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000");
@@ -1954,7 +1954,7 @@ namespace NBitcoin.Tests
         //[Fact]
         //http://bitcoin.stackexchange.com/questions/25814/ecdsa-signature-and-the-z-value
         //http://www.nilsschneider.net/2013/01/28/recovering-bitcoin-private-keys.html
-        public void PlayingWithSignatures()
+        private void PlayingWithSignatures()
         {
             var script1 = new Script("30440220d47ce4c025c35ec440bc81d99834a624875161a26bf56ef7fdc0f5d52f843ad1022044e1ff2dfd8102cf7a47c21d5c9fd5701610d04953c6836596b4fe9dd2f53e3e01 04dbd0c61532279cf72981c3584fc32216e0127699635c2789f549e0730c059b81ae133016a69c21e23f1859a95f06d52b7bf149a8f2fe4e8535c8a829b449c5ff");
 
@@ -2086,7 +2086,7 @@ namespace NBitcoin.Tests
             Assert.True(scriptCoin.GetHashVersion() == HashVersion.Witness);
 
 
-            Assert.Throws(typeof(ArgumentException), () => new ScriptCoin(c, key.PubKey.ScriptPubKey.WitHash.ScriptPubKey));
+            Assert.Throws<ArgumentException>(() => new ScriptCoin(c, key.PubKey.ScriptPubKey.WitHash.ScriptPubKey));
         }
 
         [Fact]
@@ -2313,7 +2313,7 @@ namespace NBitcoin.Tests
                             }
                             else
                             {
-                                Assert.True(signatures.Any(s => !s.ToBytes().SequenceEqual(sig.ToBytes())));
+                                Assert.Contains(signatures, s => !s.ToBytes().SequenceEqual(sig.ToBytes()));
                                 var noModifSignature = signatures[0];
                                 var replacement = PayToPubkeyHashTemplate.Instance.GenerateScriptSig(noModifSignature, secret.PubKey);
                                 if (signedInput.WitScript != WitScript.Empty)
@@ -2326,7 +2326,7 @@ namespace NBitcoin.Tests
                                 }
                                 TransactionPolicyError[] errors;
                                 Assert.False(builder.Verify(result, out errors));
-                                Assert.Equal(1, errors.Length);
+                                Assert.Single(errors);
                                 var scriptError = (ScriptPolicyError)errors[0];
                                 Assert.True(scriptError.ScriptError == ScriptError.EvalFalse);
                             }
@@ -2415,7 +2415,7 @@ namespace NBitcoin.Tests
 
         //[Fact]
         //[Trait("Core", "Core")]
-        public void tx_valid()
+        private void tx_valid()
         {
             // test is disabled for now
             // todo: get test data for the stratis blockchain
@@ -2536,7 +2536,7 @@ namespace NBitcoin.Tests
 
         //[Fact]
         //[Trait("Core", "Core")]
-        public void tx_invalid()
+        private void tx_invalid()
         {
             // test is disabled for now
             // todo: get test data for the stratis blockchain

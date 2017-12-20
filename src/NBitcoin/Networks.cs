@@ -69,7 +69,7 @@ namespace NBitcoin
 
             consensus.CoinType = 0;
 
-            consensus.DefaultAssumeValid = new uint256("0x0000000000000000003b9ce759c2a087d52abc4266f8f4ebd6d768b89defa50a"); // 477890
+            consensus.DefaultAssumeValid = new uint256("0x00000000000000000086a2362d78ffb4e41dc0b8775ff3c278bd994a5162348a"); // 499610
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -161,7 +161,7 @@ namespace NBitcoin
 
             network.consensus.CoinType = 1;
 
-            network.consensus.DefaultAssumeValid = new uint256("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); // 1135275 
+            network.consensus.DefaultAssumeValid = new uint256("0x000000003ccfe92231efee04df6621e7bb3f7f513588054e19f78d626b951f59"); // 1235126
 
             network.magic = 0x0709110B;
 
@@ -266,11 +266,14 @@ namespace NBitcoin
         }
 
         private static Network InitStratisMain()
-        {            
+        {
             Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
             var consensus = new Consensus();
+
+            consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
+            consensus.GetPoWHash = (n, h) => Crypto.HashX13.Instance.Hash(h.ToBytes(options:n)); 
 
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
@@ -299,10 +302,10 @@ namespace NBitcoin
 
             consensus.CoinType = 105;
 
-            consensus.DefaultAssumeValid = new uint256("0x5acb513b96dcb727fbe85c7d50a1266e6414cdd4c3ae66d01313c34a81b466a2"); // 602240
+            consensus.DefaultAssumeValid = new uint256("0x8c2cf95f9ca72e13c8c4cdf15c2d7cc49993946fb49be4be147e106d502f1869"); // 642930
 
             Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
-            consensus.HashGenesisBlock = genesis.GetHash();
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -388,15 +391,15 @@ namespace NBitcoin
             messageStart[3] = 0x11;
             var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
-            var genesis = Network.StratisMain.GetGenesis().Clone();
+            var genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash();
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
-            consensus.DefaultAssumeValid = new uint256("0x74427b2f85b5d9658ee81f7e73526441311122f2b23702b794be557ba43ca43e"); // 184096
+            consensus.DefaultAssumeValid = new uint256("0x12ae16993ce7f0836678f225b2f4b38154fa923bd1888f7490051ddaf4e9b7fa"); // 218810
 
             var builder = new NetworkBuilder()
                 .SetName("StratisTest")
@@ -449,11 +452,11 @@ namespace NBitcoin
             messageStart[3] = 0xef;
             var magic = BitConverter.ToUInt32(messageStart, 0); 
 
-            var genesis = Network.StratisMain.GetGenesis().Clone();
+            var genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash();
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
 

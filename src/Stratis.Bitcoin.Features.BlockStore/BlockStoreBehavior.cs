@@ -20,7 +20,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         bool CanRespondToGetBlocksPayload { get; set; }
 
-        Task AnnounceBlocks(List<uint256> blockHashesToAnnounce);
+        /// <summary>
+        /// Sends information about newly discovered blocks to network peers using "headers" or "inv" message.
+        /// </summary>
+        /// <param name="blocksToAnnounce">List of block headers to announce.</param>
+        Task AnnounceBlocks(List<ChainedBlock> blocksToAnnounce);
     }
 
     public class BlockStoreBehavior : NetworkPeerBehavior, IBlockStoreBehavior
@@ -208,14 +212,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task AnnounceBlocks(List<uint256> blockHashesToAnnounce)
+        public Task AnnounceBlocks(List<ChainedBlock> blocksToAnnounce)
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashesToAnnounce), nameof(blockHashesToAnnounce.Count), blockHashesToAnnounce?.Count);
-            Guard.NotNull(blockHashesToAnnounce, nameof(blockHashesToAnnounce));
+            Guard.NotNull(blocksToAnnounce, nameof(blocksToAnnounce));
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce.Count);
 
-            if (!blockHashesToAnnounce.Any())
+            if (!blocksToAnnounce.Any())
             {
-                this.logger.LogTrace("(-)[NO_HASHES]");
+                this.logger.LogTrace("(-)[NO_BLOCKS]");
                 return Task.CompletedTask;
             }
 
@@ -227,8 +231,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             bool revertToInv = ((!this.PreferHeaders &&
-                                 (!this.preferHeaderAndIDs || blockHashesToAnnounce.Count > 1)) ||
-                                blockHashesToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
+                                 (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1)) ||
+                                blocksToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
 
             var headers = new List<BlockHeader>();
             var inventoryBlockToSend = new List<uint256>();
@@ -238,43 +242,31 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!revertToInv)
             {
                 bool foundStartingHeader = false;
-                // Try to find first header that our peer doesn't have, and
-                // then send all headers past that one.  If we come across any
-                // headers that aren't on chainActive, give up.
+                // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
 
-                foreach (var hash in blockHashesToAnnounce)
+                foreach (ChainedBlock chainedBlock in blocksToAnnounce)
                 {
-                    ChainedBlock chainedBlock = this.chain.GetBlock(hash);
-                    if (chainedBlock == null)
+                    bestIndex = chainedBlock;
+
+                    if (!foundStartingHeader)
                     {
-                        // Bail out if we reorged away from this block
-                        revertToInv = true;
-                        break;
+                        // Peer doesn't have a block at the height of our block and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) == null)
+                            continue;
+
+                        // Peer doesn't have a block at the height of our block.Previous and with the same hash?
+                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous) == null)
+                        {
+                            // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
+                            revertToInv = true;
+                            break;
+                        }
+
+                        foundStartingHeader = true;
                     }
 
-                    bestIndex = chainedBlock;
-                    if (foundStartingHeader)
-                    {
-                        headers.Add(chainedBlock.Header);
-                    }
-                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
-                    {
-                        continue;
-                    }
-                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
-                    {
-                        // Peer doesn't have this header but they do have the prior one.
-                        // Start sending headers.
-                        foundStartingHeader = true;
-                        headers.Add(chainedBlock.Header);
-                    }
-                    else
-                    {
-                        // Peer doesn't have this header or the prior one -- nothing will
-                        // connect, so bail out.
-                        revertToInv = true;
-                        break;
-                    }
+                    // If we reached here then it means that we've found starting header.
+                    headers.Add(chainedBlock.Header);
                 }
             }
 
@@ -303,19 +295,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (revertToInv)
             {
                 // If falling back to using an inv, just try to inv the tip.
-                // The last entry in vBlockHashesToAnnounce was our tip at some point
-                // in the past.
+                // The last entry in 'blocksToAnnounce' was our tip at some point in the past.
 
-                if (blockHashesToAnnounce.Any())
+                if (blocksToAnnounce.Any())
                 {
-                    uint256 hashToAnnounce = blockHashesToAnnounce.Last();
-                    ChainedBlock chainedBlock = this.chain.GetBlock(hashToAnnounce);
+                    ChainedBlock chainedBlock = blocksToAnnounce.Last();
                     if (chainedBlock != null)
                     {
                         if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
                         {
-                            inventoryBlockToSend.Add(hashToAnnounce);
-                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", hashToAnnounce, node.RemoteSocketEndpoint);
+                            inventoryBlockToSend.Add(chainedBlock.HashBlock);
+                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedBlock.HashBlock, node.RemoteSocketEndpoint);
                         }
                     }
                 }

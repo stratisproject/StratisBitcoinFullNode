@@ -1,8 +1,12 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -11,22 +15,23 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorAddNode : PeerConnector
     {
-        /// <summary>Parameterless constructor for dependency injection.</summary>
-        public PeerConnectorAddNode()
-            : base()
-        {
-        }
-
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorAddNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
+        /// <summary>Constructor for dependency injection.</summary>
+        public PeerConnectorAddNode(
+            IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            Network network,
+            INetworkPeerFactory networkPeerFactory,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            IPeerAddressManager peerAddressManager) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
 
             this.Requirements = new NetworkPeerRequirement
@@ -41,14 +46,28 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        /// <inheritdoc/>
-        public override NetworkAddress FindPeerToConnectTo()
+        /// <summary>This connector is always started.</summary>
+        public override bool CanStartConnect
         {
-            foreach (var endPoint in this.NodeSettings.ConnectionManager.AddNode)
+            get { return true; }
+        }
+
+        /// <inheritdoc/>
+        public override void OnStartConnect()
+        {
+            this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
+        }
+
+        /// <summary>
+        /// Only return nodes as specified in the -addnode arg.
+        /// </summary>
+        public override PeerAddress FindPeerToConnectTo()
+        {
+            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
-                PeerAddress peerAddress = this.peerAddressManager.FindPeer(endPoint);
+                PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
-                    return peerAddress.NetworkAddress;
+                    return peerAddress;
             }
 
             return null;

@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             uint256 expected = this.rpcTestFixture.Node.FullNode.Chain.Tip.Header.GetHash();
 
             uint256 response = this.rpcTestFixture.RpcClient.GetBestBlockHash();
-            
+
             Assert.Equal(expected, response);
         }
 
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
             // Assert header hash matches genesis hash.
-            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
+            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash(Network.RegTest.NetworkOptions));
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             this.RpcClient = this.Node.CreateRPCClient();
 
             this.NetworkPeerClient = this.Node.CreateNetworkPeerClient();
-            this.NetworkPeerClient.VersionHandshake();
+            this.NetworkPeerClient.VersionHandshakeAsync().GetAwaiter().GetResult();
         }
 
         // note: do not call this dispose in the class itself xunit will handle it.

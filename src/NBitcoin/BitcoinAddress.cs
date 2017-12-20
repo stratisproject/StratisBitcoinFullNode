@@ -1,6 +1,6 @@
-﻿using NBitcoin.DataEncoders;
-using System;
+﻿using System;
 using System.Linq;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {

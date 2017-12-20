@@ -110,7 +110,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 payloadStream.CopyParameters(stream);
 
                 this.ReadWritePayloadFields(payloadStream);
-
             }
 
             stream.ReadWrite(ref this.signature);

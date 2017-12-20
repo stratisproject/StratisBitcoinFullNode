@@ -1,10 +1,10 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
 using Xunit;
 
 namespace NBitcoin.Tests

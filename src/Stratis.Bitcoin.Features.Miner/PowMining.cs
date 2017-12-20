@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
 
-                if (Block.BlockSignature)
+                if (this.network.NetworkOptions.IsProofOfStake)
                 {
                     // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
                     // where it is possible to generate multiple blocks within one second.
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                 Block pblock = pblockTemplate.Block;
 
-                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
+                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
                 {
                     this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 

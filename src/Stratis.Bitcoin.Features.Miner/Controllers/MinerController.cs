@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -29,19 +28,24 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>Full Node.</summary>
         private readonly IFullNode fullNode;
 
+        /// <summary>The wallet manager.</summary>
+        private readonly IWalletManager walletManager;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="walletManager">The wallet manager.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
         /// <param name="fullNode">Full Node.</param>
-        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IPosMinting posMinting = null)
+        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.walletManager = walletManager;
             this.posMinting = posMinting;
         }
 
@@ -70,11 +74,13 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// Start staking.
         /// </summary>
         /// <param name="request">The name and password of the wallet to stake.</param>
-        /// <returns>An OKResult object that produces a status code 200 HTTP response.</returns>
+        /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("startstaking")]
         [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             try
             {
                 if (!this.ModelState.IsValid)
@@ -82,31 +88,20 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                     var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
-
-                IWalletManager walletManager = this.fullNode.NodeService<IWalletManager>();
-                Wallet.Wallet wallet = this.GetWallet(walletManager, request.Name);
-
-                if (wallet == null)
+                
+                Wallet.Wallet wallet = this.walletManager.GetWallet(request.Name);
+                
+                // Check the password
+                try
                 {
-                    string err = $"The specified wallet is unknown: '{request.Name}'";
-                    this.logger.LogError("Exception occurred: {0}", err);
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found", err);
+                    Key.Parse(wallet.EncryptedSeed, request.Password, wallet.Network);
                 }
-                else
+                catch (Exception ex)
                 {
-                    // Check the password
-                    try
-                    {
-                        Key.Parse(wallet.EncryptedSeed, request.Password, wallet.Network);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new SecurityException(ex.Message);
-                    }
+                    throw new SecurityException(ex.Message);
                 }
-
+            
                 this.fullNode.NodeFeature<MiningFeature>(true).StartStaking(request.Name, request.Password);
-
                 return this.Ok();
             }
             catch (Exception e)
@@ -117,20 +112,22 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         }
 
         /// <summary>
-        /// Attempts to retrieve the <see cref="Wallet.Wallet"/> with the given name from the <see cref="IWalletManager"/>.
+        /// Stop staking.
         /// </summary>
-        /// <param name="walletManager">The wallet manager to get the wallet from.</param>
-        /// <param name="walletName">The wallet name.</param>
-        /// <returns>The wallet with the given name if found. Otherwise null.</returns>
-        private Wallet.Wallet GetWallet(IWalletManager walletManager, string walletName)
+        /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
+        [Route("stopstaking")]
+        [HttpPost]
+        public IActionResult StopStaking()
         {
             try
             {
-                return walletManager.GetWallet(walletName);
+                this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
+                return this.Ok();
             }
-            catch (WalletException)
+            catch (Exception e)
             {
-                return null;
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
     }

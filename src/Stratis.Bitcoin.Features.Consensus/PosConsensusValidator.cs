@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        protected override void CheckBlockReward(ContextInformation context, Money fees, int height, Block block)
+        protected override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
 
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
+        public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler)
         {
             this.logger.LogTrace("()");
 
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void CheckBlock(ContextInformation context)
+        public override void CheckBlock(RuleContext context)
         {
             this.logger.LogTrace("()");
 
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        protected override void UpdateCoinView(ContextInformation context, Transaction transaction)
+        protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.logger.LogTrace("()");
 
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void ContextualCheckBlock(ContextInformation context)
+        public override void ContextualCheckBlock(RuleContext context)
         {
             this.logger.LogTrace("()");
 
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void ContextualCheckBlockHeader(ContextInformation context)
+        public override void ContextualCheckBlockHeader(RuleContext context)
         {
             this.logger.LogTrace("()");
             base.ContextualCheckBlockHeader(context);
@@ -408,27 +408,27 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return false;
             }
 
-            bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
+            bool verifyRes = new PubKey(data).Verify(block.GetHash(this.ConsensusParams.NetworkOptions), new ECDSASignature(block.BlockSignatur.Signature));
             this.logger.LogTrace("(-):{0}", verifyRes);
             return verifyRes;
         }
 
         /// <inheritdoc />
-        public override void CheckBlockHeader(ContextInformation context)
+        public override void CheckBlockHeader(RuleContext context)
         {
             this.logger.LogTrace("()");
             context.SetStake();
 
             if (context.Stake.BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
                 {
                     this.logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
+            context.NextWorkRequired = this.StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
                 context.Stake.BlockStake.IsProofOfStake());
 
             this.logger.LogTrace("(-)[OK]");
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
         /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
-        private void CheckAndComputeStake(ContextInformation context)
+        private void CheckAndComputeStake(RuleContext context)
         {
             this.logger.LogTrace("()");
 
@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.PrevStakeNull.Throw();
 
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
-                if (!context.BlockValidationContext.SkipValidation)
+                if (!context.SkipValidation)
                 {
                     this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
                 }

@@ -1,13 +1,11 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Stealth;
-using NBitcoin.BouncyCastle.Math;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
+using NBitcoin.Stealth;
 
 namespace NBitcoin
 {

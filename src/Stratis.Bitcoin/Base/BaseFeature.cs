@@ -155,9 +155,9 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                     this.chain.Tip.Height.ToString().PadRight(8) +
-                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.chain.Tip.HashBlock);
+                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.chain.Tip.HashBlock);
         }
 
         /// <inheritdoc />
@@ -305,9 +305,10 @@ namespace Stratis.Bitcoin.Base
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorAddNode());
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorConnectNode());
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorDiscovery());
+                    services.AddSingleton<IPeerConnector, PeerConnectorAddNode>();
+                    services.AddSingleton<IPeerConnector, PeerConnectorConnectNode>();
+                    services.AddSingleton<IPeerConnector, PeerConnectorDiscovery>();
+                    services.AddSingleton<IPeerDiscovery, PeerDiscovery>();
                 });
             });
 

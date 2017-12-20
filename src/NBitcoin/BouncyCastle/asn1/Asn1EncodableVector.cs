@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-
 using NBitcoin.BouncyCastle.Utilities;
 
 namespace NBitcoin.BouncyCastle.Asn1
