@@ -13,7 +13,8 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorDiscovery : PeerConnector
     {
-        private const int MaximumPeerSelectionAttempts = 50;
+        /// <summary>Maximum peer selection attempts.</summary>
+        private const int MaximumPeerSelectionAttempts = 5;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
