@@ -130,6 +130,5 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
     }
 }
