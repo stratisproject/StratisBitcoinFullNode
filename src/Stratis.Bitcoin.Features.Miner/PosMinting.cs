@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private CancellationTokenSource stakeCancellationTokenSource;
 
         /// <summary>Provider of IBD state.</summary>
-        private IBlockDownloadState blockDownloadState;
+        private IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="connection">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
         /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
-        /// <param name="blockDownloadState">Provider of IBD state.</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="coinView">Consensus' view of UTXO set.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
             AssemblerFactory blockAssemblerFactory,
-            IBlockDownloadState blockDownloadState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
             StakeChain stakeChain,
@@ -334,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.connection = connection;
             this.dateTimeProvider = dateTimeProvider;
             this.blockAssemblerFactory = blockAssemblerFactory;
-            this.blockDownloadState = blockDownloadState;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.nodeLifetime = nodeLifetime;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
@@ -456,7 +456,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.blockDownloadState.IsInitialBlockDownload())
+                while (!this.connection.ConnectedNodes.Any() || this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");

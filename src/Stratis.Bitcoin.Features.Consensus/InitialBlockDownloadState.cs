@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <summary>
     /// Provides IBD (Initial Block Download) state.
     /// </summary>
-    /// <seealso cref="Stratis.Bitcoin.Interfaces.IBlockDownloadState" />
-    public class BlockDownloadState : IBlockDownloadState
+    /// <seealso cref="IInitialBlockDownloadState" />
+    public class InitialBlockDownloadState : IInitialBlockDownloadState
     {
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
@@ -37,9 +37,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         private bool ibdCached;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="BlockDownloadState"/> class.
+        /// Creates a new instance of the <see cref="InitialBlockDownloadState"/> class.
         /// </summary>
-        public BlockDownloadState(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
+        public InitialBlockDownloadState(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             this.network = network;
             this.nodeSettings = nodeSettings;

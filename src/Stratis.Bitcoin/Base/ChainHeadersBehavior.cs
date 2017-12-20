@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Base
         private readonly ChainState chainState;
 
         /// <summary>Provider of IBD state.</summary>
-        private readonly IBlockDownloadState blockDownloadState;
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary><c>true</c> if the chain should be kept in sync, <c>false</c> otherwise.</summary>
         public bool CanSync { get; set; }
@@ -91,15 +91,15 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chain">Thread safe chain of block headers from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        /// <param name="blockDownloadState">Provider of IBD state.</param>
-        public ChainHeadersBehavior(ConcurrentChain chain, ChainState chainState, IBlockDownloadState blockDownloadState, ILoggerFactory loggerFactory)
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
+        public ChainHeadersBehavior(ConcurrentChain chain, ChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
 
             this.chainState = chainState;
             this.chain = chain;
             this.loggerFactory = loggerFactory;
-            this.blockDownloadState = blockDownloadState;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
 
             this.AutoSync = true;
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Base
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.blockDownloadState.IsInitialBlockDownload() && !this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
+                        if (this.initialBlockDownloadState.IsInitialBlockDownload() && !this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -369,7 +369,7 @@ namespace Stratis.Bitcoin.Base
 
         public override object Clone()
         {
-            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.blockDownloadState, this.loggerFactory)
+            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.loggerFactory)
             {
                 CanSync = this.CanSync,
                 CanRespondToGetHeaders = this.CanRespondToGetHeaders,

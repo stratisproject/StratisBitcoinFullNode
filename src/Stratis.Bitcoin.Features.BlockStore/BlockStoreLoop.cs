@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal readonly ConcurrentChain Chain;
 
         /// <summary>Provider of IBD state.</summary>
-        public IBlockDownloadState BlockDownloadState { get; }
+        public IInitialBlockDownloadState InitialBlockDownloadState { get; }
 
         public ChainState ChainState { get; }
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IBlockDownloadState blockDownloadState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
-            this.BlockDownloadState = blockDownloadState;
+            this.InitialBlockDownloadState = initialBlockDownloadState;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);

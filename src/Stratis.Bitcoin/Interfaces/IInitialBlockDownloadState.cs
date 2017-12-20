@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Interfaces
     /// <summary>
     /// Provides IBD (Initial Block Download) state.
     /// </summary>
-    public interface IBlockDownloadState
+    public interface IInitialBlockDownloadState
     {
         /// <summary>
         /// Checks whether the node is currently in the process of initial block download.

@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 builder.StartAll();
 
                 // not in IBD
-                stratisNode.FullNode.BlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
                 var tip = coreNode.FindBlock(10).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 builder.StartAll();
 
                 // not in IBD
-                stratisNode.FullNode.BlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNodeSync.FullNode.BlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNodeSync.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 builder.StartAll();
 
                 // not in IBD
-                stratisNode.FullNode.BlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced

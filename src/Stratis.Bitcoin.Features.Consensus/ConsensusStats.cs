@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ConsensusLoop consensusLoop;
 
         /// <summary>Provider of IBD state.</summary>
-        private readonly IBlockDownloadState blockDownloadState;
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         private readonly ConcurrentChain chain;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ConsensusStats(
             CoinView coinView,
             ConsensusLoop consensusLoop,
-            IBlockDownloadState blockDownloadState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.lastSnapshot = consensusLoop.Validator.PerformanceCounter.Snapshot();
             this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
             this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
-            this.blockDownloadState = blockDownloadState;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.chain = chain;
             this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         protected override void OnNextCore(Block value)
         {
             if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
-                if (this.blockDownloadState.IsInitialBlockDownload())
+                if (this.initialBlockDownloadState.IsInitialBlockDownload())
                     this.LogAsync().GetAwaiter().GetResult();
         }
     }

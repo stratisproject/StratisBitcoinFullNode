@@ -623,7 +623,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void NotInIBD()
         {
             // not in IBD
-            this.FullNode.NodeService<IBlockDownloadState>().SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            this.FullNode.NodeService<IInitialBlockDownloadState>().SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public void Start()

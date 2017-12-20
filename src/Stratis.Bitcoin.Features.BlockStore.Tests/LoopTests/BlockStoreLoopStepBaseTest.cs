@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         private DataFolder dataFolder;
         private Mock<INodeLifetime> nodeLifeTime;
         private Mock<ILoggerFactory> loggerFactory;
-        private IBlockDownloadState blockDownloadState;
+        private IInitialBlockDownloadState initialBlockDownloadState;
 
         public BlockStoreLoop Loop { get; private set; }
 
@@ -52,9 +52,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
-            var mock = new Mock<IBlockDownloadState>();
+            var mock = new Mock<IInitialBlockDownloadState>();
             mock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
-            this.blockDownloadState = mock.Object;
+            this.initialBlockDownloadState = mock.Object;
 
             this.chainState = new Mock<ChainState>(new InvalidBlockHashStore(fullNode.DateTimeProvider));
 
@@ -63,9 +63,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
         internal FluentBlockStoreLoop AsIBD()
         {
-            var mock = new Mock<IBlockDownloadState>();
+            var mock = new Mock<IInitialBlockDownloadState>();
             mock.Setup(x => x.IsInitialBlockDownload()).Returns(true);
-            this.blockDownloadState = mock.Object;
+            this.initialBlockDownloadState = mock.Object;
             return this;
         }
 
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     new StoreSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
-                    this.blockDownloadState,
+                    this.initialBlockDownloadState,
                     DateTimeProvider.Default);
         }
 

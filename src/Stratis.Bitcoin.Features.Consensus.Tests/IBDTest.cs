@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void NotInIBDIfChainStateIsNull()
         {
-            var blockDownloadState = new BlockDownloadState(null, Network.Main, this.nodeSettings, this.checkpoints);
+            var blockDownloadState = new InitialBlockDownloadState(null, Network.Main, this.nodeSettings, this.checkpoints);
             Assert.False(blockDownloadState.IsInitialBlockDownload());
         }
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void InIBDIfChainTipIsNull()
         {
             this.chainState.ConsensusTip = null;
-            var blockDownloadState = new BlockDownloadState(this.chainState, Network.Main, this.nodeSettings, this.checkpoints);
+            var blockDownloadState = new InitialBlockDownloadState(this.chainState, Network.Main, this.nodeSettings, this.checkpoints);
             Assert.True(blockDownloadState.IsInitialBlockDownload());
         }
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void InIBDIfBehindCheckpoint()
         {
             this.chainState.ConsensusTip = new ChainedBlock(new BlockHeader(), uint256.Zero, 1000);
-            var blockDownloadState = new BlockDownloadState(this.chainState, Network.Main, this.nodeSettings, this.checkpoints);
+            var blockDownloadState = new InitialBlockDownloadState(this.chainState, Network.Main, this.nodeSettings, this.checkpoints);
             Assert.True(blockDownloadState.IsInitialBlockDownload());
         }
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void InIBDIfChainWorkIsLessThanMinimum()
         {
             this.chainState.ConsensusTip = new ChainedBlock(new BlockHeader(), uint256.Zero, this.checkpoints.GetLastCheckpointHeight() + 1);
-            var blockDownloadState = new BlockDownloadState(this.chainState, Network.Main, this.nodeSettings, this.checkpoints);
+            var blockDownloadState = new InitialBlockDownloadState(this.chainState, Network.Main, this.nodeSettings, this.checkpoints);
             Assert.True(blockDownloadState.IsInitialBlockDownload());
         }
     }
