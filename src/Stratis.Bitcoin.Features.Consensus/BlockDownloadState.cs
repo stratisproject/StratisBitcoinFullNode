@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private DateTime lockIbdUntil;
 
         /// <summary>A cached result of the IBD method.</summary>
-        private bool ibdCashed;
+        private bool ibdCached;
 
         /// <summary>
         /// Creates a new instance of the <see cref="BlockDownloadState"/> class.
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public bool IsInitialBlockDownload()
         {
             if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
-                return this.ibdCashed;
+                return this.ibdCached;
 
             if (this.chainState == null)
                 return false;
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
         {
             this.lockIbdUntil = lockStateUntil;
-            this.ibdCashed = blockDownloadState;
+            this.ibdCached = blockDownloadState;
         }
     }
 }
