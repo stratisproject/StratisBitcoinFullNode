@@ -71,20 +71,5 @@ namespace Stratis.Bitcoin.P2P
                     await ConnectAsync(peerAddress);
             }
         }
-
-        ///// <summary>
-        ///// Only return nodes as specified in the -addnode arg.
-        ///// </summary>
-        //public override PeerAddress FindPeerToConnectTo()
-        //{
-        //    foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
-        //    {
-        //        PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-        //        if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
-        //            return peerAddress;
-        //    }
-
-        //    return null;
-        //}
     }
 }

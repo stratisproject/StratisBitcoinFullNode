@@ -160,12 +160,13 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Determines whether or not a connector can be started.</summary>
         public abstract bool CanStartConnect { get; }
 
-        /// <summary>Specific peer connector initialization for each concrete implementation of this class.</summary>
+        /// <summary>Initialization logic specific to each concrete implementation of this class.</summary>
         public abstract void OnInitialize();
 
         /// <summary>Start up logic specific to each concrete implementation of this class.</summary>
         public abstract void OnStartConnect();
 
+        /// <summary>Connect logic specific to each concrete implementation of this class.</summary>
         public abstract Task OnConnectAsync();
 
         /// <inheritdoc/>
@@ -208,19 +209,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Attempts to connect to a random peer.</summary>
         internal async Task ConnectAsync(PeerAddress peerAddress)
         {
-            //if (!this.peerAddressManager.Peers.Any())
-            //    return;
-
-            //if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
-            //    return;
-
-            //PeerAddress peerAddress = this.FindPeerToConnectTo();
-            //if (peerAddress == null)
-            //{
-            //    Task.Delay(TimeSpans.TenSeconds.Milliseconds).Wait(this.nodeLifetime.ApplicationStopping);
-            //    return;
-            //}
-
             this.logger.LogTrace("()");
 
             NetworkPeer peer = null;
@@ -255,9 +243,6 @@ namespace Stratis.Bitcoin.P2P
         {
             this.ConnectedPeers.DisconnectAll("Node shutdown");
         }
-
-        ///// <inheritdoc/>
-        //public abstract PeerAddress FindPeerToConnectTo();
 
         /// <inheritdoc/>
         public void Dispose()
