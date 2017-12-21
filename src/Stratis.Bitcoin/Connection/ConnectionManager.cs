@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Connection
 
         Task<NetworkPeer> ConnectAsync(IPEndPoint ipEndpoint);
 
-        IReadOnlyNetworkPeerCollection ConnectedNodes { get; }
+        IReadOnlyNetworkPeerCollection ConnectedPeers { get; }
 
         NetworkPeer FindLocalNode();
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly NetworkPeerCollection connectedPeers;
 
-        public IReadOnlyNetworkPeerCollection ConnectedNodes
+        public IReadOnlyNetworkPeerCollection ConnectedPeers
         {
             get { return this.connectedPeers; }
         }
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Connection
             IEnumerable<IPeerConnector> peerConnectors,
             IPeerDiscovery peerDiscovery)
         {
-            this.connectedNodes = new NetworkPeerCollection();
+            this.connectedPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 PerformanceSnapshot diffTotal = new PerformanceSnapshot(0, 0);
                 builder.AppendLine("=======Connections=======");
-                foreach (NetworkPeer node in this.ConnectedNodes)
+                foreach (NetworkPeer node in this.ConnectedPeers)
                 {
                     PerformanceSnapshot newSnapshot = node.Counter.Snapshot();
                     PerformanceSnapshot lastSnapshot = null;
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Connection
         {
             var builder = new StringBuilder();
 
-            foreach (NetworkPeer node in this.ConnectedNodes)
+            foreach (NetworkPeer node in this.ConnectedPeers)
             {
                 ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
                 ChainHeadersBehavior chainHeadersBehavior = node.Behavior<ChainHeadersBehavior>();
