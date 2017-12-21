@@ -551,7 +551,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
 
             this.Parameters = parameters ?? new NetworkPeerConnectionParameters();
-            this.MyVersion = this.Parameters.CreateVersion(this.Parameters.AddressFrom, network, this.dateTimeProvider.GetTimeOffset());
+            this.MyVersion = this.Parameters.CreateVersion(this.PeerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
         }
 
         /// <summary>
