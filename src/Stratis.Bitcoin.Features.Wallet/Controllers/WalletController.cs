@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -325,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 // Get a list of all the transactions, with the addresses associated with them.
                 List<FlatHistory> items = this.walletManager.GetHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(200).ToList();
 
-                // Represents a sublist containing only the transactions that have already been spent. 
+                // Represents a sublist containing only the transactions that have already been spent.
                 List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
 
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
@@ -369,7 +368,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             model.TransactionsHistory.Add(stakingItem);
                         }
 
-                        // No need for further processing if the transaction itself is the output of a staking transaction. 
+                        // No need for further processing if the transaction itself is the output of a staking transaction.
                         if (transaction.IsCoinStake != null)
                         {
                             continue;

@@ -1,7 +1,5 @@
 using System;
 using System.Globalization;
-using System.IO;
-
 #if SILVERLIGHT || PORTABLE
 using System.Collections.Generic;
 #else

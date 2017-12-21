@@ -235,7 +235,6 @@ namespace Stratis.Bitcoin.Tests.P2P
         private IConnectionManager CreateConnectionManager(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager, IPeerConnector peerConnector)
         {
             var connectionManager = new ConnectionManager(
-                new AsyncLoopFactory(this.extendedLoggerFactory),
                 DateTimeProvider.Default,
                 this.loggerFactory,
                 this.network,

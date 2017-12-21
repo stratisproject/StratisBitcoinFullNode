@@ -1718,6 +1718,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public TestReadOnlyNetworkPeerCollection()
         {
+            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.networkPeers = new List<NetworkPeer>();
             this.networkPeers.Add(null);
         }

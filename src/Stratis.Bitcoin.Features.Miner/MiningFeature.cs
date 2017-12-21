@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -28,13 +29,13 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly MinerSettings minerSettings;
 
         /// <summary>POW miner.</summary>
-        private readonly PowMining powMining;
+        private readonly IPowMining powMining;
 
         /// <summary>POS staker.</summary>
-        private readonly PosMinting posMinting;
+        private readonly IPosMinting posMinting;
 
         /// <summary>Manager providing operations on wallets.</summary>
-        private readonly WalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -60,9 +61,9 @@ namespace Stratis.Bitcoin.Features.Miner
             MinerSettings minerSettings,
             NodeSettings nodeSettings,
             ILoggerFactory loggerFactory,
-            PowMining powMining,
-            PosMinting posMinting = null,
-            WalletManager walletManager = null)
+            IPowMining powMining,
+            IPosMinting posMinting = null,
+            IWalletManager walletManager = null)
         {
             this.network = network;
             this.minerSettings = minerSettings;
@@ -140,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)
         {
-            if (services.ServiceProvider.GetService<PosMinting>() != null)
+            if (services.ServiceProvider.GetService<IPosMinting>() != null)
             {
                 services.Features.EnsureFeature<WalletFeature>();
             }
@@ -180,7 +181,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<PowMining>();
+                        services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
@@ -210,8 +211,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<PowMining>();
-                        services.AddSingleton<PosMinting>();
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IPosMinting, PosMinting>();
                         services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();

@@ -1,9 +1,8 @@
 ﻿#if !NOJSONNET
-using NBitcoin;
-using NBitcoin.DataEncoders;
-using Newtonsoft.Json;
 using System;
 using System.Reflection;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
