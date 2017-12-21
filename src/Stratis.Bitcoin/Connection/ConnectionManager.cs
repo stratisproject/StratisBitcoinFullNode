@@ -79,9 +79,6 @@ namespace Stratis.Bitcoin.Connection
 
     public sealed class ConnectionManager : IConnectionManager
     {
-        /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -132,7 +129,6 @@ namespace Stratis.Bitcoin.Connection
         public List<NetworkPeerServer> Servers { get; }
 
         public ConnectionManager(
-            IAsyncLoopFactory asyncLoopFactory,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -144,7 +140,6 @@ namespace Stratis.Bitcoin.Connection
             IEnumerable<IPeerConnector> peerConnectors,
             IPeerDiscovery peerDiscovery)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
             this.connectedNodes = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;

@@ -59,9 +59,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Locations of important folders and files on disk.</summary>
         private readonly DataFolder dataFolder;
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
-
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
@@ -106,7 +103,6 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="nodeSettings">User defined node settings.</param>
         /// <param name="dataFolder">Locations of important folders and files on disk.</param>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
@@ -121,7 +117,6 @@ namespace Stratis.Bitcoin.Base
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
-            Network network,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
             ChainState chainState,
@@ -140,7 +135,6 @@ namespace Stratis.Bitcoin.Base
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
-            this.network = Guard.NotNull(network, nameof(network));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));

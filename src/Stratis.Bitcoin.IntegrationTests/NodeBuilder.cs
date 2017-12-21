@@ -535,8 +535,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class CoreNode
     {
-        private readonly NodeBuilder builder;
-
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
@@ -562,7 +560,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
-            this.builder = builder;
             this.Folder = folder;
             this.State = CoreNodeState.Stopped;
             if (cleanfolders)
