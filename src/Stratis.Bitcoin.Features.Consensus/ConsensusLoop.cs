@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -124,12 +125,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlockAsync"/> and the reorg part of <see cref="ConsensusLoop.PullerLoopAsync"/> methods.</summary>
         private readonly AsyncLock consensusLock;
 
-        /// <summary>Provider of block header hash checkpoints.</summary>
-        private readonly ICheckpoints checkpoints;
-
-        /// <summary>Consensus settings for the full node.</summary>
-        private readonly ConsensusSettings consensusSettings;
-
         /// <summary>Settings for the full node.</summary>
         private readonly NodeSettings nodeSettings;
 
@@ -157,7 +152,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
-        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="consensusSettings">Consensus settings for the full node.</param>
         /// <param name="nodeSettings">Settings for the full node.</param>
         /// <param name="peerBanning">Handles the banning of peers.</param>
@@ -176,7 +170,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
-            ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             NodeSettings nodeSettings,
             IPeerBanning peerBanning,
@@ -212,9 +205,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.UTXOSet = utxoSet;
             this.Puller = puller;
             this.NodeDeployments = nodeDeployments;
-            this.checkpoints = checkpoints;
             this.dateTimeProvider = dateTimeProvider;
-            this.consensusSettings = consensusSettings;
             this.nodeSettings = nodeSettings;
             this.peerBanning = peerBanning;
             this.consensusRules = consensusRules;
@@ -479,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Build the next block in the chain of headers. The chain header is most likely already created by
                 // one of the peers so after we create a new chained block (mainly for validation)
                 // we ask the chain headers for its version (also to prevent memory leaks).
-                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, 
+                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header,
                     context.BlockValidationContext.Block.Header.GetHash(this.nodeSettings.Network.NetworkOptions), this.Tip);
 
                 // Liberate from memory the block created above if possible.

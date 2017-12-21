@@ -1,36 +1,113 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
+using System.Text.RegularExpressions;
 using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
-using DNS.Server;
-using Stratis.Bitcoin.P2P.Peer;
+using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
     /// <summary>
     /// This class defines a DNS masterfile used to cache the whitelisted peers discovered by the DNS Seed service that supports saving
     /// and loading from a stream.
+    /// This is based on 3rd party library https://github.com/kapetan/dns.
     /// </summary>
-    public class DnsSeedMasterFile : MasterFile, IMasterFile
+    public class DnsSeedMasterFile : IMasterFile
     {
         /// <summary>
-        /// Adds a <see cref="NetworkPeer"/> object to the masterfile.
+        /// Sets the default ttl.
         /// </summary>
-        /// <param name="peer">The peer to add to the masterfile so that the IP address of the peer can be returned in a DNS resolve request.</param>
-        public void AddPeer(NetworkPeer peer)
+        private static readonly TimeSpan DEFAULT_TTL = new TimeSpan(0);
+
+        /// <summary>
+        /// The default time to live.
+        /// </summary>
+        private TimeSpan ttl = DEFAULT_TTL;
+
+        /// <summary>
+        /// The resource record entries in the master file.
+        /// </summary>
+        protected IList<IResourceRecord> entries = new List<IResourceRecord>();
+
+        /// <summary>
+        /// Initializes a new instance of a <see cref="DnsSeedMasterFile"/> class.
+        /// </summary>
+        /// <param name="ttl">The time to live.</param>
+        public DnsSeedMasterFile(TimeSpan ttl)
         {
-            // TODO
+            this.ttl = ttl;
         }
 
         /// <summary>
-        /// Adds a collection of <see cref="NetworkPeer"/> objects to the masterfile.
+        /// Initializes a new instance of a <see cref="DnsSeedMasterFile"/> class.
         /// </summary>
-        /// <param name="peers">The peers to add to the masterfile so that the IP address of the peer can be returned in a DNS resolve request.</param>
-        public void AddPeers(IEnumerable<NetworkPeer> peers)
+        public DnsSeedMasterFile() { }
+
+        /// <summary>
+        /// Identifies if the domain matches the entry.
+        /// </summary>
+        /// <param name="domain">The domain to match.</param>
+        /// <param name="entry">The entry to match.</param>
+        /// <returns><c>True</c> if there is a match, otherwise <c>false</c>.</returns>
+        private static bool Matches(Domain domain, Domain entry)
         {
-            // TODO
+            string[] labels = entry.ToString().Split('.');
+            string[] patterns = new string[labels.Length];
+
+            for (int i = 0; i < labels.Length; i++)
+            {
+                string label = labels[i];
+                patterns[i] = label == "*" ? "(\\w+)" : Regex.Escape(label);
+            }
+
+            Regex re = new Regex("^" + string.Join("\\.", patterns) + "$");
+            return re.IsMatch(domain.ToString());
+        }
+
+        /// <summary>
+        /// Creates the serializer for loading and saving the master file contents.
+        /// </summary>
+        /// <returns></returns>
+        private JsonSerializer CreateSerializer()
+        {
+            var settings = new Newtonsoft.Json.JsonSerializerSettings();
+            settings.Converters.Add(new ResourceRecordConverter());
+            settings.Formatting = Formatting.Indented;
+
+            return JsonSerializer.Create(settings);
+        }
+
+        /// <summary>
+        /// Adds a entry to the master file.
+        /// </summary>
+        /// <param name="entry">The resource record to add.</param>
+        public void Add(IResourceRecord entry)
+        {
+            this.entries.Add(entry);
+        }
+
+        /// <summary>
+        /// Gets a list of matching <see cref="IResourceRecord"/> objects.
+        /// </summary>
+        /// <param name="domain">The domain to match on.</param>
+        /// <param name="type">The type to match on.</param>
+        /// <returns>The matching entries.</returns>
+        public IList<IResourceRecord> Get(Domain domain, RecordType type)
+        {
+            return this.entries.Where(e => Matches(domain, e.Name) && e.Type == type).ToList();
+        }
+
+        /// <summary>
+        /// Gets a list of matching <see cref="IResourceRecord"/> objects.
+        /// </summary>
+        /// <param name="question">The <see cref="Question"/>used to match on.</param>
+        /// <returns>The matching entries.</returns>
+        public IList<IResourceRecord> Get(Question question)
+        {
+            return this.Get(question.Name, question.Type);
         }
 
         /// <summary>
@@ -39,7 +116,13 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="stream">The stream containing the masterfile.</param>
         public void Load(Stream stream)
         {
-            // TODO
+            Guard.NotNull(stream, nameof(stream));
+
+            using (JsonTextReader textReader = new JsonTextReader(new StreamReader(stream)))
+            {
+                JsonSerializer serializer = this.CreateSerializer();
+                this.entries = serializer.Deserialize<List<IResourceRecord>>(textReader);
+            }
         }
 
         /// <summary>
@@ -48,7 +131,13 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="stream">The stream to write the masterfile to.</param>
         public void Save(Stream stream)
         {
-            // TODO
+            Guard.NotNull(stream, nameof(stream));
+
+            JsonTextWriter textWriter = new JsonTextWriter(new StreamWriter(stream));
+            JsonSerializer serializer = this.CreateSerializer();
+
+            serializer.Serialize(textWriter, this.entries);
+            textWriter.Flush();
         }
     }
 }

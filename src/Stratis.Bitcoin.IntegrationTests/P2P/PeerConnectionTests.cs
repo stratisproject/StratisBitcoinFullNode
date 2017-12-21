@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
 
             IConnectionManager connectionManager = new ConnectionManager(
-                new AsyncLoopFactory(this.loggerFactory),
                 DateTimeProvider.Default,
                 this.loggerFactory,
                 this.network,
@@ -67,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 // peer collection of connection manager.
                 //
                 // This is to simulate that a peer has successfully connected
-                // and that the add node connector's Find method then won't 
+                // and that the add node connector's Find method then won't
                 // return the added node.
                 connectionManager.AddConnectedPeer(networkPeer);
 

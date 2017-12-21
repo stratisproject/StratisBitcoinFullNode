@@ -373,7 +373,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             bool startedLoop = false;
             logger.Setup(l => l.Log(LogLevel.Information, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
             {
-                startedLoop = state.ToString().Contains("DNS Metrics");
+                // Don't reset if we found the trace message we were looking for
+                if (!startedLoop)
+                {
+                    // Not yet set, check trace message
+                    startedLoop = state.ToString().Contains("DNS Metrics");
+                }
             });
             Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);

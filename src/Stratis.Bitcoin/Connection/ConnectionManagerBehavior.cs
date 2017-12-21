@@ -29,8 +29,6 @@ namespace Stratis.Bitcoin.Connection
 
         public bool OneTry { get; internal set; }
 
-        private ChainHeadersBehavior chainHeadersBehavior;
-
         public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
@@ -55,7 +53,6 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
-            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
         }

@@ -5,7 +5,7 @@
     },
     "Stratis.StratisDnsD Test": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -dnslistenport=5399"
+      "commandLineArgs": "-testnet -dnslistenport=5399 -dnshostname=dns.stratisplatform.com"
     }
   }
 }
