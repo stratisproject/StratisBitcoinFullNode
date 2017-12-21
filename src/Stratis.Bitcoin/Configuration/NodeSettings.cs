@@ -140,6 +140,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Defines the port that the DNS server will listen on, by default this is 53.</summary>
         public int DnsListenPort { get; set; }
 
+        /// <summary>Defines the nameserver host name used as the authoritative domain for the DNS seed service.</summary>
+        public string DnsNameServer { get; set; }
+
+        /// <summary>Defines the e-mail address used as the administrative point of contact for the domain.</summary>
+        public string DnsMailBox { get; set; }
+
         /// <summary>
         /// Initializes default configuration.
         /// </summary>
@@ -241,20 +247,26 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            this.Logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
-
-            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            this.Logger.LogDebug("DnsHostName set to {0}.", this.DnsHostName);
-
             if (args.Contains("-dnsfullnode", StringComparer.CurrentCultureIgnoreCase))
             {
                 this.DnsFullNode = true;
                 this.Logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
             }
 
+            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
+            this.Logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
+
             this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", 53);
             this.Logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
+
+            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
+            this.Logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
+
+            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
+            this.Logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
+
+            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
+            this.Logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
 
             try
             {
