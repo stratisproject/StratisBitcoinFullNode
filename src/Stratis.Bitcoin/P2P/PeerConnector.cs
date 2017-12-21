@@ -18,15 +18,15 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The collection of peers the connector is currently connected to.</summary>
         NetworkPeerCollection ConnectedPeers { get; }
 
-        /// <summary>
-        /// Selects a peer from the peer selector.
-        /// <para>
-        /// Each implementation of <see cref="PeerConnector"/> will have its own implementation
-        /// of this method.
-        /// </para>
-        /// </summary>
-        /// <seealso cref="IPeerSelector.SelectPeer()"/>
-        PeerAddress FindPeerToConnectTo();
+        ///// <summary>
+        ///// Selects a peer from the peer selector.
+        ///// <para>
+        ///// Each implementation of <see cref="PeerConnector"/> will have its own implementation
+        ///// of this method.
+        ///// </para>
+        ///// </summary>
+        ///// <seealso cref="IPeerSelector.SelectPeer()"/>
+        //PeerAddress FindPeerToConnectTo();
 
         /// <summary>Peer connector initialization as called by the <see cref="ConnectionManager"/>.</summary>
         void Initialize(IConnectionManager connectionManager);
@@ -166,6 +166,8 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Start up logic specific to each concrete implementation of this class.</summary>
         public abstract void OnStartConnect();
 
+        public abstract Task OnConnectAsync();
+
         /// <inheritdoc/>
         public void RemovePeer(NetworkPeer peer)
         {
@@ -191,27 +193,35 @@ namespace Stratis.Bitcoin.P2P
 
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
-                await this.ConnectAsync();
+                if (!this.peerAddressManager.Peers.Any())
+                    return;
+
+                if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
+                    return;
+
+                await this.OnConnectAsync();
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second);
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
-        private async Task ConnectAsync()
+        internal async Task ConnectAsync(PeerAddress peerAddress)
         {
-            if (!this.peerAddressManager.Peers.Any())
-                return;
+            //if (!this.peerAddressManager.Peers.Any())
+            //    return;
 
-            if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
-                return;
+            //if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
+            //    return;
 
-            PeerAddress peerAddress = this.FindPeerToConnectTo();
-            if (peerAddress == null)
-            {
-                Task.Delay(TimeSpans.TenSeconds.Milliseconds).Wait(this.nodeLifetime.ApplicationStopping);
-                return;
-            }
+            //PeerAddress peerAddress = this.FindPeerToConnectTo();
+            //if (peerAddress == null)
+            //{
+            //    Task.Delay(TimeSpans.TenSeconds.Milliseconds).Wait(this.nodeLifetime.ApplicationStopping);
+            //    return;
+            //}
+
+            this.logger.LogTrace("()");
 
             NetworkPeer peer = null;
 
@@ -246,8 +256,8 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectedPeers.DisconnectAll("Node shutdown");
         }
 
-        /// <inheritdoc/>
-        public abstract PeerAddress FindPeerToConnectTo();
+        ///// <inheritdoc/>
+        //public abstract PeerAddress FindPeerToConnectTo();
 
         /// <inheritdoc/>
         public void Dispose()
