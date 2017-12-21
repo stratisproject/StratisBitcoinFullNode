@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
-using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
@@ -30,23 +27,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.extendedLoggerFactory = new ExtendedLoggerFactory();
             this.extendedLoggerFactory.AddConsoleWithFilters();
 
-            this.network = Network.Main;
-
             this.asyncLoopFactory = new AsyncLoopFactory(this.extendedLoggerFactory);
-
-            Mock<INetworkPeerFactory> networkPeerFactoryMock = new Mock<INetworkPeerFactory>(this.extendedLoggerFactory, this.network);
-
-            var peerAddress = new NetworkAddress();
-
-            networkPeerFactoryMock
-                .Setup(m => m.CreateConnectedNetworkPeerAsync(this.network, peerAddress, this.networkPeerParameters))
-                .Returns(Task.FromResult(new NetworkPeer(peerAddress, this.network, this.networkPeerParameters, networkPeerFactoryMock.Object, DateTimeProvider.Default, this.extendedLoggerFactory)));
-
-            networkPeerFactoryMock
-                .Setup(m => m.CreateNetworkPeerClient(this.networkPeerParameters))
-                .Returns(new NetworkPeerClient(0, new TcpClient(), this.network, this.extendedLoggerFactory));
-
+            this.network = Network.Main;
             this.networkPeerParameters = new NetworkPeerConnectionParameters();
+            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.extendedLoggerFactory);
             this.nodeLifetime = new NodeLifetime();
         }
 
