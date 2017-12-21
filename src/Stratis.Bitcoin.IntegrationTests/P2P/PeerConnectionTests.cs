@@ -74,6 +74,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 // adds the successful address to the address manager.
                 peerConnectorAddNode.Initialize(connectionManager);
 
+                // TODO: Once we have an interface on NetworkPeer we can test this properly.
                 // The already connected peer should not be returned.
                 //var peer = peerConnectorAddNode.FindPeerToConnectTo();
                 //Assert.Null(peer);

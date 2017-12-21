@@ -18,16 +18,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>The collection of peers the connector is currently connected to.</summary>
         NetworkPeerCollection ConnectedPeers { get; }
 
-        ///// <summary>
-        ///// Selects a peer from the peer selector.
-        ///// <para>
-        ///// Each implementation of <see cref="PeerConnector"/> will have its own implementation
-        ///// of this method.
-        ///// </para>
-        ///// </summary>
-        ///// <seealso cref="IPeerSelector.SelectPeer()"/>
-        //PeerAddress FindPeerToConnectTo();
-
         /// <summary>Peer connector initialization as called by the <see cref="ConnectionManager"/>.</summary>
         void Initialize(IConnectionManager connectionManager);
 
