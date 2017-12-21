@@ -22,7 +22,13 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 features
                 .AddFeature<DnsFeature>()
-                .FeatureServices(services => services.AddSingleton(fullNodeBuilder));
+                .FeatureServices(services =>
+                {
+                    services.AddSingleton(fullNodeBuilder);
+                    services.AddSingleton<IMasterFile, DnsSeedMasterFile>();
+                    services.AddSingleton<IDnsServer, DnsSeedServer>();
+                    services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
+                });
             });
            
             return fullNodeBuilder;

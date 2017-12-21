@@ -17,14 +17,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #endregion
 
+using System;
+using System.IO;
 using NBitcoin.BouncyCastle.Crypto;
 using NBitcoin.Crypto.Internal;
-using System;
-using System.Diagnostics;
-using System.IO;
 
 #if !WINDOWS_UWP && !USEBC
-using System.Security.Cryptography;
+
 #endif
 
 namespace NBitcoin.Crypto

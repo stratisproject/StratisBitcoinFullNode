@@ -1,16 +1,16 @@
-﻿using NBitcoin.DataEncoders;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
-using NBitcoin.Protocol;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 #if !NOSOCKET
 using System.Net.Sockets;
 #endif

@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Version = version;
 
-            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
+            this.listener = new EventLoopMessageListener<IncomingMessage>(this.ProcessMessageAsync);
             this.messageProducer = new MessageProducer<IncomingMessage>();
             this.messageProducer.AddMessageListener(this.listener);
 
@@ -172,12 +172,28 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
+                    // Used to record any errors occurring in the thread pool task.
+                    Exception error = null;
+
                     TcpClient tcpClient = await Task.Run(() =>
                     {
-                        Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
-                        acceptTask.Wait(this.serverCancel.Token);
-                        return acceptTask.Result;
+                        try
+                        {
+                            Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
+                            acceptTask.Wait(this.serverCancel.Token);
+                            return acceptTask.Result;
+                        }
+                        catch (Exception e)
+                        {
+                            // Record the error.
+                            error = e;
+                            return null;                            
+                        }
                     }).ConfigureAwait(false);
+
+                    // Raise the error.
+                    if (error != null)
+                        throw error;
 
                     NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
 
@@ -352,7 +368,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         try
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
-                            networkPeer.StateChanged += Peer_StateChanged;
+                            networkPeer.StateChanged += this.Peer_StateChanged;
                             await networkPeer.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)

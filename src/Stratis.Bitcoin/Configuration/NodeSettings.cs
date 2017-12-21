@@ -125,6 +125,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; set; }
 
+        /// <summary><c>true</c> if the DNS Seed service should also run as a full node, otherwise <c>false</c>.</summary>
+        public bool DnsFullNode { get; set; }
+
+        /// <summary>Defines the port that the DNS server will listen on, by default this is 53.</summary>
+        public int DnsListenPort { get; set; }
+
         /// <summary>
         /// Initializes default configuration.
         /// </summary>
@@ -225,6 +231,15 @@ namespace Stratis.Bitcoin.Configuration
 
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
+
+            if (args.Contains("-dnsfullnode", StringComparer.CurrentCultureIgnoreCase))
+            {
+                this.DnsFullNode = true;
+                this.Logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
+            }
+
+            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", 53);
+            this.Logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
 
             try
             {

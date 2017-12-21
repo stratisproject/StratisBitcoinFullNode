@@ -25,6 +25,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -533,8 +534,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class CoreNode
     {
-        private readonly NodeBuilder builder;
-
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
@@ -560,7 +559,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
-            this.builder = builder;
             this.Folder = folder;
             this.State = CoreNodeState.Stopped;
             if (cleanfolders)
@@ -930,7 +928,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public IEnumerable<ChainedBlock> GetHeadersFromFork(NetworkPeer peer, ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
-            
+
             using (var listener = new NetworkPeerListener(peer).OfType<HeadersPayload>())
             {
                 int acceptMaxReorgDepth = 0;
@@ -1025,7 +1023,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
-            return this.FullNode.Services.ServiceProvider.GetService<PowMining>().GenerateBlocks(new ReserveScript { reserveSfullNodecript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
+            return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { reserveSfullNodecript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
         }
 
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)

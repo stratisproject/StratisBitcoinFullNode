@@ -1,15 +1,12 @@
-﻿using NBitcoin.BuilderExtensions;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using NBitcoin.BuilderExtensions;
 using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
 using NBitcoin.OpenAsset;
 using NBitcoin.Policy;
 using NBitcoin.Stealth;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Text;
-using System.Threading.Tasks;
 using Builder = System.Func<NBitcoin.TransactionBuilder.TransactionBuildingContext, NBitcoin.IMoney>;
 
 namespace NBitcoin

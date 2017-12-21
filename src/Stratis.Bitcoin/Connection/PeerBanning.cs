@@ -94,15 +94,11 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Functionality of date and time.</summary>
-        private readonly ConnectionManagerSettings connectionManagerSettings;
-
         public PeerBanning(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings)//, IBanStore banStore)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
-            this.connectionManagerSettings = nodeSettings.ConnectionManager;
 
             // TODO: MemoryBanStore should be replaced with the address manager store
             this.banStore = new MemoryBanStore();

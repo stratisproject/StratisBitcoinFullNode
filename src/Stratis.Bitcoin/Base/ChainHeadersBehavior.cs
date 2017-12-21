@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -179,7 +178,7 @@ namespace Stratis.Bitcoin.Base
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.chainState.IsInitialBlockDownload && !this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
+                        if (this.chainState.IsInitialBlockDownload && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -208,7 +207,7 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        this.AttachedPeer.SendMessageVoidAsync(headers);
+                        peer.SendMessageVoidAsync(headers);
                         break;
                     }
 
@@ -234,10 +233,39 @@ namespace Stratis.Bitcoin.Base
                         {
                             ChainedBlock prev = tip.FindAncestorOrSelf(header.HashPrevBlock);
                             if (prev == null)
-                                break;
+                            {
+                                this.logger.LogTrace("Previous header of the new header '{0}' was not found on the peer's chain, the view of the peer's chain is probably outdated.", header);
 
-                            tip = new ChainedBlock(header, header.GetHash(this.Chain.Network.NetworkOptions), prev);
-                            bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedPeer.Network);
+                                // We have received a header from the peer for which we don't register a previous header.
+                                // This can happen if our information about where the peer is is invalid.
+                                // However, if the previous header is on the chain that we recognize, 
+                                // we can fix it.
+
+                                // Try to find the header's previous hash on our best chain.
+                                prev = this.Chain.GetBlock(header.HashPrevBlock);
+
+                                if (prev == null)
+                                {
+                                    this.logger.LogTrace("Previous header of the new header '{0}' was not found on our chain either.", header);
+
+                                    // If we can't connect the header we received from the peer, we might be on completely different chain or 
+                                    // a reorg happened recently. If we ignored it, we would have invalid view of the peer and the propagation 
+                                    // of blocks would not work well. So we ask the peer for headers using "getheaders" message.
+                                    var getHeadersPayload = new GetHeadersPayload()
+                                    {
+                                        BlockLocators = pendingTipBefore.GetLocator(),
+                                        HashStop = null
+                                    };
+
+                                    peer.SendMessageVoidAsync(getHeadersPayload);
+                                    break;
+                                }
+
+                                // Now we know the previous block header and thus we can connect the new header.
+                            }
+
+                            tip = new ChainedBlock(header, header.GetHash(peer.Network.NetworkOptions), prev);
+                            bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
                             validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                             if (!validated)
                             {
@@ -259,7 +287,7 @@ namespace Stratis.Bitcoin.Base
                             uint maxReorgLength = this.chainState.MaxReorgLength;
                             if (maxReorgLength != 0)
                             {
-                                Network network = this.AttachedPeer?.Network;
+                                Network network = peer.Network;
                                 ChainedBlock consensusTip = this.chainState.ConsensusTip;
                                 if ((network != null) && (consensusTip != null))
                                 {

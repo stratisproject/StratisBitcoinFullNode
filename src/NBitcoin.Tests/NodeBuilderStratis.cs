@@ -6,11 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Payloads;
 using NBitcoin.RPC;
 
 namespace NBitcoin.Tests
@@ -249,7 +246,7 @@ namespace NBitcoin.Tests
         }
         */
 
-        Process _Process;
+        Process _Process = null;
 
         private void FindPorts(int[] ports)
         {
@@ -392,7 +389,6 @@ namespace NBitcoin.Tests
             var rpc = CreateRPCClient();
             BitcoinSecret dest = GetFirstSecret(rpc);
             var bestBlock = rpc.GetBestBlockHash();
-            ConcurrentChain chain = null;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
 #if !NOSOCKET

@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
 
             IConnectionManager connectionManager = new ConnectionManager(
-                new AsyncLoopFactory(this.loggerFactory),
                 DateTimeProvider.Default,
                 this.loggerFactory,
                 this.network,
@@ -67,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 // peer collection of connection manager.
                 //
                 // This is to simulate that a peer has successfully connected
-                // and that the add node connector's Find method then won't 
+                // and that the add node connector's Find method then won't
                 // return the added node.
                 connectionManager.AddConnectedPeer(networkPeer);
 
@@ -83,6 +82,9 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
         private void CreateTestContext(string folder)
         {
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
+
             this.parameters = new NetworkPeerConnectionParameters();
 
             var testFolder = TestDirectory.Create(folder);
@@ -94,18 +96,15 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             this.nodeSettings.DataFolder = new DataFolder(this.nodeSettings);
 
-            this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder);
-            var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(new DateTimeProvider(), this.peerAddressManager)
+            this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder, this.loggerFactory);
+            var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, this.peerAddressManager)
             {
                 PeersToDiscover = 10
             };
 
             this.parameters.TemplateBehaviors.Add(peerAddressManagerBehaviour);
 
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
-
-            this.networkPeerFactory = new NetworkPeerFactory(this.network, new DateTimeProvider(), this.loggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.loggerFactory);
             this.nodeLifetime = new NodeLifetime();
         }
     }

@@ -7,13 +7,9 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Dns;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisDnsD
@@ -47,12 +43,12 @@ namespace Stratis.StratisDnsD
                 // build the Dns node.
                 IFullNode node = new FullNodeBuilder()
                      .UseNodeSettings(nodeSettings)
-                     .UseStratisConsensus()                    
+                     .UseStratisConsensus()
                      .UseApi()
                      .AddRPC()
                      .UseDns()
                      .Build();
-                
+
                 // TODO: add the functionality to run a full node with Dns.
                 await node.RunAsync();
             }
