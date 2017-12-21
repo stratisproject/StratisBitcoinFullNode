@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Net;
-using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Configuration.Settings
 {

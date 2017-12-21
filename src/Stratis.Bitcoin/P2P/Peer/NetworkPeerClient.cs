@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             try
             {
                 // This variable records any error occurring in the thread pool task's context.
-                Exception err = null;
+                Exception error = null;
 
                 await Task.Run(() =>
                 {
@@ -102,12 +102,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                     catch (Exception e)
                     {
                         // Record the error occurring in the thread pool's context.
-                        err = e;
+                        error = e;
                     }
                 }).ConfigureAwait(false);
 
                 // Throw the error within this error handling context.
-                if (err != null) throw err;
+                if (error != null)
+                    throw error;
             
                 this.Stream = this.tcpClient.GetStream();
             }
