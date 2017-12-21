@@ -50,15 +50,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private readonly Network network;
 
-        private readonly IDateTimeProvider dateTimeProvider;
-
         private readonly AssemblerFactory blockAssemblerFactory;
-
-        private readonly IBlockRepository blockRepository;
-
-        private readonly ChainState chainState;
-
-        private readonly Signals.Signals signals;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -76,11 +68,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
-            IDateTimeProvider dateTimeProvider,
             AssemblerFactory blockAssemblerFactory,
-            IBlockRepository blockRepository,
-            ChainState chainState,
-            Signals.Signals signals,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
@@ -88,11 +76,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.consensusLoop = consensusLoop;
             this.chain = chain;
             this.network = network;
-            this.dateTimeProvider = dateTimeProvider;
             this.blockAssemblerFactory = blockAssemblerFactory;
-            this.blockRepository = blockRepository;
-            this.chainState = chainState;
-            this.signals = signals;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
