@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Stratis.StratisD": {
-      "commandName": "Project",
-      "commandLineArgs": "-testnet -connect=13.64.76.48 -connect=51.141.51.129"
+      "commandName": "Project"
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
