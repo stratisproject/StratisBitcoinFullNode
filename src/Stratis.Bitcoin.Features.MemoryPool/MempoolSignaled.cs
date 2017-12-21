@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -73,12 +74,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
-                var nodes = this.connection.ConnectedNodes;
-                if (!nodes.Any())
+                IReadOnlyNetworkPeerCollection peers = this.connection.ConnectedPeers;
+                if (!peers.Any())
                     return;
 
                 // announce the blocks on each nodes behaviour
-                var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
+                var behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
                 foreach (var behaviour in behaviours)
                     await behaviour.SendTrickleAsync().ConfigureAwait(false);
             },

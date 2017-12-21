@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
-            connectionManager.Setup(c => c.ConnectedNodes).Returns(new NetworkPeerCollection());
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
             connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={dataFolder.WalletPath}" }));
             connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
 
