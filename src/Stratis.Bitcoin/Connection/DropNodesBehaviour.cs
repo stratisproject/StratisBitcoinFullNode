@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Connection
                 // Find how much 20% max nodes.
                 decimal thresholdCount = Math.Round(peerConnector.MaximumNodeConnections * this.dropThreshold, MidpointRounding.ToEven);
 
-                if (thresholdCount < this.connection.ConnectedNodes.Count())
+                if (thresholdCount < this.connection.ConnectedPeers.Count())
                     if (version.StartHeight < this.chain.Height)
                         this.AttachedPeer.DisconnectWithException($"Node at height = {version.StartHeight} too far behind current height");
             });

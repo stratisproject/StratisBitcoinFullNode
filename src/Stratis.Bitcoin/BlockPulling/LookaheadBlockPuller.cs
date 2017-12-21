@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="connectionManager">Manager of information about the node's network connections.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         public LookaheadBlockPuller(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
-            : base(chain, connectionManager.ConnectedNodes, connectionManager.NodeSettings.ProtocolVersion, loggerFactory)
+            : base(chain, connectionManager.ConnectedPeers, connectionManager.NodeSettings.ProtocolVersion, loggerFactory)
         {
             this.MaxBufferedSize = MaxBlockSize * 10;
             this.MinimumLookahead = 4;

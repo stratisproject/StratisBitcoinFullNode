@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void Initialize(IConnectionManager connectionManager)
         {
-            this.connectedPeers = connectionManager.ConnectedNodes;
+            this.connectedPeers = connectionManager.ConnectedPeers;
 
             this.CurrentParameters = connectionManager.Parameters.Clone();
             this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
