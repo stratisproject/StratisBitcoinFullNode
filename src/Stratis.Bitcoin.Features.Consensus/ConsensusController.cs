@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -10,10 +11,10 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         private readonly ILogger logger;
 
-        public ConsensusLoop ConsensusLoop { get; private set; }
+        public IConsensusLoop ConsensusLoop { get; private set; }
 
         public ConsensusController(ILoggerFactory loggerFactory, ChainState chainState = null,
-            ConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
+            IConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
             : base(chainState: chainState, chain: chain)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

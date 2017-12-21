@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private static long medianTimePast;
 
-        protected readonly ConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
         protected readonly MempoolSchedulerLock mempoolLock;
 
@@ -179,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Script scriptPubKeyIn;
 
         public PowBlockAssembler(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,

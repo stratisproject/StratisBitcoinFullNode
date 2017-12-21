@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
         /// <summary>Consumes incoming blocks, validates and executes them.</summary>
-        private readonly ConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -313,7 +314,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
             IConnectionManager connection,

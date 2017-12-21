@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private const int InnerLoopCount = 0x10000;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly ConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         private readonly ConcurrentChain chain;
 
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         public PowMining(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
             AssemblerFactory blockAssemblerFactory,

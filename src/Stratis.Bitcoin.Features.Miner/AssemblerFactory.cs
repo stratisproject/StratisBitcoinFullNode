@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public class PowAssemblerFactory : AssemblerFactory
     {
-        protected readonly ConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
         protected readonly Network network;
 
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         public PowAssemblerFactory(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public class PosAssemblerFactory : AssemblerFactory
     {
-        protected readonly ConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
         protected readonly Network network;
 
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly ILoggerFactory loggerFactory;
 
         public PosAssemblerFactory(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolScheduler,
             ITxMempool mempool,

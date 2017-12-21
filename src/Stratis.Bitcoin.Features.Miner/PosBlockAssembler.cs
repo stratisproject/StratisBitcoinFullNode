@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly StakeValidator stakeValidator;
 
         public PosBlockAssembler(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,

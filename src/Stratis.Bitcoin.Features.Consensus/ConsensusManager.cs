@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -9,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusManager : INetworkDifficulty, IGetUnspentTransaction
     {
-        public ConsensusLoop ConsensusLoop { get; private set; }
+        public IConsensusLoop ConsensusLoop { get; private set; }
 
         public IDateTimeProvider DateTimeProvider { get; private set; }
 
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public PowConsensusValidator ConsensusValidator { get; private set; }
 
-        public ConsensusManager(ConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
+        public ConsensusManager(IConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
             PowConsensusValidator consensusValidator = null)
         {
             this.ConsensusLoop = consensusLoop;
