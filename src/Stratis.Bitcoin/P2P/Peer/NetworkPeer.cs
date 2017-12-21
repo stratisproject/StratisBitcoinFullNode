@@ -690,9 +690,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Calls event handlers when a new message is received from the peer.
+        /// Processes an incoming message from the peer and calls subscribed event handlers.
         /// </summary>
-        /// <param name="message">Message that was received.</param>
+        /// <param name="message">Message received from the peer.</param>
         public async Task ProcessMessageAsync(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
@@ -733,6 +733,19 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.SupportedTransactionOptions |= NetworkOptions.Witness;
                     break;
             }
+
+            this.CallMessageReceivedHandlers(message);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Calls event handlers when a new message is received from the peer.
+        /// </summary>
+        /// <param name="message">Message that was received.</param>
+        private void CallMessageReceivedHandlers(IncomingMessage message)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
             NetworkPeerMessageReceivedEventHandler messageReceivedPriority = this.MessageReceivedPriority;
             if (messageReceivedPriority != null)
