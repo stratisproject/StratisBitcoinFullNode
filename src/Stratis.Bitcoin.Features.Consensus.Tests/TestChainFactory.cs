@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
             testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNetworkPeerCollection>();
-            testChainContext.MockConnectionManager.Setup(s => s.ConnectedNodes).Returns(testChainContext.MockReadOnlyNodesCollection.Object);
+            testChainContext.MockConnectionManager.Setup(s => s.ConnectedPeers).Returns(testChainContext.MockReadOnlyNodesCollection.Object);
             testChainContext.MockConnectionManager.Setup(s => s.NodeSettings).Returns(testChainContext.NodeSettings);
 
             testChainContext.ConnectionManager = testChainContext.MockConnectionManager.Object;

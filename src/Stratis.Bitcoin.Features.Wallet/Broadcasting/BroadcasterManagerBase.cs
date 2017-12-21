@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
             var invPayload = new InvPayload(transaction);
 
-            var peers = this.connectionManager.ConnectedNodes.ToList();
+            var peers = this.connectionManager.ConnectedPeers.ToList();
             int propagateToCount = skipHalfOfThePeers ? (int)Math.Ceiling(peers.Count / 2.0) : peers.Count;
 
             for (int i = 0; i < propagateToCount; ++i)
