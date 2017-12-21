@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.P2P
                 if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
                     return;
 
-                await this.OnConnectAsync();
+                await this.OnConnectAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second);
@@ -226,6 +226,8 @@ namespace Stratis.Bitcoin.P2P
             {
                 peer?.DisconnectWithException("Error while connecting", exception);
             }
+
+            this.logger.LogTrace("(-):'{0}'", peer?.PeerAddress.Endpoint);
         }
 
         /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>

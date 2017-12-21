@@ -63,13 +63,13 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Only connect to nodes as specified in the -connect node arg.
         /// </summary>
-        public async override Task OnConnectAsync()
+        public override async Task OnConnectAsync()
         {
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
             {
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
-                    await ConnectAsync(peerAddress);
+                    await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }
     }

@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.P2P
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
-        public async override Task OnConnectAsync()
+        public override async Task OnConnectAsync()
         {
             this.logger.LogTrace("()");
 
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.P2P
             this.logger.LogTrace("Peer selected: '{0}'", peer?.NetworkAddress.Endpoint);
 
             if (peer != null)
-                await ConnectAsync(peer);
+                await ConnectAsync(peer).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
