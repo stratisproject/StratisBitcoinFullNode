@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        public StakeValidator StakeValidator { get; }
+        public IStakeValidator StakeValidator { get; }
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosConsensusValidator(
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             ICheckpoints checkpoints,
             Network network,
             StakeChain stakeChain,

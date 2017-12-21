@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly StakeValidator stakeValidator;
+        private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             MempoolSchedulerLock mempoolScheduler,
             ITxMempool mempool,
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             StakeChain stakeChain = null)

@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly StakeChain stakeChain;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly StakeValidator stakeValidator;
+        private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Miner
             INodeLifetime nodeLifetime,
             CoinView coinView,
             StakeChain stakeChain,
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
             IWalletManager wallet,

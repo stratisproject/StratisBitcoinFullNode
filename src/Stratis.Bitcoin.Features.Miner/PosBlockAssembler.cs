@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly StakeChain stakeChain;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly StakeValidator stakeValidator;
+        private readonly IStakeValidator stakeValidator;
 
         public PosBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             StakeChain stakeChain,
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
