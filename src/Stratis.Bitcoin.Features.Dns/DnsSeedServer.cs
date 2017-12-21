@@ -101,6 +101,12 @@ namespace Stratis.Bitcoin.Features.Dns
         private DnsMetric metrics;
 
         /// <summary>
+        /// Defines the pointer to the record number of the results, used to control round-robin so the same peer
+        /// doesn't always appear at the top of the list.
+        /// </summary>
+        private volatile int startIndex = 0;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DnsSeedServer"/> class with the port to listen on.
         /// </summary>
         /// <param name="client">The UDP client to use to receive DNS requests and send DNS responses.</param>
@@ -310,6 +316,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             Response response = Response.FromRequest(request);
 
+            IList<IResourceRecord> allAnswers = new List<IResourceRecord>();
             foreach (Question question in request.Questions)
             {
                 IList<IResourceRecord> answers = this.masterFile.Get(question);
@@ -317,12 +324,40 @@ namespace Stratis.Bitcoin.Features.Dns
                 {
                     foreach (IResourceRecord answer in answers)
                     {
-                        response.AnswerRecords.Add(answer);
+                        allAnswers.Add(answer);
                     }
                 }
 
                 this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
             }
+
+            // Sort output so same order isn't returned every time.
+            if (allAnswers.Count > 0)
+            {
+                // Capture start index.
+                int start = this.startIndex;
+                if (start >= allAnswers.Count)
+                {
+                    // Index is beyond answer count, start at beginning.
+                    start = 0;
+                    this.startIndex = 0;
+                }
+
+                // Copy records from start index up to end of array.
+                for (int i = start; i < allAnswers.Count; i++)
+                {
+                    response.AnswerRecords.Add(allAnswers[i]);
+                }
+
+                // Copy records from beginning of array, up to start index (or end of array).
+                for (int i = 0; i < start && start < allAnswers.Count; i++)
+                {
+                    response.AnswerRecords.Add(allAnswers[i]);
+                }
+            }
+
+            // Set new start index.
+            Interlocked.Increment(ref this.startIndex);
 
             this.logger.LogTrace("(-)");
 
