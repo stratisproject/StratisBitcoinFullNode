@@ -185,15 +185,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     return;
                 }
 
-                IReadOnlyNetworkPeerCollection nodes = this.connection.ConnectedNodes;
-                if (!nodes.Any())
+                IReadOnlyNetworkPeerCollection peers = this.connection.ConnectedPeers;
+                if (!peers.Any())
                 {
-                    this.logger.LogTrace("(-)[NO_NODES]");
+                    this.logger.LogTrace("(-)[NO_PEERS]");
                     return;
                 }
 
                 // Announce the blocks to each of the peers.
-                IEnumerable<BlockStoreBehavior> behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
+                IEnumerable<BlockStoreBehavior> behaviours = peers.Select(s => s.Behavior<BlockStoreBehavior>());
 
                 this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
                 foreach (BlockStoreBehavior behaviour in behaviours)
