@@ -588,6 +588,188 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             startedLoop.Should().BeTrue();
         }
 
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public async Task WhenDnsServerListening_AndDnsRequestReceivedRepeatedly_ThenResponsesReturnedInRoundRobinOrder_Async()
+        {
+            // Arrange.
+            Queue<CancellationTokenSource> sources = new Queue<CancellationTokenSource>();
+            Queue<byte[]> responses = new Queue<byte[]>();
+            Mock<IUdpClient> udpClient = new Mock<IUdpClient>();
+            udpClient.Setup(c => c.ReceiveAsync()).ReturnsAsync(new Tuple<IPEndPoint, byte[]>(new IPEndPoint(IPAddress.Loopback, 80), this.GetDnsRequest()));
+            udpClient.Setup(c => c.SendAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<IPEndPoint>())).Callback<byte[], int, IPEndPoint>((p, s, ip) =>
+            {
+                // One response at a time.
+                responses.Enqueue(p);
+                CancellationTokenSource source = sources.Dequeue();
+                source.Cancel();
+            }).ReturnsAsync(1);
+
+            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
+            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.1")));
+            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.2")));
+            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.3")));
+            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.4")));
+
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
+            NodeSettings nodeSettings = NodeSettings.Default();
+            nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            nodeSettings.DnsHostName = "host.example.com";
+            nodeSettings.DnsNameServer = "ns1.host.example.com";
+            nodeSettings.DnsMailBox = "admin@host.example.com";
+            DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
+
+            Mock<ILogger> logger = new Mock<ILogger>();
+            Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+
+            // Act (Part 1).
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory.Object, dateTimeProvider, nodeSettings, dataFolders);
+
+            try
+            {
+                CancellationTokenSource source = new CancellationTokenSource();
+                sources.Enqueue(source);
+                await server.ListenAsync(53, source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected.
+            }
+
+            // Assert (Part 1).
+            responses.Count.Should().Be(1);
+            byte[] response = responses.Dequeue();
+            IResponse dnsResponse = Response.FromArray(response);
+
+            dnsResponse.AnswerRecords.Count.Should().Be(4);
+            dnsResponse.AnswerRecords[0].Should().BeOfType<IPAddressResourceRecord>();
+
+            ((IPAddressResourceRecord)dnsResponse.AnswerRecords[0]).IPAddress.ToString().Should().Be("192.168.0.1");
+
+            while (responses.Count > 0)
+            {
+                // Consume queue completely.
+                responses.Dequeue();
+            }
+
+            // Act (Part 2).
+            try
+            {
+                CancellationTokenSource source = new CancellationTokenSource();
+                sources.Enqueue(source);
+                await server.ListenAsync(53, source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected.
+            }
+
+            // Assert (Part 2).
+            responses.Count.Should().Be(1);
+            response = responses.Dequeue();
+            dnsResponse = Response.FromArray(response);
+
+            dnsResponse.AnswerRecords.Count.Should().Be(4);
+            dnsResponse.AnswerRecords[0].Should().BeOfType<IPAddressResourceRecord>();
+
+            ((IPAddressResourceRecord)dnsResponse.AnswerRecords[0]).IPAddress.ToString().Should().Be("192.168.0.2");
+
+            while (responses.Count > 0)
+            {
+                // Consume queue completely.
+                responses.Dequeue();
+            }
+
+            // Act (Part 3).
+            try
+            {
+                CancellationTokenSource source = new CancellationTokenSource();
+                sources.Enqueue(source);
+                await server.ListenAsync(53, source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected.
+            }
+
+            // Assert (Part 3).
+            responses.Count.Should().Be(1);
+            response = responses.Dequeue();
+            dnsResponse = Response.FromArray(response);
+
+            dnsResponse.AnswerRecords.Count.Should().Be(4);
+            dnsResponse.AnswerRecords[0].Should().BeOfType<IPAddressResourceRecord>();
+
+            ((IPAddressResourceRecord)dnsResponse.AnswerRecords[0]).IPAddress.ToString().Should().Be("192.168.0.3");
+
+            while (responses.Count > 0)
+            {
+                // Consume queue completely.
+                responses.Dequeue();
+            }
+
+            // Act (Part 4).
+            try
+            {
+                CancellationTokenSource source = new CancellationTokenSource();
+                sources.Enqueue(source);
+                await server.ListenAsync(53, source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected.
+            }
+
+            // Assert (Part 4).
+            responses.Count.Should().Be(1);
+            response = responses.Dequeue();
+            dnsResponse = Response.FromArray(response);
+
+            dnsResponse.AnswerRecords.Count.Should().Be(4);
+            dnsResponse.AnswerRecords[0].Should().BeOfType<IPAddressResourceRecord>();
+
+            ((IPAddressResourceRecord)dnsResponse.AnswerRecords[0]).IPAddress.ToString().Should().Be("192.168.0.4");
+
+            while (responses.Count > 0)
+            {
+                // Consume queue completely.
+                responses.Dequeue();
+            }
+
+            // Act (Part 5).
+            try
+            {
+                CancellationTokenSource source = new CancellationTokenSource();
+                sources.Enqueue(source);
+                await server.ListenAsync(53, source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected.
+            }
+
+            // Assert (Part 5).
+            responses.Count.Should().Be(1);
+            response = responses.Dequeue();
+            dnsResponse = Response.FromArray(response);
+
+            dnsResponse.AnswerRecords.Count.Should().Be(4);
+            dnsResponse.AnswerRecords[0].Should().BeOfType<IPAddressResourceRecord>();
+
+            // This should start back at the beginning again.
+            ((IPAddressResourceRecord)dnsResponse.AnswerRecords[0]).IPAddress.ToString().Should().Be("192.168.0.1");
+
+            while (responses.Count > 0)
+            {
+                // Consume queue completely.
+                responses.Dequeue();
+            }
+        }
+
         /// <summary>
         /// Sets up a DNS 'A' request for google.com.
         /// </summary>
