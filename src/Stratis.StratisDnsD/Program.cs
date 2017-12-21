@@ -65,6 +65,9 @@ namespace Stratis.StratisDnsD
                         .AddRPC()
                         .UseDns()
                         .Build();
+
+                    // Run node.
+                    await node.RunAsync();
                 }
                 else
                 {

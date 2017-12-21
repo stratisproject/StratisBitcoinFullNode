@@ -212,17 +212,16 @@ namespace Stratis.Bitcoin.Features.Dns
 
                         stopWatch.Stop();
 
-                        // TODO - get list of peers from masterfile.
-                        this.metrics.CaptureRequestMetrics(0, stopWatch.ElapsedTicks, false);
+                        this.metrics.CaptureRequestMetrics(this.GetPeerCount(), stopWatch.ElapsedTicks, false);
                     }
                     catch (ArgumentException e)
                     {
-                        this.metrics.CaptureRequestMetrics(0, 0, true);
+                        this.metrics.CaptureRequestMetrics(this.GetPeerCount(), 0, true);
                         this.logger.LogWarning(e, "Failed to process DNS request.");
                     }
                     catch (SocketException e)
                     {
-                        this.metrics.CaptureRequestMetrics(0, 0, true);
+                        this.metrics.CaptureRequestMetrics(this.GetPeerCount(), 0, true);
                         this.logger.LogError(e, "Socket exception {0} whilst receiving UDP request.", e.ErrorCode);
                     }
                 }
@@ -414,19 +413,28 @@ namespace Stratis.Bitcoin.Features.Dns
             int count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.SOA)).Count;
             if (count == 0)
             {
-                // TODO: Remove cast
                 // Add SOA record for host.
-                ((DnsSeedMasterFile)this.MasterFile).Add(new StartOfAuthorityResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer), new Domain(this.nodeSettings.DnsMailBox.Replace('@', '.'))));
+                this.MasterFile.Add(new StartOfAuthorityResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer), new Domain(this.nodeSettings.DnsMailBox.Replace('@', '.'))));
             }
 
             // Check if NS record exists for host.
             count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.NS)).Count;
             if (count == 0)
             {
-                // TODO: Remove cast
                 // Add NS record for host.
-                ((DnsSeedMasterFile)this.MasterFile).Add(new NameServerResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer)));
+                this.MasterFile.Add(new NameServerResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer)));
             }
+        }
+
+        /// <summary>
+        /// Gets the peer count of IP v4 and v6 addresses in the DNS masterfile.
+        /// </summary>
+        /// <returns></returns>
+        private int GetPeerCount()
+        {
+            int count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.A)).Count;
+            count += this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.AAAA)).Count;
+            return count;
         }
 
         /// <summary>
@@ -450,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "Total DNS Requests", this.metrics.DnsRequestCountSinceStart);
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "Total DNS Server Failures (Restarted)", this.metrics.DnsServerFailureCountSinceStart);
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "Total DNS Request Failures", this.metrics.DnsRequestFailureCountSinceStart);
-                metricOutput.AppendFormat(this.MetricsOutputFormat, "Maximum Peer Count in DNS Response", this.metrics.DnsRequestFailureCountSinceStart);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Maximum Peer Count", this.metrics.MaxPeerCountSinceStart);
                 metricOutput.AppendLine();
 
                 // Reset period values.
@@ -465,8 +473,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "DNS Requests", snapshot.DnsRequestCountSinceLastPeriod);
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "DNS Server Failures (Restarted)", snapshot.DnsServerFailureCountSinceLastPeriod);
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "DNS Request Failures", snapshot.DnsRequestFailureCountSinceLastPeriod);
-                metricOutput.AppendFormat(this.MetricsOutputFormat, "Average Peer Count in DNS Response", averagePeerCount);
-                metricOutput.AppendFormat(this.MetricsOutputFormat, "Last Peer Count in DNS Response", snapshot.LastPeerCount);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Average Peer Count", averagePeerCount);
+                metricOutput.AppendFormat(this.MetricsOutputFormat, "Last Peer Count", snapshot.LastPeerCount);
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "Average Elapsed Time Processing DNS Requests (ms)", new TimeSpan((long)averageElapsedTicks).TotalMilliseconds);
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "Last Elapsed Time Processing DNS Requests (ms)", new TimeSpan(snapshot.LastDnsRequestElapsedTicks).TotalMilliseconds);
                 metricOutput.AppendLine();

@@ -219,6 +219,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            nodeSettings.DnsHostName = "host.example.com";
+            nodeSettings.DnsNameServer = "ns1.host.example.com";
+            nodeSettings.DnsMailBox = "admin@host.example.com";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
 
             // Act.
@@ -244,11 +247,15 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             udpClient.Setup(c => c.ReceiveAsync()).ThrowsAsync(new SocketException());
 
             Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
+            masterFile.Setup(m => m.Get(It.IsAny<Question>())).Returns(new List<IResourceRecord>() { new IPAddressResourceRecord(Domain.FromString("google.com"), IPAddress.Loopback) });
 
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            nodeSettings.DnsHostName = "host.example.com";
+            nodeSettings.DnsNameServer = "ns1.host.example.com";
+            nodeSettings.DnsMailBox = "admin@host.example.com";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
 
             Mock<ILogger> logger = new Mock<ILogger>(MockBehavior.Loose);
@@ -309,6 +316,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            nodeSettings.DnsHostName = "host.example.com";
+            nodeSettings.DnsNameServer = "ns1.host.example.com";
+            nodeSettings.DnsMailBox = "admin@host.example.com";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
 
             Mock<ILogger> logger = new Mock<ILogger>();
@@ -383,6 +393,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            nodeSettings.DnsHostName = "host.example.com";
+            nodeSettings.DnsNameServer = "ns1.host.example.com";
+            nodeSettings.DnsMailBox = "admin@host.example.com";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
 
             Mock<ILogger> logger = new Mock<ILogger>();

@@ -162,13 +162,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 throw new OperationCanceledException();
             };
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
 
-            DnsFeature feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders, asyncLoopFactory);
-
-            Mock<IWhitelistManager> mockWhitelistManager = new Mock<IWhitelistManager>();
-            IWhitelistManager whitelistManager = mockWhitelistManager.Object;
+            Mock<IWhitelistManager> whitelistManager = new Mock<IWhitelistManager>();
 
             Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
             NodeSettings nodeSettings = NodeSettings.Default();
@@ -182,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
 
             // Act.
-                DnsFeature feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders, asyncLoopFactory);
+            DnsFeature feature = new DnsFeature(dnsServer.Object, whitelistManager.Object, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders, asyncLoopFactory);
             feature.Initialize();
             bool waited = waitObject.Wait(5000);
 

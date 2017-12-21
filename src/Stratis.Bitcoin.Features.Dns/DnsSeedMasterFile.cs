@@ -97,7 +97,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>The matching entries.</returns>
         public IList<IResourceRecord> Get(Domain domain, RecordType type)
         {
-            return this.entries.Where(e => Matches(domain, e.Name) && e.Type == type).ToList();
+            // Fix logic from 3rd party library to support the ANY DNS query record type
+            return this.entries.Where(e => Matches(domain, e.Name) && (e.Type == type || type == RecordType.ANY)).ToList();
         }
 
         /// <summary>
