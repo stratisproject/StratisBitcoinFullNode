@@ -384,10 +384,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             {
                 // Act.
                 feature.Initialize();
-                // System.Threading.Thread.Sleep(6000);
-                nodeLifeTime.StopApplication();
+                bool waited = source.Token.WaitHandle.WaitOne(5000);
 
                 // Assert.
+                feature.Should().NotBeNull();
+                waited.Should().BeTrue();
                 mockWhitelistManager.Verify();
             }
         }
