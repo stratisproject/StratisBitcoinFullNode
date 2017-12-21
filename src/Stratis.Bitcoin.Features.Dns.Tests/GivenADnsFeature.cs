@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
         [Fact]
         [Trait("DNS", "UnitTest")]
-        public void WhenDnsFeatureInitialized_AndDnsServerStarted_AndNoMasterFileOnDisk_ThenDnsServerSuccessfullyStarts()
+        public void WhenDnsFeatureInitialized_ThenDnsServerSuccessfullyStarts()
         {
             // Arrange.
             Mock<IDnsServer> dnsServer = new Mock<IDnsServer>();
@@ -162,12 +162,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 throw new OperationCanceledException();
             };
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-            dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
 
-            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
-            masterFile.Setup(m => m.Load(It.IsAny<Stream>())).Verifiable();
-
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
+            Mock<IWhitelistManager> whitelistManager = new Mock<IWhitelistManager>();
 
             Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
             NodeSettings nodeSettings = NodeSettings.Default();
@@ -181,77 +177,14 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
 
             // Act.
-            DnsFeature feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders, asyncLoopFactory);
+            DnsFeature feature = new DnsFeature(dnsServer.Object, whitelistManager.Object, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders, asyncLoopFactory);
             feature.Initialize();
             bool waited = waitObject.Wait(5000);
 
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            masterFile.Verify(m => m.Load(It.IsAny<Stream>()), Times.Never);
-            dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
             dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        [Trait("DNS", "UnitTest")]
-        public void WhenDnsFeatureInitialized_AndDnsServerStarted_AndMasterFileOnDisk_ThenDnsServerSuccessfullyStarts()
-        {
-            // Arrange.
-            Mock<IDnsServer> dnsServer = new Mock<IDnsServer>();
-            ManualResetEventSlim waitObject = new ManualResetEventSlim(false);
-            Action<int, CancellationToken> action = (port, token) =>
-            {
-                waitObject.Set();
-                throw new OperationCanceledException();
-            };
-            dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-            dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
-
-            Mock<IWhitelistManager> mockWhitelistManager = new Mock<IWhitelistManager>();
-            IWhitelistManager whitelistManager = mockWhitelistManager.Object;
-
-            Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
-            NodeSettings nodeSettings = NodeSettings.Default();
-            nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-
-            Mock<ILogger> logger = new Mock<ILogger>(MockBehavior.Loose);
-            Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
-
-            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
-
-            string masterFilePath = Path.Combine(dataFolders.DnsMasterFilePath, DnsFeature.DnsMasterFileName);
-
-            // Act.
-            try
-            {
-                // Create masterfile on disk
-                using (FileStream stream = File.Create(masterFilePath))
-                {
-                    stream.Close();
-                }
-
-                // Run feature
-                DnsFeature feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetime.Object, nodeSettings, dataFolders, asyncLoopFactory);
-                feature.Initialize();
-                bool waited = waitObject.Wait(5000);
-
-                // Assert.
-                feature.Should().NotBeNull();
-                waited.Should().BeTrue();
-                dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Once);
-                dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
-            }
-            finally
-            {
-                // Try and remove created
-                if (File.Exists(masterFilePath))
-                {
-                    File.Delete(masterFilePath);
-                }
-            }
         }
 
         [Fact]
@@ -269,7 +202,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 }
             };
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-            dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
 
             Mock<IWhitelistManager> mockWhitelistManager = new Mock<IWhitelistManager>();
             IWhitelistManager whitelistManager = mockWhitelistManager.Object;
@@ -299,7 +231,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
             dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -314,7 +245,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 throw new ArgumentException("Bad port");
             };
             dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-            dnsServer.Setup(s => s.SwapMasterfile(It.IsAny<IMasterFile>())).Verifiable();
 
             Mock<IWhitelistManager> mockWhitelistManager = new Mock<IWhitelistManager>();
             IWhitelistManager whitelistManager = mockWhitelistManager.Object;
@@ -345,7 +275,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            dnsServer.Verify(s => s.SwapMasterfile(It.IsAny<IMasterFile>()), Times.Never);
             dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             serverError.Should().BeTrue();
         }
