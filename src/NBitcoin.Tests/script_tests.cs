@@ -1,20 +1,16 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
+using Newtonsoft.Json.Linq;
+using Xunit;
 #if !NOCONSENSUSLIB
 using System.Net.Http;
 #endif
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using Newtonsoft.Json.Linq;
-using System.Runtime.InteropServices;
 
 namespace NBitcoin.Tests
 {
@@ -161,7 +157,7 @@ namespace NBitcoin.Tests
             Assert.Equal(expectedResult, spending.Inputs.AsIndexedInputs().First().VerifyScript(tx.Outputs[0].ScriptPubKey));
 
             spending.Inputs[0].Sequence = uint.MaxValue;
-            Assert.Equal(false, spending.Inputs.AsIndexedInputs().First().VerifyScript(tx.Outputs[0].ScriptPubKey));
+            Assert.False(spending.Inputs.AsIndexedInputs().First().VerifyScript(tx.Outputs[0].ScriptPubKey));
         }
 
 
@@ -245,7 +241,7 @@ namespace NBitcoin.Tests
             var result = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript);
             Assert.Equal(2, result.PubKeys.Length);
             Assert.Equal(2, result.SignatureCount);
-            Assert.Equal(1, result.InvalidPubKeys.Length);
+            Assert.Single(result.InvalidPubKeys);
         }
 
         [Fact]

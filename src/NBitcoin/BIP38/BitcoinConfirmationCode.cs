@@ -1,9 +1,8 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
+﻿using System;
+using System.Linq;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
-using System;
-using System.Linq;
+using NBitcoin.Crypto;
 
 namespace NBitcoin
 {

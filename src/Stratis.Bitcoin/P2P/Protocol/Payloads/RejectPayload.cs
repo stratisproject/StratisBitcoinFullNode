@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using uint256 = NBitcoin.uint256;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {

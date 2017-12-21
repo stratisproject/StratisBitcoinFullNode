@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Security;
-using System.Threading.Tasks;
-using Castle.Components.DictionaryAdapter;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -1724,6 +1718,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public TestReadOnlyNetworkPeerCollection()
         {
+            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.networkPeers = new List<NetworkPeer>();
             this.networkPeers.Add(null);
         }
@@ -1754,5 +1750,3 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
     }
 }
-
-

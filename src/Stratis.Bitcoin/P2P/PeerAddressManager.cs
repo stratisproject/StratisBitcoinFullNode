@@ -3,10 +3,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities.FileStorage;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -81,6 +83,12 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
         /// <inheritdoc />
         public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
 
@@ -90,25 +98,17 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc />
         public DataFolder PeerFilePath { get; set; }
 
-        /// <inheritdoc />
+        /// <summary>Peer selector instance, used to select peers to connect to.</summary>
         public IPeerSelector PeerSelector { get; private set; }
 
-        /// <summary>Constructor used by unit tests.</summary>
-        /// <summary>Peer selector instance, used to select peers to connect to.</summary>
-        public IPeerSelector Selector { get; private set; }
-
-        public PeerAddressManager()
-        {
-            this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
-            this.PeerSelector = new PeerSelector(this.Peers);
-        }
-
         /// <summary>Constructor used by dependency injection.</summary>
-        /// <param name="peerFilePath">The file path the peer file is saved to.</param>
-        public PeerAddressManager(DataFolder peerFilePath)
-            : this()
+        public PeerAddressManager(DataFolder peerFilePath, ILoggerFactory loggerFactory)
         {
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             this.PeerFilePath = peerFilePath;
+            this.PeerSelector = new PeerSelector(this.loggerFactory, this.Peers);
         }
 
         /// <inheritdoc />

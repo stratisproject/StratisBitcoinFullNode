@@ -1,19 +1,11 @@
 ﻿#if !NOFILEIO
-using NBitcoin.DataEncoders;
-using NBitcoin.Payment;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-#if !PORTABLE
-using System.Net.Http;
-#endif
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using NBitcoin.Payment;
 using Xunit;
+#if !PORTABLE
+#endif
 
 namespace NBitcoin.Tests
 {
@@ -80,7 +72,7 @@ namespace NBitcoin.Tests
             BitcoinUrlBuilder url = new BitcoinUrlBuilder("bitcoin:?r=https://merchant.com/pay.php?h%3D2a8628fc2fbe&idontknow=test");
 
             Assert.Equal("test", url.UnknowParameters["idontknow"]);
-            Assert.Equal(1, url.UnknowParameters.Count);
+            Assert.Single(url.UnknowParameters);
         }
 
         private BitcoinUrlBuilder CreateBuilder(string uri)

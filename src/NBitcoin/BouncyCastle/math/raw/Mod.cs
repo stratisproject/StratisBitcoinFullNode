@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-
 using NBitcoin.BouncyCastle.Crypto.Utilities;
 using NBitcoin.BouncyCastle.Security;
 

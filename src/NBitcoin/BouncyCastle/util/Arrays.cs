@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-
 using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin.BouncyCastle.Utilities

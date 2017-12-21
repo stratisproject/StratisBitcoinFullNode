@@ -1,12 +1,9 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.BouncyCastle.Math;
-using System.Linq;
+﻿using System.Linq;
 using System.Security;
 using System.Text;
-using NBitcoin.BouncyCastle.Crypto.Paddings;
-using NBitcoin.BouncyCastle.Crypto.Parameters;
-using NBitcoin.BouncyCastle.Crypto.Engines;
+using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
 #if !WINDOWS_UWP && !USEBC
 using System.Security.Cryptography;
 #endif

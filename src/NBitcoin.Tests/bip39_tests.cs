@@ -1,12 +1,11 @@
-﻿using NBitcoin.DataEncoders;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -163,7 +162,7 @@ namespace NBitcoin.Tests
     public class bip39_Codegen
     {
         //[Fact]
-        public void GenerateHardcodedBIP39Dictionary()
+        private void GenerateHardcodedBIP39Dictionary()
         {
             StringBuilder builder = new StringBuilder();
             foreach(var lang in new[] { Language.ChineseSimplified, Language.ChineseTraditional, Language.English, Language.Japanese, Language.Spanish, Language.French })

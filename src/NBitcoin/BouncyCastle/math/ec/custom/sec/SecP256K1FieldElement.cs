@@ -1,5 +1,4 @@
 ﻿using System;
-
 using NBitcoin.BouncyCastle.Math.Raw;
 using NBitcoin.BouncyCastle.Utilities;
 
