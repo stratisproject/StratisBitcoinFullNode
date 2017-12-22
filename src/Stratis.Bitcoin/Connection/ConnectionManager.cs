@@ -419,7 +419,7 @@ namespace Stratis.Bitcoin.Connection
             NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
             this.AddConnectedPeer(peer);
             this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
-            await peer.VersionHandshakeAsync().ConfigureAwait(false);
+            await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
             return peer;

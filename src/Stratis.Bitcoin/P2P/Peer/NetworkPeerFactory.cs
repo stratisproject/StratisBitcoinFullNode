@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -171,7 +172,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(peerAddress, nameof(peerAddress));
 
             var peer = new NetworkPeer(peerAddress, network, parameters, this, this.dateTimeProvider, this.loggerFactory);
-            await peer.ConnectAsync(peer.Parameters.ConnectCancellation).ConfigureAwait(false);
+            try
+            {
+                await peer.ConnectAsync(peer.Parameters.ConnectCancellation).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                peer.Disconnect("Connection failed", e);
+                throw;
+            }
             return peer;
         }
 

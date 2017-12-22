@@ -889,7 +889,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(payload, nameof(payload));
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
 
-            TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();
             if (!this.IsConnected)
             {
                 this.logger.LogTrace("(-)[NOT_CONNECTED]");
@@ -961,7 +960,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
