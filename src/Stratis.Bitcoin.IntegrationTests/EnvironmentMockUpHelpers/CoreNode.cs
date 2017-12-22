@@ -29,6 +29,7 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -124,7 +125,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void NotInIBD()
         {
             // not in IBD
-            this.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            this.FullNode.NodeService<IInitialBlockDownloadState>().SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public void Start()
