@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -58,8 +59,7 @@ namespace Stratis.Bitcoin.P2P
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
-        /// <inheritdoc/>
-        public override PeerAddress FindPeerToConnectTo()
+        public override async Task OnConnectAsync()
         {
             this.logger.LogTrace("()");
 
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.P2P
                 // try and connect to it.
                 var peerExistsInAddNode = this.NodeSettings.ConnectionManager.AddNode.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInAddNode)
-                {                    
+                {
                     this.logger.LogTrace("Peer selection failed, peer exists in -addnode args '{0}'.", peer.NetworkAddress.Endpoint);
                     peerSelectionFailed++;
                     continue;
@@ -124,8 +124,12 @@ namespace Stratis.Bitcoin.P2P
                 break;
             }
 
-            this.logger.LogTrace("(-):'{0}'", peer?.NetworkAddress.Endpoint);
-            return peer;
+            this.logger.LogTrace("Peer selected: '{0}'", peer?.NetworkAddress.Endpoint);
+
+            if (peer != null)
+                await ConnectAsync(peer).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
