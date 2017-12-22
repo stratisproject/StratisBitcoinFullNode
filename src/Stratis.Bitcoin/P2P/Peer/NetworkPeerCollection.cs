@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (this.networkPeers.TryAdd(peer, peer))
             {
-                peer.MessageProducer.AddMessageListener(this.bridge);
+                peer.Connection.MessageProducer.AddMessageListener(this.bridge);
                 this.OnPeerAdded(peer);
                 return true;
             }
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             NetworkPeer old;
             if (this.networkPeers.TryRemove(peer, out old))
             {
-                peer.MessageProducer.RemoveMessageListener(this.bridge);
+                peer.Connection.MessageProducer.RemoveMessageListener(this.bridge);
                 this.OnPeerRemoved(old);
                 peer.Dispose();
                 return true;

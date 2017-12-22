@@ -143,14 +143,21 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Task responsible for reading incoming messages from the stream.</summary>
         private Task receiveMessageTask;
 
+        /// <summary>Queue of incoming messages distributed to message consumers.</summary>
+        public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
+
+        /// <summary>Consumer of messages coming from connected clients.</summary>
+        private readonly EventLoopMessageListener<IncomingMessage> messageListener;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         /// <param name="peer">Network peer the node is connected to.</param>
         /// <param name="client">Connected network client to the peer.</param>
+        /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerConnection(NetworkPeer peer, NetworkPeerClient client, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeerConnection(NetworkPeer peer, NetworkPeerClient client, Func<IncomingMessage, Task> messageReceivedCallback, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
             this.dateTimeProvider = dateTimeProvider;
@@ -160,6 +167,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.CancellationSource = new CancellationTokenSource();
             this.cancelRegistration = this.CancellationSource.Token.Register(this.InitiateShutdown);
             this.Disconnected = new ManualResetEventSlim(false);
+
+            this.MessageProducer = new MessageProducer<IncomingMessage>();
+            this.messageListener = new EventLoopMessageListener<IncomingMessage>(messageReceivedCallback);
+            this.MessageProducer.AddMessageListener(this.messageListener);
         }
 
         /// <summary>
@@ -271,7 +282,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         NetworkPeer = this.Peer
                     };
 
-                    this.Peer.MessageProducer.PushMessage(incommingMessage);
+                    this.MessageProducer.PushMessage(incommingMessage);
                 }
             }
             catch (Exception ex)
@@ -337,6 +348,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.receiveMessageTask.Wait();
             this.Disconnected.WaitHandle.WaitOne();
+
+            this.MessageProducer.RemoveMessageListener(this.messageListener);
+            this.messageListener.Dispose();
 
             this.Disconnected.Dispose();
             this.CancellationSource.Dispose();
@@ -449,9 +463,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <summary>Queue of incoming messages distributed to message consumers.</summary>
-        public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
-
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
         public bool Advertize { get; set; }
 
@@ -502,10 +513,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         public NetworkPeerConnectionParameters Parameters { get; private set; }
 
-        /// <summary>Consumer of messages coming from connected clients.</summary>
-        /// <seealso cref="ProcessMessageAsync(IncomingMessage)"/>
-        private readonly EventLoopMessageListener<IncomingMessage> messageListener;
-
         /// <summary>
         /// Dummy constructor for testing only.
         /// </summary>
@@ -519,8 +526,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.messageListener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
         }
 
         /// <summary>
@@ -536,10 +541,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
-
-            this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.messageListener = new EventLoopMessageListener<IncomingMessage>(ProcessMessageAsync);
-            this.MessageProducer.AddMessageListener(this.messageListener);
 
             this.preferredTransactionOptions = network.NetworkOptions;
             this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
@@ -570,7 +571,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
-            this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = new NetworkPeerConnection(this, client, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
 
             this.logger.LogTrace("(-)");
         }
@@ -595,7 +596,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
             this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
-            this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = new NetworkPeerConnection(this, client, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
             this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
             this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
@@ -1157,7 +1158,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.messageListener.Dispose();
             this.Disconnect("Node disposed");
 
             this.logger.LogTrace("(-)");
