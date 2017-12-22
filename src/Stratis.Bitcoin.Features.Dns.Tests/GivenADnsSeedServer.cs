@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Mock<IAsyncLoopFactory> asyncLoopFactory = new Mock<IAsyncLoopFactory>();
             asyncLoopFactory.Setup(f => f.Run(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>())).Returns(new Mock<IAsyncLoop>().Object);
-
+            
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
@@ -469,6 +469,14 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeSettings.DnsNameServer = "ns1.host.example.com";
             nodeSettings.DnsMailBox = "admin@host.example.com";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
+
+            string masterFilePath = Path.Combine(dataFolders.DnsMasterFilePath, DnsFeature.DnsMasterFileName);
+
+            // Try and remove if already exists
+            if (File.Exists(masterFilePath))
+            {
+                File.Delete(masterFilePath);
+            }
 
             // Act.
             DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory.Object, nodeLifetime.Object, loggerFactory.Object, dateTimeProvider, nodeSettings, dataFolders);
@@ -586,6 +594,45 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             server.Should().NotBeNull();
             waited.Should().BeTrue();
             startedLoop.Should().BeTrue();
+        }
+
+        [Fact]
+        [Trait("DNS", "UnitTest")]
+        public void WhenDnsServerInitialized_ThenSaveMasterfileLoopStarted()
+        {
+            // Arrange.
+            Mock<IUdpClient> udpClient = new Mock<IUdpClient>();
+            Mock<IMasterFile> masterFile = new Mock<IMasterFile>();
+            masterFile.Setup(m => m.Get(It.IsAny<Question>())).Returns(new List<IResourceRecord>());
+            masterFile.Setup(m => m.Save(It.IsAny<Stream>())).Verifiable();
+
+            CancellationTokenSource source = new CancellationTokenSource(5000);
+            Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
+            nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
+
+            Mock<ILogger> logger = new Mock<ILogger>();
+            Mock<ILoggerFactory> loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+
+            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
+
+            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
+            NodeSettings nodeSettings = NodeSettings.Default();
+            nodeSettings.DataDir = Directory.GetCurrentDirectory();
+            nodeSettings.DnsHostName = "host.example.com";
+            nodeSettings.DnsNameServer = "ns1.host.example.com";
+            nodeSettings.DnsMailBox = "admin@host.example.com";
+            DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
+
+            // Act.
+            DnsSeedServer server = new DnsSeedServer(udpClient.Object, masterFile.Object, asyncLoopFactory, nodeLifetime.Object, loggerFactory.Object, dateTimeProvider, nodeSettings, dataFolders);
+            server.Initialize();
+            bool waited = source.Token.WaitHandle.WaitOne();
+
+            // Assert.
+            server.Should().NotBeNull();
+            waited.Should().BeTrue();
+            masterFile.Verify(m => m.Save(It.IsAny<Stream>()), Times.AtLeastOnce);
         }
 
         [Fact]
