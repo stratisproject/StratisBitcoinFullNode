@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -31,6 +32,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
+
+        /// <summary>Provider of IBD state.</summary>
+        public IInitialBlockDownloadState InitialBlockDownloadState { get; }
 
         public ChainState ChainState { get; }
 
@@ -71,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
 
-        /// <summary>Public constructor for unit testing</summary>
+        /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
@@ -81,6 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
+            IInitialBlockDownloadState initialBlockDownloadState,
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -93,6 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
+            this.InitialBlockDownloadState = initialBlockDownloadState;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);

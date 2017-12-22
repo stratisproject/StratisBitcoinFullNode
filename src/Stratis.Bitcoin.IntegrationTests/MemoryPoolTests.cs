@@ -859,9 +859,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 builder.StartAll();
 
                 // not in IBD
-                stratisNodeSync.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNode1.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNode2.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNodeSync.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode1.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode2.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
                 // generate blocks and wait for the downloader to pickup
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
