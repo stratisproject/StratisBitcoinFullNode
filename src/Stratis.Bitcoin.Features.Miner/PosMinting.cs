@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.initialBlockDownloadState.IsInitialBlockDownload())
+                while (!this.connection.ConnectedPeers.Any() || this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
                     if (!this.connection.ConnectedPeers.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
