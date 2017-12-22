@@ -45,18 +45,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public MinerSettings()
-        {
-        }
-
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
         /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
-        public MinerSettings(Action<MinerSettings> callback)
-        {
-            Guard.NotNull(callback, nameof(callback));
-
+        public MinerSettings(Action<MinerSettings> callback = null)
+        {        
             this.callback = callback;
         }
 
