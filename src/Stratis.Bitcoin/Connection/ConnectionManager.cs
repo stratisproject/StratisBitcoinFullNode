@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Connection
                 foreach (NetworkPeer node in peerConnector.ConnectedPeers)
                 {
                     if (!node.PeerVersion.Services.HasFlag(services))
-                        node.DisconnectWithException("The peer does not support the required services requirement.");
+                        node.Disconnect("The peer does not support the required services requirement.");
                 }
             }
 
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Connection
                 server.Dispose();
 
             foreach (NetworkPeer peer in this.connectedPeers.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
-                peer.Disconnect();
+                peer.Disconnect("Connection manager shutdown");
 
             this.logger.LogTrace("(-)");
         }
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
             NetworkPeer peer = this.connectedPeers.FindByEndpoint(ipEndpoint);
-            peer?.DisconnectWithException("Requested by user");
+            peer?.Disconnect("Requested by user");
 
             this.logger.LogTrace("(-)");
         }
@@ -417,6 +417,7 @@ namespace Stratis.Bitcoin.Connection
             });
 
             NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
+            this.AddConnectedPeer(peer);
             this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
             await peer.VersionHandshakeAsync().ConfigureAwait(false);
 

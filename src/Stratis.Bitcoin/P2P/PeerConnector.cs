@@ -215,17 +215,18 @@ namespace Stratis.Bitcoin.P2P
 
                     peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peerAddress.NetworkAddress, clonedConnectParamaters).ConfigureAwait(false);
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
+                    this.AddPeer(peer);
                 }
             }
-            catch (OperationCanceledException timeout)
+            catch (OperationCanceledException)
             {
                 this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
-                peer?.DisconnectWithException("Timeout", timeout);
+                peer?.Disconnect("Connection timeout");
             }
             catch (Exception exception)
             {
                 this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
-                peer?.DisconnectWithException("Error while connecting", exception);
+                peer?.Disconnect("Error while connecting", exception);
             }
 
             this.logger.LogTrace("(-)");

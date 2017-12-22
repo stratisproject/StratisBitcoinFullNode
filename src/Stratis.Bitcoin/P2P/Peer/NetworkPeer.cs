@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (this.CancellationSource.IsCancellationRequested == false)
                 this.CancellationSource.Cancel();
 
-            this.receiveMessageTask.Wait();
+            this.receiveMessageTask?.Wait();
             this.Disconnected.WaitHandle.WaitOne();
 
             this.MessageProducer.RemoveMessageListener(this.messageListener);
@@ -820,7 +820,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
 
-                    this.DisconnectWithException("Handshake timeout");
+                    this.Disconnect("Handshake timeout");
 
                     this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                     throw;
@@ -829,7 +829,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
 
-                    this.DisconnectWithException("Handshake exception");
+                    this.Disconnect("Handshake exception");
 
                     this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                     throw;
@@ -1059,68 +1059,21 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Disconnects the peer and cleans up.
         /// </summary>
         /// <param name="reason">Human readable reason for disconnecting.</param>
-        public void Disconnect(string reason = null)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
-
-            if (this.IsConnected == false)
-            {
-                this.logger.LogTrace("(-)[NOT_CONNECTED]");
-                return;
-            }
-
-            this.DisconnectInternal(reason, null);
-
-            try
-            {
-                this.Connection.Disconnected.WaitHandle.WaitOne();
-            }
-            finally
-            {
-                this.Connection.Dispose();
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Disconnects the peer and cleans up.
-        /// </summary>
-        /// <param name="reason">Human readable reason for disconnecting.</param>
         /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
-        public void DisconnectWithException(string reason = null, Exception exception = null)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
-
-            if (this.IsConnected == false)
-            {
-                this.logger.LogTrace("(-)[NOT_CONNECTED]");
-                return;
-            }
-
-            this.DisconnectInternal(reason, exception);
-            this.Connection.Dispose();
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Disconnects the peer and cleans up.
-        /// </summary>
-        /// <param name="reason">Human readable reason for disconnecting.</param>
-        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
-        private void DisconnectInternal(string reason = null, Exception exception = null)
+        public void Disconnect(string reason, Exception exception = null)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
 
             if (Interlocked.CompareExchange(ref this.disconnecting, 1, 0) == 1)
             {
-                this.logger.LogTrace("(-)[DISCONNECTING");
+                this.logger.LogTrace("(-)[DISCONNECTING]");
                 return;
             }
 
             this.State = NetworkPeerState.Disconnecting;
             this.Connection.CancellationSource.Cancel();
+            this.Connection.Disconnected.WaitHandle.WaitOne();
+            this.Connection.Dispose();
 
             if (this.DisconnectReason == null)
             {

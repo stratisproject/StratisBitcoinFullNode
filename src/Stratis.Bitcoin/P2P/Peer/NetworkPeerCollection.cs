@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void DisconnectAll(string reason, CancellationToken cancellation = default(CancellationToken))
         {
             foreach (KeyValuePair<NetworkPeer, NetworkPeer> peer in this.networkPeers)
-                peer.Key.DisconnectWithException(reason);
+                peer.Key.Disconnect(reason);
         }
 
         public void Clear()

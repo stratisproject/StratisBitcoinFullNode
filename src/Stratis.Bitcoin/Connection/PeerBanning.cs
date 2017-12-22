@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Connection
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    peer.DisconnectWithException($"The peer was banned, reason: {reason}");
+                    peer.Disconnect($"The peer was banned, reason: {reason}");
                 }
                 else
                 {

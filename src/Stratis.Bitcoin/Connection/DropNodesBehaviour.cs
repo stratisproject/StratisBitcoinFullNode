@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Connection
 
                 if (thresholdCount < this.connection.ConnectedPeers.Count())
                     if (version.StartHeight < this.chain.Height)
-                        this.AttachedPeer.DisconnectWithException($"Node at height = {version.StartHeight} too far behind current height");
+                        this.AttachedPeer.Disconnect($"Node at height = {version.StartHeight} too far behind current height");
             });
 
             this.logger.LogTrace("(-)");
