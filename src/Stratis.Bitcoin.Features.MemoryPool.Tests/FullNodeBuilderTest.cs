@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var network = serviceProvider.GetService<Network>();
             var settings = serviceProvider.GetService<NodeSettings>();
             var consensusLoop = serviceProvider.GetService<IConsensusLoop>() as ConsensusLoop;
-            var consensus = serviceProvider.GetService<PowConsensusValidator>();
+            var consensus = serviceProvider.GetService<IPowConsensusValidator>() as PowConsensusValidator;
             var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
             var chainState = serviceProvider.GetService<ChainState>();
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();

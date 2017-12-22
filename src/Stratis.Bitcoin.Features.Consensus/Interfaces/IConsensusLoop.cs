@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         CoinView UTXOSet { get; }
 
         /// <summary>The validation logic for the consensus rules.</summary>
-        PowConsensusValidator Validator { get; }
+        IPowConsensusValidator Validator { get; }
 
         /// <summary>
         /// A method that will accept a new block to the node.

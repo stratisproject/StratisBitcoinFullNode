@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
-                    services.AddSingleton<PowConsensusValidator>();
+                    services.AddSingleton<IPowConsensusValidator, PowConsensusValidator>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>();
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         }
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
-                        services.AddSingleton<PowConsensusValidator, PosConsensusValidator>();
+                        services.AddSingleton<IPowConsensusValidator, PosConsensusValidator>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>();

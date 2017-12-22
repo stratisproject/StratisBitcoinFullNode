@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Network Network { get; private set; }
 
-        public PowConsensusValidator ConsensusValidator { get; private set; }
+        public IPowConsensusValidator ConsensusValidator { get; private set; }
 
         public ConsensusManager(IConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
             PowConsensusValidator consensusValidator = null)

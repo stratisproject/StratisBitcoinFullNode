@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public CoinView UTXOSet { get; }
 
         /// <summary>The validation logic for the consensus rules.</summary>
-        public PowConsensusValidator Validator { get; }
+        public IPowConsensusValidator Validator { get; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedBlock Tip { get; private set; }
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
-            PowConsensusValidator validator,
+            IPowConsensusValidator validator,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
             CoinView utxoSet,
