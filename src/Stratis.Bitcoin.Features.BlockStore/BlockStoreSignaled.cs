@@ -1,6 +1,9 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -13,10 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
+        private Task relayWorkerTask;
 
         private readonly IBlockRepository blockRepository;
 
@@ -41,6 +41,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
+        private ManualResetEventSlim blockEnqueued;
+
+        private DateTime lastBlockAnnounceTimeStamp;
+
+        private const double FlushFrequencySeconds = 0.5;
+
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
             ConcurrentChain chain,
@@ -48,12 +54,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
-            IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             string name = "BlockStore")
         {
-            this.asyncLoopFactory = asyncLoopFactory;
             this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
@@ -64,6 +68,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
+            this.blockEnqueued = new ManualResetEventSlim(false);
+            this.lastBlockAnnounceTimeStamp = DateTime.MinValue;
         }
 
         protected override void OnNextCore(Block block)
@@ -97,6 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedBlock);
             this.blocksToAnnounce.Enqueue(chainedBlock);
+            this.blockEnqueued.Set();
 
             this.logger.LogTrace("(-)");
         }
@@ -105,6 +112,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// A loop method that continuously relays blocks found in <see cref="blocksToAnnounce"/> to connected peers on the network.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// Relaying is triggered when new item is added to the <see cref="blocksToAnnounce"/>.
+        /// If previous announcement was made in less than <see cref="FlushFrequencySeconds"/> it will wait in order to form a batch.
+        /// </para>
         /// <para>
         /// The queue <see cref="blocksToAnnounce"/> contains
         /// hashes of blocks that were validated by the consensus rules.
@@ -128,90 +139,104 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
+            this.relayWorkerTask = Task.Factory.StartNew(async delegate
             {
-                this.logger.LogTrace("()");
-
-                int announceBlockCount = this.blocksToAnnounce.Count;
-                if (announceBlockCount == 0)
+                while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
-                    this.logger.LogTrace("(-)[NO_BLOCKS]");
-                    return;
-                }
+                    // Wait until a new block is added to the queue.
+                    this.blockEnqueued.Wait();
 
-                this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
+                    // Make sure that at least 'FlushFrequencySeconds' seconds passed since the last announcement.
+                    // This is needed in order to ensure announcing blocks in batches to reduce the overhead.
+                    double secondsSinceLastAnnounce = (DateTime.Now - this.lastBlockAnnounceTimeStamp).TotalSeconds;
+                    if (secondsSinceLastAnnounce < FlushFrequencySeconds)
+                        await Task.Delay(TimeSpan.FromSeconds(FlushFrequencySeconds - secondsSinceLastAnnounce));
+                    this.lastBlockAnnounceTimeStamp = DateTime.Now;
 
-                // Initialize this list with default size of 'announceBlockCount + 4' to prevent it from autoresizing during adding new items.
-                // This +4 extra size is in case new items will be added to the queue during the loop.
-                var broadcastItems = new List<ChainedBlock>(announceBlockCount + 4);
+                    this.blockEnqueued.Reset();
 
-                while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
-                {
-                    this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
+                    this.logger.LogTrace("()");
 
-                    // The first block that is not on disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
+                    int announceBlockCount = this.blocksToAnnounce.Count;
+                    if (announceBlockCount == 0)
                     {
-                        this.logger.LogTrace("Block '{0}' not found in the store.", block);
+                        this.logger.LogTrace("(-)[NO_BLOCKS]");
+                        continue;
+                    }
 
-                        // In cases when the node had a reorg the 'blocksToAnnounce' contain blocks
-                        // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
+                    this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
 
-                        // Check if the reason why we don't have a block is a reorg or it hasn't been downloaded yet.
-                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
+                    // Initialize this list with default size of 'announceBlockCount + 4' to prevent it from autoresizing during adding new items.
+                    // This +4 extra size is in case new items will be added to the queue during the loop.
+                    var broadcastItems = new List<ChainedBlock>(announceBlockCount + 4);
+
+                    while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
+                    {
+                        this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
+
+                        // The first block that is not on disk will abort the loop.
+                        if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
                         {
-                            this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
+                            this.logger.LogTrace("Block '{0}' not found in the store.", block);
 
-                            // Remove hash that we've reorged away from.
-                            this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
-                            continue;
+                            // In cases when the node had a reorg the 'blocksToAnnounce' contain blocks
+                            // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
+
+                            // Check if the reason why we don't have a block is a reorg or it hasn't been downloaded yet.
+                            if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
+                            {
+                                this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
+
+                                // Remove hash that we've reorged away from.
+                                this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
+                                continue;
+                            }
+
+                            this.blockEnqueued.Set();
+                            this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
+                            break;
                         }
-                        else this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
 
-                        break;
+                        if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
+                        {
+                            this.logger.LogTrace("Block '{0}' moved from the announce queue to broadcast list.", block);
+                            broadcastItems.Add(blockToBroadcast);
+                        }
+                        else this.logger.LogTrace("Unable to removing block '{0}' from the announce queue.", block);
                     }
 
-                    if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
+                    if (!broadcastItems.Any())
                     {
-                        this.logger.LogTrace("Block '{0}' moved from the announce queue to broadcast list.", block);
-                        broadcastItems.Add(blockToBroadcast);
+                        this.logger.LogTrace("(-)[NO_BROADCAST_ITEMS]");
+                        continue;
                     }
-                    else this.logger.LogTrace("Unable to removing block '{0}' from the announce queue.", block);
+
+                    IReadOnlyNetworkPeerCollection nodes = this.connection.ConnectedNodes;
+                    if (!nodes.Any())
+                    {
+                        this.logger.LogTrace("(-)[NO_NODES]");
+                        continue;
+                    }
+
+                    // Announce the blocks to each of the peers.
+                    IEnumerable<BlockStoreBehavior> behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
+
+                    this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
+                    foreach (BlockStoreBehavior behaviour in behaviours)
+                        await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
                 }
-
-                if (!broadcastItems.Any())
-                {
-                    this.logger.LogTrace("(-)[NO_BROADCAST_ITEMS]");
-                    return;
-                }
-
-                IReadOnlyNetworkPeerCollection nodes = this.connection.ConnectedNodes;
-                if (!nodes.Any())
-                {
-                    this.logger.LogTrace("(-)[NO_NODES]");
-                    return;
-                }
-
-                // Announce the blocks to each of the peers.
-                IEnumerable<BlockStoreBehavior> behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
-
-                this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
-                foreach (BlockStoreBehavior behaviour in behaviours)
-                    await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Second,
-            startAfter: TimeSpans.FiveSeconds);
+            });
 
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// The async loop needs to complete its work before we can shut down this feature.
-        /// </summary>
-        internal void ShutDown()
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
         {
-            this.asyncLoop.Dispose();
+            this.relayWorkerTask.Wait();
+            this.blockEnqueued.Dispose();
+
+            base.Dispose(disposing);
         }
     }
 }
