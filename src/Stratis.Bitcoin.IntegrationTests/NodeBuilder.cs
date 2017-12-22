@@ -644,11 +644,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        // public NetworkPeer CreateNodeClient(NetworkPeerConnectionParameters parameters)
-        // {
-        //     return this.networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters).GetAwaiter().GetResult();
-        // }
-
         public async Task StartAsync()
         {
             NodeConfigParameters config = new NodeConfigParameters();

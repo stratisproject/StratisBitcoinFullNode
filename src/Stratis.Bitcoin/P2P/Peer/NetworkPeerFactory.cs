@@ -43,16 +43,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="endPoint">Address and port of the counterparty to connect to.</param>
         /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
-        /// <remarks><paramref name="parameters"/> not <c>null</c> by default to avoid method signature confusion with <see cref="CreateConnectedNetworkPeerAsync(Network, string, ProtocolVersion, bool, CancellationToken)"/>.</remarks>
-        // Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, string endPoint, NetworkPeerConnectionParameters parameters);
-
-        /// <summary>
-        /// Creates a new network peer which is connected to a specified counterparty.
-        /// </summary>
-        /// <param name="network">The network to connect to.</param>
-        /// <param name="endPoint">Address and port of the counterparty to connect to.</param>
-        /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
-        /// <returns>Network peer connected to the specified counterparty.</returns>
         Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, IPEndPoint endPoint, NetworkPeerConnectionParameters parameters = null);
 
         /// <summary>
@@ -158,14 +148,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             return await this.CreateConnectedNetworkPeerAsync(network, ipEndPoint, parameters);
         }
-
-        // public async Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, string endPoint, NetworkPeerConnectionParameters parameters)
-        // {
-        //     Guard.NotNull(network, nameof(network));
-        //     Guard.NotNull(endPoint, nameof(endPoint));
-        // 
-        //     return await this.CreateConnectedNetworkPeerAsync(network, Utils.ParseIpEndpoint(endPoint, network.DefaultPort), parameters);
-        // }
 
         /// <inheritdoc/>
         public async Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, IPEndPoint endPoint, NetworkPeerConnectionParameters parameters = null)
