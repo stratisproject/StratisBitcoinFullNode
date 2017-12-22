@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Attempts to connect to a random peer.</summary>
         internal async Task ConnectAsync(PeerAddress peerAddress)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("():'{0}'", peerAddress.NetworkAddress.Endpoint);
 
             NetworkPeer peer = null;
 
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.P2P
                 peer?.DisconnectWithException("Error while connecting", exception);
             }
 
-            this.logger.LogTrace("(-):'{0}'", peer?.PeerAddress.Endpoint);
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>
