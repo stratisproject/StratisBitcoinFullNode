@@ -1,9 +1,9 @@
 ## Stratis DNS Crawler 
-The Stratis DNS Crawler provides a list of reliable nodes Stratis nodes via a custom DNS server.
+The Stratis DNS Crawler provides a list of Stratis full nodes that have recently been active via a custom DNS server.
 
 ### Prerequisites
 
-To install and run the node, you need
+To install and run the DNS Server, you need
 * [.NET Core 2.0](https://www.microsoft.com/net/download/core)
 * [Git](https://git-scm.com/)
 
@@ -63,7 +63,7 @@ Given the following settings for the Stratis DNS Server:
 | dnshostname   | stratisdns.stratisplatform.com    |
 | dnsnameserver | ns.stratisdns.stratisplatform.com |
 
-You should have NS and A record in stratisplatform.com as:
+You should have NS and A record in your ISP DNS records for your DNS host domain:
 
 | Type     | Hostname                          | Data                              |
 | -------- | --------------------------------- | --------------------------------- |
