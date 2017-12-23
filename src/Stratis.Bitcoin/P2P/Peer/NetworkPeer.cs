@@ -149,6 +149,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Consumer of messages coming from connected clients.</summary>
         private readonly EventLoopMessageListener<IncomingMessage> messageListener;
 
+        /// <summary>New network state to set to the peer when shutdown is initiated.</summary>
+        private NetworkPeerState setPeerStateOnShutdown;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -162,6 +165,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
             this.dateTimeProvider = dateTimeProvider;
 
+            this.setPeerStateOnShutdown = NetworkPeerState.Offline;
             this.Peer = peer;
             this.Client = client;
             this.CancellationSource = new CancellationTokenSource();
@@ -231,14 +235,17 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    if (this.Peer.State != NetworkPeerState.Offline)
-                        this.Peer.State = NetworkPeerState.Failed;
-
-                    this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                    if (this.Peer.DisconnectReason == null)
                     {
-                        Reason = "Unexpected exception while sending a message",
-                        Exception = ex
-                    };
+                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        {
+                            Reason = "Unexpected exception while sending a message",
+                            Exception = ex
+                        };
+                    }
+
+                    if (this.Peer.State != NetworkPeerState.Offline)
+                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
                 }
 
                 this.CancellationSource.Cancel();
@@ -302,14 +309,19 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    if (this.Peer.State != NetworkPeerState.Offline)
-                        this.Peer.State = NetworkPeerState.Failed;
-
-                    this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                    if (this.Peer.DisconnectReason == null)
                     {
-                        Reason = "Unexpected exception while waiting for a message",
-                        Exception = ex
-                    };
+                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        {
+                            Reason = "Unexpected exception while waiting for a message",
+                            Exception = ex
+                        };
+                    }
+
+                    // We can not set the peer state directly here because it would 
+                    // trigger state changing event handlers and could cause deadlock.
+                    if (this.Peer.State != NetworkPeerState.Offline)
+                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
                 }
 
                 this.CancellationSource.Cancel();
@@ -329,7 +341,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Disconnected.Set();
 
             if (this.Peer.State != NetworkPeerState.Failed)
-                this.Peer.State = NetworkPeerState.Offline;
+                this.Peer.State = this.setPeerStateOnShutdown;
 
             this.Client.ProcessingCompletion.SetResult(true);
 
@@ -676,6 +688,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
                 this.Connection.Client.Dispose();
+
                 this.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
                     Reason = "Unexpected exception while connecting to socket",
