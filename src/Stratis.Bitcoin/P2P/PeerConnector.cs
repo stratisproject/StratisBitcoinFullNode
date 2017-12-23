@@ -221,12 +221,12 @@ namespace Stratis.Bitcoin.P2P
             catch (OperationCanceledException)
             {
                 this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
-                peer?.Disconnect("Connection timeout");
+                peer?.Dispose("Connection timeout");
             }
             catch (Exception exception)
             {
                 this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
-                peer?.Disconnect("Error while connecting", exception);
+                peer?.Dispose("Error while connecting", exception);
             }
 
             this.logger.LogTrace("(-)");

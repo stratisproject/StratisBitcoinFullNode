@@ -49,13 +49,13 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            var node = this.AttachedPeer;
-            if (node.State == NetworkPeerState.Connected)
+            var peer = this.AttachedPeer;
+            if (peer.State == NetworkPeerState.Connected)
             {
-                if (this.peerBanning.IsBanned(node.RemoteSocketEndpoint))
+                if (this.peerBanning.IsBanned(peer.RemoteSocketEndpoint))
                 {
-                    this.logger.LogDebug("Node '{0}' was previously banned.", node.RemoteSocketEndpoint);
-                    node.Disconnect("A banned node tried to connect.");
+                    this.logger.LogDebug("Peer '{0}' was previously banned.", peer.RemoteSocketEndpoint);
+                    peer.Disconnect("A banned node tried to connect.");
                     return;
                 }
             }
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.peerBanning.BanPeer(peer.RemoteSocketEndpoint, this.nodeSettings.ConnectionManager.BanTimeSeconds, "Invalid block header received");
                 this.logger.LogTrace("Invalid block header received from peer '{0}'.", peer.RemoteSocketEndpoint);
-                peer.Disconnect("Invalid block header received.");
+                peer.Disconnect("Invalid block header received");
             }
 
             this.logger.LogTrace("(-)");

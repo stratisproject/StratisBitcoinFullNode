@@ -360,6 +360,19 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
     }
 
+    /// <summary>
+    /// Represents a counterparty of the node on the network. This is usually another node, but it can be 
+    /// a wallet, an analytical robot, or any other network client or server that understands the protocol.
+    /// <para>
+    /// The network peer is either inbound, if it was the counterparty that established the connection to our 
+    /// node's listener, or outbound, if our node was the one connecting to a remote server.
+    /// </para>
+    /// </summary>
+    /// <remarks>
+    /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods 
+    /// have the same functionality and the disconnecting method is provided only for better readability of the code. 
+    /// <para>It is safe to try to disconnect or dispose this object multiple times, only the first call will be processed.</para>
+    /// </remarks>
     public class NetworkPeer : IDisposable
     {
         /// <summary>Factory for creating loggers.</summary>
@@ -472,8 +485,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Version message payload received from the peer.</summary>
         public VersionPayload PeerVersion { get; private set; }
 
-        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary>
-        private int disconnecting;
+        /// <summary>Set to <c>1</c> if the peer has been disconnected already, <c>0</c> otherwise.</summary>
+        private int disconnected;
 
         /// <summary>Transaction options we would like.</summary>
         private NetworkOptions preferredTransactionOptions;
@@ -829,7 +842,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
 
-                    this.Disconnect("Handshake exception");
+                    this.Disconnect("Handshake exception", ex);
 
                     this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                     throw;
@@ -1063,9 +1076,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
 
-            if (Interlocked.CompareExchange(ref this.disconnecting, 1, 0) == 1)
+            if (Interlocked.CompareExchange(ref this.disconnected, 1, 0) == 1)
             {
-                this.logger.LogTrace("(-)[DISCONNECTING]");
+                this.logger.LogTrace("(-)[DISCONNECTED]");
                 return;
             }
 
@@ -1105,14 +1118,24 @@ namespace Stratis.Bitcoin.P2P.Peer
             return inventoryType;
         }
 
+        /// <summary>
+        /// Disconnects the peer and cleans up.
+        /// </summary>
+        /// <param name="reason">Human readable reason for disconnecting.</param>
+        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
+        public void Dispose(string reason, Exception exception = null)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
+
+            this.Disconnect(reason, exception);
+
+            this.logger.LogTrace("(-)");
+        }
+
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
-            this.Disconnect("Node disposed");
-
-            this.logger.LogTrace("(-)");
+            this.Dispose("Peer disposed");
         }
     }
 }

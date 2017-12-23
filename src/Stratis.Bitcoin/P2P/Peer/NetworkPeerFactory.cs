@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                peer.Disconnect("Connection failed", e);
+                peer.Dispose("Connection failed", e);
                 throw;
             }
             return peer;

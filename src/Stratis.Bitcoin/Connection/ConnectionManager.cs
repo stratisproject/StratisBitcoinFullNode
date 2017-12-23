@@ -323,8 +323,8 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
-            foreach (NetworkPeer peer in this.connectedPeers.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
-                peer.Disconnect("Connection manager shutdown");
+            foreach (NetworkPeer peer in this.connectedPeers)
+                peer.Dispose("Connection manager shutdown");
 
             this.logger.LogTrace("(-)");
         }
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
             NetworkPeer peer = this.connectedPeers.FindByEndpoint(ipEndpoint);
-            peer?.Disconnect("Requested by user");
+            peer?.Dispose("Requested by user");
 
             this.logger.LogTrace("(-)");
         }

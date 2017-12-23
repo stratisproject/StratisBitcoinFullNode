@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.P2P
                     }
                     finally
                     {
-                        networkPeer?.Disconnect("Discovery job done");
+                        networkPeer?.Dispose("Discovery job done");
                     }
                 }
             });
