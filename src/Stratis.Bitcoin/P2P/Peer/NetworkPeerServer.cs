@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="NetworkPeer.State"/> property.</param>
         private void Peer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerAddress, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerAddress.Endpoint, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
 
             if ((peer.State == NetworkPeerState.Disconnecting)
                 || (peer.State == NetworkPeerState.Failed)
