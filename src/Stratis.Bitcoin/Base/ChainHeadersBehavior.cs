@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Base
                         if (pendingTipBefore != this.pendingTip)
                             this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-                        if (this.pendingTip?.ChainWork > this.Chain.Tip.ChainWork)
+                        if (this.pendingTip != null && this.pendingTip.ChainWork > this.Chain.Tip.ChainWork)
                         {
                             // Long reorganization protection on POS networks.
                             bool reorgPrevented = false;
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        ChainedBlock chainedPendingTip = this.Chain.GetBlock(this.pendingTip.HashBlock);
+                        ChainedBlock chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
                         if (chainedPendingTip != null)
                         {
                             // This allows garbage collection to collect the duplicated pendingTip and ancestors.
