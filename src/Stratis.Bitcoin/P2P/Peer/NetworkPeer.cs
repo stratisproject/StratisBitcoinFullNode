@@ -542,7 +542,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
             this.PeerAddress = new NetworkAddress();
-            this.Connection = new NetworkPeerConnection(this, null, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
+            NetworkPeerClient client = new NetworkPeerClient(0, new System.Net.Sockets.TcpClient(), this.Network, this.loggerFactory);
+            this.Connection = new NetworkPeerConnection(this, client, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <summary>
