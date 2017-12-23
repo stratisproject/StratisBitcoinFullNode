@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Base
         public bool AutoSync { get; set; }
 
         /// <summary>
-        /// Information about the peer's announcement of its tip using "headers" message.
+        /// Our view of the peer's headers tip.
         /// <para>
         /// The announced tip is accepted if it seems to be valid. Validation is only done on headers
         /// and so the announced tip may refer to invalid block.
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Base
                 if (tip == null)
                     return null;
 
-                // Prevent memory leak by returning a block from the chain instead of real pending tip of possible.
+                // Prevent memory leak by returning a block from the chain instead of real pending tip if possible.
                 return this.Chain.GetBlock(tip.HashBlock) ?? tip;
             }
         }
@@ -180,11 +180,13 @@ namespace Stratis.Bitcoin.Base
                         // Use the ChainState.ConsensusTip property (not Chain.Tip)
                         // if the peer is behind/equal to our best height an empty array is sent back.
 
-                        if (!this.CanRespondToGetHeaders) break;
+                        if (!this.CanRespondToGetHeaders)
+                            break;
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
+                        if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
+                            break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -212,6 +214,10 @@ namespace Stratis.Bitcoin.Base
                                 }
                             }
                         }
+
+                        // Set our view of peer's tip equal to last header that was sent to him.
+                        if (headers.Headers.Count != 0)
+                            this.pendingTip = this.Chain.GetBlock(headers.Headers.Last().GetHash());
 
                         peer.SendMessageVoidAsync(headers);
                         break;
@@ -286,7 +292,7 @@ namespace Stratis.Bitcoin.Base
                         if (pendingTipBefore != this.pendingTip)
                             this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-                        if (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork)
+                        if (this.pendingTip?.ChainWork > this.Chain.Tip.ChainWork)
                         {
                             // Long reorganization protection on POS networks.
                             bool reorgPrevented = false;
@@ -389,16 +395,24 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Determines if the peer's headers are synced with ours.
+        /// </summary>
+        /// <remarks>
+        /// It is possible that peer is in IBD even though he has all the headers so we can't assume with 100% certainty that peer is fully synced.
+        /// </remarks>
         public bool IsSynced()
         {
-            return (GetPendingTipOrChainTip().Height >= this.chainState.ConsensusTip.Height &&
-                GetPendingTipOrChainTip().FindAncestorOrSelf(this.chainState.ConsensusTip) != null);
+            if (this.pendingTip == null)
+                return false;
+
+            return (this.pendingTip.Height >= this.chainState.ConsensusTip.Height &&
+                    this.pendingTip.FindAncestorOrSelf(this.chainState.ConsensusTip) != null);
         }
 
         private ChainedBlock GetPendingTipOrChainTip()
         {
-            this.pendingTip = this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip;
-            return this.pendingTip;
+            return this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip;
         }
 
         public override object Clone()

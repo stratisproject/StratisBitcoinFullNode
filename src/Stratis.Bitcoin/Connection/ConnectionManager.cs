@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Connection
                     "Peer:" + (node.RemoteInfo() + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LoggingConfiguration.ColumnLength + 7) +
                     (" agent " + agent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
-                    " height=" + chainHeadersBehavior.PendingTip.Height);
+                    " height=" + ((chainHeadersBehavior.PendingTip != null) ? chainHeadersBehavior.PendingTip.Height.ToString() : "unknown"));
             }
 
             return builder.ToString();

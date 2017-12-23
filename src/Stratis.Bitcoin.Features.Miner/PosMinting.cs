@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.Miner
             },
             this.stakeCancellationTokenSource.Token,
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-            startAfter: TimeSpans.TenSeconds);
+            startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
             return this.stakingLoop;
