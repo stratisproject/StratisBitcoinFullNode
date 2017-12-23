@@ -742,34 +742,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             switch (message.Message.Payload)
             {
                 case VersionPayload versionPayload:
-                    {
-                        this.logger.LogTrace("Peer's state is {0}.", this.State);
-
-                        switch (this.State)
-                        {
-                            case NetworkPeerState.Connected:
-                                if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(versionPayload).ConfigureAwait(false);
-                                break;
-
-                            case NetworkPeerState.HandShaked:
-                                if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
-                                {
-                                    var rejectPayload = new RejectPayload()
-                                    {
-                                        Code = RejectCode.DUPLICATE
-                                    };
-
-                                    await message.NetworkPeer.SendMessageAsync(rejectPayload).ConfigureAwait(false);
-                                }
-                                break;
-                        }
-
-                        this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - versionPayload.Timestamp;
-                        if ((versionPayload.Services & NetworkPeerServices.NODE_WITNESS) != 0)
-                            this.SupportedTransactionOptions |= NetworkOptions.Witness;
-
-                        break;
-                    }
+                    await this.ProcessVersionMessageAsync(versionPayload).ConfigureAwait(false);
+                    break;
 
                 case HaveWitnessPayload unused:
                     this.SupportedTransactionOptions |= NetworkOptions.Witness;
@@ -825,13 +799,50 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
+        /// Processes a "version" message received from a peer.
+        /// </summary>
+        /// <param name="version">Version message received from a peer.</param>
+        private async Task ProcessVersionMessageAsync(VersionPayload version)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(version), version);
+
+            this.logger.LogTrace("Peer's state is {0}.", this.State);
+
+            switch (this.State)
+            {
+                case NetworkPeerState.Connected:
+                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version).ConfigureAwait(false);
+                    break;
+
+                case NetworkPeerState.HandShaked:
+                    if (this.Version >= ProtocolVersion.REJECT_VERSION)
+                    {
+                        var rejectPayload = new RejectPayload()
+                        {
+                            Code = RejectCode.DUPLICATE
+                        };
+
+                        await this.SendMessageAsync(rejectPayload).ConfigureAwait(false);
+                    }
+                    break;
+            }
+
+            this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
+            if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
+                this.SupportedTransactionOptions |= NetworkOptions.Witness;
+
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
         /// Processes an initial "version" message received from a peer.
         /// </summary>
         /// <param name="version">Version message received from a peer.</param>
         /// <exception cref="OperationCanceledException">Thrown if the response to our "version" message is not received on time.</exception>
         private async Task ProcessInitialVersionPayloadAsync(VersionPayload version)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}')", nameof(version), version);
 
             this.PeerVersion = version;
             bool connectedToSelf = version.Nonce == this.Parameters.Nonce;
