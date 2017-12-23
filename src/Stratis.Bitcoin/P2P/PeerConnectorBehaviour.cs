@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.P2P
         private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
             if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Disconnecting) || (peer.State == NetworkPeerState.Offline))
-                this.peerConnector.RemovePeer(peer);
+                this.peerConnector.RemovePeer(peer, "Peer disconnected");
         }
 
         /// <inheritdoc/>

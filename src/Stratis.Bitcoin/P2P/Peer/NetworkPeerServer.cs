@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if ((peer.State == NetworkPeerState.Disconnecting)
                 || (peer.State == NetworkPeerState.Failed)
                 || (peer.State == NetworkPeerState.Offline))
-                this.ConnectedNetworkPeers.Remove(peer);
+                this.ConnectedNetworkPeers.Remove(peer, "Peer disconnected");
 
             this.logger.LogTrace("(-)");
         }

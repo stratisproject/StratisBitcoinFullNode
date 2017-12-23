@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.P2P
         /// This will only happen if the peer successfully handshaked with another.
         /// </para>
         /// </summary>
+        /// <param name="peer">Peer to be added.</param>
         void AddPeer(NetworkPeer peer);
 
         /// <summary>
@@ -41,7 +42,9 @@ namespace Stratis.Bitcoin.P2P
         /// This will happen if the peer state changed to "disconnecting", "failed" or "offline".
         /// </para>
         /// </summary>
-        void RemovePeer(NetworkPeer peer);
+        /// <param name="peer">Peer to be removed.</param>
+        /// <param name="reason">Human readable reason for removing the peer.</param>
+        void RemovePeer(NetworkPeer peer, string reason);
 
         /// <summary>
         /// Starts an asynchronous loop that connects to peers in one second intervals.
@@ -160,9 +163,9 @@ namespace Stratis.Bitcoin.P2P
         public abstract Task OnConnectAsync();
 
         /// <inheritdoc/>
-        public void RemovePeer(NetworkPeer peer)
+        public void RemovePeer(NetworkPeer peer, string reason)
         {
-            this.ConnectedPeers.Remove(peer);
+            this.ConnectedPeers.Remove(peer, reason);
         }
 
         /// <summary>

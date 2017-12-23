@@ -339,11 +339,11 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        internal void RemoveConnectedNode(NetworkPeer peer)
+        internal void RemoveConnectedNode(NetworkPeer peer, string reason)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
 
-            this.connectedPeers.Remove(peer);
+            this.connectedPeers.Remove(peer, reason);
 
             this.logger.LogTrace("(-)");
         }

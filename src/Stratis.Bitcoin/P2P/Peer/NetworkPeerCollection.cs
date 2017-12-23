@@ -109,14 +109,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             return false;
         }
 
-        public bool Remove(NetworkPeer peer)
+        public bool Remove(NetworkPeer peer, string reason)
         {
             NetworkPeer old;
             if (this.networkPeers.TryRemove(peer, out old))
             {
                 peer.MessageProducer.RemoveMessageListener(this.bridge);
                 this.OnPeerRemoved(old);
-                peer.Dispose();
+                peer.Dispose(reason);
                 return true;
             }
 
