@@ -389,6 +389,12 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
+        public bool IsSynced()
+        {
+            return (GetPendingTipOrChainTip().Height >= this.chainState.ConsensusTip.Height &&
+                GetPendingTipOrChainTip().FindAncestorOrSelf(this.chainState.ConsensusTip) != null);
+        }
+
         private ChainedBlock GetPendingTipOrChainTip()
         {
             this.pendingTip = this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip;
