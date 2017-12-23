@@ -316,12 +316,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
+            this.Client.Dispose();
+            this.Disconnected.Set();
+
             if (this.Peer.State != NetworkPeerState.Failed)
                 this.Peer.State = NetworkPeerState.Offline;
 
-            this.Client.Dispose();
             this.Client.ProcessingCompletion.SetResult(true);
-            this.Disconnected.Set();
 
             foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
             {
