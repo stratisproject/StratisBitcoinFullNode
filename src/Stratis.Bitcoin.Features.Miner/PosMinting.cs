@@ -19,7 +19,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
-{  
+{
     /// <summary>
     /// <see cref="PosMinting"/> is used in order to generate new blocks. It involves a sort of lottery, similar to proof-of-work,
     /// but the chances of winning this lottery is proportional to how many coins you are staking, not on hashing power.
@@ -356,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
-        
+
         /// <inheritdoc/>
         public IAsyncLoop Stake(WalletSecret walletSecret)
         {
@@ -413,7 +413,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-)");
             return this.stakingLoop;
         }
-        
+
         ///<inheritdoc/>
         public void StopStake()
         {
@@ -445,11 +445,21 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.initialBlockDownloadState.IsInitialBlockDownload())
+                while (!this.connection.ConnectedNodes.Any())
                 {
-                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
-                    else this.logger.LogTrace("Waiting for IBD to complete...");
+                    this.logger.LogTrace("Waiting to be connected with at least one network peer...");
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                }
 
+                while (this.initialBlockDownloadState.IsInitialBlockDownload())
+                {
+                    this.logger.LogTrace("Waiting for IBD to complete...");
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                }
+
+                while (!this.connection.ConnectedNodes.Any(x => x.Behavior<ChainHeadersBehavior>().IsSynced()))
+                {
+                    this.logger.LogTrace("Waiting for at least one synced network peer...");
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
 
@@ -959,7 +969,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions)
         {
@@ -1113,7 +1123,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public double GetNetworkWeight()
         {
@@ -1154,7 +1164,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public Models.GetStakingInfoModel GetGetStakingInfoModel()
         {
