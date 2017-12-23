@@ -57,7 +57,6 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
                 using (NetworkPeer networkPeer = coreNode.CreateNetworkPeerClient())
                 {
-
                     // Add the network peers to the connection manager's
                     // add node collection.
                     connectionManager.AddNodeAddress(networkPeer.PeerAddress.Endpoint);
