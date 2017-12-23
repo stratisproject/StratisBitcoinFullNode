@@ -151,8 +151,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </remarks>
         private async Task RelayWorkerAsync()
         {
+            this.logger.LogTrace("()");
+
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
+                this.logger.LogTrace("()");
+
                 try
                 {
                     // Wait until a new block is added to the queue.
@@ -172,8 +176,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     return;
                 }
-
-                this.logger.LogTrace("()");
 
                 int announceBlockCount = this.blocksToAnnounce.Count;
                 if (announceBlockCount == 0)
@@ -243,6 +245,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 foreach (BlockStoreBehavior behaviour in behaviours)
                     await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
