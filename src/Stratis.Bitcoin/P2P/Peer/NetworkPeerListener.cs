@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerListener(NetworkPeer peer)
         {
-            this.subscription = peer.Connection.MessageProducer.AddMessageListener(this);
+            this.subscription = peer.MessageProducer.AddMessageListener(this);
             this.Peer = peer;
         }
 

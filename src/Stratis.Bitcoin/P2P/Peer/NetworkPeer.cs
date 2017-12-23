@@ -363,8 +363,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// <summary>
     /// Represents a counterparty of the node on the network. This is usually another node, but it can be 
     /// a wallet, an analytical robot, or any other network client or server that understands the protocol.
-    /// <para>
-    /// The network peer is either inbound, if it was the counterparty that established the connection to our 
+    /// <para>The network peer is either inbound, if it was the counterparty that established the connection to our 
     /// node's listener, or outbound, if our node was the one connecting to a remote server.
     /// </para>
     /// </summary>
@@ -525,6 +524,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         public NetworkPeerConnectionParameters Parameters { get; private set; }
+
+        /// <summary>Queue of the connections' incoming messages distributed to message consumers.</summary>
+        public MessageProducer<IncomingMessage> MessageProducer { get { return this.Connection.MessageProducer; } }
 
         /// <summary>
         /// Dummy constructor for testing only.
