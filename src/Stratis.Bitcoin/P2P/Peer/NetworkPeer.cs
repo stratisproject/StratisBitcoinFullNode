@@ -541,6 +541,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.PeerAddress = new NetworkAddress();
+            this.Connection = new NetworkPeerConnection(this, null, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <summary>
@@ -1084,8 +1086,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            this.State = NetworkPeerState.Disconnecting;
-            this.Connection.CancellationSource.Cancel();
+            if (!this.Connection.CancellationSource.IsCancellationRequested)
+            {
+                if (this.IsConnected) this.State = NetworkPeerState.Disconnecting;
+
+                this.Connection.CancellationSource.Cancel();
+            }
+
             this.Connection.Disconnected.WaitHandle.WaitOne();
             this.Connection.Dispose();
 
