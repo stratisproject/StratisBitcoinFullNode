@@ -19,7 +19,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Maximum time in milliseconds for forming a new batch.</summary>
         private const int FlushFrequencyMilliseconds = 500;
 
-        private Task relayWorkerTask;
+        /// <summary>Async loop that continuously runs <see cref="RelayWorkerAsync"/>.</summary>
+        private IAsyncLoop relayWorkerLoop;
 
         private readonly IBlockRepository blockRepository;
 
@@ -42,6 +43,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         /// <summary>Event that is fired when a new block gets enqueued.</summary>
         private readonly ManualResetEventSlim blockEnqueued;
 
@@ -60,7 +64,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
-            IDateTimeProvider dateTimeProvider)
+            IDateTimeProvider dateTimeProvider,
+            IAsyncLoopFactory asyncLoopFactory)
         {
             this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
             this.blockRepository = blockRepository;
@@ -72,6 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
             this.dateTimeProvider = dateTimeProvider;
+            this.asyncLoopFactory = asyncLoopFactory;
             this.blockEnqueued = new ManualResetEventSlim(false);
             this.lastBlockAnnounceTimeStamp = DateTime.MinValue;
         }
@@ -116,7 +122,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.relayWorkerTask = Task.Run(async delegate { await this.RelayWorkerAsync(); });
+            this.relayWorkerLoop = this.asyncLoopFactory.Run("BlockStore", async token =>
+            {
+                await this.RelayWorkerAsync();
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.RunOnce);
 
             this.logger.LogTrace("(-)");
         }
@@ -167,7 +178,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     int msSinceLastAnnounce = this.lastBlockAnnounceTimeStamp == DateTime.MinValue ? int.MaxValue :
                         (int)(this.dateTimeProvider.GetUtcNow() - this.lastBlockAnnounceTimeStamp).TotalMilliseconds;
                     if (msSinceLastAnnounce < FlushFrequencyMilliseconds)
-                        await Task.Delay(FlushFrequencyMilliseconds - msSinceLastAnnounce, this.nodeLifetime.ApplicationStopping);
+                        await Task.Delay(FlushFrequencyMilliseconds - msSinceLastAnnounce, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                     this.lastBlockAnnounceTimeStamp = this.dateTimeProvider.GetUtcNow();
 
                     this.blockEnqueued.Reset();
@@ -252,7 +263,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            this.relayWorkerTask.Wait();
+            this.relayWorkerLoop.Dispose();
             this.blockEnqueued.Dispose();
 
             base.Dispose(disposing);
