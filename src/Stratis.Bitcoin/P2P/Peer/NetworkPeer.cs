@@ -693,7 +693,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private void OnStateChanged(NetworkPeerState previous)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(previous), previous, nameof(this.State), this.State);
 
             NetworkPeerStateChangedEventHandler stateChanged = this.StateChanged;
             if (stateChanged != null)
