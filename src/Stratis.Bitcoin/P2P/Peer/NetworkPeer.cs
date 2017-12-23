@@ -231,7 +231,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    this.Peer.State = NetworkPeerState.Failed;
+                    if (this.Peer.State != NetworkPeerState.Offline)
+                        this.Peer.State = NetworkPeerState.Failed;
+
                     this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
                         Reason = "Unexpected exception while sending a message",
@@ -300,7 +302,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    this.Peer.State = NetworkPeerState.Failed;
+                    if (this.Peer.State != NetworkPeerState.Offline)
+                        this.Peer.State = NetworkPeerState.Failed;
+
                     this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
                         Reason = "Unexpected exception while waiting for a message",
