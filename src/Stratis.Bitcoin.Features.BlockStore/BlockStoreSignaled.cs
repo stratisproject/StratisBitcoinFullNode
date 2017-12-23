@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
                     // Wait until a new block is added to the queue.
-                    this.blockEnqueued.Wait();
+                    this.blockEnqueued.Wait(this.nodeLifetime.ApplicationStopping);
 
                     // Make sure that at least 'FlushFrequencySeconds' seconds passed since the last announcement.
                     // This is needed in order to ensure announcing blocks in batches to reduce the overhead.
