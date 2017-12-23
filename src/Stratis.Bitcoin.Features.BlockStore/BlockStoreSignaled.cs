@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
+        /// <summary>Maximum time in seconds for forming a new batch.</summary>
+        private const double FlushFrequencySeconds = 0.5;
+
         private Task relayWorkerTask;
 
         private readonly IBlockRepository blockRepository;
@@ -41,11 +44,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
+        /// <summary>Event slim that is set when a new block gets enqueued.</summary>
         private ManualResetEventSlim blockEnqueued;
 
+        /// <summary>Timestamp of last announcement event.</summary>
         private DateTime lastBlockAnnounceTimeStamp;
-
-        private const double FlushFrequencySeconds = 0.5;
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
