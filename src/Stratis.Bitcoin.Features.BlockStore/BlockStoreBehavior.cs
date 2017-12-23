@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     ChainedBlock chainedBlock = blocksToAnnounce.Last();
                     if (chainedBlock != null)
                     {
-                        if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
+                        if (chainBehavior.PendingTip == null || chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
                         {
                             inventoryBlockToSend.Add(chainedBlock.HashBlock);
                             this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedBlock.HashBlock, peer.RemoteSocketEndpoint);
