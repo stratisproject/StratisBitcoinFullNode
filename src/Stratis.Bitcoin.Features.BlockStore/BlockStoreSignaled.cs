@@ -48,6 +48,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Timestamp of last announcement event.</summary>
         private DateTime lastBlockAnnounceTimeStamp;
 
+        /// <summary>Date and time information provider.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
             ConcurrentChain chain,
@@ -56,7 +59,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             IBlockRepository blockRepository,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider)
         {
             this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
             this.blockRepository = blockRepository;
@@ -67,6 +71,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
+            this.dateTimeProvider = dateTimeProvider;
             this.blockEnqueued = new ManualResetEventSlim(false);
             this.lastBlockAnnounceTimeStamp = DateTime.MinValue;
         }
@@ -155,10 +160,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     // Make sure that at least 'FlushFrequencyMilliseconds' passed since the last announcement.
                     // This is needed in order to ensure announcing blocks in batches to reduce the overhead.
-                    int msSinceLastAnnounce = this.lastBlockAnnounceTimeStamp == DateTime.MinValue ? int.MaxValue : (int)(DateTime.Now - this.lastBlockAnnounceTimeStamp).TotalMilliseconds;
+                    int msSinceLastAnnounce = this.lastBlockAnnounceTimeStamp == DateTime.MinValue ? int.MaxValue :
+                        (int)(this.dateTimeProvider.GetUtcNow() - this.lastBlockAnnounceTimeStamp).TotalMilliseconds;
                     if (msSinceLastAnnounce < FlushFrequencyMilliseconds)
                         await Task.Delay(FlushFrequencyMilliseconds - msSinceLastAnnounce, this.nodeLifetime.ApplicationStopping);
-                    this.lastBlockAnnounceTimeStamp = DateTime.Now;
+                    this.lastBlockAnnounceTimeStamp = this.dateTimeProvider.GetUtcNow();
 
                     this.blockEnqueued.Reset();
                 }
