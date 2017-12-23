@@ -506,7 +506,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Version message payload received from the peer.</summary>
         public VersionPayload PeerVersion { get; private set; }
 
-        /// <summary>Set to <c>1</c> if the peer has been disconnected already, <c>0</c> otherwise.</summary>
+        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary> 
         private int disconnected;
 
         /// <summary>Transaction options we would like.</summary>
