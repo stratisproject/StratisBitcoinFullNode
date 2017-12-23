@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        /// <summary>Maximum time in seconds for forming a new batch.</summary>
-        private const double FlushFrequencySeconds = 0.5;
+        /// <summary>Maximum time in milliseconds for forming a new batch.</summary>
+        private const int FlushFrequencyMilliseconds = 500;
 
         private Task relayWorkerTask;
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>
         /// <para>
         /// Relaying is triggered when new item is added to the <see cref="blocksToAnnounce"/>.
-        /// If previous announcement was made in less than <see cref="FlushFrequencySeconds"/> it will wait in order to form a batch.
+        /// If previous announcement was made in less than <see cref="FlushFrequencyMilliseconds"/> it will wait in order to form a batch.
         /// </para>
         /// <para>
         /// The queue <see cref="blocksToAnnounce"/> contains
@@ -149,11 +149,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Wait until a new block is added to the queue.
                     this.blockEnqueued.Wait(this.nodeLifetime.ApplicationStopping);
 
-                    // Make sure that at least 'FlushFrequencySeconds' seconds passed since the last announcement.
+                    // Make sure that at least 'FlushFrequencyMilliseconds' passed since the last announcement.
                     // This is needed in order to ensure announcing blocks in batches to reduce the overhead.
-                    double secondsSinceLastAnnounce = (DateTime.Now - this.lastBlockAnnounceTimeStamp).TotalSeconds;
-                    if (secondsSinceLastAnnounce < FlushFrequencySeconds)
-                        await Task.Delay(TimeSpan.FromSeconds(FlushFrequencySeconds - secondsSinceLastAnnounce));
+                    int msSinceLastAnnounce = this.lastBlockAnnounceTimeStamp == DateTime.MinValue ? int.MaxValue : (int)(DateTime.Now - this.lastBlockAnnounceTimeStamp).TotalMilliseconds;
+                    if (msSinceLastAnnounce < FlushFrequencyMilliseconds)
+                        await Task.Delay(FlushFrequencyMilliseconds - msSinceLastAnnounce, this.nodeLifetime.ApplicationStopping);
                     this.lastBlockAnnounceTimeStamp = DateTime.Now;
 
                     this.blockEnqueued.Reset();
