@@ -78,8 +78,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Initializes instance of a network peer server.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="ipAddress">Address of the local interface to listen on, or <c>null</c> to listen on all available interfaces.</param>
-        /// <param name="internalPort">Port on which the server will listen, or -1 to use the default port for the selected network.</param>
+        /// <param name="localEndPoint">IP address and port to listen on.</param>
+        /// <param name="externalEndPoint">IP address and port that the server is reachable from the Internet on.</param>
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
