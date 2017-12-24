@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.stakingLoop;
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void StopStake()
         {
             this.logger.LogTrace("()");
@@ -445,26 +445,18 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                // Do not start staking until connected to at least one peer.
-                while (!this.connection.ConnectedNodes.Any())
+                // Wait until we have at least one connected peer who's headers are synced with ours AND until not in IBD.
+                while (!this.connection.ConnectedNodes.Any(x => x.Behavior<ChainHeadersBehavior>().IsSynced()) ||
+                       this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
-                    this.logger.LogTrace("Waiting to be connected with at least one network peer...");
+                    if (this.initialBlockDownloadState.IsInitialBlockDownload())
+                        this.logger.LogTrace("Waiting for IBD to complete...");
+                    else
+                        this.logger.LogTrace("Waiting to be connected with at least one synced network peer...");
+
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
 
-                // Do not start staking if we're in IBD.
-                while (this.initialBlockDownloadState.IsInitialBlockDownload())
-                {
-                    this.logger.LogTrace("Waiting for IBD to complete...");
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
-                }
-
-                // Wait until we have at least one connected peer who's headers are synced with ours.
-                while (!this.connection.ConnectedNodes.Any(x => x.Behavior<ChainHeadersBehavior>().IsSynced()))
-                {
-                    this.logger.LogTrace("Waiting for at least one synced network peer...");
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
-                }
 
                 ChainedBlock chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)

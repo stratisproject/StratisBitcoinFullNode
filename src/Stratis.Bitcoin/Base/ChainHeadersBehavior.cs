@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Base
         public bool AutoSync { get; set; }
 
         /// <summary>
-        /// Our view of the peer's headers tip.
+        /// Our view of the peer's headers tip constructed on peer's announcement of its tip using "headers" message.
         /// <para>
         /// The announced tip is accepted if it seems to be valid. Validation is only done on headers
         /// and so the announced tip may refer to invalid block.
@@ -215,9 +215,9 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        // Set our view of peer's tip equal to last header that was sent to him.
+                        // Set our view of peer's tip equal to the last header that was sent to it.
                         if (headers.Headers.Count != 0)
-                            this.pendingTip = this.Chain.GetBlock(headers.Headers.Last().GetHash());
+                            this.pendingTip = this.Chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.pendingTip;
 
                         peer.SendMessageVoidAsync(headers);
                         break;
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Base
                         if (pendingTipBefore != this.pendingTip)
                             this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-                        if (this.pendingTip != null && this.pendingTip.ChainWork > this.Chain.Tip.ChainWork)
+                        if ((this.pendingTip != null) && (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork))
                         {
                             // Long reorganization protection on POS networks.
                             bool reorgPrevented = false;
@@ -399,15 +399,16 @@ namespace Stratis.Bitcoin.Base
         /// Determines if the peer's headers are synced with ours.
         /// </summary>
         /// <remarks>
-        /// It is possible that peer is in IBD even though he has all the headers so we can't assume with 100% certainty that peer is fully synced.
+        /// It is possible that peer is in IBD even though it has all the headers so we can't assume with 100% certainty that peer is fully synced.
         /// </remarks>
+        /// <returns><c>true</c> if we are synced with the peer. Otherwise, <c>false</c>.</returns>
         public bool IsSynced()
         {
             if (this.pendingTip == null)
                 return false;
 
-            return (this.pendingTip.Height >= this.chainState.ConsensusTip.Height &&
-                    this.pendingTip.FindAncestorOrSelf(this.chainState.ConsensusTip) != null);
+            return ((this.pendingTip.Height >= this.chainState.ConsensusTip.Height) &&
+                    (this.pendingTip.ChainWork >= this.chainState.ConsensusTip.ChainWork));
         }
 
         public ChainedBlock GetPendingTipOrChainTip()
