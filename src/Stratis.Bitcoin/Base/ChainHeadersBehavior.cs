@@ -409,7 +409,7 @@ namespace Stratis.Bitcoin.Base
                     (this.pendingTip.ChainWork >= this.chainState.ConsensusTip.ChainWork));
         }
 
-        public ChainedBlock GetPendingTipOrChainTip()
+        private ChainedBlock GetPendingTipOrChainTip()
         {
             return this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip;
         }
