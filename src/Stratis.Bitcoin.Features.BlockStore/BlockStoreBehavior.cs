@@ -255,14 +255,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.logger.LogTrace("Checking is the peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock);
 
                         // Peer doesn't have a block at the height of our block and with the same hash?
-                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock) != null)
+                        if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock) != null)
                         {
                             this.logger.LogTrace("Peer '{0}' does not have header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
                             continue;
                         }
 
                         // Peer doesn't have a block at the height of our block.Previous and with the same hash?
-                        if (chainBehavior.PendingTip.FindAncestorOrSelf(chainedBlock.Previous) == null)
+                        if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock.Previous) == null)
                         {
                             // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
                             this.logger.LogTrace("Neither the header nor its previous header found for peer '{0}', reverting to 'inv'.", peer.RemoteSocketEndpoint);

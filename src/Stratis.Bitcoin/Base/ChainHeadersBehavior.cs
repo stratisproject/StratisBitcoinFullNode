@@ -331,10 +331,6 @@ namespace Stratis.Bitcoin.Base
                             this.pendingTip = chainedPendingTip;
                         }
 
-                        if ((!this.InvalidHeaderReceived) && (newHeaders.Headers.Count != 0) &&
-                            ((this.pendingTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.pendingTip.HashBlock)))
-                            this.TrySync();
-
                         break;
                     }
             }
@@ -346,8 +342,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
-            uint256 pendingTipChainWork = this.PendingTip.ChainWork;
-            if (newTip.ChainWork > pendingTipChainWork)
+            if (this.PendingTip == null || newTip.ChainWork  > this.PendingTip.ChainWork)
             {
                 ChainedBlock chainedPendingTip = this.Chain.GetBlock(newTip.HashBlock);
                 if (chainedPendingTip != null)
@@ -356,7 +351,7 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = chainedPendingTip;
                 }
             }
-            else this.logger.LogTrace("New pending tip not set because its chain work '{0}' is lower than current's pending tip's chain work '{1}'.", newTip.ChainWork, pendingTipChainWork);
+            else this.logger.LogTrace("New pending tip not set because its chain work '{0}' is lower than current's pending tip's chain work '{1}'.", newTip.ChainWork, this.PendingTip.ChainWork);
 
             this.logger.LogTrace("(-)");
         }
