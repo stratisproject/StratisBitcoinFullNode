@@ -180,13 +180,11 @@ namespace Stratis.Bitcoin.Base
                         // Use the ChainState.ConsensusTip property (not Chain.Tip)
                         // if the peer is behind/equal to our best height an empty array is sent back.
 
-                        if (!this.CanRespondToGetHeaders)
-                            break;
+                        if (!this.CanRespondToGetHeaders) break;
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
-                            break;
+                        if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;
