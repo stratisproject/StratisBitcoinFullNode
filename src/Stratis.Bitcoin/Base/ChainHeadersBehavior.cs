@@ -213,6 +213,10 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
+                        // Set our view of peer's tip equal to the last header that was sent to it.
+                        if (headers.Headers.Count != 0)
+                            this.pendingTip = this.Chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.pendingTip;
+
                         peer.SendMessageVoidAsync(headers);
                         break;
                     }
