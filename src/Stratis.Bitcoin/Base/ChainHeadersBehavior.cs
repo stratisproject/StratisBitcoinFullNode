@@ -231,7 +231,14 @@ namespace Stratis.Bitcoin.Base
                         // It is sent in response to GetHeadersPayload or is solicited by the
                         // peer when a new block is validated (and not in IBD).
 
-                        if (!this.CanSync) break;
+                        if (!this.CanSync)
+                            break;
+
+                        if (newHeaders.Headers.Count == 0)
+                        {
+                            this.logger.LogTrace("Headers payload with 0 headers was received. Assume we're synced with the peer.");
+                            break;
+                        }
 
                         ChainedBlock pendingTipBefore = this.pendingTip;
                         this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore, newHeaders.Headers.Count);
@@ -326,8 +333,7 @@ namespace Stratis.Bitcoin.Base
                             this.pendingTip = chainedPendingTip;
                         }
 
-                        if ((!this.InvalidHeaderReceived) && (newHeaders.Headers.Count != 0) &&
-                            ((this.pendingTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.pendingTip.HashBlock)))
+                        if ((this.pendingTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.pendingTip.HashBlock))
                             this.TrySync();
 
                         break;
