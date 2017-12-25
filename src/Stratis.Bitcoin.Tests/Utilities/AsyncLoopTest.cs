@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -104,6 +105,29 @@ namespace Stratis.Bitcoin.Tests.Utilities
             await asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(330), TimeSpan.FromMilliseconds(400)).RunningTask;
 
             Assert.Equal(2, this.iterationCount);
+        }
+
+        [Fact]
+        public async Task LoopTriggerAsync()
+        {
+            var asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
+            {
+                await this.DoTask(token);
+            });
+
+            Task loopTask = asyncLoop.Run(new CancellationTokenSource(900).Token, repeatEvery: TimeSpan.FromMilliseconds(330)).RunningTask;
+
+            // Skip 2 delays.
+            for (int i = 0; i < 2; i++)
+            {
+                await Task.Delay(5);
+                asyncLoop.Trigger();
+            }
+
+            await loopTask;
+
+            // Without the trigger it should have been iterated for 3 times. But since we've skipped 2 awaits it will be 3+2 = 5 iterations.
+            Assert.Equal(5, this.iterationCount);
         }
 
         private Task DoExceptionalTask(CancellationToken token)
