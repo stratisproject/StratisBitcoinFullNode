@@ -63,6 +63,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public Task RunningTask { get; private set; }
 
+        /// <summary>Trigger's cancellation token source.</summary>
+        private CancellationTokenSource triggerTokenSource;
+
         /// <summary>
         /// Initializes a named instance of the object.
         /// </summary>
@@ -96,6 +99,14 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
+        /// Starts next iteration of the loop right away. If the loop is executing an iteration at the moment it will launch next iteration as soon as current one is executed.
+        /// </summary>
+        public void Trigger()
+        {
+            this.triggerTokenSource.Cancel();
+        }
+
+        /// <summary>
         /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
@@ -126,9 +137,26 @@ namespace Stratis.Bitcoin.Utilities
 
                     while (!cancellation.IsCancellationRequested)
                     {
+                        // Create new trigger if it is not initialized or was used before and set to 'null'.
+                        if (this.triggerTokenSource == null)
+                            this.triggerTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+
                         await this.loopAsync(cancellation).ConfigureAwait(false);
-                        if (!cancellation.IsCancellationRequested)
-                            await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+
+                        try
+                        {
+                            if (!this.triggerTokenSource.Token.IsCancellationRequested)
+                                await Task.Delay(refreshRate, this.triggerTokenSource.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException e)
+                        {
+                            // Exit the loop only if main cancellation token was used.
+                            if (cancellation.IsCancellationRequested)
+                                throw e;
+
+                            // Reset the trigger.
+                            this.triggerTokenSource = null;
+                        }
                     }
                 }
                 catch (OperationCanceledException ex)
