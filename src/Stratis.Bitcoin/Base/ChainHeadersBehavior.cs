@@ -213,10 +213,6 @@ namespace Stratis.Bitcoin.Base
                             }
                         }
 
-                        // Set our view of peer's tip equal to the last header that was sent to it.
-                        if (headers.Headers.Count != 0)
-                            this.pendingTip = this.Chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.pendingTip;
-
                         peer.SendMessageVoidAsync(headers);
                         break;
                     }
@@ -326,6 +322,10 @@ namespace Stratis.Bitcoin.Base
                             this.pendingTip = chainedPendingTip;
                         }
 
+                        if ((!this.InvalidHeaderReceived) && (newHeaders.Headers.Count != 0) &&
+                            ((this.pendingTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.pendingTip.HashBlock)))
+                            this.TrySync();
+
                         break;
                     }
             }
@@ -379,6 +379,10 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Creates <see cref="GetHeadersPayload"/> using <see cref="pendingTip"/>'s or our tip's locator.
+        /// </summary>
+        /// <returns>Get headers payload based on peer's or our tip.</returns>
         private GetHeadersPayload GetPendingTipHeadersPayload()
         {
             return new GetHeadersPayload()
