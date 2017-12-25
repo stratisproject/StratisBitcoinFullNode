@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         // Peer doesn't have a block at the height of our block and with the same hash?
                         if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock) != null)
                         {
-                            this.logger.LogTrace("Peer '{0}' does not have header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
+                            this.logger.LogTrace("Peer '{0}' already has header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
                             continue;
                         }
 

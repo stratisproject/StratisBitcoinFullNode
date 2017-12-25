@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Base
                         if (!this.CanSync) break;
 
                         ChainedBlock pendingTipBefore = this.pendingTip;
-                        this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore != null ? pendingTipBefore.ToString() : "null", newHeaders.Headers.Count);
+                        this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore, newHeaders.Headers.Count);
 
                         // TODO: implement MAX_HEADERS_RESULTS in NBitcoin.HeadersPayload
 
@@ -261,12 +261,7 @@ namespace Stratis.Bitcoin.Base
                                     // If we can't connect the header we received from the peer, we might be on completely different chain or
                                     // a reorg happened recently. If we ignored it, we would have invalid view of the peer and the propagation
                                     // of blocks would not work well. So we ask the peer for headers using "getheaders" message.
-                                    var getHeadersPayload = new GetHeadersPayload()
-                                    {
-                                        BlockLocators = pendingTipBefore.GetLocator(),
-                                        HashStop = null
-                                    };
-
+                                    GetHeadersPayload getHeadersPayload = this.GetPendingTipHeadersPayload();
                                     peer.SendMessageVoidAsync(getHeadersPayload);
                                     break;
                                 }
@@ -342,7 +337,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
-            if (this.PendingTip == null || newTip.ChainWork  > this.PendingTip.ChainWork)
+            if ((this.PendingTip == null) || (newTip.ChainWork  > this.PendingTip.ChainWork))
             {
                 ChainedBlock chainedPendingTip = this.Chain.GetBlock(newTip.HashBlock);
                 if (chainedPendingTip != null)
@@ -376,17 +371,21 @@ namespace Stratis.Bitcoin.Base
             if (peer != null)
             {
                 if ((peer.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)
-                {
-                    peer.SendMessageVoidAsync(new GetHeadersPayload()
-                    {
-                        BlockLocators = (this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip).GetLocator()
-                    });
-                }
+                    peer.SendMessageVoidAsync(this.GetPendingTipHeadersPayload());
                 else this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.InvalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No peer attached.");
 
             this.logger.LogTrace("(-)");
+        }
+
+        private GetHeadersPayload GetPendingTipHeadersPayload()
+        {
+            return new GetHeadersPayload()
+            {
+                BlockLocators = (this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip).GetLocator(),
+                HashStop = null
+            };
         }
 
         /// <summary>
