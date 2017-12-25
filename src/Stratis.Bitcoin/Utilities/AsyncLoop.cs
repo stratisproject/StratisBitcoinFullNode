@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         public void Trigger()
         {
-            this.triggerTokenSource.Cancel();
+            this.triggerTokenSource?.Cancel();
         }
 
         /// <summary>
@@ -195,6 +195,8 @@ namespace Stratis.Bitcoin.Utilities
                 this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
                 this.RunningTask.Wait();
             }
+
+            this.triggerTokenSource?.Dispose();
         }
     }
 }
