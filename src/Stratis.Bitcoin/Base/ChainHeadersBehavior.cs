@@ -335,6 +335,7 @@ namespace Stratis.Bitcoin.Base
                             this.pendingTip = chainedPendingTip;
                         }
 
+                        // If we made any advancement or the sync is enforced by 'doTrySync'- continue syncing.
                         if (doTrySync || (this.pendingTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.pendingTip.HashBlock))
                             this.TrySync();
 
