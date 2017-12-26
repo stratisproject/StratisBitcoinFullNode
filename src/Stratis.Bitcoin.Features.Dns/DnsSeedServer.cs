@@ -36,6 +36,11 @@ namespace Stratis.Bitcoin.Features.Dns
         private const int MetricsLogRate = 20;
 
         /// <summary>
+        /// Sets the period by which the master file is saved (secs).
+        /// </summary>
+        private const int SaveMasterfileRate = 300;
+
+        /// <summary>
         /// Defines the output format for a metric row.
         /// </summary>
         private readonly string MetricsOutputFormat = "{0,-60}: {1,20}" + Environment.NewLine;
@@ -94,6 +99,11 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Defines a metrics async loop.
         /// </summary>
         private IAsyncLoop metricsLoop;
+
+        /// <summary>
+        /// Defines a save masterfile loop.
+        /// </summary>
+        private IAsyncLoop saveMasterfileLoop;
 
         /// <summary>
         /// Defines an entity that holds the metrics for the DNS server.
@@ -183,6 +193,9 @@ namespace Stratis.Bitcoin.Features.Dns
 
             // Create async loop for outputting metrics.
             this.metricsLoop = this.asyncLoopFactory.Run(nameof(this.LogMetrics), async (token) => await Task.Run(() => this.LogMetrics()), this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(MetricsLogRate));
+
+            // Create async loop for saving the master file.
+            this.StartSaveMasterfileLoop();
 
             this.logger.LogTrace("(-)");
         }
@@ -299,6 +312,8 @@ namespace Stratis.Bitcoin.Features.Dns
                     disposableClient?.Dispose();
 
                     this.metricsLoop?.Dispose();
+
+                    this.saveMasterfileLoop?.Dispose();
                 }
 
                 this.disposed = true;
@@ -523,6 +538,31 @@ namespace Stratis.Bitcoin.Features.Dns
                 this.logger.LogWarning(e, "Failed to output DNS metrics.");
             }
 
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Starts the loop to save the masterfile.
+        /// </summary>
+        private void StartSaveMasterfileLoop()
+        {
+            this.logger.LogTrace("()");
+
+            this.saveMasterfileLoop = this.asyncLoopFactory.Run($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
+            {
+                string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsFeature.DnsMasterFileName);
+
+                this.logger.LogInformation("Saving cached DNS masterfile to {0}", path);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write))
+                {
+                    this.MasterFile.Save(stream);
+                }
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromSeconds(SaveMasterfileRate));
+            
             this.logger.LogTrace("(-)");
         }
     }
