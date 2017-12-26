@@ -107,6 +107,7 @@ Every time someone pushes to the master branch or create a pull request on it, a
 
 To skip a build, for example if you've made very minor changes, include the text **[skip ci]** or **[ci skip]** in your commits' comment (with the squared brackets).
 
-If you want get the :sparkles: latest :sparkles: (and unstable :bomb:) version of the nuget packages here: [Stratis.Bitcoin](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.1.0.2-alpha.nupkg?job=Configuration%3A%20Release) and [Stratis.Bitcoin.Common](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.Common.1.0.0.nupkg?job=Configuration%3A%20Release).
+If you want get the :sparkles: latest :sparkles: (and unstable :bomb:) version of the nuget packages here: 
+* [Stratis.Bitcoin](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.1.0.7-alpha.nupkg?job=Configuration%3A%20Release)
 
 
