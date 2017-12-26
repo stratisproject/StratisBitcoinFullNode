@@ -1,17 +1,16 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
     /// <summary>
-    /// Responsible for managing the Dns feature.
+    /// Responsible for managing the DNS feature.
     /// </summary>
     public class DnsFeature : FullNodeFeature
     {
@@ -23,19 +22,19 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the name of the masterfile on disk.
         /// </summary>
-        public const string DnsMasterFileName = "masterfile.dat";
+        public const string DnsMasterFileName = "masterfile.json";
 
         /// <summary>
         /// Defines the DNS server.
         /// </summary>
         private readonly IDnsServer dnsServer;
-
+        
         /// <summary>
-        /// Defines the peer address manager.
+        /// Defines the whitelist manager.
         /// </summary>
-        private readonly IPeerAddressManager peerAddressManager;
+        private readonly IWhitelistManager whitelistManager;
 
-        /// <summary>
+       /// <summary>
         /// Defines the logger.
         /// </summary>
         private readonly ILogger logger;
@@ -61,33 +60,50 @@ namespace Stratis.Bitcoin.Features.Dns
         private Task dnsTask;
 
         /// <summary>
+        /// Factory for creating background async loop tasks.
+        /// </summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+        
+        /// <summary>
+        /// The async loop to refresh the whitelist.
+        /// </summary>
+        private IAsyncLoop whitelistRefreshLoop;
+        /// <summary>
+        /// Defines a flag used to indicate whether the object has been disposed or not.
+        /// </summary>
+        private bool disposed = false;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DnsFeature"/> class.
         /// </summary>
         /// <param name="dnsServer">The DNS server.</param>
-        /// <param name="peerAddressManager">The peer address manager.</param>
+        /// <param name="whitelistManager">The whitelist manager.</param>
         /// <param name="loggerFactory">The factory to create the logger.</param>
         /// <param name="nodeLifetime">The node lifetime object used for graceful shutdown.</param>
         /// <param name="nodeSettings">The node settings object containing node configuration.</param>
         /// <param name="dataFolders">The data folders of the system.</param>
-        public DnsFeature(IDnsServer dnsServer, IPeerAddressManager peerAddressManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, NodeSettings nodeSettings, DataFolder dataFolders)
+        /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
+        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory)
         {
             Guard.NotNull(dnsServer, nameof(dnsServer));
-            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+            Guard.NotNull(whitelistManager, nameof(whitelistManager));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(dataFolders, nameof(dataFolders));
+            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
             this.dnsServer = dnsServer;
-            this.peerAddressManager = peerAddressManager;
+            this.whitelistManager = whitelistManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.nodeSettings = nodeSettings;
             this.dataFolders = dataFolders;
         }
 
         /// <summary>
-        /// Initializes the Dns feature.
+        /// Initializes the DNS feature.
         /// </summary>
         public override void Initialize()
         {
@@ -95,6 +111,8 @@ namespace Stratis.Bitcoin.Features.Dns
 
             // Create long running task for DNS service.
             this.dnsTask = Task.Factory.StartNew(this.RunDnsService, TaskCreationOptions.LongRunning);
+
+            this.StartWhitelistRefreshLoop();
 
             this.logger.LogTrace("(-)");
         }
@@ -110,32 +128,10 @@ namespace Stratis.Bitcoin.Features.Dns
             // Initialize DNS server.
             this.dnsServer.Initialize();
 
-            bool restarted = false;
-
             while (true)
             {
                 try
                 {
-                    // Only load if we are starting up for the first time.
-                    if (!restarted)
-                    {
-                        // Load masterfile from disk if it exists.
-                        string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsMasterFileName);
-                        if (File.Exists(path))
-                        {
-                            this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
-
-                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            {
-                                IMasterFile masterFile = new DnsSeedMasterFile();
-                                masterFile.Load(stream);
-
-                                // Swap in masterfile from disk into DNS server.
-                                this.dnsServer.SwapMasterfile(masterFile);
-                            }
-                        }
-                    }
-
                     this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
 
                     // Start.
@@ -164,10 +160,55 @@ namespace Stratis.Bitcoin.Features.Dns
                     }
 
                     this.logger.LogTrace("Restarting DNS server following previous failure.");
-
-                    restarted = true;
                 }
             }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Disposes of the object.
+        /// </summary>
+        public override void Dispose()
+        {
+            this.logger.LogInformation("Stopping DNS...");
+
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes of the object.
+        /// </summary>
+        /// <param name="disposing"><c>true</c> if the object is being disposed of deterministically, otherwise <c>false</c>.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    IDisposable disposablewhitelistRefreshLoop = this.whitelistRefreshLoop as IDisposable;
+                    disposablewhitelistRefreshLoop?.Dispose();
+                }
+
+                this.disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Starts the loop to refresh the whitelist.
+        /// </summary>
+        private void StartWhitelistRefreshLoop()
+        {
+            this.logger.LogTrace("()");
+
+            this.whitelistRefreshLoop = this.asyncLoopFactory.Run($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
+            {
+                this.whitelistManager.RefreshWhitelist();
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: new TimeSpan(0, 0, 30));
 
             this.logger.LogTrace("(-)");
         }

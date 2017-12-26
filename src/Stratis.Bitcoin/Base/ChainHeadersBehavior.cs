@@ -4,6 +4,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -25,6 +26,9 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Information about node's chain.</summary>
         private readonly ChainState chainState;
+
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary><c>true</c> if the chain should be kept in sync, <c>false</c> otherwise.</summary>
         public bool CanSync { get; set; }
@@ -86,13 +90,15 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chain">Thread safe chain of block headers from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public ChainHeadersBehavior(ConcurrentChain chain, ChainState chainState, ILoggerFactory loggerFactory)
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
+        public ChainHeadersBehavior(ConcurrentChain chain, ChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
 
             this.chainState = chainState;
             this.chain = chain;
             this.loggerFactory = loggerFactory;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
 
             this.AutoSync = true;
@@ -123,14 +129,14 @@ namespace Stratis.Bitcoin.Base
 
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
 
-            // TODO: Previously, this has been implemented using filters, which guaranteed 
+            // TODO: Previously, this has been implemented using filters, which guaranteed
             // that ChainHeadersBehavior will be first to be notified about the message.
-            // This is no longer EXPLICITLY guaranteed with event approach, 
-            // and the order of notifications only depends on the order of component 
-            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior 
+            // This is no longer EXPLICITLY guaranteed with event approach,
+            // and the order of notifications only depends on the order of component
+            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior
             // is first to go again.
             //
-            // To guarantee that priority for ChainHeadersBehavior until events are refactored 
+            // To guarantee that priority for ChainHeadersBehavior until events are refactored
             // we use special MessageReceivedPriority now instead of normal MessageReceived event.
             this.AttachedPeer.MessageReceivedPriority += this.AttachedPeer_MessageReceived;
 
@@ -178,7 +184,7 @@ namespace Stratis.Bitcoin.Base
 
                         // Ignoring "getheaders" from peers because node is in initial block download.
                         // If not in IBD whitelisted won't be checked.
-                        if (this.chainState.IsInitialBlockDownload && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
+                        if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted) break;
 
                         HeadersPayload headers = new HeadersPayload();
                         ChainedBlock consensusTip = this.chainState.ConsensusTip;
@@ -238,7 +244,7 @@ namespace Stratis.Bitcoin.Base
 
                                 // We have received a header from the peer for which we don't register a previous header.
                                 // This can happen if our information about where the peer is is invalid.
-                                // However, if the previous header is on the chain that we recognize, 
+                                // However, if the previous header is on the chain that we recognize,
                                 // we can fix it.
 
                                 // Try to find the header's previous hash on our best chain.
@@ -248,8 +254,8 @@ namespace Stratis.Bitcoin.Base
                                 {
                                     this.logger.LogTrace("Previous header of the new header '{0}' was not found on our chain either.", header);
 
-                                    // If we can't connect the header we received from the peer, we might be on completely different chain or 
-                                    // a reorg happened recently. If we ignored it, we would have invalid view of the peer and the propagation 
+                                    // If we can't connect the header we received from the peer, we might be on completely different chain or
+                                    // a reorg happened recently. If we ignored it, we would have invalid view of the peer and the propagation
                                     // of blocks would not work well. So we ask the peer for headers using "getheaders" message.
                                     var getHeadersPayload = new GetHeadersPayload()
                                     {
@@ -391,7 +397,7 @@ namespace Stratis.Bitcoin.Base
 
         public override object Clone()
         {
-            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.loggerFactory)
+            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.loggerFactory)
             {
                 CanSync = this.CanSync,
                 CanRespondToGetHeaders = this.CanRespondToGetHeaders,

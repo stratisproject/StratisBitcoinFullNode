@@ -7,9 +7,13 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Dns;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisDnsD
@@ -40,17 +44,45 @@ namespace Stratis.StratisDnsD
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
                 NodeSettings nodeSettings = new NodeSettings("stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
 
-                // build the Dns node.
-                IFullNode node = new FullNodeBuilder()
-                     .UseNodeSettings(nodeSettings)
-                     .UseStratisConsensus()
-                     .UseApi()
-                     .AddRPC()
-                     .UseDns()
-                     .Build();
+                // Verify that the DNS host, nameserver and mailbox arguments are set.
+                if (string.IsNullOrWhiteSpace(nodeSettings.DnsHostName) || string.IsNullOrWhiteSpace(nodeSettings.DnsNameServer) || string.IsNullOrWhiteSpace(nodeSettings.DnsMailBox))
+                {
+                    throw new ArgumentException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+                }
 
-                // TODO: add the functionality to run a full node with Dns.
-                await node.RunAsync();
+                // Run as a full node with DNS or just a DNS service?
+                if (nodeSettings.DnsFullNode)
+                {
+                    // Build the Dns full node.
+                    IFullNode node = new FullNodeBuilder()
+                        .UseNodeSettings(nodeSettings)
+                        .UseStratisConsensus()
+                        .UseBlockStore()
+                        .UseMempool()
+                        .UseWallet()
+                        .AddPowPosMining()
+                        .UseApi()
+                        .AddRPC()
+                        .UseDns()
+                        .Build();
+
+                    // Run node.
+                    await node.RunAsync();
+                }
+                else
+                {
+                    // Build the Dns node.
+                    IFullNode node = new FullNodeBuilder()
+                        .UseNodeSettings(nodeSettings)
+                        .UseStratisConsensus()
+                        .UseApi()
+                        .AddRPC()
+                        .UseDns()
+                        .Build();
+
+                    // Run node.
+                    await node.RunAsync();
+                }
             }
             catch (Exception ex)
             {

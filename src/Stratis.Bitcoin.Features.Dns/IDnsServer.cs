@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using DNS.Server;
 
 namespace Stratis.Bitcoin.Features.Dns
 {

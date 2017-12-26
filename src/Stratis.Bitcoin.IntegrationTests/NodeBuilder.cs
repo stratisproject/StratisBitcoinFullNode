@@ -29,6 +29,7 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -534,8 +535,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class CoreNode
     {
-        private readonly NodeBuilder builder;
-
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
@@ -561,7 +560,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
-            this.builder = builder;
             this.Folder = folder;
             this.State = CoreNodeState.Stopped;
             if (cleanfolders)
@@ -623,7 +621,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void NotInIBD()
         {
             // not in IBD
-            this.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            this.FullNode.NodeService<IInitialBlockDownloadState>().SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public void Start()
@@ -931,7 +929,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public IEnumerable<ChainedBlock> GetHeadersFromFork(NetworkPeer peer, ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
-            
+
             using (var listener = new NetworkPeerListener(peer).OfType<HeadersPayload>())
             {
                 int acceptMaxReorgDepth = 0;

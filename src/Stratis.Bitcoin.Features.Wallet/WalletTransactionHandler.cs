@@ -27,13 +27,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         private const int SendCountThresholdLimit = 500;
 
-        private readonly ConcurrentChain chain;
-
         private readonly IWalletManager walletManager;
 
         private readonly IWalletFeePolicy walletFeePolicy;
-
-        private readonly Network network;
 
         private readonly CoinType coinType;
 
@@ -41,15 +37,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
-            ConcurrentChain chain,
             IWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
             Network network)
         {
-            this.chain = chain;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
-            this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }

@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -59,18 +60,16 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// Only return nodes as specified in the -addnode arg.
+        /// Only connect to nodes as specified in the -addnode arg.
         /// </summary>
-        public override PeerAddress FindPeerToConnectTo()
+        public override async Task OnConnectAsync()
         {
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
-                    return peerAddress;
+                    await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
-
-            return null;
         }
     }
 }
