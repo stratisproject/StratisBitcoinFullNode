@@ -223,6 +223,32 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        [Fact]
+        public async Task ExecuteSmartContractAsync()
+        {
+            var context = new TestContext();
+            await context.InitializeAsync();
+
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+
+            // add transaction to mem pool
+
+            //Transaction tx = new Transaction();
+            //tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(),0), new Script(OpcodeType.OP_CONTRACT)));
+            //tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
+            //uint256 txHash = tx.GetHash();
+            //context.mempool.AddUnchecked(txHash, entry.Fee(1000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+
+            // TODO: Instead of doing the above, use the same code inside the 'InitializeAsync' constructor. 
+
+            // All the magic happens inside 'ConsensusLoop' -> 'ValidateAndExecuteBlock' and 'ExecuteBlock'
+
+            // 'UpdateCoinView' also - at the bottom of  'ExecuteBlock'
+
+            // create block
+            throw new NotImplementedException();
+        }
+
         // Test suite for ancestor feerate transaction selection.
         // Implemented as an additional function, rather than a separate test case,
         // to allow reusing the blockchain created in CreateNewBlock_validity.
@@ -239,7 +265,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             // rate package with a low fee rate parent.
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
+            //tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
+
+            tx.AddOutput(new TxOut(new Money(50000000000000L - 1000), new Script()));
 
             // This tx has a low fee: 1000 satoshis
             uint256 hashParentTx = tx.GetHash(); // save this txid for later use
