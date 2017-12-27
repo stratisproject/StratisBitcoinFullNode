@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void MakeSureEachNodeCanMineAndSync()
         {
-            foreach (var node in Nodes)
+            foreach (var node in this.Nodes)
             {
                 Thread.Sleep(1000);
                 var currentHeight = node.FullNode.Chain.Height;
