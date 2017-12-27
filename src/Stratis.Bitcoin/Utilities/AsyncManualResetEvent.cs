@@ -165,6 +165,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             if (task == null)
                 throw new ArgumentNullException(nameof(task));
+
             task.GetAwaiter().GetResult();
         }
 
@@ -178,6 +179,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             if (task == null)
                 throw new ArgumentNullException(nameof(task));
+
             try
             {
                 task.Wait(cancellationToken);
@@ -200,8 +202,10 @@ namespace Stratis.Bitcoin.Utilities
 
             if (!cancellationToken.CanBeCanceled)
                 return task;
+
             if (cancellationToken.IsCancellationRequested)
                 return Task.FromCanceled(cancellationToken);
+
             return DoWaitAsync(task, cancellationToken);
         }
 
