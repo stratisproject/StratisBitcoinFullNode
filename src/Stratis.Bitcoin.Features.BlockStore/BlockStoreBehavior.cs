@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
 
                 // In case of reorg, we just try again, eventually we succeed.
-                if (chainTip.FindAncestorOrSelf(forkPoint) != null)
+                if (chainTip.FindAncestorOrSelf(forkPoint) == null)
                 {
                     chainTip = this.chain.Tip;
                     forkPoint = null;
