@@ -103,13 +103,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
+        private async void AttachedNode_MessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
             try
             {
-                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
