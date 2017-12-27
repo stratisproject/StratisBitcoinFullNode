@@ -229,16 +229,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private Task ProcessSendCmpctPayload(NetworkPeer node, SendCmpctPayload sendCmpct)
+        private Task ProcessSendCmpctPayload(NetworkPeer peer, SendCmpctPayload sendCmpct)
         {
             // TODO: announce using compact blocks
             return Task.CompletedTask;
         }
 
-        private async Task ProcessGetDataAsync(NetworkPeer node, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataAsync(NetworkPeer peer, GetDataPayload getDataPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node?.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
-            Guard.Assert(node != null);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer?.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
+            Guard.Assert(peer != null);
 
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
@@ -248,10 +248,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (block != null)
                 {
-                    this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, node?.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer?.RemoteSocketEndpoint);
 
                     //TODO strip block of witness if node does not support
-                    await node.SendMessageAsync(new BlockPayload(block.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new BlockPayload(block.WithOptions(peer.SupportedTransactionOptions))).ConfigureAwait(false);
                 }
             }
 
