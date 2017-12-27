@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
 
-            this.CanRespondToGetBlocksPayload = false;
+            this.CanRespondToGetBlocksPayload = true;
             this.CanRespondToGetDataPayload = true;
 
             this.PreferHeaders = false;
@@ -131,37 +131,102 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
+        private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
-            var getDataPayload = message.Message.Payload as GetDataPayload;
-            if ((getDataPayload != null) && this.CanRespondToGetDataPayload)
+            switch (message.Message.Payload)
             {
-                Task res = this.ProcessGetDataAsync(node, getDataPayload);
-                this.logger.LogTrace("(-)[GET_DATA_PAYLOAD]");
-                return res;
+                case GetDataPayload getDataPayload:
+                    if (!this.CanRespondToGetDataPayload)
+                    {
+                        this.logger.LogTrace("Can't respond to 'getdata'.");
+                        break;
+                    }
+
+                    await this.ProcessGetDataAsync(peer, getDataPayload).ConfigureAwait(false);
+                    break;
+
+                case GetBlocksPayload getBlocksPayload:
+                    // TODO: this is not used in core anymore consider deleting it
+                    // However, this is required for StratisX to be able to sync from us.
+
+                    if (!this.CanRespondToGetDataPayload)
+                    {
+                        this.logger.LogTrace("Can't respond to 'getblocks'.");
+                        break;
+                    }
+
+                    await this.ProcessGetBlocksAsync(peer, getBlocksPayload).ConfigureAwait(false);
+                    break;
+
+                case SendCmpctPayload sendCmpctPayload:
+                    await this.ProcessSendCmpctPayload(peer, sendCmpctPayload).ConfigureAwait(false);
+                    break;
+
+                case SendHeadersPayload sendHeadersPayload:
+                    this.PreferHeaders = true;
+                    break;
             }
-
-            // TODO: this is not used in core anymore consider deleting it
-            ////var getBlocksPayload = message.Message.Payload as GetBlocksPayload;
-            ////if (getBlocksPayload != null && this.CanRespondToGetBlocksPayload)
-            ////   return this.ProcessGetBlocksAsync(node, getBlocksPayload);
-
-            var sendCmpctPayload = message.Message.Payload as SendCmpctPayload;
-            if (sendCmpctPayload != null)
-            {
-                Task res = this.ProcessSendCmpctPayload(node, sendCmpctPayload);
-                this.logger.LogTrace("(-)[SEND_CMPCT_PAYLOAD]");
-                return res;
-            }
-
-            var sendHeadersPayload = message.Message.Payload as SendHeadersPayload;
-            if (sendHeadersPayload != null)
-                this.PreferHeaders = true;
 
             this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Processes "getblocks" message received from the peer.
+        /// </summary>
+        /// <param name="peer">Peer that sent the message.</param>
+        /// <param name="getBlocksPayload">Payload of "getblocks" message to process.</param>
+        private async Task ProcessGetBlocksAsync(NetworkPeer peer, GetBlocksPayload getBlocksPayload)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
+
+            ChainedBlock chainedBlock = this.chain.FindFork(getBlocksPayload.BlockLocators);
+            if (chainedBlock == null)
+            {
+                this.logger.LogTrace("(-)[NO_FORK_POINT]");
+                return;
+            }
+
+            bool sendTip = true;
+        	var inv = new InvPayload();
+        	for (int limit = 0; limit < InvPayload.MaxGetBlocksInventorySize; limit++)
+        	{
+        		chainedBlock = this.chain.GetBlock(chainedBlock.Height + 1);
+                if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
+                {
+                    this.logger.LogTrace("Hash stop has been reached.");
+                    break;
+                }
+
+                this.logger.LogTrace("Adding block '{0}' to the inventory.", chainedBlock);
+                inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
+                if (this.chain.Tip.HashBlock == chainedBlock.HashBlock)
+                {
+                    this.logger.LogTrace("Tip of the chain has been reached.");
+                    sendTip = false;
+                }
+        	}
+
+            int count = inv.Inventory.Count;
+            if (count > 0)
+            {
+                this.logger.LogTrace("Sending inventory with {0} block hashes.", count);
+                await peer.SendMessageAsync(inv).ConfigureAwait(false);
+
+                if (sendTip)
+                {
+                    // In order for the peer to send us the next "getblocks" message
+                    // to continue the syncing process, we need to send an inventory message
+                    // with our chain tip.
+                    var invContinue = new InvPayload();
+                    invContinue.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, this.chain.Tip.HashBlock));
+                    await peer.SendMessageAsync(invContinue).ConfigureAwait(false);
+                }
+            }
+            else this.logger.LogTrace("Nothing to send.");
+
+            this.logger.LogTrace("(-)");
         }
 
         private Task ProcessSendCmpctPayload(NetworkPeer node, SendCmpctPayload sendCmpct)
