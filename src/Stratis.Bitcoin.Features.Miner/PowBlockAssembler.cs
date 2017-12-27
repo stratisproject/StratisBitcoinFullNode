@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public Money fees;
 
-        private TxMempool.SetEntries inBlock;
+        protected TxMempool.SetEntries inBlock { get; }
 
         protected Transaction coinbase;
 
@@ -231,10 +231,10 @@ namespace Stratis.Bitcoin.Features.Miner
             uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
 
-            IEnumerable<BIP9Deployments> deploymensts = Enum.GetValues(typeof(BIP9Deployments))
+            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments))
                 .OfType<BIP9Deployments>();
 
-            foreach (BIP9Deployments deployment in deploymensts)
+            foreach (BIP9Deployments deployment in deployments)
             {
                 ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
@@ -277,9 +277,9 @@ namespace Stratis.Bitcoin.Features.Miner
             this.fIncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
             // add transactions from the mempool
-            int nPackagesSelected = 0;
-            int nDescendantsUpdated = 0;
-            this.AddTransactions(nPackagesSelected, nDescendantsUpdated);
+            int nPackagesSelected;
+            int nDescendantsUpdated;
+            this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
 
             lastBlockTx = this.blockTx;
             lastBlockSize = this.blockSize;
@@ -400,8 +400,10 @@ namespace Stratis.Bitcoin.Features.Miner
         // Each time through the loop, we compare the best transaction in
         // mapModifiedTxs with the next transaction in the mempool to decide what
         // transaction package to work on next.
-        protected virtual void AddTransactions(int nPackagesSelected, int nDescendantsUpdated)
+        protected virtual void AddTransactions(out int nPackagesSelected, out int nDescendantsUpdated)
         {
+            nPackagesSelected = 0;
+            nDescendantsUpdated = 0;
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
 
             // mapModifiedTx will store sorted packages after they are modified
