@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var networkNode1 = simulator.Nodes[2];
             var networkNode2 = simulator.Nodes[3];
 
-            //TODO comment
+            // Connect nodes with each other. Miner is connected to connector and connector, node1, node2 are connected with each other.
             miner.CreateRPCClient().AddNode(connector.Endpoint, true);
             connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);
             connector.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
@@ -333,7 +333,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             networkNode1.GenerateStratis(1);
 
             //wait until connector get the hash of network's block
-            while (connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
+            while (connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock ||
+                   networkNode1.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight)
                 Thread.Sleep(1);
 
             //make sure that miner did not advance yet but connector did
