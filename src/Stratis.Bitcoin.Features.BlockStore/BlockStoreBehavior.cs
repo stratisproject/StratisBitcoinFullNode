@@ -190,6 +190,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
+            this.logger.LogTrace("Block store tip is '{0}'.", blockStoreTip);
+
             // Now we want to find the last common block between our chain and the block locator the peer sent us.
             ChainedBlock chainTip = this.chain.Tip;
             ChainedBlock forkPoint = null;
@@ -211,6 +213,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     forkPoint = null;
                 }
             }
+
+            this.logger.LogTrace("Fork point is '{0}'.", forkPoint);
 
             // If block store is lower than the fork point, or it is on different chain, we don't have anything to contribute to this peer at this point.
             if (blockStoreTip.FindAncestorOrSelf(forkPoint) == null)
