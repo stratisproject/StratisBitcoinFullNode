@@ -189,6 +189,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             bool sendTip = true;
+            ChainedBlock lastAddedChainedBlock = null;
         	var inv = new InvPayload();
         	for (int limit = 0; limit < InvPayload.MaxGetBlocksInventorySize; limit++)
         	{
@@ -200,6 +201,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
 
                 this.logger.LogTrace("Adding block '{0}' to the inventory.", chainedBlock);
+                lastAddedChainedBlock = chainedBlock;
                 inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
                 if (this.chain.Tip.HashBlock == chainedBlock.HashBlock)
                 {
@@ -211,6 +213,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
+                this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedBlock);
+                ChainHeadersBehavior chainBehavior = peer.Behavior<ChainHeadersBehavior>();
+                chainBehavior.SetPendingTip(lastAddedChainedBlock);
+
                 this.logger.LogTrace("Sending inventory with {0} block hashes.", count);
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
 
