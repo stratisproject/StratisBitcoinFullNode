@@ -181,38 +181,86 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
 
-            ChainedBlock chainedBlock = this.chain.FindFork(getBlocksPayload.BlockLocators);
-            if (chainedBlock == null)
+            // We only want to work with blocks that are in the store, 
+            // so we first get information about the store's tip.
+            ChainedBlock blockStoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+            if (blockStoreTip == null)
             {
-                this.logger.LogTrace("(-)[NO_FORK_POINT]");
+                this.logger.LogTrace("(-)[REORG]");
                 return;
             }
 
-            bool sendTip = true;
-            ChainedBlock lastAddedChainedBlock = null;
-        	var inv = new InvPayload();
-        	for (int limit = 0; limit < InvPayload.MaxGetBlocksInventorySize; limit++)
-        	{
-        		chainedBlock = this.chain.GetBlock(chainedBlock.Height + 1);
-                if (chainedBlock == null)
+            // Now we want to find the last common block between our chain and the block locator the peer sent us.
+            ChainedBlock chainTip = this.chain.Tip;
+            ChainedBlock forkPoint = null;
+
+            // Find last common block between our chain and the block locator the peer sent us.
+            while (forkPoint == null)
+            {
+                forkPoint = this.chain.FindFork(getBlocksPayload.BlockLocators.Blocks);
+                if (forkPoint == null)
                 {
-                    this.logger.LogTrace("Tip reached.");
-                    break;
+                    this.logger.LogTrace("(-)[NO_FORK_POINT]");
+                    return;
                 }
 
+                // In case of reorg, we just try again, eventually we succeed.
+                if (chainTip.FindAncestorOrSelf(forkPoint) != null)
+                {
+                    chainTip = this.chain.Tip;
+                    forkPoint = null;
+                }
+            }
+
+            // If block store is lower than the fork point, or it is on different chain, we don't have anything to contribute to this peer at this point.
+            if (blockStoreTip.FindAncestorOrSelf(forkPoint) == null)
+            {
+                this.logger.LogTrace("(-)[FORK_OUTSIDE_STORE]");
+                return;
+            }
+
+            // Now we compile a list of blocks we want to send to the peer as inventory vectors.
+            // This is needed as we want to traverse the chain in forward direction.
+            int maxHeight = Math.Min(blockStoreTip.Height, forkPoint.Height + InvPayload.MaxGetBlocksInventorySize);
+            ChainedBlock lastBlock = blockStoreTip.GetAncestor(maxHeight);
+            int headersCount = maxHeight - forkPoint.Height;
+
+            this.logger.LogTrace("Last block to announce is '{0}', number of blocks to announce is {1}.", lastBlock, headersCount);
+
+            ChainedBlock[] headersToAnnounce = new ChainedBlock[headersCount];
+            for (int i = headersCount - 1; i >= 0; i--)
+            {
+                headersToAnnounce[i] = lastBlock;
+                lastBlock = lastBlock.Previous;
+            }
+
+            // Now we compile inventory payload and we also consider hash stop given by the peer
+            // and we also check if the blocks to be announced are really present in the store.
+            bool sendContinuation = true;
+            ChainedBlock lastAddedChainedBlock = null;
+        	var inv = new InvPayload();
+        	for (int i = 0; i < headersToAnnounce.Length; i++)
+        	{
+                ChainedBlock chainedBlock = headersToAnnounce[i];
                 if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
                 {
                     this.logger.LogTrace("Hash stop has been reached.");
                     break;
                 }
 
+                if (!await this.blockRepository.ExistAsync(chainedBlock.HashBlock).ConfigureAwait(false))
+                {
+                    this.logger.LogTrace("Block '{0}' is not ready in the store yet, we won't announce it now.");
+                    break;
+                }
+
                 this.logger.LogTrace("Adding block '{0}' to the inventory.", chainedBlock);
                 lastAddedChainedBlock = chainedBlock;
                 inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
-                if (this.chain.Tip.HashBlock == chainedBlock.HashBlock)
+                if (chainedBlock.HashBlock == chainTip.HashBlock)
                 {
                     this.logger.LogTrace("Tip of the chain has been reached.");
-                    sendTip = false;
+                    sendContinuation = false;
                 }
         	}
 
@@ -227,22 +275,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // with the modern method. So we need to disable it to prevent collisions of those two methods.
                 // However, this should be only done if the peer is syncing from us and not vice versa.
                 // And when the sync is done, we should enable it again.
-                chainBehavior.CanSync = (peerTip != null) && (this.chain.Tip.ChainWork > peerTip.ChainWork);
+                chainBehavior.CanSync = (peerTip != null) && (blockStoreTip.ChainWork > peerTip.ChainWork);
 
-                this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedBlock);
                 int peersHeight = peerTip != null ? peerTip.Height : 0;
-                if (peersHeight < lastAddedChainedBlock.Height) chainBehavior.SetPendingTip(lastAddedChainedBlock);
+                if (peersHeight < lastAddedChainedBlock.Height)
+                {
+                    this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedBlock);
+                    chainBehavior.SetPendingTip(lastAddedChainedBlock);
+                }
 
                 this.logger.LogTrace("Sending inventory with {0} block hashes.", count);
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
 
-                if (sendTip)
+                if (sendContinuation)
                 {
                     // In order for the peer to send us the next "getblocks" message
                     // to continue the syncing process, we need to send an inventory message
-                    // with our chain tip.
+                    // with our block store tip.
                     var invContinue = new InvPayload();
-                    invContinue.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, this.chain.Tip.HashBlock));
+                    invContinue.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, blockStoreTip.HashBlock));
                     await peer.SendMessageAsync(invContinue).ConfigureAwait(false);
                 }
             }
