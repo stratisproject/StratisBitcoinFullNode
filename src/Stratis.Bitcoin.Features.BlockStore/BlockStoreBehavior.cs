@@ -194,6 +194,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         	for (int limit = 0; limit < InvPayload.MaxGetBlocksInventorySize; limit++)
         	{
         		chainedBlock = this.chain.GetBlock(chainedBlock.Height + 1);
+                if (chainedBlock == null)
+                {
+                    this.logger.LogTrace("Tip reached.");
+                    break;
+                }
+
                 if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
                 {
                     this.logger.LogTrace("Hash stop has been reached.");
