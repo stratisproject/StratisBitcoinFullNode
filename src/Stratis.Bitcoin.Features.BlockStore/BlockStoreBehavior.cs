@@ -214,16 +214,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (count > 0)
             {
                 ChainHeadersBehavior chainBehavior = peer.Behavior<ChainHeadersBehavior>();
+                ChainedBlock peerTip = chainBehavior.PendingTip;
 
                 // New nodes do not use "getblocks" messages and their syncing is based on "getheaders"
                 // messages. StratisX nodes do need "getblocks", but then our node tries to sync 
                 // with the modern method. So we need to disable it to prevent collisions of those two methods.
                 // However, this should be only done if the peer is syncing from us and not vice versa.
                 // And when the sync is done, we should enable it again.
-                chainBehavior.CanSync = (chainBehavior.PendingTip != null) && (this.chain.Tip.ChainWork > chainBehavior.PendingTip.ChainWork);
+                chainBehavior.CanSync = (peerTip != null) && (this.chain.Tip.ChainWork > peerTip.ChainWork);
 
                 this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedBlock);
-                chainBehavior.SetPendingTip(lastAddedChainedBlock);
+                int peersHeight = peerTip != null ? peerTip.Height : 0;
+                if (peerTip.Height < lastAddedChainedBlock.Height) chainBehavior.SetPendingTip(lastAddedChainedBlock);
 
                 this.logger.LogTrace("Sending inventory with {0} block hashes.", count);
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
