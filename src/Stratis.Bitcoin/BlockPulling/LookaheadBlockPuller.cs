@@ -222,6 +222,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
+            this.pushed.Dispose();
+            this.consumed.Dispose();
+
             lock (this.bufferLock)
             {
                 this.askBlockQueue.Clear();
