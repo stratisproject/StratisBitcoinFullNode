@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedBlock);
                 int peersHeight = peerTip != null ? peerTip.Height : 0;
-                if (peerTip.Height < lastAddedChainedBlock.Height) chainBehavior.SetPendingTip(lastAddedChainedBlock);
+                if (peersHeight < lastAddedChainedBlock.Height) chainBehavior.SetPendingTip(lastAddedChainedBlock);
 
                 this.logger.LogTrace("Sending inventory with {0} block hashes.", count);
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
