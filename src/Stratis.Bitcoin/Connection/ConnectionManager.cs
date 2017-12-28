@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Connection
             this.discoveredNodeRequiredService |= services;
 
             IPeerConnector peerConnector = this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorDiscovery);
-            if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
+            if ((peerConnector != null) && (!peerConnector.Requirements?.RequiredServices.HasFlag(services) ?? false))
             {
                 peerConnector.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (NetworkPeer node in peerConnector.ConnectedPeers)
