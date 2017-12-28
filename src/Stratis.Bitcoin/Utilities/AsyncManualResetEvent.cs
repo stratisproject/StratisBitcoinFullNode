@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Utilities
         public AsyncManualResetEvent(bool set)
         {
             this.mutex = new object();
-            this.tcs = CreateAsyncTaskSource<object>();
+            this.tcs = this.CreateAsyncTaskSource<object>();
             if (set)
                 this.tcs.TrySetResult(null);
         }
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Utilities
             if (waitTask.IsCompleted)
                 return waitTask;
 
-            return WaitAsync(waitTask, cancellationToken);
+            return this.WaitAsync(waitTask, cancellationToken);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Utilities
             lock (this.mutex)
             {
                 if (this.tcs.Task.IsCompleted)
-                    this.tcs = CreateAsyncTaskSource<object>();
+                    this.tcs = this.CreateAsyncTaskSource<object>();
             }
         }
 
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Utilities
             if (cancellationToken.IsCancellationRequested)
                 return Task.FromCanceled(cancellationToken);
 
-            return DoWaitAsync(task, cancellationToken);
+            return this.DoWaitAsync(task, cancellationToken);
         }
 
         /// <summary>
