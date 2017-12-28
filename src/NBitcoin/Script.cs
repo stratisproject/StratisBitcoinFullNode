@@ -217,7 +217,7 @@ namespace NBitcoin
         OP_ENDIF = 0x68,
         OP_VERIFY = 0x69,
         OP_RETURN = 0x6a,
-        OP_CONTRACT = 0x6b,
+
         // stack ops
         OP_TOALTSTACK = 0x6b,
         OP_FROMALTSTACK = 0x6c,
@@ -314,6 +314,9 @@ namespace NBitcoin
         OP_NOP8 = 0xb7,
         OP_NOP9 = 0xb8,
         OP_NOP10 = 0xb9,
+
+        // smart contracts
+        OP_CONTRACT = 0xc0,
     };
 
     public enum HashVersion

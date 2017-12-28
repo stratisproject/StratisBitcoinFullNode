@@ -277,6 +277,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
+                                // SC
+                                if (txout.ScriptPubKey.ToBytes().FirstOrDefault() == (byte) OpcodeType.OP_CONTRACT)
+                                {
+                                    return true;
+                                }
+                                // END SC
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
                                 var ctx = new ScriptEvaluationContext();
                                 ctx.ScriptVerify = flags.ScriptFlags;

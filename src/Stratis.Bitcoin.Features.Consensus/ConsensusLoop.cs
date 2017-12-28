@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
     /// </para>
     /// </remarks>
-    public class ConsensusLoop
+    public class ConsensusLoop : IConsensusLoop
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -503,7 +503,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        internal async Task ValidateAndExecuteBlockAsync(RuleContext context)
+        public async Task ValidateAndExecuteBlockAsync(RuleContext context)
         {
             this.logger.LogTrace("()");
 
