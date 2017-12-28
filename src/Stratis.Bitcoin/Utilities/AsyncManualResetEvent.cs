@@ -105,27 +105,6 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Synchronously waits for this event to be set. This method may block the calling thread.
-        /// </summary>
-        public void Wait()
-        {
-            WaitAndUnwrapException(this.WaitAsync());
-        }
-
-        /// <summary>
-        /// Synchronously waits for this event to be set. This method may block the calling thread.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token used to cancel the wait. If this token is already canceled, this method will first check whether the event is set.</param>
-        public void Wait(CancellationToken cancellationToken)
-        {
-            Task ret = this.WaitAsync();
-            if (ret.IsCompleted)
-                return;
-
-            WaitAndUnwrapException(ret, cancellationToken);
-        }
-
-        /// <summary>
         /// Sets the event, atomically completing every task returned by <see cref="O:Nito.AsyncEx.AsyncManualResetEvent.WaitAsync"/>. If the event is already set, this method does nothing.
         /// </summary>
         public void Set()
@@ -152,42 +131,9 @@ namespace Stratis.Bitcoin.Utilities
         /// Creates a new TCS for use with async code, and which forces its continuations to execute asynchronously.
         /// </summary>
         /// <typeparam name="TResult">The type of the result of the TCS.</typeparam>
-        private static TaskCompletionSource<TResult> CreateAsyncTaskSource<TResult>()
+        private TaskCompletionSource<TResult> CreateAsyncTaskSource<TResult>()
         {
             return new TaskCompletionSource<TResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        }
-
-        /// <summary>
-        /// Waits for the task to complete, unwrapping any exceptions.
-        /// </summary>
-        /// <param name="task">The task. May not be <c>null</c>.</param>
-        private static void WaitAndUnwrapException(Task task)
-        {
-            if (task == null)
-                throw new ArgumentNullException(nameof(task));
-
-            task.GetAwaiter().GetResult();
-        }
-
-        /// <summary>
-        /// Waits for the task to complete, unwrapping any exceptions.
-        /// </summary>
-        /// <param name="task">The task. May not be <c>null</c>.</param>
-        /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-        /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> was cancelled before the <paramref name="task"/> completed, or the <paramref name="task"/> raised an <see cref="OperationCanceledException"/>.</exception>
-        private static void WaitAndUnwrapException(Task task, CancellationToken cancellationToken)
-        {
-            if (task == null)
-                throw new ArgumentNullException(nameof(task));
-
-            try
-            {
-                task.Wait(cancellationToken);
-            }
-            catch (AggregateException ex)
-            {
-                throw PrepareForRethrow(ex.InnerException);
-            }
         }
 
         /// <summary>
@@ -195,10 +141,9 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="task">The task to wait for. May not be <c>null</c>.</param>
         /// <param name="cancellationToken">The cancellation token that cancels the wait.</param>
-        private static Task WaitAsync(Task task, CancellationToken cancellationToken)
+        private Task WaitAsync(Task task, CancellationToken cancellationToken)
         {
-            if (task == null)
-                throw new ArgumentNullException(nameof(task));
+            Guard.NotNull(task, nameof(task));
 
             if (!cancellationToken.CanBeCanceled)
                 return task;
@@ -209,64 +154,23 @@ namespace Stratis.Bitcoin.Utilities
             return DoWaitAsync(task, cancellationToken);
         }
 
-        private static async Task DoWaitAsync(Task task, CancellationToken cancellationToken)
-        {
-            using (var cancelTaskSource = new CancellationTokenTaskSource<object>(cancellationToken))
-                await await Task.WhenAny(task, cancelTaskSource.Task).ConfigureAwait(false);
-        }
-
         /// <summary>
-        /// Attempts to prepare the exception for re-throwing by preserving the stack trace. The returned exception should be immediately thrown.
+        /// Waits for the task to be executed or canceled.
         /// </summary>
-        /// <param name="exception">The exception. May not be <c>null</c>.</param>
-        /// <returns>The <see cref="Exception"/> that was passed into this method.</returns>
-        private static Exception PrepareForRethrow(Exception exception)
-        {
-            ExceptionDispatchInfo.Capture(exception).Throw();
-
-            // The code cannot ever get here. We just return a value to work around a badly-designed API (ExceptionDispatchInfo.Throw):
-            //  https://connect.microsoft.com/VisualStudio/feedback/details/689516/exceptiondispatchinfo-api-modifications (http://www.webcitation.org/6XQ7RoJmO)
-            return exception;
-        }
-    }
-
-    /// <summary>
-    /// Holds the task for a cancellation token, as well as the token registration. The registration is disposed when this instance is disposed.
-    /// </summary>
-    public sealed class CancellationTokenTaskSource<T> : IDisposable
-    {
-        /// <summary>
-        /// The cancellation token registration, if any. This is <c>null</c> if the registration was not necessary.
-        /// </summary>
-        private readonly IDisposable registration;
-
-        /// <summary>
-        /// Creates a task for the specified cancellation token, registering with the token if necessary.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token to observe.</param>
-        public CancellationTokenTaskSource(CancellationToken cancellationToken)
+        /// <remarks>
+        /// Double await construct is used here in order to catch exceptions in child tasks.
+        /// It is similar to await + unwrap but uses less allocations. <see cref="https://stackoverflow.com/questions/34816628/await-await-vs-unwrap"/>
+        /// </remarks>
+        /// <param name="task">The task to wait for. May not be <c>null</c>.</param>
+        /// <param name="cancellationToken">The cancellation token that cancels the wait.</param>
+        private async Task DoWaitAsync(Task task, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
-            {
-                this.Task = System.Threading.Tasks.Task.FromCanceled<T>(cancellationToken);
                 return;
-            }
-            var tcs = new TaskCompletionSource<T>();
-            this.registration = cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken), useSynchronizationContext: false);
-            this.Task = tcs.Task;
-        }
 
-        /// <summary>
-        /// Gets the task for the source cancellation token.
-        /// </summary>
-        public Task<T> Task { get; private set; }
-
-        /// <summary>
-        /// Disposes the cancellation token registration, if any. Note that this may cause <see cref="Task"/> to never complete.
-        /// </summary>
-        public void Dispose()
-        {
-            this.registration?.Dispose();
+            var tcs = new TaskCompletionSource<object>();
+            using (cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken), useSynchronizationContext: false))
+                await await Task.WhenAny(task, tcs.Task).ConfigureAwait(false);
         }
     }
 }
