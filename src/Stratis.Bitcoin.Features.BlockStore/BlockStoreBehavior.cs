@@ -252,9 +252,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // and we also check if the blocks to be announced are really present in the store.
             bool sendContinuation = true;
             ChainedBlock lastAddedChainedBlock = null;
-        	var inv = new InvPayload();
-        	for (int i = 0; i < headersToAnnounce.Length; i++)
-        	{
+            var inv = new InvPayload();
+            for (int i = 0; i < headersToAnnounce.Length; i++)
+            {
                 ChainedBlock chainedBlock = headersToAnnounce[i];
                 if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
                 {
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogTrace("Tip of the chain has been reached.");
                     sendContinuation = false;
                 }
-        	}
+            }
 
             int count = inv.Inventory.Count;
             if (count > 0)
