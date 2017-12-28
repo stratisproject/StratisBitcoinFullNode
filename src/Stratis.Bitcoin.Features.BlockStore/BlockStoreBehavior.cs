@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async void AttachedNode_MessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             try
             {
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             catch (OperationCanceledException opx)
             {
                 if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedPeer?.IsConnected ?? false)
+                    if (peer.IsConnected)
                     {
                         this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                         throw;
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             switch (message.Message.Payload)
             {
@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (block != null)
                 {
-                    this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer?.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
 
                     //TODO strip block of witness if node does not support
                     await peer.SendMessageAsync(new BlockPayload(block.WithOptions(peer.SupportedTransactionOptions))).ConfigureAwait(false);
@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task SendAsBlockInventoryAsync(NetworkPeer peer, IEnumerable<uint256> blocks)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
+            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
             var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
             while (queue.Count > 0)
