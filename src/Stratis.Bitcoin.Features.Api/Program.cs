@@ -16,11 +16,13 @@ namespace Stratis.Bitcoin.Features.Api
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
+            var ApiUri = fullNode.NodeService<ApiSettings>().ApiUri;
+
             var host = new WebHostBuilder()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
-                .UseUrls(fullNode.Settings.ApiUri.ToString())
+                .UseUrls(ApiUri.ToString())
                 .ConfigureServices(collection =>
                 {
                     if (services == null)

@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var ApiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 using (client = new HttpClient())
                 {
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisStakeNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var ApiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var ApiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 using (client = new HttpClient())
                 {
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var ApiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 using (client = new HttpClient())
                 {
