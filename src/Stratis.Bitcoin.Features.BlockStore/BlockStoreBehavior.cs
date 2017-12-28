@@ -56,6 +56,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private bool preferHeaderAndIDs;
 
+        /// <summary>Hash of the last block we've sent to the peer in response to "getblocks" message,
+        /// or <c>null</c> if the peer haven't used "getblocks" message or if we sent a tip to it already.</summary>
+        /// <remarks>
+        /// In case the peer is syncing using outdated "getblocks" message, we need to maintain 
+        /// the hash of the last block we sent to it in an inventory batch. Once the peer asks 
+        /// for block data of the block with this hash, we will send a continuation inventory message.
+        /// This will cause the peer to ask for more.
+        /// </remarks>
+        private uint256 getBlocksBatchLastItemHash;
+
         public BlockStoreBehavior(
             ConcurrentChain chain,
             BlockRepository blockRepository,
@@ -274,32 +284,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ChainHeadersBehavior chainBehavior = peer.Behavior<ChainHeadersBehavior>();
                 ChainedBlock peerTip = chainBehavior.PendingTip;
 
-                // New nodes do not use "getblocks" messages and their syncing is based on "getheaders"
-                // messages. StratisX nodes do need "getblocks", but then our node tries to sync 
-                // with the modern method. So we need to disable it to prevent collisions of those two methods.
-                // However, this should be only done if the peer is syncing from us and not vice versa.
-                // And when the sync is done, we should enable it again.
-                chainBehavior.CanSync = (peerTip != null) && (blockStoreTip.ChainWork > peerTip.ChainWork);
-
                 int peersHeight = peerTip != null ? peerTip.Height : 0;
                 if (peersHeight < lastAddedChainedBlock.Height)
                 {
                     this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedBlock);
                     chainBehavior.SetPendingTip(lastAddedChainedBlock);
+
+                    // Set last item of the batch (unless we are announcing the tip), which is then used 
+                    // when the peer sends us "getdata" message. When we detect "getdata" message for this block, 
+                    // we will send continuation inventory message. This will cause the peer to ask for another batch of blocks.
+                    // See ProcessGetDataAsync method.
+                    if (sendContinuation)
+                        this.getBlocksBatchLastItemHash = lastAddedChainedBlock.HashBlock;
                 }
 
                 this.logger.LogTrace("Sending inventory with {0} block hashes.", count);
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
-
-                if (sendContinuation)
-                {
-                    // In order for the peer to send us the next "getblocks" message
-                    // to continue the syncing process, we need to send an inventory message
-                    // with our block store tip.
-                    var invContinue = new InvPayload();
-                    invContinue.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, blockStoreTip.HashBlock));
-                    await peer.SendMessageAsync(invContinue).ConfigureAwait(false);
-                }
             }
             else this.logger.LogTrace("Nothing to send.");
 
@@ -314,8 +314,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task ProcessGetDataAsync(NetworkPeer peer, GetDataPayload getDataPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer?.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
             Guard.Assert(peer != null);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
 
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
@@ -329,6 +329,26 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     //TODO strip block of witness if node does not support
                     await peer.SendMessageAsync(new BlockPayload(block.WithOptions(peer.SupportedTransactionOptions))).ConfigureAwait(false);
+                }
+
+                // If the peer is syncing using "getblocks" message we are supposed to send 
+                // an "inv" message with our tip to it once we it asks for all blocks
+                // from the previous batch.
+                if (item.Hash == this.getBlocksBatchLastItemHash)
+                {
+                    // Reset the hash to indicate that no continuation is pending anymore.
+                    this.getBlocksBatchLastItemHash = null;
+
+                    // Announce last block we have in the store.
+                    ChainedBlock blockStoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+                    if (blockStoreTip != null)
+                    {
+                        this.logger.LogTrace("Sending continuation inventory message for block '{0}' to peer '{1}'.", blockStoreTip, peer.RemoteSocketEndpoint);
+                        var invContinue = new InvPayload();
+                        invContinue.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, blockStoreTip.HashBlock));
+                        await peer.SendMessageAsync(invContinue).ConfigureAwait(false);
+                    }
+                    else this.logger.LogTrace("Reorg in blockstore, inventory continuation won't be sent to peer '{0}'.", peer.RemoteSocketEndpoint);
                 }
             }
 
