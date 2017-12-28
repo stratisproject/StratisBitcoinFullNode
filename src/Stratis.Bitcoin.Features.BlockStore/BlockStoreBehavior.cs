@@ -314,7 +314,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task ProcessGetDataAsync(NetworkPeer peer, GetDataPayload getDataPayload)
         {
-            Guard.Assert(peer != null);
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
 
             // TODO: bring logic from core
