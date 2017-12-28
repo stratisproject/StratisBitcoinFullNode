@@ -21,7 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-https://github.com/StephenCleary/AsyncEx
+Based on the original implementation of AsyncManualResetEvent from
+Stephen Cleary's AsyncEx library - https://github.com/StephenCleary/AsyncEx .
  */
 
 using System;
@@ -157,12 +158,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Waits for the task to be executed or canceled.
         /// </summary>
-        /// <remarks>
-        /// Double await construct is used here in order to catch exceptions in child tasks.
-        /// It is similar to await + unwrap but uses less allocations. <see cref="https://stackoverflow.com/questions/34816628/await-await-vs-unwrap"/>
-        /// </remarks>
         /// <param name="task">The task to wait for. May not be <c>null</c>.</param>
         /// <param name="cancellationToken">The cancellation token that cancels the wait.</param>
+        /// <remarks>
+        /// Double await construct is used here in order to catch exceptions in child tasks.
+        /// It is similar to await + unwrap but uses less allocations.
+        /// Detailed comparison can be found here: <see cref="https://stackoverflow.com/questions/34816628/await-await-vs-unwrap"/>.
+        /// </remarks>
         private async Task DoWaitAsync(Task task, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
