@@ -6,6 +6,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
+    // Added by Jordan - If not used anywhere we can delete. 29/12/17
     public interface IConsensusLoop
     {
         Task StartAsync();

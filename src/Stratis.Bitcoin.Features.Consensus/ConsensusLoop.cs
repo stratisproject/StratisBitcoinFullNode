@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
     /// </para>
     /// </remarks>
-    public class ConsensusLoop : IConsensusLoop
+    public class ConsensusLoop
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;

@@ -5,7 +5,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SmartContractTransaction : IBitcoinSerializable
+    public class SCTransaction : IBitcoinSerializable
     {
         // SHA-256 value of encoded transaction
         public byte[] Hash { get; set; }
