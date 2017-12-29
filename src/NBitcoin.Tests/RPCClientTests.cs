@@ -357,28 +357,6 @@ namespace NBitcoin.Tests
             }
         }
 
-#if !PORTABLE
-        [Fact]
-        public void CanGetPeersInfo()
-        {
-                    /*
-         * TODO: Consider importing to FN.
-
-            using(var builder = NodeBuilder.Create())
-            {
-                var nodeA = builder.CreateNode();
-                builder.StartAll();
-                var rpc = nodeA.CreateRPCClient();
-                using(var node = nodeA.CreateNodeClient())
-                {
-                    node.VersionHandshake();
-                    var peers = rpc.GetPeersInfo();
-                    Assert.NotEmpty(peers);
-                }
-            }
-            */
-    }
-#endif
 #if !NOSOCKET
         [Fact]
         [Trait("UnitTest", "UnitTest")]

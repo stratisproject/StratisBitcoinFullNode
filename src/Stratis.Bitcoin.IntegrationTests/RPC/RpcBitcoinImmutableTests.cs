@@ -88,6 +88,16 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         /// <summary>
+        /// <seealso cref="https://github.com/MetacoSA/NBitcoin/blob/master/NBitcoin.Tests/RPCClientTests.cs">NBitcoin test CanGetPeersInfo</seealso>
+        /// </summary>
+        [Fact]
+        public void GetPeersInfoWithValidPeersThenReturnsPeerInfo()
+        {
+            PeerInfo[] peers = this.rpcTestFixture.RpcClient.GetPeersInfo();
+            Assert.NotEmpty(peers);
+        }
+
+        /// <summary>
         /// <seealso cref="https://github.com/MetacoSA/NBitcoin/blob/master/NBitcoin.Tests/RPCClientTests.cs">NBitcoin test EstimateFeeRate</seealso>
         /// </summary>
         [Fact]
