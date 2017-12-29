@@ -58,12 +58,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void MakeSureEachNodeCanMineAndSync()
         {
-            foreach (var node in Nodes)
+            foreach (var node in this.Nodes)
             {
                 Thread.Sleep(1000);
                 var currentHeight = node.FullNode.Chain.Height;
 
-                node.GenerateStratis(1);
+                node.GenerateStratisWithMiner(1);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
                 TestHelper.WaitLoop(new Func<bool>(delegate { return node.FullNode.Chain.Height == currentHeight + 1; }));
                 TestHelper.WaitLoop(new Func<bool>(delegate { return AreAllNodesAtSameHeight(); }));
