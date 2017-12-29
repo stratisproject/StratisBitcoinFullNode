@@ -5,7 +5,6 @@ using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web.NBitcoin;
 #if !NOHTTPCLIENT
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -229,7 +228,7 @@ namespace NBitcoin.Payment
                     builder.Append("&");
                 builder.Append(parameter.Key);
                 builder.Append("=");
-                builder.Append(HttpUtility.UrlEncode(parameter.Value));
+                builder.Append(WebUtility.UrlEncode(parameter.Value));
             }
         }
 
