@@ -329,27 +329,27 @@ namespace Stratis.Bitcoin.IntegrationTests
             int networkHeight = miner.FullNode.Chain.Height;
             Assert.Equal(networkHeight, simulator.Nodes.Count);
 
-            //random node on network generates a block
+            // Random node on network generates a block.
             networkNode1.GenerateStratis(1);
 
-            //wait until connector get the hash of network's block
-            while (connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock ||
-                   networkNode1.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight)
+            // Wait until connector get the hash of network's block.
+            while ((connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
+                   (networkNode1.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight))
                 Thread.Sleep(1);
 
-            //make sure that miner did not advance yet but connector did
+            // Make sure that miner did not advance yet but connector did.
             Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight+1);
 
-            //miner mines the block
+            // Miner mines the block.
             miner.GenerateStratis(1);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
 
             networkHeight++;
 
-            //make sure that at this moment miner's tip != network's and connector's tip
+            // Make sure that at this moment miner's tip != network's and connector's tip.
             Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
