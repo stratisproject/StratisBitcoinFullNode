@@ -11,14 +11,6 @@ namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class AsyncManualResetEventTest
     {
-        /// <summary>
-        /// Tests that:
-        /// <list type="bullet">
-        /// <item><see cref="AsyncManualResetEvent"/> does not crush.</item>
-        /// <item>WaitAsync eventually completes.</item>
-        /// <item>WaitAsync completes when the event is set.</item>
-        /// </list>
-        /// </summary>
         [Fact]
         public async void AsyncManualResetEvent_WaitAsync()
         {
@@ -37,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             stopwatch.Stop();
 
-            Assert.True(stopwatch.ElapsedMilliseconds >= 500 && stopwatch.ElapsedMilliseconds < 600);
+            Assert.True(stopwatch.ElapsedMilliseconds >= 500);
             Assert.True(mreAwaitingTask.Status == TaskStatus.RanToCompletion);
         }
 
@@ -62,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var mre = new AsyncManualResetEvent();
 
-            var task = mre.WaitAsync();
+            Task task = mre.WaitAsync();
 
             await Task.Delay(200);
 
@@ -75,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var mre = new AsyncManualResetEvent();
 
             mre.Set();
-            var task = mre.WaitAsync();
+            Task task = mre.WaitAsync();
 
             Assert.True(task.IsCompleted);
         }
@@ -85,7 +77,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var mre = new AsyncManualResetEvent(true);
 
-            var task = mre.WaitAsync();
+            Task task = mre.WaitAsync();
 
             Assert.True(task.IsCompleted);
         }
@@ -109,7 +101,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             mre.Set();
             mre.Reset();
-            var task = mre.WaitAsync();
+            Task task = mre.WaitAsync();
 
             await Task.Delay(200);
 
@@ -117,17 +109,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void AsyncManualResetEvent_CanBeCancelled()
+        public async void AsyncManualResetEvent_CanBeCancelledAsync()
         {
-            AsyncManualResetEvent manualResetEvent = new AsyncManualResetEvent(false);
-
-            CancellationTokenSource tokenSource = new CancellationTokenSource();
-
-            Task task = Task.Run(async () =>
-            {
-                await Task.Delay(500);
-                tokenSource.Cancel();
-            });
+            var manualResetEvent = new AsyncManualResetEvent(false);
+            var tokenSource = new CancellationTokenSource(500);
 
             Task mreAwaitingTask = manualResetEvent.WaitAsync(tokenSource.Token);
 
@@ -140,6 +125,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             }
 
             Assert.True(mreAwaitingTask.Status == TaskStatus.Canceled);
+            tokenSource.Dispose();
         }
     }
 }

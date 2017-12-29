@@ -38,13 +38,14 @@ namespace Stratis.Bitcoin.Utilities
     public sealed class AsyncManualResetEvent
     {
         /// <summary>
-        /// The object used for synchronization.
+        /// Lock to protect access to <see cref="tcs"/>.
         /// </summary>
         private readonly object mutex;
 
         /// <summary>
         /// The current state of the event.
         /// </summary>
+        /// <remarks>All access to this object has to be protected by <see cref="mutex"/>.</remarks>
         private TaskCompletionSource<object> tcs;
 
         /// <summary>
@@ -96,17 +97,29 @@ namespace Stratis.Bitcoin.Utilities
         /// Asynchronously waits for this event to be set or for the wait to be canceled.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token used to cancel the wait. If this token is already canceled, this method will first check whether the event is set.</param>
-        public Task WaitAsync(CancellationToken cancellationToken)
+        public async Task WaitAsync(CancellationToken cancellationToken)
         {
             Task waitTask = this.WaitAsync();
             if (waitTask.IsCompleted)
-                return waitTask;
+                return;
 
-            return this.WaitAsync(waitTask, cancellationToken);
+            if (!cancellationToken.CanBeCanceled)
+            {
+                await waitTask.ConfigureAwait(false);
+                return;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var tcs = new TaskCompletionSource<object>();
+            using (cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken), useSynchronizationContext: false))
+            {
+                await await Task.WhenAny(waitTask, tcs.Task).ConfigureAwait(false);
+            }
         }
 
         /// <summary>
-        /// Sets the event, atomically completing every task returned by <see cref="O:Nito.AsyncEx.AsyncManualResetEvent.WaitAsync"/>. If the event is already set, this method does nothing.
+        /// Sets the event, atomically completing every task returned by <see cref="AsyncManualResetEvent.WaitAsync"/>. If the event is already set, this method does nothing.
         /// </summary>
         public void Set()
         {
@@ -135,44 +148,6 @@ namespace Stratis.Bitcoin.Utilities
         private TaskCompletionSource<TResult> CreateAsyncTaskSource<TResult>()
         {
             return new TaskCompletionSource<TResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        }
-
-        /// <summary>
-        /// Asynchronously waits for the task to complete, or for the cancellation token to be canceled.
-        /// </summary>
-        /// <param name="task">The task to wait for. May not be <c>null</c>.</param>
-        /// <param name="cancellationToken">The cancellation token that cancels the wait.</param>
-        private Task WaitAsync(Task task, CancellationToken cancellationToken)
-        {
-            Guard.NotNull(task, nameof(task));
-
-            if (!cancellationToken.CanBeCanceled)
-                return task;
-
-            if (cancellationToken.IsCancellationRequested)
-                return Task.FromCanceled(cancellationToken);
-
-            return this.DoWaitAsync(task, cancellationToken);
-        }
-
-        /// <summary>
-        /// Waits for the task to be executed or canceled.
-        /// </summary>
-        /// <param name="task">The task to wait for. May not be <c>null</c>.</param>
-        /// <param name="cancellationToken">The cancellation token that cancels the wait.</param>
-        /// <remarks>
-        /// Double await construct is used here in order to catch exceptions in child tasks.
-        /// It is similar to await + unwrap but uses less allocations.
-        /// Detailed comparison can be found here: <see cref="https://stackoverflow.com/questions/34816628/await-await-vs-unwrap"/>.
-        /// </remarks>
-        private async Task DoWaitAsync(Task task, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return;
-
-            var tcs = new TaskCompletionSource<object>();
-            using (cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken), useSynchronizationContext: false))
-                await await Task.WhenAny(task, tcs.Task).ConfigureAwait(false);
         }
     }
 }
