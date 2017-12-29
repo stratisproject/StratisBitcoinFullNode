@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class AsyncManualResetEventTest
     {
+        /// <summary>Used in <see cref="AsyncManualResetEvent_RingTriggeringAsync"/>.</summary>
+        private int counter;
+
         [Fact]
         public async void AsyncManualResetEvent_WaitAsync()
         {
@@ -126,6 +130,61 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Assert.True(mreAwaitingTask.Status == TaskStatus.Canceled);
             tokenSource.Dispose();
+        }
+
+
+        /// <summary>
+        /// This test simulates several tasks that wait for it's own event and set next one.
+        /// </summary>
+        [Fact]
+        public async void AsyncManualResetEvent_RingTriggeringAsync()
+        {
+            this.counter = 0;
+            int tasksCount = 10;
+            var cts = new CancellationTokenSource();
+
+            var events = new List<AsyncManualResetEvent>();
+            for (int i = 0; i < tasksCount; ++i)
+                events.Add(new AsyncManualResetEvent(false));
+
+            var tasks = new List<Task>();
+
+            for (int i = 0; i < tasksCount; ++i)
+            {
+                AsyncManualResetEvent partnerEvent = i != (tasksCount - 1) ? events[i+1] : events[0];
+                tasks.Add(CountAsync(events[i], partnerEvent, cts));
+            }
+
+            // Trigger one event.
+            events.First().Set();
+
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+
+            cts.Dispose();
+
+            Assert.Equal(1000, this.counter);
+        }
+
+        private async Task CountAsync(AsyncManualResetEvent self, AsyncManualResetEvent partnerEvent, CancellationTokenSource shutdown)
+        {
+            while (!shutdown.IsCancellationRequested)
+            {
+                await self.WaitAsync(shutdown.Token);
+
+                this.counter++;
+
+                if (this.counter >= 1000)
+                    shutdown.Cancel();
+
+                self.Reset();
+                partnerEvent.Set();
+            }
         }
     }
 }
