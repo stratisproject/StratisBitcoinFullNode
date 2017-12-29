@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder.Feature;
@@ -45,9 +43,9 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>
-        /// Defines the configuration settings for the node.
+        /// Defines the DNS settings for the node.
         /// </summary>
-        private readonly NodeSettings nodeSettings;
+        private readonly DnsSettings dnsSettings;
 
         /// <summary>
         /// Defines the data folders of the system.
@@ -83,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="nodeSettings">The node settings object containing node configuration.</param>
         /// <param name="dataFolders">The data folders of the system.</param>
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
-        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory)
+        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, DnsSettings dnsSettings, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory)
         {
             Guard.NotNull(dnsServer, nameof(dnsServer));
             Guard.NotNull(whitelistManager, nameof(whitelistManager));
@@ -98,7 +96,8 @@ namespace Stratis.Bitcoin.Features.Dns
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
-            this.nodeSettings = nodeSettings;
+            dnsSettings.Load(nodeSettings);
+            this.dnsSettings = dnsSettings;
             this.dataFolders = dataFolders;
         }
 
@@ -132,10 +131,10 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 try
                 {
-                    this.logger.LogInformation("Starting DNS server on port {0}", this.nodeSettings.DnsListenPort);
+                    this.logger.LogInformation("Starting DNS server on port {0}", this.dnsSettings.DnsListenPort);
 
                     // Start.
-                    this.dnsServer.ListenAsync(this.nodeSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    this.dnsServer.ListenAsync(this.dnsSettings.DnsListenPort, this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
                 catch (OperationCanceledException)
                 {

@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the configuration settings for the node.
         /// </summary>
-        private readonly NodeSettings nodeSettings;
+        private readonly DnsSettings dnsSettings;
 
         /// <summary>
         /// Defines the data folders of the system.
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="dateTimeProvider">The <see cref="DateTime"/> provider.</param>
         /// <param name="nodeSettings">The node settings object containing node configuration.</param>
         /// <param name="dataFolders">The data folders of the system.</param>
-        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings, DataFolder dataFolders)
+        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, DnsSettings dnsSettings, DataFolder dataFolders)
         {
             Guard.NotNull(client, nameof(client));
             Guard.NotNull(masterFile, nameof(masterFile));
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(dnsSettings, nameof(dnsSettings));
             Guard.NotNull(dataFolders, nameof(dataFolders));
 
             this.udpClient = client;
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
-            this.nodeSettings = nodeSettings;
+            this.dnsSettings = dnsSettings;
             this.dataFolders = dataFolders;
             this.metrics = new DnsMetric();
         }
@@ -457,22 +457,22 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private void SeedMasterFile()
         {
-            this.logger.LogInformation("Seeding DNS masterfile with SOA and NS resource records: Host = {0}, Nameserver = {1}, Mailbox = {2}", this.nodeSettings.DnsHostName, this.nodeSettings.DnsNameServer, this.nodeSettings.DnsMailBox);
+            this.logger.LogInformation("Seeding DNS masterfile with SOA and NS resource records: Host = {0}, Nameserver = {1}, Mailbox = {2}", this.dnsSettings.DnsHostName, this.dnsSettings.DnsNameServer, this.dnsSettings.DnsMailBox);
 
             // Check if SOA record exists for host.
-            int count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.SOA)).Count;
+            int count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.SOA)).Count;
             if (count == 0)
             {
                 // Add SOA record for host.
-                this.MasterFile.Add(new StartOfAuthorityResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer), new Domain(this.nodeSettings.DnsMailBox.Replace('@', '.'))));
+                this.MasterFile.Add(new StartOfAuthorityResourceRecord(new Domain(this.dnsSettings.DnsHostName), new Domain(this.dnsSettings.DnsNameServer), new Domain(this.dnsSettings.DnsMailBox.Replace('@', '.'))));
             }
 
             // Check if NS record exists for host.
-            count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.NS)).Count;
+            count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.NS)).Count;
             if (count == 0)
             {
                 // Add NS record for host.
-                this.MasterFile.Add(new NameServerResourceRecord(new Domain(this.nodeSettings.DnsHostName), new Domain(this.nodeSettings.DnsNameServer)));
+                this.MasterFile.Add(new NameServerResourceRecord(new Domain(this.dnsSettings.DnsHostName), new Domain(this.dnsSettings.DnsNameServer)));
             }
         }
 
@@ -482,8 +482,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns></returns>
         private int GetPeerCount()
         {
-            int count = this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.A)).Count;
-            count += this.MasterFile.Get(new Question(new Domain(this.nodeSettings.DnsHostName), RecordType.AAAA)).Count;
+            int count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.A)).Count;
+            count += this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.AAAA)).Count;
             return count;
         }
 
