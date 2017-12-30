@@ -34,17 +34,6 @@ namespace Stratis.Bitcoin.Features.Api
         }
 
         /// <summary>
-        /// Constructs this object from the NodeSettings and the provided callback.
-        /// </summary>
-        /// <param name="nodeSettings">The NodeSettings object.</param>
-        /// <param name="callback">The callback used to override the node settings.</param>
-        public ApiSettings(NodeSettings nodeSettings, Action<ApiSettings> callback = null)
-            : this(callback)
-        {
-            this.Load(nodeSettings);
-        }
-
-        /// <summary>
         /// Loads the API related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
@@ -52,7 +41,9 @@ namespace Stratis.Bitcoin.Features.Api
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.ApiUri = config.GetOrDefault("apiuri", new Uri($"http://localhost:{ (nodeSettings.Network.IsBitcoin() ? 37220 : 37221) }"));
+            var port = nodeSettings.Network.IsBitcoin() ? 37220 : 37221;
+
+            this.ApiUri = config.GetOrDefault("apiuri", new Uri($"http://localhost:{port}"));
 
             this.callback?.Invoke(this);
         }
