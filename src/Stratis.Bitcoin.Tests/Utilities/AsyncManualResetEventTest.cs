@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class AsyncManualResetEventTest
     {
-        /// <summary>Used in <see cref="AsyncManualResetEvent_RingTriggeringAsync"/>.</summary>
-        private int counter;
+        /// <summary>Source of randomness.</summary>
+        private Random random = new Random();
 
         [Fact]
         public async void AsyncManualResetEvent_WaitAsync()
@@ -139,7 +139,6 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public async void AsyncManualResetEvent_RingTriggeringAsync()
         {
-            this.counter = 0;
             int tasksCount = 10;
             var cts = new CancellationTokenSource();
 
@@ -149,10 +148,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             var tasks = new List<Task>();
 
+            List<int> resultList = new List<int>() { 0 };
             for (int i = 0; i < tasksCount; i++)
             {
-                AsyncManualResetEvent partnerEvent = i != (tasksCount - 1) ? events[i+1] : events[0];
-                tasks.Add(CountAsync(events[i], partnerEvent, cts));
+                tasks.Add(AsyncManualResetEvent_RingTriggeringAsync_WorkerAsync(i, events, resultList, cts));
             }
 
             // Trigger one event.
@@ -168,22 +167,30 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             cts.Dispose();
 
-            Assert.Equal(1000, this.counter);
+            for (int i = 0; i < resultList.Count; i++)
+                Assert.Equal(i, resultList[i]);
         }
 
-        private async Task CountAsync(AsyncManualResetEvent self, AsyncManualResetEvent partnerEvent, CancellationTokenSource shutdown)
+        private async Task AsyncManualResetEvent_RingTriggeringAsync_WorkerAsync(int id, List<AsyncManualResetEvent> events, List<int> resultList, CancellationTokenSource shutdown)
         {
+            AsyncManualResetEvent selfEvent = events[id];
             while (!shutdown.IsCancellationRequested)
             {
-                await self.WaitAsync(shutdown.Token);
+                await selfEvent.WaitAsync(shutdown.Token);
 
-                this.counter++;
+                int next = resultList.Last() + 1;
 
-                if (this.counter >= 1000)
+                await Task.Delay(id + 1);
+
+                resultList.Add(next);
+
+                if (next == 250)
                     shutdown.Cancel();
 
-                self.Reset();
-                partnerEvent.Set();
+                selfEvent.Reset();
+
+                int nextId = this.random.Next(events.Count);
+                events[nextId].Set();
             }
         }
     }
