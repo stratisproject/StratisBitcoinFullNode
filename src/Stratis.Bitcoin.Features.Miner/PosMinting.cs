@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly WalletManager walletManager;
 
         /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
-        private readonly PosConsensusValidator posConsensusValidator;
+        private readonly IPosConsensusValidator posConsensusValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -354,7 +354,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
 
-            this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
+            this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }

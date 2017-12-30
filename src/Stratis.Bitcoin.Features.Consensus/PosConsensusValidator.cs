@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <item>Coinbase 'scriptSig' starts with serialized block height value. This means that coinbase transaction commits to the height of the block it appears in.</item>
     /// </list>
     /// </remarks>
-    public class PosConsensusValidator : PowConsensusValidator
+    public class PosConsensusValidator : PowConsensusValidator, IPosConsensusValidator
     {
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>

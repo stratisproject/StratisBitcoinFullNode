@@ -202,6 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<IPowConsensusValidator, PosConsensusValidator>();
+                        services.AddSingleton<IPosConsensusValidator, PosConsensusValidator>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>();
