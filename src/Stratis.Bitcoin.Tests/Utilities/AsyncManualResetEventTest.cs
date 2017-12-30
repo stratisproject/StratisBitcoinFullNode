@@ -144,12 +144,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var cts = new CancellationTokenSource();
 
             var events = new List<AsyncManualResetEvent>();
-            for (int i = 0; i < tasksCount; ++i)
+            for (int i = 0; i < tasksCount; i++)
                 events.Add(new AsyncManualResetEvent(false));
 
             var tasks = new List<Task>();
 
-            for (int i = 0; i < tasksCount; ++i)
+            for (int i = 0; i < tasksCount; i++)
             {
                 AsyncManualResetEvent partnerEvent = i != (tasksCount - 1) ? events[i+1] : events[0];
                 tasks.Add(CountAsync(events[i], partnerEvent, cts));
