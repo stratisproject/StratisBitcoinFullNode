@@ -9,6 +9,9 @@ namespace Stratis.Bitcoin.Features.Dns
     /// </summary>
     public class DnsSettings
     {
+        /// <summary>The default value for the DNS listen port.</summary>
+        public const int DefaultDnsListenPort = 53;
+
         /// <summary>The default value which a peer should have last have been connected before being blacklisted in DNS nodes.</summary>
         public const int DefaultDnsPeerBlacklistThresholdInSeconds = 1800;
 
@@ -74,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
             
-            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", 53);
+            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
             logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
 
             this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
