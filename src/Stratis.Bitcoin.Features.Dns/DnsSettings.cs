@@ -68,28 +68,34 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(this.GetType().FullName);
+
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
             
             this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", 53);
-            nodeSettings.Logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
+            logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
 
             this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
             if (this.DnsFullNode)
-                nodeSettings.Logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
+                logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
 
             this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            nodeSettings.Logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
+            logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
 
             this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            nodeSettings.Logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
+            logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
 
             this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
-            nodeSettings.Logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
+            logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
 
             this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
-            nodeSettings.Logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
+            logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
 
             this.callback?.Invoke(this);
+
+            logger.LogTrace("(-)");
         }
     }
 }
