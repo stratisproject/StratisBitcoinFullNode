@@ -172,6 +172,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Check that the list is built correctly.
             for (int i = 0; i < resultList.Count; i++)
                 Assert.Equal(i, resultList[i]);
+
+            Assert.Equal(250, resultList.Count);
         }
 
         private async Task AsyncManualResetEvent_RingTriggeringAsync_WorkerAsync(int id, List<AsyncManualResetEvent> events, List<int> resultList, CancellationTokenSource shutdown)
@@ -185,7 +187,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
                 // Prepare next item to the list, but wait a little bit before adding it.
                 int next = resultList.Last() + 1;
-                await Task.Delay(id + 1);
+                await Task.Delay(this.random.Next(10) + 1);
                 resultList.Add(next);
 
                 if (next == 250)
@@ -196,6 +198,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
                 // Select the next worker to go. This can select ourselves again.
                 int nextId = this.random.Next(events.Count);
+                Assert.False(events[nextId].IsSet);
                 events[nextId].Set();
             }
         }
