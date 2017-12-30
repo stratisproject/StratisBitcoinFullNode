@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             for (int i = 0; i < resultList.Count; i++)
                 Assert.Equal(i, resultList[i]);
 
-            Assert.Equal(250, resultList.Count);
+            Assert.Equal(251, resultList.Count);
         }
 
         private async Task AsyncManualResetEvent_RingTriggeringAsync_WorkerAsync(int id, List<AsyncManualResetEvent> events, List<int> resultList, CancellationTokenSource shutdown)
