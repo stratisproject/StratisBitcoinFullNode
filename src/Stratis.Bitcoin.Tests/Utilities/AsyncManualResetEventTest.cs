@@ -142,17 +142,19 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int tasksCount = 10;
             var cts = new CancellationTokenSource();
 
+            // Create events for all workers.
             var events = new List<AsyncManualResetEvent>();
             for (int i = 0; i < tasksCount; i++)
                 events.Add(new AsyncManualResetEvent(false));
 
             var tasks = new List<Task>();
 
+            // List that the tasks will built.
             List<int> resultList = new List<int>() { 0 };
+
+            // Run all workers.
             for (int i = 0; i < tasksCount; i++)
-            {
                 tasks.Add(AsyncManualResetEvent_RingTriggeringAsync_WorkerAsync(i, events, resultList, cts));
-            }
 
             // Trigger one event.
             events.First().Set();
@@ -167,6 +169,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             cts.Dispose();
 
+            // Check that the list is built correctly.
             for (int i = 0; i < resultList.Count; i++)
                 Assert.Equal(i, resultList[i]);
         }
@@ -174,21 +177,24 @@ namespace Stratis.Bitcoin.Tests.Utilities
         private async Task AsyncManualResetEvent_RingTriggeringAsync_WorkerAsync(int id, List<AsyncManualResetEvent> events, List<int> resultList, CancellationTokenSource shutdown)
         {
             AsyncManualResetEvent selfEvent = events[id];
+
             while (!shutdown.IsCancellationRequested)
             {
+                // Wait until it is our turn.
                 await selfEvent.WaitAsync(shutdown.Token);
 
+                // Prepare next item to the list, but wait a little bit before adding it.
                 int next = resultList.Last() + 1;
-
                 await Task.Delay(id + 1);
-
                 resultList.Add(next);
 
                 if (next == 250)
                     shutdown.Cancel();
 
+                // Deactivate ourselves. 
                 selfEvent.Reset();
 
+                // Select the next worker to go. This can select ourselves again.
                 int nextId = this.random.Next(events.Count);
                 events[nextId].Set();
             }
