@@ -509,11 +509,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return this.ConsensusOptions.ProofOfWorkReward;
         }
 
-        /// <summary>
-        /// Gets miner's coin stake reward.
-        /// </summary>
-        /// <param name="height">Target block height.</param>
-        /// <returns>Miner's coin stake reward.</returns>
+        /// <inheritdoc />
         public Money GetProofOfStakeReward(int height)
         {
             if (this.IsPremine(height))
