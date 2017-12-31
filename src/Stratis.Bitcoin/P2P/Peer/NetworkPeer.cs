@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -564,7 +565,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
             this.PeerAddress = new NetworkAddress();
-            NetworkPeerClient client = new NetworkPeerClient(0, new System.Net.Sockets.TcpClient(), this.Network, this.loggerFactory);
+            NetworkPeerClient client = new NetworkPeerClient(0, new TcpClient(), this.Network, this.loggerFactory);
             this.Connection = new NetworkPeerConnection(this, client, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
         }
 
@@ -607,11 +608,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
-            NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
-            this.logger.LogTrace("()");
+            NetworkPeerClient networkPeerClient = networkPeerFactory.CreateNetworkPeerClient(parameters);
+            this.Connection = new NetworkPeerConnection(this, networkPeerClient, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
 
-            this.Connection = new NetworkPeerConnection(this, client, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{networkPeerClient.Id}-{peerAddress.Endpoint}] ");
+            this.logger.LogTrace("()");
 
             this.logger.LogTrace("(-)");
         }
@@ -626,17 +627,19 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peerVersion">Version message payload received from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, NetworkPeerClient client, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory)
             : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
+            NetworkPeerClient networkPeerClient = networkPeerFactory.CreateNetworkPeerClient(client);
+            this.Connection = new NetworkPeerConnection(this, networkPeerClient, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{networkPeerClient.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
-            this.RemoteSocketEndpoint = client.RemoteEndPoint;
+            this.RemoteSocketEndpoint = this.PeerAddress.Endpoint;
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
             this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
-            this.Connection = new NetworkPeerConnection(this, client, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
             this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
             this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);

@@ -177,22 +177,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
-                    NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
+                    this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
-
-                    var peerAddress = new NetworkAddress()
-                    {
-                        Endpoint = client.RemoteEndPoint,
-                        Time = this.dateTimeProvider.GetUtcNow()
-                    };
-
-                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, client, this.CreateNetworkPeerConnectionParameters());
-
+                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(this.Network, tcpClient, this.CreateNetworkPeerConnectionParameters());
+                    
                     this.ConnectedNetworkPeers.Add(networkPeer);
                     networkPeer.StateChanged += this.Peer_StateChanged;
 
-                    this.AddConnectedClient(client);
+                    this.AddConnectedClient(networkPeer.Connection.Client);
                 }
             }
             catch (OperationCanceledException)

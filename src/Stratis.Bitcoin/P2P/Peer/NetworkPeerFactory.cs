@@ -19,12 +19,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Creates a network peer using already established network connection.
         /// </summary>
-        /// <param name="peerAddress">Address of the connected counterparty.</param>
         /// <param name="network">The network to connect to.</param>
         /// <param name="client">Already connected network client.</param>
         /// <param name="parameters">Parameters of the established connection, or <c>null</c> to use default parameters.</param>
         /// <returns>New network peer that is connected via the established connection.</returns>
-        NetworkPeer CreateNetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerClient client, NetworkPeerConnectionParameters parameters = null);
+        NetworkPeer CreateNetworkPeer(Network network, TcpClient client, NetworkPeerConnectionParameters parameters = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
@@ -122,14 +121,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public NetworkPeer CreateNetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerClient client, NetworkPeerConnectionParameters parameters = null)
+        public NetworkPeer CreateNetworkPeer(Network network, TcpClient client, NetworkPeerConnectionParameters parameters = null)
         {
-            Guard.NotNull(peerAddress, nameof(peerAddress));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(client, nameof(client));
-            Guard.NotNull(client.RemoteEndPoint, $"{nameof(client)}.{nameof(client.RemoteEndPoint)}");
 
-            return new NetworkPeer(peerAddress, network, parameters, client, this.dateTimeProvider, this.loggerFactory);
+            var peerAddress = new NetworkAddress()
+            {
+                Endpoint = (IPEndPoint)client.Client.RemoteEndPoint,
+                Time = this.dateTimeProvider.GetUtcNow()
+            };
+
+            return new NetworkPeer(peerAddress, network, parameters, client, this.dateTimeProvider, this, this.loggerFactory);
         }
 
         /// <inheritdoc/>
