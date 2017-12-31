@@ -8,10 +8,286 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
+    /// <summary>
+    /// Represents a network connection to a peer. It is responsible for reading incoming messages 
+    /// from the peer and sending messages from the node to the peer.
+    /// </summary>
+    public class NetworkPeerConnection : IDisposable
+    {
+        /// <summary>Logger for the node.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Network peer this connection connects to.</summary>
+        public NetworkPeer Peer { get; private set; }
+
+        /// <summary>Connected network socket to the peer.</summary>
+        public NetworkPeerClient Client { get; private set; }
+
+        /// <summary>Event that is set when the connection is closed.</summary>
+        public ManualResetEventSlim Disconnected { get; private set; }
+
+        /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
+        public CancellationTokenSource CancellationSource { get; private set; }
+
+        /// <summary>Registration of callback routine to shutdown the connection when <see cref="CancellationSource"/>'s token is cancelled.</summary>
+        private CancellationTokenRegistration cancelRegistration;
+
+        /// <summary>Task responsible for reading incoming messages from the stream.</summary>
+        private Task receiveMessageTask;
+
+        /// <summary>Queue of incoming messages distributed to message consumers.</summary>
+        public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
+
+        /// <summary>Consumer of messages coming from connected clients.</summary>
+        private readonly EventLoopMessageListener<IncomingMessage> messageListener;
+
+        /// <summary>New network state to set to the peer when shutdown is initiated.</summary>
+        private NetworkPeerState setPeerStateOnShutdown;
+
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        /// <param name="network">The network to connect to.</param>
+        /// <param name="peer">Network peer the node is connected to.</param>
+        /// <param name="client">Connected TCP client to the peer.</param>
+        /// <param name="clientId">Unique identifier of the connection.</param>
+        /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        public NetworkPeerConnection(Network network, NetworkPeer peer, TcpClient client, int clientId, Func<IncomingMessage, Task> messageReceivedCallback, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
+            this.dateTimeProvider = dateTimeProvider;
+
+            this.setPeerStateOnShutdown = NetworkPeerState.Offline;
+            this.Peer = peer;
+
+            NetworkPeerClient networkPeerClient = new NetworkPeerClient(clientId, client, network, loggerFactory);
+            this.Client = networkPeerClient;
+            this.CancellationSource = new CancellationTokenSource();
+
+            // When the cancellation source is cancelled, the registered callback is executed within 
+            // the context of the thread that invoked the cancellation. However, we need InitiateShutdown to be 
+            // called in separation of that to avoid deadlock.
+            this.cancelRegistration = this.CancellationSource.Token.Register(() => Task.Run(() => this.InitiateShutdown()));
+
+            this.Disconnected = new ManualResetEventSlim(false);
+
+            this.MessageProducer = new MessageProducer<IncomingMessage>();
+            this.messageListener = new EventLoopMessageListener<IncomingMessage>(messageReceivedCallback);
+            this.MessageProducer.AddMessageListener(this.messageListener);
+        }
+
+        /// <summary>
+        /// Sends message to the connected counterparty.
+        /// </summary>
+        /// <param name="payload">Payload of the message to send.</param>
+        /// <param name="cancellation">Cancellation token that allows aborting the sending operation.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
+        public async Task SendAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
+
+            CancellationTokenSource cts = null;
+            if (cancellation != default(CancellationToken))
+            {
+                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
+                cancellation = cts.Token;
+            }
+            else cancellation = this.CancellationSource.Token;
+
+            try
+            {
+
+                var message = new Message
+                {
+                    Magic = this.Peer.Network.Magic,
+                    Payload = payload
+                };
+
+                this.logger.LogTrace("Sending message: '{0}'", message);
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    message.ReadWrite(new BitcoinStream(ms, true)
+                    {
+                        ProtocolVersion = this.Peer.Version,
+                        TransactionOptions = this.Peer.SupportedTransactionOptions
+                    });
+
+                    byte[] bytes = ms.ToArray();
+
+                    await this.Client.SendAsync(bytes, cancellation).ConfigureAwait(false);
+                    this.Peer.Counter.AddWritten(bytes.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex is OperationCanceledException)
+                {
+                    this.logger.LogTrace("Sending cancelled.");
+                }
+                else
+                {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+
+                    if (this.Peer.DisconnectReason == null)
+                    {
+                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        {
+                            Reason = "Unexpected exception while sending a message",
+                            Exception = ex
+                        };
+                    }
+
+                    if (this.Peer.State != NetworkPeerState.Offline)
+                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
+                }
+
+                this.CancellationSource.Cancel();
+            }
+            finally
+            {
+                cts?.Dispose();
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Starts waiting for incoming messages.
+        /// </summary>
+        public void StartReceiveMessages()
+        {
+            this.logger.LogTrace("()");
+
+            this.receiveMessageTask = this.ReceiveMessagesAsync();
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Reads messages from the connection stream.
+        /// </summary>
+        public async Task ReceiveMessagesAsync()
+        {
+            this.logger.LogTrace("()");
+
+            try
+            {
+                while (!this.CancellationSource.Token.IsCancellationRequested)
+                {
+                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
+
+                    this.logger.LogTrace("Received message: '{0}'", message);
+
+                    this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
+                    this.Peer.Counter.AddRead(message.MessageSize);
+
+                    var incommingMessage = new IncomingMessage()
+                    {
+                        Message = message,
+                        Client = this.Client,
+                        Length = message.MessageSize,
+                        NetworkPeer = this.Peer
+                    };
+
+                    this.MessageProducer.PushMessage(incommingMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex is OperationCanceledException)
+                {
+                    this.logger.LogTrace("Receiving cancelled.");
+                }
+                else
+                {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+
+                    if (this.Peer.DisconnectReason == null)
+                    {
+                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        {
+                            Reason = "Unexpected exception while waiting for a message",
+                            Exception = ex
+                        };
+                    }
+
+                    // We can not set the peer state directly here because it would 
+                    // trigger state changing event handlers and could cause deadlock.
+                    if (this.Peer.State != NetworkPeerState.Offline)
+                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
+                }
+
+                this.CancellationSource.Cancel();
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// When the connection is terminated, this method cleans up and informs connected behaviors about the termination.
+        /// </summary>
+        private void InitiateShutdown()
+        {
+            this.logger.LogTrace("()");
+
+            this.Client.Dispose();
+            this.Disconnected.Set();
+
+            if (this.Peer.State != NetworkPeerState.Failed)
+                this.Peer.State = this.setPeerStateOnShutdown;
+
+            this.Client.ProcessingCompletion.SetResult(true);
+
+            foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
+            {
+                try
+                {
+                    behavior.Detach();
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.logger.LogTrace("()");
+
+            if (this.CancellationSource.IsCancellationRequested == false)
+                this.CancellationSource.Cancel();
+
+            this.receiveMessageTask?.Wait();
+            this.Disconnected.WaitHandle.WaitOne();
+
+            this.MessageProducer.RemoveMessageListener(this.messageListener);
+            this.messageListener.Dispose();
+
+            this.Disconnected.Dispose();
+            this.CancellationSource.Dispose();
+            this.cancelRegistration.Dispose();
+
+            this.logger.LogTrace("(-)");
+        }
+    }
+
+
     /// <summary>
     /// Represents a TCP client that can connect to a server and send and receive messages.
     /// </summary>
