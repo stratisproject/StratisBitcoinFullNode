@@ -20,17 +20,48 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// </summary>
     public class NetworkPeerConnection : IDisposable
     {
-        /// <summary>Logger for the node.</summary>
-        private readonly ILogger logger;
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private ILogger logger;
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        private readonly Network network;
+
+        /// <summary>Unique identifier of a client.</summary>
+        public int Id { get; private set; }
+
+        /// <summary>Underlaying TCP client.</summary>
+        private TcpClient tcpClient;
+
+        /// <summary>Prevents parallel execution of multiple write operations on <see cref="Stream"/>.</summary>
+        private AsyncLock writeLock;
+
+        /// <summary>Stream to send and receive messages through established TCP connection.</summary>
+        /// <remarks>Write operations on the stream have to be protected by <see cref="writeLock"/>.</remarks>
+        public NetworkStream Stream { get; private set; }
+
+        /// <summary>Task completion that is completed when the client processing is finished.</summary>
+        public TaskCompletionSource<bool> ProcessingCompletion { get; private set; }
+
+        /// <summary><c>1</c> if the instance of the object has been disposed or disposing is in progress, <c>0</c> otherwise.</summary>
+        private int disposed;
+
+        /// <summary>Address of the end point the client is connected to, or <c>null</c> if the client has not connected yet.</summary>
+        public IPEndPoint RemoteEndPoint
+        {
+            get
+            {
+                return (IPEndPoint)this.tcpClient?.Client?.RemoteEndPoint;
+            }
+        }
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Network peer this connection connects to.</summary>
         public NetworkPeer Peer { get; private set; }
-
-        /// <summary>Connected network socket to the peer.</summary>
-        public NetworkPeerClient Client { get; private set; }
 
         /// <summary>Event that is set when the connection is closed.</summary>
         public ManualResetEventSlim Disconnected { get; private set; }
@@ -56,23 +87,31 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        /// <param name="network">The network to connect to.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="peer">Network peer the node is connected to, or will connect to.</param>
-        /// <param name="client">Initialized and possibly connected TCP client to the peer.</param>
+        /// <param name="client">Initialized TCP client, which may or may not be already connected.</param>
         /// <param name="clientId">Unique identifier of the connection.</param>
         /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public NetworkPeerConnection(Network network, NetworkPeer peer, TcpClient client, int clientId, Func<IncomingMessage, Task> messageReceivedCallback, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
+            this.loggerFactory = loggerFactory;
+            this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peer.PeerAddress.Endpoint}] ");
+
+            this.network = network;
             this.dateTimeProvider = dateTimeProvider;
 
-            this.setPeerStateOnShutdown = NetworkPeerState.Offline;
             this.Peer = peer;
+            this.setPeerStateOnShutdown = NetworkPeerState.Offline;
+            this.tcpClient = client;
+            this.Id = clientId;
 
-            NetworkPeerClient networkPeerClient = new NetworkPeerClient(clientId, client, network, loggerFactory);
-            this.Client = networkPeerClient;
+            this.Stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
+            this.ProcessingCompletion = new TaskCompletionSource<bool>();
+
+            this.writeLock = new AsyncLock();
+
             this.CancellationSource = new CancellationTokenSource();
 
             // When the cancellation source is cancelled, the registered callback is executed within 
@@ -126,7 +165,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     byte[] bytes = ms.ToArray();
 
-                    await this.Client.SendAsync(bytes, cancellation).ConfigureAwait(false);
+                    await this.SendAsync(bytes, cancellation).ConfigureAwait(false);
                     this.Peer.Counter.AddWritten(bytes.Length);
                 }
             }
@@ -186,7 +225,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.CancellationSource.Token.IsCancellationRequested)
                 {
-                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
+                    Message message = await this.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
@@ -196,7 +235,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     var incommingMessage = new IncomingMessage()
                     {
                         Message = message,
-                        Client = this.Client,
                         Length = message.MessageSize,
                         NetworkPeer = this.Peer
                     };
@@ -242,13 +280,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.Client.Dispose();
+            this.DisposePeerClient();
             this.Disconnected.Set();
 
             if (this.Peer.State != NetworkPeerState.Failed)
                 this.Peer.State = this.setPeerStateOnShutdown;
 
-            this.Client.ProcessingCompletion.SetResult(true);
+            this.ProcessingCompletion.SetResult(true);
 
             foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
             {
@@ -263,94 +301,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.logger.LogTrace("()");
-
-            if (this.CancellationSource.IsCancellationRequested == false)
-                this.CancellationSource.Cancel();
-
-            this.receiveMessageTask?.Wait();
-            this.Disconnected.WaitHandle.WaitOne();
-
-            this.MessageProducer.RemoveMessageListener(this.messageListener);
-            this.messageListener.Dispose();
-
-            this.Disconnected.Dispose();
-            this.CancellationSource.Dispose();
-            this.cancelRegistration.Dispose();
-
-            this.logger.LogTrace("(-)");
-        }
-    }
-
-
-    /// <summary>
-    /// Represents a TCP client that can connect to a server and send and receive messages.
-    /// </summary>
-    public class NetworkPeerClient : IDisposable
-    {
-        /// <summary>Logger factory to create loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Instance logger.</summary>
-        private ILogger logger;
-
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
-
-        /// <summary>Unique identifier of a client.</summary>
-        public int Id { get; private set; }
-
-        /// <summary>Underlaying TCP client.</summary>
-        private TcpClient tcpClient;
-
-        /// <summary>Prevents parallel execution of multiple write operations on <see cref="Stream"/>.</summary>
-        private AsyncLock writeLock;
-
-        /// <summary>Stream to send and receive messages through established TCP connection.</summary>
-        /// <remarks>Write operations on the stream have to be protected by <see cref="writeLock"/>.</remarks>
-        public NetworkStream Stream { get; private set; }
-
-        /// <summary>Task completion that is completed when the client processing is finished.</summary>
-        public TaskCompletionSource<bool> ProcessingCompletion { get; private set; }
-
-        /// <summary><c>1</c> if the instance of the object has been disposed or disposing is in progress, <c>0</c> otherwise.</summary>
-        private int disposed;
-
-        /// <summary>Address of the end point the client is connected to, or <c>null</c> if the client has not connected yet.</summary>
-        public IPEndPoint RemoteEndPoint
-        {
-            get
-            {
-                return (IPEndPoint)this.tcpClient?.Client?.RemoteEndPoint;
-            }
-        }
-
-        /// <summary>
-        /// Initializes a new network client.
-        /// </summary>
-        /// <param name="Id">Unique identifier of a client.</param>
-        /// <param name="tcpClient">Initialized TCP client, which may or may not be already connected.</param>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerClient(int Id, TcpClient tcpClient, Network network, ILoggerFactory loggerFactory)
-        {
-            this.tcpClient = tcpClient;
-
-            this.loggerFactory = loggerFactory;
-            this.Id = Id;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, string.Format("[{0}{1}] ", this.Id, this.RemoteEndPoint != null ? "-" + this.RemoteEndPoint.ToString() : ""));
-
-            this.network = network;
-
-            this.Stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
-            this.ProcessingCompletion = new TaskCompletionSource<bool>();
-
-            this.writeLock = new AsyncLock();
         }
 
         /// <summary>
@@ -385,7 +335,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 // Throw the error within this error handling context.
                 if (error != null)
                     throw error;
-            
+
                 this.Stream = this.tcpClient.GetStream();
             }
             catch (OperationCanceledException)
@@ -593,6 +543,27 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <inheritdoc />
         public void Dispose()
+        {
+            this.logger.LogTrace("()");
+
+            if (this.CancellationSource.IsCancellationRequested == false)
+                this.CancellationSource.Cancel();
+
+            this.receiveMessageTask?.Wait();
+            this.Disconnected.WaitHandle.WaitOne();
+
+            this.MessageProducer.RemoveMessageListener(this.messageListener);
+            this.messageListener.Dispose();
+
+            this.Disconnected.Dispose();
+            this.CancellationSource.Dispose();
+            this.cancelRegistration.Dispose();
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void DisposePeerClient()
         {
             this.logger.LogTrace("()");
 

@@ -68,8 +68,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <summary>List of connected clients mapped by their unique identifiers.</summary>
-        private readonly ConcurrentDictionary<int, NetworkPeerClient> clientsById;
+        /// <summary>List of active clients' connections mapped by their unique identifiers.</summary>
+        private readonly ConcurrentDictionary<int, NetworkPeerConnection> connectionsById;
 
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.tcpListener.Server.NoDelay = true;
             this.tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-            this.clientsById = new ConcurrentDictionary<int, NetworkPeerClient>();
+            this.connectionsById = new ConcurrentDictionary<int, NetworkPeerConnection>();
             this.acceptTask = Task.CompletedTask;
 
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.ConnectedNetworkPeers.Add(networkPeer);
                     networkPeer.StateChanged += this.Peer_StateChanged;
 
-                    this.AddConnectedClient(networkPeer.Connection.Client);
+                    this.AddClientConnection(networkPeer.Connection);
                 }
             }
             catch (OperationCanceledException)
@@ -200,28 +200,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Adds connected client to the list of clients.
+        /// Adds client's connection to the list of active connections.
         /// </summary>
-        /// <param name="client">Client to add.</param>
-        private void AddConnectedClient(NetworkPeerClient client)
+        /// <param name="connection">Client's connection to add.</param>
+        private void AddClientConnection(NetworkPeerConnection connection)
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(connection), nameof(connection.Id), connection.Id);
 
-            this.clientsById.AddOrReplace(client.Id, client);
-            client.ProcessingCompletion.Task.ContinueWith(unused => this.RemoveConnectedClient(client));
+            this.connectionsById.AddOrReplace(connection.Id, connection);
+            connection.ProcessingCompletion.Task.ContinueWith(unused => this.RemoveConnectedClient(connection));
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Removes a client from the list of clients and disconnects it.
+        /// Removes a connection from the list of active clients' connection.
         /// </summary>
-        /// <param name="client">Client to remove and disconnect.</param>
-        private void RemoveConnectedClient(NetworkPeerClient client)
+        /// <param name="connection">Client to remove and disconnect.</param>
+        private void RemoveConnectedClient(NetworkPeerConnection connection)
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(connection), nameof(connection.Id), connection.Id);
 
-            if (!this.clientsById.TryRemove(client.Id, out NetworkPeerClient unused))
+            if (!this.connectionsById.TryRemove(connection.Id, out NetworkPeerConnection unused))
                 this.logger.LogError("Internal data integration error.");
 
             this.logger.LogTrace("(-)");
@@ -269,15 +269,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("Waiting for accepting task to complete.");
             this.acceptTask.Wait();
 
-            ICollection<NetworkPeerClient> connectedClients = this.clientsById.Values;
-            if (connectedClients.Count > 0)
+            ICollection<NetworkPeerConnection> connections = this.connectionsById.Values;
+            if (connections.Count > 0)
             {
-                this.logger.LogInformation("Waiting for {0} connected clients to finish.", connectedClients.Count);
-                foreach (NetworkPeerClient client in connectedClients)
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", connections.Count);
+                foreach (NetworkPeerConnection connection in connections)
                 {
-                    this.logger.LogTrace("Disposing and waiting for client ID {0}.", client.Id);
-                    TaskCompletionSource<bool> completion = client.ProcessingCompletion;
-                    client.Dispose();
+                    this.logger.LogTrace("Disposing and waiting for connection ID {0}.", connection.Id);
+                    TaskCompletionSource<bool> completion = connection.ProcessingCompletion;
+                    connection.Dispose();
                     completion.Task.Wait();
                 }
             }
