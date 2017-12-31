@@ -114,8 +114,8 @@ namespace Stratis.Bitcoin.P2P.Peer
     public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
 
     /// <summary>
-    /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer 
-    /// and sending messages from the node to the peer.
+    /// Represents a network connection to a peer. It is responsible for reading incoming messages 
+    /// from the peer and sending messages from the node to the peer.
     /// </summary>
     public class NetworkPeerConnection : IDisposable
     {
