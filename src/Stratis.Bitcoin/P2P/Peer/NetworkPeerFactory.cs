@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -64,21 +65,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <returns>Newly created network peer server, which is ready to be started.</returns>
         NetworkPeerServer CreateNetworkPeerServer(Network network, IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
-        /*
-        /// <summary>
-        /// Creates a new network peer client.
-        /// </summary>
-        /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established.</param>
-        /// <returns>Newly created network peer client.</returns>
-        NetworkPeerClient CreateNetworkPeerClient(NetworkPeerConnectionParameters parameters);
+
 
         /// <summary>
-        /// Creates a new network peer client using an established TCP connection.
+        /// Creates a new representation of the network connection using TCP client object.
         /// </summary>
-        /// <param name="tcpClient">Initializes TCP client that may or may not be already connected.</param>
-        /// <returns>Newly created network peer client.</returns>
-        NetworkPeerClient CreateNetworkPeerClient(TcpClient tcpClient);
-        */
+        /// <param name="peer">Network peer the node is connected to, or will connect to.</param>
+        /// <param name="client">Initialized and possibly connected TCP client to the peer.</param>
+        /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
+        NetworkPeerConnection CreateNetworkPeerConnection(NetworkPeer peer, TcpClient client, Func<IncomingMessage, Task> messageReceivedCallback);
     }
 
     /// <summary>
@@ -197,28 +192,16 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             return new NetworkPeerServer(network, localEndPoint, externalEndPoint, version, this.dateTimeProvider, this.loggerFactory, this);
         }
-        /*
-        /// <inheritdoc/>
-        public NetworkPeerClient CreateNetworkPeerClient(NetworkPeerConnectionParameters parameters)
-        {
-            Guard.NotNull(parameters, nameof(parameters));
-
-            TcpClient tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
-            tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-            tcpClient.Client.ReceiveBufferSize = parameters.ReceiveBufferSize;
-            tcpClient.Client.SendBufferSize = parameters.SendBufferSize;
-
-            return this.CreateNetworkPeerClient(tcpClient);
-        }
 
         /// <inheritdoc/>
-        public NetworkPeerClient CreateNetworkPeerClient(TcpClient tcpClient)
+        public NetworkPeerConnection CreateNetworkPeerConnection(NetworkPeer peer, TcpClient client, Func<IncomingMessage, Task> messageReceivedCallback)
         {
-            Guard.NotNull(tcpClient, nameof(tcpClient));
+            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(client, nameof(client));
+            Guard.NotNull(messageReceivedCallback, nameof(messageReceivedCallback));
 
             int id = Interlocked.Increment(ref this.lastClientId);
-            return new NetworkPeerClient(id, tcpClient, this.network, this.loggerFactory);
+            return new NetworkPeerConnection(this.network, peer, client, id, messageReceivedCallback, this.dateTimeProvider, this.loggerFactory);
         }
-        */
     }
 }

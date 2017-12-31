@@ -337,15 +337,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
-            TcpClient tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
-            tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-            tcpClient.Client.ReceiveBufferSize = parameters.ReceiveBufferSize;
-            tcpClient.Client.SendBufferSize = parameters.SendBufferSize;
+            TcpClient client = new TcpClient(AddressFamily.InterNetworkV6);
+            client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+            client.Client.ReceiveBufferSize = parameters.ReceiveBufferSize;
+            client.Client.SendBufferSize = parameters.SendBufferSize;
 
-            int clientId = 0;
-            this.Connection = new NetworkPeerConnection(network, this, tcpClient, clientId, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peerAddress.Endpoint}] ");
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
             this.logger.LogTrace("(-)");
@@ -364,10 +363,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory)
             : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
         {
-            int clientId = 0;
-            this.Connection = new NetworkPeerConnection(network, this, client, clientId, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peerAddress.Endpoint}] ");
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Client.Id}-{peerAddress.Endpoint}] ");
             this.logger.LogTrace("()");
 
             this.RemoteSocketEndpoint = this.PeerAddress.Endpoint;

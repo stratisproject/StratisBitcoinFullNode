@@ -57,8 +57,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Initializes an instance of the object.
         /// </summary>
         /// <param name="network">The network to connect to.</param>
-        /// <param name="peer">Network peer the node is connected to.</param>
-        /// <param name="client">Connected TCP client to the peer.</param>
+        /// <param name="peer">Network peer the node is connected to, or will connect to.</param>
+        /// <param name="client">Initialized and possibly connected TCP client to the peer.</param>
         /// <param name="clientId">Unique identifier of the connection.</param>
         /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
