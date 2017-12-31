@@ -605,8 +605,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.disposed = true;
             }
 
-            if (this.CancellationSource.IsCancellationRequested == false)
-                this.CancellationSource.Cancel();
+            this.CancellationSource.Cancel();
 
             this.receiveMessageTask?.Wait();
             this.ShutdownComplete.Task.Wait();
