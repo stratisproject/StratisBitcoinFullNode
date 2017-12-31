@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <returns>Newly created network peer server, which is ready to be started.</returns>
         NetworkPeerServer CreateNetworkPeerServer(Network network, IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
-
+        /*
         /// <summary>
         /// Creates a new network peer client.
         /// </summary>
@@ -78,6 +78,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="tcpClient">Initializes TCP client that may or may not be already connected.</param>
         /// <returns>Newly created network peer client.</returns>
         NetworkPeerClient CreateNetworkPeerClient(TcpClient tcpClient);
+        */
     }
 
     /// <summary>
@@ -196,7 +197,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             return new NetworkPeerServer(network, localEndPoint, externalEndPoint, version, this.dateTimeProvider, this.loggerFactory, this);
         }
-
+        /*
         /// <inheritdoc/>
         public NetworkPeerClient CreateNetworkPeerClient(NetworkPeerConnectionParameters parameters)
         {
@@ -218,5 +219,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             int id = Interlocked.Increment(ref this.lastClientId);
             return new NetworkPeerClient(id, tcpClient, this.network, this.loggerFactory);
         }
+        */
     }
 }
