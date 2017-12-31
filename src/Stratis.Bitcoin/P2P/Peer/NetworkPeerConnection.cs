@@ -75,11 +75,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>New network state to set to the peer when shutdown is initiated.</summary>
         private NetworkPeerState setPeerStateOnShutdown;
 
-        /// <summary>Task completion that is completed when the client processing is finished.</summary>
-        public TaskCompletionSource<bool> ProcessingCompletion { get; private set; }
-
-        /// <summary>Event that is set when the connection is closed.</summary>
-        private ManualResetEventSlim disconnected;
+        /// <summary>Task completion that is completed when <see cref="Shutdown"/> is finished.</summary>
+        public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
 
         /// <summary><c>1</c> if the instance of the object has been disposed or disposing is in progress, <c>0</c> otherwise.</summary>
         private int disposed;
@@ -108,7 +105,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Id = clientId;
 
             this.stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
-            this.ProcessingCompletion = new TaskCompletionSource<bool>();
+            this.ShutdownComplete = new TaskCompletionSource<bool>();
 
             this.writeLock = new AsyncLock();
 
@@ -117,9 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             // When the cancellation source is cancelled, the registered callback is executed within 
             // the context of the thread that invoked the cancellation. However, we need InitiateShutdown to be 
             // called in separation of that to avoid deadlock.
-            this.cancelRegistration = this.CancellationSource.Token.Register(() => Task.Run(() => this.InitiateShutdown()));
-
-            this.disconnected = new ManualResetEventSlim(false);
+            this.cancelRegistration = this.CancellationSource.Token.Register(() => Task.Run(() => this.Shutdown()));
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
             this.messageListener = new EventLoopMessageListener<IncomingMessage>(messageReceivedCallback);
@@ -200,17 +195,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// When the connection is terminated, this method cleans up and informs connected behaviors about the termination.
         /// </summary>
-        private void InitiateShutdown()
+        private void Shutdown()
         {
             this.logger.LogTrace("()");
 
             this.Disconnect();
-            this.disconnected.Set();
 
             if (this.peer.State != NetworkPeerState.Failed)
                 this.peer.State = this.setPeerStateOnShutdown;
-
-            this.ProcessingCompletion.SetResult(true);
 
             foreach (INetworkPeerBehavior behavior in this.peer.Behaviors)
             {
@@ -224,6 +216,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
+            this.ShutdownComplete.SetResult(true);
             this.logger.LogTrace("(-)");
         }
 
@@ -550,12 +543,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.CancellationSource.Cancel();
 
             this.receiveMessageTask?.Wait();
-            this.disconnected.WaitHandle.WaitOne();
+            this.ShutdownComplete.Task.Wait();
 
             this.MessageProducer.RemoveMessageListener(this.messageListener);
             this.messageListener.Dispose();
 
-            this.disconnected.Dispose();
             this.CancellationSource.Dispose();
             this.cancelRegistration.Dispose();
 

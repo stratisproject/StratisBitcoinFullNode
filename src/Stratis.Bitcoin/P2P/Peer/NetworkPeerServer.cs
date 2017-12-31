@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(connection), nameof(connection.Id), connection.Id);
 
             this.connectionsById.AddOrReplace(connection.Id, connection);
-            connection.ProcessingCompletion.Task.ContinueWith(unused => this.RemoveConnectedClient(connection));
+            connection.ShutdownComplete.Task.ContinueWith(unused => this.RemoveConnectedClient(connection));
 
             this.logger.LogTrace("(-)");
         }
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 foreach (NetworkPeerConnection connection in connections)
                 {
                     this.logger.LogTrace("Disposing and waiting for connection ID {0}.", connection.Id);
-                    TaskCompletionSource<bool> completion = connection.ProcessingCompletion;
+                    TaskCompletionSource<bool> completion = connection.ShutdownComplete;
                     connection.Dispose();
                     completion.Task.Wait();
                 }
