@@ -75,11 +75,27 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>New network state to set to the peer when shutdown is initiated.</summary>
         private NetworkPeerState setPeerStateOnShutdown;
 
-        /// <summary>Task completion that is completed when <see cref="Shutdown"/> is finished.</summary>
+        /// <summary>Task completion that is completed when the work of the shutdown procedure is finished, including detaching from behaviors.</summary>
+        /// <seealso cref="Shutdown"/>
         public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
 
-        /// <summary><c>1</c> if the instance of the object has been disposed or disposing is in progress, <c>0</c> otherwise.</summary>
-        private int disposed;
+        /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
+        private object shutdownLock = new object();
+
+        /// <summary>Set to <c>true</c> during the execution of shutdown procedure, <c>false</c> otherwise.</summary>
+        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
+        /// <seealso cref="Shutdown"/>
+        private bool shutdownInProgress;
+
+        /// <summary>Set to <c>true</c> if any of the detached behavior during the shutdown procedure requested connection object disposal, <c>false</c> otherwise.</summary>
+        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
+        /// <seealso cref="Shutdown"/>
+        private bool disposeRequested;
+
+        /// <summary>Set to <c>true</c> if disposal procedure has been executed, <c>false</c> otherwise.</summary>
+        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
+        /// <seealso cref="Shutdown"/>
+        private bool disposed;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -193,11 +209,33 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// When the connection is terminated, this method cleans up and informs connected behaviors about the termination.
+        /// When the connection is terminated, this method terminates the connection and informs connected behaviors about the termination.
         /// </summary>
+        /// <remarks>
+        /// The shutdown sequence of this object can come either from the cancellation token (which triggers the execution of this method)
+        /// or from disposal of the object. Moreover, the attached behaviors which are detached here can call the disposal of the object 
+        /// during the process of detachment or if they implement state changed handler.
+        /// </para>
+        /// <para>
+        /// This is why we need to carefully control the dispose sequence in order to prevent deadlock while still making sure 
+        /// the whole cleanup is done before the caller of <see cref="Dispose"/> is given the control back.
+        /// <para>
+        /// To achieve this, we prohibit execution of <see cref="Dispose"/> from the attached behaviors. 
+        /// This is done using <see cref="shutdownInProgress"/>, which prevents execution of the disposal procedure - see the body of <see cref="Dispose"/>.
+        /// </para>
+        /// <para>
+        /// If disposal is requested from the behavior being detached, <see cref="disposeRequested"/> is set and <see cref="Dispose"/>
+        /// is called when all behaviors are detached.
+        /// </para>
+        /// </remarks>
         private void Shutdown()
         {
             this.logger.LogTrace("()");
+
+            lock (this.shutdownLock)
+            {
+                this.shutdownInProgress = true;
+            }
 
             this.Disconnect();
 
@@ -217,6 +255,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.ShutdownComplete.SetResult(true);
+
+            bool callDispose = false;
+            lock (this.shutdownLock)
+            {
+                this.shutdownInProgress = false;
+                callDispose = this.disposeRequested;
+            }
+
+            if (callDispose) this.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -540,10 +587,22 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
+            lock (this.shutdownLock)
             {
-                this.logger.LogTrace("(-)[DISPOSED]");
-                return;
+                if (this.disposed)
+                {
+                    this.logger.LogTrace("(-)[DISPOSED]");
+                    return;
+                }
+
+                if (this.shutdownInProgress)
+                {
+                    this.disposeRequested = true;
+                    this.logger.LogTrace("(-)[SHUTDOWN_IN_PROGRESS]");
+                    return;
+                }
+
+                this.disposed = true;
             }
 
             if (this.CancellationSource.IsCancellationRequested == false)
