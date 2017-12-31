@@ -413,7 +413,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (OperationCanceledException)
             {
                 this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerAddress.Endpoint);
-                this.Connection.DisposePeerClient();
                 this.State = NetworkPeerState.Offline;
 
                 this.logger.LogTrace("(-)[CANCELLED]");
@@ -422,7 +421,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception ex)
             {
                 this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                this.Connection.DisposePeerClient();
 
                 this.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
@@ -856,13 +854,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            if (!this.Connection.CancellationSource.IsCancellationRequested)
-            {
-                if (this.IsConnected) this.State = NetworkPeerState.Disconnecting;
-
-                this.Connection.CancellationSource.Cancel();
-            }
-
+            if (this.IsConnected) this.State = NetworkPeerState.Disconnecting;
             this.Connection.Dispose();
 
             if (this.DisconnectReason == null)
