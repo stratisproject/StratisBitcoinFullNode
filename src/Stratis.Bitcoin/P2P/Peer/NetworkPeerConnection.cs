@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            this.DisposePeerClient();
+            this.Disconnect();
             this.disconnected.Set();
 
             if (this.peer.State != NetworkPeerState.Failed)
@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
-        public void DisposePeerClient()
+        private void Disconnect()
         {
             this.logger.LogTrace("()");
 
