@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.CancellationSource = new CancellationTokenSource();
 
             // When the cancellation source is cancelled, the registered callback is executed within 
-            // the context of the thread that invoked the cancellation. However, we need InitiateShutdown to be 
+            // the context of the thread that invoked the cancellation. However, we need Shutdown to be 
             // called in separation of that to avoid deadlock.
             this.cancelRegistration = this.CancellationSource.Token.Register(() => Task.Run(() => this.Shutdown()));
 
