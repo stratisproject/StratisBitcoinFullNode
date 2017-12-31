@@ -34,7 +34,7 @@ namespace NBitcoin.Protocol
 
             lock (this.listeners)
             {
-                this.listeners.Add(listener);
+                this.listeners.Remove(listener);
             }
         }
 
