@@ -35,12 +35,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Underlaying TCP client.</summary>
         private TcpClient tcpClient;
 
-        /// <summary>Prevents parallel execution of multiple write operations on <see cref="Stream"/>.</summary>
+        /// <summary>Prevents parallel execution of multiple write operations on <see cref="stream"/>.</summary>
         private AsyncLock writeLock;
 
         /// <summary>Stream to send and receive messages through established TCP connection.</summary>
         /// <remarks>Write operations on the stream have to be protected by <see cref="writeLock"/>.</remarks>
-        public NetworkStream Stream { get; private set; }
+        private NetworkStream stream;
 
         /// <summary>Task completion that is completed when the client processing is finished.</summary>
         public TaskCompletionSource<bool> ProcessingCompletion { get; private set; }
@@ -61,10 +61,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Network peer this connection connects to.</summary>
-        public NetworkPeer Peer { get; private set; }
+        private NetworkPeer peer;
 
         /// <summary>Event that is set when the connection is closed.</summary>
-        public ManualResetEventSlim Disconnected { get; private set; }
+        private ManualResetEventSlim disconnected;
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource CancellationSource { get; private set; }
@@ -102,12 +102,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
 
-            this.Peer = peer;
+            this.peer = peer;
             this.setPeerStateOnShutdown = NetworkPeerState.Offline;
             this.tcpClient = client;
             this.Id = clientId;
 
-            this.Stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
+            this.stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
             this.ProcessingCompletion = new TaskCompletionSource<bool>();
 
             this.writeLock = new AsyncLock();
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             // called in separation of that to avoid deadlock.
             this.cancelRegistration = this.CancellationSource.Token.Register(() => Task.Run(() => this.InitiateShutdown()));
 
-            this.Disconnected = new ManualResetEventSlim(false);
+            this.disconnected = new ManualResetEventSlim(false);
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
             this.messageListener = new EventLoopMessageListener<IncomingMessage>(messageReceivedCallback);
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 var message = new Message
                 {
-                    Magic = this.Peer.Network.Magic,
+                    Magic = this.peer.Network.Magic,
                     Payload = payload
                 };
 
@@ -159,14 +159,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     message.ReadWrite(new BitcoinStream(ms, true)
                     {
-                        ProtocolVersion = this.Peer.Version,
-                        TransactionOptions = this.Peer.SupportedTransactionOptions
+                        ProtocolVersion = this.peer.Version,
+                        TransactionOptions = this.peer.SupportedTransactionOptions
                     });
 
                     byte[] bytes = ms.ToArray();
 
                     await this.SendAsync(bytes, cancellation).ConfigureAwait(false);
-                    this.Peer.Counter.AddWritten(bytes.Length);
+                    this.peer.Counter.AddWritten(bytes.Length);
                 }
             }
             catch (Exception ex)
@@ -179,16 +179,16 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    if (this.Peer.DisconnectReason == null)
+                    if (this.peer.DisconnectReason == null)
                     {
-                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
                         {
                             Reason = "Unexpected exception while sending a message",
                             Exception = ex
                         };
                     }
 
-                    if (this.Peer.State != NetworkPeerState.Offline)
+                    if (this.peer.State != NetworkPeerState.Offline)
                         this.setPeerStateOnShutdown = NetworkPeerState.Failed;
                 }
 
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Reads messages from the connection stream.
         /// </summary>
-        public async Task ReceiveMessagesAsync()
+        private async Task ReceiveMessagesAsync()
         {
             this.logger.LogTrace("()");
 
@@ -225,18 +225,18 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.CancellationSource.Token.IsCancellationRequested)
                 {
-                    Message message = await this.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
+                    Message message = await this.ReadAndParseMessageAsync(this.peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
-                    this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
-                    this.Peer.Counter.AddRead(message.MessageSize);
+                    this.peer.LastSeen = this.dateTimeProvider.GetUtcNow();
+                    this.peer.Counter.AddRead(message.MessageSize);
 
                     var incommingMessage = new IncomingMessage()
                     {
                         Message = message,
                         Length = message.MessageSize,
-                        NetworkPeer = this.Peer
+                        NetworkPeer = this.peer
                     };
 
                     this.MessageProducer.PushMessage(incommingMessage);
@@ -252,9 +252,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    if (this.Peer.DisconnectReason == null)
+                    if (this.peer.DisconnectReason == null)
                     {
-                        this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
+                        this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
                         {
                             Reason = "Unexpected exception while waiting for a message",
                             Exception = ex
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     // We can not set the peer state directly here because it would 
                     // trigger state changing event handlers and could cause deadlock.
-                    if (this.Peer.State != NetworkPeerState.Offline)
+                    if (this.peer.State != NetworkPeerState.Offline)
                         this.setPeerStateOnShutdown = NetworkPeerState.Failed;
                 }
 
@@ -281,14 +281,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("()");
 
             this.DisposePeerClient();
-            this.Disconnected.Set();
+            this.disconnected.Set();
 
-            if (this.Peer.State != NetworkPeerState.Failed)
-                this.Peer.State = this.setPeerStateOnShutdown;
+            if (this.peer.State != NetworkPeerState.Failed)
+                this.peer.State = this.setPeerStateOnShutdown;
 
             this.ProcessingCompletion.SetResult(true);
 
-            foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
+            foreach (INetworkPeerBehavior behavior in this.peer.Behaviors)
             {
                 try
                 {
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if (error != null)
                     throw error;
 
-                this.Stream = this.tcpClient.GetStream();
+                this.stream = this.tcpClient.GetStream();
             }
             catch (OperationCanceledException)
             {
@@ -361,13 +361,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="data">Data to send.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the operation.</param>
         /// <exception cref="OperationCanceledException">Thrown when the connection was terminated or the cancellation token was cancelled.</exception>
-        public async Task SendAsync(byte[] data, CancellationToken cancellation = default(CancellationToken))
+        private async Task SendAsync(byte[] data, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(data), nameof(data.Length), data.Length);
 
             using (await this.writeLock.LockAsync(cancellation).ConfigureAwait(false))
             {
-                if (this.Stream == null)
+                if (this.stream == null)
                 {
                     this.logger.LogTrace("Connection has been terminated.");
                     this.logger.LogTrace("(-)[NO_STREAM]");
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 try
                 {
-                    await this.Stream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
+                    await this.stream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Binary message received from the connected counterparty.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         /// <exception cref="ProtocolViolationException">Thrown if the incoming message is too big.</exception>
-        public async Task<byte[]> ReadMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
+        private async Task<byte[]> ReadMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
 
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Each networkm message starts with the magic value. If the connection stream is in unknown state,
         /// the next bytes to read might not be the magic. Therefore we read from the stream until we find the magic value.
         /// </remarks>
-        public async Task ReadMagicAsync(byte[] magic, CancellationToken cancellation)
+        private async Task ReadMagicAsync(byte[] magic, CancellationToken cancellation)
         {
             this.logger.LogTrace("()");
 
@@ -496,7 +496,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             while (bytesToRead > 0)
             {
-                int chunkSize = await this.Stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
+                int chunkSize = await this.stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
                 if (chunkSize == 0)
                 {
                     this.logger.LogTrace("(-)[STREAM_END]");
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// for parsing the message from binary data. That method need stream to read from, so to achieve that we create a memory stream from our data,
         /// which is not efficient. This should be improved.
         /// </remarks>
-        public async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation)
+        private async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation)
         {
             this.logger.LogTrace("({0}:{1})", nameof(protocolVersion), protocolVersion);
 
@@ -550,12 +550,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.CancellationSource.Cancel();
 
             this.receiveMessageTask?.Wait();
-            this.Disconnected.WaitHandle.WaitOne();
+            this.disconnected.WaitHandle.WaitOne();
 
             this.MessageProducer.RemoveMessageListener(this.messageListener);
             this.messageListener.Dispose();
 
-            this.Disconnected.Dispose();
+            this.disconnected.Dispose();
             this.CancellationSource.Dispose();
             this.cancelRegistration.Dispose();
 
@@ -573,10 +573,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            NetworkStream disposeStream = this.Stream;
+            NetworkStream disposeStream = this.stream;
             TcpClient disposeTcpClient = this.tcpClient;
 
-            this.Stream = null;
+            this.stream = null;
             this.tcpClient = null;
 
             disposeStream?.Dispose();

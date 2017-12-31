@@ -863,7 +863,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.Connection.CancellationSource.Cancel();
             }
 
-            this.Connection.Disconnected.WaitHandle.WaitOne();
             this.Connection.Dispose();
 
             if (this.DisconnectReason == null)
