@@ -217,6 +217,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.ShutdownComplete.SetResult(true);
+
             this.logger.LogTrace("(-)");
         }
 
@@ -539,6 +540,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
+            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
+            {
+                this.logger.LogTrace("(-)[DISPOSED]");
+                return;
+            }
+
             if (this.CancellationSource.IsCancellationRequested == false)
                 this.CancellationSource.Cancel();
 
@@ -558,12 +565,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         private void Disconnect()
         {
             this.logger.LogTrace("()");
-
-            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
-            {
-                this.logger.LogTrace("(-)[DISPOSED]");
-                return;
-            }
 
             NetworkStream disposeStream = this.stream;
             TcpClient disposeTcpClient = this.tcpClient;
