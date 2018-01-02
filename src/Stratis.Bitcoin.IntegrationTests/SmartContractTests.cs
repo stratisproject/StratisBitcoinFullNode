@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 this.Network = Network.Main;
                 this.Chain = new SCChain(this.Network);
-                this.Consensus = new SCConsensusLoop();
+                this.Consensus = new SCConsensusLoop(this.Chain);
 
                 // will need to be able to reuse all of the networking, mempool, etc.
 

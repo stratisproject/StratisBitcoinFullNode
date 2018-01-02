@@ -8,21 +8,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public class SCConsensusLoop
     {
         public SCChain Chain { get; set; }
+        
 
         // DI YO!
         public SCConsensusLoop(SCChain chain)
         {
-            Chain = chain;
+            this.Chain = chain;
         }
 
-        public Task AcceptBlockAsync(SCBlockValidationContext blockValidationContext)
+        public async Task AcceptBlockAsync(SCBlockValidationContext blockValidationContext)
         {
             // Execute against the consensus rules.
+            SCBlock block = blockValidationContext.Block;
+
 
             // Add block to current tip
 
-
+            Chain.SetTip(block);
             
+            throw new NotImplementedException();
+        }
+
+        public Task ExecuteBlockAsync()
+        {
             throw new NotImplementedException();
         }
     }

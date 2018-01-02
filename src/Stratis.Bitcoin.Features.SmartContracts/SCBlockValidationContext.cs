@@ -6,6 +6,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SCBlockValidationContext
     {
-        SCBlock Block { get; set; }
+        public SCBlock Block { get; set; }
     }
 }
