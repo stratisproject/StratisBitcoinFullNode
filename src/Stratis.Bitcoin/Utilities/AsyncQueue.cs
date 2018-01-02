@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Consumer of the newly added items to the queue that waits for the signal 
         /// and then executes the user-defined callback.
         /// </summary>
-        public async Task ConsumerAsync()
+        private async Task ConsumerAsync()
         {
             CancellationToken cancellationToken = this.cancellationTokenSource.Token;
             while (!cancellationToken.IsCancellationRequested)
