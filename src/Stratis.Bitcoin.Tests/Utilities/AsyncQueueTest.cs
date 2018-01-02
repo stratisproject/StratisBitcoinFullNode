@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         /// <summary>
         /// Tests the guarantee of <see cref="AsyncQueue{T}"/> that only one instance of the callback is executed at the moment
-        /// regardless of how many enqueue operations occur and regardless of how many manual signals are sent.
+        /// regardless of how many enqueue operations occur.
         /// </summary>
         [Fact]
         public async void AsyncQueue_OnlyOneInstanceOfCallbackExecutesAsync()
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await Task.Delay(this.random.Next(10));
             }
 
-            // Wait for all items to be processed and for the manual signal to be processed as well.
+            // Wait for all items to be processed.
             allItemsProcessed.Wait();
 
             Assert.Equal(itemsToProcess, itemsProcessed);
