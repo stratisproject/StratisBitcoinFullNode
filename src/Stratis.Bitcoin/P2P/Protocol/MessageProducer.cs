@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-
-namespace NBitcoin.Protocol
+using NBitcoin;
+    
+namespace Stratis.Bitcoin.P2P.Protocol
 {
     public class MessageProducer<T>
     {
