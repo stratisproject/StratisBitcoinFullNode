@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private readonly Network network;
 
-        private readonly AssemblerFactory blockAssemblerFactory;
+        private readonly IAssemblerFactory blockAssemblerFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
-            AssemblerFactory blockAssemblerFactory,
+            IAssemblerFactory blockAssemblerFactory,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)

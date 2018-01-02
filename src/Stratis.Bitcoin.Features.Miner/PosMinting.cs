@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Provides an interface for creating block templates of different types.</summary>
-        private readonly AssemblerFactory blockAssemblerFactory;
+        private readonly IAssemblerFactory blockAssemblerFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -319,7 +319,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
-            AssemblerFactory blockAssemblerFactory,
+            IAssemblerFactory blockAssemblerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
