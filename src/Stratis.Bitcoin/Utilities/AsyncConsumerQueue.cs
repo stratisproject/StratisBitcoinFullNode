@@ -37,12 +37,12 @@ namespace Stratis.Bitcoin.Utilities
         private Task timerAwaiterTask;
 
         /// <summary>Task that runs execution flow.</summary>
-        private Task executor;
+        private Task executorTask;
 
         /// <summary>Cancellation token source.</summary>
         private CancellationTokenSource cancellation;
 
-        private readonly object lockObject;
+        private readonly object mutex;
 
         /// <summary>Queue items count.</summary>
         public int Count => this.queue.Count;
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Utilities
 
             this.trigger = new AsyncManualResetEvent(false);
             this.cancellation = new CancellationTokenSource();
-            this.lockObject = new object();
+            this.mutex = new object();
         }
 
         /// <inheritdoc />
@@ -87,8 +87,8 @@ namespace Stratis.Bitcoin.Utilities
                 }
                 else
                 {
-                    // Using 'lock' to prevent starting timer several times.
-                    lock (this.lockObject)
+                    // Using 'lock' to prevent starting timer task several times.
+                    lock (this.mutex)
                     {
                         // Start timer if it's not already started and timer timespan is not 'null'.
                         if (this.timer != null && (this.timerAwaiterTask == null))
@@ -97,11 +97,11 @@ namespace Stratis.Bitcoin.Utilities
                 }
 
                 // Using 'lock' to prevent starting executor task several times.
-                lock (this.lockObject)
+                lock (this.mutex)
                 {
                     // Ensure flow is running.
-                    if (this.executor == null || this.executor.IsCompleted)
-                        this.executor = ExecutionFlowAsync();
+                    if (this.executorTask == null || this.executorTask.IsCompleted)
+                        this.executorTask = ExecutionFlowAsync();
                 }
 
             }).ConfigureAwait(false);
@@ -118,25 +118,21 @@ namespace Stratis.Bitcoin.Utilities
             if (this.triggerAwaiterTask == null || this.triggerAwaiterTask.IsCompleted)
                 this.triggerAwaiterTask = this.trigger.WaitAsync(this.cancellation.Token);
 
-            List<Task> awaitedTasks = new List<Task>();
-            awaitedTasks.Add(this.triggerAwaiterTask);
+            List<Task> awaitedTasks = new List<Task>() { this.triggerAwaiterTask };
 
-            if (this.timerAwaiterTask != null && !this.timerAwaiterTask.IsCompleted)
+            if (this.timerAwaiterTask != null)
                 awaitedTasks.Add(this.timerAwaiterTask);
 
             // Wait until trigger is set or timer task is completed.
             await Task.WhenAny(awaitedTasks).ConfigureAwait(false);
 
-            // Reset trigger.
-            if (this.trigger.IsSet)
-                this.trigger.Reset();
+            // Reset trigger and timer.
+            this.trigger.Reset();
+            this.timerAwaiterTask = null;
 
             // Process queue if task wasn't canceled.
             if (awaitedTasks.Any(x => x.Status == TaskStatus.RanToCompletion))
                 this.processingAction(this.queue);
-
-            // Timer is no longer needed.
-            this.timerAwaiterTask = null;
 
             if (this.restartTimerIfNotAllItemsConsumed &&
                 (this.timer != null) &&
@@ -152,7 +148,7 @@ namespace Stratis.Bitcoin.Utilities
         public void Dispose()
         {
             this.cancellation.Cancel();
-            this.executor.Wait();
+            this.executorTask.Wait();
 
             this.cancellation.Dispose();
         }
