@@ -25,8 +25,6 @@ Based on the original implementation of AsyncManualResetEvent from
 Stephen Cleary's AsyncEx library - https://github.com/StephenCleary/AsyncEx .
  */
 
-using System;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
