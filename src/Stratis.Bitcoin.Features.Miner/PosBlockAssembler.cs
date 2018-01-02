@@ -41,11 +41,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
 
-            this.coinbase.Outputs[0].ScriptPubKey = new Script();
-            this.coinbase.Outputs[0].Value = Money.Zero;
-
             PosConsensusValidator posValidator = this.consensusLoop.Validator as PosConsensusValidator;
             Guard.NotNull(posValidator, nameof(posValidator));
+
+            // Without this the coinbase transaction has a zero value
+            this.coinbase.Outputs[0].Value = this.fees + posValidator.GetProofOfWorkReward(this.height);
+            this.pblocktemplate.TotalFee = this.fees;
+
+            this.UpdateHeaders();
+            this.TestBlockValidity();
 
             this.logger.LogTrace("(-)");
             return this.pblocktemplate;
