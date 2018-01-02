@@ -42,28 +42,32 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
             {
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "'from' parameter is required.", "Please provide the height or the hash of a block from which you'd like to sync the chain.");
             }
-
-            uint256 hashToSyncFrom;
-
+            
             // Check if an integer was provided as a parameter, meaning the request specifies a block height.
             // If not, the request specified is a block hash.
             bool isHeight = int.TryParse(from, out int height);
             if (isHeight)
             {
-                var chainedBlock = this.chain.GetBlock(height);
-                if (chainedBlock == null)
+                var block = this.chain.GetBlock(height);
+                if (block == null)
                 {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block at height {height} not found on the blockchain.", string.Empty);
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block at height {height} was not found on the blockchain.", string.Empty);
                 }
 
-                hashToSyncFrom = chainedBlock.HashBlock;
+                this.blockNotification.SyncFrom(block.HashBlock);
             }
             else
             {
-                hashToSyncFrom = uint256.Parse(from);
-            }
+                uint256 hashToSyncFrom = uint256.Parse(from);
+                ChainedBlock block = this.chain.GetBlock(hashToSyncFrom);
+                if (block == null)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block with hash {from} was not found on the blockchain.", string.Empty);
+                }
 
-            this.blockNotification.SyncFrom(hashToSyncFrom);
+                this.blockNotification.SyncFrom(hashToSyncFrom);
+            }
+            
             return this.Ok();
         }
     }
