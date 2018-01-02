@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
                     this.Peer.Counter.AddRead(message.MessageSize);
 
-                    var incommingMessage = new IncomingMessage()
+                    var incomingMessage = new IncomingMessage()
                     {
                         Message = message,
                         Client = this.Client,
@@ -296,7 +296,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         NetworkPeer = this.Peer
                     };
 
-                    this.MessageProducer.PushMessage(incommingMessage);
+                    this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
             catch (Exception ex)
