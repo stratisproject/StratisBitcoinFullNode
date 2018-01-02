@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-    
+
 namespace Stratis.Bitcoin.P2P.Protocol
 {
     public class MessageProducer<T>
@@ -52,7 +52,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
                 }
             }
         }
-
 
         public void PushMessages(IEnumerable<T> messages)
         {
