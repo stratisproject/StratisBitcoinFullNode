@@ -2,8 +2,9 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin.Protocol;
 
-namespace NBitcoin.Protocol
+namespace Stratis.Bitcoin.P2P.Protocol
 {
     public interface IMessageListener<in T>
     {
