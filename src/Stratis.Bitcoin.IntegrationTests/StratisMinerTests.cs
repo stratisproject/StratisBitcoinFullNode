@@ -36,10 +36,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 node1.NotInIBD();
 
-                // Create the originating node's wallet
+                // Create the generating node's wallet
                 var wm1 = node1.FullNode.NodeService<IWalletManager>() as WalletManager;
                 wm1.CreateWallet("Source1", "source");
 
+                // Get the miner secret by obtaining the private key of one of the source node's addresses
                 var wallet1 = wm1.GetWalletByName("source");
                 var account1 = wallet1.GetAccountsByCoinType((CoinType)node1.FullNode.Network.Consensus.CoinType).First();
                 var address1 = account1.GetFirstUnusedReceivingAddress();
@@ -48,9 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // We can use SetDummyMinerSecret here because the private key is already in the wallet
                 node1.SetDummyMinerSecret(new BitcoinSecret(secret1.PrivateKey, node1.FullNode.Network));
 
-                // Generate a block so we have some funds to create a transaction with
+                // Generate a block so we receive some coins
                 node1.GenerateStratisWithMiner(1);
 
+                // The generated coins should immediately appear in the wallet with 1 confirmation
                 Assert.True(account1.GetSpendableAmount().ConfirmedAmount > 0);
 
                 node1.Kill();
