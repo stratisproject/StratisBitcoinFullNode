@@ -133,5 +133,31 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.Equal(36, sum);
             processedQueue.Dispose();
         }
+
+        [Fact]
+        public async void ItemsAreProcessedRightAwayIfNoConditionOrTimerProvided()
+        {
+            int sum = 0;
+
+            AsyncConsumerQueue<int> processedQueue = new AsyncConsumerQueue<int>(
+                innerQueue =>
+                {
+                    while (innerQueue.TryDequeue(out int item))
+                    {
+                        sum += item;
+                    }
+                });
+
+            for (int i = 0; i < 10; i++)
+            {
+                int sumBefore = sum;
+                processedQueue.Enqueue(i);
+                await Task.Delay(50);
+
+                Assert.Equal(sum, sumBefore + i);
+            }
+
+            processedQueue.Dispose();
+        }
     }
 }

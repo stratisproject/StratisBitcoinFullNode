@@ -79,7 +79,9 @@ namespace Stratis.Bitcoin.Utilities
             Task.Run(() =>
             {
                 // If the trigger condition exists and it is met - set the trigger.
-                if (this.immediateProcessingTrigger != null && this.immediateProcessingTrigger(item))
+                // If no timer or condition is provided- trigger.
+                if (((this.immediateProcessingTrigger != null) && this.immediateProcessingTrigger(item)) ||
+                    ((this.immediateProcessingTrigger == null) && (this.timer == null)))
                 {
                     this.trigger.Set();
                 }
