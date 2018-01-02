@@ -97,8 +97,10 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>The matching entries.</returns>
         public IList<IResourceRecord> Get(Domain domain, RecordType type)
         {
-            // Fix logic from 3rd party library to support the ANY DNS query record type
-            return this.entries.Where(e => Matches(domain, e.Name) && (e.Type == type || type == RecordType.ANY)).ToList();
+            // Fix logic from 3rd party library to support the ANY DNS query record type and
+            // when dig uses +trace option, the recursion request to get the NS record doesn't specify a domain
+            // which is catered for by testing to see if the domain is empty.
+            return this.entries.Where(e => (string.IsNullOrWhiteSpace(domain.ToString()) || Matches(domain, e.Name)) && (e.Type == type || type == RecordType.ANY)).ToList();
         }
 
         /// <summary>
