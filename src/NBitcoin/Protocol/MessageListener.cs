@@ -10,33 +10,6 @@ namespace NBitcoin.Protocol
         void PushMessage(T message);
     }
 
-    public class NewThreadMessageListener<T> : IMessageListener<T>
-    {
-        private readonly Action<T> process;
-        public NewThreadMessageListener(Action<T> process)
-        {
-            this.process = process ?? throw new ArgumentNullException("process");
-        }
-
-        public void PushMessage(T message)
-        {
-            if (message != null)
-            {
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        this.process(message);
-                    }
-                    catch (Exception ex)
-                    {
-                        NodeServerTrace.Error("Unexpected expected during message loop", ex);
-                    }
-                });
-            }
-        }
-    }
-
     public class EventLoopMessageListener<T> : IMessageListener<T>, IDisposable
     {
         private BlockingCollection<T> messageQueue = new BlockingCollection<T>(new ConcurrentQueue<T>());
