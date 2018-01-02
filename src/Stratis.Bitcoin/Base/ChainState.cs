@@ -5,10 +5,50 @@ namespace Stratis.Bitcoin.Base
 {
     /// <summary>
     /// Chain state holds various information related to the status of the chain and its validation.
+    /// </summary>
+    public interface IChainState
+    {
+        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
+        ChainedBlock ConsensusTip { get; set; }
+
+        /// <summary>
+        /// This method will check if the node is in a state of IBD (Initial Block Download)
+        /// </summary>
+        bool IsInitialBlockDownload { get; }
+
+        /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
+        /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
+        uint MaxReorgLength { get; set; }
+
+        /// <summary>
+        /// Check if a block is marked as invalid.
+        /// </summary>
+        /// <param name="hashBlock">The block hash to check.</param>
+        /// <returns><c>true</c> if the block is marked as invalid.</returns>
+        bool IsMarkedInvalid(uint256 hashBlock);
+
+        /// <summary>
+        /// Marks a block as invalid. This is used to prevent DOS attacks as the next time the block is seen, it is not processed again.
+        /// </summary>
+        /// <param name="hashBlock">The block hash to mark as invalid.</param>
+        /// <param name="rejectedUntil">Time in UTC after which the block is no longer considered as invalid, or <c>null</c> if the block is to be considered invalid forever.</param>
+        void MarkBlockInvalid(uint256 hashBlock, DateTime? rejectedUntil = null);
+
+        /// <summary>
+        /// Sets last IBD status update time and result.
+        /// <para>Used in tests only.</para>
+        /// </summary>
+        /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
+        /// <param name="time">New value for the last check of IBD status.</param>
+        void SetIsInitialBlockDownload(bool val, DateTime time);
+    }
+
+    /// <summary>
+    /// Chain state holds various information related to the status of the chain and its validation.
     /// The data are provided by different components and the chaine state is a mechanism that allows
     /// these components to share that data without creating extra dependencies.
     /// </summary>
-    public class ChainState
+    public class ChainState : IChainState
     {
         /// <summary>Store of block header hashes that are to be considered invalid.</summary>
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
@@ -29,21 +69,13 @@ namespace Stratis.Bitcoin.Base
             this.invalidBlockHashStore = invalidBlockHashStore;
         }
 
-        /// <summary>
-        /// Check if a block is marked as invalid.
-        /// </summary>
-        /// <param name="hashBlock">The block hash to check.</param>
-        /// <returns><c>true</c> if the block is marked as invalid.</returns>
+        /// <inheritdoc/>
         public bool IsMarkedInvalid(uint256 hashBlock)
         {
             return this.invalidBlockHashStore.IsInvalid(hashBlock);
         }
 
-        /// <summary>
-        /// Marks a block as invalid. This is used to prevent DOS attacks as the next time the block is seen, it is not processed again.
-        /// </summary>
-        /// <param name="hashBlock">The block hash to mark as invalid.</param>
-        /// <param name="rejectedUntil">Time in UTC after which the block is no longer considered as invalid, or <c>null</c> if the block is to be considered invalid forever.</param>
+        /// <inheritdoc/>
         public void MarkBlockInvalid(uint256 hashBlock, DateTime? rejectedUntil = null)
         {
             this.invalidBlockHashStore.MarkInvalid(hashBlock, rejectedUntil);

@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Holds state related to the block chain.</summary>
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         /// <summary>Connection manager of all the currently connected peers.</summary>
         private readonly IConnectionManager connectionManager;
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             LookaheadBlockPuller puller,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
-            ChainState chainState,
+            IChainState chainState,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Base
         private readonly ILogger logger;
 
         /// <summary>Information about node's chain.</summary>
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;

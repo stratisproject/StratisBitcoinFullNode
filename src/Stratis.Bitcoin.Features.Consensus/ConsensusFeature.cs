@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly CoinView coinView;
 
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         private readonly IConnectionManager connectionManager;
 
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Network network,
             LookaheadBlockPuller blockPuller,
             CoinView coinView,
-            ChainState chainState,
+            IChainState chainState,
             IConnectionManager connectionManager,
             Signals.Signals signals,
             IConsensusLoop consensusLoop,

@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public IConsensusLoop ConsensusLoop { get; private set; }
 
-        public ConsensusController(ILoggerFactory loggerFactory, ChainState chainState = null,
+        public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState = null,
             IConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
             : base(chainState: chainState, chain: chain)
         {
