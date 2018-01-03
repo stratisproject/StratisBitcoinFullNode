@@ -39,8 +39,16 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Constructs this object.
         /// </summary>
+        public DnsSettings()
+        {
+        }
+
+        /// <summary>
+        /// Constructs this object and calls the Load method.
+        /// </summary>
         /// <param name="nodeSettings">The nodeSettings used to initialize the DNS settings.</param>
-        public DnsSettings(NodeSettings nodeSettings = null)
+        public DnsSettings(NodeSettings nodeSettings)
+            :this()
         {
             if (nodeSettings != null)
                 Load(nodeSettings);
