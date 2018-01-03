@@ -223,45 +223,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-
-        
-
-        //[Fact]
-        //public async Task ExecuteSmartContractAsync()
-        //{
-        //    var context = new TestContext();
-        //    await context.InitializeAsync();
-
-        //    var pblock = context.newBlock.Block.Clone(); // pointer for convenience
-        //    pblock.Header.HashPrevBlock = context.chain.Tip.HashBlock;
-        //    pblock.Header.Version = 1;
-        //    pblock.Header.Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1;
-        //    //Transaction txCoinbase = pblock.Transactions[0].Clone();
-        //    //txCoinbase.Inputs.Clear();
-        //    //txCoinbase.Version = 1;
-        //    //txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(1), Op.GetPushOp(context.chain.Height) })));
-        //    //txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
-        //    //pblock.Transactions[0] = txCoinbase;
-
-        //    Transaction tx = new Transaction();
-        //    tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-        //    tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
-        //    pblock.Transactions.Add(tx);
-        //    pblock.UpdateMerkleRoot();
-
-        //    pblock.Header.Nonce = 0;
-
-        //    context.chain.SetTip(pblock.Header);
-        //    await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblock }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-
-        //    // All the magic happens inside 'ConsensusLoop' -> 'ValidateAndExecuteBlock' and 'ExecuteBlock'
-
-        //    // 'UpdateCoinView' also - at the bottom of  'ExecuteBlock'
-
-        //    // create block
-        //    throw new NotImplementedException();
-        //}
-
         // Test suite for ancestor feerate transaction selection.
         // Implemented as an additional function, rather than a separate test case,
         // to allow reusing the blockchain created in CreateNewBlock_validity.
@@ -279,9 +240,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             // rate package with a low fee rate parent.
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            //tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
-
-            tx.AddOutput(new TxOut(new Money(50000000000000L - 1000), new Script()));
+            tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
 
             // This tx has a low fee: 1000 satoshis
             uint256 hashParentTx = tx.GetHash(); // save this txid for later use

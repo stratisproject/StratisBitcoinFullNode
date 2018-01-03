@@ -228,6 +228,27 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             TestContext context = new TestContext();
             await context.InitializeAsync();
+
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+
+            Transaction tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
+
+            var data = new
+            {
+                Version = 1,
+                GasLimit = 500000,
+                GasPrice = 1,
+                ContractToDeploy = new byte[0],
+                Code = OpcodeType.OP_CREATECONTRACT
+            };
+
+            tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
+
+            // This tx has a low fee: 1000 satoshis
+            uint256 hashParentTx = tx.GetHash();
+            context.mempool.AddUnchecked(hashParentTx, entry.Fee(1000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
         }
     }
 }
