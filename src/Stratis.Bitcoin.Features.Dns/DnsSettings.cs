@@ -39,8 +39,11 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Constructs this object.
         /// </summary>
-        public DnsSettings()
+        /// <param name="nodeSettings">The nodeSettings used to initialize the DNS settings.</param>
+        public DnsSettings(NodeSettings nodeSettings = null)
         {
+            if (nodeSettings != null)
+                Load(nodeSettings);
         }
 
         /// <summary>
@@ -52,17 +55,6 @@ namespace Stratis.Bitcoin.Features.Dns
             : this()
         {
             this.callback = callback;
-        }
-
-        /// <summary>
-        /// Constructs this object from the NodeSettings and the provided callback.
-        /// </summary>
-        /// <param name="nodeSettings">The NodeSettings object.</param>
-        /// <param name="callback">The callback used to override the node settings.</param>
-        public DnsSettings(NodeSettings nodeSettings, Action<DnsSettings> callback = null)
-            : this(callback)
-        {
-            this.Load(nodeSettings);
         }
 
         /// <summary>

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,10 +11,8 @@ using DNS.Client;
 using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
 using DNS.Protocol.Utils;
-using DNS.Server;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
@@ -86,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
-        /// Defines the configuration settings for the node.
+        /// Defines the configuration settings for the DNS seed server.
         /// </summary>
         private readonly DnsSettings dnsSettings;
 
