@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Stratis.Bitcoin
+namespace Stratis.Bitcoin.Utilities.Extensions
 {
     public static class IPExtensions
     {

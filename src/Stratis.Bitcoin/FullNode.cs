@@ -47,6 +47,9 @@ namespace Stratis.Bitcoin
         /// <summary>Information about the best chain.</summary>
         public ChainState ChainBehaviorState { get; private set; }
 
+        /// <summary>Provider of IBD state.</summary>
+        public IInitialBlockDownloadState InitialBlockDownloadState { get; private set; }
+
         /// <summary>Provider of notification about newly available blocks and transactions.</summary>
         public Signals.Signals Signals { get; set; }
 
@@ -160,6 +163,7 @@ namespace Stratis.Bitcoin
             this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainState>();
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
+            this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
@@ -195,8 +199,8 @@ namespace Stratis.Bitcoin
             // Initialize all registered features.
             this.fullNodeFeatureExecutor.Initialize();
 
-            // Start connecting to peers.
-            this.ConnectionManager.Start();
+            // Initialize peer connection.
+            this.ConnectionManager.Initialize();
 
             // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();

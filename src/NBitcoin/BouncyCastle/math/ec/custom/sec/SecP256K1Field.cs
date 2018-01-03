@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-
 using NBitcoin.BouncyCastle.Math.Raw;
 
 namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec

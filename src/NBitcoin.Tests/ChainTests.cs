@@ -110,8 +110,8 @@ namespace NBitcoin.Tests
             Assert.Equal(cchain.GetBlock(b5.HashBlock), chain.Tip);
 
             Assert.Equal(cchain.SetTip(b1), b1);
-            Assert.Equal(cchain.GetBlock(b5.HashBlock), null);
-            Assert.Equal(cchain.GetBlock(b2.HashBlock), null);
+            Assert.Null(cchain.GetBlock(b5.HashBlock));
+            Assert.Null(cchain.GetBlock(b2.HashBlock));
 
             Assert.Equal(cchain.SetTip(b5), b1);
             Assert.Equal(cchain.GetBlock(b5.HashBlock), chain.Tip);
@@ -124,7 +124,7 @@ namespace NBitcoin.Tests
 
             Assert.Equal(cchain.SetTip(b6b), b2);
 
-            Assert.Equal(cchain.GetBlock(b5.HashBlock), null);
+            Assert.Null(cchain.GetBlock(b5.HashBlock));
             Assert.Equal(cchain.GetBlock(b2.HashBlock), b2);
             Assert.Equal(cchain.GetBlock(6), b6b);
             Assert.Equal(cchain.GetBlock(5), b5b);
@@ -194,7 +194,7 @@ namespace NBitcoin.Tests
 
         private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedBlock expectedFork)
         {
-            var fork = chain.FindFork(chain2);
+            var fork = this.FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
@@ -203,7 +203,7 @@ namespace NBitcoin.Tests
             chain = chain2;
             chain2 = temp;
 
-            fork = chain.FindFork(chain2);
+            fork = this.FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
@@ -573,5 +573,18 @@ namespace NBitcoin.Tests
             return AppendBlock(index, chains);
         }
 
+        /// <summary>
+        /// Returns the first common chained block header between two chains.
+        /// </summary>
+        /// <param name="chainSrc">The source chain.</param>
+        /// <param name="otherChain">The other chain.</param>
+        /// <returns>First common chained block header or <c>null</c>.</returns>
+        private ChainedBlock FindFork(ChainBase chainSrc, ChainBase otherChain)
+        {
+            if (otherChain == null)
+                throw new ArgumentNullException("otherChain");
+
+            return chainSrc.FindFork(otherChain.Tip.EnumerateToGenesis().Select(o => o.HashBlock));
+        }
     }
 }

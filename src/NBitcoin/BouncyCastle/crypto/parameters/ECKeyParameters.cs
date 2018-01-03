@@ -1,5 +1,4 @@
 using System;
-
 using NBitcoin.BouncyCastle.Utilities;
 
 namespace NBitcoin.BouncyCastle.Crypto.Parameters

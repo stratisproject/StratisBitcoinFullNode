@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Linq;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-using System.Linq;
 
 namespace NBitcoin
 {

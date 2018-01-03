@@ -1,24 +1,10 @@
 ﻿#if !NOFILEIO
-using NBitcoin.BitcoinCore;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.OpenAsset;
-using NBitcoin.Protocol;
-using NBitcoin.RPC;
-using NBitcoin.Stealth;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using NBitcoin.BitcoinCore;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -69,7 +55,7 @@ namespace NBitcoin.Tests
 
             foreach(var stored in StoredBlock.EnumerateFile(@"data\blocks\blk00000.dat"))
             {
-                Assert.True(stored.Item.Header.CheckProofOfWork());
+                Assert.True(stored.Item.Header.CheckProofOfWork(Network.Main.Consensus));
                 Assert.True(stored.Item.CheckMerkleRoot());
                 count++;
             }
@@ -349,7 +335,7 @@ namespace NBitcoin.Tests
                     Assert.Equal(blk0[0].Item.GetHash(), stored.Item.GetHash());
                 if(count == 300)
                     Assert.Equal(blk1[0].Item.GetHash(), stored.Item.GetHash());
-                Assert.True(stored.Item.Header.CheckProofOfWork());
+                Assert.True(stored.Item.Header.CheckProofOfWork(Network.Main.Consensus));
                 Assert.True(stored.Item.CheckMerkleRoot());
                 count++;
             }

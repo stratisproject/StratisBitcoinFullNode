@@ -59,9 +59,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Locations of important folders and files on disk.</summary>
         private readonly DataFolder dataFolder;
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
-
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
@@ -98,12 +95,14 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A handler that can manage the lifetime of network peers.</summary>
         private readonly IPeerBanning peerBanning;
 
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="nodeSettings">User defined node settings.</param>
         /// <param name="dataFolder">Locations of important folders and files on disk.</param>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
@@ -114,10 +113,10 @@ namespace Stratis.Bitcoin.Base
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
-            Network network,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
             ChainState chainState,
@@ -128,6 +127,7 @@ namespace Stratis.Bitcoin.Base
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
+            IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager)
         {
@@ -135,7 +135,6 @@ namespace Stratis.Bitcoin.Base
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
-            this.network = Guard.NotNull(network, nameof(network));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
@@ -144,6 +143,7 @@ namespace Stratis.Bitcoin.Base
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             this.peerAddressManager.PeerFilePath = this.dataFolder;
 
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.dateTimeProvider = dateTimeProvider;
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
@@ -155,9 +155,9 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                     this.chain.Tip.Height.ToString().PadRight(8) +
-                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.chain.Tip.HashBlock);
+                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.chain.Tip.HashBlock);
         }
 
         /// <inheritdoc />
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Base
 
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
-            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);
@@ -305,9 +305,10 @@ namespace Stratis.Bitcoin.Base
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorAddNode());
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorConnectNode());
-                    services.AddSingleton<IPeerConnector>(new PeerConnectorDiscovery());
+                    services.AddSingleton<IPeerConnector, PeerConnectorAddNode>();
+                    services.AddSingleton<IPeerConnector, PeerConnectorConnectNode>();
+                    services.AddSingleton<IPeerConnector, PeerConnectorDiscovery>();
+                    services.AddSingleton<IPeerDiscovery, PeerDiscovery>();
                 });
             });
 

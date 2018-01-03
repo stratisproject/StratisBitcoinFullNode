@@ -29,10 +29,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly Network network;
 
-        private readonly ConcurrentChain chain;
-
-        private readonly PowConsensusValidator consensusValidator;
-
         private readonly LookaheadBlockPuller blockPuller;
 
         private readonly CoinView coinView;
@@ -41,22 +37,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly IConnectionManager connectionManager;
 
-        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
-        private readonly INodeLifetime nodeLifetime;
-
         private readonly Signals.Signals signals;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
 
-        private readonly NodeSettings nodeSettings;
-
         private readonly NodeDeployments nodeDeployments;
 
         private readonly StakeChainStore stakeChain;
-
-        /// <summary>Consensus settings from configuration.</summary>
-        private readonly ConsensusSettings consensusSettings;
 
         private readonly IRuleRegistration ruleRegistration;
         private readonly IConsensusRules consensusRules;
@@ -67,32 +55,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        private readonly ConsensusManager consensusManager;
-
         /// <summary>Consensus statistics logger.</summary>
         private readonly ConsensusStats consensusStats;
 
         public ConsensusFeature(
-            IAsyncLoopFactory asyncLoopFactory,
             DBreezeCoinView dBreezeCoinView,
             Network network,
-            PowConsensusValidator consensusValidator,
-            ConcurrentChain chain,
             LookaheadBlockPuller blockPuller,
             CoinView coinView,
             ChainState chainState,
             IConnectionManager connectionManager,
-            INodeLifetime nodeLifetime,
             Signals.Signals signals,
             ConsensusLoop consensusLoop,
-            NodeSettings nodeSettings,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
-            IDateTimeProvider dateTimeProvider,
-            ConsensusManager consensusManager,
             ConsensusStats consensusStats,
             ConsensusSettings consensusSettings,
             IRuleRegistration ruleRegistration,
@@ -100,25 +76,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
-            this.consensusValidator = consensusValidator;
-            this.chain = chain;
             this.blockPuller = blockPuller;
             this.coinView = coinView;
             this.chainState = chainState;
             this.connectionManager = connectionManager;
-            this.nodeLifetime = nodeLifetime;
             this.signals = signals;
             this.network = network;
             this.consensusLoop = consensusLoop;
-            this.nodeSettings = nodeSettings;
             this.nodeDeployments = nodeDeployments;
             this.stakeChain = stakeChain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
-            this.dateTimeProvider = dateTimeProvider;
-            this.consensusManager = consensusManager;
             this.consensusStats = consensusStats;
-            this.consensusSettings = consensusSettings;
             this.ruleRegistration = ruleRegistration;
             this.consensusRules = consensusRules;
 
@@ -130,9 +99,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (this.chainState?.ConsensusTip != null)
             {
-                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                      this.chainState.ConsensusTip.Height.ToString().PadRight(8) +
-                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                                      this.chainState.ConsensusTip.HashBlock);
             }
         }
@@ -203,13 +172,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>();
                     services.AddSingleton<ConsensusLoop>();
-                    services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, ConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, BaseConsensusRules>();
+                    services.AddSingleton<IRuleRegistration, CoreConsensusRules>();
                 });
             });
 
@@ -243,23 +213,28 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusLoop>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<StakeValidator>();
-                        services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                        services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                        services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRules, ConsensusRules>();
-                        services.AddSingleton<IRuleRegistration, BaseConsensusRules>();
+                        services.AddSingleton<IRuleRegistration, CoreConsensusRules>();
                     });
             });
 
             return fullNodeBuilder;
         }
 
-        public class BaseConsensusRules : IRuleRegistration
+        public class CoreConsensusRules : IRuleRegistration
         {
             public IEnumerable<ConsensusRule> GetRules()
             {
                 yield return new BlockPreviousHeaderRule();
+
+                // rules that are inside the method ContextualCheckBlockHeader
+                yield return new CheckpointsRule();
+                yield return new AssumeValidRule();
 
                 // rules that are inside the method ContextualCheckBlock
                 yield return new Bip113ActivationRule();

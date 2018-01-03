@@ -1241,18 +1241,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void LastReceivedBlockHashWithoutAnyWalletOfCoinTypeThrowsException()
+        public void NoLastReceivedBlockHashInWalletReturnsChainTip()
         {
-            Assert.Throws<Exception>(() =>
-            {
-                var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                    CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
-                var wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-                wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-                walletManager.Wallets.Add(wallet);
+            var chain = WalletTestsHelpers.GenerateChainWithHeight(2, Network.Main);
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(),
+                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+            var wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
+            walletManager.Wallets.Add(wallet);
 
-                var result = walletManager.LastReceivedBlockHash();
-            });
+            var result = walletManager.LastReceivedBlockHash();
+            Assert.Equal(chain.Tip.HashBlock, result);
         }
 
         [Fact]

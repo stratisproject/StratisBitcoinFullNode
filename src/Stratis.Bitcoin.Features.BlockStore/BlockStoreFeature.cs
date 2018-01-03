@@ -97,9 +97,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             var highestBlock = (this.blockRepository as BlockRepository)?.HighestPersistedBlock;
 
             if (highestBlock != null)
-                benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                     highestBlock.Height.ToString().PadRight(8) +
-                    $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                    $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                     highestBlock.HashBlock);
         }
 

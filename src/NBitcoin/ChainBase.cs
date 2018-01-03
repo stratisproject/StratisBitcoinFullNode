@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -23,6 +22,9 @@ namespace NBitcoin
 
         /// <summary>Gets the chained block header at the tip of the chain.</summary>
         public abstract ChainedBlock Tip { get; }
+
+        /// <summary>The network associated with the chain.</summary>
+        public abstract Network Network { get; }
 
         /// <summary>Gets the height of the chain.</summary>
         public abstract int Height { get; }
@@ -104,7 +106,7 @@ namespace NBitcoin
             if (prev == null)
                 return false;
 
-            chainedHeader = new ChainedBlock(header, header.GetHash(), this.GetBlock(header.HashPrevBlock));
+            chainedHeader = new ChainedBlock(header, header.GetHash(this.Network.NetworkOptions), this.GetBlock(header.HashPrevBlock));
             this.SetTip(chainedHeader);
             return true;
         }
@@ -142,19 +144,6 @@ namespace NBitcoin
         public Target GetWorkRequired(Network network, int height)
         {
             return this.GetBlock(height).GetWorkRequired(network);
-        }
-
-        /// <summary>
-        /// Returns the first common chained block header between two chains.
-        /// </summary>
-        /// <param name="chain">The other chain.</param>
-        /// <returns>First common chained block header or <c>null</c>.</returns>
-        public ChainedBlock FindFork(ChainBase chain)
-        {
-            if (chain == null)
-                throw new ArgumentNullException("chain");
-
-            return this.FindFork(chain.Tip.EnumerateToGenesis().Select(o => o.HashBlock));
         }
 
         /// <summary>
@@ -248,7 +237,7 @@ namespace NBitcoin
 
             while (true)
             {
-                ChainedBlock b = GetBlock(i);
+                ChainedBlock b = this.GetBlock(i);
                 if ((b == null) || (b.Previous != prev))
                     yield break;
 

@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.ExceptionServices;
+using System.Text;
+using System.Threading.Tasks;
 #if !NOHTTPCLIENT
 using System.Net.Http;
 using System.Net.Http.Headers;
 #endif
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.NBitcoin;
-using System.Runtime.ExceptionServices;
 
 namespace NBitcoin.Payment
 {
@@ -230,7 +228,7 @@ namespace NBitcoin.Payment
                     builder.Append("&");
                 builder.Append(parameter.Key);
                 builder.Append("=");
-                builder.Append(System.Web.NBitcoin.HttpUtility.UrlEncode(parameter.Value));
+                builder.Append(WebUtility.UrlEncode(parameter.Value));
             }
         }
 

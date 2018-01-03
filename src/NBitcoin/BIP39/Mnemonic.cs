@@ -1,16 +1,12 @@
-﻿
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using NBitcoin.Crypto;
-#if !WINDOWS_UWP && !USEBC
-using System.Security.Cryptography;
-#endif
-using NBitcoin.BouncyCastle.Security;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
+using NBitcoin.Crypto;
+
+#if !WINDOWS_UWP && !USEBC
+#endif
 
 namespace NBitcoin
 {

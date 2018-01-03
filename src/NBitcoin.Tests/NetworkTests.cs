@@ -1,9 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
-using NBitcoin;
 using Xunit;
-using System;
 
 namespace NBitcoin.Tests
 {
@@ -46,7 +45,7 @@ namespace NBitcoin.Tests
 
             CanGetNetworkFromName();
 
-            Assert.True(Network.GetNetworks().Contains(network));
+            Assert.Contains(network, Network.GetNetworks());
         }
 
         [Fact]

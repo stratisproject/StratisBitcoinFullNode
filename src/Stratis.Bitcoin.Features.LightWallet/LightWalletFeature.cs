@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
@@ -156,9 +155,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 ChainedBlock block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-                benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                         (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                        (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
+                        (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
             }
         }
 
@@ -206,6 +205,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<WalletController>();
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
+                        services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();
                     });
             });
 

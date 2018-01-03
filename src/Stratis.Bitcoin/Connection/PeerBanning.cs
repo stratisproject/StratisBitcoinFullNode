@@ -94,15 +94,11 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Functionality of date and time.</summary>
-        private readonly ConnectionManagerSettings connectionManagerSettings;
-
         public PeerBanning(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings)//, IBanStore banStore)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
-            this.connectionManagerSettings = nodeSettings.ConnectionManager;
 
             // TODO: MemoryBanStore should be replaced with the address manager store
             this.banStore = new MemoryBanStore();
@@ -112,8 +108,9 @@ namespace Stratis.Bitcoin.Connection
         public void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
-
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
+
+            reason = reason ?? "unknown";
 
             bool banPeer = true;
             NetworkPeer peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
@@ -122,18 +119,18 @@ namespace Stratis.Bitcoin.Connection
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason ?? "unknown");
                     peer.DisconnectWithException($"The peer was banned, reason: {reason}");
                 }
                 else
                 {
                     banPeer = false;
-                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
+                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason);
                 }
             }
 
             if (banPeer)
             {
+                this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
                 this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds));
             }
 

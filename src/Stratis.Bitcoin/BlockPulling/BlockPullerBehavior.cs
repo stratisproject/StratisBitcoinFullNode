@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 // even if the origin of the message was from the other puller behavior.
                 // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash();
+                uint256 blockHash = block.Obj.Header.GetHash(node.Network.NetworkOptions);
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
                     this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
@@ -163,7 +163,9 @@ namespace Stratis.Bitcoin.BlockPulling
 
             uint256 block = null;
             if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
-                attachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+            {
+                attachedNode.SendMessageVoidAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -187,7 +189,7 @@ namespace Stratis.Bitcoin.BlockPulling
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
-            attachedNode.SendMessageAsync(getDataPayload);
+            attachedNode.SendMessageVoidAsync(getDataPayload);
 
             this.logger.LogTrace("(-)");
         }

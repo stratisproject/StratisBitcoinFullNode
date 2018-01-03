@@ -3,11 +3,11 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         private DataFolder dataFolder;
         private Mock<INodeLifetime> nodeLifeTime;
         private Mock<ILoggerFactory> loggerFactory;
+        private IInitialBlockDownloadState initialBlockDownloadState;
 
         public BlockStoreLoop Loop { get; private set; }
 
@@ -51,15 +52,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
-            this.chainState = new Mock<ChainState>(fullNode, new InvalidBlockHashStore(fullNode.DateTimeProvider));
-            this.chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
+            var mock = new Mock<IInitialBlockDownloadState>();
+            mock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
+            this.initialBlockDownloadState = mock.Object;
+
+            this.chainState = new Mock<ChainState>(new InvalidBlockHashStore(fullNode.DateTimeProvider));
 
             this.nodeLifeTime = new Mock<INodeLifetime>();
         }
 
         internal FluentBlockStoreLoop AsIBD()
         {
-            this.chainState.Object.SetIsInitialBlockDownload(true, DateTime.Today.AddDays(1));
+            var mock = new Mock<IInitialBlockDownloadState>();
+            mock.Setup(x => x.IsInitialBlockDownload()).Returns(true);
+            this.initialBlockDownloadState = mock.Object;
             return this;
         }
 
@@ -107,6 +113,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     new StoreSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
+                    this.initialBlockDownloadState,
                     DateTimeProvider.Default);
         }
 

@@ -12,18 +12,6 @@ namespace Stratis.Bitcoin.Base
     /// </summary>
     public class ChainState
     {
-        /// <summary>The fullnode interface.</summary>
-        private readonly IFullNode fullNode;
-
-        /// <summary>The last time the <see cref="ibdLastResult"/> was updated.</summary>
-        private long ibdLastUpdate;
-
-        /// <summary>A cached result of the IBD method.</summary>
-        private bool ibdLastResult;
-
-        /// <summary>A provider of the date and time.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
         /// <summary>Store of block header hashes that are to be considered invalid.</summary>
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
@@ -37,12 +25,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>
         /// Initialize instance of the object.
         /// </summary>
-        /// <param name="fullNode">The full node using this feature.</param>
         /// <param name="invalidBlockHashStore">Store of block header hashes that are to be considered invalid.</param>
-        public ChainState(IFullNode fullNode, IInvalidBlockHashStore invalidBlockHashStore)
+        public ChainState(IInvalidBlockHashStore invalidBlockHashStore)
         {
-            this.fullNode = fullNode;
-            this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
             this.invalidBlockHashStore = invalidBlockHashStore;
         }
 
@@ -64,34 +49,6 @@ namespace Stratis.Bitcoin.Base
         public void MarkBlockInvalid(uint256 hashBlock, DateTime? rejectedUntil = null)
         {
             this.invalidBlockHashStore.MarkInvalid(hashBlock, rejectedUntil);
-        }
-
-        /// <summary>
-        /// This method will check if the node is in a state of IBD (Initial Block Download)
-        /// </summary>
-        public bool IsInitialBlockDownload
-        {
-            get
-            {
-                if (this.ibdLastUpdate < this.dateTimeProvider?.GetUtcNow().Ticks)
-                {
-                    // Sample every minute.
-                    this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
-
-                    // If consensus is not present IBD has no meaning. Set to false to match legacy code.
-                    IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
-                    this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
-                }
-
-                return this.ibdLastResult;
-            }
-        }
-
-        // For testing to be able to move the IBD.
-        public void SetIsInitialBlockDownload(bool val, DateTime time)
-        {
-            this.ibdLastUpdate = time.Ticks;
-            this.ibdLastResult = val;
         }
     }
 }

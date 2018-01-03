@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.MinerScriptPubKey = this.MinerKey.PubKey.Hash.ScriptPubKey;
         }
 
-        public ConcurrentChain Chain { get; } = new ConcurrentChain();
+        public ConcurrentChain Chain { get; private set; }
 
         public Key MinerKey
         {
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.AddTransaction(tx);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork())
+                while (!block.CheckProofOfWork(this.network.Consensus))
                     block.Header.Nonce = ++nonce;
                 block.Header.CacheHashes();
                 blocks.Add(block);

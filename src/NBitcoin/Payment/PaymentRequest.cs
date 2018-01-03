@@ -1,19 +1,15 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.Protobuf;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using NBitcoin.Crypto;
+using NBitcoin.Protobuf;
+
 #if !NOHTTPCLIENT
-using System.Net.Http;
 #endif
-using System.Text;
-using System.Text.RegularExpressions;
 #if WIN
 using System.Security.Cryptography.X509Certificates;
 #endif
-using System.Threading.Tasks;
 
 namespace NBitcoin.Payment
 {

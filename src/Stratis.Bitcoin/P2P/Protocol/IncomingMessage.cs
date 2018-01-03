@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -9,7 +8,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
     public class IncomingMessage
     {
         public Message Message { get; set; }
-        internal Socket Socket { get; set; }
+        internal NetworkPeerClient Client { get; set; }
         public NetworkPeer NetworkPeer { get; set; }
         public long Length { get; set; }
 

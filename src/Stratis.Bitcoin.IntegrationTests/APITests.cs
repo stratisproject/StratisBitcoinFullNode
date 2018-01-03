@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -72,8 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                     var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
-
-                    Assert.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\"", response);
+                    Assert.StartsWith("{\"walletFilePath\":\"", response);
                 }
             }
             finally
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var fullNode = this.apiTestsFixture.stratisStakeNode.FullNode;
                 var ApiURI = fullNode.Settings.ApiUri;
 
-                Assert.NotNull(fullNode.NodeService<PosMinting>(true));
+                Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
                 using (client = new HttpClient())
                 {

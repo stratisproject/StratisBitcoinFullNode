@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -56,9 +58,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
         private readonly CancellationTokenSource serverCancel;
 
-        /// <summary>Number of unfinished tasks that we need to wait for before we consider shutdown of the object completed.</summary>
-        private volatile int unfinishedTasks;
-
         /// <summary>Nonce for server's version payload.</summary>
         private ulong nonce;
         /// <summary>Nonce for server's version payload.</summary>
@@ -78,8 +77,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>Consumer of messages coming from connected clients.</summary>
-        /// <seealso cref="ProcessMessage(IncomingMessage)"/>
+        /// <seealso cref="ProcessMessageAsync(IncomingMessage)"/>
         private readonly EventLoopMessageListener<IncomingMessage> listener;
+
+        /// <summary>List of connected clients mapped by their unique identifiers.</summary>
+        private readonly ConcurrentDictionary<int, NetworkPeerClient> clientsById;
+
+        /// <summary>Task accepting new clients in a loop.</summary>
+        private Task acceptTask;
 
         /// <summary>
         /// Initializes instance of a network peer server.
@@ -109,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Version = version;
 
-            this.listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
+            this.listener = new EventLoopMessageListener<IncomingMessage>(this.ProcessMessageAsync);
             this.messageProducer = new MessageProducer<IncomingMessage>();
             this.messageProducer.AddMessageListener(this.listener);
 
@@ -122,6 +127,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.tcpListener.Server.LingerState = new LingerOption(true, 0);
             this.tcpListener.Server.NoDelay = true;
             this.tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+
+            this.clientsById = new ConcurrentDictionary<int, NetworkPeerClient>();
+            this.acceptTask = Task.CompletedTask;
 
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
 
@@ -140,7 +148,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.tcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 this.tcpListener.Start();
-                this.AcceptClientsAsync();
+                this.acceptTask = this.AcceptClientsAsync();
             }
             catch (Exception e)
             {
@@ -152,131 +160,153 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Implements loop accepting new connections.
+        /// Implements loop accepting connections from newly connected clients.
         /// </summary>
-        private async void AcceptClientsAsync()
+        private async Task AcceptClientsAsync()
         {
             this.logger.LogTrace("()");
 
             this.logger.LogTrace("Accepting incoming connections.");
 
-            while (!this.serverCancel.IsCancellationRequested)
+            try
             {
-                try
+                while (!this.serverCancel.IsCancellationRequested)
                 {
-                    int taskCount = Interlocked.Increment(ref this.unfinishedTasks);
-                    this.logger.LogTrace("Starting accepting task, there are {0} unfinished tasks now.", taskCount);
+                    // Used to record any errors occurring in the thread pool task.
+                    Exception error = null;
 
-                    Socket client = await Task.Run(() => this.tcpListener.AcceptSocketAsync(), this.serverCancel.Token);
+                    TcpClient tcpClient = await Task.Run(() =>
+                    {
+                        try
+                        {
+                            Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
+                            acceptTask.Wait(this.serverCancel.Token);
+                            return acceptTask.Result;
+                        }
+                        catch (Exception e)
+                        {
+                            // Record the error.
+                            error = e;
+                            return null;                            
+                        }
+                    }).ConfigureAwait(false);
 
-                    taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
+                    // Raise the error.
+                    if (error != null)
+                        throw error;
 
-                    this.logger.LogTrace("Connection accepted from client '{0}', there are {1} unfinished tasks now.", client.RemoteEndPoint, taskCount);
-                    Task unused = Task.Run(() => this.ProcessNewClient(client));
+                    NetworkPeerClient client = this.networkPeerFactory.CreateNetworkPeerClient(tcpClient);
+
+                    this.AddConnectedClient(client);
+
+                    this.logger.LogTrace("Connection accepted from client '{0}'.", client.RemoteEndPoint);
+
+                    // This should be cheaper for the accept loop thread than just calling ProcessNewClientAsync without awaiting.
+                    Task unused = Task.Run(async () => await this.ProcessNewClientAsync(client));
                 }
-                catch (Exception e)
-                {
-                    if (e is OperationCanceledException) this.logger.LogDebug("Shutdown detected, stop accepting connections.");
-                    else this.logger.LogDebug("Exception occurred: {0}", e.ToString());
-
-                    int taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
-                    this.logger.LogTrace("Accepting task aborted or failed, there are {0} unfinished tasks now.", taskCount);
-
-                    break;
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogDebug("Shutdown detected, stop accepting connections.");
+            }
+            catch (Exception e)
+            {
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
             
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Handles a newly accepted client's connection.
+        /// Adds connected client to the list of clients.
         /// </summary>
-        /// <param name="client">New client connection's socket.</param>
-        private void ProcessNewClient(Socket client)
+        /// <param name="client">Client to add.</param>
+        private void AddConnectedClient(NetworkPeerClient client)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(client), client.RemoteEndPoint);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
 
-            EndPoint clientEndPoint = client.RemoteEndPoint;
-            int taskCount = Interlocked.Increment(ref this.unfinishedTasks);
-            this.logger.LogTrace("Processing new client '{0}', there are {1} unfinished tasks now.", clientEndPoint, taskCount);
-
-            try
-            {
-                using (var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
-                {
-                    cancel.CancelAfter(TimeSpan.FromSeconds(10));
-
-                    var stream = new NetworkStream(client, false);
-                    while (true)
-                    {
-                        if (this.ConnectedNetworkPeers.Count >= this.MaxConnections)
-                        {
-                            this.logger.LogDebug("Maximum number of connections {0} reached.", this.MaxConnections);
-                            Utils.SafeCloseSocket(client);
-                            break;
-                        }
-                        cancel.Token.ThrowIfCancellationRequested();
-
-                        PerformanceCounter counter;
-                        Message message = Message.ReadNext(stream, this.Network, this.Version, cancel.Token, out counter);
-                        this.messageProducer.PushMessage(new IncomingMessage()
-                        {
-                            Socket = client,
-                            Message = message,
-                            Length = counter.ReadBytes,
-                            NetworkPeer = null,
-                        });
-
-                        if (message.Payload is VersionPayload)
-                        {
-                            this.logger.LogTrace("Connection with client '{0}' successfully initiated.", client.RemoteEndPoint);
-                            break;
-                        }
-
-                        this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                if (!this.serverCancel.Token.IsCancellationRequested)
-                    this.logger.LogTrace("Inbound client '{0}' failed to send a message within 10 seconds, dropping connection.", client.RemoteEndPoint);
-
-                Utils.SafeCloseSocket(client);
-            }
-            catch (Exception ex)
-            {
-                if (this.serverCancel.IsCancellationRequested)
-                    return;
-
-                if (client == null)
-                {
-                    this.logger.LogTrace("Exception occurred while accepting connection: {0}", ex.ToString());
-                    Thread.Sleep(3000);
-                }
-                else
-                {
-                    this.logger.LogTrace("Exception occurred while processing message from client '{0}': {1}", client.RemoteEndPoint, ex.ToString());
-                    Utils.SafeCloseSocket(client);
-                }
-            }
-
-            taskCount = Interlocked.Decrement(ref this.unfinishedTasks);
-            this.logger.LogTrace("Processing of new client '{0}' is complete, there are {1} unfinished tasks now.", clientEndPoint, taskCount);
+            this.clientsById.AddOrReplace(client.Id, client);
+            client.ProcessingCompletion.Task.ContinueWith(unused => this.RemoveConnectedClient(client));
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Callback that is called when a new message is received from a connected client peer.
+        /// Removes a client from the list of clients and disconnects it.
         /// </summary>
-        /// <param name="message">Message received from the client.</param>
-        private void ProcessMessage(IncomingMessage message)
+        /// <param name="client">Client to remove and disconnect.</param>
+        private void RemoveConnectedClient(NetworkPeerClient client)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(client), nameof(client.Id), client.Id);
 
-            this.ProcessMessageCore(message);
+            if (!this.clientsById.TryRemove(client.Id, out NetworkPeerClient unused))
+                this.logger.LogError("Internal data integration error.");
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Handles a newly accepted client's connection.
+        /// </summary>
+        /// <param name="client">Newly accepted client.</param>
+        private async Task ProcessNewClientAsync(NetworkPeerClient client)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(client), client.RemoteEndPoint);
+
+            bool keepClientConnected = false;
+
+            EndPoint clientEndPoint = client.RemoteEndPoint;
+            try
+            {
+                if (this.ConnectedNetworkPeers.Count < this.MaxConnections)
+                {
+                    using (var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
+                    {
+                        cancel.CancelAfter(TimeSpan.FromSeconds(10));
+
+                        while (true)
+                        {
+                            cancel.Token.ThrowIfCancellationRequested();
+                            Message message = await client.ReadAndParseMessageAsync(this.Version, cancel.Token).ConfigureAwait(false);
+                            
+                            this.messageProducer.PushMessage(new IncomingMessage()
+                            {
+                                Client = client,
+                                Message = message,
+                                Length = message.MessageSize,
+                                NetworkPeer = null,
+                            });
+
+                            if (message.Payload is VersionPayload)
+                            {
+                                this.logger.LogTrace("Connection with client '{0}' successfully initiated.", client.RemoteEndPoint);
+                                keepClientConnected = true;
+                                break;
+                            }
+
+                            this.logger.LogTrace("The first message of the remote peer '{0}' did not contain a version payload.", client.RemoteEndPoint);
+                        }
+                    }
+                }
+                else this.logger.LogDebug("Maximum number of connections {0} reached, client '{1}' will be disconnected.", this.MaxConnections, clientEndPoint);
+            }
+            catch (OperationCanceledException)
+            {
+                if (this.serverCancel.Token.IsCancellationRequested) this.logger.LogTrace("Shutdown detected.");
+                else this.logger.LogTrace("Inbound client '{0}' failed to send a version message within 10 seconds, dropping connection.", client.RemoteEndPoint);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogTrace("Exception occurred while processing message from client '{0}': {1}", client.RemoteEndPoint, ex.ToString());
+            }
+
+            if (!keepClientConnected)
+            {
+                // NetworkPeer is not created for this client here yet.
+                // This is why we need to finish its completion.
+                client.Dispose();
+                client.ProcessingCompletion.SetResult(true);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -285,7 +315,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Processes a new message received from a connected client peer.
         /// </summary>
         /// <param name="message">Message received from the client.</param>
-        private void ProcessMessageCore(IncomingMessage message)
+        private async Task ProcessMessageAsync(IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
@@ -298,7 +328,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if ((message.NetworkPeer != null) && connectedToSelf)
                 {
-                    message.NetworkPeer.DisconnectWithException();
+                    message.NetworkPeer.DisconnectWithException("Connected to self");
 
                     this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                     return;
@@ -312,7 +342,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (!remoteEndpoint.Address.IsRoutable(this.AllowLocalPeers))
                     {
                         // Send his own endpoint.
-                        remoteEndpoint = new IPEndPoint(((IPEndPoint)message.Socket.RemoteEndPoint).Address, this.Network.DefaultPort);
+                        remoteEndpoint = new IPEndPoint(message.Client.RemoteEndPoint.Address, this.Network.DefaultPort);
                     }
 
                     var peerAddress = new NetworkAddress()
@@ -321,30 +351,31 @@ namespace Stratis.Bitcoin.P2P.Peer
                         Time = this.dateTimeProvider.GetUtcNow()
                     };
 
-                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, CreateNetworkPeerConnectionParameters(), message.Socket, version);
+                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(peerAddress, this.Network, message.Client, version, this.CreateNetworkPeerConnectionParameters());
                     if (connectedToSelf)
                     {
-                        networkPeer.SendMessage(CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset()));
-                        networkPeer.Disconnect();
+                        VersionPayload versionPayload = this.CreateNetworkPeerConnectionParameters().CreateVersion(networkPeer.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
+                        await networkPeer.SendMessageAsync(versionPayload);
+                        networkPeer.Disconnect("Connected to self");
 
                         this.logger.LogTrace("(-)[CONNECTED_TO_SELF_2]");
                         return;
                     }
 
-                    using (CancellationTokenSource cancel = new CancellationTokenSource())
+                    using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.serverCancel.Token))
                     {
-                        cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
+                        cancellationSource.CancelAfter(TimeSpan.FromSeconds(10.0));
                         try
                         {
                             this.ConnectedNetworkPeers.Add(networkPeer);
-                            networkPeer.StateChanged += Peer_StateChanged;
-                            networkPeer.RespondToHandShake(cancel.Token);
+                            networkPeer.StateChanged += this.Peer_StateChanged;
+                            await networkPeer.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
                             this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
 
-                            networkPeer.DisconnectWithException();
+                            networkPeer.DisconnectWithException("Handshake timeout");
 
                             this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                             throw;
@@ -353,7 +384,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         {
                             this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
 
-                            networkPeer.DisconnectWithException();
+                            networkPeer.DisconnectWithException("Handshake exception");
 
                             this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
                             throw;
@@ -395,18 +426,31 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.ConnectedNetworkPeers.DisconnectAll();
+                this.ConnectedNetworkPeers.DisconnectAll("Node shutdown");
             }
             catch (Exception e)
             {
                 this.logger.LogTrace("Exception occurred: {0}", e.ToString());
             }
 
+            this.logger.LogTrace("Stopping TCP listener.");
             this.tcpListener?.Stop();
 
-            this.logger.LogTrace("Waiting for {0} unfinished tasks to complete.", this.unfinishedTasks);
-            while (this.unfinishedTasks > 0)
-                Thread.Sleep(100);
+            this.logger.LogTrace("Waiting for accepting task to complete.");
+            this.acceptTask.Wait();
+
+            ICollection<NetworkPeerClient> connectedClients = this.clientsById.Values;
+            if (connectedClients.Count > 0)
+            {
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", connectedClients.Count);
+                foreach (NetworkPeerClient client in connectedClients)
+                {
+                    this.logger.LogTrace("Disposing and waiting for client ID {0}.", client.Id);
+                    TaskCompletionSource<bool> completion = client.ProcessingCompletion;
+                    client.Dispose();
+                    completion.Task.Wait();
+                }
+            }
 
             this.logger.LogTrace("(-)");
         }
