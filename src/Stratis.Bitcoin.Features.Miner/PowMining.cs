@@ -17,12 +17,12 @@ namespace Stratis.Bitcoin.Features.Miner
         {
         }
 
-        public ReserveScript(Script reserveSfullNodecript)
+        public ReserveScript(Script reserveFullNodeScript)
         {
-            this.reserveSfullNodecript = reserveSfullNodecript;
+            this.ReserveFullNodeScript = reserveFullNodeScript;
         }
 
-        public Script reserveSfullNodecript { get; set; }
+        public Script ReserveFullNodeScript { get; set; }
     }
 
     public class PowMining : IPowMining
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.mining = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
-                this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, int.MaxValue, int.MaxValue);
+                this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
                 this.mining = null;
                 return Task.CompletedTask;
             },
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
+                BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.ReserveFullNodeScript);
 
                 if (this.network.NetworkOptions.IsProofOfStake)
                 {
