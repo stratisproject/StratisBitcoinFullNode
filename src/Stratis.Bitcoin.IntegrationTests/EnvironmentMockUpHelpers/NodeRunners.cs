@@ -268,9 +268,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     {
                         // Get default IBD implementation and replace it with the mock.
                         ServiceDescriptor ibdService = services.FirstOrDefault(x => x.ServiceType == typeof(IInitialBlockDownloadState));
-                        services.Remove(ibdService);
 
-                        services.AddSingleton<IInitialBlockDownloadState, MockedInitialBlockDownloadState>();
+                        if (ibdService != null)
+                        {
+                            services.Remove(ibdService);
+                            services.AddSingleton<IInitialBlockDownloadState, MockedInitialBlockDownloadState>();
+                        }
                     });
                 }
             });
