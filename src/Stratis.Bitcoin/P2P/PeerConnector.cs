@@ -128,6 +128,7 @@ namespace Stratis.Bitcoin.P2P
             this.nodeLifetime = nodeLifetime;
             this.NodeSettings = nodeSettings;
             this.peerAddressManager = peerAddressManager;
+            this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
         }
 
         /// <inheritdoc/>

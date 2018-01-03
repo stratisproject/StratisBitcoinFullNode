@@ -11,7 +11,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>NBitcoin</RootNamespace>
     <PackageId>NStratis</PackageId>
     <Authors>NStratis</Authors>
@@ -25,6 +25,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE;NETSTANDARD1_6;NETCORE;NOSTRNORMALIZE;NOCUSTOMSSLVALIDATION;</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Protocol\Payloads\**" />
+    <EmbeddedResource Remove="Protocol\Payloads\**" />
+    <None Remove="Protocol\Payloads\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Protocol\AddressManager.cs" />
@@ -48,10 +54,6 @@
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Protocol\Payloads\" />
   </ItemGroup>
 
 </Project>
