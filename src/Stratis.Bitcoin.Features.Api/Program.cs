@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,11 +17,13 @@ namespace Stratis.Bitcoin.Features.Api
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
-            var host = new WebHostBuilder()
+            Uri apiUri = fullNode.NodeService<ApiSettings>().ApiUri;
+
+            IWebHost host = new WebHostBuilder()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
-                .UseUrls(fullNode.Settings.ApiUri.ToString())
+                .UseUrls(apiUri.ToString())
                 .ConfigureServices(collection =>
                 {
                     if (services == null)
@@ -30,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Api
 
                     // copies all the services defined for the full node to the Api.
                     // also copies over singleton instances already defined
-                    foreach (var service in services)
+                    foreach (ServiceDescriptor service in services)
                     {
                         var obj = fullNode.Services.ServiceProvider.GetService(service.ServiceType);
                         if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)

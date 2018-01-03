@@ -29,17 +29,13 @@ namespace Stratis.Bitcoin.P2P
             IPeerAddressManager peerAddressManager) :
             base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
+            this.Requirements.RequiredServices = NetworkPeerServices.Nothing;
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
             this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.Connect.Count;
-            this.Requirements = new NetworkPeerRequirement
-            {
-                MinVersion = this.NodeSettings.ProtocolVersion,
-                RequiredServices = NetworkPeerServices.Nothing
-            };
 
             // Add the endpoints from the -connect arg to the address manager
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
