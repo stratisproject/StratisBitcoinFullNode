@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.BlockPulling
     /// but should the ActualLookahead be adjusted, they can be requested in the near future.
     /// </para>
     /// </remarks>
-    public class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller
+    public class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller, IDisposable
     {
         /// <summary>Maximal size of a block in bytes.</summary>
         private const int MaxBlockSize = 2000000;
@@ -213,6 +213,24 @@ namespace Stratis.Bitcoin.BlockPulling
             this.MinimumLookahead = 4;
             this.MaximumLookahead = 2000;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <summary>
+        /// Dispose of this object.
+        /// </summary>
+        public void Dispose()
+        {
+            this.logger.LogTrace("()");
+
+            this.pushed.Dispose();
+            this.consumed.Dispose();
+
+            lock (this.bufferLock)
+            {
+                this.askBlockQueue.Clear();
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

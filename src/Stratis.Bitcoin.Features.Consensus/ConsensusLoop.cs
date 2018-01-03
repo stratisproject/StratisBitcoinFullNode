@@ -250,6 +250,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public void Stop()
         {
+            this.Puller.Dispose();
             this.asyncLoop.Dispose();
         }
 

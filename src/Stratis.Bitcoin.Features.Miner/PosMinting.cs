@@ -15,10 +15,11 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
-{  
+{
     /// <summary>
     /// <see cref="PosMinting"/> is used in order to generate new blocks. It involves a sort of lottery, similar to proof-of-work,
     /// but the chances of winning this lottery is proportional to how many coins you are staking, not on hashing power.
@@ -204,9 +205,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <remarks>Used to verify that node is connected to network before we start staking.</remarks>
         private readonly IConnectionManager connection;
 
-        /// <summary>Used to verify that node is not in a state of IBD (Initial Block Download).</summary>
-        private readonly ChainState chainState;
-
         /// <summary>Provides date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -287,9 +285,12 @@ namespace Stratis.Bitcoin.Features.Miner
         private uint256 lastCoinStakeSearchPrevBlockHash;
 
         /// <summary>
-        /// A cancellation token source that can cancel the staking processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>. 
+        /// A cancellation token source that can cancel the staking processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
         /// </summary>
         private CancellationTokenSource stakeCancellationTokenSource;
+
+        /// <summary>Provider of IBD state.</summary>
+        private IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
@@ -300,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="connection">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
         /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
-        /// <param name="chainState">Used to verify that node is not in a state of IBD (Initial Block Download).</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="coinView">Consensus' view of UTXO set.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
@@ -317,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
             AssemblerFactory blockAssemblerFactory,
-            ChainState chainState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
             StakeChain stakeChain,
@@ -334,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.connection = connection;
             this.dateTimeProvider = dateTimeProvider;
             this.blockAssemblerFactory = blockAssemblerFactory;
-            this.chainState = chainState;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.nodeLifetime = nodeLifetime;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
@@ -355,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
-        
+
         /// <inheritdoc/>
         public IAsyncLoop Stake(WalletSecret walletSecret)
         {
@@ -407,13 +408,13 @@ namespace Stratis.Bitcoin.Features.Miner
             },
             this.stakeCancellationTokenSource.Token,
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-            startAfter: TimeSpans.TenSeconds);
+            startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
             return this.stakingLoop;
         }
-        
-        ///<inheritdoc/>
+
+        /// <inheritdoc/>
         public void StopStake()
         {
             this.logger.LogTrace("()");
@@ -444,13 +445,18 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
+                // Wait until we have at least one connected peer who's headers are synced with ours AND until not in IBD.
+                while (!this.connection.ConnectedNodes.Any(x => x.Behavior<ChainHeadersBehavior>().IsSynced()) ||
+                       this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
-                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
-                    else this.logger.LogTrace("Waiting for IBD to complete...");
+                    if (this.initialBlockDownloadState.IsInitialBlockDownload())
+                        this.logger.LogTrace("Waiting for IBD to complete...");
+                    else
+                        this.logger.LogTrace("Waiting to be connected with at least one synced network peer...");
 
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
+
 
                 ChainedBlock chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)
@@ -958,7 +964,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions)
         {
@@ -1112,7 +1118,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public double GetNetworkWeight()
         {
@@ -1153,7 +1159,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public Models.GetStakingInfoModel GetGetStakingInfoModel()
         {
