@@ -316,7 +316,8 @@ namespace NBitcoin
         OP_NOP10 = 0xb9,
 
         // smart contracts
-        OP_CONTRACT = 0xc0,
+        OP_CREATECONTRACT = 0xc0,
+        OP_CALLCONTRACT = 0xc1
     };
 
     public enum HashVersion

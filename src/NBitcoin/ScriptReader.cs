@@ -659,6 +659,13 @@ namespace NBitcoin
                 return IsSmallUInt || Code == OpcodeType.OP_1NEGATE;
             }
         }
+        public bool IsContractExecution
+        {
+            get
+            {
+                return Code == OpcodeType.OP_CALLCONTRACT || Code == OpcodeType.OP_CREATECONTRACT; 
+            }
+        }
 
         public int? GetInt()
         {

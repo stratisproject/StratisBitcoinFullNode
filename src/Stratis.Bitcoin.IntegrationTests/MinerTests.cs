@@ -198,16 +198,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
                     pblock.Transactions[0] = txCoinbase;
 
-                    // SC
-                    if (i == this.blockinfo.Count - 1)
-                    {
-                        Transaction tx = new Transaction();
-                        tx.AddInput(new TxIn(new OutPoint(this.txFirst[0].GetHash(), 0), new Script()));
-                        tx.AddOutput(new TxOut(new Money(100L), new Script(OpcodeType.OP_CONTRACT)));
-                        pblock.Transactions.Add(tx);
-                    }
-                    // END SC
-
                     if (this.txFirst.Count == 0)
                         this.baseheight = this.chain.Height;
                     if (this.txFirst.Count < 4)
