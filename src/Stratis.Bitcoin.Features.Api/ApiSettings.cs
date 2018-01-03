@@ -13,14 +13,7 @@ namespace Stratis.Bitcoin.Features.Api
         public Uri ApiUri { get; set; }
 
         /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
-        private Action<ApiSettings> callback = null;
-
-        /// <summary>
-        /// Constructs this object.
-        /// </summary>
-        public ApiSettings()
-        {
-        }
+        private Action<ApiSettings> callback;
 
         /// <summary>
         /// Constructs this object whilst providing a callback to override/constrain/extend 
@@ -28,7 +21,6 @@ namespace Stratis.Bitcoin.Features.Api
         /// </summary>
         /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
         public ApiSettings(Action<ApiSettings> callback)
-            : this()
         {
             this.callback = callback;
         }
