@@ -62,13 +62,12 @@ namespace Stratis.Bitcoin.Features.RPC
             var config = nodeSettings.ConfigReader;
 
             this.Server = config.GetOrDefault<bool>("server", false);
-            this.RPCPort = nodeSettings.Network.RPCPort;
+            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
 
             if (this.Server)
             {
                 this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
                 this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
-                this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
 
                 try
                 {

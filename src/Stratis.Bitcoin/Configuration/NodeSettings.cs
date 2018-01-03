@@ -111,9 +111,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
 
-        /// <summary>URI to node's API interface.</summary>
-        public Uri ApiUri { get; set; }
-
         /// <summary>Minimum transaction fee for network.</summary>
         public FeeRate MinTxFeeRate { get; set; }
 
@@ -235,7 +232,6 @@ namespace Stratis.Bitcoin.Configuration
 
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
             this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            this.ApiUri = config.GetOrDefault("apiuri", new Uri($"http://localhost:{ (this.Network.ToString().StartsWith("Stratis") ? 37221 : 37220) }"));
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
             this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);

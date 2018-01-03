@@ -244,7 +244,9 @@ namespace Stratis.Bitcoin.BlockPulling
                     continue;
 
                 minHeight = Math.Min(chainedBlock.Height, minHeight);
-                vectors.Add(chainedBlock.Height, vector);
+
+                if (!vectors.ContainsKey(chainedBlock.Height))
+                    vectors.Add(chainedBlock.Height, vector);
             }
 
             if (vectors.Count > 0) this.DistributeDownload(vectors, minHeight);
