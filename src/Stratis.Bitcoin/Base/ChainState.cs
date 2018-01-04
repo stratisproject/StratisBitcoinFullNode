@@ -1,7 +1,5 @@
 using System;
 using NBitcoin;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {
