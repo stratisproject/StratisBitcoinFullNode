@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         private DateTime lockIbdUntil;
 
         /// <summary>A cached result of the IBD method.</summary>
-        private bool ibdCached;
+        private bool blockDownloadState;
 
         public InitialBlockDownloadStateMock(ChainState chainState, Network network, NodeSettings nodeSettings,
             ICheckpoints checkpoints) : base (chainState, network, nodeSettings, checkpoints)
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public override bool IsInitialBlockDownload()
         {
             if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
-                return this.ibdCached;
+                return this.blockDownloadState;
 
             return base.IsInitialBlockDownload();
         }
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
         {
             this.lockIbdUntil = lockStateUntil;
-            this.ibdCached = blockDownloadState;
+            this.blockDownloadState = blockDownloadState;
         }
     }
 }
