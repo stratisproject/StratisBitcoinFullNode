@@ -40,13 +40,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         /// <summary>
         /// Sets last IBD status update time and result.
-        /// <para>Used in tests only.</para>
         /// </summary>
         /// <param name="blockDownloadState">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
-        /// <param name="lockStateUntil">Time until IBD state won't be changed.</param>
-        public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
+        /// <param name="lockIbdUntil">Time until IBD state won't be changed.</param>
+        public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockIbdUntil)
         {
-            this.lockIbdUntil = lockStateUntil;
+            this.lockIbdUntil = lockIbdUntil;
             this.blockDownloadState = blockDownloadState;
         }
     }
