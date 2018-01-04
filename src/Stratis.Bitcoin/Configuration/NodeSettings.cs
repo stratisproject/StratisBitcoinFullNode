@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Default value for Maximum tip age in seconds to consider node in initial block download.</summary>
         public const int DefaultMaxTipAge = 24 * 60 * 60;
 
-        /// <summary>The default value which a peer should have last have been connected before being blacklisted in DNS nodes.</summary>
-        public const int DefaultDnsPeerBlacklistThresholdInSeconds = 1800;
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -124,24 +121,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; set; }
-
-        /// <summary>The value which a peer should have last have been connected before being blacklisted from the DNS nodes.</summary>
-        public int DnsPeerBlacklistThresholdInSeconds { get; set; }
-
-        /// <summary>Defines the host name for the node when running as a DNS Seed service.</summary>
-        public string DnsHostName { get; set; }
-
-        /// <summary><c>true</c> if the DNS Seed service should also run as a full node, otherwise <c>false</c>.</summary>
-        public bool DnsFullNode { get; set; }
-
-        /// <summary>Defines the port that the DNS server will listen on, by default this is 53.</summary>
-        public int DnsListenPort { get; set; }
-
-        /// <summary>Defines the nameserver host name used as the authoritative domain for the DNS seed service.</summary>
-        public string DnsNameServer { get; set; }
-
-        /// <summary>Defines the e-mail address used as the administrative point of contact for the domain.</summary>
-        public string DnsMailBox { get; set; }
 
         /// <summary>
         /// Initializes default configuration.
@@ -242,27 +221,6 @@ namespace Stratis.Bitcoin.Configuration
 
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
-
-            if (args.Contains("-dnsfullnode", StringComparer.CurrentCultureIgnoreCase))
-            {
-                this.DnsFullNode = true;
-                this.Logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
-            }
-
-            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            this.Logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
-
-            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", 53);
-            this.Logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
-
-            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            this.Logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
-
-            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
-            this.Logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
-
-            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
-            this.Logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
 
             try
             {
