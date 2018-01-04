@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
@@ -22,7 +25,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             if (this.IsPropagated(transaction))
                 return;
 
-            await this.PropagateTransactionToPeersAsync(transaction, true);
+            List<NetworkPeer> peers = this.connectionManager.ConnectedNodes.ToList();
+            int propagateToCount = (int)Math.Ceiling(peers.Count / 2.0);
+
+            await this.PropagateTransactionToPeersAsync(transaction, peers.Take(propagateToCount).ToList());
         }
     }
 }
