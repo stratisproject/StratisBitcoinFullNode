@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return ret;
             });
 
-            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node?.RemoteSocketEndpoint);
+            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(node, sends.Select(s => s.Trx.GetHash()));
             this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();
 

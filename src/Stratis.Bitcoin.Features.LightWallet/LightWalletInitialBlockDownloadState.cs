@@ -20,11 +20,5 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             return this.isInInitialBlockDownload;
         }
-
-        /// <inheritdoc />
-        public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
-        {
-            this.isInInitialBlockDownload = blockDownloadState;
-        }
     }
 }

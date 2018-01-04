@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Defines the DNS server.
         /// </summary>
         private readonly IDnsServer dnsServer;
-        
+
         /// <summary>
         /// Defines the whitelist manager.
         /// </summary>
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Factory for creating background async loop tasks.
         /// </summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
-        
+
         /// <summary>
         /// The async loop to refresh the whitelist.
         /// </summary>
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 if (disposing)
                 {
-                    IDisposable disposablewhitelistRefreshLoop = this.whitelistRefreshLoop as IDisposable;
+                    IDisposable disposablewhitelistRefreshLoop = this.whitelistRefreshLoop;
                     disposablewhitelistRefreshLoop?.Dispose();
                 }
 
