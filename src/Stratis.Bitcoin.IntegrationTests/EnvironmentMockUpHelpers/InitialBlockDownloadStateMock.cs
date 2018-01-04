@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
-    public class MockedInitialBlockDownloadState : InitialBlockDownloadState
+    public class InitialBlockDownloadStateMock : InitialBlockDownloadState
     {
         /// <summary>Time until IBD state can be checked.</summary>
         private DateTime lockIbdUntil;
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <summary>A cached result of the IBD method.</summary>
         private bool ibdCached;
 
-        public MockedInitialBlockDownloadState(ChainState chainState, Network network, NodeSettings nodeSettings,
+        public InitialBlockDownloadStateMock(ChainState chainState, Network network, NodeSettings nodeSettings,
             ICheckpoints checkpoints) : base (chainState, network, nodeSettings, checkpoints)
         {
             this.lockIbdUntil = DateTime.MinValue;

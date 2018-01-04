@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void NotInIBD()
         {
             // not in IBD
-            (this.FullNode.NodeService<IInitialBlockDownloadState>() as MockedInitialBlockDownloadState).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public void Start()

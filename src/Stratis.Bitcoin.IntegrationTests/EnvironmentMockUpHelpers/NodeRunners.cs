@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         if (ibdService != null)
                         {
                             services.Remove(ibdService);
-                            services.AddSingleton<IInitialBlockDownloadState, MockedInitialBlockDownloadState>();
+                            services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
                         }
                     });
                 }
