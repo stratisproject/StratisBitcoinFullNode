@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Loads the DNS related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        /// <param name "dnsSettings">Existing DnsSettings object to add loaded values to.</param>
+        /// <param name="dnsSettings">Existing DnsSettings object to add loaded values to.</param>
         public static DnsSettings Load(NodeSettings nodeSettings, DnsSettings dnsSettings = null)
         {
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
