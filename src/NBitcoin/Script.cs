@@ -569,6 +569,19 @@ namespace NBitcoin
             }
         }
 
+        // TODO: Tidy up - It seems I haven't quite added to opcode correctly
+        public bool IsSmartContractExec
+        {
+            get
+            {
+                var lastOp = ToBytes().LastOrDefault();
+                if (lastOp == 0)
+                    return false;
+
+                return (lastOp == (byte)OpcodeType.OP_CALLCONTRACT || lastOp == (byte)OpcodeType.OP_CREATECONTRACT);
+            }
+        }
+
         public bool HasCanonicalPushes
         {
             get
