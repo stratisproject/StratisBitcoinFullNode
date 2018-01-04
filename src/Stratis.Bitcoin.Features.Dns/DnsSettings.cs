@@ -44,17 +44,6 @@ namespace Stratis.Bitcoin.Features.Dns
         }
 
         /// <summary>
-        /// Constructs this object and calls the Load method.
-        /// </summary>
-        /// <param name="nodeSettings">The nodeSettings used to initialize the DNS settings.</param>
-        public DnsSettings(NodeSettings nodeSettings)
-            :this()
-        {
-            if (nodeSettings != null)
-                Load(nodeSettings);
-        }
-
-        /// <summary>
         /// Constructs this object whilst providing a callback to override/constrain/extend 
         /// the settings provided by the Load method.
         /// </summary>
@@ -69,36 +58,41 @@ namespace Stratis.Bitcoin.Features.Dns
         /// Loads the DNS related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        /// <param name "dnsSettings">Existing DnsSettings object to add loaded values to.</param>
+        public static DnsSettings Load(NodeSettings nodeSettings, DnsSettings dnsSettings = null)
         {
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(this.GetType().FullName);
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
 
             logger.LogTrace("()");
 
+            dnsSettings = dnsSettings ?? new DnsSettings();
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
             
-            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
-            logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
+            dnsSettings.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
+            logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", dnsSettings.DnsListenPort);
 
-            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
-            if (this.DnsFullNode)
-                logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
+            dnsSettings.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
+            if (dnsSettings.DnsFullNode)
+                logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", dnsSettings.DnsListenPort);
 
-            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
+            dnsSettings.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
+            logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", dnsSettings.DnsPeerBlacklistThresholdInSeconds);
 
-            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
+            dnsSettings.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
+            logger.LogDebug("DNS Seed Service host name set to {0}.", dnsSettings.DnsHostName);
 
-            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
-            logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
+            dnsSettings.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
+            logger.LogDebug("DNS Seed Service nameserver set to {0}.", dnsSettings.DnsNameServer);
 
-            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
-            logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
+            dnsSettings.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
+            logger.LogDebug("DNS Seed Service mailbox set to {0}.", dnsSettings.DnsMailBox);
 
-            this.callback?.Invoke(this);
+            dnsSettings.callback?.Invoke(dnsSettings);
 
             logger.LogTrace("(-)");
+
+            return dnsSettings;
         }
     }
 }

@@ -96,8 +96,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
-            dnsSettings.Load(nodeSettings);
-            this.dnsSettings = dnsSettings;
+            this.dnsSettings = DnsSettings.Load(nodeSettings, dnsSettings);
             this.dataFolders = dataFolders;
         }
 

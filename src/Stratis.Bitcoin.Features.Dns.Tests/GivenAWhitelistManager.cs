@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
 
-            Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, nodeSettings, new DnsSettings(nodeSettings)); };
+            Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, nodeSettings, DnsSettings.Load(nodeSettings)); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("DnsHostName");
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "stratis.test.com";
             nodeSettings.ConnectionManager = null;
 
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Verifiable();
 
             NodeSettings nodeSettings = NodeSettings.Default();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
 
@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Network network = Network.StratisTest;
             NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(args);
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             dnsSettings.DnsFullNode = false;
@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Network network = Network.StratisTest;
             NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(args);
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsFullNode = true;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Verifiable();
 
             NodeSettings nodeSettings = NodeSettings.Default();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
 

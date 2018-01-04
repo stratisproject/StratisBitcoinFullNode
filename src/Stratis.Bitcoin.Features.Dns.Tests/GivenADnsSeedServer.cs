@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsSeedServer(null, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolders); };
+            Action a = () => { new DnsSeedServer(null, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("client");
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsSeedServer(udpClient, null, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolders); };
+            Action a = () => { new DnsSeedServer(udpClient, null, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("masterFile");
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsSeedServer(udpClient, masterFile, null, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolders); };
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, null, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("asyncLoopFactory");
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, null, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolders); };
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, null, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, null, dateTimeProvider, new DnsSettings(nodeSettings), dataFolders); };
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, null, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
-            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, null, new DnsSettings(nodeSettings), dataFolders); };
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, null, DnsSettings.Load(nodeSettings), dataFolders); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dateTimeProvider");
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = @"C:\";
-            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), null); };
+            Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), null); };
 
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dataFolders");
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             DataFolder dataFolders = new Mock<DataFolder>(nodeSettings).Object;
 
             // Act.
-            DnsSeedServer server = new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolders);
+            DnsSeedServer server = new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolders);
 
             // Assert.
             server.Should().NotBeNull();
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -396,7 +396,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -469,7 +469,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -517,7 +517,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -586,7 +586,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -626,7 +626,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -670,7 +670,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             NodeSettings nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
-            DnsSettings dnsSettings = new DnsSettings(nodeSettings);
+            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
