@@ -79,9 +79,9 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    this.LastConnectionAttempt != null &&
-                    this.LastConnectionSuccess == null &&
-                    this.LastConnectionHandshake == null;
+                    (this.LastConnectionAttempt != null) &&
+                    (this.LastConnectionSuccess == null) &&
+                    (this.LastConnectionHandshake == null);
             }
         }
 
@@ -94,9 +94,9 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    this.LastConnectionAttempt == null &&
-                    this.LastConnectionSuccess != null &&
-                    this.LastConnectionHandshake == null;
+                    (this.LastConnectionAttempt == null) &&
+                    (this.LastConnectionSuccess != null) &&
+                    (this.LastConnectionHandshake == null);
             }
         }
 
@@ -109,9 +109,9 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    this.LastConnectionAttempt == null &&
-                    this.LastConnectionSuccess == null &&
-                    this.LastConnectionHandshake == null;
+                    (this.LastConnectionAttempt == null) &&
+                    (this.LastConnectionSuccess == null) &&
+                    (this.LastConnectionHandshake == null);
             }
         }
 
@@ -124,9 +124,9 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    this.LastConnectionAttempt == null &&
-                    this.LastConnectionSuccess != null &&
-                    this.LastConnectionHandshake != null;
+                    (this.LastConnectionAttempt == null) &&
+                    (this.LastConnectionSuccess != null) &&
+                    (this.LastConnectionHandshake != null);
             }
         }
 
