@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public virtual bool IsInitialBlockDownload()
+        public bool IsInitialBlockDownload()
         {
             if (this.chainState == null)
                 return false;

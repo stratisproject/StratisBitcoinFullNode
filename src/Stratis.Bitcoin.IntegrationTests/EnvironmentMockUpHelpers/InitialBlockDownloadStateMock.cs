@@ -3,10 +3,12 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
-    public class InitialBlockDownloadStateMock : InitialBlockDownloadState
+    public class InitialBlockDownloadStateMock : IInitialBlockDownloadState
     {
         /// <summary>Time until IBD state can be checked.</summary>
         private DateTime lockIbdUntil;
@@ -14,18 +16,26 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <summary>A cached result of the IBD method.</summary>
         private bool blockDownloadState;
 
+        /// <summary>A provider of the date and time.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
+        private readonly InitialBlockDownloadState innerBlockDownloadState;
+
         public InitialBlockDownloadStateMock(ChainState chainState, Network network, NodeSettings nodeSettings,
-            ICheckpoints checkpoints) : base (chainState, network, nodeSettings, checkpoints)
+            ICheckpoints checkpoints)
         {
             this.lockIbdUntil = DateTime.MinValue;
+            this.dateTimeProvider = DateTimeProvider.Default;
+
+            this.innerBlockDownloadState = new InitialBlockDownloadState(chainState, network, nodeSettings, checkpoints);
         }
 
-        public override bool IsInitialBlockDownload()
+        public bool IsInitialBlockDownload()
         {
             if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
                 return this.blockDownloadState;
 
-            return base.IsInitialBlockDownload();
+            return this.innerBlockDownloadState.IsInitialBlockDownload();
         }
 
         /// <summary>
