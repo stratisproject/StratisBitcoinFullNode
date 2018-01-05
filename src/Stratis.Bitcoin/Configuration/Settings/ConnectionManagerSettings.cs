@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Stratis.Bitcoin.Configuration.Settings
@@ -19,6 +21,81 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.Connect = new List<IPEndPoint>();
             this.AddNode = new List<IPEndPoint>();
             this.Listen = new List<NodeServerEndpoint>();
+        }
+
+        public static ConnectionManagerSettings Load(NodeSettings nodeSettings, ConnectionManagerSettings settings = null)
+        {
+            var config = nodeSettings.ConfigReader;
+
+            settings = settings ?? new ConnectionManagerSettings();
+
+            try
+            {
+                settings.Connect.AddRange(config.GetAll("connect")
+                    .Select(c => NodeSettings.ConvertIpAddressToEndpoint(c, nodeSettings.Network.DefaultPort)));
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'connect' parameter.");
+            }
+
+            try
+            {
+                settings.AddNode.AddRange(config.GetAll("addnode")
+                        .Select(c => NodeSettings.ConvertIpAddressToEndpoint(c, nodeSettings.Network.DefaultPort)));
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'addnode' parameter.");
+            }
+
+            var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
+            try
+            {
+                settings.Listen.AddRange(config.GetAll("bind")
+                        .Select(c => new NodeServerEndpoint(NodeSettings.ConvertIpAddressToEndpoint(c, port), false)));
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'bind' parameter");
+            }
+
+            try
+            {
+                settings.Listen.AddRange(config.GetAll("whitebind")
+                        .Select(c => new NodeServerEndpoint(NodeSettings.ConvertIpAddressToEndpoint(c, port), true)));
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'listen' parameter");
+            }
+
+            if (settings.Listen.Count == 0)
+            {
+                settings.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
+            }
+
+            var externalIp = config.GetOrDefault<string>("externalip", null);
+            if (externalIp != null)
+            {
+                try
+                {
+                    settings.ExternalEndpoint = NodeSettings.ConvertIpAddressToEndpoint(externalIp, port);
+                }
+                catch (FormatException)
+                {
+                    throw new ConfigurationException("Invalid 'externalip' parameter");
+                }
+            }
+
+            if (settings.ExternalEndpoint == null)
+            {
+                settings.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
+            }
+
+            settings.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
+
+            return settings;
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
