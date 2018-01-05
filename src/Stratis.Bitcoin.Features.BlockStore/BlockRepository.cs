@@ -23,6 +23,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         Task InitializeAsync();
 
+        /// <summary>
+        /// Persist the next block hash and insert new blocks into the database.
+        /// </summary>
+        /// <param name="nextBlockHash">next block has</param>
+        /// <param name="blocks">blocks to be inserted</param>
         Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
 
         Task<Block> GetAsync(uint256 hash);
@@ -47,12 +52,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
         Task<bool> ExistAsync(uint256 hash);
 
+        /// <summary>
+        /// Get the corresponding block hash by using transaction hash.
+        /// </summary>
+        /// <param name="trxid">The transaction hash</param>
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
 
+        /// <summary>
+        /// Set the next block hash and persist it in the database.
+        /// </summary>
+        /// <param name="nextBlockHash">The next block hash.</param>
         Task SetBlockHashAsync(uint256 nextBlockHash);
 
         Task SetTxIndexAsync(bool txIndex);
 
+        /// <summary>
+        /// Get the next block hash
+        /// </summary>
         uint256 BlockHash { get; }
 
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
@@ -148,7 +164,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Retreive the transaction information asynchronously using transaction id
+        /// Retreive the transaction information asynchronously using transaction hash
         /// </summary>
         /// <param name="trxid">The transaction id to find</param>
         public Task<Transaction> GetTrxAsync(uint256 trxid)
@@ -193,6 +209,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
+        /// <summary>
+        /// Get the corresponding block hash by using transaction hash.
+        /// </summary>
+        /// <param name="trxid">transaction hash</param>
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
@@ -300,6 +320,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Persist the next block hash and insert new blocks into the database
+        /// </summary>
+        /// <param name="nextBlockHash">next block has</param>
+        /// <param name="blocks">blocks to be inserted</param>
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
         {
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
