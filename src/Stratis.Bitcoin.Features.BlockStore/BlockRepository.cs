@@ -12,18 +12,39 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
+    /// <summary>
+    /// <see cref="IBlockRepository"/> is the interface to all the logics interacting with the blocks stored in the database.
+    /// </summary>
+    /// <seealso cref="System.IDisposable" />
     public interface IBlockRepository : IDisposable
     {
+        /// <summary>
+        /// Initializes the blockchain storage and ensure the genesis block has been created in the database.
+        /// </summary>
         Task InitializeAsync();
 
         Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
 
         Task<Block> GetAsync(uint256 hash);
 
+        /// <summary>
+        /// Retreive the transaction information asynchronously using transaction id.
+        /// </summary>
+        /// <param name="trxid">The transaction id to find.</param>
         Task<Transaction> GetTrxAsync(uint256 trxid);
 
-        Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
+        /// <summary>
+        /// Wipe our blocks and their transactions then replace with a new block.
+        /// </summary>
+        /// <param name="newBlockHash">Hash of the new block.</param>
+        /// <param name="hashes">List of all block hashes to be deleted.</param>
+        Task DeleteAsync(uint256 newBlockHash, List<uint256> hashes);
 
+        /// <summary>
+        /// Determine if a block already exists
+        /// </summary>
+        /// <param name="hash">The hash.</param>
+        /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
         Task<bool> ExistAsync(uint256 hash);
 
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
@@ -88,6 +109,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new BlockStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
+        /// <summary>
+        /// Initializes the blockchain storage and ensure the genesis block has been created in the database.
+        /// </summary>
         public virtual Task InitializeAsync()
         {
             this.logger.LogTrace("()");
@@ -123,6 +147,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
+        /// <summary>
+        /// Retreive the transaction information asynchronously using transaction id
+        /// </summary>
+        /// <param name="trxid">The transaction id to find</param>
         public Task<Transaction> GetTrxAsync(uint256 trxid)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
@@ -441,6 +469,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
+        /// <summary>
+        /// Determine if a block already exists
+        /// </summary>
+        /// <param name="hash">The hash.</param>
+        /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
         public Task<bool> ExistAsync(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
@@ -538,6 +571,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return blocks;
         }
 
+        /// <summary>
+        /// Wipe our blocks and their transactions then replace with a new block.
+        /// </summary>
+        /// <param name="newBlockHash">Hash of the new block</param>
+        /// <param name="hashes">List of all block hashes to be deleted</param>
         public Task DeleteAsync(uint256 newBlockHash, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newBlockHash), newBlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);
