@@ -26,10 +26,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
-        /// <param name="nextBlockHash">next block has</param>
+        /// <param name="nextBlockHash">next block hash</param>
         /// <param name="blocks">blocks to be inserted</param>
         Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
 
+        /// <summary>
+        /// Get the block from the database by using block hash.
+        /// </summary>
+        /// <param name="hash">The block hash.</param>
         Task<Block> GetAsync(uint256 hash);
 
         /// <summary>
@@ -426,6 +430,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.BlockHash;
         }
 
+        /// <summary>
+        /// Set the next block hash and persist it in the database.
+        /// </summary>
+        /// <param name="nextBlockHash">The next block hash.</param>
         public Task SetBlockHashAsync(uint256 nextBlockHash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
@@ -459,6 +467,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Get block from the database by block hash.
+        /// </summary>
+        /// <param name="hash">The block hash.</param>
         public Task<Block> GetAsync(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
