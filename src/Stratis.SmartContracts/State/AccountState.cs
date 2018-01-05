@@ -2,10 +2,11 @@
 
 namespace Stratis.SmartContracts.State
 {
-    internal class AccountState
+    public class AccountState
     {
-        public ulong Nonce { get; set; }
-        public ulong Balance { get; set; }
+        // public ulong Nonce { get; set; }
+        // public ulong Balance { get; set; }
+        
         /// <summary>
         /// 32 byte hash of the code deployed at this contract.
         /// Can be used to lookup the actual code in the code table

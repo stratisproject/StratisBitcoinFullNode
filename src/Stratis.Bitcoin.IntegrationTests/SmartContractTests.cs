@@ -21,6 +21,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.State;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -151,7 +152,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     UseCheckpoints = this.useCheckpoints
                 };
 
-                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory);
+                SmartContractStateRepository stateRepository = new SmartContractStateRepository();
+                stateRepository.Refresh(); // just for unit tests
+                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, stateRepository);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);

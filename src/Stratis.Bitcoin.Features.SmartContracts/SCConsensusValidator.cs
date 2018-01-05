@@ -7,6 +7,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Backend;
+using Stratis.SmartContracts.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -15,13 +17,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        private readonly ISmartContractStateRepository state;
+
         public SCConsensusValidator(
             Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            ISmartContractStateRepository state)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
+            this.state = state;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -151,27 +157,49 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 return;
             }
 
+            // Need to update balances for these transactions
+
             foreach (var txOut in transaction.Outputs)
             {
                 if (txOut.ScriptPubKey.IsSmartContractExec)
                 {
                     var scTransaction = new SCTransaction(txOut);
-                    // Execute the transaction in the VM
+                    if (scTransaction.OpCodeType == OpcodeType.OP_CREATECONTRACT)
+                    {
+                        ExecuteCreateContractTransaction(scTransaction);
+                    }
+                    else if (scTransaction.OpCodeType == OpcodeType.OP_CALLCONTRACT)
+                    {
+                        ExecuteCallContractTransaction(scTransaction);
+                    }
                 }
             }
+        }
 
+        // TODO: These should only be updating a kind of temporary store
 
+        // Real database should only be updated on block being accepted.
 
-            //    // if create 
-            //    // instantiate contract, run to update database
-            //    // update contract code
+        private void ExecuteCreateContractTransaction(SCTransaction transaction)
+        {
+            // decompile code to module
+            // validate module with analyzer
+            // inject gasspend
 
-            //    // if call
-            //    // get values from transaction
-            //    // get contract code
-            //    // execute and save storage
+            // run method with reflectionvirtualmachine
 
-            //    throw new NotImplementedException();
+            // gas?? add to coinbase transaction?
+            // save code to database
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteCallContractTransaction(SCTransaction transaction)
+        {
+            // get code from db
+
+            // run method with reflectionvirtualmachine
+
+            // gas?? add to coinbase transaction?
 
             throw new NotImplementedException();
         }

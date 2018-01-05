@@ -12,7 +12,8 @@ namespace Stratis.SmartContracts
         protected ulong Balance {
             get
             {
-                return PersistentState.StateDb.GetBalance(Address.ToUint160());
+                throw new NotImplementedException();
+                //return PersistentState.StateDb.GetBalance(Address.ToUint160());
             }
         }
 
@@ -39,8 +40,10 @@ namespace Stratis.SmartContracts
             if (Balance < amount)
                 throw new InsufficientBalanceException();
 
-            PersistentState.StateDb.SubtractBalance(Address.ToUint160(), amount);
-            PersistentState.StateDb.AddBalance(addressTo.ToUint160(), amount);
+            // Handling balance
+
+            //PersistentState.StateDb.SubtractBalance(Address.ToUint160(), amount);
+            //PersistentState.StateDb.AddBalance(addressTo.ToUint160(), amount);
 
             if (contractCode != null && contractCode.Length > 0)
             {

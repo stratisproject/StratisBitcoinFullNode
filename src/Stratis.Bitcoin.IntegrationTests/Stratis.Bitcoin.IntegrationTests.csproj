@@ -60,4 +60,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="SmartContracts\" />
+  </ItemGroup>
+
 </Project>

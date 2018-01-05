@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.State
     /// can be adjusted to only use a single transaction in cases where more than
     /// one action is being made.
     /// </summary>
-    internal class DBreezeDb : IStateDb
+    public class SmartContractStateRepository : ISmartContractStateRepository
     {
         private DBreezeEngine _engine = null;
 
@@ -23,9 +23,10 @@ namespace Stratis.SmartContracts.State
         private const string CodeTable = "Code";
         private const string DbLocation = @"C:\temp";
 
-        public DBreezeDb()
+        public SmartContractStateRepository(string dbLocation = null)
         {
-            _engine = new DBreezeEngine(DbLocation);
+            _engine = new DBreezeEngine(dbLocation ?? DbLocation);
+            // TODO: Update byte serialization here
             DBreeze.Utils.CustomSerializator.ByteArraySerializator = (object o) =>
             {
                 if (o is uint160)
@@ -59,30 +60,6 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public ulong AddBalance(uint160 address, ulong value)
-        {
-            var accountState = GetOrCreateAccountState(address);
-            accountState.Balance += value;
-            using(var t = _engine.GetTransaction())
-            {
-                t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
-                t.Commit();
-                return accountState.Balance;
-            }
-        }
-
-        public ulong SubtractBalance(uint160 address, ulong value)
-        {
-            var accountState = GetOrCreateAccountState(address);
-            accountState.Balance -= value;
-            using (var t = _engine.GetTransaction())
-            {
-                t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
-                t.Commit();
-                return accountState.Balance;
-            }
-        }
-
         public void SetCode(uint160 address, byte[] code)
         {
             var accountState = GetAccountState(address);
@@ -92,6 +69,20 @@ namespace Stratis.SmartContracts.State
                 t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
                 t.Insert<byte[], byte[]>(CodeTable, accountState.CodeHash, code);
                 t.Commit();
+            }
+        }
+
+        public byte[] GetCode(uint160 address)
+        {
+            var accountState = GetAccountState(address);
+            using (var t = _engine.GetTransaction())
+            {
+                var row = t.Select<byte[], byte[]>(CodeTable, accountState.CodeHash);
+
+                if (row.Exists)
+                    return row.Value;
+
+                return null;
             }
         }
 
@@ -128,43 +119,6 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public ulong GetBalance(uint160 address)
-        {
-            AccountState accountState = GetAccountState(address);
-            return accountState != null ? accountState.Balance : 0;
-        }
-
-        public byte[] GetCode(uint160 address)
-        {
-            var accountState = GetAccountState(address);
-            using (var t = _engine.GetTransaction())
-            {
-                var row = t.Select<byte[], byte[]>(CodeTable, accountState.CodeHash);
-
-                if (row.Exists)
-                    return row.Value;
-
-                return null;
-            }
-        }
-
-        public ulong GetNonce(uint160 address)
-        {
-            AccountState accountState = GetAccountState(address);
-            return accountState != null ? accountState.Nonce : 0;
-        }
-
-        public void IncrementNonce(uint160 address)
-        {
-            var accountState = GetOrCreateAccountState(address);
-            accountState.Nonce++;
-            using (var t = _engine.GetTransaction())
-            {
-                t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
-                t.Commit();
-            }
-        }
-
         public void SetObject<T>(uint160 address, object key, T toStore)
         {
             using (var t = _engine.GetTransaction())
@@ -174,27 +128,27 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public void SetObject<T>(uint160 address, string key, T toStore)
-        {
-            using (var t = _engine.GetTransaction())
-            {
-                t.Insert<byte[], T>(address.ToString(), Encoding.UTF8.GetBytes(key), toStore);
-                t.Commit();
-            }
-        }
+        //public void SetObject<T>(uint160 address, string key, T toStore)
+        //{
+        //    using (var t = _engine.GetTransaction())
+        //    {
+        //        t.Insert<byte[], T>(address.ToString(), Encoding.UTF8.GetBytes(key), toStore);
+        //        t.Commit();
+        //    }
+        //}
 
-        public T GetObject<T>(uint160 address, string key)
-        {
-            using (var t = _engine.GetTransaction())
-            {
-                var row = t.Select<byte[], T>(address.ToString(), Encoding.UTF8.GetBytes(key));
+        //public T GetObject<T>(uint160 address, string key)
+        //{
+        //    using (var t = _engine.GetTransaction())
+        //    {
+        //        var row = t.Select<byte[], T>(address.ToString(), Encoding.UTF8.GetBytes(key));
 
-                if (row.Exists)
-                    return row.Value;
+        //        if (row.Exists)
+        //            return row.Value;
 
-                return default(T);
-            }
-        }
+        //        return default(T);
+        //    }
+        //}
 
         public T GetObject<T>(uint160 address, object key)
         {
@@ -207,16 +161,6 @@ namespace Stratis.SmartContracts.State
 
                 return default(T);
             }
-        }
-
-        public void Rewind()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Commit()
-        {
-            throw new NotImplementedException();
         }
     }
 }

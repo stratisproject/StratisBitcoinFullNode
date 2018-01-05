@@ -4,3 +4,4 @@
 [assembly: InternalsVisibleTo("Stratis.SmartContracts.Backend")]
 [assembly: InternalsVisibleTo("Stratis.SmartContracts.Demo")]
 [assembly: InternalsVisibleTo("Stratis.SmartContracts.Compiler")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.SmartContracts")]
