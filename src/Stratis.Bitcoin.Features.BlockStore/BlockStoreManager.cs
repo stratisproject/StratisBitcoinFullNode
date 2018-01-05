@@ -1,8 +1,4 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
+﻿using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {

@@ -121,7 +121,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="asyncLoopFactory">The async loop factory.</param>
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="dateTimeProvider">The <see cref="DateTime"/> provider.</param>
-        /// <param name="nodeSettings">The node settings object containing node configuration.</param>
         /// <param name="dataFolders">The data folders of the system.</param>
         public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, DnsSettings dnsSettings, DataFolder dataFolders)
         {
@@ -559,7 +558,7 @@ namespace Stratis.Bitcoin.Features.Dns
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromSeconds(SaveMasterfileRate));
-            
+
             this.logger.LogTrace("(-)");
         }
     }

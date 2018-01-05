@@ -1,12 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;

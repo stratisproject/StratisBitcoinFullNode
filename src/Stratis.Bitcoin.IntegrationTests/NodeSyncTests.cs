@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 

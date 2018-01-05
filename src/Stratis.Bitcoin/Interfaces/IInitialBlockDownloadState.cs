@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.Bitcoin.Interfaces
+﻿namespace Stratis.Bitcoin.Interfaces
 {
     /// <summary>
     /// Provides IBD (Initial Block Download) state.

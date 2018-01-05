@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
+                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(request.CreationDate);

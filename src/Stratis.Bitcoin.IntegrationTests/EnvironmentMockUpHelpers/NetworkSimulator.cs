@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
-using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {

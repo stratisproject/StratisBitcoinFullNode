@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// <summary>
     /// State of the network connection to a peer.
     /// </summary>
-    public enum NetworkPeerState : int
+    public enum NetworkPeerState
     {
         /// <summary>An error occurred during a network operation.</summary>
         Failed,
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
 
     /// <summary>
-    /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer 
+    /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer
     /// and sending messages from the node to the peer.
     /// </summary>
     public class NetworkPeerConnection : IDisposable
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="payload">Payload of the message to send.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the sending operation.</param>
-        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</exception>
         public async Task SendAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
@@ -773,9 +773,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected.</param>
         /// <remarks>
         /// TODO: Remove this method from the code base as it is a bad practise to use it anyway.
-        /// If we used proper SendMessageAsync instead, it would throw an exception if the connection to the peer 
-        /// is terminated, which is what we want - detect the failure as early as possible and not to advance 
-        /// in the code in such a case. Also most of the time we send the message and wait for the response, 
+        /// If we used proper SendMessageAsync instead, it would throw an exception if the connection to the peer
+        /// is terminated, which is what we want - detect the failure as early as possible and not to advance
+        /// in the code in such a case. Also most of the time we send the message and wait for the response,
         /// in which case we save nothing by sending the message and not awaiting the send operation.
         /// </remarks>
         public void SendMessageVoidAsync(Payload payload)
@@ -849,7 +849,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
-        /// <para>Both parties have to send their "version" messages to the other party 
+        /// <para>Both parties have to send their "version" messages to the other party
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
@@ -860,7 +860,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
-        /// <para>Both parties have to send their "version" messages to the other party 
+        /// <para>Both parties have to send their "version" messages to the other party
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
         /// </summary>
         /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>
