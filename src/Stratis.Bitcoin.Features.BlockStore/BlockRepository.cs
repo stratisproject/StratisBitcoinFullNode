@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<Transaction> GetTrxAsync(uint256 trxid);
 
         /// <summary>
-        /// Wipe our blocks and their transactions then replace with a new block.
+        /// Wipe out blocks and their transactions then replace with a new block.
         /// </summary>
         /// <param name="newBlockHash">Hash of the new block.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
