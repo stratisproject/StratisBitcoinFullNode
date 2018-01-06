@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
             {
                 this.txid = prevOut.Hash.ToString();
                 this.vout = prevOut.N;
-                this.scriptSig = new Script(scriptSig); ;
+                this.scriptSig = new Script(scriptSig);
             }
             this.sequence = (uint)sequence;
         }

@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         private readonly DBreezeCoinView dBreezeCoinView;
 
-        private readonly Network network;
-
         private readonly LookaheadBlockPuller blockPuller;
 
         private readonly CoinView coinView;
@@ -68,7 +66,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ConsensusStats consensusStats,
-            ConsensusSettings consensusSettings,
             IRuleRegistration ruleRegistration,
             IConsensusRules consensusRules,
             StakeChainStore stakeChain = null)
@@ -79,7 +76,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState = chainState;
             this.connectionManager = connectionManager;
             this.signals = signals;
-            this.network = network;
             this.consensusLoop = consensusLoop;
             this.nodeDeployments = nodeDeployments;
             this.stakeChain = stakeChain;
@@ -89,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.ruleRegistration = ruleRegistration;
             this.consensusRules = consensusRules;
 
-            this.chainState.MaxReorgLength = this.network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
+            this.chainState.MaxReorgLength = network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
         }
 
         /// <inheritdoc />

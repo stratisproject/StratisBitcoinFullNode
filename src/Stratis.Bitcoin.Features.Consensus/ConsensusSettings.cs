@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Constructs a new consensus settings object.
         /// </summary>
         /// <param name="nodeSettings">Full node settings.</param>
-        /// <param name="logger">Current application logger.</param>
+        /// <param name="loggerFactory">Logger factory.</param>
         public ConsensusSettings(NodeSettings nodeSettings, ILoggerFactory loggerFactory)
         {
             this.nodeSettings = nodeSettings;

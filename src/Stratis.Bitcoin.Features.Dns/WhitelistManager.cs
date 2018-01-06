@@ -64,24 +64,25 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="peerAddressManager">The manager implementation for peer addresses.</param>
         /// <param name="dnsServer">The DNS server.</param>
         /// <param name="nodeSettings">The node settings.</param>
-        public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, NodeSettings nodeSettings)
+        public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, NodeSettings nodeSettings, DnsSettings dnsSettings)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             Guard.NotNull(dnsServer, nameof(dnsServer));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            Guard.NotNull(nodeSettings.DnsHostName, nameof(nodeSettings.DnsHostName));
+            Guard.NotNull(dnsSettings, nameof(dnsSettings));
+            Guard.NotNull(dnsSettings.DnsHostName, nameof(dnsSettings.DnsHostName));
             Guard.NotNull(nodeSettings.ConnectionManager, nameof(nodeSettings.ConnectionManager));
 
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddressManager = peerAddressManager;
             this.dnsServer = dnsServer;
-            this.dnsPeerBlacklistThresholdInSeconds = nodeSettings.DnsPeerBlacklistThresholdInSeconds;
-            this.dnsHostName = nodeSettings.DnsHostName;
+            this.dnsPeerBlacklistThresholdInSeconds = dnsSettings.DnsPeerBlacklistThresholdInSeconds;
+            this.dnsHostName = dnsSettings.DnsHostName;
             this.externalEndpoint = nodeSettings.ConnectionManager.ExternalEndpoint;
-            this.fullNodeMode = nodeSettings.DnsFullNode;
+            this.fullNodeMode = dnsSettings.DnsFullNode;
         }
 
         /// <summary>

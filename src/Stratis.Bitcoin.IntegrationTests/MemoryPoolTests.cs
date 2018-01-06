@@ -857,11 +857,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var stratisNode1 = builder.CreateStratisPowNode();
                 var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
-
-                // not in IBD
-                stratisNodeSync.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNode1.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNode2.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                
+                stratisNodeSync.NotInIBD();
+                stratisNode1.NotInIBD();
+                stratisNode2.NotInIBD();
 
                 // generate blocks and wait for the downloader to pickup
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));

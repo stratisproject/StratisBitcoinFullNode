@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 Block block = context.BlockValidationContext.Block;
 
-                uint256 hashMerkleRoot2 = BlockMerkleRootRule.BlockMerkleRoot(block, out bool mutated);
+                uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
                 if (block.Header.HashMerkleRoot != hashMerkleRoot2)
                 {
                     this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             foreach (Transaction tx in block.Transactions)
                 leaves.Add(tx.GetHash());
 
-            return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
+            return ComputeMerkleRoot(leaves, out mutated);
         }
 
         /// <summary>
