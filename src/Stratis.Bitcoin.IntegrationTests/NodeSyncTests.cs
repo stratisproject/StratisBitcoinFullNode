@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
@@ -54,8 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreNode = builder.CreateNode();
                 builder.StartAll();
 
-                // not in IBD
-                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.NotInIBD();
 
                 var tip = coreNode.FindBlock(10).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
@@ -83,9 +79,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreCreateNode = builder.CreateNode();
                 builder.StartAll();
 
-                // not in IBD
-                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNodeSync.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.NotInIBD();
+                stratisNodeSync.NotInIBD();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
@@ -116,8 +111,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreCreateNode = builder.CreateNode();
                 builder.StartAll();
 
-                // not in IBD
-                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.NotInIBD();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
