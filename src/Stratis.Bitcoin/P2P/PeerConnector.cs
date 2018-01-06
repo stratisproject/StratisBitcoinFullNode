@@ -220,8 +220,11 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (OperationCanceledException timeout)
             {
-                this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
-                peer?.DisconnectWithException("Timeout", timeout);
+                this.logger.LogDebug(this.nodeLifetime.ApplicationStopping.IsCancellationRequested? "Peer {0} connection canceled because application is stopping." :
+                    "Peer {0} connection timeout.", peerAddress.NetworkAddress.Endpoint);
+
+                peer?.DisconnectWithException(this.nodeLifetime.ApplicationStopping.IsCancellationRequested ? "Application stopping"
+                    : "Timeout", timeout);
             }
             catch (Exception exception)
             {
