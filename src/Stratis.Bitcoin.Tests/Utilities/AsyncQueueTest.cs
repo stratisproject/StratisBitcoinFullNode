@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
@@ -168,6 +169,145 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             asyncQueue.Dispose();
             Assert.True(itemsProcessed < itemsToProcess);
+        }
+
+
+        /// <summary>
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws cancellation exception 
+        /// when the passed cancellation token is cancelled.
+        /// </summary>
+        [Fact]
+        public async void AsyncQueue_DequeueCancellationAsync()
+        {
+            int itemsToProcess = 50;
+            int itemsProcessed = 0;
+
+            // Create a queue in blocking dequeue mode.
+            var asyncQueue = new AsyncQueue<int>();
+
+            Task consumer = Task.Run(async () =>
+            {
+                using (var cts = new CancellationTokenSource(250))
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            int item = await asyncQueue.DequeueAsync(cts.Token);
+
+                            await Task.Delay(this.random.Next(10));
+                            itemsProcessed++;
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            break;
+                        }
+                    }
+                }
+            });
+
+            for (int i = 0; i < itemsToProcess; i++)
+            {
+                asyncQueue.Enqueue(i);
+                await Task.Delay(this.random.Next(10) + 10);
+            }
+
+            // Check that the consumer task ended already.
+            Assert.True(consumer.IsCompleted);
+
+            asyncQueue.Dispose();
+
+            // Check that not all items were processed.
+            Assert.True(itemsProcessed < itemsToProcess);
+        }
+
+        /// <summary>
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> provides items in correct order 
+        /// and that it throws cancellation exception when the queue is disposed.
+        /// </summary>
+        [Fact]
+        public async void AsyncQueue_DequeueAndDisposeAsync()
+        {
+            int itemsToProcess = 50;
+
+            // Create a queue in blocking dequeue mode.
+            var asyncQueue = new AsyncQueue<int>();
+
+            // List of items collected by the consumer task.
+            List<int> list = new List<int>();
+
+            Task consumer = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        int item = await asyncQueue.DequeueAsync();
+
+                        await Task.Delay(this.random.Next(10) + 1);
+
+                        list.Add(item);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                }
+            });
+
+            // Add half of the items slowly, so that the consumer is able to empty the queue.
+            // Add the rest of the items very quickly, so that the consumer won't be able to process all of them.
+            for (int i = 0; i < itemsToProcess; i++)
+            {
+                asyncQueue.Enqueue(i);
+
+                if (i < itemsToProcess / 2)
+                    await Task.Delay(this.random.Next(10) + 5);
+            }
+
+            // Give the consumer little more time to process couple more items.
+            await Task.Delay(20);
+
+            // Dispose the queue, which should cause the first consumer task to terminate.
+            asyncQueue.Dispose();
+
+            await consumer;
+
+            // Check that the list contain items in correct order.
+            for (int i = 0; i < list.Count - 1; i++)
+                Assert.Equal(list[i] + 1, list[i + 1]);
+
+            // Check that not all items were processed.
+            Assert.True(list.Count < itemsToProcess);
+        }
+
+        /// <summary>
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws cancellation exception 
+        /// if it is called after the queue was disposed.
+        /// </summary>
+        [Fact]
+        public async void AsyncQueue_DequeueThrowsAfterDisposeAsync()
+        {
+            // Create a queue in blocking dequeue mode.
+            var asyncQueue = new AsyncQueue<int>();
+
+            asyncQueue.Enqueue(1);
+
+            asyncQueue.Dispose();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(async () => await asyncQueue.DequeueAsync());
+        }
+
+        /// <summary>
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> blocks when the queue is empty.
+        /// </summary>
+        [Fact]
+        public void AsyncQueue_DequeueBlocksOnEmptyQueue()
+        {
+            // Create a queue in blocking dequeue mode.
+            var asyncQueue = new AsyncQueue<int>();
+
+            Assert.False(asyncQueue.DequeueAsync().Wait(100));
         }
     }
 }
