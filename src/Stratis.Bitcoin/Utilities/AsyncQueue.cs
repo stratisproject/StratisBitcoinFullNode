@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Utilities
         private readonly CancellationTokenSource cancellationTokenSource;
 
         /// <summary>Number of pending dequeue operations which need to be finished before the queue can fully dispose.</summary>
-        private int unfinishedDequeueCount;
+        private volatile int unfinishedDequeueCount;
 
         /// <summary><c>true</c> if <see cref="Dispose"/> was called, <c>false</c> otherwise.</summary>
         private bool disposed;
