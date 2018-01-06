@@ -52,20 +52,4 @@ namespace Stratis.Bitcoin.P2P.Protocol
             this.asyncQueue.Dispose();
         }
     }
-
-    public class PollMessageListener<T> : IMessageListener<T>
-    {
-        private BlockingCollection<T> messageQueue = new BlockingCollection<T>(new ConcurrentQueue<T>());
-        public BlockingCollection<T> MessageQueue { get { return this.messageQueue; } }
-
-        public virtual T ReceiveMessage(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return this.MessageQueue.Take(cancellationToken);
-        }
-
-        public virtual void PushMessage(T message)
-        {
-            this.messageQueue.Add(message);
-        }
-    }
 }
