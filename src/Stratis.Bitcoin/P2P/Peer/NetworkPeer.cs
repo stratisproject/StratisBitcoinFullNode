@@ -696,7 +696,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         public async Task VersionHandshakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            await this.VersionHandshakeAsync(null, cancellationToken);
+            await this.VersionHandshakeAsync(null, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -716,7 +716,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 || (p.Message.Payload is VerAckPayload)))
             {
                 this.logger.LogTrace("Sending my version.");
-                await this.SendMessageAsync(this.MyVersion).ConfigureAwait(false);
+                await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
                 this.logger.LogTrace("Waiting for version or rejection message.");
                 Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
@@ -750,7 +750,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
 
                 this.logger.LogTrace("Sending version acknowledgement.");
-                await this.SendMessageAsync(new VerAckPayload()).ConfigureAwait(false);
+                await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
 
                 this.logger.LogTrace("Waiting for version acknowledgement.");
                 listener.ReceivePayload<VerAckPayload>(cancellationToken);
@@ -773,17 +773,17 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <exception cref="ProtocolException">Thrown when the peer rejected our "version" message.</exception>
-        public async Task RespondToHandShakeAsync(CancellationToken cancellation = default(CancellationToken))
+        public async Task RespondToHandShakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
             using (var listener = new NetworkPeerListener(this).Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
             {
                 this.logger.LogTrace("Responding to handshake with my version.");
-                await this.SendMessageAsync(this.MyVersion);
+                await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
                 this.logger.LogTrace("Waiting for version acknowledgement or rejection message.");
-                IncomingMessage message = listener.ReceiveMessage(cancellation);
+                IncomingMessage message = listener.ReceiveMessage(cancellationToken);
 
                 if (message.Message.Payload is RejectPayload reject)
                 {
@@ -793,7 +793,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
 
                 this.logger.LogTrace("Sending version acknowledgement.");
-                await this.SendMessageAsync(new VerAckPayload());
+                await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
                 this.State = NetworkPeerState.HandShaked;
             }
 
