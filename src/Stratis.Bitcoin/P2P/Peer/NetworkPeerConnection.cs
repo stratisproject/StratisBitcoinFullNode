@@ -63,9 +63,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource CancellationSource { get; private set; }
 
-        /// <summary>Registration of callback routine to shutdown the connection when <see cref="CancellationSource"/>'s token is cancelled.</summary>
-        private CancellationTokenRegistration cancelRegistration;
-
         /// <summary>Task responsible for reading incoming messages from the stream.</summary>
         private Task receiveMessageTask;
 
@@ -79,13 +76,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <seealso cref="Shutdown"/>
         public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
 
-        /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
+        /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="shutdownCalled"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
         private object shutdownLock = new object();
 
         /// <summary>Set to <c>true</c> during the execution of shutdown procedure, <c>false</c> otherwise.</summary>
         /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
         /// <seealso cref="Shutdown"/>
         private bool shutdownInProgress;
+
+        /// <summary>Set to <c>true</c> if <see cref="Shutdown"/> was called already, <c>false</c> otherwise.</summary>
+        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
+        /// <seealso cref="Shutdown"/>
+        private bool shutdownCalled;
 
         /// <summary>Set to <c>true</c> if any of the detached behavior during the shutdown procedure requested connection object disposal, <c>false</c> otherwise.</summary>
         /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
@@ -126,11 +128,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.writeLock = new AsyncLock();
 
             this.CancellationSource = new CancellationTokenSource();
-
-            // When the cancellation source is cancelled, the registered callback is executed within 
-            // the context of the thread that invoked the cancellation. However, we want Shutdown method 
-            // to be called in separation of that to have cleaner shutdown sequence.
-            this.cancelRegistration = this.CancellationSource.Token.Register(() => Task.Run(() => this.Shutdown()));
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
             this.messageListener = new EventLoopMessageListener<IncomingMessage>(messageReceivedCallback);
@@ -202,10 +199,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.setPeerStateOnShutdown = NetworkPeerState.Failed;
                 }
 
-                this.CancellationSource.Cancel();
+                this.CallShutdown();
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Calls <see cref="Shutdown"/> in a separated context.
+        /// </summary>
+        private void CallShutdown()
+        {
+            Task.Run(() => this.Shutdown());
         }
 
         /// <summary>
@@ -227,6 +232,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// If disposal is requested from the behavior being detached, <see cref="disposeRequested"/> is set and <see cref="Dispose"/>
         /// is called when all behaviors are detached.
         /// </para>
+        /// <para>
+        /// <see cref="shutdownCalled"/> protects this method from being called more than once.
+        /// </para>
         /// </remarks>
         private void Shutdown()
         {
@@ -234,12 +242,19 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             lock (this.shutdownLock)
             {
+                if (this.shutdownCalled)
+                {
+                    this.logger.LogTrace("(-)[SHUTDOWN_CALLED]");
+                    return;
+                }
+
+                this.shutdownCalled = true;
                 this.shutdownInProgress = true;
             }
 
             this.Disconnect();
 
-            if (this.peer.State != NetworkPeerState.Failed)
+            if ((this.peer.State != NetworkPeerState.Failed) && (this.peer.State != this.setPeerStateOnShutdown))
                 this.peer.State = this.setPeerStateOnShutdown;
 
             foreach (INetworkPeerBehavior behavior in this.peer.Behaviors)
@@ -386,7 +401,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.setPeerStateOnShutdown = NetworkPeerState.Failed;
                 }
 
-                this.CancellationSource.Cancel();
+                this.CallShutdown();
             }
             finally
             {
@@ -587,6 +602,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
+            bool callShutdown = false;
             lock (this.shutdownLock)
             {
                 if (this.disposed)
@@ -603,8 +619,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
 
                 this.disposed = true;
+
+                callShutdown = !this.shutdownCalled;
             }
 
+            if (callShutdown) this.CallShutdown();
             this.CancellationSource.Cancel();
 
             this.receiveMessageTask?.Wait();
@@ -614,7 +633,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.messageListener.Dispose();
 
             this.CancellationSource.Dispose();
-            this.cancelRegistration.Dispose();
 
             this.logger.LogTrace("(-)");
         }
