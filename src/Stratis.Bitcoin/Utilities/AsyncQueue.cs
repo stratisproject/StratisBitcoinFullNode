@@ -52,18 +52,22 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary><c>true</c> if <see cref="Dispose"/> was called, <c>false</c> otherwise.</summary>
         private bool disposed;
 
+        /// <summary><c>true</c> if the queue operates in callback mode, <c>false</c> if it operates in blocking dequeue mode.</summary>
+        private bool callbackMode;
+
         /// <summary>
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
         /// </summary>
         /// <param name="onEnqueueAsync">Callback routine to be called when a new item is added to the queue, or <c>null</c> to operate in blocking dequeue mode.</param>
         public AsyncQueue(OnEnqueueAsync onEnqueueAsync = null)
         {
+            this.callbackMode = onEnqueueAsync != null;
             this.lockObject = new object();
             this.items = new Queue<T>();
             this.signal = new AsyncManualResetEvent();
             this.onEnqueueAsync = onEnqueueAsync;
             this.cancellationTokenSource = new CancellationTokenSource();
-            this.consumerTask = this.onEnqueueAsync != null ? this.ConsumerAsync() : null;
+            this.consumerTask = this.callbackMode ? this.ConsumerAsync() : null;
         }
 
         /// <summary>
@@ -118,8 +122,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="cancellation">Cancellation token that allows aborting the wait if the queue is empty.</param>
         /// <returns>Dequeued item from the queue.</returns>
         /// <exception cref="OperationCanceledException">Thrown when the cancellation token is triggered or when the queue is disposed.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if this method is called on a queue that operates in callback mode.</exception>
         public async Task<T> DequeueAsync(CancellationToken cancellation = default(CancellationToken))
         {
+            if (this.callbackMode)
+                throw new InvalidOperationException();
+
             // Increment the counter so that the queue's cancellation source is not disposed when we are using it.
             Interlocked.Increment(ref this.unfinishedDequeueCount);
 
@@ -193,10 +201,14 @@ namespace Stratis.Bitcoin.Utilities
             this.cancellationTokenSource.Cancel();
             this.consumerTask?.Wait();
 
-            // We have to wait until all pending dequeue operations are finished.
-            // This should be very fast, so we can wait actively.
-            while (this.unfinishedDequeueCount > 0)
-                Thread.Sleep(10);
+            if (!this.callbackMode)
+            {
+                // Wait until all pending dequeue operations are finished.
+                // As this is very fast once disposed has been set to true,
+                // we can afford busy wait.
+                while (this.unfinishedDequeueCount > 0)
+                    Thread.Sleep(1);
+            }
 
             this.cancellationTokenSource.Dispose();
         }
