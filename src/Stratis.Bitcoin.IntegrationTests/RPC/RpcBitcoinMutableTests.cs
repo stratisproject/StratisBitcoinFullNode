@@ -1,9 +1,6 @@
-﻿using System;
-using System.Threading;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.RPC;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
@@ -52,12 +49,14 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpc.AddNode(nodeB.Endpoint);
 
                 AddedNodeInfo[] info = null;
-                WaitAssert(() =>
+                TestHelper.WaitLoop(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
-                    Assert.NotNull(info);
-                    Assert.NotEmpty(info);
+                    return info != null && info.Length > 0;
                 });
+                Assert.NotNull(info);
+                Assert.NotEmpty(info);
+
                 //For some reason this one does not pass anymore in 0.13.1
                 //Assert.Equal(nodeB.Endpoint, info.First().Addresses.First().Address);
                 AddedNodeInfo oneInfo = rpc.GetAddedNodeInfo(true, nodeB.Endpoint);
@@ -67,29 +66,13 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Assert.Null(oneInfo);
                 rpc.RemoveNode(nodeB.Endpoint);
 
-                WaitAssert(() =>
+                TestHelper.WaitLoop(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
-                    Assert.Empty(info);
+                    return info.Length == 0;
                 });
-            }
-        }
 
-        private void WaitAssert(Action act)
-        {
-            int totalTry = 50;
-            while (totalTry > 0)
-            {
-                try
-                {
-                    act();
-                    return;
-                }
-                catch (AssertActualExpectedException)
-                {
-                    Thread.Sleep(200);
-                    totalTry--;
-                }
+                Assert.Empty(info);
             }
         }
     }
