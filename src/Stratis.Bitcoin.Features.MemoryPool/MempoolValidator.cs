@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLock = mempoolLock;
             this.consensusValidator = consensusValidator;
             this.dateTimeProvider = dateTimeProvider;
-            this.mempoolSettings = mempoolSettings; ;
+            this.mempoolSettings = mempoolSettings;
             this.chain = chain;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

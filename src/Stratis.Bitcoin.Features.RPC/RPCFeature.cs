@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Controllers;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {

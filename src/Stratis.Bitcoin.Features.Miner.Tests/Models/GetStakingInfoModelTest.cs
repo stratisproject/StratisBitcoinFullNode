@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.Miner.Models;
+﻿using Stratis.Bitcoin.Features.Miner.Models;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests.Models
