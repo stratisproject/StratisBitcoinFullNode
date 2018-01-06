@@ -397,5 +397,21 @@ namespace Stratis.Bitcoin.Tests.Utilities
             }
         }
 
+        /// <summary>
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws 
+        /// exception when it is called on a queue operating in callback mode.
+        /// </summary>
+        [Fact]
+        public void AsyncQueue_DequeueThrowsInCallbackMode()
+        {
+            var asyncQueue = new AsyncQueue<int>((item, cancellation) =>
+            {
+                return Task.CompletedTask;
+            });
+
+            // Enqueue an item, which should trigger the callback.
+            Assert.ThrowsAsync< InvalidOperationException>(async () => await asyncQueue.DequeueAsync());
+        }
+
     }
 }
