@@ -1,6 +1,9 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -13,10 +16,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        /// <summary>Maximum time in milliseconds for forming a new batch.</summary>
+        private const int FlushFrequencyMilliseconds = 500;
 
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
+        /// <summary>Async loop that continuously runs <see cref="RelayWorkerAsync"/>.</summary>
+        private IAsyncLoop relayWorkerLoop;
 
         private readonly IBlockRepository blockRepository;
 
@@ -31,8 +35,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly string name;
-
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
@@ -41,6 +43,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>Event that is fired when a new block gets enqueued.</summary>
+        private readonly ManualResetEventSlim blockEnqueued;
+
+        /// <summary>Timestamp of last announcement event.</summary>
+        private DateTime lastBlockAnnounceTimeStamp;
+
+        /// <summary>Date and time information provider.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
             ConcurrentChain chain,
@@ -48,22 +62,24 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
-            IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
-            string name = "BlockStore")
+            IDateTimeProvider dateTimeProvider,
+            IAsyncLoopFactory asyncLoopFactory)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
             this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
             this.chainState = chainState;
             this.connection = connection;
-            this.name = name;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
+            this.dateTimeProvider = dateTimeProvider;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.blockEnqueued = new ManualResetEventSlim(false);
+            this.lastBlockAnnounceTimeStamp = DateTime.MinValue;
         }
 
         protected override void OnNextCore(Block block)
@@ -97,14 +113,34 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedBlock);
             this.blocksToAnnounce.Enqueue(chainedBlock);
+            this.blockEnqueued.Set();
 
             this.logger.LogTrace("(-)");
         }
+
+        public void Initialize()
+        {
+            this.logger.LogTrace("()");
+
+            this.relayWorkerLoop = this.asyncLoopFactory.Run("BlockStore", async token =>
+            {
+                await this.RelayWorkerAsync();
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.RunOnce);
+
+            this.logger.LogTrace("(-)");
+        }
+
 
         /// <summary>
         /// A loop method that continuously relays blocks found in <see cref="blocksToAnnounce"/> to connected peers on the network.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// Relaying is triggered when new item is added to the <see cref="blocksToAnnounce"/>.
+        /// If previous announcement was made in less than <see cref="FlushFrequencyMilliseconds"/> it will wait in order to form a batch.
+        /// </para>
         /// <para>
         /// The queue <see cref="blocksToAnnounce"/> contains
         /// hashes of blocks that were validated by the consensus rules.
@@ -124,19 +160,39 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// TODO: consider moving the relay logic to the <see cref="LoopSteps.ProcessPendingStorageStep"/>.
         /// </remarks>
-        public void RelayWorker()
+        private async Task RelayWorkerAsync()
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
+            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
                 this.logger.LogTrace("()");
+
+                try
+                {
+                    // Wait until a new block is added to the queue.
+                    this.blockEnqueued.Wait(this.nodeLifetime.ApplicationStopping);
+
+                    // Make sure that at least 'FlushFrequencyMilliseconds' passed since the last announcement.
+                    // This is needed in order to ensure announcing blocks in batches to reduce the overhead.
+                    int msSinceLastAnnounce = this.lastBlockAnnounceTimeStamp == DateTime.MinValue ? int.MaxValue :
+                        (int)(this.dateTimeProvider.GetUtcNow() - this.lastBlockAnnounceTimeStamp).TotalMilliseconds;
+                    if (msSinceLastAnnounce < FlushFrequencyMilliseconds)
+                        await Task.Delay(FlushFrequencyMilliseconds - msSinceLastAnnounce, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    this.lastBlockAnnounceTimeStamp = this.dateTimeProvider.GetUtcNow();
+
+                    this.blockEnqueued.Reset();
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
 
                 int announceBlockCount = this.blocksToAnnounce.Count;
                 if (announceBlockCount == 0)
                 {
                     this.logger.LogTrace("(-)[NO_BLOCKS]");
-                    return;
+                    continue;
                 }
 
                 this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
@@ -166,8 +222,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
                             continue;
                         }
-                        else this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
 
+                        this.blockEnqueued.Set();
+                        this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
                         break;
                     }
 
@@ -182,14 +239,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (!broadcastItems.Any())
                 {
                     this.logger.LogTrace("(-)[NO_BROADCAST_ITEMS]");
-                    return;
+                    continue;
                 }
 
                 IReadOnlyNetworkPeerCollection nodes = this.connection.ConnectedNodes;
                 if (!nodes.Any())
                 {
                     this.logger.LogTrace("(-)[NO_NODES]");
-                    return;
+                    continue;
                 }
 
                 // Announce the blocks to each of the peers.
@@ -198,20 +255,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
                 foreach (BlockStoreBehavior behaviour in behaviours)
                     await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Second,
-            startAfter: TimeSpans.FiveSeconds);
+            }
 
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// The async loop needs to complete its work before we can shut down this feature.
-        /// </summary>
-        internal void ShutDown()
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
         {
-            this.asyncLoop.Dispose();
+            this.relayWorkerLoop.Dispose();
+            this.blockEnqueued.Dispose();
+
+            base.Dispose(disposing);
         }
     }
 }
