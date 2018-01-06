@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         public MempoolManager MempoolManager { get; private set; }
 
-        public MempoolController(MempoolManager mempoolManager) : base()
+        public MempoolController(MempoolManager mempoolManager)
         {
             Guard.NotNull(mempoolManager, nameof(mempoolManager));
 
