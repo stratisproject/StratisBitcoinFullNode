@@ -689,48 +689,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Waits for a message of specific type to be received from the peer.
-        /// </summary>
-        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
-        /// <param name="timeout">How long to wait for the message.</param>
-        /// <returns>Received message.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the wait timed out.</exception>
-        public TPayload ReceiveMessage<TPayload>(TimeSpan timeout) where TPayload : Payload
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(timeout), timeout);
-
-            using (var source = new CancellationTokenSource())
-            {
-                source.CancelAfter(timeout);
-                TPayload res = this.ReceiveMessage<TPayload>(source.Token);
-
-                this.logger.LogTrace("(-):'{0}'", res);
-                return res;
-            }
-        }
-
-        /// <summary>
-        /// Waits for a message of specific type to be received from the peer.
-        /// </summary>
-        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation.</param>
-        /// <returns>Received message.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the cancellation token was cancelled.</exception>
-        public TPayload ReceiveMessage<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
-        {
-            this.logger.LogTrace("()");
-
-            using (var listener = new NetworkPeerListener(this))
-            {
-                TPayload res = listener.ReceivePayload<TPayload>(cancellationToken);
-
-                this.logger.LogTrace("(-):'{0}'", res);
-                return res;
-            }
-
-        }
-
-        /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
         /// <para>Both parties have to send their "version" messages to the other party 
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
