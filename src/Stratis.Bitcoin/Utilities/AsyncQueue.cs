@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Utilities
         private bool disposed;
 
         /// <summary><c>true</c> if the queue operates in callback mode, <c>false</c> if it operates in blocking dequeue mode.</summary>
-        private bool callbackMode;
+        private readonly bool callbackMode;
 
         /// <summary>
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Utilities
         public async Task<T> DequeueAsync(CancellationToken cancellation = default(CancellationToken))
         {
             if (this.callbackMode)
-                throw new InvalidOperationException();
+                throw new InvalidOperationException($"{nameof(DequeueAsync)} called on queue in callback mode.");
 
             // Increment the counter so that the queue's cancellation source is not disposed when we are using it.
             Interlocked.Increment(ref this.unfinishedDequeueCount);
