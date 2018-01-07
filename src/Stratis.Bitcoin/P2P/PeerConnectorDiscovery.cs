@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.MaxOutboundConnections = 8;
+            this.MaxOutboundConnections = this.NodeSettings.ConfigReader.GetOrDefault("maxOutboundConnections", 8);
         }
 
         /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.P2P
                     continue;
                 }
 
-                // If the peer exists in the -addnode collection don't 
+                // If the peer exists in the -addnode collection don't
                 // try and connect to it.
                 var peerExistsInAddNode = this.NodeSettings.ConnectionManager.AddNode.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInAddNode)
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.P2P
                     continue;
                 }
 
-                // If the peer exists in the -connect collection don't 
+                // If the peer exists in the -connect collection don't
                 // try and connect to it.
                 var peerExistsInConnectNode = this.NodeSettings.ConnectionManager.Connect.Any(p => p.MapToIpv6().Match(peer.NetworkAddress.Endpoint));
                 if (peerExistsInConnectNode)
