@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.MaximumNodeConnections = 8;
+            this.MaxOutboundConnections = 8;
         }
 
         /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>

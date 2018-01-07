@@ -381,7 +381,7 @@ namespace Stratis.Bitcoin.Connection
             if (!this.NodeSettings.ConnectionManager.AddNode.Any(p => p.Match(ipEndpoint)))
             {
                 this.NodeSettings.ConnectionManager.AddNode.Add(ipEndpoint);
-                this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode).MaximumNodeConnections++;
+                this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode).MaxOutboundConnections++;
             }
             else
                 this.logger.LogTrace("The endpoint already exists in the add node collection.");
