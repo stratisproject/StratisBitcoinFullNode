@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +17,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </para>
     /// </summary>
     /// <typeparam name="T">Type of items to be inserted in the queue.</typeparam>
-    public class AsyncQueue<T>: IDisposable
+    public class AsyncQueue<T> : IDisposable
     {
         /// <summary>
         /// Represents a callback method to be executed when a new item is added to the queue.
@@ -99,7 +98,6 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     // Wait for an item to be enqueued.
                     await this.signal.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    this.signal.Reset();
 
                     // Dequeue all items and execute the callback.
                     T item;
@@ -150,18 +148,8 @@ namespace Stratis.Bitcoin.Utilities
 
                         // Note that another thread could consume the message before us, 
                         // so dequeue safely and loop if nothing is available.
-                        lock (this.lockObject)
-                        {
-                            if (this.items.Count > 0)
-                            {
-                                item = this.items.Dequeue();
-
-                                if (this.items.Count == 0)
-                                    this.signal.Reset();
-
-                                return item;
-                            }
-                        }
+                        if (this.TryDequeue(out item))
+                            return item;
                     }
                 }
             }
@@ -184,6 +172,10 @@ namespace Stratis.Bitcoin.Utilities
                 if (this.items.Count > 0)
                 {
                     item = this.items.Dequeue();
+
+                    if (this.items.Count == 0)
+                        this.signal.Reset();
+
                     return true;
                 }
 
@@ -207,7 +199,7 @@ namespace Stratis.Bitcoin.Utilities
                 // As this is very fast once disposed has been set to true,
                 // we can afford busy wait.
                 while (this.unfinishedDequeueCount > 0)
-                    Thread.Sleep(1);
+                    Thread.Sleep(5);
             }
 
             this.cancellationTokenSource.Dispose();
