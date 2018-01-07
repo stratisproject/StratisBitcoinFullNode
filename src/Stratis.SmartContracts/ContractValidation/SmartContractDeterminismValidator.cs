@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.ContractValidation
     /// Also check there is no way around these rules, including recursion, funky namespaces,
     /// partial classes and extension methods, attributes
     /// </summary>
-    internal class DeterminismValidator : IContractValidator
+    internal class SmartContractDeterminismValidator : ISmartContractValidator
     {
         /// <summary>
         /// System calls where we don't need to check any deeper - we just allow them.
@@ -81,31 +81,24 @@ namespace Stratis.SmartContracts.ContractValidation
             OpCodes.Stind_R8
         };
 
-        private readonly TypeDefinition _contractType;
-        //private List<ContractValidationError> _errorsToReturn;
-        private List<ContractValidationError> _errors;
+        private List<SmartContractValidationError> _errors;
         private HashSet<string> _visitedMethods;
 
         private MethodDefinition _currentMethod;
         private MethodDefinition _lastUserCall;
 
-        public DeterminismValidator(TypeDefinition typeDefinition)
+        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            _contractType = typeDefinition;
-            //_errorsToReturn = new List<ContractValidationError>();
-            _errors = new List<ContractValidationError>();
+            _errors = new List<SmartContractValidationError>();
             _visitedMethods = new HashSet<string>();
-        }
 
-        public ContractValidationResult Validate()
-        {
-            foreach (var method in _contractType.Methods)
+            foreach (var method in decompilation.ContractType.Methods)
             {
                 _currentMethod = method;
                 ValidateDeterminismForUserMethod(method);
             }
 
-            return new ContractValidationResult(_errors);
+            return new SmartContractValidationResult(_errors);
         }
 
         public void ValidateDeterminismForUserMethod(MethodDefinition method)
@@ -129,7 +122,7 @@ namespace Stratis.SmartContracts.ContractValidation
                 }
                 catch (StratisCompilationException e)
                 {
-                    _errors.Add(new ContractValidationError(e.Message));
+                    _errors.Add(new SmartContractValidationError(e.Message));
                 }
             }
 

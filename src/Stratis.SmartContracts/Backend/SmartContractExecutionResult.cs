@@ -6,7 +6,7 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts.Backend
 {
-    internal class ExecutionResult
+    internal class SmartContractExecutionResult
     {
         public ulong GasUsed { get; set; }
         public object Return { get; set; }
@@ -22,13 +22,13 @@ namespace Stratis.SmartContracts.Backend
 
         public uint160 NewContractAddress { get; set; }
 
-        public ExecutionResult()
+        public SmartContractExecutionResult()
         {
             DeleteAccounts = new HashSet<uint256>();
             //InternalTransactions = new List<InternalTransaction>();
         }
 
-        public void Merge(ExecutionResult another)
+        public void Merge(SmartContractExecutionResult another)
         {
             //InternalTransactions.AddRange(another.InternalTransactions);
             if (another.RuntimeException == null && !another.Revert)

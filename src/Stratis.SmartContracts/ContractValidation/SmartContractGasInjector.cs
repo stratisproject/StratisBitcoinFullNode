@@ -5,21 +5,9 @@ using System.Linq;
 
 namespace Stratis.SmartContracts.ContractValidation
 {
-    internal class SpendGasInjector
+    public class SmartContractGasInjector
     {
         private const string GasMethod = "System.Void Stratis.SmartContracts.CompiledSmartContract::SpendGas(System.UInt32)";
-
-        public void AddGasCalculationToContract(TypeDefinition contractType, TypeDefinition baseType)
-        {
-            // Get gas expend method
-            MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
-            MethodReference gasMethodReference = contractType.Module.Import(gasMethod);
-
-            foreach(var method in contractType.Methods)
-            {
-                InjectSpendGasMethod(method, gasMethodReference);
-            }
-        }
 
         private static readonly HashSet<OpCode> _branchingOps = new HashSet<OpCode>
         {
@@ -51,6 +39,18 @@ namespace Stratis.SmartContracts.ContractValidation
             OpCodes.Calli,
             OpCodes.Callvirt
         };
+
+        public void AddGasCalculationToContract(TypeDefinition contractType, TypeDefinition baseType)
+        {
+            // Get gas expend method
+            MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
+            MethodReference gasMethodReference = contractType.Module.Import(gasMethod);
+
+            foreach (var method in contractType.Methods)
+            {
+                InjectSpendGasMethod(method, gasMethodReference);
+            }
+        }
 
         private void InjectSpendGasMethod(MethodDefinition methodDefinition, MethodReference gasMethod)
         {

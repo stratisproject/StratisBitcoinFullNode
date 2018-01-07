@@ -21,7 +21,9 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -154,7 +156,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 SmartContractStateRepository stateRepository = new SmartContractStateRepository();
                 stateRepository.Refresh(); // just for unit tests
-                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, stateRepository);
+                SmartContractDecompiler smartContractDecompiler = new SmartContractDecompiler();
+                SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
+                        {
+                            new SmartContractFormatValidator(),
+                            new SmartContractDeterminismValidator()
+                        });
+                SmartContractGasInjector gasInjector = new SmartContractGasInjector();
+                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, stateRepository, smartContractDecompiler, validator, gasInjector);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
@@ -185,7 +194,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
                 this.baseheight = 0;
-                List<Block> blocks = new List<Block>();
+                List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
                 this.txFirst = new List<Transaction>();
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
@@ -236,23 +245,22 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            //tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
 
             var contractTransaction = new SCTransaction
             {
                 VmVersion = 1,
                 GasLimit = 500000,
                 GasPrice = 1,
-                ContractCode = new byte[0],
+                ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"),
                 OpCodeType = OpcodeType.OP_CREATECONTRACT
             };
-            tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script(contractTransaction.ToBytes())));
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.ToBytes())));
 
             var outTest = tx.Outputs.FirstOrDefault();
             bool result = outTest.ScriptPubKey.IsSmartContractExec;
             // This tx has a low fee: 1000 satoshis
             uint256 hashParentTx = tx.GetHash();
-            context.mempool.AddUnchecked(hashParentTx, entry.Fee(1000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            context.mempool.AddUnchecked(hashParentTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });

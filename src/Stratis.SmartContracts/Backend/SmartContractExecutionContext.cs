@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts
     /// <summary>
     /// Information about the current state of the blockchain that can be accessed in the virtual machine.
     /// </summary>
-    internal class ExecutionContext
+    internal class SmartContractExecutionContext
     {
         // If it will somehow improve performance in future to make these a UINT180, then do so
         public uint160 ContractAddress { get; set; }

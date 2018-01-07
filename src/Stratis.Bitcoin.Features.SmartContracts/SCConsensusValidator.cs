@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
+using Stratis.SmartContracts.ContractValidation;
+using Stratis.SmartContracts.ContractValidation.Result;
 using Stratis.SmartContracts.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -18,24 +23,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
 
         private readonly ISmartContractStateRepository state;
+        private readonly SmartContractDecompiler smartContractDecompiler;
+        private readonly SmartContractValidator smartContractValidator;
+        private readonly SmartContractGasInjector smartContractGasInjector;
 
         public SCConsensusValidator(
             Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            ISmartContractStateRepository state)
+            ISmartContractStateRepository state,
+            SmartContractDecompiler smartContractDecompiler,
+            SmartContractValidator smartContractValidator,
+            SmartContractGasInjector smartContractGasInjector)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
-            this.state = state;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.state = state;
+            this.smartContractDecompiler = smartContractDecompiler;
+            this.smartContractValidator = smartContractValidator;
+            this.smartContractGasInjector = smartContractGasInjector;
         }
 
+        // Same as base, just that it always validates true for scripts for now. Purely for testing.
         public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
 
-            Block block = context.BlockValidationContext.Block;
+            NBitcoin.Block block = context.BlockValidationContext.Block;
             ChainedBlock index = context.BlockValidationContext.ChainedBlock;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
@@ -159,7 +174,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Need to update balances for these transactions
 
-            foreach (var txOut in transaction.Outputs)
+            foreach (TxOut txOut in transaction.Outputs)
             {
                 if (txOut.ScriptPubKey.IsSmartContractExec)
                 {
@@ -182,15 +197,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private void ExecuteCreateContractTransaction(SCTransaction transaction)
         {
-            // decompile code to module
-            // validate module with analyzer
-            // inject gasspend
+            SmartContractDecompilation decomp = this.smartContractDecompiler.GetModuleDefinition(transaction.ContractCode);
+            SmartContractValidationResult validationResult = this.smartContractValidator.ValidateContract(decomp);
+            
+            if (!validationResult.Valid)
+            {
+                // expend all of users fee - no deployment
+                throw new NotImplementedException();
+            }
 
-            // run method with reflectionvirtualmachine
+            this.smartContractGasInjector.AddGasCalculationToContract(decomp.ContractType, decomp.BaseType);
+            MemoryStream adjustedCodeMem = new MemoryStream();
+            decomp.ModuleDefinition.Write(adjustedCodeMem);
+            byte[] adjustedCodeBytes = adjustedCodeMem.ToArray();
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
 
-            // gas?? add to coinbase transaction?
-            // save code to database
-            throw new NotImplementedException();
+            uint160 contractAddress = 0; // TODO: GET ACTUAL NUM
+
+            SmartContractExecutionResult result = vm.ExecuteMethod(adjustedCodeMem.ToArray(), new SmartContractExecutionContext {
+                // todo fill
+            });
+            // do something with gas
+            
+            if (!result.Revert)
+            {
+                state.SetCode(contractAddress, adjustedCodeBytes);
+                // anything else to update
+            }
         }
 
         private void ExecuteCallContractTransaction(SCTransaction transaction)

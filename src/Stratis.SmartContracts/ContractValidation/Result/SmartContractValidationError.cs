@@ -4,11 +4,11 @@ using System.Text;
 
 namespace Stratis.SmartContracts.ContractValidation.Result
 {
-    internal class ContractValidationError
+    public class SmartContractValidationError
     {
         public string Message { get; set; }
 
-        public ContractValidationError(string message)
+        public SmartContractValidationError(string message)
         {
             Message = message;
         }

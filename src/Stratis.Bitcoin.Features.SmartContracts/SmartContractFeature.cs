@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.SmartContracts.ContractValidation;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -27,6 +28,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
+                        services.AddSingleton<SmartContractDecompiler>();
+                        SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
+                        {
+                            new SmartContractFormatValidator(),
+                            new SmartContractDeterminismValidator()
+                        });
+                        services.AddSingleton<SmartContractValidator>(validator);
+                        services.AddSingleton<SmartContractGasInjector>();
                         services.AddSingleton<PowConsensusValidator, SCConsensusValidator>();
                     });
             });
