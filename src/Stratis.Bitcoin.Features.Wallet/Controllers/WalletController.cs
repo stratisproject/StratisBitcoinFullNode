@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     {
                         // We look for the 2 outputs related to our spending input.
                         List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
-                        if (relatedOutputs.Count == 2)
+                        if (relatedOutputs.Any())
                         {
                             // Add staking transaction details.
                             // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
