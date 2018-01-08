@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.LightWallet
@@ -21,12 +19,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public bool IsInitialBlockDownload()
         {
             return this.isInInitialBlockDownload;
-        }
-
-        /// <inheritdoc />
-        public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
-        {
-            this.isInInitialBlockDownload = blockDownloadState;
         }
     }
 }

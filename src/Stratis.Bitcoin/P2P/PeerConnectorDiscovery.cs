@@ -34,17 +34,13 @@ namespace Stratis.Bitcoin.P2P
             base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.Requirements.RequiredServices = NetworkPeerServices.Network;
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
             this.MaximumNodeConnections = 8;
-            this.Requirements = new NetworkPeerRequirement
-            {
-                MinVersion = this.NodeSettings.ProtocolVersion,
-                RequiredServices = NetworkPeerServices.Network
-            };
         }
 
         /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>

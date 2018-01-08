@@ -10,15 +10,11 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.BreezeD
 {
     public class Program
     {
-        private const string DefaultBitcoinUri = "http://localhost:37220";
-        private const string DefaultStratisUri = "http://localhost:37221";
-
         public static void Main(string[] args)
         {
             MainAsync(args).Wait();
@@ -29,9 +25,9 @@ namespace Stratis.BreezeD
             try
             {
                 // Get the API uri.
-                var apiUri = args.GetValueOf("apiuri");
                 var isTestNet = args.Contains("-testnet");
                 var isStratis = args.Contains("stratis");
+
                 var agent = "Breeze";
 
                 NodeSettings nodeSettings;
@@ -46,12 +42,10 @@ namespace Stratis.BreezeD
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 
                     nodeSettings = new NodeSettings("stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent).LoadArguments(args);
-                    nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
                 }
                 else
                 {
                     nodeSettings = new NodeSettings(agent: agent).LoadArguments(args);
-                    nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
                 }
 
                 IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()

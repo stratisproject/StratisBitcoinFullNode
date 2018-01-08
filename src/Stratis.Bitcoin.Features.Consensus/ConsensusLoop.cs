@@ -529,7 +529,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("Executing block.");
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                this.Validator.ExecuteBlock(context, null);
+                this.Validator.ExecuteBlock(context);
             }
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
