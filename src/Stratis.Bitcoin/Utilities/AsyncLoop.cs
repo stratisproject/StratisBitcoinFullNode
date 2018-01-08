@@ -66,6 +66,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public Task RunningTask { get; private set; }
 
+        /// <inheritdoc />
         public TimeSpan RepeatEvery { get; set; }
 
         /// <summary>
