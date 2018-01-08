@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             var config = nodeSettings.ConfigReader;
 
-            this.Prune = config.GetOrDefault("prune", 0) != 0;
-            this.TxIndex = config.GetOrDefault("txindex", 0) != 0;
-            this.ReIndex = config.GetOrDefault("reindex", 0) != 0;
+            this.Prune = config.GetOrDefault<bool>("prune", false);
+            this.TxIndex = config.GetOrDefault<bool>("txindex", false);
+            this.ReIndex = config.GetOrDefault<bool>("reindex", false);
 
             this.callback?.Invoke(this);
 
