@@ -82,6 +82,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        ///<inheritdoc/>
         public IAsyncLoop Mine(Script reserveScript)
         {
             if (this.mining != null)
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
                 }
 
-                this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
+                nExtraNonce = this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                 Block pblock = pblockTemplate.Block;
 
                 while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
@@ -188,7 +189,8 @@ namespace Stratis.Bitcoin.Features.Miner
             return blocks;
         }
 
-        public void IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+        ///<inheritdoc/>
+        public int IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
         {
             // Update nExtraNonce
             if (this.hashPrevBlock != pblock.Header.HashPrevBlock)
@@ -204,6 +206,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
             pblock.UpdateMerkleRoot();
+
+            return nExtraNonce;
         }
     }
 }
