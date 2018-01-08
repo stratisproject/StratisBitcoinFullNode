@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
+            // TODO: make sure that this is moved to a new config implementation when it's ready.
             this.MaxOutboundConnections = this.NodeSettings.ConfigReader.GetOrDefault("maxOutboundConnections", 8);
         }
 
