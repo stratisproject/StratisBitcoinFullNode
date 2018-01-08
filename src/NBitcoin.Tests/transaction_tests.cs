@@ -1412,6 +1412,25 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
+        public void CanBuildWithKnownSignatures()
+        {
+            var k = new Key();
+            var tx = new Transaction();
+ 
+            var coin = new Coin(new OutPoint(Rand(), 0), new TxOut(Money.Coins(1.0m), k.PubKey.Hash));
+            tx.Inputs.Add(new TxIn(coin.Outpoint));
+            TransactionSignature signature = tx.SignInput(k, coin);
+ 
+            var txBuilder = new TransactionBuilder();
+            txBuilder.AddCoins(coin);
+            txBuilder.AddKnownSignature(k.PubKey, signature);
+            txBuilder.SignTransactionInPlace(tx);
+ 
+            Assert.True(tx.Inputs.AsIndexedInputs().First().VerifyScript(coin));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
         public void CanBuildTransaction()
         {
             var keys = Enumerable.Range(0, 5).Select(i => new Key()).ToArray();
@@ -2060,6 +2079,17 @@ namespace NBitcoin.Tests
             spending.Inputs[0].WitScript = new WitScript(new[] { new byte[521] }.Concat(spending.Inputs[0].WitScript.Pushes).ToArray());
             Assert.False(spending.Inputs.AsIndexedInputs().First().VerifyScript(coin, out error));
             Assert.Equal(ScriptError.PushSize, error);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void DoNotThrowsWithSatoshiFormatAndNoOutputs()
+        {
+ 	        var tx = Transaction.Parse("02000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0401700101ffffffff02" +
+                        "00f2052a0100000023210295aefb5b15cd9204f18ceda653ebeaada10c69b6ef7f757450c5d66c0f0ebb8dac0000000000000000266a24aa21a9" +
+                        "ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf900000000");
+
+            tx.ToString(RawFormat.Satoshi);
         }
 
         [Fact]
