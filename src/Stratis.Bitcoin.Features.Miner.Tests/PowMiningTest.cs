@@ -335,13 +335,29 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 BlockTemplate blockTemplate = CreateBlockTemplate(this.fixture.block1);
                 BlockTemplate blockTemplate2 = CreateBlockTemplate(this.fixture.block2);
 
+                int attempts = 0;
                 this.blockAssembler.Setup(b => b.CreateNewBlock(It.Is<Script>(r => r == this.fixture.reserveScript.ReserveFullNodeScript), true))
                     .Returns(() =>
                     {
                         if (lastChainedBlock == null)
                         {
+                            if (attempts == 10)
+                            {
+                                // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
+                                this.fixture.block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.key.ScriptPubKey);
+                                this.fixture.chainedBlock1 = new ChainedBlock(this.fixture.block1.Header, this.fixture.block1.GetHash(), this.chain.Tip);
+                                this.fixture.block2 = this.fixture.PrepareValidBlock(this.fixture.chainedBlock1, 2, this.fixture.key.ScriptPubKey);
+                                this.fixture.chainedBlock2 = new ChainedBlock(this.fixture.block2.Header, this.fixture.block2.GetHash(), this.fixture.chainedBlock1);
+
+                                blockTemplate = CreateBlockTemplate(this.fixture.block1);
+                                blockTemplate2 = CreateBlockTemplate(this.fixture.block2);
+                                attempts = 0;
+                            }
+                            attempts += 1;
+
                             return blockTemplate;
                         }
+
                         return blockTemplate2;
                     });
 
@@ -561,7 +577,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             }
         }
 
-        private Block PrepareValidBlock(ChainedBlock prevBlock, int newHeight, Script ScriptPubKey)
+        public Block PrepareValidBlock(ChainedBlock prevBlock, int newHeight, Script ScriptPubKey)
         {
             uint nonce = 0;
 
