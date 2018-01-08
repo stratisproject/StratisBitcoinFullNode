@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.Connect.Count;
+            this.MaxOutboundConnections = this.NodeSettings.ConnectionManager.Connect.Count;
 
             // Add the endpoints from the -connect arg to the address manager
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)

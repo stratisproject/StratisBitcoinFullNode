@@ -826,7 +826,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            var block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedBlock block = this.chain.GetBlock(uint256.Parse(model.Hash));
+
+            if (block == null)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block with hash {model.Hash} was not found on the blockchain.", string.Empty);
+            }
+
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
         }

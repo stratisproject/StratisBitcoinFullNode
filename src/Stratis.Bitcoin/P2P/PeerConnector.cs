@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.P2P
         void Initialize(IConnectionManager connectionManager);
 
         /// <summary>The maximum amount of peers the node can connect to (defaults to 8).</summary>
-        int MaximumNodeConnections { get; set; }
+        int MaxOutboundConnections { get; set; }
 
         /// <summary>Specification of requirements the <see cref="PeerConnector"/> has when connecting to other peers.</summary>
         NetworkPeerRequirement Requirements { get; }
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Starts an asynchronous loop that connects to peers in one second intervals.
         /// <para>
-        /// If the maximum amount of connections has been reached (<see cref="MaximumNodeConnections"/>), the action gets skipped.
+        /// If the maximum amount of connections has been reached (<see cref="MaxOutboundConnections"/>), the action gets skipped.
         /// </para>
         /// </summary>
         void StartConnectAsync();
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.P2P
         private readonly ILogger logger;
 
         /// <inheritdoc/>
-        public int MaximumNodeConnections { get; set; }
+        public int MaxOutboundConnections { get; set; }
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         protected INodeLifetime nodeLifetime;
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.P2P
                 if (!this.peerAddressManager.Peers.Any())
                     return;
 
-                if (this.ConnectedPeers.Count >= this.MaximumNodeConnections)
+                if (this.ConnectedPeers.Count >= this.MaxOutboundConnections)
                     return;
 
                 await this.OnConnectAsync().ConfigureAwait(false);

@@ -235,8 +235,12 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
+            peerAddressManager.PeerConnected(networkAddressOne.Endpoint, DateTime.UtcNow);
             peerAddressManager.PeerHandshaked(networkAddressOne.Endpoint, DateTime.UtcNow);
+
+            peerAddressManager.PeerConnected(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
             peerAddressManager.PeerHandshaked(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
+
             peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
 
             var peers = peerAddressManager.Peers.Handshaked();
