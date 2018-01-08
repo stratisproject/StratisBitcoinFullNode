@@ -3,7 +3,6 @@ using Mono.Cecil.Cil;
 using Stratis.SmartContracts.Exceptions;
 using System;
 using System.Collections.Generic;
-using Stratis.SmartContracts.ContractValidation.Result;
 
 namespace Stratis.SmartContracts.ContractValidation
 {
@@ -44,6 +43,7 @@ namespace Stratis.SmartContracts.ContractValidation
             "System.Linq.Enumerable",
             "Stratis.SmartContracts.SmartContractList`1",
             "Stratis.SmartContracts.SmartContractDictionary`2",
+            "Stratis.SmartContracts.SmartContractMapping`2",
             typeof(CompiledSmartContract).FullName
         };
 

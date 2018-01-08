@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Stratis.SmartContracts.ContractValidation.Result
+namespace Stratis.SmartContracts.ContractValidation
 {
     public class SmartContractValidationResult
     {

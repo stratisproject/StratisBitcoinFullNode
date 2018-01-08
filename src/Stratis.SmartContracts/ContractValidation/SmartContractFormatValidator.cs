@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Stratis.SmartContracts.Exceptions;
-using Stratis.SmartContracts.ContractValidation.Result;
 
 namespace Stratis.SmartContracts.ContractValidation
 {

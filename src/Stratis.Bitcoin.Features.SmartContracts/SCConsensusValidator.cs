@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.ContractValidation.Result;
 using Stratis.SmartContracts.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -221,7 +220,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             
             if (!result.Revert)
             {
-                state.SetCode(contractAddress, adjustedCodeBytes);
+                this.state.SetCode(contractAddress, adjustedCodeBytes);
                 // anything else to update
             }
         }

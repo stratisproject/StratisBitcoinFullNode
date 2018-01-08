@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Stratis.SmartContracts.ContractValidation.Result;
 
 namespace Stratis.SmartContracts.ContractValidation
 {

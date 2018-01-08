@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task TestSmartContractConsensusValidator()
+        public async Task TestSmartContractConsensusValidatorAsync()
         {
             TestContext context = new TestContext();
             await context.InitializeAsync();
