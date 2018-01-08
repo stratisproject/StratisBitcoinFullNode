@@ -106,6 +106,29 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.Equal(2, this.iterationCount);
         }
 
+
+        [Fact]
+        public async Task AsyncLoopRepeatEveryIntervalCanBeChangedWhileRunningAsync()
+        {
+            int iterations = 0;
+
+            IAsyncLoop asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
+            {
+                iterations++;
+            });
+
+            Task loopRun = asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(300)).RunningTask;
+
+            await Task.Delay(500);
+            asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(100);
+
+            // At this point there were 2 iterations, 600 ms passed.
+
+            await loopRun;
+
+            Assert.Equal(6, iterations);
+        }
+
         private Task DoExceptionalTask(CancellationToken token)
         {
             this.iterationCount++;

@@ -13,6 +13,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Name of the loop. It is used for logging.</summary>
         string Name { get; }
 
+        /// <summary>Interval between each execution of the task.</summary>
+        TimeSpan RepeatEvery { get; set; }
+
         /// <summary>
         /// Starts an application defined task inside the async loop.
         /// </summary>
@@ -63,6 +66,8 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public Task RunningTask { get; private set; }
 
+        public TimeSpan RepeatEvery { get; set; }
+
         /// <summary>
         /// Initializes a named instance of the object.
         /// </summary>
@@ -77,6 +82,7 @@ namespace Stratis.Bitcoin.Utilities
             this.Name = name;
             this.logger = logger;
             this.loopAsync = loop;
+            this.RepeatEvery = TimeSpan.FromMilliseconds(1000);
         }
 
         /// <inheritdoc />
@@ -90,7 +96,10 @@ namespace Stratis.Bitcoin.Utilities
         {
             Guard.NotNull(cancellation, nameof(cancellation));
 
-            this.RunningTask = this.StartAsync(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
+            if (repeatEvery != null)
+                this.RepeatEvery = repeatEvery.Value;
+
+            this.RunningTask = this.StartAsync(cancellation, startAfter);
 
             return this;
         }
@@ -99,11 +108,8 @@ namespace Stratis.Bitcoin.Utilities
         /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
-        /// <param name="refreshRate">Interval between each execution of the task.
-        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
-        /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="delayStart">Delay before the first run of the task, or null if no startup delay is required.</param>
-        private Task StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)
+        private Task StartAsync(CancellationToken cancellation, TimeSpan? delayStart = null)
         {
             return Task.Run(async () =>
             {
@@ -114,7 +120,7 @@ namespace Stratis.Bitcoin.Utilities
                     if (delayStart != null)
                         await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
 
-                    if (refreshRate == TimeSpans.RunOnce)
+                    if (this.RepeatEvery == TimeSpans.RunOnce)
                     {
                         if (cancellation.IsCancellationRequested)
                             return;
@@ -128,7 +134,7 @@ namespace Stratis.Bitcoin.Utilities
                     {
                         await this.loopAsync(cancellation).ConfigureAwait(false);
                         if (!cancellation.IsCancellationRequested)
-                            await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+                            await Task.Delay(this.RepeatEvery, cancellation).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException ex)
