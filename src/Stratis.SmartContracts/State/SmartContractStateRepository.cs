@@ -26,11 +26,13 @@ namespace Stratis.SmartContracts.State
         public SmartContractStateRepository(string dbLocation = null)
         {
             _engine = new DBreezeEngine(dbLocation ?? DbLocation);
-            // TODO: Update byte serialization here
+            // Feel like this is really bad. TODO: Is there any better way of doing this?
             DBreeze.Utils.CustomSerializator.ByteArraySerializator = (object o) =>
             {
                 if (o is uint160)
                     return ((uint160)o).ToBytes();
+                if (o is Address)
+                    return ((Address)o).ToUint160().ToBytes();
 
                 return NetJSON.NetJSON.Serialize(o).To_UTF8Bytes();
             };
@@ -38,6 +40,8 @@ namespace Stratis.SmartContracts.State
             {
                 if (t == typeof(uint160))
                     return new uint160(new uint160(bt));
+                if (t == typeof(Address))
+                    return new Address(new uint160(bt));
 
                 return NetJSON.NetJSON.Deserialize(t, bt.UTF8_GetString());
             };

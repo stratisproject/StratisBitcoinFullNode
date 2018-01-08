@@ -12,7 +12,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public ulong GasLimit { get; set; }
         public ulong GasPrice { get; set; }
         public ulong Value { get; set; }
+        public object[] Parameters { get; set; }
+
         public byte[] ContractCode { get; set; }
+
+        public uint160 To { get; set; }
+        public string MethodName { get; set; }
+
         public OpcodeType OpCodeType { get; set; }
         
         public SCTransaction() { }
@@ -23,13 +29,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <param name="txOut"></param>
         public SCTransaction(TxOut txOut)
         {
-            Value = txOut.Value;
             var bytes = txOut.ScriptPubKey.ToBytes();
-            OpCodeType = (OpcodeType) bytes.LastOrDefault();
+            OpCodeType = (OpcodeType)bytes.LastOrDefault();
+            Value = txOut.Value;
             VmVersion = BitConverter.ToUInt32(bytes.Take(4).ToArray(), 0);
             GasLimit = BitConverter.ToUInt64(bytes.Skip(4).Take(8).ToArray(), 0);
             GasPrice = BitConverter.ToUInt64(bytes.Skip(12).Take(8).ToArray(), 0);
-            ContractCode = bytes.Skip(20).SkipLast(1).ToArray();
+
+            if (OpCodeType == OpcodeType.OP_CREATECONTRACT)
+            {
+                ContractCode = bytes.Skip(20).SkipLast(1).ToArray();
+            }
+            else if (OpCodeType == OpcodeType.OP_CALLCONTRACT)
+            {
+                // for now might make this json. gross but temporary
+                throw new NotImplementedException();
+            }
         }
 
         public IEnumerable<byte> ToBytes()

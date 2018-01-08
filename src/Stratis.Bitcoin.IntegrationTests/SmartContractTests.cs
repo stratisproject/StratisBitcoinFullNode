@@ -118,6 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public Money HIGHERFEE = 4 * Money.COIN;
             public int baseheight;
             public CachedCoinView cachedCoinView;
+            public SmartContractStateRepository state;
 
             private bool useCheckpoints = true;
 
@@ -154,8 +155,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                     UseCheckpoints = this.useCheckpoints
                 };
 
-                SmartContractStateRepository stateRepository = new SmartContractStateRepository();
-                stateRepository.Refresh(); // just for unit tests
+                this.state = new SmartContractStateRepository();
+                this.state.Refresh(); // just for unit tests
                 SmartContractDecompiler smartContractDecompiler = new SmartContractDecompiler();
                 SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
@@ -163,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                             new SmartContractDeterminismValidator()
                         });
                 SmartContractGasInjector gasInjector = new SmartContractGasInjector();
-                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, stateRepository, smartContractDecompiler, validator, gasInjector);
+                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, smartContractDecompiler, validator, gasInjector);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
@@ -264,6 +265,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            var hopefullyOwner = context.state.GetObject<uint160>(0, "Owner");
+
         }
     }
 }

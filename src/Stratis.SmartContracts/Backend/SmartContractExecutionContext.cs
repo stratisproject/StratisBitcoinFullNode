@@ -10,16 +10,13 @@ namespace Stratis.SmartContracts
     /// </summary>
     internal class SmartContractExecutionContext
     {
-        // If it will somehow improve performance in future to make these a UINT180, then do so
         public uint160 ContractAddress { get; set; }
         public uint160 CallerAddress { get; set; }
         public uint160 CoinbaseAddress { get; set; }
 
         public ulong CallValue { get; set; }
         public ulong GasPrice { get; set; }
-        public byte[] CallData { get; set; }
 
-        public uint256 BlockHash { get; set; }
         public ulong BlockNumber { get; set; }
         public ulong Difficulty { get; set; }
         public ulong GasLimit { get; set; }

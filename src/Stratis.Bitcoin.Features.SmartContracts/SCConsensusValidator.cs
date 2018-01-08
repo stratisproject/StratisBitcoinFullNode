@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
@@ -180,11 +181,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     var scTransaction = new SCTransaction(txOut);
                     if (scTransaction.OpCodeType == OpcodeType.OP_CREATECONTRACT)
                     {
-                        ExecuteCreateContractTransaction(scTransaction);
+                        ExecuteCreateContractTransaction(context, scTransaction);
                     }
                     else if (scTransaction.OpCodeType == OpcodeType.OP_CALLCONTRACT)
                     {
-                        ExecuteCallContractTransaction(scTransaction);
+                        ExecuteCallContractTransaction(context, scTransaction);
                     }
                 }
             }
@@ -194,8 +195,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         // Real database should only be updated on block being accepted.
 
-        private void ExecuteCreateContractTransaction(SCTransaction transaction)
+        private void ExecuteCreateContractTransaction(RuleContext context, SCTransaction transaction)
         {
+            uint160 contractAddress = 0; // TODO: GET ACTUAL NUM
+            this.state.CreateAccount(0);
             SmartContractDecompilation decomp = this.smartContractDecompiler.GetModuleDefinition(transaction.ContractCode);
             SmartContractValidationResult validationResult = this.smartContractValidator.ValidateContract(decomp);
             
@@ -211,10 +214,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             byte[] adjustedCodeBytes = adjustedCodeMem.ToArray();
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
 
-            uint160 contractAddress = 0; // TODO: GET ACTUAL NUM
-
+            MethodDefinition initMethod = decomp.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y=>y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
+ 
             SmartContractExecutionResult result = vm.ExecuteMethod(adjustedCodeMem.ToArray(), new SmartContractExecutionContext {
-                // todo fill
+                BlockNumber = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height),
+                Difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty),
+                CallerAddress = 100, // TODO: FIX THIS
+                CallValue = transaction.Value,
+                GasLimit = transaction.GasLimit,
+                GasPrice = transaction.GasPrice,
+                Parameters = transaction.Parameters ?? new object[0],
+                CoinbaseAddress = 0, //TODO: FIX THIS
+                ContractAddress = contractAddress,
+                ContractMethod = initMethod?.Name, // probably better ways of doing this
+                ContractTypeName = decomp.ContractType.Name // probably better ways of doing this
             });
             // do something with gas
             
@@ -225,14 +238,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
-        private void ExecuteCallContractTransaction(SCTransaction transaction)
+        private void ExecuteCallContractTransaction(RuleContext context, SCTransaction transaction)
         {
-            // get code from db
+            uint160 contractAddress = 0; // TODO: GET ACTUAL NUM
 
-            // run method with reflectionvirtualmachine
-
-            // gas?? add to coinbase transaction?
-
+            byte[] contractCode = this.state.GetCode(transaction.To);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
+            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, new SmartContractExecutionContext
+            {
+                BlockNumber = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height),
+                Difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty),
+                CallerAddress = 0, // TODO: FIX THIS
+                CallValue = transaction.Value,
+                GasLimit = transaction.GasLimit,
+                GasPrice = transaction.GasPrice,
+                Parameters = transaction.Parameters ?? new object[0],
+                CoinbaseAddress = 0, //TODO: FIX THIS
+                ContractAddress = contractAddress,
+                ContractMethod = transaction.MethodName,
+                // TODO: Get contract name
+            });
             throw new NotImplementedException();
         }
     }

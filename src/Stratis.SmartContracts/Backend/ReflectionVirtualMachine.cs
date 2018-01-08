@@ -23,17 +23,22 @@ namespace Stratis.SmartContracts.Backend
             Assembly assembly = Assembly.Load(contractCode);
             Type type = assembly.GetType(context.ContractTypeName);
             CompiledSmartContract contract = (CompiledSmartContract)Activator.CreateInstance(type);
-            MethodInfo methodToInvoke = type.GetMethod(context.ContractMethod);
-            methodToInvoke.Invoke(context, context.Parameters);
+            object result = null;
+            if (context.ContractMethod != null)
+            {
+                MethodInfo methodToInvoke = type.GetMethod(context.ContractMethod);
+                result = methodToInvoke.Invoke(contract, context.Parameters);
+            }
             return new SmartContractExecutionResult
             {
-                GasUsed = contract.GasUsed
+                GasUsed = contract.GasUsed,
+                Return = result
             };
         }
 
         private void SetStaticValues(SmartContractExecutionContext context)
         {
-            Block.Set(context.BlockNumber, context.BlockHash, context.CoinbaseAddress, context.Difficulty);
+            Block.Set(context.BlockNumber, context.CoinbaseAddress, context.Difficulty);
             Message.Set(new Address(context.ContractAddress), new Address(context.CallerAddress), context.CallValue, context.GasLimit);
             PersistentState.ResetCounter();
             PersistentState.SetDbAndAddress(this.StateDb, context.ContractAddress);
