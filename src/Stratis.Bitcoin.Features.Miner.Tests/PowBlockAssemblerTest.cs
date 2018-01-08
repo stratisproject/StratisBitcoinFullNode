@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Tests;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -24,6 +23,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Mock<IPowConsensusValidator> validator;
         private RuleContext callbackRuleContext = null;
         private Money powReward;
+        private Network network;
+        private Key key;
 
         public PowBlockAssemblerTest()
         {
@@ -32,6 +33,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.validator = new Mock<IPowConsensusValidator>();
             this.powReward = new Money(100 * 1000 * 1000);
+            this.network = Network.StratisTest;
+            this.key = new Key();
 
             SetupValidator();
             SetupConsensusLoop();
@@ -40,23 +43,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CreateNewBlock_WithScript_ReturnsBlockTemplate()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
+            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
-                var newOptions = new PowConsensusOptions();
-                network.Consensus.Options = newOptions;
-
-                var key = new Key();
-                var chain = GenerateChainWithHeight(5, network, key);
-                var transaction = CreateTransaction(network, key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
+                var chain = GenerateChainWithHeight(5, this.network, this.key);
+                var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
-                SetupTxMempool(chain, newOptions, txFee, transaction);
+                SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                           this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
-                var blockTemplate = powBlockAssembler.CreateNewBlock(key.ScriptPubKey);
+                var blockTemplate = powBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
 
                 Assert.Null(blockTemplate.CoinbaseCommitment);
                 Assert.Equal(new Money(1000), blockTemplate.TotalFee);
@@ -78,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.False(resultingTransaction.IsCoinStake);
                 Assert.Equal(TxIn.CreateCoinbase(6).ScriptSig, resultingTransaction.Inputs[0].ScriptSig);
                 Assert.Equal(this.powReward + txFee, resultingTransaction.TotalOut);
-                Assert.Equal(key.ScriptPubKey, resultingTransaction.Outputs[0].ScriptPubKey);
+                Assert.Equal(this.key.ScriptPubKey, resultingTransaction.Outputs[0].ScriptPubKey);
                 Assert.Equal(this.powReward + txFee, resultingTransaction.Outputs[0].Value);
 
                 resultingTransaction = blockTemplate.Block.Transactions[1];
@@ -92,40 +89,28 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Assert.Equal(transaction.Outputs[0].ScriptPubKey, resultingTransaction.Outputs[0].ScriptPubKey);
                 Assert.Equal(new Money(400 * 1000 * 1000), resultingTransaction.Outputs[0].Value);
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-            }
+            });
         }
 
         [Fact]
         public void CreateNewBlock_WithScript_ValidatesTemplateUsingRuleContext()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
-            {
-                var newOptions = new PowConsensusOptions()
-                {
-                    MaxBlockWeight = 1500
-                };
-                network.Consensus.Options = newOptions;
+            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
 
-                var key = new Key();
-                var chain = GenerateChainWithHeight(5, network, key);
+            this.ExecuteWithConsensusOptions(newOptions, () =>
+            {
+                var chain = GenerateChainWithHeight(5, this.network, this.key);
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
 
-                var transaction = CreateTransaction(network, key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
+                var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
-                SetupTxMempool(chain, newOptions, txFee, transaction);
+                SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                           this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
-                var blockTemplate = powBlockAssembler.CreateNewBlock(key.ScriptPubKey);
+                var blockTemplate = powBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
 
                 Assert.NotNull(this.callbackRuleContext);
 
@@ -135,27 +120,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
                 this.consensusLoop.Verify();
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-            }
+            });
         }
 
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_NoBip9DeploymentActive_UpdatesHeightAndVersion()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
+            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
-                var newOptions = new PowConsensusOptions();
-                network.Consensus.Options = newOptions;
+                var chain = GenerateChainWithHeight(5, this.network, new Key());
 
-                var chain = GenerateChainWithHeight(5, network, new Key());
-
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var result = powBlockAssembler.ComputeBlockVersion(chain.GetBlock(4));
@@ -163,36 +138,29 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal(5, result.Height);
                 uint version = ThresholdConditionCache.VersionbitsTopBits;
                 Assert.Equal((int)version, result.Version);
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-                network.Consensus.BIP9Deployments[0] = null;
-            }
+            });
         }
 
 
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_Bip9DeploymentActive_UpdatesHeightAndVersion()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            var minerConfirmationWindow = network.Consensus.MinerConfirmationWindow;
-            var ruleChangeActivationThreshold = network.Consensus.RuleChangeActivationThreshold;
+            var options = this.network.Consensus.Options;
+            var minerConfirmationWindow = this.network.Consensus.MinerConfirmationWindow;
+            var ruleChangeActivationThreshold = this.network.Consensus.RuleChangeActivationThreshold;
             try
             {
                 var newOptions = new PowConsensusOptions();
-                network.Consensus.Options = newOptions;
-                network.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
+                this.network.Consensus.Options = newOptions;
+                this.network.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
-                network.Consensus.MinerConfirmationWindow = 2;
-                network.Consensus.RuleChangeActivationThreshold = 2;
+                this.network.Consensus.MinerConfirmationWindow = 2;
+                this.network.Consensus.RuleChangeActivationThreshold = 2;
 
-                var chain = GenerateChainWithHeightAndActivatedBip9(5, network, new Key(), network.Consensus.BIP9Deployments[0]);
+                var chain = GenerateChainWithHeightAndActivatedBip9(5, this.network, new Key(), this.network.Consensus.BIP9Deployments[0]);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var result = powBlockAssembler.ComputeBlockVersion(chain.GetBlock(4));
@@ -206,30 +174,24 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             finally
             {
                 // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-                network.Consensus.BIP9Deployments[0] = null;
-                network.Consensus.MinerConfirmationWindow = minerConfirmationWindow;
-                network.Consensus.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
+                this.network.Consensus.Options = options;
+                this.network.Consensus.BIP9Deployments[0] = null;
+                this.network.Consensus.MinerConfirmationWindow = minerConfirmationWindow;
+                this.network.Consensus.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
             }
         }
 
         [Fact]
         public void CreateCoinbase_CreatesCoinbaseTemplateTransaction_AddsToBlockTemplate()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
+            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
-                var newOptions = new PowConsensusOptions();
-                network.Consensus.Options = newOptions;
+                var chain = GenerateChainWithHeight(5, this.network, this.key);
 
-                var key = new Key();
-                var chain = GenerateChainWithHeight(5, network, key);
-
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
-                var result = powBlockAssembler.CreateCoinBase(chain.Tip, key.ScriptPubKey);
+                var result = powBlockAssembler.CreateCoinBase(chain.Tip, this.key.ScriptPubKey);
 
                 Assert.NotEmpty(result.Block.Transactions);
                 Assert.Equal(-1, result.TxSigOpsCost[0]);
@@ -244,33 +206,22 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal(TxIn.CreateCoinbase(6).ScriptSig, resultingTransaction.Inputs[0].ScriptSig);
 
                 Assert.NotEmpty(resultingTransaction.Outputs);
-                Assert.Equal(key.ScriptPubKey, resultingTransaction.Outputs[0].ScriptPubKey);
+                Assert.Equal(this.key.ScriptPubKey, resultingTransaction.Outputs[0].ScriptPubKey);
                 Assert.Equal(Money.Zero, resultingTransaction.Outputs[0].Value);
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-                network.Consensus.BIP9Deployments[0] = null;
-            }
+            });
         }
 
         [Fact]
         public void UpdateHeaders_UsingChainAndNetwork_PreparesBlockHeaders()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
+            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
-                var newOptions = new PowConsensusOptions();
-                network.Consensus.Options = newOptions;
-
                 this.dateTimeProvider.Setup(d => d.GetTimeOffset())
                     .Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
 
-                var chain = GenerateChainWithHeight(5, network, new Key(), new Target(235325239));
+                var chain = GenerateChainWithHeight(5, this.network, new Key(), new Target(235325239));
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var result = powBlockAssembler.UpdateHeaders(chain.Tip);
@@ -279,33 +230,21 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal((uint)1483747200, result.Header.Time);
                 Assert.Equal(1.9610088966776103E+35, result.Header.Bits.Difficulty);
                 Assert.Equal((uint)0, result.Header.Nonce);
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-                network.Consensus.BIP9Deployments[0] = null;
-            }
+            });
         }
 
         [Fact]
         public void TestBlockValidity_UsesRuleContextToValidateBlock()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
-            {
-                var newOptions = new PowConsensusOptions()
-                {
-                    MaxBlockWeight = 1500
-                };
-                network.Consensus.Options = newOptions;
+            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
 
-                var chain = GenerateChainWithHeight(5, network, new Key());
+            this.ExecuteWithConsensusOptions(newOptions, () =>
+            {
+                var chain = GenerateChainWithHeight(5, this.network, new Key());
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                           this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var blockTemplate = powBlockAssembler.TestBlockValidity();
@@ -318,35 +257,24 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
                 this.consensusLoop.Verify();
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-            }
+            });
         }
 
         [Fact]
         public void AddTransactions_WithoutTransactionsInMempool_DoesNotAddEntriesToBlock()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
-            {
-                var newOptions = new PowConsensusOptions()
-                {
-                    MaxBlockWeight = 1500
-                };
-                network.Consensus.Options = newOptions;
+            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
 
-                var chain = GenerateChainWithHeight(5, network, new Key());
+            this.ExecuteWithConsensusOptions(newOptions, () =>
+            {
+                var chain = GenerateChainWithHeight(5, this.network, new Key());
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
                 var indexedTransactionSet = new TxMempool.IndexedTransactionSet();
                 this.txMempool.Setup(t => t.MapTx)
                     .Returns(indexedTransactionSet);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                           this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var result = powBlockAssembler.AddTransactions();
@@ -354,36 +282,24 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Empty(result.Block.Transactions);
                 Assert.Equal(0, result.Selected);
                 Assert.Equal(0, result.Updated);
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-            }
+            });
         }
 
         [Fact]
         public void AddTransactions_TransactionNotInblock_AddsTransactionToBlock()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
-            {
-                var newOptions = new PowConsensusOptions()
-                {
-                    MaxBlockWeight = 1500
-                };
-                network.Consensus.Options = newOptions;
+            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
 
-                var key = new Key();
-                var chain = GenerateChainWithHeight(5, network, key);
+            this.ExecuteWithConsensusOptions(newOptions, () =>
+            {
+                var chain = GenerateChainWithHeight(5, this.network, this.key);
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
-                var transaction = CreateTransaction(network, key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
+                var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, newOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                           this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var result = powBlockAssembler.AddTransactions();
@@ -393,36 +309,24 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal(transaction.ToHex(), result.Block.Transactions[0].ToHex());
                 Assert.Equal(1, result.Selected);
                 Assert.Equal(0, result.Updated);
-            }
-            finally
-            {
-                // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
-            }
+            });
         }
 
         [Fact]
         public void AddTransactions_TransactionAlreadyInInblock_DoesNotAddTransactionToBlock()
         {
-            var network = Network.StratisTest;
-            var options = network.Consensus.Options;
-            try
-            {
-                var newOptions = new PowConsensusOptions()
-                {
-                    MaxBlockWeight = 1500
-                };
-                network.Consensus.Options = newOptions;
+            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
 
-                var key = new Key();
-                var chain = GenerateChainWithHeight(5, network, key);
+            this.ExecuteWithConsensusOptions(newOptions, () =>
+            {
+                var chain = GenerateChainWithHeight(5, this.network, this.key);
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
-                var transaction = CreateTransaction(network, key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
+                var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
                 var entries = SetupTxMempool(chain, newOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, network, new MempoolSchedulerLock(), this.txMempool.Object,
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                           this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
                 powBlockAssembler.AddInBlockTxEntries(entries);
 
@@ -431,11 +335,23 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Empty(result.Block.Transactions);
                 Assert.Equal(0, result.Selected);
                 Assert.Equal(0, result.Updated);
+            });
+        }
+
+        private void ExecuteWithConsensusOptions(PowConsensusOptions newOptions, Action action)
+        {
+            var options = this.network.Consensus.Options;
+            try
+            {
+                this.network.Consensus.Options = newOptions;
+
+                action();
             }
             finally
             {
                 // This is a static in the global context so be careful updating it. I'm resetting it after being done testing so I don't influence other tests.
-                network.Consensus.Options = options;
+                this.network.Consensus.Options = options;
+                this.network.Consensus.BIP9Deployments[0] = null;
             }
         }
 
