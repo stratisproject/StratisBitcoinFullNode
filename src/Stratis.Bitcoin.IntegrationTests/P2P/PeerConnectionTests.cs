@@ -50,34 +50,34 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 peerDiscovery);
 
             // Create a peer to add to the already connected peers collection.
-            NetworkPeer networkPeer = null;
             using (NodeBuilder builder = NodeBuilder.Create())
             {
                 CoreNode coreNode = builder.CreateStratisPowNode();
                 builder.StartAll();
 
-                networkPeer = coreNode.CreateNetworkPeerClient();
+                using (NetworkPeer networkPeer = coreNode.CreateNetworkPeerClient())
+                {
+                    // Add the network peers to the connection manager's
+                    // add node collection.
+                    connectionManager.AddNodeAddress(networkPeer.PeerAddress.Endpoint);
 
-                // Add the network peers to the connection manager's
-                // add node collection.
-                connectionManager.AddNodeAddress(networkPeer.PeerAddress.Endpoint);
+                    // Add the peer to the already connected
+                    // peer collection of connection manager.
+                    //
+                    // This is to simulate that a peer has successfully connected
+                    // and that the add node connector's Find method then won't
+                    // return the added node.
+                    connectionManager.AddConnectedPeer(networkPeer);
 
-                // Add the peer to the already connected
-                // peer collection of connection manager.
-                //
-                // This is to simulate that a peer has successfully connected
-                // and that the add node connector's Find method then won't
-                // return the added node.
-                connectionManager.AddConnectedPeer(networkPeer);
+                    // Re-initialize the add node peer connector so that it
+                    // adds the successful address to the address manager.
+                    peerConnectorAddNode.Initialize(connectionManager);
 
-                // Re-initialize the add node peer connector so that it
-                // adds the successful address to the address manager.
-                peerConnectorAddNode.Initialize(connectionManager);
-
-                // TODO: Once we have an interface on NetworkPeer we can test this properly.
-                // The already connected peer should not be returned.
-                //var peer = peerConnectorAddNode.FindPeerToConnectTo();
-                //Assert.Null(peer);
+                    // TODO: Once we have an interface on NetworkPeer we can test this properly.
+                    // The already connected peer should not be returned.
+                    //var peer = peerConnectorAddNode.FindPeerToConnectTo();
+                    //Assert.Null(peer);
+                }
             }
         }
 

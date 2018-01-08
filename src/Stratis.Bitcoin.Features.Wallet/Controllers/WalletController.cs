@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
-                    ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
+                    ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
                     ChainTip = this.chain.Tip.Height,
                     IsChainSynced = this.chain.IsDownloaded(),
                     IsDecrypted = true
@@ -639,7 +639,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            if (!this.connectionManager.ConnectedNodes.Any())
+            if (!this.connectionManager.ConnectedPeers.Any())
                 throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
 
             try
