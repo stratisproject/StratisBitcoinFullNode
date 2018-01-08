@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // TODO: this is not used in core anymore consider deleting it
                     // However, this is required for StratisX to be able to sync from us.
 
-                    if (!this.CanRespondToGetDataPayload)
+                    if (!this.CanRespondToGetBlocksPayload)
                     {
                         this.logger.LogTrace("Can't respond to 'getblocks'.");
                         break;
@@ -248,8 +248,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 lastBlock = lastBlock.Previous;
             }
 
-            // Now we compile inventory payload and we also consider hash stop given by the peer
-            // and we also check if the blocks to be announced are really present in the store.
+            // Now we compile inventory payload and we also consider hash stop given by the peer.
             bool sendContinuation = true;
             ChainedBlock lastAddedChainedBlock = null;
             var inv = new InvPayload();
@@ -259,12 +258,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
                 {
                     this.logger.LogTrace("Hash stop has been reached.");
-                    break;
-                }
-
-                if (!await this.blockRepository.ExistAsync(chainedBlock.HashBlock).ConfigureAwait(false))
-                {
-                    this.logger.LogTrace("Block '{0}' is not ready in the store yet, we won't announce it now.");
                     break;
                 }
 
@@ -331,7 +324,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
 
                 // If the peer is syncing using "getblocks" message we are supposed to send 
-                // an "inv" message with our tip to it once we it asks for all blocks
+                // an "inv" message with our tip to it once it asks for all blocks
                 // from the previous batch.
                 if (item.Hash == this.getBlocksBatchLastItemHash)
                 {
