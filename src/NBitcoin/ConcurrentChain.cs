@@ -72,7 +72,10 @@ namespace NBitcoin
                             this.tip = null;
                             this.SetTipLocked(new ChainedBlock(header, header.GetHash(), 0));
                         }
-                        else this.SetTipLocked(new ChainedBlock(header, id.Value, this.Tip));
+                        else if (this.tip.HashBlock == header.HashPrevBlock && !header.IsNull)
+                            this.SetTipLocked(new ChainedBlock(header, id.Value, this.Tip));
+                        else
+                            break;
 
                         height++;
                     }
