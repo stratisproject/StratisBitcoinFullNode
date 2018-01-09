@@ -586,12 +586,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public async Task BroadcastBlocksAsync(Block[] blocks, NetworkPeer peer)
         {
-            Block lastSent = null;
             foreach (var block in blocks)
             {
                 await peer.SendMessageAsync(new InvPayload(block));
                 await peer.SendMessageAsync(new BlockPayload(block));
-                lastSent = block;
             }
             await this.PingPongAsync(peer);
         }

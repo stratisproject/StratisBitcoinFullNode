@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
     {
         private Action<IFullNodeBuilder> callback;
 
-        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null) : base()
+        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
         {
             this.callback = callback;
         }
