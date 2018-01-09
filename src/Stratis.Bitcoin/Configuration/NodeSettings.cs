@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            this.ConnectionManager = ConnectionManagerSettings.Load(this, this.ConnectionManager);
+            this.ConnectionManager.Load(this);
 
             return this;
         }

@@ -23,15 +23,17 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.Listen = new List<NodeServerEndpoint>();
         }
 
-        public static ConnectionManagerSettings Load(NodeSettings nodeSettings, ConnectionManagerSettings settings = null)
+        /// <summary>
+        /// Loads the ConnectionManager related settings from the application configuration.
+        /// </summary>
+        /// <param name="nodeSettings">Application configuration.</param>
+        public void Load(NodeSettings nodeSettings)
         {
             var config = nodeSettings.ConfigReader;
 
-            settings = settings ?? new ConnectionManagerSettings();
-
             try
             {
-                settings.Connect.AddRange(config.GetAll("connect")
+                this.Connect.AddRange(config.GetAll("connect")
                     .Select(c => NodeSettings.ConvertIpAddressToEndpoint(c, nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
@@ -41,7 +43,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                settings.AddNode.AddRange(config.GetAll("addnode")
+                this.AddNode.AddRange(config.GetAll("addnode")
                         .Select(c => NodeSettings.ConvertIpAddressToEndpoint(c, nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
@@ -52,7 +54,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
             try
             {
-                settings.Listen.AddRange(config.GetAll("bind")
+                this.Listen.AddRange(config.GetAll("bind")
                         .Select(c => new NodeServerEndpoint(NodeSettings.ConvertIpAddressToEndpoint(c, port), false)));
             }
             catch (FormatException)
@@ -62,7 +64,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                settings.Listen.AddRange(config.GetAll("whitebind")
+                this.Listen.AddRange(config.GetAll("whitebind")
                         .Select(c => new NodeServerEndpoint(NodeSettings.ConvertIpAddressToEndpoint(c, port), true)));
             }
             catch (FormatException)
@@ -70,9 +72,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 throw new ConfigurationException("Invalid 'listen' parameter");
             }
 
-            if (settings.Listen.Count == 0)
+            if (this.Listen.Count == 0)
             {
-                settings.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
+                this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
             }
 
             var externalIp = config.GetOrDefault<string>("externalip", null);
@@ -80,7 +82,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 try
                 {
-                    settings.ExternalEndpoint = NodeSettings.ConvertIpAddressToEndpoint(externalIp, port);
+                    this.ExternalEndpoint = NodeSettings.ConvertIpAddressToEndpoint(externalIp, port);
                 }
                 catch (FormatException)
                 {
@@ -88,14 +90,12 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 }
             }
 
-            if (settings.ExternalEndpoint == null)
+            if (this.ExternalEndpoint == null)
             {
-                settings.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
+                this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
             }
 
-            settings.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
-
-            return settings;
+            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
