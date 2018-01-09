@@ -187,9 +187,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         public NodeBuilder builder;
         public CoreNode stratisPowNode;
         public CoreNode stratisStakeNode;
+        private bool initialBlockSignature;
 
         public ApiTestsFixture()
         {
+            this.initialBlockSignature = Block.BlockSignature;
+            Block.BlockSignature = false;
+
             this.builder = NodeBuilder.Create();
 
             this.stratisPowNode = this.builder.CreateStratisPowNode(false, fullNodeBuilder =>
@@ -208,6 +212,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.stratisPowNode.ConfigParameters.Add("apiuri", "http://localhost:37221");
 
             this.InitializeTestWallet(this.stratisPowNode);
+            this.builder.StartAll();
+
+            Block.BlockSignature = true;
 
             this.stratisStakeNode = this.builder.CreateStratisPosNode(false, fullNodeBuilder =>
             {
@@ -230,6 +237,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void Dispose()
         {
             this.builder.Dispose();
+            Block.BlockSignature = this.initialBlockSignature;
         }
 
         /// <summary>
