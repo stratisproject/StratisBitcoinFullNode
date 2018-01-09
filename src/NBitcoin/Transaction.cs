@@ -1573,6 +1573,7 @@ namespace NBitcoin
         /// <para>For more complex scenario, use TransactionBuilder</para>
         /// </summary>
         /// <param name="secret"></param>
+        [Obsolete("Use Sign(ISecret,ICoin[]) instead)")]
         public void Sign(ISecret secret, bool assumeP2SH)
         {
             Sign(secret.PrivateKey, assumeP2SH);
@@ -1584,6 +1585,7 @@ namespace NBitcoin
         /// <para>For more complex scenario, use TransactionBuilder</para>
         /// </summary>
         /// <param name="secret"></param>
+        [Obsolete("Use Sign(Key,ICoin[]) instead)")]
         public void Sign(Key key, bool assumeP2SH)
         {
             List<Coin> coins = new List<Coin>();
