@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private readonly InitialBlockDownloadState innerBlockDownloadState;
 
-        public InitialBlockDownloadStateMock(ChainState chainState, Network network, NodeSettings nodeSettings,
+        public InitialBlockDownloadStateMock(IChainState chainState, Network network, NodeSettings nodeSettings,
             ICheckpoints checkpoints)
         {
             this.lockIbdUntil = DateTime.MinValue;

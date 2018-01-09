@@ -20,11 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
         private Mock<IConsensusLoop> consensusLoop;
-        private Mock<IDateTimeProvider> dateTimeProvider;
         private Mock<IAssemblerFactory> assemblerFactory;
-        private Mock<IBlockRepository> blockRepository;
-        private Mock<ISignals> signals;
-        private Mock<IChainState> chainState;
         private Mock<INodeLifetime> nodeLifetime;
         private Mock<IAsyncLoopFactory> asyncLoopFactory;
         private Mock<BlockAssembler> blockAssembler;
@@ -35,10 +31,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
-            this.dateTimeProvider = new Mock<IDateTimeProvider>();
-            this.blockRepository = new Mock<IBlockRepository>();
-            this.signals = new Mock<ISignals>();
-            this.chainState = new Mock<IChainState>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.fixture = fixture;
@@ -49,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             SetupConsensusLoop();
             SetupBlockAssembler();
 
-            this.powMining = new PowMining(this.consensusLoop.Object, this.chain, this.network, this.dateTimeProvider.Object, this.assemblerFactory.Object, this.blockRepository.Object, this.chainState.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.LoggerFactory.Object);
+            this.powMining = new PowMining(this.consensusLoop.Object, this.chain, this.network, this.assemblerFactory.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.LoggerFactory.Object);
         }
 
         [Fact]

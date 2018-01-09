@@ -11,11 +11,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         ChainedBlock ConsensusTip { get; set; }
 
-        /// <summary>
-        /// This method will check if the node is in a state of IBD (Initial Block Download)
-        /// </summary>
-        bool IsInitialBlockDownload { get; }
-
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
         uint MaxReorgLength { get; set; }
@@ -33,14 +28,6 @@ namespace Stratis.Bitcoin.Base
         /// <param name="hashBlock">The block hash to mark as invalid.</param>
         /// <param name="rejectedUntil">Time in UTC after which the block is no longer considered as invalid, or <c>null</c> if the block is to be considered invalid forever.</param>
         void MarkBlockInvalid(uint256 hashBlock, DateTime? rejectedUntil = null);
-
-        /// <summary>
-        /// Sets last IBD status update time and result.
-        /// <para>Used in tests only.</para>
-        /// </summary>
-        /// <param name="val">New value for the IBD status, <c>true</c> means the node is considered in IBD.</param>
-        /// <param name="time">New value for the last check of IBD status.</param>
-        void SetIsInitialBlockDownload(bool val, DateTime time);
     }
 
     /// <summary>
