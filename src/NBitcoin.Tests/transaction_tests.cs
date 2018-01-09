@@ -287,14 +287,14 @@ namespace NBitcoin.Tests
             //You need to get the ScriptCoin, the RedeemScript of you script coin should be k.PubKey.WitHash.ScriptPubKey.
 
             Coin[] coins =
- 	            //Get coins from any block explorer.
-            GetCoins(p2sh)
- 	            //Nobody knows your redeem script, so you add here the information
- 	            //This line is actually optional since 4.0.0.38, as the TransactionBuilder is smart enough to figure out
- 	            //the redeems from the keys added by AddKeys.
- 	            //However, explicitely having the redeem will make code more easy to update to other payment like 2-2
- 	            //.Select(c => c.ToScriptCoin(k.PubKey.WitHash.ScriptPubKey))
-                .ToArray();
+ 	                //Get coins from any block explorer.
+                GetCoins(p2sh)
+ 	                //Nobody knows your redeem script, so you add here the information
+ 	                //This line is actually optional since 4.0.0.38, as the TransactionBuilder is smart enough to figure out
+ 	                //the redeems from the keys added by AddKeys.
+ 	                //However, explicitely having the redeem will make code more easy to update to other payment like 2-2
+ 	                //.Select(c => c.ToScriptCoin(k.PubKey.WitHash.ScriptPubKey))
+                    .ToArray();
  
             TransactionBuilder builder = new TransactionBuilder();
             builder.AddCoins(coins);
