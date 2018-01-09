@@ -222,71 +222,8 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            try
-            {
-                this.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-                    .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'connect' parameter.");
-            }
+            this.ConnectionManager.Load(this);
 
-            try
-            {
-                this.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-                        .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'addnode' parameter.");
-            }
-
-            var port = config.GetOrDefault<int>("port", this.Network.DefaultPort);
-            try
-            {
-                this.ConnectionManager.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), false)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'bind' parameter");
-            }
-
-            try
-            {
-                this.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
-                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), true)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'listen' parameter");
-            }
-
-            if (this.ConnectionManager.Listen.Count == 0)
-            {
-                this.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
-            }
-
-            var externalIp = config.GetOrDefault<string>("externalip", null);
-            if (externalIp != null)
-            {
-                try
-                {
-                    this.ConnectionManager.ExternalEndpoint = ConvertIpAddressToEndpoint(externalIp, port);
-                }
-                catch (FormatException)
-                {
-                    throw new ConfigurationException("Invalid 'externalip' parameter");
-                }
-            }
-
-            if (this.ConnectionManager.ExternalEndpoint == null)
-            {
-                this.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort);
-            }
-
-            this.ConnectionManager.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
             return this;
         }
 
