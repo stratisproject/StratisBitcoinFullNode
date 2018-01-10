@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Return information about <address>.
         /// </summary>
-        /// <param name="address">BitcoinAddress (P2PKH, P2SH) to validate.</param>
+        /// <param name="address">BitcoinAddress to validate.</param>
         /// <returns>information about <address>. {isvalid}</returns>
         [ActionName("validateaddress")]
         [ActionDescription("Returns information about a bitcoin address")]
