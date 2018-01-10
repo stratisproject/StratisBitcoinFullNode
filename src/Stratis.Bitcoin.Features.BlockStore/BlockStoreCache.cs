@@ -34,15 +34,42 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
+        public readonly int MaxCacheBlocksCount;
+
+        /// <summary>Entry options for adding blocks to the cache.</summary>
+        private readonly MemoryCacheEntryOptions blockEntryOptions;
+
+        /// <summary>Entry options for adding transactions to the cache.</summary>
+        private readonly MemoryCacheEntryOptions txEntryOptions;
+
         public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(blockRepository, new MemoryCache(new MemoryCacheOptions()), dateTimeProvider, loggerFactory)
+            : this(blockRepository, dateTimeProvider, loggerFactory, null)
         {
         }
 
-        public BlockStoreCache(IBlockRepository blockRepository, IMemoryCache memoryCache, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IMemoryCache memoryCache = null)
         {
             Guard.NotNull(blockRepository, nameof(blockRepository));
-            Guard.NotNull(memoryCache, nameof(memoryCache));
+
+            //TODO get from config
+            this.MaxCacheBlocksCount = 300;
+
+            if (memoryCache == null)
+            {
+                var memoryCacheOptions = new MemoryCacheOptions()
+                {
+                    //We treat one block to be of '100' size and tx to be '1'.
+                    SizeLimit = this.MaxCacheBlocksCount * 100,
+
+                    // Remove 20% of the items if the size limit is exceeded.
+                    CompactionPercentage = 0.8
+                };
+
+                this.cache = new MemoryCache(memoryCacheOptions);
+            }
+
+            this.blockEntryOptions = new MemoryCacheEntryOptions() {AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 100 };
+            this.txEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 1 };
 
             this.blockRepository = blockRepository;
             this.cache = memoryCache;
@@ -90,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             block = await this.blockRepository.GetAsync(blockid);
             if (block != null)
             {
-                this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
+                this.cache.Set(blockid, block, this.blockEntryOptions);
                 this.PerformanceCounter.AddCacheSetCount(1);
             }
 
@@ -121,7 +148,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return null;
             }
 
-            this.cache.Set(trxid, blockid, TimeSpan.FromMinutes(10));
+            this.cache.Set(trxid, blockid, this.txEntryOptions);
             this.PerformanceCounter.AddCacheSetCount(1);
             block = await this.GetBlockAsync(blockid);
 
@@ -146,9 +173,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 blockid = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockid);
 
-            Block existingBlock;
-            if (!this.cache.TryGetValue(blockid, out existingBlock))
-                this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
+            if (!this.cache.TryGetValue(blockid, out Block existingBlock))
+                this.cache.Set(blockid, block, this.blockEntryOptions);
 
             this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
         }
