@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.P2P
                 await this.OnConnectAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: burstConnectionInterval);
+            repeatEvery: this.burstConnectionInterval);
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
