@@ -7,6 +7,41 @@
 	},
 	"item": [
 		{
+			"name": "Create mnemonic",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37220/api/wallet/mnemonic?language=french&wordcount=24",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37220",
+					"path": [
+						"api",
+						"wallet",
+						"mnemonic"
+					],
+					"query": [
+						{
+							"key": "language",
+							"value": "french",
+							"equals": true
+						},
+						{
+							"key": "wordcount",
+							"value": "24",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
 			"name": "Create wallet - success",
 			"request": {
 				"method": "POST",
@@ -398,6 +433,233 @@
 						}
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get multiple unused addresses",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:37220/api/wallet/addresses?walletname=restore1&accountname=account 0&count=5",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37220",
+					"path": [
+						"api",
+						"wallet",
+						"addresses"
+					],
+					"query": [
+						{
+							"key": "walletname",
+							"value": "restore1",
+							"equals": true
+						},
+						{
+							"key": "accountname",
+							"value": "account 0",
+							"equals": true
+						},
+						{
+							"key": "count",
+							"value": "5",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get maximum spendable balance",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37220/api/wallet/maxbalance?walletname=restore1&accountname=account 0&feetype=low&allowunconfirmed=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37220",
+					"path": [
+						"api",
+						"wallet",
+						"maxbalance"
+					],
+					"query": [
+						{
+							"key": "walletname",
+							"value": "restore1",
+							"equals": true
+						},
+						{
+							"key": "accountname",
+							"value": "account 0",
+							"equals": true
+						},
+						{
+							"key": "feetype",
+							"value": "low",
+							"equals": true
+						},
+						{
+							"key": "allowunconfirmed",
+							"value": "true",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Estimate Transaction Fee",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37220/api/wallet/estimate-txfee?walletname=restore1&accountname=account 0&destinationaddress=1FYp9uguYCz7DgSF9jTWDeZF8kdRKQTXPg&amount=1&feetype=low&allowunconfirmed=true&shuffleoutputs=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37220",
+					"path": [
+						"api",
+						"wallet",
+						"estimate-txfee"
+					],
+					"query": [
+						{
+							"key": "walletname",
+							"value": "restore1",
+							"equals": true
+						},
+						{
+							"key": "accountname",
+							"value": "account 0",
+							"equals": true
+						},
+						{
+							"key": "destinationaddress",
+							"value": "1FYp9uguYCz7DgSF9jTWDeZF8kdRKQTXPg",
+							"equals": true
+						},
+						{
+							"key": "amount",
+							"value": "1",
+							"equals": true
+						},
+						{
+							"key": "feetype",
+							"value": "low",
+							"equals": true
+						},
+						{
+							"key": "allowunconfirmed",
+							"value": "true",
+							"equals": true
+						},
+						{
+							"key": "shuffleoutputs",
+							"value": "true",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get the extPubKey of an account",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:37220/api/wallet/extpubkey?walletname=restore1&accountname=account 0",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37220",
+					"path": [
+						"api",
+						"wallet",
+						"extpubkey"
+					],
+					"query": [
+						{
+							"key": "walletname",
+							"value": "restore1",
+							"equals": true
+						},
+						{
+							"key": "accountname",
+							"value": "account 0",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Sync the blockchain from a defined block",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"hash\": \"8609cc873222a0573615788dc32e377b88bfd6a0015791f627d969ee3a415115\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:37221/api/wallet/sync",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"wallet",
+						"sync"
+					]
+				},
+				"description": ""
 			},
 			"response": []
 		}
