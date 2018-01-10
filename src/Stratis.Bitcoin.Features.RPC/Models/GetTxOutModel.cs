@@ -18,30 +18,30 @@ namespace Stratis.Bitcoin.Features.RPC.Models
             if (unspentOutputs != null)
             {
                 var output = unspentOutputs.TryGetOutput(vout);
-                this.bestblock = tip.HashBlock;
-                this.coinbase = unspentOutputs.IsCoinbase;
-                this.confirmations = NetworkExtensions.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;
+                this.BestBlock = tip.HashBlock;
+                this.Coinbase = unspentOutputs.IsCoinbase;
+                this.Confirmations = NetworkExtensions.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;
                 if (output != null)
                 {
-                    this.value = output.Value;
-                    this.scriptPubKey = new ScriptPubKey(output.ScriptPubKey, network);
+                    this.Value = output.Value;
+                    this.ScriptPubKey = new ScriptPubKey(output.ScriptPubKey, network);
                 }
             }
         }
 
-        [JsonProperty(Order = 0)]
-        public uint256 bestblock { get; set; }
+        [JsonProperty(Order = 0, PropertyName = "bestblock")]
+        public uint256 BestBlock { get; set; }
 
-        [JsonProperty(Order = 1)]
-        public int confirmations { get; set; }
+        [JsonProperty(Order = 1, PropertyName = "confirmations")]
+        public int Confirmations { get; set; }
 
-        [JsonProperty(Order = 2)]
-        public Money value { get; set; }
+        [JsonProperty(Order = 2, PropertyName = "value")]
+        public Money Value { get; set; }
 
-        [JsonProperty(Order = 3)]
-        public ScriptPubKey scriptPubKey { get; set; }
+        [JsonProperty(Order = 3, PropertyName = "scriptPubKey")]
+        public ScriptPubKey ScriptPubKey { get; set; }
 
-        [JsonProperty(Order = 4)]
-        public bool coinbase { get; set; }
+        [JsonProperty(Order = 4, PropertyName = "coinbase")]
+        public bool Coinbase { get; set; }
     }
 }
