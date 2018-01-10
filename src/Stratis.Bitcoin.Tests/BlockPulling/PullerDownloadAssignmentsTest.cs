@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 };
                 qualities.Add(peerInfo.QualityScore);
                 availablePeersInformation.Add(peerInfo);
-            };
+            }
 
             double qualityMedian = qualities.Median();
 

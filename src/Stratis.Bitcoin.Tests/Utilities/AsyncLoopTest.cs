@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
     {
         private int iterationCount;
 
-        public AsyncLoopTest() : base()
+        public AsyncLoopTest()
         {
             this.iterationCount = 0;
         }

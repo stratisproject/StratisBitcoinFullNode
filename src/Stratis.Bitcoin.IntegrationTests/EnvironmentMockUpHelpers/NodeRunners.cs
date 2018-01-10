@@ -14,11 +14,10 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
     public class BitcoinCoreRunner : INodeRunner
     {
@@ -56,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private Action<IFullNodeBuilder> callback;
 
-        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null) : base()
+        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
         {
             this.callback = callback;
         }
