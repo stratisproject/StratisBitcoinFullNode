@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Net;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
@@ -13,14 +12,6 @@ namespace Stratis.Bitcoin.P2P
     [JsonObject]
     public sealed class PeerAddress
     {
-        private const int PeerAddressLastSeen = 30;
-
-        private const int PeerMinimumFailDays = 7;
-
-        private const int PeerMaximumWeeklyAttempts = 10;
-
-        private const int PeerMaximumConnectionRetries = 3;
-
         /// <summary>EndPoint of this peer.</summary>
         [JsonProperty(PropertyName = "endpoint")]
         [JsonConverter(typeof(IPEndPointConverter))]
@@ -80,18 +71,62 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
         /// <summary>
-        /// <c>True</c> if <see cref="LastConnectionAttempt"/>, <see cref="LastConnectionSuccess"/> and
-        /// <see cref="LastConnectionHandshake"/> is null.
+        /// <c>True</c> if the peer has had connection attempts but none successful.
         /// </summary>
         [JsonIgnore]
-        public bool IsNew
+        public bool Attempted
         {
             get
             {
                 return
-                    this.LastConnectionAttempt == null &&
-                    this.LastConnectionSuccess == null &&
-                    this.LastConnectionHandshake == null;
+                    (this.LastConnectionAttempt != null) &&
+                    (this.LastConnectionSuccess == null) &&
+                    (this.LastConnectionHandshake == null);
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has had a successful connection attempt.
+        /// </summary>
+        [JsonIgnore]
+        public bool Connected
+        {
+            get
+            {
+                return
+                    (this.LastConnectionAttempt == null) &&
+                    (this.LastConnectionSuccess != null) &&
+                    (this.LastConnectionHandshake == null);
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has never had connection attempts.
+        /// </summary>
+        [JsonIgnore]
+        public bool Fresh
+        {
+            get
+            {
+                return
+                    (this.LastConnectionAttempt == null) &&
+                    (this.LastConnectionSuccess == null) &&
+                    (this.LastConnectionHandshake == null);
+            }
+        }
+
+        /// <summary>
+        /// <c>True</c> if the peer has had a successful connection attempt and handshaked.
+        /// </summary>
+        [JsonIgnore]
+        public bool Handshaked
+        {
+            get
+            {
+                return
+                    (this.LastConnectionAttempt == null) &&
+                    (this.LastConnectionSuccess != null) &&
+                    (this.LastConnectionHandshake != null);
             }
         }
 
@@ -116,20 +151,18 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
         /// </summary>
-        internal void Attempted(DateTimeOffset peerAttemptedAt)
+        internal void SetAttempted(DateTimeOffset peerAttemptedAt)
         {
             this.ConnectionAttempts += 1;
             this.LastConnectionAttempt = peerAttemptedAt;
+            this.LastConnectionSuccess = null;
+            this.LastConnectionHandshake = null;
         }
 
         /// <summary>
         /// Sets the <see cref="LastConnectionSuccess"/>, <see cref="addressTime"/> and <see cref="NetworkAddress.Time"/> properties.
         /// <para>
         /// Resets <see cref="ConnectionAttempts"/> and <see cref="LastConnectionAttempt"/>.
-        /// </para>
-        /// <para>
-        /// TODO: [NBitcoin] Do we need to throttle the update of lastSuccessfulConnect?
-        /// https://github.com/stratisproject/NStratis/blob/2b0fbc3f6b809d92aaf43a8ee12f8baa724e5ccf/NBitcoin/Protocol/AddressManager.cs#L1014
         /// </para>
         /// </summary>
         internal void SetConnected(DateTimeOffset peerConnectedAt)
@@ -147,102 +180,6 @@ namespace Stratis.Bitcoin.P2P
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
             this.LastConnectionHandshake = peerHandshakedAt;
-        }
-
-        /// <summary>
-        /// Determines whether the peer will be selected by the <see cref="IPeerConnector"/> when connecting.
-        /// </summary>
-        /// <seealso cref="PeerHasNeverBeenConnectedTo"/>
-        /// <seealso cref="PeerHasBeenConnectedTo"/>
-        [JsonIgnore]
-        public bool Preferred
-        {
-            get
-            {
-                if (this.LastConnectionSuccess == null)
-                    return this.PeerHasNeverBeenConnectedTo;
-
-                return this.PeerHasBeenConnectedTo;
-            }
-        }
-
-        /// <summary>
-        /// Preference condition if the peer has never been connected to.
-        /// <list>
-        /// <item>1: Prefer the peer if it is new (never attempted and never connected to).</item>
-        /// <item>2: The last connection attempt was more than 60 seconds ago.</item>
-        /// <item>3: The maximum number of retries has not been reached.</item>
-        /// </list>
-        /// </summary>
-        [JsonIgnore]
-        private bool PeerHasNeverBeenConnectedTo
-        {
-            get
-            {
-                if (this.LastConnectionAttempt == null)
-                    return true;
-
-                return
-                    this.LastConnectionAttempt.Value >= DateTimeOffset.Now - TimeSpan.FromSeconds(60) &&
-                    this.ConnectionAttempts < PeerMaximumConnectionRetries;
-            }
-        }
-
-        /// <summary>
-        /// Preference condition if the peer has been connected to.
-        /// <list>
-        /// <item>1: The peer has been seen in the last 30 days..</item>
-        /// <item>2: The last connection successful connection was less than a week ago.</item>
-        /// <item>3: The maximum number of failures has not been reached.</item>
-        /// </list>
-        /// </summary>
-        [JsonIgnore]
-        private bool PeerHasBeenConnectedTo
-        {
-            get
-            {
-                if (DateTimeOffset.Now - this.NetworkAddress.Time > TimeSpan.FromDays(PeerAddressLastSeen))
-                    return false;
-
-                return
-                    DateTimeOffset.Now - this.LastConnectionSuccess < TimeSpan.FromDays(PeerMinimumFailDays) &&
-                    this.ConnectionAttempts < PeerMaximumWeeklyAttempts;
-            }
-        }
-
-        /// <summary>
-        /// Calculates the relative chance this peer should be given when selecting nodes to connect to.
-        /// <para>
-        /// This logic was taken from NBitcoin's implementation.
-        /// </para>
-        /// <para>
-        /// We effectively "deprioritize" the peer away after each failed attempt,
-        /// making it harder for the peer to be able to be selected by the
-        /// address manager. But at most no more than 1/28th to avoid the search taking forever
-        /// or overly penalizing outages.
-        /// </para>
-        /// </summary>
-        internal double Selectability
-        {
-            get
-            {
-                double selectability = 1.0;
-
-                var timeSinceLastAttempt = DateTimeOffset.Now - this.LastConnectionAttempt;
-                if (timeSinceLastAttempt < TimeSpan.Zero)
-                    timeSinceLastAttempt = TimeSpan.Zero;
-
-                // If the last attempt was less than 10 minutes away,
-                // deprioritize the peer by 10%.
-                if (timeSinceLastAttempt < TimeSpan.FromMinutes(10))
-                    selectability *= 0.01;
-
-                // Deprioritize 66% after each failed attempt, but at most 1/28th
-                // to avoid the search taking forever or overly penalizing outages.
-                selectability *= Math.Pow(0.66, Math.Min(this.ConnectionAttempts, 8));
-
-                return selectability;
-            }
         }
 
         /// <summary>

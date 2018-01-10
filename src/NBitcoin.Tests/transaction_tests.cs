@@ -1,19 +1,17 @@
-﻿using NBitcoin.BitcoinCore;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.OpenAsset;
-using NBitcoin.Policy;
-using NBitcoin.Protocol;
-using NBitcoin.Stealth;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.BitcoinCore;
+using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
+using NBitcoin.OpenAsset;
+using NBitcoin.Policy;
+using NBitcoin.Stealth;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -79,10 +77,10 @@ namespace NBitcoin.Tests
             if(chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, null, chain.Tip);
+                return new ChainedBlock(b.Header, b.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, 0);
+                return new ChainedBlock(b.Header, b.Header.GetHash(), 0);
         }
 
         [Fact]
@@ -272,6 +270,45 @@ namespace NBitcoin.Tests
                 .IssueAsset(nico.PubKey, new AssetMoney(goldAssetId, 1000))
                 .BuildTransaction(true);
             Assert.True(builder.Verify(tx));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanGuessRedeemScriptWithInputKeys()
+        {
+            var k = new Key();
+
+            //This gives you a Bech32 address (currently not really interoperable in wallets, so you need to convert it into P2SH)
+            BitcoinAddress address = k.PubKey.WitHash.GetAddress(Network.Main);
+            BitcoinScriptAddress p2sh = address.GetScriptAddress();
+            //p2sh is now an interoperable P2SH segwit address
+
+            //For spending, it works the same as a a normal P2SH
+            //You need to get the ScriptCoin, the RedeemScript of you script coin should be k.PubKey.WitHash.ScriptPubKey.
+
+            Coin[] coins =
+ 	                //Get coins from any block explorer.
+                GetCoins(p2sh)
+ 	                //Nobody knows your redeem script, so you add here the information
+ 	                //This line is actually optional since 4.0.0.38, as the TransactionBuilder is smart enough to figure out
+ 	                //the redeems from the keys added by AddKeys.
+ 	                //However, explicitely having the redeem will make code more easy to update to other payment like 2-2
+ 	                //.Select(c => c.ToScriptCoin(k.PubKey.WitHash.ScriptPubKey))
+                    .ToArray();
+ 
+            TransactionBuilder builder = new TransactionBuilder();
+            builder.AddCoins(coins);
+            builder.AddKeys(k);
+            builder.Send(new Key().ScriptPubKey, Money.Coins(1));
+            builder.SendFees(Money.Coins(0.001m));
+            builder.SetChange(p2sh);
+            Transaction signedTx = builder.BuildTransaction(true);
+            Assert.True(builder.Verify(signedTx));
+        }
+ 
+        private Coin[] GetCoins(BitcoinScriptAddress p2sh)
+        {
+            return new Coin[] { new Coin(new uint256(Enumerable.Range(0, 32).Select(i => (byte)0xaa).ToArray()), 0, Money.Coins(2.0m), p2sh.ScriptPubKey) };
         }
 
         [Fact]
@@ -473,7 +510,7 @@ namespace NBitcoin.Tests
                 repo.Transactions.Put(tx.GetHash(), tx);
 
                 var ctx = tx.GetColoredTransaction(repo);
-                Assert.Equal(1, ctx.Issuances.Count);
+                Assert.Single(ctx.Issuances);
                 Assert.Equal(2, ctx.Transfers.Count);
             }
         }
@@ -559,10 +596,11 @@ namespace NBitcoin.Tests
 
             Assert.True(txBuilder.Verify(tx));
             colored = tx.GetColoredTransaction(repo);
-            Assert.Equal(1, colored.Inputs.Count);
+            Assert.Single(colored.Inputs);
             Assert.Equal(goldId, colored.Inputs[0].Asset.Id);
             Assert.Equal(500, colored.Inputs[0].Asset.Quantity);
-            Assert.Equal(1, colored.Issuances.Count);
+
+            Assert.Single(colored.Issuances);
             Assert.Equal(2, colored.Transfers.Count);
             AssertHasAsset(tx, colored, colored.Transfers[0], goldId, 470, bob.PubKey);
             AssertHasAsset(tx, colored, colored.Transfers[1], goldId, 30, satoshi.PubKey);
@@ -1408,7 +1446,26 @@ namespace NBitcoin.Tests
                 .SendFees(Money.Coins(0.01m))
                 .SetChange(alice)
                 .BuildTransaction(true);
-            Assert.True(tx.Outputs.Any(o => o.Value == Money.Coins(0.59m)));
+            Assert.Contains(tx.Outputs, o => o.Value == Money.Coins(0.59m));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanBuildWithKnownSignatures()
+        {
+            var k = new Key();
+            var tx = new Transaction();
+ 
+            var coin = new Coin(new OutPoint(Rand(), 0), new TxOut(Money.Coins(1.0m), k.PubKey.Hash));
+            tx.Inputs.Add(new TxIn(coin.Outpoint));
+            TransactionSignature signature = tx.SignInput(k, coin);
+ 
+            var txBuilder = new TransactionBuilder();
+            txBuilder.AddCoins(coin);
+            txBuilder.AddKnownSignature(k.PubKey, signature);
+            txBuilder.SignTransactionInPlace(tx);
+ 
+            Assert.True(tx.Inputs.AsIndexedInputs().First().VerifyScript(coin));
         }
 
         [Fact]
@@ -1883,8 +1940,8 @@ namespace NBitcoin.Tests
             spending.Inputs.Add(new TxIn(new OutPoint(funding, 3))); //Coins not found
             builder.Verify(spending, Money.Coins(1.0m), out errors);
             var coin = errors.OfType<CoinNotFoundPolicyError>().Single();
-            Assert.Equal(coin.InputIndex, 4UL);
-            Assert.Equal(coin.OutPoint.N, 3UL);
+            Assert.Equal(4UL, coin.InputIndex);
+            Assert.Equal(3UL, coin.OutPoint.N);
         }
 
         //OP_DEPTH 5 OP_SUB OP_PICK OP_SIZE OP_NIP e 10 OP_WITHIN OP_DEPTH 6 OP_SUB OP_PICK OP_SIZE OP_NIP e 10 OP_WITHIN OP_BOOLAND OP_DEPTH 5 OP_SUB OP_PICK OP_SHA256 1d3a9b978502dbe93364a4ea7b75ae9758fd7683958f0f42c1600e9975d10350 OP_EQUAL OP_DEPTH 6 OP_SUB OP_PICK OP_SHA256 1c5f92551d47cb478129b6ba715f58e9cea74ced4eee866c61fc2ea214197dec OP_EQUAL OP_BOOLAND OP_BOOLAND OP_DEPTH 5 OP_SUB OP_PICK OP_SIZE OP_NIP OP_DEPTH 6 OP_SUB OP_PICK OP_SIZE OP_NIP OP_EQUAL OP_IF 1d3a9b978502dbe93364a4ea7b75ae9758fd7683958f0f42c1600e9975d10350 OP_ELSE 1c5f92551d47cb478129b6ba715f58e9cea74ced4eee866c61fc2ea214197dec OP_ENDIF 1d3a9b978502dbe93364a4ea7b75ae9758fd7683958f0f42c1600e9975d10350 OP_EQUAL OP_DEPTH 1 OP_SUB OP_PICK OP_DEPTH 2 OP_SUB OP_PICK OP_CHECKSIG OP_BOOLAND OP_DEPTH 5 OP_SUB OP_PICK OP_SIZE OP_NIP OP_DEPTH 6 OP_SUB OP_PICK OP_SIZE OP_NIP OP_EQUAL OP_IF 1d3a9b978502dbe93364a4ea7b75ae9758fd7683958f0f42c1600e9975d10350 OP_ELSE 1c5f92551d47cb478129b6ba715f58e9cea74ced4eee866c61fc2ea214197dec OP_ENDIF 1c5f92551d47cb478129b6ba715f58e9cea74ced4eee866c61fc2ea214197dec OP_EQUAL OP_DEPTH 3 OP_SUB OP_PICK OP_DEPTH 4 OP_SUB OP_PICK OP_CHECKSIG OP_BOOLAND OP_BOOLOR OP_BOOLAND OP_DEPTH 1 OP_SUB OP_PICK OP_DEPTH 2 OP_SUB OP_PICK OP_CHECKSIG OP_DEPTH 3 OP_SUB OP_PICK OP_DEPTH 4 OP_SUB OP_PICK OP_CHECKSIG OP_BOOLAND OP_BOOLOR OP_VERIFY
@@ -2065,6 +2122,17 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
+        public void DoNotThrowsWithSatoshiFormatAndNoOutputs()
+        {
+ 	        var tx = Transaction.Parse("02000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0401700101ffffffff02" +
+                        "00f2052a0100000023210295aefb5b15cd9204f18ceda653ebeaada10c69b6ef7f757450c5d66c0f0ebb8dac0000000000000000266a24aa21a9" +
+                        "ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf900000000");
+
+            tx.ToString(RawFormat.Satoshi);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
         //http://brainwallet.org/#tx
         public void CanParseTransaction()
         {
@@ -2108,7 +2176,7 @@ namespace NBitcoin.Tests
         //[Fact]
         //http://bitcoin.stackexchange.com/questions/25814/ecdsa-signature-and-the-z-value
         //http://www.nilsschneider.net/2013/01/28/recovering-bitcoin-private-keys.html
-        public void PlayingWithSignatures()
+        private void PlayingWithSignatures()
         {
             var script1 = new Script("30440220d47ce4c025c35ec440bc81d99834a624875161a26bf56ef7fdc0f5d52f843ad1022044e1ff2dfd8102cf7a47c21d5c9fd5701610d04953c6836596b4fe9dd2f53e3e01 04dbd0c61532279cf72981c3584fc32216e0127699635c2789f549e0730c059b81ae133016a69c21e23f1859a95f06d52b7bf149a8f2fe4e8535c8a829b449c5ff");
 
@@ -2298,8 +2366,7 @@ namespace NBitcoin.Tests
             Assert.True(scriptCoin.IsP2SH);
             Assert.True(scriptCoin.GetHashVersion() == HashVersion.Witness);
 
-
-            Assert.Throws(typeof(ArgumentException), () => new ScriptCoin(c, key.PubKey.ScriptPubKey.WitHash.ScriptPubKey));
+            Assert.Throws<ArgumentException>(() => new ScriptCoin(c, key.PubKey.ScriptPubKey.WitHash.ScriptPubKey));
         }
 
         [Fact]
@@ -2526,7 +2593,7 @@ namespace NBitcoin.Tests
                             }
                             else
                             {
-                                Assert.True(signatures.Any(s => !s.ToBytes().SequenceEqual(sig.ToBytes())));
+                                Assert.Contains(signatures, s => !s.ToBytes().SequenceEqual(sig.ToBytes()));
                                 var noModifSignature = signatures[0];
                                 var replacement = PayToPubkeyHashTemplate.Instance.GenerateScriptSig(noModifSignature, secret.PubKey);
                                 if(signedInput.WitScript != WitScript.Empty)
@@ -2539,7 +2606,7 @@ namespace NBitcoin.Tests
                                 }
                                 TransactionPolicyError[] errors;
                                 Assert.False(builder.Verify(result, out errors));
-                                Assert.Equal(1, errors.Length);
+                                Assert.Single(errors);
                                 var scriptError = (ScriptPolicyError)errors[0];
                                 Assert.True(scriptError.ScriptError == ScriptError.EvalFalse);
                             }

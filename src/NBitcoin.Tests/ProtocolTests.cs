@@ -1,16 +1,6 @@
 ﻿#if !NOSOCKET
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using NBitcoin;
-using NBitcoin.Protocol;
-using System.Net;
-using System.Threading;
-using System.IO;
-using NBitcoin.DataEncoders;
-using System.Diagnostics;
 
 namespace NBitcoin.Tests
 {

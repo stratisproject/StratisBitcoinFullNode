@@ -1,14 +1,13 @@
-﻿using NBitcoin.BouncyCastle.Math;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.JsonConverters;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -135,6 +134,10 @@ namespace NBitcoin.Tests
             Assert.Throws<Bech32FormatException>(() => new BitcoinWitScriptAddress("bc1qrp33g0q5c3txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3", Network.Main));
 
             Assert.Throws<Bech32FormatException>(() => new BitcoinWitPubKeyAddress("bc1qw507d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", Network.Main));
+
+            var addr1 = new BitcoinWitPubKeyAddress("tb1qr5d68t6qm8t2n7ch4nph3ha4prztteuw98ewda", Network.TestNet);
+            var addr2 = new BitcoinWitPubKeyAddress("tb1qr5d68t6qm8t2n7ch4nph3ha4prztteuw98ewda");
+            Assert.Equal(addr1, addr2);
         }
 
         [Fact]

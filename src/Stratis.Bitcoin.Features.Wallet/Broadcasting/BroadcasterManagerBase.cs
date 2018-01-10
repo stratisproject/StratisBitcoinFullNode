@@ -1,21 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ConcurrentCollections;
 using NBitcoin;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Broadcasting
+namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public abstract class BroadcasterManagerBase : IBroadcasterManager
     {
         public event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
 
-        /// <summary>Connection manager for managing node connections.</summary>
+        /// <summary> Connection manager for managing node connections.</summary>
         protected readonly IConnectionManager connectionManager;
 
         public BroadcasterManagerBase(IConnectionManager connectionManager)
@@ -59,24 +61,23 @@ namespace Stratis.Bitcoin.Broadcasting
             }
         }
 
-        public abstract Task<bool> TryBroadcastAsync(Transaction transaction);
+        public abstract Task BroadcastTransactionAsync(Transaction transaction);
 
         /// <summary>
         /// Sends transaction to peers.
         /// </summary>
         /// <param name="transaction">Transaction that will be propagated.</param>
-        /// <param name="skipHalfOfThePeers">If set to <c>true</c> transaction will be send to all the peers we are connected to. Otherwise it will be sent to half of them.</param>
-        protected void PropagateTransactionToPeers(Transaction transaction, bool skipHalfOfThePeers = false)
+        /// <param name="peers">Peers to whom we will propagate the transaction.</param>
+        protected async Task PropagateTransactionToPeersAsync(Transaction transaction, List<NetworkPeer> peers)
         {
             this.AddOrUpdate(transaction, State.ToBroadcast);
 
             var invPayload = new InvPayload(transaction);
 
-            var peers = this.connectionManager.ConnectedNodes.ToList();
-            int propagateToCount = skipHalfOfThePeers ? (int)Math.Ceiling(peers.Count / 2.0) : peers.Count;
-
-            for (int i = 0; i < propagateToCount; ++i)
-                peers[i].SendMessageAsync(invPayload).GetAwaiter().GetResult();
+            foreach (var peer in peers)
+            {
+                await peer.SendMessageAsync(invPayload);
+            }
         }
 
         protected bool IsPropagated(Transaction transaction)

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -44,8 +44,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Connection manager for managing node connections.</summary>
         private readonly IConnectionManager connectionManager;
 
-        /// <summary>Current block chain state.</summary>
-        private readonly ChainState chainState;
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="manager">Memory pool manager for managing the memory pool.</param>
         /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
-        /// <param name="chainState">Current block chain state.</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="logger">Instance logger for memory pool behavior.</param>
         public MempoolBehavior(
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolManager manager,
             MempoolOrphans orphans,
             IConnectionManager connectionManager,
-            ChainState chainState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             Signals.Signals signals,
             ILogger logger)
         {
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.manager = manager;
             this.orphans = orphans;
             this.connectionManager = connectionManager;
-            this.chainState = chainState;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.signals = signals;
             this.logger = logger;
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="manager">Memory pool manager for managing the memory pool.</param>
         /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
-        /// <param name="chainState">Current block chain state.</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="loggerFactory">Logger factory for creating logger.</param>
         public MempoolBehavior(
@@ -112,10 +112,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolManager manager,
             MempoolOrphans orphans,
             IConnectionManager connectionManager,
-            ChainState chainState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             Signals.Signals signals,
             ILoggerFactory loggerFactory)
-            : this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
+            : this(validator, manager, orphans, connectionManager, initialBlockDownloadState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
         {
         }
 
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override object Clone()
         {
-            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals, this.logger);
+            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.logger);
         }
 
         /// <summary>
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return ret;
             });
 
-            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node?.RemoteSocketEndpoint);
+            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(node, sends.Select(s => s.Trx.GetHash()));
             this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();
 
@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return; //error("message inv size() = %u", vInv.size());
             }
 
-            if (this.chainState.IsInitialBlockDownload)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IS_IBD]");
                 return;
@@ -504,8 +504,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task RelayTransaction(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-            IReadOnlyNetworkPeerCollection nodes = this.connectionManager.ConnectedNodes;
-            if (!nodes.Any())
+            IReadOnlyNetworkPeerCollection peers = this.connectionManager.ConnectedPeers;
+            if (!peers.Any())
             {
                 this.logger.LogTrace("(-)[NO_NODES]");
                 return Task.CompletedTask;
@@ -513,7 +513,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // find all behaviours then start an exclusive task
             // to add the hash to each local collection
-            IEnumerable<MempoolBehavior> behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
+            IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
             this.logger.LogTrace("(-)");
             return this.manager.MempoolLock.WriteAsync(() =>
             {

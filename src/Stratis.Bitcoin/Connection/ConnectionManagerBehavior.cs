@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -29,8 +28,6 @@ namespace Stratis.Bitcoin.Connection
 
         public bool OneTry { get; internal set; }
 
-        private ChainHeadersBehavior chainHeadersBehavior;
-
         public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
@@ -55,26 +52,25 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
-            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            if (node.State == NetworkPeerState.HandShaked)
+            if (peer.State == NetworkPeerState.HandShaked)
             {
-                this.ConnectionManager.AddConnectedNode(node);
-                this.infoLogger.LogInformation("Node '{0}' connected ({1}), agent '{2}', height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
-                node.SendMessageAsync(new SendHeadersPayload());
+                this.ConnectionManager.AddConnectedPeer(peer);
+                this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
+                peer.SendMessageVoidAsync(new SendHeadersPayload());
             }
 
-            if ((node.State == NetworkPeerState.Failed) || (node.State == NetworkPeerState.Offline))
+            if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
             {
-                this.infoLogger.LogInformation("Node '{0}' offline, reason: '{1}'.", node.RemoteSocketEndpoint, node.DisconnectReason?.Reason ?? "unknown");
-                this.ConnectionManager.RemoveConnectedNode(node);
+                this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
+                this.ConnectionManager.RemoveConnectedNode(peer, "Peer offline");
             }
 
             this.logger.LogTrace("(-)");

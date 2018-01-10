@@ -49,13 +49,13 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            var node = this.AttachedPeer;
-            if (node.State == NetworkPeerState.Connected)
+            var peer = this.AttachedPeer;
+            if (peer.State == NetworkPeerState.Connected)
             {
-                if (this.peerBanning.IsBanned(node.RemoteSocketEndpoint))
+                if (this.peerBanning.IsBanned(peer.RemoteSocketEndpoint))
                 {
-                    this.logger.LogDebug("Node '{0}' was previously banned.", node.RemoteSocketEndpoint);
-                    node.DisconnectWithException("A banned node tried to connect.");
+                    this.logger.LogDebug("Peer '{0}' was previously banned.", peer.RemoteSocketEndpoint);
+                    peer.Disconnect("A banned node tried to connect.");
                     return;
                 }
             }
@@ -70,17 +70,17 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>
         /// Receive message payloads from the peer.
         /// </summary>
-        /// <param name="node">The peers that is sending the message.</param>
+        /// <param name="peer">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
+        private void AttachedNode_MessageReceived(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
-                this.peerBanning.BanPeer(node.RemoteSocketEndpoint, this.nodeSettings.ConnectionManager.BanTimeSeconds);
-                this.logger.LogTrace("Invalid block received from peer '{0}'.", node.RemoteSocketEndpoint);
-                node.DisconnectWithException("Invalid block received.");
+                this.peerBanning.BanPeer(peer.RemoteSocketEndpoint, this.nodeSettings.ConnectionManager.BanTimeSeconds, "Invalid block header received");
+                this.logger.LogTrace("Invalid block header received from peer '{0}'.", peer.RemoteSocketEndpoint);
+                peer.Disconnect("Invalid block header received");
             }
 
             this.logger.LogTrace("(-)");

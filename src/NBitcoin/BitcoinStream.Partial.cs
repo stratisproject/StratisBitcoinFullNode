@@ -1,13 +1,8 @@
 ﻿
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using NBitcoin.Protocol;
 
 namespace NBitcoin
@@ -24,7 +19,7 @@ namespace NBitcoin
             ReadWrite(ref _VarInt);
 
             if(_VarInt.ToLong() > (uint)MaxArraySize)
-                throw new ArgumentOutOfRangeException("Array size not big");
+                throw new ArgumentOutOfRangeException("Array size too big");
             if(!Serializing)
                 data = new T[_VarInt.ToLong()];
             for(int i = 0 ; i < data.Length ; i++)

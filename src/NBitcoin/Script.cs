@@ -1,11 +1,11 @@
-﻿using System.Runtime.InteropServices;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {
@@ -676,8 +676,10 @@ namespace NBitcoin
                 return uint256.One;
             }
 
-            // Check for invalid use of SIGHASH_SINGLE
-            if(nHashType == SigHash.Single)
+            SigHash hashType = nHashType & (SigHash)31;
+            
+            // Check for invalid use of SIGHASH_SINGLE.
+            if (hashType == SigHash.Single)
             {
                 if(nIn >= txTo.Outputs.Count)
                 {
@@ -699,7 +701,6 @@ namespace NBitcoin
             //Copy subscript into the txin script you are checking
             txCopy.Inputs[nIn].ScriptSig = scriptCopy;
 
-            var hashType = nHashType & (SigHash)31;
             if(hashType == SigHash.None)
             {
                 //The output of txCopy is set to a vector of zero size.

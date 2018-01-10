@@ -17,6 +17,24 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManagerBehaviour : NetworkPeerBehavior
     {
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// See <see cref="PeerAddressManagerBehaviourMode"/> for the different modes and their
+        /// explanations.
+        /// </summary>
+        public PeerAddressManagerBehaviourMode Mode { get; set; }
+
+        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        private readonly IPeerAddressManager peerAddressManager;
+
+        /// <summary>
+        /// The amount of peers that can be discovered before
+        /// <see cref="PeerDiscovery"/> stops finding new ones.
+        /// </summary>
+        public int PeersToDiscover { get; set; }
+
         public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -28,19 +46,16 @@ namespace Stratis.Bitcoin.P2P
             this.PeersToDiscover = 1000;
         }
 
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        public int PeersToDiscover { get; set; }
-
-        public PeerAddressManagerBehaviourMode Mode { get; set; }
-
-        /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
-        private readonly IPeerAddressManager peerAddressManager;
-
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
             this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
+
+            if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
+            {
+                if (this.AttachedPeer.State == NetworkPeerState.Connected)
+                    this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+            }
         }
 
         private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
@@ -48,7 +63,10 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
-                    peer.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
+                {
+                    var peers = this.peerAddressManager.PeerSelector.SelectPeers(1000).Select(p => p.NetworkAddress).ToArray();
+                    peer.SendMessageVoidAsync(new AddrPayload(peers));
+                }
             }
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
@@ -58,18 +76,10 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        // TODO: We need to refactor this as the StateChanged event handlers only gets attached
-        // AFTER the peer has connected, which means that we can never go:
-        // if (peer.State == NetworkPeerState.Connected)
-        // which is more intuitive.
-        // This happens in PeerDiscovery as well where we connect and then disconnect straight after.
         private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
-                if (peer.State <= NetworkPeerState.Disconnecting && previousState == NetworkPeerState.HandShaked)
-                    this.peerAddressManager.PeerConnected(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
-
                 if (peer.State == NetworkPeerState.HandShaked)
                     this.peerAddressManager.PeerHandshaked(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
             }
@@ -90,6 +100,9 @@ namespace Stratis.Bitcoin.P2P
         }
     }
 
+    /// <summary>
+    /// Specifies how messages related to network peer discovery are handled.
+    /// </summary>
     [Flags]
     public enum PeerAddressManagerBehaviourMode
     {

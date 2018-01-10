@@ -3,11 +3,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -32,7 +32,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
 
-        private readonly ChainState chainState;
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         private readonly ConcurrentChain chain;
 
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ConsensusStats(
             CoinView coinView,
             ConsensusLoop consensusLoop,
-            ChainState chainState,
+            IInitialBlockDownloadState initialBlockDownloadState,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.lastSnapshot = consensusLoop.Validator.PerformanceCounter.Snapshot();
             this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
             this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
-            this.chainState = chainState;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.chain = chain;
             this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -112,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         protected override void OnNextCore(Block value)
         {
             if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
-                if (this.chainState.IsInitialBlockDownload)
+                if (this.initialBlockDownloadState.IsInitialBlockDownload())
                     this.LogAsync().GetAwaiter().GetResult();
         }
     }

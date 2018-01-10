@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -124,12 +125,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlockAsync"/> and the reorg part of <see cref="ConsensusLoop.PullerLoopAsync"/> methods.</summary>
         private readonly AsyncLock consensusLock;
 
-        /// <summary>Provider of block header hash checkpoints.</summary>
-        private readonly ICheckpoints checkpoints;
-
-        /// <summary>Consensus settings for the full node.</summary>
-        private readonly ConsensusSettings consensusSettings;
-
         /// <summary>Settings for the full node.</summary>
         private readonly NodeSettings nodeSettings;
 
@@ -157,7 +152,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
-        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="consensusSettings">Consensus settings for the full node.</param>
         /// <param name="nodeSettings">Settings for the full node.</param>
         /// <param name="peerBanning">Handles the banning of peers.</param>
@@ -176,7 +170,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
-            ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             NodeSettings nodeSettings,
             IPeerBanning peerBanning,
@@ -212,9 +205,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.UTXOSet = utxoSet;
             this.Puller = puller;
             this.NodeDeployments = nodeDeployments;
-            this.checkpoints = checkpoints;
             this.dateTimeProvider = dateTimeProvider;
-            this.consensusSettings = consensusSettings;
             this.nodeSettings = nodeSettings;
             this.peerBanning = peerBanning;
             this.consensusRules = consensusRules;
@@ -259,6 +250,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public void Stop()
         {
+            this.Puller.Dispose();
             this.asyncLoop.Dispose();
         }
 
@@ -272,6 +264,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </remarks>
         private async Task PullerLoopAsync()
         {
+            this.logger.LogTrace("()");
+
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
                 BlockValidationContext blockValidationContext = new BlockValidationContext();
@@ -280,6 +274,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     // Save the current consensus tip to later check if it changed.
                     ChainedBlock consensusTip = this.Tip;
+
+                    this.logger.LogTrace("Asking block puller to deliver next block.");
 
                     // This method will block until the next block is downloaded.
                     LookaheadResult lookaheadResult = this.Puller.NextBlock(this.nodeLifetime.ApplicationStopping);
@@ -310,6 +306,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.logger.LogTrace("Block received from puller.");
                 await this.AcceptBlockAsync(blockValidationContext).ConfigureAwait(false);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -410,7 +408,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds != BlockValidationContext.BanDurationNoBan))
                     {
                         int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.nodeSettings.ConnectionManager.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration);
+                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
                     }
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
@@ -506,7 +504,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("Executing block.");
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                this.Validator.ExecuteBlock(context, null);
+                this.Validator.ExecuteBlock(context);
             }
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
@@ -559,7 +557,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>List of transaction ids.</returns>
         public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(), nameof(enforceBIP30), enforceBIP30);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(NetworkOptions.TemporaryOptions), nameof(enforceBIP30), enforceBIP30);
 
             HashSet<uint256> ids = new HashSet<uint256>();
             foreach (Transaction tx in block.Transactions)

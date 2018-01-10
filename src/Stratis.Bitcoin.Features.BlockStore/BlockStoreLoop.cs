@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -31,6 +32,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         internal readonly ConcurrentChain Chain;
+
+        /// <summary>Provider of IBD state.</summary>
+        public IInitialBlockDownloadState InitialBlockDownloadState { get; }
 
         public ChainState ChainState { get; }
 
@@ -71,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
 
-        /// <summary>Public constructor for unit testing</summary>
+        /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
@@ -81,6 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
+            IInitialBlockDownloadState initialBlockDownloadState,
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -93,6 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
+            this.InitialBlockDownloadState = initialBlockDownloadState;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);
@@ -170,31 +176,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Adds a block to Pending Storage
+        /// Adds a block to Pending Storage.
         /// <para>
-        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if:
+        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if the store's tip is behind the given block.
         /// </para>
-        /// <list>
-        ///     <item>1: The block does exist on the chain.</item>
-        ///     <item>2: The store's tip is behind the given block.</item>
-        /// </list>
         /// </summary>
-        /// <param name="block">The block to add to pending storage</param>
+        /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
-        public void AddToPending(Block block)
+        public void AddToPending(BlockPair blockPair)
         {
-            uint256 blockHash = block.GetHash();
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
 
-            ChainedBlock chainedBlock = this.Chain.GetBlock(blockHash);
-            if (chainedBlock == null)
-            {
-                this.logger.LogTrace("(-)[REORG]");
-                return;
-            }
-
-            if (this.StoreTip.Height < chainedBlock.Height)
-                this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
+            if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
+                this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
 
             this.logger.LogTrace("(-)");
         }

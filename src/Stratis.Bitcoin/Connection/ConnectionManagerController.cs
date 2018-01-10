@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Connection
                     break;
 
                 case "onetry":
-                    this.ConnectionManager.Connect(endpoint);
+                    this.ConnectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
                     break;
 
                 default:
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Connection
         {
             List<PeerNodeModel> peerList = new List<PeerNodeModel>();
 
-            List<NetworkPeer> nodes = this.ConnectionManager.ConnectedNodes.ToList();
+            List<NetworkPeer> nodes = this.ConnectionManager.ConnectedPeers.ToList();
             foreach (NetworkPeer node in nodes)
             {
                 if ((node != null) && (node.RemoteSocketAddress != null))

@@ -21,15 +21,15 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         public string Errors { get; set; }
 
         /// <summary>Size of the next block the node wants to mine in bytes.</summary>
-        [JsonProperty(PropertyName = "currentblocksize")]
+        [JsonProperty(PropertyName = "currentBlockSize")]
         public long CurrentBlockSize { get; set; }
 
         /// <summary>Number of transactions the node wants to put in the next block.</summary>
-        [JsonProperty(PropertyName = "currentblocktx")]
+        [JsonProperty(PropertyName = "currentBlockTx")]
         public long CurrentBlockTx { get; set; }
 
         /// <summary>Number of transactions in the memory pool.</summary>
-        [JsonProperty(PropertyName = "pooledtx")]
+        [JsonProperty(PropertyName = "pooledTx")]
         public long PooledTx { get; set; }
 
         /// <summary>Target difficulty that the next block must meet.</summary>
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         public double Difficulty { get; set; }
 
         /// <summary>Length of the last staking search interval in seconds.</summary>
-        [JsonProperty(PropertyName = "search-interval")]
+        [JsonProperty(PropertyName = "searchInterval")]
         public int SearchInterval { get; set; }
 
         /// <summary>Staking weight of the node.</summary>
@@ -45,11 +45,11 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         public long Weight { get; set; }
 
         /// <summary>Estimation of the total staking weight of all nodes on the network.</summary>
-        [JsonProperty(PropertyName = "netstakeweight")]
+        [JsonProperty(PropertyName = "netStakeWeight")]
         public long NetStakeWeight { get; set; }
 
         /// <summary>Expected time of the node to find new block in seconds.</summary>
-        [JsonProperty(PropertyName = "expectedtime")]
+        [JsonProperty(PropertyName = "expectedTime")]
         public long ExpectedTime { get; set; }
 
         /// <inheritdoc />

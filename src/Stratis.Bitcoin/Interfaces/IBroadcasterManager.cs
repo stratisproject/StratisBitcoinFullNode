@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Interfaces
 {
     public interface IBroadcasterManager
     {
-        Task<bool> TryBroadcastAsync(Transaction transaction);
+        Task BroadcastTransactionAsync(Transaction transaction);
 
         event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
 

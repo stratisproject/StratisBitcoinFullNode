@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Stratis.Bitcoin.Tests.Logging;
-using Stratis.Bitcoin.Utilities.FileStorage;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities

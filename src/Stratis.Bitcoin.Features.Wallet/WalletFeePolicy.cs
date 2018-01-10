@@ -1,23 +1,12 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletFeePolicy : IWalletFeePolicy
     {
-        /// <summary>Block policy estimator.</summary>
-        private readonly BlockPolicyEstimator blockPolicyEstimator;
-
-        /// <summary>Memory pool validator.</summary>
-        private readonly IMempoolValidator mempoolValidator;
-
-        /// <summary>Transaction memory pool.</summary>
-        private readonly TxMempool mempool;
-
         /// <summary>Maximum transaction fee.</summary>
         private readonly Money maxTxFee;
 
@@ -47,17 +36,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Constructs a wallet fee policy.
         /// </summary>
-        /// <param name="blockPolicyEstimator">Block policy estimator.</param>
-        /// <param name="mempoolValidator">Memory pool validator.</param>
-        /// <param name="mempool">Memory pool.</param>
-        /// <param name="network">Network node is running on.</param>
         /// <param name="nodeSettings">Settings for the the node.</param>
-        public WalletFeePolicy(BlockPolicyEstimator blockPolicyEstimator, IMempoolValidator mempoolValidator, TxMempool mempool, Network network, NodeSettings nodeSettings)
+        public WalletFeePolicy(NodeSettings nodeSettings)
         {
-            this.blockPolicyEstimator = blockPolicyEstimator;
-            this.mempoolValidator = mempoolValidator;
-            this.mempool = mempool;
-
             this.minTxFee = nodeSettings.MinTxFeeRate;
             this.fallbackFee = nodeSettings.FallbackTxFeeRate;
             this.payTxFee = new FeeRate(0);

@@ -109,13 +109,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             return false;
         }
 
-        public bool Remove(NetworkPeer peer)
+        public bool Remove(NetworkPeer peer, string reason)
         {
             NetworkPeer old;
             if (this.networkPeers.TryRemove(peer, out old))
             {
                 peer.MessageProducer.RemoveMessageListener(this.bridge);
                 this.OnPeerRemoved(old);
+                peer.Dispose(reason);
                 return true;
             }
 
@@ -174,10 +175,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this.GetEnumerator();
         }
 
-        public void DisconnectAll(CancellationToken cancellation = default(CancellationToken))
+        public void DisconnectAll(string reason, CancellationToken cancellation = default(CancellationToken))
         {
             foreach (KeyValuePair<NetworkPeer, NetworkPeer> peer in this.networkPeers)
-                peer.Key.DisconnectWithException();
+                peer.Key.Dispose(reason);
         }
 
         public void Clear()

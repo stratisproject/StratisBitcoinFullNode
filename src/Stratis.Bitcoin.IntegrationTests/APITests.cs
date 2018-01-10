@@ -9,10 +9,12 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -64,16 +66,15 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var apiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 using (client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                    var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
-
-                    Assert.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\"", response);
+                    var response = client.GetStringAsync(apiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
+                    Assert.StartsWith("{\"walletFilePath\":\"", response);
                 }
             }
             finally
@@ -91,9 +92,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisStakeNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var apiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
-                Assert.NotNull(fullNode.NodeService<PosMinting>(true));
+                Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
                 using (client = new HttpClient())
                 {
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     var mnemonic = walletManager.CreateWallet(model.Password, model.Name);
 
                     var content = new StringContent(model.ToString(), Encoding.UTF8, "application/json");
-                    var response = client.PostAsync(ApiURI + "api/miner/startstaking", content).GetAwaiter().GetResult();
+                    var response = client.PostAsync(apiURI + "api/miner/startstaking", content).GetAwaiter().GetResult();
                     Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
 
                     var responseText = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -134,14 +135,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var apiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 using (client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                    var response = client.GetStringAsync(ApiURI + "api/rpc/callbyname?methodName=getblockhash&height=0").GetAwaiter().GetResult();
+                    var response = client.GetStringAsync(apiURI + "api/rpc/callbyname?methodName=getblockhash&height=0").GetAwaiter().GetResult();
 
                     Assert.Equal("\"0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206\"", response);
                 }
@@ -162,14 +163,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             try
             {
                 var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                var apiURI = fullNode.NodeService<ApiSettings>().ApiUri;
 
                 using (client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                    var response = client.GetStringAsync(ApiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
+                    var response = client.GetStringAsync(apiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
 
                     Assert.StartsWith("[{\"", response);
                 }

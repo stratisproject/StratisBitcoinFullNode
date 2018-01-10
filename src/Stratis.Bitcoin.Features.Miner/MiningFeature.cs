@@ -9,8 +9,10 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -27,13 +29,13 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly MinerSettings minerSettings;
 
         /// <summary>POW miner.</summary>
-        private readonly PowMining powMining;
+        private readonly IPowMining powMining;
 
         /// <summary>POS staker.</summary>
-        private readonly PosMinting posMinting;
+        private readonly IPosMinting posMinting;
 
         /// <summary>Manager providing operations on wallets.</summary>
-        private readonly WalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -49,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="minerSettings">Settings relevant to mining or staking.</param>
+        /// <param name="nodeSettings">The node's configuration settings.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="powMining">POW miner.</param>
         /// <param name="posMinting">POS staker.</param>
@@ -58,9 +61,9 @@ namespace Stratis.Bitcoin.Features.Miner
             MinerSettings minerSettings,
             NodeSettings nodeSettings,
             ILoggerFactory loggerFactory,
-            PowMining powMining,
-            PosMinting posMinting = null,
-            WalletManager walletManager = null)
+            IPowMining powMining,
+            IPosMinting posMinting = null,
+            IWalletManager walletManager = null)
         {
             this.network = network;
             this.minerSettings = minerSettings;
@@ -94,6 +97,16 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
+        /// <summary>
+        /// Stop a staking wallet.
+        /// </summary>
+        public void StopStaking()
+        {
+            this.posMinting.StopStake();
+            this.posLoop = null;
+            this.logger.LogInformation("Staking stopped.");
+        }
+
         /// <inheritdoc />
         public override void Initialize()
         {
@@ -122,12 +135,13 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.powLoop?.Dispose();
             this.posLoop?.Dispose();
+            this.posLoop = null;
         }
 
         /// <inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)
         {
-            if (services.ServiceProvider.GetService<PosMinting>() != null)
+            if (services.ServiceProvider.GetService<IPosMinting>() != null)
             {
                 services.Features.EnsureFeature<WalletFeature>();
             }
@@ -164,9 +178,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<PowMining>();
+                        services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
@@ -196,11 +211,12 @@ namespace Stratis.Bitcoin.Features.Miner
                     .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<PowMining>();
-                        services.AddSingleton<PosMinting>();
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IPosMinting, PosMinting>();
                         services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
                     });
             });

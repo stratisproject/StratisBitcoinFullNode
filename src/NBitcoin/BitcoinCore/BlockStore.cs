@@ -35,7 +35,7 @@ namespace NBitcoin.BitcoinCore
 
             foreach(BlockHeader header in Enumerate(true).Select(b => b.Item.Header))
             {
-                uint256 hash = header.GetHash();
+                uint256 hash = header.GetHash(this.Network.NetworkOptions);
                 headers.Add(hash, header);
             }
 
@@ -109,7 +109,7 @@ namespace NBitcoin.BitcoinCore
                                 break;
                         }
 
-                        var chainedHeader = new ChainedBlock(block.Value.Header, block.Value.GetHash(), chainedBlock);
+                        var chainedHeader = new ChainedBlock(block.Value.Header, block.Value.GetHash(this.Network.NetworkOptions), chainedBlock);
                         chain.SetTip(chainedHeader);
                         chainedBlocks.TryAdd(chainedHeader.HashBlock, chainedHeader);
                         inChain.Add(block.Key);

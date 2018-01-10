@@ -1,13 +1,10 @@
 ﻿#if !NOJSONNET
-using NBitcoin.DataEncoders;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
@@ -127,15 +124,19 @@ namespace NBitcoin.RPC
                 else
                 {
                     var multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
-                    WritePropertyValue(writer, "reqSigs", multi.SignatureCount);
+                    if (multi != null)
+                        WritePropertyValue(writer, "reqSigs", multi.SignatureCount);
                     WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate()));
-                    writer.WritePropertyName("addresses");
-                    writer.WriteStartArray();
-                    foreach(var key in multi.PubKeys)
+                    if (multi != null)
                     {
-                        writer.WriteValue(key.Hash.GetAddress(Network).ToString());
+                        writer.WritePropertyName("addresses");
+                        writer.WriteStartArray();
+                        foreach (PubKey key in multi.PubKeys)
+                        {
+                            writer.WriteValue(key.Hash.GetAddress(this.Network).ToString());
+                        }
+                        writer.WriteEndArray();
                     }
-                    writer.WriteEndArray();
                 }
 
                 writer.WriteEndObject(); //endscript

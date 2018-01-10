@@ -1,13 +1,12 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Stealth;
-using NBitcoin.BouncyCastle.Math;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.BouncyCastle.Crypto.Parameters;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
+using NBitcoin.Stealth;
 
 namespace NBitcoin
 {
@@ -420,17 +419,34 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <returns>Shared secret</returns>
+        [Obsolete("Use GetSharedPubkey instead")]
         public byte[] GetSharedSecret(Key key)
         {
-            var pub = _ECKey.GetPublicKeyParameters();
-            var privKey = key._ECKey.PrivateKey;
-            if(!pub.Parameters.Equals(privKey.Parameters))
+            return Hashes.SHA256(GetSharedPubkey(key).ToBytes());
+        }
+
+        /// <summary>
+        /// Exchange shared secret through ECDH
+        /// </summary>
+        /// <param name="key">Private key</param>
+        /// <returns>Shared pubkey</returns>
+        public PubKey GetSharedPubkey(Key key)
+        {
+            ECPublicKeyParameters pub = this._ECKey.GetPublicKeyParameters();
+            ECPrivateKeyParameters privKey = key._ECKey.PrivateKey;
+
+            if (!pub.Parameters.Equals(privKey.Parameters))
                 throw new InvalidOperationException("ECDH public key has wrong domain parameters");
+
             ECPoint q = pub.Q.Multiply(privKey.D).Normalize();
-            if(q.IsInfinity)
+
+            if (q.IsInfinity)
                 throw new InvalidOperationException("Infinity is not a valid agreement value for ECDH");
-            var pubkey = ECKey.Secp256k1.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger()).GetEncoded(true);
-            return Hashes.SHA256(pubkey);
+
+            ECPoint pubkey = ECKey.Secp256k1.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger());
+            pubkey = pubkey.Normalize();
+
+            return new ECKey(pubkey.GetEncoded(true), false).GetPubKey(true);
         }
 
         public BitcoinWitPubKeyAddress GetSegwitAddress(Network network)

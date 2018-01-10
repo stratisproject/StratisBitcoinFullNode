@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -6,6 +7,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -14,37 +16,25 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorAddNode : PeerConnector
     {
-        /// <summary>Constructor for dependency injection.</summary
+        /// <summary>Constructor for dependency injection.</summary>
         public PeerConnectorAddNode(
             IAsyncLoopFactory asyncLoopFactory,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
-            IPeerAddressManager peerAddressManager)
-            :
-            base(asyncLoopFactory, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
+            IPeerAddressManager peerAddressManager) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
         {
-        }
-
-        /// <summary>Constructor used for unit testing.</summary>
-        public PeerConnectorAddNode(NodeSettings nodeSettings, IPeerAddressManager peerAddressManager)
-            : base(nodeSettings, peerAddressManager)
-        {
+            this.Requirements.RequiredServices = NetworkPeerServices.Nothing;
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.GroupSelector = WellKnownPeerConnectorSelectors.ByEndpoint;
-            this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
-
-            this.Requirements = new NetworkPeerRequirement
-            {
-                MinVersion = this.NodeSettings.ProtocolVersion,
-                RequiredServices = NetworkPeerServices.Nothing
-            };
+            this.MaxOutboundConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
 
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
@@ -52,29 +42,32 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        /// <summary>This connector is always started </summary>
+        /// <summary>This connector is always started.</summary>
         public override bool CanStartConnect
         {
             get { return true; }
         }
 
         /// <inheritdoc/>
-        public override void OnStartConnectAsync()
+        public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
-        /// <inheritdoc/>
-        public override NetworkAddress FindPeerToConnectTo()
+        /// <summary>
+        /// Only connect to nodes as specified in the -addnode arg.
+        /// </summary>
+        public override async Task OnConnectAsync()
         {
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
+                if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    return;
+
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
-                    return peerAddress.NetworkAddress;
+                    await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
-
-            return null;
         }
     }
 }

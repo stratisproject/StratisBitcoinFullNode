@@ -9,15 +9,12 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Controllers;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
     public class RPCFeature : FullNodeFeature
     {
         private readonly FullNode fullNode;
-
-        private readonly NodeSettings nodeSettings;
 
         private readonly ILogger logger;
 
@@ -29,7 +26,6 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
-            this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             rpcSettings.Load(nodeSettings);
             this.rpcSettings = rpcSettings;

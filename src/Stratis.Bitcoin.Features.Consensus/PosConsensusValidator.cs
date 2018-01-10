@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler)
+        public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
 
@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return false;
             }
 
-            bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
+            bool verifyRes = new PubKey(data).Verify(block.GetHash(this.ConsensusParams.NetworkOptions), new ECDSASignature(block.BlockSignatur.Signature));
             this.logger.LogTrace("(-):{0}", verifyRes);
             return verifyRes;
         }
@@ -421,14 +421,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (context.Stake.BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
                 {
                     this.logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
+            context.NextWorkRequired = this.StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
                 context.Stake.BlockStake.IsProofOfStake());
 
             this.logger.LogTrace("(-)[OK]");

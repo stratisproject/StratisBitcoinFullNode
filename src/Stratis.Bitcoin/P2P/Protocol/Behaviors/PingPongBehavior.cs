@@ -96,13 +96,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             return (peer != null) && (peer.Version > NBitcoin.Protocol.ProtocolVersion.BIP0031_VERSION);
         }
 
-        void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
             if (peer.State == NetworkPeerState.HandShaked)
                 this.Ping(null);
         }
 
-        void Ping(object unused)
+        private void Ping(object unused)
         {
             if (Monitor.TryEnter(this.cs))
             {
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
                     this.currentPing = new PingPayload();
                     this.dateSent = DateTimeOffset.UtcNow;
-                    peer.SendMessageAsync(this.currentPing);
+                    peer.SendMessageVoidAsync(this.currentPing);
                     this.pingTimeoutTimer = new Timer(PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
                 finally
@@ -135,11 +135,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.Ping(null);
         }
 
-        void PingTimeout(object ping)
+        private void PingTimeout(object ping)
         {
             NetworkPeer peer = this.AttachedPeer;
             if ((peer != null) && ((PingPayload)ping == this.currentPing))
-                peer.DisconnectWithException("Pong timeout for " + ((PingPayload)ping).Nonce);
+                peer.Disconnect("Pong timeout for " + ((PingPayload)ping).Nonce);
         }
 
         private Timer pingTimeoutTimer;
@@ -148,14 +148,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public TimeSpan Latency { get; private set; }
 
-        void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
+        private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
         {
             if (!this.PingVersion())
                 return;
 
             if ((message.Message.Payload is PingPayload ping) && this.Mode.HasFlag(PingPongMode.RespondPong))
             {
-                peer.SendMessageAsync(new PongPayload()
+                peer.SendMessageVoidAsync(new PongPayload()
                 {
                     Nonce = ping.Nonce
                 });

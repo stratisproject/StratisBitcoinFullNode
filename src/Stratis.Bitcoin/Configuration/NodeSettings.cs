@@ -108,9 +108,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
 
-        /// <summary>URI to node's API interface.</summary>
-        public Uri ApiUri { get; set; }
-
         /// <summary>Minimum transaction fee for network.</summary>
         public FeeRate MinTxFeeRate { get; set; }
 
@@ -214,7 +211,6 @@ namespace Stratis.Bitcoin.Configuration
 
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
             this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            this.ApiUri = config.GetOrDefault("apiuri", new Uri($"http://localhost:{ (this.Network.ToString().StartsWith("Stratis") ? 37221 : 37220) }"));
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
             this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
@@ -226,71 +222,8 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            try
-            {
-                this.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-                    .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'connect' parameter.");
-            }
+            this.ConnectionManager.Load(this);
 
-            try
-            {
-                this.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-                        .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'addnode' parameter.");
-            }
-
-            var port = config.GetOrDefault<int>("port", this.Network.DefaultPort);
-            try
-            {
-                this.ConnectionManager.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), false)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'bind' parameter");
-            }
-
-            try
-            {
-                this.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
-                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), true)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'listen' parameter");
-            }
-
-            if (this.ConnectionManager.Listen.Count == 0)
-            {
-                this.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
-            }
-
-            var externalIp = config.GetOrDefault<string>("externalip", null);
-            if (externalIp != null)
-            {
-                try
-                {
-                    this.ConnectionManager.ExternalEndpoint = ConvertIpAddressToEndpoint(externalIp, port);
-                }
-                catch (FormatException)
-                {
-                    throw new ConfigurationException("Invalid 'externalip' parameter");
-                }
-            }
-
-            if (this.ConnectionManager.ExternalEndpoint == null)
-            {
-                this.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort);
-            }
-
-            this.ConnectionManager.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
             return this;
         }
 

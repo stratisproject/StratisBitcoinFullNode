@@ -1,20 +1,39 @@
 using System;
-using System.IO;
 using System.Net;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
-    public class RpcTests : IClassFixture<RPCTestFixture>
+    /// <summary>
+    /// Stratis test fixture for RPC tests.
+    /// </summary>
+    public class RpcTestFixtureStratis : RpcTestFixtureBase
     {
-        private readonly RPCTestFixture rpcTestFixture;
+        /// <inheritdoc />
+        protected override void InitializeFixture()
+        {
+            this.Builder = NodeBuilder.Create();
+            this.Node = this.Builder.CreateStratisPowNode();
+            this.InitializeTestWallet(this.Node);
+            this.Builder.StartAll();
 
-        public RpcTests(RPCTestFixture RpcTestFixture)
+            this.RpcClient = this.Node.CreateRPCClient();
+
+            this.NetworkPeerClient = this.Node.CreateNetworkPeerClient();
+            this.NetworkPeerClient.VersionHandshakeAsync().GetAwaiter().GetResult();
+        }
+    }
+
+    public class RpcTests : IClassFixture<RpcTestFixtureStratis>
+    {
+        private readonly RpcTestFixtureStratis rpcTestFixture;
+
+        public RpcTests(RpcTestFixtureStratis RpcTestFixture)
         {
             this.rpcTestFixture = RpcTestFixture;
         }
@@ -118,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
             // Assert header hash matches genesis hash.
-            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
+            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash(Network.RegTest.NetworkOptions));
         }
 
         /// <summary>
@@ -162,45 +181,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string resp = this.rpcTestFixture.RpcClient.SendCommand("generate", "1").ResultString;
             Assert.StartsWith("[" + Environment.NewLine + "  \"", resp);
-        }
-    }
-
-    public class RPCTestFixture : IDisposable
-    {
-        private readonly NodeBuilder builder;
-        public readonly CoreNode Node;
-        public readonly RPCClient RpcClient;
-        public readonly NetworkPeer NetworkPeerClient;
-
-        public RPCTestFixture()
-        {
-            this.builder = NodeBuilder.Create();
-            this.Node = this.builder.CreateStratisPowNode();
-            this.InitializeTestWallet(this.Node);
-            this.builder.StartAll();
-
-            this.RpcClient = this.Node.CreateRPCClient();
-
-            this.NetworkPeerClient = this.Node.CreateNetworkPeerClient();
-            this.NetworkPeerClient.VersionHandshake();
-        }
-
-        // note: do not call this dispose in the class itself xunit will handle it.
-        public void Dispose()
-        {
-            this.builder.Dispose();
-            this.NetworkPeerClient.Dispose();
-        }
-
-        /// <summary>
-        /// Copies the test wallet into data folder for node if it isnt' already present.
-        /// </summary>
-        /// <param name="node">Core node for the test.</param>
-        private void InitializeTestWallet(CoreNode node)
-        {
-            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
-            if (!File.Exists(testWalletPath))
-                File.Copy("Data/test.wallet.json", testWalletPath);
         }
     }
 }

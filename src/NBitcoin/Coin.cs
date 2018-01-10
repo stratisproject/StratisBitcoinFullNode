@@ -1,10 +1,8 @@
-﻿using NBitcoin.OpenAsset;
-using NBitcoin.Stealth;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NBitcoin.OpenAsset;
+using NBitcoin.Stealth;
 
 namespace NBitcoin
 {
@@ -443,7 +441,7 @@ namespace NBitcoin
                 return _OverrideScriptCode;
             var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(ScriptPubKey);
             if(key != null)
-                return key.WitScriptPubKey;
+                return key.AsKeyId().ScriptPubKey;
             return ScriptPubKey;
         }
 
@@ -709,7 +707,7 @@ namespace NBitcoin
                 return _OverrideScriptCode;
             var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(Redeem);
             if(key != null)
-                return key.WitScriptPubKey;
+                return key.AsKeyId().ScriptPubKey;
             return Redeem;
         }
 

@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
