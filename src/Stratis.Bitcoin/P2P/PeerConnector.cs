@@ -111,7 +111,10 @@ namespace Stratis.Bitcoin.P2P
         public int BurstModeTargetConnections { get; private set; }
 
         /// <summary>Default time interval between making a connection attempt.</summary>
-        private TimeSpan DefaultConnectionAttemptInterval;
+        private readonly TimeSpan defaultConnectionInterval;
+
+        /// <summary>Burst time interval between making a connection attempt.</summary>
+        private readonly TimeSpan burstConnectionInterval;
 
         /// <summary>Parameterless constructor for dependency injection.</summary>
         protected PeerConnector(
@@ -136,7 +139,8 @@ namespace Stratis.Bitcoin.P2P
             this.peerAddressManager = peerAddressManager;
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
-            this.DefaultConnectionAttemptInterval = TimeSpans.Second;
+            this.defaultConnectionInterval = TimeSpans.Second;
+            this.burstConnectionInterval = TimeSpan.Zero;
             this.BurstModeTargetConnections = this.NodeSettings.ConfigReader.GetOrDefault("burstModeTargetConnections", 1);
         }
 
@@ -160,7 +164,7 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectedPeers.Add(peer);
 
             if (this.ConnectedPeers.Count >= this.BurstModeTargetConnections)
-                this.asyncLoop.RepeatEvery = this.DefaultConnectionAttemptInterval;
+                this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
         }
 
         /// <summary>Determines whether or not a connector can be started.</summary>
@@ -181,7 +185,7 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectedPeers.Remove(peer, reason);
 
             if (this.ConnectedPeers.Count < this.BurstModeTargetConnections)
-                this.asyncLoop.RepeatEvery = TimeSpan.Zero;
+                this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
         }
 
         /// <summary>
@@ -212,7 +216,7 @@ namespace Stratis.Bitcoin.P2P
                 await this.OnConnectAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpan.Zero);
+            repeatEvery: burstConnectionInterval);
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
