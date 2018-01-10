@@ -21,8 +21,8 @@ namespace NBitcoin
             var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
             foreach(var network in networks)
             {
-                var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
-                if(encoder == null)
+                var encoder = network.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
+                if (encoder == null)
                     continue;
                 try
                 {
@@ -30,6 +30,7 @@ namespace NBitcoin
                     var data = encoder.Decode(bech32, out witVersion);
                     if(data.Length == 20 && witVersion == 0)
                     {
+                        expectedNetwork = network;
                         return bech32;
                     }
                 }
@@ -55,7 +56,7 @@ namespace NBitcoin
         public bool VerifyMessage(string message, string signature)
         {
             var key = PubKey.RecoverFromMessage(message, signature);
-            return key.Hash == this.Hash;
+            return key.WitHash == this.Hash;
         }
 
         WitKeyId _Hash;
