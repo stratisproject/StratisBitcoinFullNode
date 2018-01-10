@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -71,7 +70,7 @@ namespace Stratis.Bitcoin.Connection
             if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
             {
                 this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
-                this.ConnectionManager.RemoveConnectedNode(peer);
+                this.ConnectionManager.RemoveConnectedNode(peer, "Peer offline");
             }
 
             this.logger.LogTrace("(-)");

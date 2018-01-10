@@ -113,13 +113,13 @@ namespace Stratis.Bitcoin.Connection
             reason = reason ?? "unknown";
 
             bool banPeer = true;
-            NetworkPeer peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
+            NetworkPeer peer = this.connectionManager.ConnectedPeers.FindByEndpoint(endpoint);
             if (peer != null)
             {
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
-                    peer.DisconnectWithException($"The peer was banned, reason: {reason}");
+                    peer.Disconnect($"The peer was banned, reason: {reason}");
                 }
                 else
                 {

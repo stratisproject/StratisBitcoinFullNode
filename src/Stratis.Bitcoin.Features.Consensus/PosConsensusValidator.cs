@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler)
+        public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
 

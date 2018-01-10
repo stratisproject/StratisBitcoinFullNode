@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
+                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(request.CreationDate);
@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
-                    ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
+                    ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
                     ChainTip = this.chain.Tip.Height,
                     IsChainSynced = this.chain.IsDownloaded(),
                     IsDecrypted = true
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     {
                         // We look for the 2 outputs related to our spending input.
                         List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
-                        if (relatedOutputs.Count == 2)
+                        if (relatedOutputs.Any())
                         {
                             // Add staking transaction details.
                             // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
@@ -639,7 +639,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            if (!this.connectionManager.ConnectedNodes.Any())
+            if (!this.connectionManager.ConnectedPeers.Any())
                 throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
 
             try
@@ -826,7 +826,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            var block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedBlock block = this.chain.GetBlock(uint256.Parse(model.Hash));
+
+            if (block == null)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block with hash {model.Hash} was not found on the blockchain.", string.Empty);
+            }
+
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
         }

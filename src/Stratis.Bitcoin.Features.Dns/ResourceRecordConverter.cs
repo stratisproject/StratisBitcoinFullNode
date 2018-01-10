@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="serializer">The calling serializer.</param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            JObject jObject = null;
+            JObject jObject;
 
             if (value is IPAddressResourceRecord)
             {

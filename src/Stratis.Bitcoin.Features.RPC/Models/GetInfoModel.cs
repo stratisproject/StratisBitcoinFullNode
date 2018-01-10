@@ -3,59 +3,55 @@ using Stratis.Bitcoin.Features.RPC.Converters;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
-#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
-
     public class GetInfoModel
     {
-        [JsonProperty(Order = 0)]
-        public uint version { get; set; }
+        [JsonProperty(Order = 0, PropertyName = "version")]
+        public uint Version { get; set; }
 
-        [JsonProperty(Order = 1)]
-        public uint protocolversion { get; set; }
+        [JsonProperty(Order = 1, PropertyName = "protocolversion")]
+        public uint ProtocolVersion { get; set; }
 
-        [JsonProperty(Order = 4)]
-        public int blocks { get; set; }
+        [JsonProperty(Order = 4, PropertyName = "blocks")]
+        public int Blocks { get; set; }
 
-        [JsonProperty(Order = 5)]
-        public long timeoffset { get; set; }
+        [JsonProperty(Order = 5, PropertyName = "timeoffset")]
+        public long TimeOffset { get; set; }
 
-        [JsonProperty(Order = 6, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? connections { get; set; }
+        [JsonProperty(Order = 6, PropertyName = "connections", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? Connections { get; set; }
 
-        [JsonProperty(Order = 7)]
-        public string proxy { get; set; }
+        [JsonProperty(Order = 7, PropertyName = "proxy")]
+        public string Proxy { get; set; }
 
-        [JsonProperty(Order = 8)]
-        public double difficulty { get; set; }
+        [JsonProperty(Order = 8, PropertyName = "difficulty")]
+        public double Difficulty { get; set; }
 
-        [JsonProperty(Order = 9)]
-        public bool testnet { get; set; }
+        [JsonProperty(Order = 9, PropertyName = "testnet")]
+        public bool Testnet { get; set; }
 
         [JsonConverter(typeof(BtcDecimalJsonConverter))]
-        [JsonProperty(Order = 14)]
-        public decimal relayfee { get; set; }
+        [JsonProperty(Order = 14, PropertyName = "relayfee")]
+        public decimal RelayFee { get; set; }
 
-        [JsonProperty(Order = 15)]
-        public string errors { get; set; }
+        [JsonProperty(Order = 15, PropertyName = "errors")]
+        public string Errors { get; set; }
 
-        [JsonProperty(Order = 2, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public uint? walletversion { get; set; }
+        [JsonProperty(Order = 2, PropertyName = "walletversion", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public uint? WalletVersion { get; set; }
 
-        [JsonProperty(Order = 3, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public decimal? balance { get; set; }
+        [JsonProperty(Order = 3, PropertyName = "balance", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal? Balance { get; set; }
 
-        [JsonProperty(Order = 10, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public long? keypoololdest { get; set; }
+        [JsonProperty(Order = 10, PropertyName = "keypoololdest", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public long? KeypoolOldest { get; set; }
 
-        [JsonProperty(Order = 11, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? keypoolsize { get; set; }
+        [JsonProperty(Order = 11, PropertyName = "keypoolsize", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? KeypoolSize { get; set; }
 
-        [JsonProperty(Order = 12, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public uint? unlocked_until { get; set; }
+        [JsonProperty(Order = 12, PropertyName = "unlocked_until", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public uint? UnlockedUntil { get; set; }
 
-        [JsonProperty(Order = 13, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public decimal? paytxfee { get; set; }
+        [JsonProperty(Order = 13, PropertyName = "paytxfee", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal? PayTxFee { get; set; }
     }
 }
-
-#pragma warning restore IDE1006 // Naming Styles
