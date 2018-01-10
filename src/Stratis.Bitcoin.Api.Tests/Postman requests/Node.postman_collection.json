@@ -1,50 +1,37 @@
 {
-	"variables": [],
 	"info": {
 		"name": "Node",
-		"_postman_id": "28053655-d992-60bb-a476-0c83186f5674",
+		"_postman_id": "77c8fecb-8a7d-e8da-bff2-630d391fe19b",
 		"description": "",
-		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Connect full node",
-      "request": {
-        "url": "http://localhost:37220/api/node/connect",
-        "method": "GET",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "description": ""
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWallet\"\n}"
-        },
-        "description": ""
-      },
-			"response": []
-		},
-		{
-			"name": "Start syncing from hash",
-      "request": {
-        "url": "http://localhost:37220/api/node/sync",
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "description": ""
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \n\t\"hash\": \"00000000770ebe897270ca5f6d539d8afb4ea4f4e757761a34ca82e17207d886\"\n}"
-        },
-        "description": "{ \n\t\"hash\": \"00000000770ebe897270ca5f6d539d8afb4ea4f4e757761a34ca82e17207d886\"\n}"
-      },
+			"name": "Shutdown node",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37220/api/node/shutdown",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"node",
+						"shutdown"
+					]
+				},
+				"description": ""
+			},
 			"response": []
 		}
 	]
