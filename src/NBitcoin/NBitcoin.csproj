@@ -7,11 +7,11 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <Version>4.0.0.34</Version>
+    <Version>4.0.0.48</Version>
   </PropertyGroup>
   
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>NBitcoin</RootNamespace>
     <PackageId>NStratis</PackageId>
     <Authors>NStratis</Authors>

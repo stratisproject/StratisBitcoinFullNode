@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction))
                 this.AddOrUpdate(transaction, State.CantBroadcast);
             else
-                await this.PropagateTransactionToPeersAsync(transaction, true);
+                await this.PropagateTransactionToPeersAsync(transaction, this.connectionManager.ConnectedPeers.ToList());
         }
     }
 }

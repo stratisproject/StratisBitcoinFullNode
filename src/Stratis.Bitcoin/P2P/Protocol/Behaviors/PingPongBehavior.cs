@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         {
             NetworkPeer peer = this.AttachedPeer;
             if ((peer != null) && ((PingPayload)ping == this.currentPing))
-                peer.DisconnectWithException("Pong timeout for " + ((PingPayload)ping).Nonce);
+                peer.Disconnect("Pong timeout for " + ((PingPayload)ping).Nonce);
         }
 
         private Timer pingTimeoutTimer;

@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -13,9 +14,10 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
     public class BitcoinCoreRunner : INodeRunner
     {
@@ -53,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private Action<IFullNodeBuilder> callback;
 
-        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null) : base()
+        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
         {
             this.callback = callback;
         }
@@ -103,6 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .UseWallet()
                     .AddPowPosMining()
                     .AddRPC()
+                    .MockIBD()
                     .Build();
             }
 
@@ -181,6 +184,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .UseWallet()
                 .AddPowPosMining()
                 .AddRPC()
+                .MockIBD()
                 .Build();
 
             return fullNode;
@@ -241,6 +245,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .AddMining()
                     .UseWallet()
                     .AddRPC()
+                    .MockIBD()
                     .Build();
             }
 
@@ -248,5 +253,31 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         public FullNode FullNode;
+    }
+
+    public static class FullNodeTestBuilderExtension
+    {
+        public static IFullNodeBuilder MockIBD(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                foreach (IFeatureRegistration feature in features.FeatureRegistrations)
+                {
+                    feature.FeatureServices(services =>
+                    {
+                        // Get default IBD implementation and replace it with the mock.
+                        ServiceDescriptor ibdService = services.FirstOrDefault(x => x.ServiceType == typeof(IInitialBlockDownloadState));
+
+                        if (ibdService != null)
+                        {
+                            services.Remove(ibdService);
+                            services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
+                        }
+                    });
+                }
+            });
+
+            return fullNodeBuilder;
+        }
     }
 }

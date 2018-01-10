@@ -5,9 +5,6 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.RPC.Converters;
 
-#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
-#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
-
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
     public abstract class TransactionModel
@@ -18,15 +15,15 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public TransactionModel(Transaction trx)
         {
-            this.hex = trx?.ToHex();
+            this.Hex = trx?.ToHex();
         }
 
-        [JsonProperty(Order = 0)]
-        public string hex { get; set; }
+        [JsonProperty(Order = 0, PropertyName = "hex")]
+        public string Hex { get; set; }
 
         public override string ToString()
         {
-            return this.hex;
+            return this.Hex;
         }
     }
 
@@ -52,55 +49,55 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         {
             if (trx != null)
             {
-                this.txid = trx.GetHash().ToString();
-                this.size = trx.GetSerializedSize();
-                this.version = trx.Version;
-                this.locktime = trx.LockTime;
+                this.TxId = trx.GetHash().ToString();
+                this.Size = trx.GetSerializedSize();
+                this.Version = trx.Version;
+                this.LockTime = trx.LockTime;
 
-                this.vin = trx.Inputs.Select(txin => new Vin(txin.PrevOut, txin.Sequence, txin.ScriptSig)).ToList();
+                this.VIn = trx.Inputs.Select(txin => new Vin(txin.PrevOut, txin.Sequence, txin.ScriptSig)).ToList();
 
                 int n = 0;
-                this.vout = trx.Outputs.Select(txout => new Vout(n++, txout, network)).ToList();
+                this.VOut = trx.Outputs.Select(txout => new Vout(n++, txout, network)).ToList();
 
                 if (block != null)
                 {
-                    this.blockhash = block.HashBlock.ToString();
-                    this.time = this.blocktime = Utils.DateTimeToUnixTime(block.Header.BlockTime);
+                    this.BlockHash = block.HashBlock.ToString();
+                    this.Time = this.BlockTime = Utils.DateTimeToUnixTime(block.Header.BlockTime);
                     if (tip != null)
-                        this.confirmations = tip.Height - block.Height + 1;
+                        this.Confirmations = tip.Height - block.Height + 1;
                 }
             }
         }
 
-        [JsonProperty(Order = 1)]
-        public string txid { get; set; }
+        [JsonProperty(Order = 1, PropertyName = "txid")]
+        public string TxId { get; set; }
 
-        [JsonProperty(Order = 2)]
-        public int size { get; set; }
+        [JsonProperty(Order = 2, PropertyName = "size")]
+        public int Size { get; set; }
 
-        [JsonProperty(Order = 3)]
-        public uint version { get; set; }
+        [JsonProperty(Order = 3, PropertyName = "version")]
+        public uint Version { get; set; }
 
-        [JsonProperty(Order = 4)]
-        public uint locktime { get; set; }
+        [JsonProperty(Order = 4, PropertyName = "locktime")]
+        public uint LockTime { get; set; }
 
-        [JsonProperty(Order = 5)]
-        public List<Vin> vin { get; set; }
+        [JsonProperty(Order = 5, PropertyName = "vin")]
+        public List<Vin> VIn { get; set; }
 
-        [JsonProperty(Order = 6)]
-        public List<Vout> vout { get; set; }
+        [JsonProperty(Order = 6, PropertyName = "vout")]
+        public List<Vout> VOut { get; set; }
 
-        [JsonProperty(Order = 7, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string blockhash { get; set; }
+        [JsonProperty(Order = 7, PropertyName = "blockhash", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string BlockHash { get; set; }
 
-        [JsonProperty(Order = 8, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? confirmations { get; set; }
+        [JsonProperty(Order = 8, PropertyName = "confirmations", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? Confirmations { get; set; }
 
-        [JsonProperty(Order = 9, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public uint? time { get; set; }
+        [JsonProperty(Order = 9, PropertyName = "time", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public uint? Time { get; set; }
 
-        [JsonProperty(Order = 10, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public uint? blocktime { get; set; }
+        [JsonProperty(Order = 10, PropertyName = "blocktime", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public uint? BlockTime { get; set; }
     }
 
     public class Vin
@@ -113,31 +110,31 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         {
             if (prevOut.Hash == uint256.Zero)
             {
-                this.coinbase = Encoders.Hex.EncodeData(scriptSig.ToBytes());
+                this.Coinbase = Encoders.Hex.EncodeData(scriptSig.ToBytes());
             }
             else
             {
-                this.txid = prevOut.Hash.ToString();
-                this.vout = prevOut.N;
-                this.scriptSig = new Script(scriptSig); ;
+                this.TxId = prevOut.Hash.ToString();
+                this.VOut = prevOut.N;
+                this.ScriptSig = new Script(scriptSig);
             }
-            this.sequence = (uint)sequence;
+            this.Sequence = (uint)sequence;
         }
 
-        [JsonProperty(Order = 0, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string coinbase { get; set; }
+        [JsonProperty(Order = 0, PropertyName = "coinbase", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string Coinbase { get; set; }
 
-        [JsonProperty(Order = 1, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string txid { get; set; }
+        [JsonProperty(Order = 1, PropertyName = "txid", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string TxId { get; set; }
 
-        [JsonProperty(Order = 2, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public uint? vout { get; set; }
+        [JsonProperty(Order = 2, PropertyName = "vout", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public uint? VOut { get; set; }
 
-        [JsonProperty(Order = 3, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public Script scriptSig { get; set; }
+        [JsonProperty(Order = 3, PropertyName = "scriptSig", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public Script ScriptSig { get; set; }
 
-        [JsonProperty(Order = 4)]
-        public uint sequence { get; set; }
+        [JsonProperty(Order = 4, PropertyName = "sequence")]
+        public uint Sequence { get; set; }
     }
 
     public class Vout
@@ -148,20 +145,20 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public Vout(int N, TxOut txout, Network network)
         {
-            this.n = N;
-            this.value = txout.Value.ToDecimal(MoneyUnit.BTC);
-            this.scriptPubKey = new ScriptPubKey(txout.ScriptPubKey, network);
+            this.N = N;
+            this.Value = txout.Value.ToDecimal(MoneyUnit.BTC);
+            this.ScriptPubKey = new ScriptPubKey(txout.ScriptPubKey, network);
         }
 
         [JsonConverter(typeof(BtcDecimalJsonConverter))]
-        [JsonProperty(Order = 0)]
-        public decimal value { get; set; }
+        [JsonProperty(Order = 0, PropertyName = "value")]
+        public decimal Value { get; set; }
 
-        [JsonProperty(Order = 1)]
-        public int n { get; set; }
+        [JsonProperty(Order = 1, PropertyName = "n")]
+        public int N { get; set; }
 
-        [JsonProperty(Order = 2)]
-        public ScriptPubKey scriptPubKey { get; set; }
+        [JsonProperty(Order = 2, PropertyName = "scriptPubKey")]
+        public ScriptPubKey ScriptPubKey { get; set; }
     }
 
     public class Script
@@ -172,15 +169,15 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public Script(NBitcoin.Script script)
         {
-            this.asm = script.ToString();
-            this.hex = Encoders.Hex.EncodeData(script.ToBytes());
+            this.Asm = script.ToString();
+            this.Hex = Encoders.Hex.EncodeData(script.ToBytes());
         }
 
-        [JsonProperty(Order = 0)]
-        public string asm { get; set; }
+        [JsonProperty(Order = 0, PropertyName = "asm")]
+        public string Asm { get; set; }
 
-        [JsonProperty(Order = 1)]
-        public string hex { get; set; }
+        [JsonProperty(Order = 1, PropertyName = "hex")]
+        public string Hex { get; set; }
     }
 
     public class ScriptPubKey : Script
@@ -192,7 +189,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         public ScriptPubKey(NBitcoin.Script script, Network network) : base(script)
         {
             var destinations = new List<TxDestination> { script.GetDestination() };
-            this.type = this.GetScriptType(script.FindTemplate());
+            this.Type = this.GetScriptType(script.FindTemplate());
             if (destinations[0] == null)
             {
                 destinations = script.GetDestinationPublicKeys()
@@ -203,26 +200,26 @@ namespace Stratis.Bitcoin.Features.RPC.Models
             {
                 if (destinations.Count == 1)
                 {
-                    this.reqSigs = 1;
-                    this.addresses = new List<string> { destinations[0].GetAddress(network).ToString() };
+                    this.ReqSigs = 1;
+                    this.Addresses = new List<string> { destinations[0].GetAddress(network).ToString() };
                 }
                 else
                 {
                     PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(script);
-                    this.reqSigs = multi.SignatureCount;
-                    this.addresses = multi.PubKeys.Select(m => m.GetAddress(network).ToString()).ToList();
+                    this.ReqSigs = multi.SignatureCount;
+                    this.Addresses = multi.PubKeys.Select(m => m.GetAddress(network).ToString()).ToList();
                 }
             }
         }
 
-        [JsonProperty(Order = 2, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? reqSigs { get; set; }
+        [JsonProperty(Order = 2, PropertyName = "reqSigs", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? ReqSigs { get; set; }
 
-        [JsonProperty(Order = 3, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string type { get; set; }
+        [JsonProperty(Order = 3, PropertyName = "type", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string Type { get; set; }
 
-        [JsonProperty(Order = 4, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public List<string> addresses { get; set; }
+        [JsonProperty(Order = 4, PropertyName = "addresses", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<string> Addresses { get; set; }
 
         protected string GetScriptType(ScriptTemplate template)
         {
@@ -249,5 +246,3 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         }
     }
 }
-
-#pragma warning restore IDE1006 // Naming Styles

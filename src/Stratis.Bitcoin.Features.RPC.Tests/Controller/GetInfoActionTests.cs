@@ -24,16 +24,16 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
             var expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
             Assert.NotNull(info);
-            Assert.Equal(0, info.blocks);
-            Assert.NotEqual<uint>(0, info.version);
-            Assert.Equal(expectedProtocolVersion, info.protocolversion);
-            Assert.Equal(0, info.timeoffset);
-            Assert.Equal(0, info.connections);
-            Assert.NotNull(info.proxy);
-            Assert.Equal(0, info.difficulty);
-            Assert.False(info.testnet);
-            Assert.Equal(expectedRelayFee, info.relayfee);
-            Assert.Empty(info.errors);
+            Assert.Equal(0, info.Blocks);
+            Assert.NotEqual<uint>(0, info.Version);
+            Assert.Equal(expectedProtocolVersion, info.ProtocolVersion);
+            Assert.Equal(0, info.TimeOffset);
+            Assert.Equal(0, info.Connections);
+            Assert.NotNull(info.Proxy);
+            Assert.Equal(0, info.Difficulty);
+            Assert.False(info.Testnet);
+            Assert.Equal(expectedRelayFee, info.RelayFee);
+            Assert.Empty(info.Errors);
         }
     }
 }

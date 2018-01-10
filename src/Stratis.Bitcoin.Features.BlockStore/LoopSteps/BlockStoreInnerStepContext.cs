@@ -26,9 +26,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
-
         /// <summary>Provider of time functions.</summary>
         internal readonly IDateTimeProvider DateTimeProvider;
 
@@ -44,14 +41,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
             Guard.NotNull(nextChainedBlock, nameof(nextChainedBlock));
 
-            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;
             this.DateTimeProvider = dateTimeProvider;
             this.DownloadStack = new Queue<ChainedBlock>();
-            this.InnerSteps = new List<BlockStoreInnerStep> { new BlockStoreInnerStepFindBlocks(this.loggerFactory), new BlockStoreInnerStepReadBlocks(this.loggerFactory) };
+            this.InnerSteps = new List<BlockStoreInnerStep> { new BlockStoreInnerStepFindBlocks(loggerFactory), new BlockStoreInnerStepReadBlocks(loggerFactory) };
             this.InsertBlockSize = 0;
             this.LastDownloadStackFlushTime = this.DateTimeProvider.GetUtcNow();
             this.NextChainedBlock = nextChainedBlock;

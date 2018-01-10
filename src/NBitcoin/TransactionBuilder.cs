@@ -214,6 +214,7 @@ namespace NBitcoin
             private IndexedTxIn txIn;
             private List<Tuple<PubKey, ECDSASignature>> _KnownSignatures;
             private Dictionary<KeyId, ECDSASignature> _VerifiedSignatures = new Dictionary<KeyId, ECDSASignature>();
+            private Dictionary<uint256, PubKey> _DummyToRealKey = new Dictionary<uint256, PubKey>();
 
             public KnownSignatureSigner(List<Tuple<PubKey, ECDSASignature>> _KnownSignatures, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
@@ -231,11 +232,28 @@ namespace NBitcoin
                     if(tv.Item1.Verify(hash, tv.Item2))
                     {
                         var key = new Key();
+                        this._DummyToRealKey.Add(Hashes.Hash256(key.PubKey.ToBytes()), tv.Item1);
                         _VerifiedSignatures.AddOrReplace(key.PubKey.Hash, tv.Item2);
                         return key;
                     }
                 }
                 return null;
+            }
+
+            public Script ReplaceDummyKeys(Script script)
+            {
+                var ops = script.ToOps().ToList();
+                List<Op> result = new List<Op>();
+                foreach(Op op in ops)
+                {
+                    uint256 h = Hashes.Hash256(op.PushData);
+ 	                PubKey real;
+ 	                if(this._DummyToRealKey.TryGetValue(h, out real))
+ 		                result.Add(Op.GetPushOp(real.ToBytes()));
+ 	                else
+ 		                result.Add(op);
+                }
+                return new Script(result.ToArray());
             }
 
             public TransactionSignature Sign(Key key)
@@ -557,13 +575,19 @@ namespace NBitcoin
 
         public TransactionBuilder AddKeys(params ISecret[] keys)
         {
-            _Keys.AddRange(keys.Select(k => k.PrivateKey));
+            this.AddKeys(keys.Select(k => k.PrivateKey).ToArray());
             return this;
         }
 
         public TransactionBuilder AddKeys(params Key[] keys)
         {
             _Keys.AddRange(keys);
+            foreach (Key k in keys)
+            {
+                AddKnownRedeems(k.PubKey.ScriptPubKey);
+                AddKnownRedeems(k.PubKey.WitHash.ScriptPubKey);
+                AddKnownRedeems(k.PubKey.Hash.ScriptPubKey);
+            }
             return this;
         }
 
@@ -1580,7 +1604,11 @@ namespace NBitcoin
                 {
                     var scriptSig1 = extension.GenerateScriptSig(scriptPubKey, keyRepo, signer);
                     var scriptSig2 = extension.GenerateScriptSig(scriptPubKey, signer2, signer2);
-                    if(scriptSig1 != null && scriptSig2 != null && extension.CanCombineScriptSig(scriptPubKey, scriptSig1, scriptSig2))
+                    if (scriptSig2 != null)
+                    {
+                        scriptSig2 = signer2.ReplaceDummyKeys(scriptSig2);
+                    }
+                    if (scriptSig1 != null && scriptSig2 != null && extension.CanCombineScriptSig(scriptPubKey, scriptSig1, scriptSig2))
                     {
                         var combined = extension.CombineScriptSig(scriptPubKey, scriptSig1, scriptSig2);
                         return combined;

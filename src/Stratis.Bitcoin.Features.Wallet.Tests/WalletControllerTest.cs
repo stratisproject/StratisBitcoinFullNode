@@ -607,7 +607,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedNodes)
+            connectionManagerMock.Setup(c => c.ConnectedPeers)
                 .Returns(new NetworkPeerCollection());
 
             var mockWalletWrapper = new Mock<IWalletManager>();
@@ -1357,7 +1357,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedNodes).Returns(new TestReadOnlyNetworkPeerCollection());
+            connectionManagerMock.Setup(c => c.ConnectedPeers).Returns(new TestReadOnlyNetworkPeerCollection());
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
                 new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
@@ -1379,7 +1379,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
 
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedNodes)
+            connectionManagerMock.Setup(c => c.ConnectedPeers)
                 .Returns(new NetworkPeerCollection());
 
             WalletController controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,

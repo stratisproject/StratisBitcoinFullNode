@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="nodes">Network peers of the node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         public StoreBlockPuller(ConcurrentChain chain, Connection.IConnectionManager nodes, ILoggerFactory loggerFactory)
-            : base(chain, nodes.ConnectedNodes, nodes.NodeSettings.ProtocolVersion, loggerFactory)
+            : base(chain, nodes.ConnectedPeers, nodes.NodeSettings.ProtocolVersion, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
