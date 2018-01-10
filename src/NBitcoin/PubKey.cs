@@ -425,22 +425,22 @@ namespace NBitcoin
         }
 
         /// <summary>
- 		/// Exchange shared secret through ECDH
- 		/// </summary>
- 		/// <param name="key">Private key</param>
- 		/// <returns>Shared pubkey</returns>
- 		public PubKey GetSharedPubkey(Key key)
+        /// Exchange shared secret through ECDH
+        /// </summary>
+        /// <param name="key">Private key</param>
+        /// <returns>Shared pubkey</returns>
+        public PubKey GetSharedPubkey(Key key)
         {
-            var pub = this._ECKey.GetPublicKeyParameters();
-            var privKey = key._ECKey.PrivateKey;
-            if (!pub.Parameters.Equals(privKey.Parameters))
-                throw new InvalidOperationException("ECDH public key has wrong domain parameters");
-            ECPoint q = pub.Q.Multiply(privKey.D).Normalize();
-            if (q.IsInfinity)
-                throw new InvalidOperationException("Infinity is not a valid agreement value for ECDH");
-            var pubkey = ECKey.Secp256k1.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger());
-            pubkey = pubkey.Normalize();
-            return new ECKey(pubkey.GetEncoded(true), false).GetPubKey(true);
+        var pub = this._ECKey.GetPublicKeyParameters();
+        var privKey = key._ECKey.PrivateKey;
+        if (!pub.Parameters.Equals(privKey.Parameters))
+            throw new InvalidOperationException("ECDH public key has wrong domain parameters");
+        ECPoint q = pub.Q.Multiply(privKey.D).Normalize();
+        if (q.IsInfinity)
+            throw new InvalidOperationException("Infinity is not a valid agreement value for ECDH");
+        var pubkey = ECKey.Secp256k1.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger());
+        pubkey = pubkey.Normalize();
+        return new ECKey(pubkey.GetEncoded(true), false).GetPubKey(true);
         }
 
         public BitcoinWitPubKeyAddress GetSegwitAddress(Network network)
