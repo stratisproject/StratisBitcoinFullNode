@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
@@ -173,6 +175,34 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
             }
             return model;
+        }
+
+        /// <summary>
+        /// Return information about <address>.
+        /// </summary>
+        /// <param name="address">BitcoinAddress (P2PKH, P2SH) to validate.</param>
+        /// <returns>information about <address>. {isvalid}</returns>
+        [ActionName("validateaddress")]
+        [ActionDescription("Returns information about a bitcoin address")]
+        public JObject ValidateAddress(string address)
+        {
+            if(address == null)
+                throw new ArgumentNullException("address");
+
+            JObject res = new JObject();
+            res["isvalid"] = false; // until proven otherwise
+
+            // P2PKH
+            if(BitcoinPubKeyAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            // P2SH
+            else if(BitcoinScriptAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            return res;
         }
 
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)

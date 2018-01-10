@@ -18,26 +18,31 @@ namespace NBitcoin
 
         private static string Validate(string base58, ref Network expectedNetwork)
         {
-            if(base58 == null)
-                throw new ArgumentNullException("base58");
-            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
-            var data = Encoders.Base58Check.DecodeData(base58);
-            foreach(var network in networks)
-            {
-                var versionBytes = network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
-                if(versionBytes != null && data.StartWith(versionBytes))
-                {
-                    if(data.Length == versionBytes.Length + 20)
-                    {
-                        expectedNetwork = network;
-                        return base58;
-                    }
-                }
-            }
+            if (IsValid(base58, ref expectedNetwork))
+                return base58;
             throw new FormatException("Invalid BitcoinPubKeyAddress");
         }
 
-        
+        public static bool IsValid(string base58, ref Network expectedNetwork)
+        {
+            if (base58 == null)
+                throw new ArgumentNullException("base58");
+            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
+            var data = Encoders.Base58Check.DecodeData(base58);
+            foreach (var network in networks)
+            {
+                var versionBytes = network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
+                if (versionBytes != null && data.StartWith(versionBytes))
+                {
+                    if (data.Length == versionBytes.Length + 20)
+                    {
+                        expectedNetwork = network;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         public BitcoinPubKeyAddress(KeyId keyId, Network network) :
             base(NotNull(keyId) ?? Network.CreateBase58(Base58Type.PUBKEY_ADDRESS, keyId.ToBytes(), network), network)
