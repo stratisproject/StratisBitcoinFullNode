@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -113,17 +112,22 @@ namespace Stratis.Bitcoin.P2P
         private Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<NetworkAddress>();
-            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeers(1000).Select(p => p.NetworkAddress));
 
-            if (peersToDiscover.Count == 0)
-            {
+            //First add peers for discovery from the current set of peers
+            if (this.peerAddressManager.Peers.Any())
+                peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeers(1000).Select(p => p.NetworkAddress));
+
+            //If none exists add peers from the DNS seed nodes
+            if (!peersToDiscover.Any())
                 this.AddDNSSeedNodes(peersToDiscover);
+
+            //If none exists add peers from the hard-coded IP seed nodes
+            if (!peersToDiscover.Any())
                 this.AddSeedNodes(peersToDiscover);
 
-                peersToDiscover = new List<NetworkAddress>(peersToDiscover.OrderBy(a => RandomUtils.GetInt32()));
-                if (peersToDiscover.Count == 0)
-                    return Task.CompletedTask;
-            }
+            //If none exists return
+            if (!peersToDiscover.Any())
+                return Task.CompletedTask;
 
             Parallel.ForEach(peersToDiscover, new ParallelOptions()
             {
@@ -167,26 +171,26 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// Add peers to the address manager from the network DNS's seed nodes.
+        /// Add peers to discover from the network DNS seed nodes.
         /// </summary>
         private void AddDNSSeedNodes(List<NetworkAddress> peers)
         {
-            peers.AddRange(this.network.DNSSeeds.SelectMany(seed =>
+            foreach (var seed in this.network.DNSSeeds)
             {
                 try
                 {
-                    return seed.GetAddressNodes();
+                    var seedAddresses = seed.GetAddressNodes().Select(ip => new NetworkAddress(ip, this.network.DefaultPort));
+                    peers.AddRange(seedAddresses);
                 }
-                catch (Exception)
+                catch (Exception exception)
                 {
-                    return new IPAddress[0];
+                    this.logger.LogTrace("Address retrieval from seed {0} failed, error: {1}" + exception.Message);
                 }
-            })
-            .Select(d => new NetworkAddress(d, this.network.DefaultPort)));
+            }
         }
 
         /// <summary>
-        /// Add peers to the address manager from the network's seed nodes.
+        /// Add peers to discover from the network's hard coded IP seed nodes.
         /// </summary>
         private void AddSeedNodes(List<NetworkAddress> peers)
         {
