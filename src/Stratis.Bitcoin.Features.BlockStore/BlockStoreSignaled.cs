@@ -18,8 +18,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
-        private readonly IBlockRepository blockRepository;
-
         private readonly BlockStoreLoop blockStoreLoop;
 
         private readonly ConcurrentChain chain;
@@ -51,14 +49,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
-            IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             IBlockStoreCache blockStoreCache,
             string name = "BlockStore")
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
-            this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
             this.chainState = chainState;
