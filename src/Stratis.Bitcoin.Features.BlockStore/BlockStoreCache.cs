@@ -18,6 +18,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<Transaction> GetTrxAsync(uint256 trxid);
 
         void AddToCache(Block block);
+
+        bool Exist(uint256 blockid);
     }
 
     public class BlockStoreCache : IBlockStoreCache
@@ -178,6 +180,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
         }
+
+        /// <summary>
+        /// Determine if a block already exists in the cache.
+        /// </summary>
+        /// <param name="blockid">Block id.</param>
+        /// <returns><c>true</c> if the block hash can be found in the cache, otherwise return <c>false</c>.</returns>
+        public bool Exist(uint256 blockid)
+        {
+            return this.cache.TryGetValue(blockid, out Block unused);
+        }
+
 
         /// <inheritdoc />
         public void Dispose()
