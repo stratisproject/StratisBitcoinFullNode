@@ -54,7 +54,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             //TODO get from config
             this.MaxCacheBlocksCount = 300;
 
-            if (memoryCache == null)
+            this.cache = memoryCache;
+            if (this.cache == null)
             {
                 var memoryCacheOptions = new MemoryCacheOptions()
                 {
@@ -72,7 +73,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.txEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 1 };
 
             this.blockRepository = blockRepository;
-            this.cache = memoryCache;
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = this.BlockStoreCachePerformanceCounterFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
