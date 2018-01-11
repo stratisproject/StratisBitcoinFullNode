@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Protocol
 {
@@ -10,8 +11,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
 
         public IDisposable AddMessageListener(IMessageListener<T> listener)
         {
-            if (listener == null)
-                throw new ArgumentNullException("listener");
+            Guard.NotNull(listener, nameof(listener));
 
             lock (this.listeners)
             {
