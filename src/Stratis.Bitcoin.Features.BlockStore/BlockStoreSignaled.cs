@@ -156,26 +156,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
 
-                    // The first block that is not on disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
+                    // Check if we've reorged from the current block.
+                    if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                     {
-                        this.logger.LogTrace("Block '{0}' not found in the store.", block);
+                        this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
 
-                        // In cases when the node had a reorg the 'blocksToAnnounce' contain blocks
-                        // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
-
-                        // Check if the reason why we don't have a block is a reorg or it hasn't been downloaded yet.
-                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
-                        {
-                            this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
-
-                            // Remove hash that we've reorged away from.
-                            this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
-                            continue;
-                        }
-                        else this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
-
-                        break;
+                        // Remove hash that we've reorged away from.
+                        this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
+                        continue;
                     }
 
                     if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
