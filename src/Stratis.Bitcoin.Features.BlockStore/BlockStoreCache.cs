@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -36,6 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>The blocks count that cache can contain.</summary>
         public readonly int MaxCacheBlocksCount;
 
         /// <summary>Entry options for adding blocks to the cache.</summary>
@@ -49,12 +51,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
         }
 
-        public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IMemoryCache memoryCache = null)
+        public BlockStoreCache(
+            IBlockRepository blockRepository,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings,
+            IMemoryCache memoryCache = null)
         {
             Guard.NotNull(blockRepository, nameof(blockRepository));
 
-            //TODO get from config
-            this.MaxCacheBlocksCount = 300;
+            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", 300);
 
             this.cache = memoryCache;
             if (this.cache == null)

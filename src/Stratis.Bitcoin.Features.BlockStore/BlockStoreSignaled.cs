@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            // Add to cache if not IBD.
+            // Add to cache if not in IBD.
             this.blockStoreCache.AddToCache(block);
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedBlock);
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
 
-                    // Check if we've reorged from the current block.
+                    // Check if we've reorged away from the current block.
                     if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                     {
                         this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);

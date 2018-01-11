@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -15,6 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private BlockStoreCache blockStoreCache;
         private Mock<IMemoryCache> cache;
         private readonly ILoggerFactory loggerFactory;
+        private readonly NodeSettings nodeSettings;
 
         public BlockStoreCacheTest()
         {
@@ -22,7 +24,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.blockRepository = new Mock<IBlockRepository>();
             this.cache = new Mock<IMemoryCache>();
 
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.cache.Object);
+            this.nodeSettings = new NodeSettings
+            {
+                ConnectionManager = new Configuration.Settings.ConnectionManagerSettings()
+            };
+            this.nodeSettings.LoadArguments(new string[] { });
+
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, this.cache.Object);
         }
 
         [Fact]
@@ -80,7 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 .Returns(Task.FromResult(repositoryBlock));
 
             var memoryCacheStub = new MemoryCacheStub();
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, memoryCacheStub);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, memoryCacheStub);
 
             var result = this.blockStoreCache.GetBlockAsync(blockId);
             result.Wait();
@@ -101,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             dict.Add(blockId, block);
 
             var memoryCacheStub = new MemoryCacheStub(dict);
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, memoryCacheStub);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, memoryCacheStub);
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
             result.Wait();
@@ -120,7 +128,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             dict.Add(blockId, block);
 
             var memoryCacheStub = new MemoryCacheStub(dict);
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, memoryCacheStub);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, memoryCacheStub);
             this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult(blockId));
 
@@ -136,7 +144,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             uint256 txId = new uint256(3252);
             var memoryCacheStub = new MemoryCacheStub();
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, memoryCacheStub);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, memoryCacheStub);
             this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult((uint256)null));
 
@@ -161,7 +169,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             dict.Add(blockId, block);
 
             var memoryCacheStub = new MemoryCacheStub(dict);
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, memoryCacheStub);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, memoryCacheStub);
 
             var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
             result.Wait();
@@ -178,7 +186,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 .Returns(Task.FromResult((uint256)null));
 
             var memoryCacheStub = new MemoryCacheStub();
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, memoryCacheStub);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings, memoryCacheStub);
 
             var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
             result.Wait();
