@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
+        private readonly IBlockStoreCache blockStoreCache;
+
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
@@ -51,6 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
+            IBlockStoreCache blockStoreCache,
             string name = "BlockStore")
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -64,6 +67,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
+            this.blockStoreCache = blockStoreCache;
         }
 
         protected override void OnNextCore(Block block)
@@ -94,6 +98,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[IBD]");
                 return;
             }
+
+            // Add to cache if not IBD.
+            this.blockStoreCache.AddToCache(block);
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedBlock);
             this.blocksToAnnounce.Enqueue(chainedBlock);
