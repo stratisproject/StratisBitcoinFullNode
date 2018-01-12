@@ -178,12 +178,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Return information about <address>.
+        /// Returns information about a bitcoin address
         /// </summary>
-        /// <param name="address">BitcoinAddress to validate.</param>
-        /// <returns>information about <address>. {isvalid}</returns>
+        /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
+        /// <returns>JObject containing a boolean indicating address validity</returns>
         [ActionName("validateaddress")]
-        [ActionDescription("Returns information about a bitcoin address")]
+        [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
         public JObject ValidateAddress(string address)
         {
             if(address == null)
