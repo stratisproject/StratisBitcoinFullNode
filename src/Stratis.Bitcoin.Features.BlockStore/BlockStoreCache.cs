@@ -20,6 +20,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         void AddToCache(Block block);
 
+        /// <summary>
+        /// Determine if a block already exists in the cache.
+        /// </summary>
+        /// <param name="blockid">Block id.</param>
+        /// <returns><c>true</c> if the block hash can be found in the cache, otherwise return <c>false</c>.</returns>
         bool Exist(uint256 blockid);
     }
 
@@ -37,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>The blocks count that cache can contain.</summary>
+        /// <summary>The maximum amount of blocks the cache can contain.</summary>
         public readonly int MaxCacheBlocksCount;
 
         /// <summary>Entry options for adding blocks to the cache.</summary>
@@ -45,6 +50,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Entry options for adding transactions to the cache.</summary>
         private readonly MemoryCacheEntryOptions txEntryOptions;
+
+        /// <summary>Specifies amount to compact the cache by when the maximum size is exceeded.</summary>
+        /// <remarks>For example value of 0.8 will let cache remove 20% of all items when cache size is exceeded.</remarks>
+        private readonly double CompactionPercentage = 0.8;
 
         public BlockStoreCache(
             IBlockRepository blockRepository,
@@ -65,8 +74,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     //We treat one block to be of '100' size and tx to be '1'.
                     SizeLimit = this.MaxCacheBlocksCount * 100,
 
-                    // Remove 20% of the items if the size limit is exceeded.
-                    CompactionPercentage = 0.8
+                    CompactionPercentage = this.CompactionPercentage
                 };
 
                 this.cache = new MemoryCache(memoryCacheOptions);
@@ -182,16 +190,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
         }
 
-        /// <summary>
-        /// Determine if a block already exists in the cache.
-        /// </summary>
-        /// <param name="blockid">Block id.</param>
-        /// <returns><c>true</c> if the block hash can be found in the cache, otherwise return <c>false</c>.</returns>
+        /// <inheritdoc />
         public bool Exist(uint256 blockid)
         {
             return this.cache.TryGetValue(blockid, out Block unused);
         }
-
 
         /// <inheritdoc />
         public void Dispose()
