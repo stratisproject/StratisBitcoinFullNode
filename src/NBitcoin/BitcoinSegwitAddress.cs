@@ -37,7 +37,6 @@ namespace NBitcoin
                     return true;
                 }
             }
-            catch (Bech32FormatException) { throw; }
             catch (FormatException) { }
             return false;
         }
@@ -120,7 +119,6 @@ namespace NBitcoin
                     return true;
                 }
             }
-            catch (Bech32FormatException) { throw; }
             catch (FormatException) { }
             return false;
         }
