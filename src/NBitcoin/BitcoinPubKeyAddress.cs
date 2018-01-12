@@ -28,7 +28,7 @@ namespace NBitcoin
             if (base58 == null)
                 throw new ArgumentNullException("base58");
             var data = Encoders.Base58Check.DecodeData(base58);
-            var versionBytes = network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
+            var versionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
             if (versionBytes != null && data.StartWith(versionBytes))
             {
                 if (data.Length == versionBytes.Length + 20)
