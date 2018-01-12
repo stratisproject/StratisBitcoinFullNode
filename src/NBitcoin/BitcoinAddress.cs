@@ -27,18 +27,13 @@ namespace NBitcoin
         {
             if (base58 == null)
                 throw new ArgumentNullException("base58");
-            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
             var data = Encoders.Base58Check.DecodeData(base58);
-            foreach (var network in networks)
+            var versionBytes = expectedNetwork.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, false);
+            if (versionBytes != null && data.StartWith(versionBytes))
             {
-                var versionBytes = network.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, false);
-                if (versionBytes != null && data.StartWith(versionBytes))
+                if (data.Length == versionBytes.Length + 20)
                 {
-                    if (data.Length == versionBytes.Length + 20)
-                    {
-                        expectedNetwork = network;
-                        return true;
-                    }
+                    return true;
                 }
             }
             return false;

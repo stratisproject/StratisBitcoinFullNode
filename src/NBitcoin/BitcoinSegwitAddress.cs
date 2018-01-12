@@ -25,24 +25,20 @@ namespace NBitcoin
         {
             if (bech32 == null)
                 throw new ArgumentNullException("bech32");
-            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
-            foreach (var network in networks)
+            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
+            if (encoder == null)
+                return false;
+            try
             {
-                var encoder = network.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
-                if (encoder == null)
-                    continue;
-                try
+                byte witVersion;
+                var data = encoder.Decode(bech32, out witVersion);
+                if (data.Length == 20 && witVersion == 0)
                 {
-                    byte witVersion;
-                    var data = encoder.Decode(bech32, out witVersion);
-                    if (data.Length == 20 && witVersion == 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
-                catch (Bech32FormatException) { throw; }
-                catch (FormatException) { continue; }
             }
+            catch (Bech32FormatException) { throw; }
+            catch (FormatException) { }
             return false;
         }
 
@@ -111,24 +107,21 @@ namespace NBitcoin
         {
             if (bech32 == null)
                 throw new ArgumentNullException("bech32");
-            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
-            foreach (var network in networks)
+
+            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
+            if (encoder == null)
+                return false;
+            try
             {
-                var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
-                if (encoder == null)
-                    continue;
-                try
+                byte witVersion;
+                var data = encoder.Decode(bech32, out witVersion);
+                if (data.Length == 32 && witVersion == 0)
                 {
-                    byte witVersion;
-                    var data = encoder.Decode(bech32, out witVersion);
-                    if (data.Length == 32 && witVersion == 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
-                catch (Bech32FormatException) { throw; }
-                catch (FormatException) { continue; }
             }
+            catch (Bech32FormatException) { throw; }
+            catch (FormatException) { }
             return false;
         }
 
