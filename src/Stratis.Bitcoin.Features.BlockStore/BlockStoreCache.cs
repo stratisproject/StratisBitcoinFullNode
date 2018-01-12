@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -13,11 +14,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         Task<Block> GetBlockAsync(uint256 blockid);
 
-        Task<Block> GetBlockByTrxAsync(uint256 trxid);
-
-        Task<Transaction> GetTrxAsync(uint256 trxid);
-
         void AddToCache(Block block);
+
+        /// <summary>
+        /// Determine if a block already exists in the cache.
+        /// </summary>
+        /// <param name="blockid">Block id.</param>
+        /// <returns><c>true</c> if the block hash can be found in the cache, otherwise return <c>false</c>.</returns>
+        bool Exist(uint256 blockid);
     }
 
     public class BlockStoreCache : IBlockStoreCache
@@ -34,18 +38,44 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(blockRepository, new MemoryCache(new MemoryCacheOptions()), dateTimeProvider, loggerFactory)
-        {
-        }
+        /// <summary>The maximum amount of blocks the cache can contain.</summary>
+        public readonly int MaxCacheBlocksCount;
 
-        public BlockStoreCache(IBlockRepository blockRepository, IMemoryCache memoryCache, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        /// <summary>Entry options for adding blocks to the cache.</summary>
+        private readonly MemoryCacheEntryOptions blockEntryOptions;
+
+        /// <summary>Specifies amount to compact the cache by when the maximum size is exceeded.</summary>
+        /// <remarks>For example value of <c>0.8</c> will let cache remove 20% of all items when cache size is exceeded.</remarks>
+        private readonly double CompactionPercentage = 0.8;
+
+        public BlockStoreCache(
+            IBlockRepository blockRepository,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings,
+            IMemoryCache memoryCache = null)
         {
             Guard.NotNull(blockRepository, nameof(blockRepository));
-            Guard.NotNull(memoryCache, nameof(memoryCache));
+
+            // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.
+            // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
+            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", 300);
+
+            this.cache = memoryCache;
+            if (this.cache == null)
+            {
+                var memoryCacheOptions = new MemoryCacheOptions()
+                {
+                    SizeLimit = this.MaxCacheBlocksCount,
+                    CompactionPercentage = this.CompactionPercentage
+                };
+
+                this.cache = new MemoryCache(memoryCacheOptions);
+            }
+
+            this.blockEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24), Size = 1 };
 
             this.blockRepository = blockRepository;
-            this.cache = memoryCache;
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = this.BlockStoreCachePerformanceCounterFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -90,7 +120,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             block = await this.blockRepository.GetAsync(blockid);
             if (block != null)
             {
-                this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
+                this.cache.Set(blockid, block, this.blockEntryOptions);
                 this.PerformanceCounter.AddCacheSetCount(1);
             }
 
@@ -98,59 +128,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return block;
         }
 
-        public async Task<Block> GetBlockByTrxAsync(uint256 trxid)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-            Guard.NotNull(trxid, nameof(trxid));
-
-            uint256 blockid;
-            Block block;
-            if (this.cache.TryGetValue(trxid, out blockid))
-            {
-                this.PerformanceCounter.AddCacheHitCount(1);
-                block = await this.GetBlockAsync(blockid);
-                return block;
-            }
-
-            this.PerformanceCounter.AddCacheMissCount(1);
-
-            blockid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
-            if (blockid == null)
-            {
-                this.logger.LogTrace("(-):null");
-                return null;
-            }
-
-            this.cache.Set(trxid, blockid, TimeSpan.FromMinutes(10));
-            this.PerformanceCounter.AddCacheSetCount(1);
-            block = await this.GetBlockAsync(blockid);
-
-            this.logger.LogTrace("(-):'{0}'", block);
-            return block;
-        }
-
-        public async Task<Transaction> GetTrxAsync(uint256 trxid)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-            Guard.NotNull(trxid, nameof(trxid));
-
-            Block block = await this.GetBlockByTrxAsync(trxid);
-            Transaction trx = block?.Transactions.Find(t => t.GetHash() == trxid);
-
-            this.logger.LogTrace("(-):'{0}')", trx);
-            return trx;
-        }
-
         public void AddToCache(Block block)
         {
             uint256 blockid = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockid);
 
-            Block existingBlock;
-            if (!this.cache.TryGetValue(blockid, out existingBlock))
-                this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
+            if (!this.cache.TryGetValue(blockid, out Block existingBlock))
+                this.cache.Set(blockid, block, this.blockEntryOptions);
 
             this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
+        }
+
+        /// <inheritdoc />
+        public bool Exist(uint256 blockid)
+        {
+            return this.cache.TryGetValue(blockid, out Block unused);
         }
 
         /// <inheritdoc />
