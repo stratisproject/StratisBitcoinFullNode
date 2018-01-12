@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             stopwatch.Stop();
 
             Assert.True(stopwatch.ElapsedMilliseconds >= 500);
-            Assert.True(mreAwaitingTask.Status == TaskStatus.RanToCompletion);
+            Assert.True(mreAwaitingTask.IsCompletedSuccessfully);
         }
 
         [Fact]
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 if (next == 250)
                     shutdown.Cancel();
 
-                // Deactivate ourselves. 
+                // Deactivate ourselves.
                 selfEvent.Reset();
 
                 // Select the next worker to go. This can select ourselves again.
