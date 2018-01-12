@@ -46,11 +46,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Entry options for adding transactions to the cache.</summary>
         private readonly MemoryCacheEntryOptions txEntryOptions;
 
-        public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(blockRepository, dateTimeProvider, loggerFactory, null)
-        {
-        }
-
         public BlockStoreCache(
             IBlockRepository blockRepository,
             IDateTimeProvider dateTimeProvider,
