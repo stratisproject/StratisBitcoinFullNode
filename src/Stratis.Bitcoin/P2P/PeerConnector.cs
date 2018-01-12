@@ -208,7 +208,10 @@ namespace Stratis.Bitcoin.P2P
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 if (!this.peerAddressManager.Peers.Any())
+                {
+                    await Task.Delay(2000, this.nodeLifetime.ApplicationStopping);
                     return;
+                }
 
                 if (this.ConnectedPeers.Count >= this.MaxOutboundConnections)
                     return;
