@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Connection
                     peerConnector = this.connection.PeerConnectors.First(pc => pc is PeerConnectorDiscovery);
 
                 // Find how much 20% max nodes.
-                decimal thresholdCount = Math.Round(peerConnector.MaximumNodeConnections * this.dropThreshold, MidpointRounding.ToEven);
+                decimal thresholdCount = Math.Round(peerConnector.MaxOutboundConnections * this.dropThreshold, MidpointRounding.ToEven);
 
                 if (thresholdCount < this.connection.ConnectedPeers.Count())
                     if (version.StartHeight < this.chain.Height)

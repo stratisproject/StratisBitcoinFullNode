@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -857,7 +858,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var stratisNode1 = builder.CreateStratisPowNode();
                 var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
-                
+
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
                 stratisNode2.NotInIBD();

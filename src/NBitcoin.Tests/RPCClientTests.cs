@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Sdk;
 
 namespace NBitcoin.Tests
 {
@@ -69,36 +68,6 @@ namespace NBitcoin.Tests
         }
 
         [Fact]
-        public void CanGetRawMemPool()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode(true);
-                var rpc = node.CreateRPCClient();
-                builder.StartAll();
-                node.Generate(101);
-                var txid = rpc.SendToAddress(new Key().PubKey.GetAddress(rpc.Network), Money.Coins(1.0m), "hello", "world");
-                var ids = rpc.GetRawMempool();
-                Assert.Single(ids);
-                Assert.Equal(txid, ids[0]);
-            }
-        }
-
-        [Fact]
-        public void CanUseAsyncRPC()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                var rpc = node.CreateRPCClient();
-                builder.StartAll();
-                node.Generate(10);
-                var blkCount = rpc.GetBlockCountAsync().Result;
-                Assert.Equal(10, blkCount);
-            }
-        }
-
-        [Fact]
         public void CanSignRawTransaction()
         {
             using(var builder = NodeBuilder.Create())
@@ -132,21 +101,6 @@ namespace NBitcoin.Tests
         }
 
         [Fact]
-        public void EstimateFeeRate()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                node.Start();
-                node.Generate(101);
-                var rpc = node.CreateRPCClient();
-                Assert.Throws<NoEstimationException>(() => rpc.EstimateFeeRate(1));
-                Assert.Equal(Money.Coins(50m), rpc.GetBalance(1, false));
-                Assert.Equal(Money.Coins(50m), rpc.GetBalance());
-            }
-        }
-
-        [Fact]
         public void TryEstimateFeeRate()
         {
             using(var builder = NodeBuilder.Create())
@@ -160,49 +114,6 @@ namespace NBitcoin.Tests
         }
 
         [Fact]
-        public void TestFundRawTransaction()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                node.Start();
-                node.Generate(101);
-
-                var k = new Key();
-                var tx = new Transaction();
-                tx.Outputs.Add(new TxOut(Money.Coins(1), k));
-                var rpc = node.CreateRPCClient();
-                var result = rpc.FundRawTransaction(tx);
-                TestFundRawTransactionResult(tx, result);
-
-                result = rpc.FundRawTransaction(tx, new FundRawTransactionOptions());
-                TestFundRawTransactionResult(tx, result);
-                var result1 = result;
-
-                var change = rpc.GetNewAddress();
-                var change2 = rpc.GetRawChangeAddress();
-                result = rpc.FundRawTransaction(tx, new FundRawTransactionOptions()
-                {
-                    FeeRate = new FeeRate(Money.Satoshis(50), 1),
-                    IncludeWatching = true,
-                    ChangeAddress = change,
-                });
-                TestFundRawTransactionResult(tx, result);
-                Assert.True(result1.Fee < result.Fee);
-                Assert.Contains(result.Transaction.Outputs, o => o.ScriptPubKey == change.ScriptPubKey);
-            }
-        }
-
-        private static void TestFundRawTransactionResult(Transaction tx, FundRawTransactionResponse result)
-        {
-            Assert.Equal(tx.Version, result.Transaction.Version);
-            Assert.True(result.Transaction.Inputs.Count > 0);
-            Assert.True(result.Transaction.Outputs.Count > 1);
-            Assert.True(result.ChangePos != -1);
-            Assert.Equal(Money.Coins(50m) - result.Transaction.Outputs.Select(txout => txout.Value).Sum(), result.Fee);
-        }
-
-        [Fact]
         public void CanGetTxOutNoneFromRPC()
         {
             using (var builder = NodeBuilder.Create())
@@ -213,44 +124,6 @@ namespace NBitcoin.Tests
                 var txid = rpc.Generate(1).Single();
                 var resultTxOut = rpc.GetTxOut(txid, 0, true);
                 Assert.Null(resultTxOut);
-            }
-        }
-
-        [Fact]
-        public void CanGetTxOutFromRPC()
-        {
-            using (var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                node.Start();
-                node.Generate(101);
-                var rpc = node.CreateRPCClient();
-                var unspent = rpc.ListUnspent();
-                Assert.True(unspent.Any());
-                var coin = unspent[0] ;
-                var resultTxOut = rpc.GetTxOut(coin.OutPoint.Hash, coin.OutPoint.N, true);
-                Assert.Equal((int)coin.Confirmations, resultTxOut.confirmations);
-                Assert.Equal(coin.Amount.ToDecimal(MoneyUnit.BTC), resultTxOut.value);
-                Assert.Equal(coin.Address.ToString(), resultTxOut.scriptPubKey.addresses[0]);
-            }
-        }
-
-        [Fact]
-        public async Task CanGetTxOutAsyncFromRPC()
-        {
-            using (var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                node.Start();
-                node.Generate(101);
-                var rpc = node.CreateRPCClient();
-                var unspent = rpc.ListUnspent();
-                Assert.True(unspent.Any());
-                var coin = unspent[0];
-                var resultTxOut = await rpc.GetTxOutAsync(coin.OutPoint.Hash, coin.OutPoint.N, true);
-                Assert.Equal((int)coin.Confirmations, resultTxOut.confirmations);
-                Assert.Equal(coin.Amount.ToDecimal(MoneyUnit.BTC), resultTxOut.value);
-                Assert.Equal(coin.Address.ToString(), resultTxOut.scriptPubKey.addresses[0]);
             }
         }
 
@@ -484,28 +357,6 @@ namespace NBitcoin.Tests
             }
         }
 
-#if !PORTABLE
-        [Fact]
-        public void CanGetPeersInfo()
-        {
-                    /*
-         * TODO: Consider importing to FN.
-
-            using(var builder = NodeBuilder.Create())
-            {
-                var nodeA = builder.CreateNode();
-                builder.StartAll();
-                var rpc = nodeA.CreateRPCClient();
-                using(var node = nodeA.CreateNodeClient())
-                {
-                    node.VersionHandshake();
-                    var peers = rpc.GetPeersInfo();
-                    Assert.NotEmpty(peers);
-                }
-            }
-            */
-    }
-#endif
 #if !NOSOCKET
         [Fact]
         [Trait("UnitTest", "UnitTest")]
@@ -594,60 +445,6 @@ namespace NBitcoin.Tests
                     {
                         Assert.False(true, "Should have thrown RPC_METHOD_NOT_FOUND");
                     }
-                }
-            }
-        }
-
-        [Fact]
-        public void CanAddNodes()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var nodeA = builder.CreateNode();
-                var nodeB = builder.CreateNode();
-                builder.StartAll();
-                var rpc = nodeA.CreateRPCClient();
-                rpc.RemoveNode(nodeA.Endpoint);
-                rpc.AddNode(nodeB.Endpoint);
-
-                AddedNodeInfo[] info = null;
-                WaitAssert(() =>
-                {
-                    info = rpc.GetAddedNodeInfo(true);
-                    Assert.NotNull(info);
-                    Assert.NotEmpty(info);
-                });
-                //For some reason this one does not pass anymore in 0.13.1
-                //Assert.Equal(nodeB.Endpoint, info.First().Addresses.First().Address);
-                var oneInfo = rpc.GetAddedNodeInfo(true, nodeB.Endpoint);
-                Assert.NotNull(oneInfo);
-                Assert.True(oneInfo.AddedNode.ToString() == nodeB.Endpoint.ToString());
-                oneInfo = rpc.GetAddedNodeInfo(true, nodeA.Endpoint);
-                Assert.Null(oneInfo);
-                rpc.RemoveNode(nodeB.Endpoint);
-
-                WaitAssert(() =>
-                {
-                    info = rpc.GetAddedNodeInfo(true);
-                    Assert.Empty(info);
-                });
-            }
-        }
-
-        void WaitAssert(Action act)
-        {
-            int totalTry = 30;
-            while(totalTry > 0)
-            {
-                try
-                {
-                    act();
-                    return;
-                }
-                catch(AssertActualExpectedException)
-                {
-                    Thread.Sleep(100);
-                    totalTry--;
                 }
             }
         }
