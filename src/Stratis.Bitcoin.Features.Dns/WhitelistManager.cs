@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Dns
             if (!this.fullNodeMode)
             {
                 // Exclude the current external ip address from DNS as its not a full node.
-                whitelist = whitelist.Where(p => !p.NetworkAddress.Endpoint.Match(this.externalEndpoint));
+                whitelist = whitelist.Where(p => !p.EndPoint.Match(this.externalEndpoint));
             }
 
             IMasterFile masterFile = new DnsSeedMasterFile();
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 Domain domain = new Domain(this.dnsHostName);
 
-                IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.NetworkAddress.Endpoint.Address);
+                IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.EndPoint.Address);
                 masterFile.Add(resourceRecord);
             }
 
