@@ -95,6 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             {
                 DataDir = testFolder.FolderName
             };
+            this.nodeSettings.LoadArguments(new string[] { });
 
             this.nodeSettings.DataFolder = new DataFolder(this.nodeSettings);
 
