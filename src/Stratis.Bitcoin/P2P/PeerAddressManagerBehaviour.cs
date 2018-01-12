@@ -54,7 +54,15 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (this.AttachedPeer.State == NetworkPeerState.Connected)
+                {
+                    //If a peer connects via the peer discovery loop but does not yet exist
+                    //in the address manager's peer list, we need to add it. 
+                    //This could be a peer address provided by one of the seed nodes.
+                    if (this.peerAddressManager.FindPeer(this.AttachedPeer.PeerAddress.Endpoint) == null)
+                        this.peerAddressManager.AddPeer(this.AttachedPeer.PeerAddress, this.AttachedPeer.RemoteSocketAddress);
+
                     this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                }
             }
         }
 
