@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.cache = new MemoryCache(memoryCacheOptions);
             }
 
-            this.blockEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 1 };
+            this.blockEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24), Size = 1 };
 
             this.blockRepository = blockRepository;
             this.dateTimeProvider = dateTimeProvider;
