@@ -1657,7 +1657,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var model = viewResult.Value as AddressesModel;
 
             Assert.NotNull(model);
-            Assert.Equal(4, model.Addresses.Count);
+            Assert.Equal(4, model.Addresses.Count());
 
             var modelUsedReceiveAddress = model.Addresses.Single(a => a.Address == usedReceiveAddress.Address);
             Assert.Equal(modelUsedReceiveAddress.Address, model.Addresses.Single(a => a.Address == modelUsedReceiveAddress.Address).Address);

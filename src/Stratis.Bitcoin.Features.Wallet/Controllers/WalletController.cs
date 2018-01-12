@@ -732,7 +732,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Gets an unused address.
         /// </summary>
         /// <returns>The last created and unused address or creates a new address (in Base58 format).</returns>
-        [Route("newaddress")]
+        [Route("unusedaddress")]
         [HttpGet]
         public IActionResult GetUnusedAddress([FromQuery]GetUnusedAddressModel request)
         {
@@ -759,7 +759,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets the specified number of unused addresses.
         /// </summary>
-        [Route("newaddresses")]
+        [Route("unusedaddresses")]
         [HttpGet]
         public IActionResult GetUnusedAddresses([FromQuery]GetUnusedAddressesModel request)
         {
@@ -803,19 +803,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
-                AddressesModel model = new AddressesModel();
-                
-                foreach (HdAddress address in account.GetCombinedAddresses())
+
+                AddressesModel model = new AddressesModel
                 {
-                    AddressModel addressModel = new AddressModel
+                    Addresses = account.GetCombinedAddresses().Select(address => new AddressModel
                     {
                         Address = address.Address,
                         IsUsed = address.Transactions.Any(),
                         IsChange = address.IsChangeAddress()
-                    };
-                    
-                    model.Addresses.Add(addressModel);
-                }
+                    })
+                };
+
                 return this.Json(model);
             }
             catch (Exception e)

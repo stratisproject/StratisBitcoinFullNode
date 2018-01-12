@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// A list of addresses.
         /// </summary>
         [JsonProperty(PropertyName = "addresses")]
-        public List<AddressModel> Addresses { get; set; }
+        public IEnumerable<AddressModel> Addresses { get; set; }
     }
 
     /// <summary>
