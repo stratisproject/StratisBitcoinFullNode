@@ -52,13 +52,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             trie.Put(dog, cat);
             trie.Put(fish, bird);
 
-            Assert.Equal(trie.Get(dog), cat);
-            Assert.Equal(trie.Get(fish), bird);
+            Assert.Equal(cat, trie.Get(dog));
+            Assert.Equal(bird, trie.Get(fish));
 
             trie.Put(dog, fish);
             trie.Put(dog, bird);
 
-            Assert.Equal(trie.Get(dog), bird);
+            Assert.Equal(bird, trie.Get(dog));
         }
 
         [Fact]
@@ -73,6 +73,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Empty(memDb.Db.Keys);
             trie.Flush();
             Assert.NotEmpty(memDb.Db.Keys); // This should be more specific in future. How many nodes are we expecting?
+        }
+
+        [Fact]
+        public void TestDelete()
+        {
+            var memDb = new MemoryDictionarySource();
+            var trie = new Trie(memDb);
+
+            trie.Put(dog, cat);
+
+            byte[] dogCatOnlyHash = trie.GetRootHash();
+
+            trie.Put(fish, bird);
+            trie.Delete(fish);
+
+            Assert.Equal(dogCatOnlyHash, trie.GetRootHash());
+
+            trie.Put(fish, bird);
+            trie.Put(fish, empty);
+
+            Assert.Equal(dogCatOnlyHash, trie.GetRootHash());
         }
 
     }

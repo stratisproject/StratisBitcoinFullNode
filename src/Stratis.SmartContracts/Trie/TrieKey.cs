@@ -142,7 +142,7 @@ namespace Stratis.SmartContracts.Trie
         {
             if (this.IsTerminal) throw new Exception("Can' append to terminal key: " + this + " + " + k);
             int len = this.Length;
-            int kLen = this.Length;
+            int kLen = k.Length;
             int newLen = len + kLen;
             byte[] newKeyBytes = new byte[(newLen + 1) >> 1];
             TrieKey ret = new TrieKey(newKeyBytes, newLen & 1, k.IsTerminal);
