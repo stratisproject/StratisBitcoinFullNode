@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Connection
             this.dropThreshold = 0.8M;
         }
 
-        private void AttachedNodeOnMessageReceived(NetworkPeer node, IncomingMessage message)
+        private void AttachedPeer_MessageReceived(NetworkPeer node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -57,11 +57,11 @@ namespace Stratis.Bitcoin.Connection
                     peerConnector = this.connection.PeerConnectors.First(pc => pc is PeerConnectorDiscovery);
 
                 // Find how much 20% max nodes.
-                decimal thresholdCount = Math.Round(peerConnector.MaximumNodeConnections * this.dropThreshold, MidpointRounding.ToEven);
+                decimal thresholdCount = Math.Round(peerConnector.MaxOutboundConnections * this.dropThreshold, MidpointRounding.ToEven);
 
-                if (thresholdCount < this.connection.ConnectedNodes.Count())
+                if (thresholdCount < this.connection.ConnectedPeers.Count())
                     if (version.StartHeight < this.chain.Height)
-                        this.AttachedPeer.DisconnectWithException($"Node at height = {version.StartHeight} too far behind current height");
+                        this.AttachedPeer.Disconnect($"Node at height = {version.StartHeight} too far behind current height");
             });
 
             this.logger.LogTrace("(-)");
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived += this.AttachedNodeOnMessageReceived;
+            this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived -= this.AttachedNodeOnMessageReceived;
+            this.AttachedPeer.MessageReceived -= this.AttachedPeer_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }

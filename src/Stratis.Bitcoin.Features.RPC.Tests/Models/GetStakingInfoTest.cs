@@ -17,14 +17,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             "enabled",
             "staking",
             "errors",
-            "currentblocksize",
-            "currentblocktx",
-            "pooledtx",
+            "currentBlockSize",
+            "currentBlockTx",
+            "pooledTx",
             "difficulty",
-            "search-interval",
+            "searchInterval",
             "weight",
-            "netstakeweight",
-            "expectedtime",
+            "netStakeWeight",
+            "expectedTime",
         };
 
         /// <summary>
@@ -54,14 +54,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
                 + "  \"enabled\": true,\n"
                 + "  \"staking\": true,\n"
                 + "  \"errors\": \"Block rejected by peers\",\n"
-                + "  \"currentblocksize\": 151,\n"
-                + "  \"currentblocktx\": 1,\n"
-                + "  \"pooledtx\": 120,\n"
+                + "  \"currentBlockSize\": 151,\n"
+                + "  \"currentBlockTx\": 1,\n"
+                + "  \"pooledTx\": 120,\n"
                 + "  \"difficulty\": 77856.9675875571,\n"
-                + "  \"search-interval\": 16,\n"
+                + "  \"searchInterval\": 16,\n"
                 + "  \"weight\": 98076279000000,\n"
-                + "  \"netstakeweight\": 101187415332927,\n"
-                + "  \"expectedtime\": 66\n"
+                + "  \"netStakeWeight\": 101187415332927,\n"
+                + "  \"expectedTime\": 66\n"
                 + "}\n";
 
             JObject obj = JObject.Parse(json);

@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -857,7 +858,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var stratisNode1 = builder.CreateStratisPowNode();
                 var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
-                
+
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
                 stratisNode2.NotInIBD();
@@ -899,10 +900,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 5);
 
                 // the full node should be connected to both nodes
-                Assert.True(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count() >= 2);
+                Assert.True(stratisNodeSync.FullNode.ConnectionManager.ConnectedPeers.Count() >= 2);
 
                 // reset the trickle timer on the full node that has the transactions in the pool
-                foreach (var node in stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes) node.Behavior<MempoolBehavior>().NextInvSend = 0;
+                foreach (var node in stratisNodeSync.FullNode.ConnectionManager.ConnectedPeers) node.Behavior<MempoolBehavior>().NextInvSend = 0;
 
                 TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 5);
                 TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 5);

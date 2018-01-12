@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,10 +22,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peerAddress">Address of the connected counterparty.</param>
         /// <param name="network">The network to connect to.</param>
         /// <param name="client">Already connected network client.</param>
-        /// <param name="peerVersion">Version of the connected counterparty.</param>
         /// <param name="parameters">Parameters of the established connection, or <c>null</c> to use default parameters.</param>
         /// <returns>New network peer that is connected via the established connection.</returns>
-        NetworkPeer CreateNetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerClient client, VersionPayload peerVersion, NetworkPeerConnectionParameters parameters = null);
+        NetworkPeer CreateNetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerClient client, NetworkPeerConnectionParameters parameters = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
@@ -36,16 +36,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellation">Cancallation token that allows to interrupt establishing of the connection.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
         Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken));
-
-        /// <summary>
-        /// Creates a new network peer which is connected to a specified counterparty.
-        /// </summary>
-        /// <param name="network">The network to connect to.</param>
-        /// <param name="endPoint">Address and port of the counterparty to connect to.</param>
-        /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
-        /// <returns>Network peer connected to the specified counterparty.</returns>
-        /// <remarks><paramref name="parameters"/> not <c>null</c> by default to avoid method signature confusion with <see cref="CreateConnectedNetworkPeerAsync(Network, string, ProtocolVersion, bool, CancellationToken)"/>.</remarks>
-        Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, string endPoint, NetworkPeerConnectionParameters parameters);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
@@ -132,14 +122,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public NetworkPeer CreateNetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerClient client, VersionPayload peerVersion, NetworkPeerConnectionParameters parameters = null)
+        public NetworkPeer CreateNetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerClient client, NetworkPeerConnectionParameters parameters = null)
         {
             Guard.NotNull(peerAddress, nameof(peerAddress));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(client, nameof(client));
             Guard.NotNull(client.RemoteEndPoint, $"{nameof(client)}.{nameof(client.RemoteEndPoint)}");
 
-            return new NetworkPeer(peerAddress, network, parameters, client, peerVersion, this.dateTimeProvider, this.loggerFactory);
+            return new NetworkPeer(peerAddress, network, parameters, client, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <inheritdoc/>
@@ -158,15 +148,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             };
 
             return await this.CreateConnectedNetworkPeerAsync(network, ipEndPoint, parameters);
-        }
-
-        /// <inheritdoc/>
-        public async Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, string endPoint, NetworkPeerConnectionParameters parameters)
-        {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(endPoint, nameof(endPoint));
-
-            return await this.CreateConnectedNetworkPeerAsync(network, Utils.ParseIpEndpoint(endPoint, network.DefaultPort), parameters);
         }
 
         /// <inheritdoc/>
@@ -191,7 +172,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(peerAddress, nameof(peerAddress));
 
             var peer = new NetworkPeer(peerAddress, network, parameters, this, this.dateTimeProvider, this.loggerFactory);
-            await peer.ConnectAsync(peer.Parameters.ConnectCancellation).ConfigureAwait(false);
+            try
+            {
+                await peer.ConnectAsync(peer.Parameters.ConnectCancellation).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                peer.Dispose("Connection failed", e);
+                throw;
+            }
             return peer;
         }
 

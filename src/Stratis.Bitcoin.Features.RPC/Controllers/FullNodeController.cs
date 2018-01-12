@@ -124,24 +124,24 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             var model = new GetInfoModel
             {
-                version = this.FullNode?.Version.ToUint() ?? 0,
-                protocolversion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
-                blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
-                timeoffset = this.ConnectionManager?.ConnectedNodes?.GetMedianTimeOffset() ?? 0,
-                connections = this.ConnectionManager?.ConnectedNodes?.Count(),
-                proxy = string.Empty,
-                difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
-                testnet = this.Network.IsTest(),
-                relayfee = this.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC),
-                errors = string.Empty,
+                Version = this.FullNode?.Version.ToUint() ?? 0,
+                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                Blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
+                TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
+                Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
+                Proxy = string.Empty,
+                Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
+                Testnet = this.Network.IsTest(),
+                RelayFee = this.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC),
+                Errors = string.Empty,
 
                 //TODO: Wallet related infos: walletversion, balance, keypoololdest, keypoolsize, unlocked_until, paytxfee
-                walletversion = null,
-                balance = null,
-                keypoololdest = null,
-                keypoolsize = null,
-                unlocked_until = null,
-                paytxfee = null
+                WalletVersion = null,
+                Balance = null,
+                KeypoolOldest = null,
+                KeypoolSize = null,
+                UnlockedUntil = null,
+                PayTxFee = null
             };
 
             return model;

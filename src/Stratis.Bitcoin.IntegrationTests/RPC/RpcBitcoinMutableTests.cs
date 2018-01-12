@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC

@@ -15,14 +15,13 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
     public class CoreNode
     {
@@ -135,11 +134,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public NetworkPeer CreateNodeClient(NetworkPeerConnectionParameters parameters)
-        {
-            return this.networkPeerFactory.CreateConnectedNetworkPeerAsync(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters).GetAwaiter().GetResult();
-        }
-
         public async Task StartAsync()
         {
             NodeConfigParameters config = new NodeConfigParameters();
@@ -231,7 +225,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Broadcast(Transaction transaction)
         {
-            using (var peer = this.CreateNetworkPeerClient())
+            using (NetworkPeer peer = this.CreateNetworkPeerClient())
             {
                 peer.VersionHandshakeAsync().GetAwaiter().GetResult();
                 peer.SendMessageAsync(new InvPayload(transaction)).GetAwaiter().GetResult();
@@ -328,7 +322,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 
-            using (var peer = this.CreateNetworkPeerClient())
+            using (NetworkPeer peer = this.CreateNetworkPeerClient())
             {
                 peer.VersionHandshakeAsync().GetAwaiter().GetResult();
                 chain = bestBlock == peer.Network.GenesisHash ? new ConcurrentChain(peer.Network) : this.GetChain(peer);
@@ -583,7 +577,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public async Task BroadcastBlocksAsync(Block[] blocks)
         {
-            using (var peer = this.CreateNetworkPeerClient())
+            using (NetworkPeer peer = this.CreateNetworkPeerClient())
             {
                 await peer.VersionHandshakeAsync();
                 await this.BroadcastBlocksAsync(blocks, peer);
@@ -592,12 +586,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public async Task BroadcastBlocksAsync(Block[] blocks, NetworkPeer peer)
         {
-            Block lastSent = null;
             foreach (var block in blocks)
             {
                 await peer.SendMessageAsync(new InvPayload(block));
                 await peer.SendMessageAsync(new BlockPayload(block));
-                lastSent = block;
             }
             await this.PingPongAsync(peer);
         }
