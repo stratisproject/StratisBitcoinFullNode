@@ -186,11 +186,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
         public JObject ValidateAddress(string address)
         {
-            if(address == null)
+            if (string.IsNullOrEmpty(address))
                 throw new ArgumentNullException("address");
 
-            JObject res = new JObject();
-            res["isvalid"] = false; // until proven otherwise
+            var res = new JObject();
+            res["isvalid"] = false;
 
             // P2PKH
             if(BitcoinPubKeyAddress.IsValid(address, ref this.Network))
