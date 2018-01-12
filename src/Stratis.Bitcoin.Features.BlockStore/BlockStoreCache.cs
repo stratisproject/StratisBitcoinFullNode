@@ -14,10 +14,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         Task<Block> GetBlockAsync(uint256 blockid);
 
-        Task<Block> GetBlockByTrxAsync(uint256 trxid);
-
-        Task<Transaction> GetTrxAsync(uint256 trxid);
-
         void AddToCache(Block block);
 
         /// <summary>
@@ -48,9 +44,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Entry options for adding blocks to the cache.</summary>
         private readonly MemoryCacheEntryOptions blockEntryOptions;
 
-        /// <summary>Entry options for adding transactions to the cache.</summary>
-        private readonly MemoryCacheEntryOptions txEntryOptions;
-
         /// <summary>Specifies amount to compact the cache by when the maximum size is exceeded.</summary>
         /// <remarks>For example value of 0.8 will let cache remove 20% of all items when cache size is exceeded.</remarks>
         private readonly double CompactionPercentage = 0.8;
@@ -71,17 +64,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 var memoryCacheOptions = new MemoryCacheOptions()
                 {
-                    //We treat one block to be of '100' size and tx to be '1'.
-                    SizeLimit = this.MaxCacheBlocksCount * 100,
-
+                    SizeLimit = this.MaxCacheBlocksCount,
                     CompactionPercentage = this.CompactionPercentage
                 };
 
                 this.cache = new MemoryCache(memoryCacheOptions);
             }
 
-            this.blockEntryOptions = new MemoryCacheEntryOptions() {AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 100 };
-            this.txEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 1 };
+            this.blockEntryOptions = new MemoryCacheEntryOptions() {AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60), Size = 1 };
 
             this.blockRepository = blockRepository;
             this.dateTimeProvider = dateTimeProvider;
@@ -134,49 +124,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)[CACHE_MISS]:'{0}'", block);
             return block;
-        }
-
-        public async Task<Block> GetBlockByTrxAsync(uint256 trxid)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-            Guard.NotNull(trxid, nameof(trxid));
-
-            uint256 blockid;
-            Block block;
-            if (this.cache.TryGetValue(trxid, out blockid))
-            {
-                this.PerformanceCounter.AddCacheHitCount(1);
-                block = await this.GetBlockAsync(blockid);
-                return block;
-            }
-
-            this.PerformanceCounter.AddCacheMissCount(1);
-
-            blockid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
-            if (blockid == null)
-            {
-                this.logger.LogTrace("(-):null");
-                return null;
-            }
-
-            this.cache.Set(trxid, blockid, this.txEntryOptions);
-            this.PerformanceCounter.AddCacheSetCount(1);
-            block = await this.GetBlockAsync(blockid);
-
-            this.logger.LogTrace("(-):'{0}'", block);
-            return block;
-        }
-
-        public async Task<Transaction> GetTrxAsync(uint256 trxid)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-            Guard.NotNull(trxid, nameof(trxid));
-
-            Block block = await this.GetBlockByTrxAsync(trxid);
-            Transaction trx = block?.Transactions.Find(t => t.GetHash() == trxid);
-
-            this.logger.LogTrace("(-):'{0}')", trx);
-            return trx;
         }
 
         public void AddToCache(Block block)
