@@ -27,7 +27,7 @@ namespace Stratis.SmartContracts.Trie
             public byte[] Hash { get; private set; }
             private byte[] rlp = null;
             private RLPLList parsedRlp = null;
-            private bool dirty = false;
+            public bool Dirty { get; private set; } = false;
 
             private object[] children;
             
@@ -47,14 +47,14 @@ namespace Stratis.SmartContracts.Trie
             public Node(Trie trie)
             {
                 this.children = new object[17];
-                this.dirty = true;
+                this.Dirty = true;
                 this.trie = trie;
             }
 
             // new KVNode with key and (value or node)
             public Node(TrieKey key, Object valueOrNode, Trie trie) : this(new Object[] { key, valueOrNode}, trie)
             {
-                this.dirty = true;
+                this.Dirty = true;
             }
 
             // new Node with hash or RLP
@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts.Trie
 
             private byte[] Encode(int depth, bool forceHash)
             {
-                if (!dirty)
+                if (!Dirty)
                 {
                     return Hash != null ? RLP.EncodeElement(Hash) : rlp;
                 }
@@ -138,7 +138,7 @@ namespace Stratis.SmartContracts.Trie
                     {
                         trie.DeleteHash(Hash);
                     }
-                    dirty = false;
+                    Dirty = false;
                     if (ret.Length < 32 && !forceHash)
                     {
                         rlp = ret;
@@ -212,7 +212,7 @@ namespace Stratis.SmartContracts.Trie
             {
                 Parse();
                 children[hex] = node == null ? NULL_NODE : node;
-                dirty = true;
+                Dirty = true;
                 return this;
             }
 
@@ -240,7 +240,7 @@ namespace Stratis.SmartContracts.Trie
             {
                 Parse();
                 children[16] = val == null ? NULL_NODE : val;
-                dirty = true;
+                Dirty = true;
                 return this;
             }
 
@@ -295,7 +295,7 @@ namespace Stratis.SmartContracts.Trie
             {
                 Parse();
                 children[1] = value;
-                dirty = true;
+                Dirty = true;
                 return this;
             }
 
@@ -309,7 +309,7 @@ namespace Stratis.SmartContracts.Trie
             {
                 Parse();
                 children[1] = valueOrNode;
-                dirty = true;
+                Dirty = true;
                 return this;
             }
                
@@ -323,7 +323,7 @@ namespace Stratis.SmartContracts.Trie
 
             public Node Invalidate()
             {
-                dirty = true;
+                Dirty = true;
                 return this;
             }
         }
@@ -599,7 +599,18 @@ namespace Stratis.SmartContracts.Trie
 
         public bool Flush()
         {
-            throw new NotImplementedException();
+            if (root != null && root.Dirty)
+            {
+                // persist all dirty nodes to underlying Source
+                Encode();
+                // release all Trie Node instances for GC
+                root = new Node(root.Hash, this);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public byte[] GetRootHash()

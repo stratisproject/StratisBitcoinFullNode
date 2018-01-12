@@ -6,16 +6,16 @@ namespace Stratis.SmartContracts.Trie
 {
     public class MemoryDictionarySource : ISource<byte[], byte[]>
     {
-        private Dictionary<byte[], byte[]> db;
+        public Dictionary<byte[], byte[]> Db { get; private set; }
 
         public MemoryDictionarySource()
         {
-            this.db = new Dictionary<byte[], byte[]>();
+            this.Db = new Dictionary<byte[], byte[]>();
         }
 
         public void Delete(byte[] key)
         {
-            this.db.Remove(key);
+            this.Db.Remove(key);
         }
 
         public bool Flush()
@@ -25,12 +25,12 @@ namespace Stratis.SmartContracts.Trie
 
         public byte[] Get(byte[] key)
         {
-            return this.db[key];
+            return this.Db[key];
         }
 
         public void Put(byte[] key, byte[] val)
         {
-            this.db[key] = val;
+            this.Db[key] = val;
         }
     }
 }

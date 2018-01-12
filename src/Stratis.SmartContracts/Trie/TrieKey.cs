@@ -82,6 +82,7 @@ namespace Stratis.SmartContracts.Trie
 
         public int GetHex(int idx)
         {
+            int adjustedIndex = (off + idx) >> 1;
             byte b = key[(off + idx) >> 1];
             return (((off + idx) & 1) == 0 ? (b >> 4) : b) & 0xF;
         }
@@ -161,7 +162,7 @@ namespace Stratis.SmartContracts.Trie
             // TODO can be optimized
             int prefixLen = 0;
             int thisLenght = this.Length;
-            int kLength = this.Length;
+            int kLength = k.Length;
             while (prefixLen < thisLenght && prefixLen < kLength && GetHex(prefixLen) == k.GetHex(prefixLen))
                 prefixLen++;
             byte[] prefixKey = new byte[(prefixLen + 1) >> 1];
@@ -174,6 +175,19 @@ namespace Stratis.SmartContracts.Trie
             return ret;
         }
 
+        public override bool Equals(object obj)
+        {
+            TrieKey k = (TrieKey)obj;
+            int len = this.Length;
+
+            if (len != k.Length) return false;
+            // TODO can be optimized
+            for (int i = 0; i < len; i++)
+            {
+                if (GetHex(i) != k.GetHex(i)) return false;
+            }
+            return this.IsTerminal == k.IsTerminal;
+        }
 
     }
 }
