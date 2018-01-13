@@ -116,5 +116,27 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Assert
             Assert.Throws<FormatException>(() => notificationController.SyncFrom(hashLocation));
         }
+
+        [Fact]
+        public void Given_SyncActionIsCalled_When_HeightNotOnChain_Then_ABadRequestErrorIsReturned()
+        {
+            // Set up
+            var chain = new Mock<ConcurrentChain>();
+            chain.Setup(c => c.GetBlock(15)).Returns((ChainedBlock)null);
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+
+            // Act
+            var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
+
+            // Assert
+            IActionResult result = notificationController.SyncFrom("15");
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+        }
     }
 }
