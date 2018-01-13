@@ -12,37 +12,39 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void CacheCanCompact()
         {
-            var cache = new MemoryCache<int, string>(100, 0.5);
-
-            for (int i = 0; i < 200; ++i)
+            using (var cache = new MemoryCache<int, string>(100, 0.5))
             {
-                cache.CreateEntry(i, i + "VALUE");
-            }
+                for (int i = 0; i < 200; ++i)
+                {
+                    cache.AddOrUpdate(i, i + "VALUE");
+                }
 
-            Assert.Equal(50, cache.Count);
+                Assert.Equal(50, cache.Count);
+            }
         }
 
         [Fact]
         public void CacheKeepsMostRecentItemsOnCompaction()
         {
-            var cache = new MemoryCache<int, string>(10, 0.5);
-
-            for (int i = 0; i < 10; ++i)
+            using (var cache = new MemoryCache<int, string>(10, 0.5))
             {
-                cache.CreateEntry(i, i + "VALUE");
-            }
-
-            for (int i = 0; i < 10; ++i)
-            {
-                bool success = cache.TryGetValue(i, out string value);
-
-                if (i < 5)
+                for (int i = 0; i < 10; ++i)
                 {
-                    Assert.False(success);
+                    cache.AddOrUpdate(i, i + "VALUE");
                 }
-                else
+
+                for (int i = 0; i < 10; ++i)
                 {
-                    Assert.True(success);
+                    bool success = cache.TryGetValue(i, out string value);
+
+                    if (i < 5)
+                    {
+                        Assert.False(success);
+                    }
+                    else
+                    {
+                        Assert.True(success);
+                    }
                 }
             }
         }
@@ -50,19 +52,20 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void CanManuallyRemoveItemsFromTheCache()
         {
-            var cache = new MemoryCache<int, string>(10, 0.5);
-
-            for (int i = 0; i < 5; ++i)
+            using (var cache = new MemoryCache<int, string>(10, 0.5))
             {
-                cache.CreateEntry(i, i + "VALUE");
-            }
+                for (int i = 0; i < 5; ++i)
+                {
+                    cache.AddOrUpdate(i, i + "VALUE");
+                }
 
-            for (int i = 0; i < 3; ++i)
-            {
-                cache.Remove(i);
-            }
+                for (int i = 0; i < 3; ++i)
+                {
+                    cache.Remove(i);
+                }
 
-            Assert.Equal(2, cache.Count);
+                Assert.Equal(2, cache.Count);
+            }
         }
     }
 }

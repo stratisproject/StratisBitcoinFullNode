@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Create or overwrite an entry in the cache.
         /// </summary>
-        public void CreateEntry(TKey key, TValue value)
+        public void AddOrUpdate(TKey key, TValue value)
         {
             if (this.cache.TryGetValue(key, out TValue priorEntry))
                 this.cache.TryUpdate(key, value, priorEntry);
