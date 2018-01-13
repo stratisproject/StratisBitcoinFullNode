@@ -130,8 +130,9 @@ namespace Stratis.SmartContracts.Trie
                 else if (prefix < OFFSET_SHORT_LIST)
                 {  // [0xb8, 0xbf]
                     int lenlen = prefix - OFFSET_LONG_ITEM; // length of length the encoded bytes
-                    byte[] copy = new byte[0];
+                    byte[] copy = new byte[lenlen];
                     Array.Copy(data, pos + 1, copy,0, lenlen);
+                    copy = PadBytesForInt(copy);
                     int lenbytes =  BitConverter.ToInt32(copy, 0); // length of encoded bytes
                     ret.Add(pos + 1 + lenlen, lenbytes, false);
                     pos += 1 + lenlen + lenbytes;
@@ -145,8 +146,9 @@ namespace Stratis.SmartContracts.Trie
                 else if (prefix <= 0xFF)
                 {  // [0xf8, 0xff]
                     int lenlen = prefix - OFFSET_LONG_LIST; // length of length the encoded list
-                    byte[] copy = new byte[0];
+                    byte[] copy = new byte[lenlen];
                     Array.Copy(data, pos + 1, copy, 0, lenlen);
+                    copy = PadBytesForInt(copy);
                     int lenlist = BitConverter.ToInt32(copy, 0); // length of encoded bytes
                     ret.Add(pos + 1 + lenlen, lenlist, true);
                     pos += 1 + lenlen + lenlist; // start at position of first element in list
@@ -157,6 +159,17 @@ namespace Stratis.SmartContracts.Trie
                 }
             }
             return ret;
+        }
+
+        private static byte[] PadBytesForInt(byte[] bytes)
+        {
+            if (bytes.Length < 4)
+            {
+                byte[] temp = new byte[4];
+                bytes.CopyTo(temp, 0);
+                bytes = temp;
+            }
+            return bytes;
         }
     }
 }

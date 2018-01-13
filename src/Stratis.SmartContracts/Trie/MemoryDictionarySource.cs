@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,7 +11,7 @@ namespace Stratis.SmartContracts.Trie
 
         public MemoryDictionarySource()
         {
-            this.Db = new Dictionary<byte[], byte[]>();
+            this.Db = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
         }
 
         public void Delete(byte[] key)
@@ -32,5 +33,40 @@ namespace Stratis.SmartContracts.Trie
         {
             this.Db[key] = val;
         }
+
+        public class ByteArrayComparer : IEqualityComparer<byte[]>
+        {
+            public bool Equals(byte[] left, byte[] right)
+            {
+                if (left == null || right == null)
+                {
+                    return left == right;
+                }
+                if (left.Length != right.Length)
+                {
+                    return false;
+                }
+                for (int i = 0; i < left.Length; i++)
+                {
+                    if (left[i] != right[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            public int GetHashCode(byte[] key)
+            {
+                if (key == null)
+                    throw new ArgumentNullException("key");
+                int sum = 0;
+                foreach (byte cur in key)
+                {
+                    sum += cur;
+                }
+                return sum;
+            }
+        }
+
     }
 }

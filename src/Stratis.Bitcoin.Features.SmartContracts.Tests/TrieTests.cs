@@ -96,5 +96,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(dogCatOnlyHash, trie.GetRootHash());
         }
 
+        [Fact]
+        public void TestTrieLoad()
+        {
+            var memDb = new MemoryDictionarySource();
+            var trie = new Trie(memDb);
+
+            trie.Put(dog, cat);
+            trie.Put(fish, bird);
+            trie.Put(dodecahedron, fish);
+            trie.Flush();
+            byte[] savedHash = trie.GetRootHash();
+
+            var trie2 = new Trie(memDb);
+            trie2.SetRoot(savedHash);
+
+            Assert.Equal(cat, trie2.Get(dog));
+            Assert.Equal(bird, trie2.Get(fish));
+            Assert.Equal(fish, trie2.Get(dodecahedron));
+        }
+
     }
 }

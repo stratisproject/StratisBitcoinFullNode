@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Trie
 
             private object[] children;
             
-            // purely used for reference to cache?
+            // purely used for reference to cache
             private Trie trie;
 
             public NodeType NodeType
