@@ -2,28 +2,28 @@
 using System.Collections.Generic;
 using System.Text;
 using DBreeze;
-using NBitcoin;
 using DBreeze.DataTypes;
+using NBitcoin;
 using Stratis.SmartContracts.Trie;
 
 namespace Stratis.SmartContracts.State
 {
-    public class ContractStorageDb : ISource<byte[], byte[]>
+    public class DBreezeByteStore : ISource<byte[], byte[]>
     {
         private DBreezeEngine engine;
-        private uint160 address;
+        private string table;
 
-        public ContractStorageDb(DBreezeEngine engine, uint160 address)
+        public DBreezeByteStore(DBreezeEngine engine, string table)
         {
             this.engine = engine;
-            this.address = address;
+            this.table = table;
         }
 
         public byte[] Get(byte[] key)
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.address.ToString(), key);
+                Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.table.ToString(), key);
 
                 if (row.Exists)
                     return row.Value;
@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                t.Insert(this.address.ToString(), key, val);
+                t.Insert(this.table.ToString(), key, val);
                 t.Commit();
             }
         }
@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                t.RemoveKey(this.address.ToString(), key);
+                t.RemoveKey(this.table.ToString(), key);
                 t.Commit();
             }
         }
@@ -55,34 +55,4 @@ namespace Stratis.SmartContracts.State
             throw new NotImplementedException("Can't flush - no underlying DB");
         }
     }
-
-    //public class CodeStorageDb
-    //{
-    //    // Saves code and hashes to dbreeze
-    //}
-
-    //public class AccountStateDb : ISource<byte, byte>
-    //{
-    //    //Saves account state to db
-
-    //    public void Delete(byte key)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public bool Flush()
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public byte Get(byte key)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public void Put(byte key, byte val)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-    //}
 }

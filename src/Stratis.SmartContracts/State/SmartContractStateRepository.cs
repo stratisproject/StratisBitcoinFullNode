@@ -10,15 +10,10 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts.State
 {
-    /// <summary>
-    /// Note: This should not be used as it is in a production environment.
-    /// It serializes to json which will take up too much room, and the calls
-    /// can be adjusted to only use a single transaction in cases where more than
-    /// one action is being made.
-    /// </summary>
     public class SmartContractStateRepository : ISmartContractStateRepository
     {
         private DBreezeEngine engine = null;
+        private AccountStateTrie accountStateTrie; 
 
         private const string AccountStateTable = "AccountState";
         private const string CodeTable = "Code";
@@ -27,25 +22,27 @@ namespace Stratis.SmartContracts.State
         public SmartContractStateRepository(string dbLocation = null)
         {
             this.engine = new DBreezeEngine(dbLocation ?? DbLocation);
-            // Feel like this is really bad. TODO: Is there any better way of doing this?
-            DBreeze.Utils.CustomSerializator.ByteArraySerializator = (object o) =>
-            {
-                if (o is uint160)
-                    return ((uint160)o).ToBytes();
-                if (o is Address)
-                    return ((Address)o).ToUint160().ToBytes();
+            this.accountStateTrie = new AccountStateTrie(new Trie.Trie(new DBreezeByteStore(this.engine, AccountStateTable)));
 
-                return NetJSON.NetJSON.Serialize(o).To_UTF8Bytes();
-            };
-            DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = (byte[] bt, Type t) =>
-            {
-                if (t == typeof(uint160))
-                    return new uint160(new uint160(bt));
-                if (t == typeof(Address))
-                    return new Address(new uint160(bt));
+            //// Feel like this is really bad. TODO: Is there any better way of doing this?
+            //DBreeze.Utils.CustomSerializator.ByteArraySerializator = (object o) =>
+            //{
+            //    if (o is uint160)
+            //        return ((uint160)o).ToBytes();
+            //    if (o is Address)
+            //        return ((Address)o).ToUint160().ToBytes();
 
-                return NetJSON.NetJSON.Deserialize(t, bt.UTF8_GetString());
-            };
+            //    return NetJSON.NetJSON.Serialize(o).To_UTF8Bytes();
+            //};
+            //DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = (byte[] bt, Type t) =>
+            //{
+            //    if (t == typeof(uint160))
+            //        return new uint160(new uint160(bt));
+            //    if (t == typeof(Address))
+            //        return new Address(new uint160(bt));
+
+            //    return NetJSON.NetJSON.Deserialize(t, bt.UTF8_GetString());
+            //};
         }
 
         /// <summary>
@@ -55,10 +52,10 @@ namespace Stratis.SmartContracts.State
         {
             using (var t = engine.GetTransaction())
             {
-                var allAccounts = t.SelectDictionary<byte[], AccountState>(AccountStateTable);
+                var allAccounts = t.SelectDictionary<byte[], byte[]>(AccountStateTable);
                 foreach(var key in allAccounts.Keys)
                 {
-                    t.RemoveAllKeys(key.ToHexFromByteArray().ToLower(), true);
+                    t.RemoveAllKeys(new uint160(key).ToString(), true);
                 }
                 t.RemoveAllKeys(AccountStateTable, true);
                 t.RemoveAllKeys(CodeTable, true);
@@ -69,9 +66,9 @@ namespace Stratis.SmartContracts.State
         {
             AccountState accountState = GetAccountState(address);
             accountState.CodeHash = HashHelper.Keccak256(code);
+            this.accountStateTrie.Put(address, accountState);
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
                 t.Insert<byte[], byte[]>(CodeTable, accountState.CodeHash, code);
                 t.Commit();
             }
@@ -94,11 +91,7 @@ namespace Stratis.SmartContracts.State
         public AccountState CreateAccount(uint160 address)
         {
             var accountState = new AccountState();
-            using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
-            {
-                t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
-                t.Commit();
-            }
+            this.accountStateTrie.Put(address, accountState);
             return accountState;
         }
 
@@ -113,71 +106,36 @@ namespace Stratis.SmartContracts.State
 
         private AccountState GetAccountState(uint160 address)
         {
-            using (var t = engine.GetTransaction())
-            {
-                var row = t.Select<byte[], AccountState>(AccountStateTable, address.ToBytes());
-
-                if (row.Exists)
-                    return row.Value;
-
-                return null;
-            }
+            return this.accountStateTrie.Get(address);
         }
 
         public void SetObject<T>(uint160 address, object key, T toStore)
         {
             AccountState accountState = GetAccountState(address);
-            Trie.Trie contractStorageTrie = new Trie.Trie(new ContractStorageDb(this.engine, address));
+            Trie.Trie contractStorageTrie = new Trie.Trie(new DBreezeByteStore(this.engine, address.ToString()));
             contractStorageTrie.SetRoot(accountState.StateRoot);
             contractStorageTrie.Put((byte[])key, (byte[]) (object) toStore);
             contractStorageTrie.Flush(); // do later on in future
             accountState.StateRoot = contractStorageTrie.GetRootHash();
-            using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
-            {
-                t.Insert<byte[], AccountState>(AccountStateTable, address.ToBytes(), accountState);
-                t.Commit();
-            }
+            this.accountStateTrie.Put(address, accountState);
         }
 
         public T GetObject<T>(uint160 address, object key)
         {
             AccountState accountState = GetAccountState(address);
-            Trie.Trie contractStorageTrie = new Trie.Trie(new ContractStorageDb(this.engine, address));
+            Trie.Trie contractStorageTrie = new Trie.Trie(new DBreezeByteStore(this.engine, address.ToString()));
             contractStorageTrie.SetRoot(accountState.StateRoot);
             return (T) (object) contractStorageTrie.Get((byte[])key);
-            //using (var t = engine.GetTransaction())
-            //{
-            //    //var 
-
-            //    //var row = t.Select<byte[], T>(address.ToString(), key.ToBytes());
-
-            //    //if (row.Exists)
-            //    //    return row.Value;
-
-            //    return default(T);
-            //}
         }
 
-        //public void SetObject<T>(uint160 address, string key, T toStore)
-        //{
-        //    using (var t = _engine.GetTransaction())
-        //    {
-        //        t.Insert<byte[], T>(address.ToString(), Encoding.UTF8.GetBytes(key), toStore);
-        //        t.Commit();
-        //    }
-        //}
+        public void Rollback(uint256 hash)
+        {
+            throw new NotImplementedException();
+        }
 
-        //public T GetObject<T>(uint160 address, string key)
-        //{
-        //    using (var t = _engine.GetTransaction())
-        //    {
-        //        var row = t.Select<byte[], T>(address.ToString(), Encoding.UTF8.GetBytes(key));
-
-        //        if (row.Exists)
-        //            return row.Value;
-
-        //        return default(T);
-        //    }
-        //}
+        public void Commit()
+        {
+            this.accountStateTrie.Flush();
+        }
     }
 }

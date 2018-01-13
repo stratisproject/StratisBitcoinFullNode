@@ -191,10 +191,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
-        // TODO: These should only be updating a kind of temporary store
-
-        // Real database should only be updated on block being accepted.
-
         private void ExecuteCreateContractTransaction(RuleContext context, SCTransaction transaction)
         {
             uint160 contractAddress = 0; // TODO: GET ACTUAL NUM

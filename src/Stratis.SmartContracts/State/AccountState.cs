@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Linq;
+using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.State
 {
     public class AccountState
     {
-        // public ulong Nonce { get; set; }
-        // public ulong Balance { get; set; }
-        
         /// <summary>
         /// 32 byte hash of the code deployed at this contract.
         /// Can be used to lookup the actual code in the code table
@@ -17,5 +16,25 @@ namespace Stratis.SmartContracts.State
         /// 32 byte merkle root of this contract's Patricia trie for storage.
         /// </summary>
         public byte[] StateRoot { get; set; }
+
+        public AccountState(){}
+
+        #region Serialization
+
+        public AccountState(byte[] bytes) : this()
+        {
+            RLPCollection list = RLP.Decode(bytes);
+            RLPCollection innerList = (RLPCollection)list[0];
+            this.CodeHash = innerList[0].RLPData;
+            this.StateRoot = innerList[1].RLPData;
+        }
+
+        public byte[] ToBytes()
+        {
+
+            return RLP.EncodeList(RLP.EncodeElement(this.CodeHash ?? new byte[0]), RLP.EncodeElement(this.StateRoot ?? new byte[0]));
+        }
+
+        #endregion
     }
 }
