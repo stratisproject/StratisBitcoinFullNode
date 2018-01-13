@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 if (!this.peerAddressManager.Peers.Any() || (this.ConnectedPeers.Count >= this.MaxOutboundConnections))
                 {
-                    await Task.Delay(2000, this.nodeLifetime.ApplicationStopping);
+                    await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                     return;
                 }
 
