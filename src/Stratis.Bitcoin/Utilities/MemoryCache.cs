@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.Utilities
 {
     public class MemoryCache<TKey, TValue>
     {
+        /// <summary>Dictionary that contains cached items.</summary>
         private readonly ConcurrentDictionary<TKey, TValue> cache;
 
         /// <summary>Keys sorted by time they when they were accessed last time with most recent ones in the end.</summary>
@@ -48,9 +49,9 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        /// <summary>
-        /// Create or overwrite an entry in the cache.
-        /// </summary>
+        /// <summary>Create or overwrite an entry in the cache.</summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value to add to the cache.</param>
         public void AddOrUpdate(TKey key, TValue value)
         {
             if (this.cache.TryGetValue(key, out TValue priorEntry))
@@ -77,9 +78,8 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        /// <summary>
-        /// Removes the object associated with the given key.
-        /// </summary>
+        /// <summary>Removes the object associated with the given key.</summary>
+        /// <param name="key">Item's key that will be removed from the cache.</param>
         public void Remove(TKey key)
         {
             if (this.cache.TryRemove(key, out TValue unused))
@@ -92,6 +92,9 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>Gets the item associated with this key if present.</summary>
+        /// <param name="key">Item's key.</param>
+        /// <param name="value">Item assosiated with specified <paramref name="key"/>.</param>
+        /// <returns><c>true</c> if cache contains the item; <c>false</c> otherwise.</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
             bool success = this.cache.TryGetValue(key, out value);
