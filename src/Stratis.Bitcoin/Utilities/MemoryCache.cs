@@ -5,12 +5,15 @@ using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
 {
+    /// <summary>
+    /// Memory cache that implements the Least Recently Used (LRU) standard.
+    /// </summary>
     public class MemoryCache<TKey, TValue>
     {
         /// <summary>Dictionary that contains cached items.</summary>
         private readonly ConcurrentDictionary<TKey, TValue> cache;
 
-        /// <summary>Keys sorted by time they when they were accessed last time with most recent ones in the end.</summary>
+        /// <summary>Keys sorted by their last access time with most recent ones at the end.</summary>
         private readonly LinkedList<TKey> keys;
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
