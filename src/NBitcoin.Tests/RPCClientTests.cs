@@ -167,7 +167,7 @@ namespace NBitcoin.Tests
                 builder.StartAll();
                 Key key = new Key();
                 var passphrase = "password1234";
-                rpc.SendCommand("encryptwallet", passphrase);
+                rpc.SendCommand(RPCOperations.encryptwallet, passphrase);
                 builder.Nodes[0].Restart();
                 rpc.ImportAddress(key.PubKey.GetAddress(Network.RegTest), TestAccount, false);
                 BitcoinAddress address = rpc.GetAccountAddress(TestAccount);

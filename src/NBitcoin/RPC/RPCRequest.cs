@@ -8,6 +8,11 @@ namespace NBitcoin.RPC
 {
     public class RPCRequest
     {
+        public RPCRequest(RPCOperations method, object[] parameters)
+            : this(method.ToString(), parameters)
+        {
+
+        }
         public RPCRequest(string method, object[] parameters)
             : this()
         {
