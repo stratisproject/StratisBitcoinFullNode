@@ -27,7 +27,6 @@
         getblocktemplate,
         submitblock,
         estimatefee,
-        estimatepriority,
 
         getnewaddress,
         getaccountaddress,
