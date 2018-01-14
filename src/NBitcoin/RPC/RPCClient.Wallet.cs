@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
@@ -540,14 +539,7 @@ namespace NBitcoin.RPC
 
         private void LockUnspentCore(bool unlock, OutPoint[] outpoints)
         {
-            try
-            {
-                LockUnspentCoreAsync(unlock, outpoints).Wait();
-            }
-            catch(AggregateException ex)
-            {
-                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-            }
+            LockUnspentCoreAsync(unlock, outpoints).GetAwaiter().GetResult();
         }
 
         private async Task LockUnspentCoreAsync(bool unlock, OutPoint[] outpoints)

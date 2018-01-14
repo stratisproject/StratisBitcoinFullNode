@@ -408,15 +408,7 @@ namespace NBitcoin.RPC
 
         public RPCResponse SendCommand(RPCRequest request, bool throwIfRPCError = true)
         {
-            try
-            {
-                return SendCommandAsync(request, throwIfRPCError).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; // Can't happen.
-            }
+            return SendCommandAsync(request, throwIfRPCError).GetAwaiter().GetResult();
         }
 
         /// <summary>Send all commands in one batch.</summary>
@@ -748,15 +740,7 @@ namespace NBitcoin.RPC
         {
             PeerInfo[] peers = null;
 
-            try
-            {
-                peers = GetPeersInfoAsync().Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-            }
-
+            peers = GetPeersInfoAsync().GetAwaiter().GetResult();
             return peers;
         }
 
@@ -900,14 +884,7 @@ namespace NBitcoin.RPC
         {
             AddedNodeInfo[] addedNodesInfo = null;
 
-            try
-            {
-                addedNodesInfo = GetAddedNodeInfoAsync(detailed).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-            }
+            addedNodesInfo = GetAddedNodeInfoAsync(detailed).GetAwaiter().GetResult();
 
             return addedNodesInfo;
         }
@@ -916,14 +893,7 @@ namespace NBitcoin.RPC
         {
             AddedNodeInfo addedNodeInfo = null;
 
-            try
-            {
-                addedNodeInfo = GetAddedNodeInfoAsync(detailed, nodeEndPoint).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-            }
+            addedNodeInfo = GetAddedNodeInfoAsync(detailed, nodeEndPoint).GetAwaiter().GetResult();
 
             return addedNodeInfo;
         }
@@ -1001,28 +971,12 @@ namespace NBitcoin.RPC
         /// <returns></returns>
         public Block GetBlock(uint256 blockId)
         {
-            try
-            {
-                return GetBlockAsync(blockId).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                throw;
-            }
+            return GetBlockAsync(blockId).GetAwaiter().GetResult();
         }
 
         public Block GetBlock(int height)
         {
-            try
-            {
-                return GetBlockAsync(height).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                throw;
-            }
+            return GetBlockAsync(height).GetAwaiter().GetResult();
         }
 
         public async Task<Block> GetBlockAsync(int height)
@@ -1184,15 +1138,7 @@ namespace NBitcoin.RPC
         /// <returns></returns>
         public Transaction GetRawTransaction(uint256 txid, bool throwIfNotFound = true)
         {
-            try
-            {
-                return GetRawTransactionAsync(txid, throwIfNotFound).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; //Can't happen
-            }
+            return GetRawTransactionAsync(txid, throwIfNotFound).GetAwaiter().GetResult();
         }
 
         public async Task<Transaction> GetRawTransactionAsync(uint256 txid, bool throwIfNotFound = true)
@@ -1325,15 +1271,7 @@ namespace NBitcoin.RPC
         {
             decimal priority = 0;
 
-            try
-            {
-                priority = EstimatePriorityAsync(nblock).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-            }
-
+            priority = EstimatePriorityAsync(nblock).GetAwaiter().GetResult();
             return priority;
         }
 
@@ -1359,15 +1297,7 @@ namespace NBitcoin.RPC
         {
             uint256 txid = null;
 
-            try
-            {
-                txid = SendToAddressAsync(address, amount, commentTx, commentDest).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-            }
-
+            txid = SendToAddressAsync(address, amount, commentTx, commentDest).GetAwaiter().GetResult();
             return txid;
         }
 

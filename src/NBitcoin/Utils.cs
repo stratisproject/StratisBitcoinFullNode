@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,15 +25,7 @@ namespace NBitcoin
     {
         public static Block GetBlock(this INBitcoinBlockRepository repository, uint256 blockId)
         {
-            try
-            {
-                return repository.GetBlockAsync(blockId).Result;
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; //Can't happen
-            }
+            return repository.GetBlockAsync(blockId).GetAwaiter().GetResult();
         }
 
 
