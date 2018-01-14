@@ -8,9 +8,9 @@ namespace Stratis.SmartContracts.Trie
 {
     public class AccountStateTrie : ISource<uint160, AccountState>
     {
-        private Trie trie;
+        private PatriciaTrie trie;
 
-        public AccountStateTrie(Trie trie)
+        public AccountStateTrie(PatriciaTrie trie)
         {
             this.trie = trie;
         }
@@ -35,6 +35,11 @@ namespace Stratis.SmartContracts.Trie
         {
             this.trie.Flush();
             return true;
+        }
+
+        public void SetRoot(byte[] root)
+        {
+            this.trie.SetRoot(root);
         }
     }
 }

@@ -18,8 +18,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestTrieDeterminism()
         {
             // No matter the order that things are put in, if the contents are the same then root hash is the same
-            var trie1 = new Trie();
-            var trie2 = new Trie();
+            var trie1 = new PatriciaTrie();
+            var trie2 = new PatriciaTrie();
 
             trie1.Put(dog, cat);
             trie1.Put(fish, bird);
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestTrieGetPut()
         {
             // We can retrieve the values we put in
-            var trie = new Trie();
+            var trie = new PatriciaTrie();
 
             trie.Put(dog, cat);
             trie.Put(fish, bird);
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestTrieFlush()
         {
             var memDb = new MemoryDictionarySource();
-            var trie = new Trie(memDb);
+            var trie = new PatriciaTrie(memDb);
 
             trie.Put(dog, cat);
             trie.Put(fish, bird);
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestDelete()
         {
             var memDb = new MemoryDictionarySource();
-            var trie = new Trie(memDb);
+            var trie = new PatriciaTrie(memDb);
 
             trie.Put(dog, cat);
 
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestTrieLoad()
         {
             var memDb = new MemoryDictionarySource();
-            var trie = new Trie(memDb);
+            var trie = new PatriciaTrie(memDb);
 
             trie.Put(dog, cat);
             trie.Put(fish, bird);
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             trie.Flush();
             byte[] savedHash = trie.GetRootHash();
 
-            var trie2 = new Trie(memDb);
+            var trie2 = new PatriciaTrie(memDb);
             trie2.SetRoot(savedHash);
 
             Assert.Equal(cat, trie2.Get(dog));

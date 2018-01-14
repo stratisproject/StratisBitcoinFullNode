@@ -10,10 +10,18 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts.State
 {
+    // TODOs:
+
+    // -Handle object serialization. At the moment trie only retrieves bytes
+
+    // -Experiment with using only one db for everything - if it's all hashed before it goes in the db
+    //  then theoretically we only need 1 KV store
+
     public class SmartContractStateRepository : ISmartContractStateRepository
     {
         private DBreezeEngine engine = null;
-        private AccountStateTrie accountStateTrie; 
+        private AccountStateTrie accountStateTrie;
+        private Dictionary<uint160, PatriciaTrie> contractStorageTries;
 
         private const string AccountStateTable = "AccountState";
         private const string CodeTable = "Code";
@@ -22,27 +30,8 @@ namespace Stratis.SmartContracts.State
         public SmartContractStateRepository(string dbLocation = null)
         {
             this.engine = new DBreezeEngine(dbLocation ?? DbLocation);
-            this.accountStateTrie = new AccountStateTrie(new Trie.Trie(new DBreezeByteStore(this.engine, AccountStateTable)));
-
-            //// Feel like this is really bad. TODO: Is there any better way of doing this?
-            //DBreeze.Utils.CustomSerializator.ByteArraySerializator = (object o) =>
-            //{
-            //    if (o is uint160)
-            //        return ((uint160)o).ToBytes();
-            //    if (o is Address)
-            //        return ((Address)o).ToUint160().ToBytes();
-
-            //    return NetJSON.NetJSON.Serialize(o).To_UTF8Bytes();
-            //};
-            //DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = (byte[] bt, Type t) =>
-            //{
-            //    if (t == typeof(uint160))
-            //        return new uint160(new uint160(bt));
-            //    if (t == typeof(Address))
-            //        return new Address(new uint160(bt));
-
-            //    return NetJSON.NetJSON.Deserialize(t, bt.UTF8_GetString());
-            //};
+            this.accountStateTrie = new AccountStateTrie(new PatriciaTrie(new DBreezeByteStore(this.engine, AccountStateTable)));
+            this.contractStorageTries = new Dictionary<uint160, PatriciaTrie>();
         }
 
         /// <summary>
@@ -111,31 +100,49 @@ namespace Stratis.SmartContracts.State
 
         public void SetObject<T>(uint160 address, object key, T toStore)
         {
+            // TODO: Can be optimised. We're getting account state twice.
+            PatriciaTrie trie = GetContractStorageTrie(address);
+            trie.Put((byte[])key, (byte[])(object)toStore);
             AccountState accountState = GetAccountState(address);
-            Trie.Trie contractStorageTrie = new Trie.Trie(new DBreezeByteStore(this.engine, address.ToString()));
-            contractStorageTrie.SetRoot(accountState.StateRoot);
-            contractStorageTrie.Put((byte[])key, (byte[]) (object) toStore);
-            contractStorageTrie.Flush(); // do later on in future
-            accountState.StateRoot = contractStorageTrie.GetRootHash();
+            accountState.StateRoot = trie.GetRootHash();
             this.accountStateTrie.Put(address, accountState);
         }
 
         public T GetObject<T>(uint160 address, object key)
         {
-            AccountState accountState = GetAccountState(address);
-            Trie.Trie contractStorageTrie = new Trie.Trie(new DBreezeByteStore(this.engine, address.ToString()));
-            contractStorageTrie.SetRoot(accountState.StateRoot);
-            return (T) (object) contractStorageTrie.Get((byte[])key);
+            return (T)(object) GetContractStorageTrie(address).Get((byte[])key);
         }
 
-        public void Rollback(uint256 hash)
+        private PatriciaTrie GetContractStorageTrie(uint160 address)
         {
-            throw new NotImplementedException();
+            if (this.contractStorageTries.ContainsKey(address))
+                return this.contractStorageTries[address];
+
+            AccountState accountState = GetAccountState(address);
+            PatriciaTrie contractStorageTrie = new PatriciaTrie(new DBreezeByteStore(this.engine, address.ToString()), accountState.StateRoot);
+            this.contractStorageTries.Add(address, contractStorageTrie);
+            return contractStorageTrie;
         }
 
         public void Commit()
         {
+            foreach(PatriciaTrie trie in this.contractStorageTries.Values)
+            {
+                trie.Flush();
+            }
             this.accountStateTrie.Flush();
+            this.contractStorageTries = new Dictionary<uint160, PatriciaTrie>();
+        }
+
+        public void Rollback()
+        {
+            // Do nothing - let garbage collection take care of it.
+        }
+
+        public void LoadSnapshot(byte[] root)
+        {
+            this.accountStateTrie.SetRoot(root);
+            throw new NotImplementedException();
         }
     }
 }

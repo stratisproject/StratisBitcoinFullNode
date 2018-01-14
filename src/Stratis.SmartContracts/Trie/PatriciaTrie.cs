@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Trie
 {
     // TODO: All of this is taken from EthereumJ. Should clean up a ton before pushing out.
     // Also note that heaps of Asserts were taken out
-    public class Trie : ITrie<byte[]>
+    public class PatriciaTrie : ITrie<byte[]>
     {
 
         public enum NodeType
@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.Trie
             private object[] children;
             
             // purely used for reference to cache
-            private Trie trie;
+            private PatriciaTrie trie;
 
             public NodeType NodeType
             {
@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.Trie
             }
 
             // new empty BranchNode
-            public Node(Trie trie)
+            public Node(PatriciaTrie trie)
             {
                 this.children = new object[17];
                 this.Dirty = true;
@@ -52,13 +52,13 @@ namespace Stratis.SmartContracts.Trie
             }
 
             // new KVNode with key and (value or node)
-            public Node(TrieKey key, Object valueOrNode, Trie trie) : this(new Object[] { key, valueOrNode}, trie)
+            public Node(TrieKey key, Object valueOrNode, PatriciaTrie trie) : this(new Object[] { key, valueOrNode}, trie)
             {
                 this.Dirty = true;
             }
 
             // new Node with hash or RLP
-            public Node(byte[] hashOrRlp, Trie trie)
+            public Node(byte[] hashOrRlp, PatriciaTrie trie)
             {
                 if (hashOrRlp.Length == 32)
                 {
@@ -71,14 +71,14 @@ namespace Stratis.SmartContracts.Trie
                 this.trie = trie;
             }
 
-            public Node(RLPLList parsedRlp, Trie trie)
+            public Node(RLPLList parsedRlp, PatriciaTrie trie)
             {
                 this.parsedRlp = parsedRlp;
                 this.rlp = parsedRlp.GetEncoded();
                 this.trie = trie;
             }
 
-            private Node(object[] children, Trie trie)
+            private Node(object[] children, PatriciaTrie trie)
             {
                 this.children = children;
                 this.trie = trie;
@@ -331,13 +331,13 @@ namespace Stratis.SmartContracts.Trie
         private ISource<byte[], byte[]> cache;
         private Node root;
 
-        public Trie() : this((byte[]) null) { }
+        public PatriciaTrie() : this((byte[]) null) { }
 
-        public Trie(byte[] root) : this(new MemoryDictionarySource(), root) { }
+        public PatriciaTrie(byte[] root) : this(new MemoryDictionarySource(), root) { }
 
-        public Trie(ISource<byte[],byte[]> cache) : this(cache, null) { }
+        public PatriciaTrie(ISource<byte[],byte[]> cache) : this(cache, null) { }
         
-        public Trie(ISource<byte[],byte[]> cache, byte[] root)
+        public PatriciaTrie(ISource<byte[],byte[]> cache, byte[] root)
         {
             this.cache = cache;
             SetRoot(root);
