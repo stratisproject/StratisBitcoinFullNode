@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    public class MemoryCache<TKey, TValue> : IDisposable
+    public class MemoryCache<TKey, TValue>
     {
         private readonly ConcurrentDictionary<TKey, TValue> cache;
 
@@ -127,12 +127,6 @@ namespace Stratis.Bitcoin.Utilities
             {
                 this.cache.TryRemove(key, out TValue unused);
             }
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
         }
     }
 }

@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public interface IBlockStoreCache : IDisposable
+    public interface IBlockStoreCache
     {
         Task<Block> GetBlockAsync(uint256 blockid);
 
@@ -105,12 +105,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public bool Exist(uint256 blockid)
         {
             return this.cache.TryGetValue(blockid, out Block unused);
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.cache.Dispose();
         }
     }
 }
