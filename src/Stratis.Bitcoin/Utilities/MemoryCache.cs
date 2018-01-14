@@ -37,6 +37,11 @@ namespace Stratis.Bitcoin.Utilities
             this.mutex = new object();
         }
 
+        public MemoryCache(int maxItemsCount, IEqualityComparer<TKey> comparer) : this (maxItemsCount)
+        {
+            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>>(this.maxItemsCount, comparer);
+        }
+
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
         public int Count
         {
