@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public void CacheKeepsMostRecentItemsOnCompaction()
+        public void CacheKeepsMostRecentlyAddedItemsOnCompactionIfNoneWereUsed()
         {
             using (var cache = new MemoryCache<int, string>(10, 0.5))
             {
@@ -65,6 +65,39 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 }
 
                 Assert.Equal(2, cache.Count);
+            }
+        }
+
+        [Fact]
+        public void CacheKeepsMostRecentlyUsedItems()
+        {
+            using (var cache = new MemoryCache<int, string>(11, 0.5))
+            {
+                // Add 10 items.
+                for (int i = 0; i < 10; ++i)
+                {
+                    cache.AddOrUpdate(i, i + "VALUE");
+                }
+
+                // Use first 3 items.
+                for (int i = 0; i < 3; ++i)
+                {
+                    cache.TryGetValue(i, out string unused);
+                }
+
+                // Add 11th item to trigger compact.
+                cache.AddOrUpdate(10, 10 + "VALUE");
+
+                // Cache should have 0,1,2,8,9,10
+                for (int i = 0; i < 11; ++i)
+                {
+                    bool success = cache.TryGetValue(i, out string unused);
+
+                    if (i < 3 || i > 7)
+                        Assert.True(success);
+                    else
+                        Assert.False(success);
+                }
             }
         }
     }

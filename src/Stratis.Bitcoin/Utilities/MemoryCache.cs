@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
@@ -8,11 +9,17 @@ namespace Stratis.Bitcoin.Utilities
     {
         private readonly ConcurrentDictionary<TKey, TValue> cache;
 
+        /// <summary>Keys sorted by time they when they were accessed last time with most recent ones in the end.</summary>
+        private readonly LinkedList<TKey> keys;
+
         /// <summary>Maximum items count that can be stored in the cache.</summary>
         private readonly int sizeLimit;
         /// <summary>Amount to compact the cache by when the maximum size is exceeded.</summary>
         private readonly double compactionPercentage;
 
+        /// <summary>Lock to protect access to <see cref="keys"/>.</summary>
+        private readonly object mutex;
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCache{TKey, TValue}"/> class.
         /// </summary>
@@ -24,12 +31,20 @@ namespace Stratis.Bitcoin.Utilities
             this.compactionPercentage = compactionPercentage;
 
             this.cache = new ConcurrentDictionary<TKey, TValue>();
+            this.keys = new LinkedList<TKey>();
+            this.mutex = new object();
         }
 
         /// <summary>Gets the count of the current entries for diagnostic purposes.</summary>
         public int Count
         {
-            get { return this.cache.Count; }
+            get
+            {
+                lock (this.mutex)
+                {
+                    return this.keys.Count;
+                }
+            }
         }
 
         /// <summary>
@@ -38,10 +53,23 @@ namespace Stratis.Bitcoin.Utilities
         public void AddOrUpdate(TKey key, TValue value)
         {
             if (this.cache.TryGetValue(key, out TValue priorEntry))
+            {
                 this.cache.TryUpdate(key, value, priorEntry);
+
+                lock (this.mutex)
+                {
+                    this.keys.Remove(key);
+                    this.keys.AddLast(key);
+                }
+            }
             else
             {
                 this.cache.TryAdd(key, value);
+
+                lock (this.mutex)
+                {
+                    this.keys.AddLast(key);
+                }
 
                 if (this.Count >= this.sizeLimit)
                     this.Compact();
@@ -53,13 +81,30 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         public void Remove(TKey key)
         {
-            this.cache.TryRemove(key, out TValue unused);
+            if (this.cache.TryRemove(key, out TValue unused))
+            {
+                lock (this.mutex)
+                {
+                    this.keys.Remove(key);
+                }
+            }
         }
 
         /// <summary>Gets the item associated with this key if present.</summary>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            return this.cache.TryGetValue(key, out value);
+            bool success = this.cache.TryGetValue(key, out value);
+
+            if (success)
+            {
+                lock (this.mutex)
+                {
+                    this.keys.Remove(key);
+                    this.keys.AddLast(key);
+                }
+            }
+
+            return success;
         }
 
         /// <summary>Remove at least the given percentage (0.10 for 10%) of the total entries.</summary>
@@ -67,9 +112,19 @@ namespace Stratis.Bitcoin.Utilities
         {
             int compactItemsCount = (int)(this.sizeLimit * (1.0 - this.compactionPercentage));
 
-            foreach (TKey key in this.cache.Keys.Take(compactItemsCount))
+            List<TKey> keysToRemove;
+            lock (this.mutex)
             {
-                this.Remove(key);
+                keysToRemove = this.keys.Take(compactItemsCount).ToList();
+                foreach (TKey key in keysToRemove)
+                {
+                    this.keys.Remove(key);
+                }
+            }
+
+            foreach (TKey key in keysToRemove)
+            {
+                this.cache.TryRemove(key, out TValue unused);
             }
         }
 
