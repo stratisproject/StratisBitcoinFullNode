@@ -21,25 +21,21 @@ namespace Stratis.Bitcoin.Utilities
         
         /// <summary>Lock to protect access to <see cref="keys"/> and <see cref="cache"/>.</summary>
         private readonly object mutex;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCache{TKey, TValue}"/> class.
         /// </summary>
         /// <param name="maxItemsCount">Maximum items count that can be stored in the cache.</param>
-        public MemoryCache(int maxItemsCount)
+        /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> implementation to use when comparing keys, or <c>null</c> to use the default comparer for the type of the key.</param>
+        public MemoryCache(int maxItemsCount, IEqualityComparer<TKey> comparer = null)
         {
             Guard.Assert(maxItemsCount > 0);
 
             this.maxItemsCount = maxItemsCount;
 
-            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>>(this.maxItemsCount);
+            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>>(this.maxItemsCount, comparer);
             this.keys = new LinkedList<CacheItem<TKey, TValue>>();
             this.mutex = new object();
-        }
-
-        public MemoryCache(int maxItemsCount, IEqualityComparer<TKey> comparer) : this (maxItemsCount)
-        {
-            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>>(this.maxItemsCount, comparer);
         }
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
