@@ -46,6 +46,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
                         Assert.True(success);
                     }
                 }
+
+                Assert.Equal(5, cache.Count);
             }
         }
 

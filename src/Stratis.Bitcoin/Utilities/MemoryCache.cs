@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
         private readonly int sizeLimit;
+
         /// <summary>Amount to compact the cache by when the maximum size is exceeded.</summary>
         private readonly double compactionPercentage;
 
