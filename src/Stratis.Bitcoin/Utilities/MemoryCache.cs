@@ -6,14 +6,33 @@ using System.Linq;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Memory cache that implements the Least Recently Used (LRU) standard.
+    /// Memory cache that implements the Least Recently Used (LRU) policy.
     /// </summary>
     public class MemoryCache<TKey, TValue>
     {
+        /// <summary>Cache item for the inner usage of the <see cref="MemoryCache{TKey,TValue}"/> class.</summary>
+        private class CacheItem<TKey, TValue>
+        {
+            public TKey Key { get; }
+
+            public TValue Value { get; set; }
+
+            /// <summary>Initializes a new instance of the <see cref="CacheItem{TKey, TValue}"/> class.</summary>
+            /// <param name="key">The key.</param>
+            /// <param name="value">The value.</param>
+            public CacheItem(TKey key, TValue value)
+            {
+                this.Key = key;
+                this.Value = value;
+            }
+        }
+
         /// <summary>Dictionary that contains cached items.</summary>
+        /// <remarks>Should be accessed inside a lock using <see cref="mutex"/>.</remarks>
         private readonly Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>> cache;
 
         /// <summary>Keys sorted by their last access time with most recent ones at the end.</summary>
+        /// <remarks>Should be accessed inside a lock using <see cref="mutex"/>.</remarks>
         private readonly LinkedList<CacheItem<TKey, TValue>> keys;
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
@@ -50,7 +69,7 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        /// <summary>Create or overwrite an entry in the cache.</summary>
+        /// <summary>Create or overwrite an item in the cache.</summary>
         /// <param name="key">The key.</param>
         /// <param name="value">The value to add to the cache.</param>
         public void AddOrUpdate(TKey key, TValue value)
@@ -68,8 +87,9 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     if (this.keys.Count == this.maxItemsCount)
                     {
-                        // Remove 1 item.
-                        this.cache.Remove(this.keys.First.Value.Key);
+                        // Remove the item that was not used for the longest time.
+                        LinkedListNode<CacheItem<TKey, TValue>> lastNode = this.keys.First;
+                        this.cache.Remove(lastNode.Value.Key);
                         this.keys.RemoveFirst();
                     }
 
@@ -82,7 +102,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>Removes the object associated with the given key.</summary>
-        /// <param name="key">Item's key that will be removed from the cache.</param>
+        /// <param name="key">Key of that item that will be removed from the cache.</param>
         public void Remove(TKey key)
         {
             lock (this.mutex)
@@ -95,10 +115,10 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        /// <summary>Gets the item associated with this key if present.</summary>
+        /// <summary>Gets an item associated with specific key if present.</summary>
         /// <param name="key">Item's key.</param>
-        /// <param name="value">Item assosiated with specified <paramref name="key"/>.</param>
-        /// <returns><c>true</c> if cache contains the item; <c>false</c> otherwise.</returns>
+        /// <param name="value">Item associated with specified <paramref name="key"/>.</param>
+        /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
             lock (this.mutex)
@@ -116,19 +136,6 @@ namespace Stratis.Bitcoin.Utilities
 
             value = default(TValue);
             return false;
-        }
-        
-        private class CacheItem<TKey, TValue>
-        {
-            public TKey Key { get; }
-
-            public TValue Value { get; set; }
-
-            public CacheItem(TKey key, TValue value)
-            {
-                this.Key = key;
-                this.Value = value;
-            }
         }
     }
 }
