@@ -10,49 +10,42 @@ namespace Stratis.Bitcoin.Tests.Utilities
     public class MemoryCacheTest
     {
         [Fact]
-        public void CacheCanCompact()
+        public void CacheDoesNotExceedMaxItemsLimit()
         {
-            var cache = new MemoryCache<int, string>(100, 0.5);
+            var cache = new MemoryCache<int, string>(100);
             
             for (int i = 0; i < 200; ++i)
             {
                 cache.AddOrUpdate(i, i + "VALUE");
             }
 
-            Assert.Equal(50, cache.Count);
+            Assert.Equal(100, cache.Count);
         }
 
         [Fact]
-        public void CacheKeepsMostRecentlyAddedItemsOnCompactionIfNoneWereUsed()
+        public void CacheKeepsMostRecentlyAddedItemsNoneWereUsed()
         {
-            var cache = new MemoryCache<int, string>(10, 0.5);
+            var cache = new MemoryCache<int, string>(10);
             
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 100; ++i)
             {
                 cache.AddOrUpdate(i, i + "VALUE");
             }
 
-            for (int i = 0; i < 10; ++i)
+            for (int i = 90; i < 100; ++i)
             {
                 bool success = cache.TryGetValue(i, out string value);
 
-                if (i < 5)
-                {
-                    Assert.False(success);
-                }
-                else
-                {
-                    Assert.True(success);
-                }
+                Assert.True(success);
             }
 
-            Assert.Equal(5, cache.Count);
+            Assert.Equal(10, cache.Count);
         }
 
         [Fact]
         public void CanManuallyRemoveItemsFromTheCache()
         {
-            var cache = new MemoryCache<int, string>(10, 0.5);
+            var cache = new MemoryCache<int, string>(10);
             
             for (int i = 0; i < 5; ++i)
             {
@@ -70,25 +63,24 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void CacheKeepsMostRecentlyUsedItems()
         {
-            var cache = new MemoryCache<int, string>(11, 0.5);
+            var cache = new MemoryCache<int, string>(10);
             
-            // Add 10 items.
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 15; ++i)
             {
                 cache.AddOrUpdate(i, i + "VALUE");
+
+                if (i == 8)
+                {
+                    // Use first 3 items.
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        cache.TryGetValue(k, out string unused);
+                    }
+                }
             }
-
-            // Use first 3 items.
-            for (int i = 0; i < 3; ++i)
-            {
-                cache.TryGetValue(i, out string unused);
-            }
-
-            // Add 11th item to trigger compact.
-            cache.AddOrUpdate(10, 10 + "VALUE");
-
-            // Cache should have 0,1,2,8,9,10
-            for (int i = 0; i < 11; ++i)
+            
+            // Cache should have 0-2 & 8-14.
+            for (int i = 0; i < 15; ++i)
             {
                 bool success = cache.TryGetValue(i, out string unused);
 
@@ -97,6 +89,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 else
                     Assert.False(success);
             }
+
+            Assert.Equal(10, cache.Count);
         }
     }
 }

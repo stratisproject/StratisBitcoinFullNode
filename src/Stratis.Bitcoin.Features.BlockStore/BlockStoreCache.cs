@@ -38,10 +38,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The maximum amount of blocks the cache can contain.</summary>
         public readonly int MaxCacheBlocksCount;
 
-        /// <summary>Specifies amount to compact the cache by when the maximum size is exceeded.</summary>
-        /// <remarks>For example value of <c>0.8</c> will let cache remove 20% of all items when cache size is exceeded.</remarks>
-        private readonly double CompactionPercentage = 0.8;
-
         public BlockStoreCache(
             IBlockRepository blockRepository,
             IDateTimeProvider dateTimeProvider,
@@ -54,7 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
             this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", 300);
 
-            this.cache = new MemoryCache<uint256, Block>(this.MaxCacheBlocksCount, this.CompactionPercentage);
+            this.cache = new MemoryCache<uint256, Block>(this.MaxCacheBlocksCount);
 
             this.blockRepository = blockRepository;
             this.dateTimeProvider = dateTimeProvider;

@@ -11,36 +11,33 @@ namespace Stratis.Bitcoin.Utilities
     public class MemoryCache<TKey, TValue>
     {
         /// <summary>Dictionary that contains cached items.</summary>
-        private readonly ConcurrentDictionary<TKey, TValue> cache;
+        private readonly Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>> cache;
 
         /// <summary>Keys sorted by their last access time with most recent ones at the end.</summary>
-        private readonly LinkedList<TKey> keys;
+        private readonly LinkedList<CacheItem<TKey, TValue>> keys;
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
-        private readonly int sizeLimit;
-
-        /// <summary>Amount to compact the cache by when the maximum size is exceeded.</summary>
-        private readonly double compactionPercentage;
-
-        /// <summary>Lock to protect access to <see cref="keys"/>.</summary>
+        private readonly int maxItemsCount;
+        
+        /// <summary>Lock to protect access to <see cref="keys"/> and <see cref="cache"/>.</summary>
         private readonly object mutex;
         
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCache{TKey, TValue}"/> class.
         /// </summary>
-        /// <param name="sizeLimit">Maximum items count that can be stored in the cache.</param>
-        /// <param name="compactionPercentage">Amount to compact the cache by when the maximum size is exceeded.</param>
-        public MemoryCache(int sizeLimit, double compactionPercentage)
+        /// <param name="maxItemsCount">Maximum items count that can be stored in the cache.</param>
+        public MemoryCache(int maxItemsCount)
         {
-            this.sizeLimit = sizeLimit;
-            this.compactionPercentage = compactionPercentage;
+            Guard.Assert(maxItemsCount > 0);
 
-            this.cache = new ConcurrentDictionary<TKey, TValue>();
-            this.keys = new LinkedList<TKey>();
+            this.maxItemsCount = maxItemsCount;
+
+            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>>(this.maxItemsCount);
+            this.keys = new LinkedList<CacheItem<TKey, TValue>>();
             this.mutex = new object();
         }
 
-        /// <summary>Gets the count of the current entries for diagnostic purposes.</summary>
+        /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
         public int Count
         {
             get
@@ -57,27 +54,29 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="value">The value to add to the cache.</param>
         public void AddOrUpdate(TKey key, TValue value)
         {
-            if (this.cache.TryGetValue(key, out TValue priorEntry))
+            LinkedListNode<CacheItem<TKey, TValue>> node;
+
+            lock (this.mutex)
             {
-                this.cache.TryUpdate(key, value, priorEntry);
-
-                lock (this.mutex)
+                if (this.cache.TryGetValue(key, out node))
                 {
-                    this.keys.Remove(key);
-                    this.keys.AddLast(key);
+                    node.Value.Value = value;
+                    this.keys.Remove(node);
                 }
-            }
-            else
-            {
-                this.cache.TryAdd(key, value);
-
-                lock (this.mutex)
+                else
                 {
-                    this.keys.AddLast(key);
+                    if (this.keys.Count == this.maxItemsCount)
+                    {
+                        // Remove 1 item.
+                        this.cache.Remove(this.keys.First.Value.Key);
+                        this.keys.RemoveFirst();
+                    }
+
+                    node = new LinkedListNode<CacheItem<TKey, TValue>>(new CacheItem<TKey, TValue>(key, value));
+                    this.cache.Add(key, node);
                 }
 
-                if (this.Count >= this.sizeLimit)
-                    this.Compact();
+                this.keys.AddLast(node);
             }
         }
 
@@ -85,11 +84,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="key">Item's key that will be removed from the cache.</param>
         public void Remove(TKey key)
         {
-            if (this.cache.TryRemove(key, out TValue unused))
+            lock (this.mutex)
             {
-                lock (this.mutex)
+                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem<TKey, TValue>> node))
                 {
-                    this.keys.Remove(key);
+                    this.cache.Remove(node.Value.Key);
+                    this.keys.Remove(node);
                 }
             }
         }
@@ -100,38 +100,33 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns><c>true</c> if cache contains the item; <c>false</c> otherwise.</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            bool success = this.cache.TryGetValue(key, out value);
-
-            if (success)
-            {
-                lock (this.mutex)
-                {
-                    this.keys.Remove(key);
-                    this.keys.AddLast(key);
-                }
-            }
-
-            return success;
-        }
-
-        /// <summary>Remove at least the given percentage (0.10 for 10%) of the total entries.</summary>
-        private void Compact()
-        {
-            int compactItemsCount = (int)(this.sizeLimit * (1.0 - this.compactionPercentage));
-
-            List<TKey> keysToRemove;
             lock (this.mutex)
             {
-                keysToRemove = this.keys.Take(compactItemsCount).ToList();
-                foreach (TKey key in keysToRemove)
+                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem<TKey, TValue>> node))
                 {
-                    this.keys.Remove(key);
+                    this.keys.Remove(node);
+                    this.keys.AddLast(node);
+
+                    value = node.Value.Value;
+
+                    return true;
                 }
             }
 
-            foreach (TKey key in keysToRemove)
+            value = default(TValue);
+            return false;
+        }
+        
+        private class CacheItem<TKey, TValue>
+        {
+            public TKey Key { get; }
+
+            public TValue Value { get; set; }
+
+            public CacheItem(TKey key, TValue value)
             {
-                this.cache.TryRemove(key, out TValue unused);
+                this.Key = key;
+                this.Value = value;
             }
         }
     }
