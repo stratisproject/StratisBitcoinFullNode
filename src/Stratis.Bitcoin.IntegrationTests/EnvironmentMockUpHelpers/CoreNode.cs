@@ -12,6 +12,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -509,7 +510,21 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
-            return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { reserveSfullNodecript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
+            List<uint256> blocks = new List<uint256>();
+
+            ConsensusLoop consensusLoop = this.FullNode.NodeService<ConsensusLoop>();
+            ConcurrentChain chain = this.FullNode.NodeService<ConcurrentChain>();
+
+            for (int i = 0; i < blockCount; i++)
+            {
+                // Wait here with a small interval. Otherwise PoSMiner will wait for this with 1 minute interval.
+                TestHelper.WaitLoop(() => chain.Tip == consensusLoop.Tip);
+                
+                List<uint256> generatedBlock = this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { reserveSfullNodecript = this.MinerSecret.ScriptPubKey }, 1, uint.MaxValue);
+                blocks.AddRange(generatedBlock);
+            }
+
+            return blocks;
         }
 
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
