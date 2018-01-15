@@ -1,0 +1,86 @@
+{
+	"info": {
+		"name": "Notifications",
+		"_postman_id": "a1111169-2f25-60d4-bd85-d8800e5fcb96",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Sync the node from a block height",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"password\": \"123456\",\n\t\"name\": \"restore1\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:37221/api/Notifications/sync?from=250000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"Notifications",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "250000",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Sync the node from a block hash",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"password\": \"123456\",\n\t\"name\": \"restore1\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:37221/api/Notifications/sync?from=8609cc873222a0573615788dc32e377b88bfd6a0015791f627d969ee3a415115",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"Notifications",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "8609cc873222a0573615788dc32e377b88bfd6a0015791f627d969ee3a415115 ",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
