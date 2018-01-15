@@ -37,15 +37,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private AsyncQueue<ChainedBlock> blocksToAnnounce;
 
         /// <summary>Local batch of blocks that will be announced to the peers.</summary>
-        private List<ChainedBlock> localBatch;
+        private readonly List<ChainedBlock> localBatch;
 
         /// <summary>Interval between batches.</summary>
         private readonly TimeSpan batchInterval;
 
-        /// <summary>Timer that invokes <see cref="SendBatchAsync"/> when runs out.</summary>
-        private Timer batchTimer;
+        /// <summary>Timer that invokes <see cref="SendBatchLockedAsync"/> when runs out.</summary>
+        private readonly Timer batchTimer;
 
-        /// <summary>Prevents parallel execution of multiple <see cref="SendBatchAsync"/> methods.</summary>
+        /// <summary>Prevents parallel execution of multiple <see cref="SendBatchLockedAsync"/> methods.</summary>
         private readonly AsyncLock asyncLock;
 
         public BlockStoreSignaled(
@@ -70,6 +70,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // Set interval between batches.
             this.batchInterval = TimeSpans.Second;
+
+            this.localBatch = new List<ChainedBlock>();
+
+            // Configure batch timer.
+            this.batchTimer = new Timer(this.batchInterval.TotalMilliseconds);
+            this.batchTimer.AutoReset = false;
         }
 
         protected override void OnNextCore(Block block)
@@ -113,21 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Initializes the <see cref="BlockStoreSignaled"/>.</summary>
         public void Initialize()
         {
-            this.localBatch = new List<ChainedBlock>();
-
-            // Configure batch timer.
-            this.batchTimer = new Timer(this.batchInterval.TotalMilliseconds);
-            this.batchTimer.AutoReset = false;
-            this.batchTimer.Elapsed += async (sender, args) =>
-            {
-                using (await this.asyncLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
-                {
-                    if (!this.batchTimer.Enabled)
-                        return;
-
-                    await SendBatchAsync();
-                }
-            };
+            this.batchTimer.Elapsed += async (sender, args) => { await this.OnBatchTimerRunsOutAsync().ConfigureAwait(false); };
 
             this.blocksToAnnounce = new AsyncQueue<ChainedBlock>(async (item, cancellation) =>
             {
@@ -140,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         this.batchTimer.Stop();
 
-                        await SendBatchAsync();
+                        await SendBatchLockedAsync().ConfigureAwait(false);
                     }
                     else if (!this.batchTimer.Enabled)
                     {
@@ -148,6 +140,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
                 }
             });
+        }
+
+        /// <summary><see cref="batchTimer"/>'s elapsed callback.</summary>
+        private async Task OnBatchTimerRunsOutAsync()
+        {
+            using (await this.asyncLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
+            {
+                if (!this.batchTimer.Enabled)
+                    return;
+
+                await SendBatchLockedAsync().ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -159,7 +163,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// <para>
         /// This block hashes need to be relayed to connected peers. A peer that does not have a block
-        /// will then ask for the entire block, that means only blocks that have been stored\cached should be relayed.
+        /// will then ask for the entire block, that means only blocks that have been stored/cached should be relayed.
         /// </para>
         /// <para>
         /// During IBD blocks are not relayed to peers.
@@ -170,9 +174,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <para>
         /// Before relaying, verify the block is still in the best chain else discard it.
         /// </para>
+        /// <para>
         /// TODO: consider moving the relay logic to the <see cref="LoopSteps.ProcessPendingStorageStep"/>.
+        /// </para>
         /// </remarks>
-        private async Task SendBatchAsync()
+        private async Task SendBatchLockedAsync()
         {
             this.logger.LogTrace("()");
 
