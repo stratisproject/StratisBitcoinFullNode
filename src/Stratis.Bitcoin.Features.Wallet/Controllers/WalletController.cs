@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     {
                         // We look for the 2 outputs related to our spending input.
                         List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
-                        if (relatedOutputs.Count == 2)
+                        if (relatedOutputs.Any())
                         {
                             // Add staking transaction details.
                             // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
@@ -732,7 +732,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Gets an unused address.
         /// </summary>
         /// <returns>The last created and unused address or creates a new address (in Base58 format).</returns>
-        [Route("address")]
+        [Route("unusedaddress")]
         [HttpGet]
         public IActionResult GetUnusedAddress([FromQuery]GetUnusedAddressModel request)
         {
@@ -759,7 +759,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets the specified number of unused addresses.
         /// </summary>
-        [Route("addresses")]
+        [Route("unusedaddresses")]
         [HttpGet]
         public IActionResult GetUnusedAddresses([FromQuery]GetUnusedAddressesModel request)
         {
@@ -776,6 +776,45 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 var result = this.walletManager.GetUnusedAddresses(new WalletAccountReference(request.WalletName, request.AccountName), count);
                 return this.Json(result.Select(x => x.Address).ToArray());
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets the specified number of unused addresses.
+        /// </summary>
+        [Route("addresses")]
+        [HttpGet]
+        public IActionResult GetAllAddresses([FromQuery]GetAllAddressesModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+
+                AddressesModel model = new AddressesModel
+                {
+                    Addresses = account.GetCombinedAddresses().Select(address => new AddressModel
+                    {
+                        Address = address.Address,
+                        IsUsed = address.Transactions.Any(),
+                        IsChange = address.IsChangeAddress()
+                    })
+                };
+
+                return this.Json(model);
             }
             catch (Exception e)
             {
@@ -826,7 +865,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            var block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedBlock block = this.chain.GetBlock(uint256.Parse(model.Hash));
+
+            if (block == null)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block with hash {model.Hash} was not found on the blockchain.", string.Empty);
+            }
+
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
         }

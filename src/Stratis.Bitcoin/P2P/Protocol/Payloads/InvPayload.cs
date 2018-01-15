@@ -10,6 +10,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     [Payload("inv")]
     public class InvPayload : Payload, IEnumerable<InventoryVector>
     {
+        /// <summary>Maximal number of inventory items in response to "getblocks" message.</summary>
+        public const int MaxGetBlocksInventorySize = 500;
+
         public const int MaxInventorySize = 50000;
 
         private List<InventoryVector> inventory = new List<InventoryVector>();

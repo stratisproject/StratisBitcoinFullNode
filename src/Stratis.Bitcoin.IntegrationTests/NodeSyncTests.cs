@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
                 var rpc1 = node1.CreateRPCClient();
-                var rpc2 = node2.CreateRPCClient();
                 rpc1.AddNode(node2.Endpoint, true);
                 Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);

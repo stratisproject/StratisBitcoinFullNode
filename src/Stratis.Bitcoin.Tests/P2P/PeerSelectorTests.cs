@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.Peers.Attempted();
             Assert.Equal(2, peers.Count());
-            Assert.DoesNotContain(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressOne.Endpoint));
+            Assert.DoesNotContain(peers, p => p.EndPoint.Match(networkAddressOne.Endpoint));
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.Peers.Attempted();
             Assert.Equal(2, peers.Count());
-            Assert.DoesNotContain(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressThree.Endpoint));
+            Assert.DoesNotContain(peers, p => p.EndPoint.Match(networkAddressThree.Endpoint));
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.Peers.Connected();
             Assert.Single(peers);
-            Assert.Contains(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressTwo.Endpoint));
+            Assert.Contains(peers, p => p.EndPoint.Match(networkAddressTwo.Endpoint));
         }
 
         /// <summary>
@@ -235,13 +235,17 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
+            peerAddressManager.PeerConnected(networkAddressOne.Endpoint, DateTime.UtcNow);
             peerAddressManager.PeerHandshaked(networkAddressOne.Endpoint, DateTime.UtcNow);
+
+            peerAddressManager.PeerConnected(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
             peerAddressManager.PeerHandshaked(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
+
             peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
 
             var peers = peerAddressManager.Peers.Handshaked();
             Assert.Single(peers);
-            Assert.Contains(peers, p => p.NetworkAddress.Endpoint.Match(networkAddressTwo.Endpoint));
+            Assert.Contains(peers, p => p.EndPoint.Match(networkAddressTwo.Endpoint));
         }
 
     }

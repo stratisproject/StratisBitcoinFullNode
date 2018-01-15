@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
+            this.MaxOutboundConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
 
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
@@ -61,8 +61,11 @@ namespace Stratis.Bitcoin.P2P
         {
             foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
             {
+                if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    return;
+
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.EndPoint))
                     await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }
