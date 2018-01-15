@@ -5,6 +5,7 @@ using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -63,17 +64,16 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="loggerFactory">The factory to create the logger.</param>
         /// <param name="peerAddressManager">The manager implementation for peer addresses.</param>
         /// <param name="dnsServer">The DNS server.</param>
-        /// <param name="nodeSettings">The node settings.</param>
-        public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, NodeSettings nodeSettings, DnsSettings dnsSettings)
+        /// <param name="connectionSettings">The connection settings.</param>
+        public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, ConnectionManagerSettings connectionSettings, DnsSettings dnsSettings)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             Guard.NotNull(dnsServer, nameof(dnsServer));
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(dnsSettings, nameof(dnsSettings));
             Guard.NotNull(dnsSettings.DnsHostName, nameof(dnsSettings.DnsHostName));
-            Guard.NotNull(nodeSettings.ConnectionManager, nameof(nodeSettings.ConnectionManager));
+            Guard.NotNull(connectionSettings, nameof(connectionSettings));
 
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.dnsServer = dnsServer;
             this.dnsPeerBlacklistThresholdInSeconds = dnsSettings.DnsPeerBlacklistThresholdInSeconds;
             this.dnsHostName = dnsSettings.DnsHostName;
-            this.externalEndpoint = nodeSettings.ConnectionManager.ExternalEndpoint;
+            this.externalEndpoint = connectionSettings.ExternalEndpoint;
             this.fullNodeMode = dnsSettings.DnsFullNode;
         }
 
