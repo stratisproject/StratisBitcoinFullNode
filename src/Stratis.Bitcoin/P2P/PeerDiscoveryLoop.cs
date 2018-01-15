@@ -177,9 +177,9 @@ namespace Stratis.Bitcoin.P2P
                     var ipAddresses = seed.GetAddressNodes();
                     endPoints.AddRange(ipAddresses.Select(ip => new IPEndPoint(ip, this.network.DefaultPort)));
                 }
-                catch (Exception exception)
+                catch (Exception)
                 {
-                    this.logger.LogError("Error getting seed node address from {0}, error : {1}", seed.Host, exception.ToString());
+                    this.logger.LogWarning("Error getting seed node addresses from {0}.", seed.Host);
                 }
             }
         }
