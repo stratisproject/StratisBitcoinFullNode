@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Wallet",
-		"_postman_id": "b3152dc2-51b4-b523-cab5-e28b9b2a9e72",
+		"_postman_id": "2dab2c7e-1dfd-7825-fff4-586231a4ebae",
 		"description": "Requests relating to operations on the wallet",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -11,7 +11,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "http://localhost:37220/api/wallet/mnemonic?language=french&wordcount=24",
 					"protocol": "http",
@@ -36,8 +39,7 @@
 							"equals": true
 						}
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		},
@@ -365,6 +367,46 @@
 			"response": []
 		},
 		{
+			"name": "Get all addresses",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37221/api/wallet/addresses?walletname=FullNodeWallet&accountname=account 0",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"wallet",
+						"addresses"
+					],
+					"query": [
+						{
+							"key": "walletname",
+							"value": "FullNodeWallet",
+							"equals": true
+						},
+						{
+							"key": "accountname",
+							"value": "account 0",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
 			"name": "Get unused account in wallet",
 			"request": {
 				"method": "POST",
@@ -409,7 +451,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "http://localhost:37220/api/wallet/address?walletName=restore1&accountName=account 0",
+					"raw": "http://localhost:37220/api/wallet/unusedaddress?walletName=restore1&accountName=account 0",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -418,7 +460,7 @@
 					"path": [
 						"api",
 						"wallet",
-						"address"
+						"unusedaddress"
 					],
 					"query": [
 						{
@@ -451,7 +493,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "http://localhost:37220/api/wallet/addresses?walletname=restore1&accountname=account 0&count=5",
+					"raw": "http://localhost:37220/api/wallet/unusedaddresses?walletname=restore1&accountname=account 0&count=5",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -460,7 +502,7 @@
 					"path": [
 						"api",
 						"wallet",
-						"addresses"
+						"unusedaddresses"
 					],
 					"query": [
 						{
@@ -479,8 +521,7 @@
 							"equals": true
 						}
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		},
@@ -489,7 +530,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "http://localhost:37220/api/wallet/maxbalance?walletname=restore1&accountname=account 0&feetype=low&allowunconfirmed=true",
 					"protocol": "http",
@@ -524,8 +568,7 @@
 							"equals": true
 						}
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		},
@@ -534,7 +577,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "http://localhost:37220/api/wallet/estimate-txfee?walletname=restore1&accountname=account 0&destinationaddress=1FYp9uguYCz7DgSF9jTWDeZF8kdRKQTXPg&amount=1&feetype=low&allowunconfirmed=true&shuffleoutputs=true",
 					"protocol": "http",
@@ -584,8 +630,7 @@
 							"equals": true
 						}
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		},
@@ -627,8 +672,7 @@
 							"equals": true
 						}
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		},
@@ -658,8 +702,7 @@
 						"wallet",
 						"sync"
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		}
