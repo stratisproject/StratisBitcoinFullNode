@@ -34,15 +34,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlockAsyncBlockInCacheReturnsBlock()
         {
-            uint256 blockId = new uint256(2389704);
             var block = new Block();
             block.Header.Version = 1513;
             this.blockStoreCache.AddToCache(block);
 
-            var task = this.blockStoreCache.GetBlockAsync(blockId);
-            task.Wait();
+            uint256 hash = block.GetHash();
+            Block blockFromCache = this.blockStoreCache.GetBlockAsync(hash).GetAwaiter().GetResult();
 
-            Assert.Equal(1513, ((Block)block).Header.Version);
+            Assert.Equal(1513, blockFromCache.Header.Version);
         }
 
         [Fact]

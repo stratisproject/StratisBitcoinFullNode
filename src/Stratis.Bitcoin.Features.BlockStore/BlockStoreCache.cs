@@ -94,8 +94,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 blockid = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockid);
 
-            this.logger.LogTrace("(-)");
             this.cache.AddOrUpdate(blockid, block);
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

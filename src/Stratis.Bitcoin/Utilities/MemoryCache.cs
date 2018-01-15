@@ -13,9 +13,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Cache item for the inner usage of the <see cref="MemoryCache{TKey,TValue}"/> class.</summary>
         private class CacheItem<TKey, TValue>
         {
-            public TKey Key { get; }
+            public readonly TKey Key;
 
-            public TValue Value { get; set; }
+            public TValue Value;
 
             /// <summary>Initializes a new instance of the <see cref="CacheItem{TKey, TValue}"/> class.</summary>
             /// <param name="key">The key.</param>
