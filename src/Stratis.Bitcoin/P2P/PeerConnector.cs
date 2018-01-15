@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -95,6 +96,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>User defined node settings.</summary>
         public NodeSettings NodeSettings;
 
+        /// <summary>User defined connection settings.</summary>
+        public ConnectionManagerSettings ConnectionSettings;
+
         /// <summary>The network the node is running on.</summary>
         private Network network;
 
@@ -125,6 +129,7 @@ namespace Stratis.Bitcoin.P2P
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
+            ConnectionManagerSettings connectionSettings,
             IPeerAddressManager peerAddressManager)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -136,6 +141,7 @@ namespace Stratis.Bitcoin.P2P
             this.networkPeerFactory = networkPeerFactory;
             this.nodeLifetime = nodeLifetime;
             this.NodeSettings = nodeSettings;
+            this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
