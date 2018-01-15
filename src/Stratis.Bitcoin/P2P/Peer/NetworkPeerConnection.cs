@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Consumer of messages coming from connected clients.</summary>
-        private readonly EventLoopMessageListener<IncomingMessage> messageListener;
+        private readonly CallbackMessageListener<IncomingMessage> messageListener;
 
         /// <summary>Unique identifier of a client.</summary>
         public int Id { get; private set; }
@@ -106,10 +106,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peer">Network peer the node is connected to, or will connect to.</param>
         /// <param name="client">Initialized TCP client, which may or may not be already connected.</param>
         /// <param name="clientId">Unique identifier of the connection.</param>
-        /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
+        /// <param name="processMessageAsync">Callback to be called when a new message arrives from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerConnection(Network network, NetworkPeer peer, TcpClient client, int clientId, Func<IncomingMessage, Task> messageReceivedCallback, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeerConnection(Network network, NetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peer.PeerAddress.Endpoint}] ");
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.CancellationSource = new CancellationTokenSource();
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.messageListener = new EventLoopMessageListener<IncomingMessage>(messageReceivedCallback);
+            this.messageListener = new CallbackMessageListener<IncomingMessage>(processMessageAsync);
             this.MessageProducer.AddMessageListener(this.messageListener);
         }
 
