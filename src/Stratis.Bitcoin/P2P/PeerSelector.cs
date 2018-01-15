@@ -19,11 +19,17 @@ namespace Stratis.Bitcoin.P2P
         PeerAddress SelectPeer();
 
         /// <summary>
-        /// Select preferred peers from the address manager for sending
-        /// via address payload and peer discovery.
+        /// Select a random set of peers from the address manager for peer discovery.
         /// </summary>
         /// <param name="peerCount">The amount of peers to return.</param>
-        IEnumerable<PeerAddress> SelectPeers(int peerCount);
+        IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount);
+
+        /// <summary>
+        /// Select preferred peers from the address manager for sending
+        /// via address payload.
+        /// </summary>
+        /// <param name="peerCount">The amount of peers to return.</param>
+        IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount);
     }
 
     public sealed class PeerSelector : IPeerSelector
@@ -145,7 +151,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public IEnumerable<PeerAddress> SelectPeers(int peerCount)
+        public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
             // If there are no peers, just one or if the amount peers is less than
             // the amount of peers asked for, just return the list.
@@ -156,6 +162,12 @@ namespace Stratis.Bitcoin.P2P
             // asked for.
             var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
             return allPeers.Select(p => p.Value).Take(1000);
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount)
+        {
+            return new PeerAddress[] { };
         }
     }
 
