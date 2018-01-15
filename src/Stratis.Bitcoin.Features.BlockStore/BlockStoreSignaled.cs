@@ -1,6 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -8,16 +9,12 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using System.Timers;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
-
         private readonly BlockStoreLoop blockStoreLoop;
 
         private readonly ConcurrentChain chain;
@@ -28,9 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
-        private readonly string name;
-
+        
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
@@ -39,7 +34,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IBlockStoreCache blockStoreCache;
 
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
-        private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
+        private AsyncQueue<ChainedBlock> blocksToAnnounce;
+
+        /// <summary>Local batch of blocks that will be announced to the peers.</summary>
+        private List<ChainedBlock> localBatch;
+
+        /// <summary>Interval between batches.</summary>
+        private readonly TimeSpan batchInterval;
+
+        /// <summary>Timer that invokes <see cref="SendBatchAsync"/> when runs out.</summary>
+        private Timer batchTimer;
+
+        /// <summary>Prevents parallel execution of multiple <see cref="SendBatchAsync"/> methods.</summary>
+        private readonly AsyncLock asyncLock;
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
@@ -48,22 +55,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
-            IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory,
-            IBlockStoreCache blockStoreCache,
-            string name = "BlockStore")
+            IBlockStoreCache blockStoreCache)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
-            this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
             this.chainState = chainState;
             this.connection = connection;
-            this.name = name;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
             this.blockStoreCache = blockStoreCache;
+            this.asyncLock = new AsyncLock();
+
+            // Set interval between batches.
+            this.batchInterval = TimeSpans.Second;
         }
 
         protected override void OnNextCore(Block block)
@@ -104,17 +110,56 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>Initializes the <see cref="BlockStoreSignaled"/>.</summary>
+        public void Initialize()
+        {
+            this.localBatch = new List<ChainedBlock>();
+
+            // Configure batch timer.
+            this.batchTimer = new Timer(this.batchInterval.TotalMilliseconds);
+            this.batchTimer.AutoReset = false;
+            this.batchTimer.Elapsed += async (sender, args) =>
+            {
+                using (await this.asyncLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
+                {
+                    if (!this.batchTimer.Enabled)
+                        return;
+
+                    await SendBatchAsync();
+                }
+            };
+
+            this.blocksToAnnounce = new AsyncQueue<ChainedBlock>(async (item, cancellation) =>
+            {
+                using (await this.asyncLock.LockAsync(cancellation).ConfigureAwait(false))
+                {
+                    this.localBatch.Add(item);
+
+                    // Send batch right away if tip, if not and the timer haven't been started already- start the timer.
+                    if (item == this.chain.Tip)
+                    {
+                        this.batchTimer.Stop();
+
+                        await SendBatchAsync();
+                    }
+                    else if (!this.batchTimer.Enabled)
+                    {
+                        this.batchTimer.Start();
+                    }
+                }
+            });
+        }
+
         /// <summary>
-        /// A loop method that continuously relays blocks found in <see cref="blocksToAnnounce"/> to connected peers on the network.
+        /// A method that relays blocks found in <see cref="localBatch"/> to connected peers on the network.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The queue <see cref="blocksToAnnounce"/> contains
-        /// hashes of blocks that were validated by the consensus rules.
+        /// The list <see cref="localBatch"/> contains hashes of blocks that were validated by the consensus rules.
         /// </para>
         /// <para>
         /// This block hashes need to be relayed to connected peers. A peer that does not have a block
-        /// will then ask for the entire block, that means only blocks that have been stored should be relayed.
+        /// will then ask for the entire block, that means only blocks that have been stored\cached should be relayed.
         /// </para>
         /// <para>
         /// During IBD blocks are not relayed to peers.
@@ -127,82 +172,71 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// TODO: consider moving the relay logic to the <see cref="LoopSteps.ProcessPendingStorageStep"/>.
         /// </remarks>
-        public void RelayWorker()
+        private async Task SendBatchAsync()
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
+            int announceBlockCount = this.localBatch.Count;
+            if (announceBlockCount == 0)
             {
-                this.logger.LogTrace("()");
+                this.logger.LogTrace("(-)[NO_BLOCKS]");
+                return;
+            }
 
-                int announceBlockCount = this.blocksToAnnounce.Count;
-                if (announceBlockCount == 0)
+            this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
+
+            // Initialize this list with default size of 'announceBlockCount + 4' to prevent it from autoresizing during adding new items.
+            // This +4 extra size is in case new items will be added to the queue during the loop.
+            var broadcastItems = new List<ChainedBlock>(announceBlockCount + 4);
+
+            while (this.localBatch.Count > 0)
+            {
+                ChainedBlock block = this.localBatch.First();
+
+                this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
+
+                // Check if we've reorged away from the current block.
+                if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                 {
-                    this.logger.LogTrace("(-)[NO_BLOCKS]");
-                    return;
+                    this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
+
+                    // Remove hash that we've reorged away from.
+                    this.localBatch.Remove(block);
+                    continue;
                 }
+               
+                this.logger.LogTrace("Block '{0}' moved from the announce queue to broadcast list.", block);
+                this.localBatch.Remove(block);
+                broadcastItems.Add(block);
+            }
 
-                this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
+            if (!broadcastItems.Any())
+            {
+                this.logger.LogTrace("(-)[NO_BROADCAST_ITEMS]");
+                return;
+            }
 
-                // Initialize this list with default size of 'announceBlockCount + 4' to prevent it from autoresizing during adding new items.
-                // This +4 extra size is in case new items will be added to the queue during the loop.
-                var broadcastItems = new List<ChainedBlock>(announceBlockCount + 4);
+            IReadOnlyNetworkPeerCollection peers = this.connection.ConnectedPeers;
+            if (!peers.Any())
+            {
+                this.logger.LogTrace("(-)[NO_PEERS]");
+                return;
+            }
 
-                while (this.blocksToAnnounce.TryPeek(out ChainedBlock block))
-                {
-                    this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
+            // Announce the blocks to each of the peers.
+            IEnumerable<BlockStoreBehavior> behaviours = peers.Select(s => s.Behavior<BlockStoreBehavior>());
 
-                    // Check if we've reorged away from the current block.
-                    if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
-                    {
-                        this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
-
-                        // Remove hash that we've reorged away from.
-                        this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
-                        continue;
-                    }
-
-                    if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))
-                    {
-                        this.logger.LogTrace("Block '{0}' moved from the announce queue to broadcast list.", block);
-                        broadcastItems.Add(blockToBroadcast);
-                    }
-                    else this.logger.LogTrace("Unable to removing block '{0}' from the announce queue.", block);
-                }
-
-                if (!broadcastItems.Any())
-                {
-                    this.logger.LogTrace("(-)[NO_BROADCAST_ITEMS]");
-                    return;
-                }
-
-                IReadOnlyNetworkPeerCollection peers = this.connection.ConnectedPeers;
-                if (!peers.Any())
-                {
-                    this.logger.LogTrace("(-)[NO_PEERS]");
-                    return;
-                }
-
-                // Announce the blocks to each of the peers.
-                IEnumerable<BlockStoreBehavior> behaviours = peers.Select(s => s.Behavior<BlockStoreBehavior>());
-
-                this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
-                foreach (BlockStoreBehavior behaviour in behaviours)
-                    await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Second,
-            startAfter: TimeSpans.FiveSeconds);
-
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", broadcastItems.Count, behaviours.Count());
+            foreach (BlockStoreBehavior behaviour in behaviours)
+                await behaviour.AnnounceBlocksAsync(broadcastItems).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// The async loop needs to complete its work before we can shut down this feature.
-        /// </summary>
-        internal void ShutDown()
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
         {
-            this.asyncLoop.Dispose();
+            this.blocksToAnnounce.Dispose();
+
+            base.Dispose(disposing);
         }
     }
 }
