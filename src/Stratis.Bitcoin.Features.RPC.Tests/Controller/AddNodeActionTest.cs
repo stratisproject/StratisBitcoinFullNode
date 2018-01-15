@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             var connectionManager = fullNode.NodeService<IConnectionManager>();
             controller.AddNode("0.0.0.0", "add");
-            Assert.Single(connectionManager.NodeSettings.ConnectionManager.AddNode);
+            Assert.Single(connectionManager.ConnectionSettings.AddNode);
 
         }
     }
