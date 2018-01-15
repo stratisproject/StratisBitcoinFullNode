@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -8,10 +7,8 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public interface IBlockStoreCache : IDisposable
+    public interface IBlockStoreCache
     {
-        void Expire(uint256 blockid);
-
         Task<Block> GetBlockAsync(uint256 blockid);
 
         void AddToCache(Block block);
@@ -28,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private readonly IBlockRepository blockRepository;
 
-        private readonly IMemoryCache cache;
+        private readonly MemoryCache<uint256, Block> cache;
 
         public BlockStoreCachePerformanceCounter PerformanceCounter { get; }
 
@@ -41,19 +38,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The maximum amount of blocks the cache can contain.</summary>
         public readonly int MaxCacheBlocksCount;
 
-        /// <summary>Entry options for adding blocks to the cache.</summary>
-        private readonly MemoryCacheEntryOptions blockEntryOptions;
-
-        /// <summary>Specifies amount to compact the cache by when the maximum size is exceeded.</summary>
-        /// <remarks>For example value of <c>0.8</c> will let cache remove 20% of all items when cache size is exceeded.</remarks>
-        private readonly double CompactionPercentage = 0.8;
-
         public BlockStoreCache(
             IBlockRepository blockRepository,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            NodeSettings nodeSettings,
-            IMemoryCache memoryCache = null)
+            NodeSettings nodeSettings)
         {
             Guard.NotNull(blockRepository, nameof(blockRepository));
 
@@ -61,19 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
             this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", 300);
 
-            this.cache = memoryCache;
-            if (this.cache == null)
-            {
-                var memoryCacheOptions = new MemoryCacheOptions()
-                {
-                    SizeLimit = this.MaxCacheBlocksCount,
-                    CompactionPercentage = this.CompactionPercentage
-                };
-
-                this.cache = new MemoryCache(memoryCacheOptions);
-            }
-
-            this.blockEntryOptions = new MemoryCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24), Size = 1 };
+            this.cache = new MemoryCache<uint256, Block>(this.MaxCacheBlocksCount);
 
             this.blockRepository = blockRepository;
             this.dateTimeProvider = dateTimeProvider;
@@ -84,22 +61,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public virtual BlockStoreCachePerformanceCounter BlockStoreCachePerformanceCounterFactory()
         {
             return new BlockStoreCachePerformanceCounter(this.dateTimeProvider);
-        }
-
-        public void Expire(uint256 blockid)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
-            Guard.NotNull(blockid, nameof(blockid));
-
-            Block block;
-            if (this.cache.TryGetValue(blockid, out block))
-            {
-                this.PerformanceCounter.AddCacheHitCount(1);
-                this.PerformanceCounter.AddCacheRemoveCount(1);
-                this.cache.Remove(block);
-            }
-
-            this.logger.LogTrace("(-)");
         }
 
         public async Task<Block> GetBlockAsync(uint256 blockid)
@@ -120,7 +81,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             block = await this.blockRepository.GetAsync(blockid);
             if (block != null)
             {
-                this.cache.Set(blockid, block, this.blockEntryOptions);
+                this.cache.AddOrUpdate(blockid, block);
                 this.PerformanceCounter.AddCacheSetCount(1);
             }
 
@@ -133,22 +94,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 blockid = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockid);
 
-            if (!this.cache.TryGetValue(blockid, out Block existingBlock))
-                this.cache.Set(blockid, block, this.blockEntryOptions);
-
-            this.logger.LogTrace("(-)[{0}]", existingBlock != null ? "ALREADY_IN_CACHE" : "ADDED_TO_CACHE");
+            this.cache.AddOrUpdate(blockid, block);
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public bool Exist(uint256 blockid)
         {
             return this.cache.TryGetValue(blockid, out Block unused);
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.cache.Dispose();
         }
     }
 }

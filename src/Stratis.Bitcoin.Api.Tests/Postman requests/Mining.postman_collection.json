@@ -1,0 +1,95 @@
+{
+	"info": {
+		"name": "Mining",
+		"_postman_id": "39c0b682-b724-d568-5b07-34cc1ac44bc5",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Staking Info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37221/api/miner/getstakinginfo",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"miner",
+						"getstakinginfo"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Start staking",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"password\": \"123456\",\n\t\"name\": \"restore1\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:37221/api/miner/startstaking",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"miner",
+						"startstaking"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Stop staking",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"password\": \"123456\",\n\t\"name\": \"restore1\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:37221/api/miner/stopstaking",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"miner",
+						"stopstaking"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

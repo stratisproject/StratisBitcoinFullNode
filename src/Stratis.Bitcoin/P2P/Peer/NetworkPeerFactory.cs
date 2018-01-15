@@ -72,8 +72,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="peer">Network peer the node is connected to, or will connect to.</param>
         /// <param name="client">Initialized and possibly connected TCP client to the peer.</param>
-        /// <param name="messageReceivedCallback">Callback to be called when a new message arrives from the peer.</param>
-        NetworkPeerConnection CreateNetworkPeerConnection(NetworkPeer peer, TcpClient client, Func<IncomingMessage, Task> messageReceivedCallback);
+        /// <param name="processMessageAsync">Callback to be called when a new message arrives from the peer.</param>
+        NetworkPeerConnection CreateNetworkPeerConnection(NetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync);
     }
 
     /// <summary>
@@ -194,14 +194,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public NetworkPeerConnection CreateNetworkPeerConnection(NetworkPeer peer, TcpClient client, Func<IncomingMessage, Task> messageReceivedCallback)
+        public NetworkPeerConnection CreateNetworkPeerConnection(NetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync)
         {
             Guard.NotNull(peer, nameof(peer));
             Guard.NotNull(client, nameof(client));
-            Guard.NotNull(messageReceivedCallback, nameof(messageReceivedCallback));
+            Guard.NotNull(processMessageAsync, nameof(processMessageAsync));
 
             int id = Interlocked.Increment(ref this.lastClientId);
-            return new NetworkPeerConnection(this.network, peer, client, id, messageReceivedCallback, this.dateTimeProvider, this.loggerFactory);
+            return new NetworkPeerConnection(this.network, peer, client, id, processMessageAsync, this.dateTimeProvider, this.loggerFactory);
         }
     }
 }
