@@ -12,8 +12,11 @@ namespace Stratis.SmartContracts.State
         byte[] GetCode(uint160 address);
         void SetCode(uint160 address, byte[] code);
 
-        void LoadSnapshot(byte[] root);
+        ISmartContractStateRepository StartTracking();
         void Rollback();
         void Commit();
+
+        void LoadSnapshot(byte[] root);
+        byte[] GetRoot();
     }
 }

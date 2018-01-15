@@ -115,6 +115,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(bird, trie2.Get(fish));
             Assert.Equal(fish, trie2.Get(dodecahedron));
         }
-
     }
 }

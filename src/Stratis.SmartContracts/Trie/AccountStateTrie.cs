@@ -41,5 +41,10 @@ namespace Stratis.SmartContracts.Trie
         {
             this.trie.SetRoot(root);
         }
+
+        public byte[] GetRootHash()
+        {
+            return this.trie.GetRootHash();
+        }
     }
 }

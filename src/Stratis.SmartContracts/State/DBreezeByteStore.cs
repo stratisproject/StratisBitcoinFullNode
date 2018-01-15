@@ -23,7 +23,9 @@ namespace Stratis.SmartContracts.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.table.ToString(), key);
+                var test = t.SelectDictionary<byte[], byte[]>(this.table);
+
+                Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.table, key);
 
                 if (row.Exists)
                     return row.Value;
@@ -36,7 +38,7 @@ namespace Stratis.SmartContracts.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                t.Insert(this.table.ToString(), key, val);
+                t.Insert(this.table, key, val);
                 t.Commit();
             }
         }
@@ -45,7 +47,7 @@ namespace Stratis.SmartContracts.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                t.RemoveKey(this.table.ToString(), key);
+                t.RemoveKey(this.table, key);
                 t.Commit();
             }
         }

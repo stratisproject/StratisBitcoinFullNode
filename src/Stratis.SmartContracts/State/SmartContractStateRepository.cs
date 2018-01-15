@@ -34,6 +34,19 @@ namespace Stratis.SmartContracts.State
             this.contractStorageTries = new Dictionary<uint160, PatriciaTrie>();
         }
 
+        protected SmartContractStateRepository(DBreezeEngine engine, AccountStateTrie accountStateTrie)
+        {
+            this.engine = engine;
+            this.accountStateTrie = accountStateTrie;
+            this.contractStorageTries = new Dictionary<uint160, PatriciaTrie>();
+        }
+
+        public ISmartContractStateRepository StartTracking()
+        {
+            var bytes = accountStateTrie.GetRootHash();
+            return new SmartContractStateRepository(this.engine, new AccountStateTrie(new PatriciaTrie(new DBreezeByteStore(this.engine, AccountStateTable), this.accountStateTrie.GetRootHash())));
+        }
+
         /// <summary>
         /// Empty database
         /// </summary>
@@ -41,11 +54,8 @@ namespace Stratis.SmartContracts.State
         {
             using (var t = engine.GetTransaction())
             {
-                var allAccounts = t.SelectDictionary<byte[], byte[]>(AccountStateTable);
-                foreach(var key in allAccounts.Keys)
-                {
-                    t.RemoveAllKeys(new uint160(key).ToString(), true);
-                }
+                // TODO: Once the keys are all stored in a single table, just wipe out that table
+                // At the moment each contract has a separate table that is storing things.
                 t.RemoveAllKeys(AccountStateTable, true);
                 t.RemoveAllKeys(CodeTable, true);
             }
@@ -102,10 +112,13 @@ namespace Stratis.SmartContracts.State
         {
             // TODO: Can be optimised. We're getting account state twice.
             PatriciaTrie trie = GetContractStorageTrie(address);
+
+            //var test = trie.GetRootHash();
+
             trie.Put((byte[])key, (byte[])(object)toStore);
-            AccountState accountState = GetAccountState(address);
-            accountState.StateRoot = trie.GetRootHash();
-            this.accountStateTrie.Put(address, accountState);
+            
+            //accountState.StateRoot = trie.GetRootHash();
+            //this.accountStateTrie.Put(address, accountState);
         }
 
         public T GetObject<T>(uint160 address, object key)
@@ -126,9 +139,12 @@ namespace Stratis.SmartContracts.State
 
         public void Commit()
         {
-            foreach(PatriciaTrie trie in this.contractStorageTries.Values)
+            foreach(KeyValuePair<uint160,PatriciaTrie> kvp in this.contractStorageTries)
             {
-                trie.Flush();
+                kvp.Value.Flush();
+                AccountState accountState = GetAccountState(kvp.Key);
+                accountState.StateRoot = kvp.Value.GetRootHash();
+                this.accountStateTrie.Put(kvp.Key, accountState);
             }
             this.accountStateTrie.Flush();
             this.contractStorageTries = new Dictionary<uint160, PatriciaTrie>();
@@ -142,7 +158,13 @@ namespace Stratis.SmartContracts.State
         public void LoadSnapshot(byte[] root)
         {
             this.accountStateTrie.SetRoot(root);
-            throw new NotImplementedException();
+            this.contractStorageTries = new Dictionary<uint160, PatriciaTrie>();
         }
+
+        public byte[] GetRoot()
+        {
+            return this.accountStateTrie.GetRootHash();
+        }
+
     }
 }

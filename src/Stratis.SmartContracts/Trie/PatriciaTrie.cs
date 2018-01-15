@@ -18,7 +18,8 @@ namespace Stratis.SmartContracts.Trie
             KVNodeNode
         }
 
-        private static readonly byte[] EMPTY_ELEMENT_RLP = RLP.EncodeElement(new byte[0]); // TODO: Update
+        private static readonly byte[] EMPTY_ELEMENT_RLP = RLP.EncodeElement(new byte[0]);
+        private static readonly byte[] EMPTY_TRIE_HASH = HashHelper.Keccak256(EMPTY_ELEMENT_RLP);
         private static readonly byte[] EMPTY_BYTE_ARRAY = new byte[0];
         private static readonly object NULL_NODE = new object();
 
@@ -345,7 +346,7 @@ namespace Stratis.SmartContracts.Trie
 
         public void SetRoot(byte[] root)
         {
-            if (root != null)
+            if (root != null && !new ByteArrayComparer().Equals(root, EMPTY_TRIE_HASH))
             {
                 this.root = new Node(root, this);
             }
@@ -616,8 +617,7 @@ namespace Stratis.SmartContracts.Trie
         public byte[] GetRootHash()
         {
             Encode();
-            return root != null ? root.Hash : 
-            throw new NotImplementedException("Should be a keccak hash");
+            return root != null ? root.Hash : EMPTY_TRIE_HASH;
         }
 
         private void Encode()
