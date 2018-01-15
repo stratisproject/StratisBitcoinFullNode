@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             public readonly TKey Key;
 
-            public TValue Value;
+            public TValue Value { get; set; }
 
             /// <summary>Initializes a new instance of the <see cref="CacheItem{TKey, TValue}"/> class.</summary>
             /// <param name="key">The key.</param>
