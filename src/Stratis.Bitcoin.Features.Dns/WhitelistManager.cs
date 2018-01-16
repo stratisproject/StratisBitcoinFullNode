@@ -40,12 +40,17 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the peroid in seconds that the peer should last have been seen to be included in the whitelist.
         /// </summary>
-        private readonly int dnsPeerBlacklistThresholdInSeconds;
+        private int dnsPeerBlacklistThresholdInSeconds;
 
         /// <summary>
         /// Defines the DNS host name of the DNS Server.
         /// </summary>
-        private readonly string dnsHostName;
+        private string dnsHostName;
+
+        /// <summary>
+        /// Defines the DNS Settings.
+        /// </summary>
+        private readonly DnsSettings dnsSettings;
 
         /// <summary>
         /// Defines the external endpoint for the dns node.
@@ -55,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines if DNS server daemon is running as full node <c>true</c> or not <c>false</c>.
         /// </summary>
-        private readonly bool fullNodeMode;
+        private bool fullNodeMode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WhitelistManager"/> class.
@@ -72,17 +77,14 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             Guard.NotNull(dnsServer, nameof(dnsServer));
             Guard.NotNull(dnsSettings, nameof(dnsSettings));
-            Guard.NotNull(dnsSettings.DnsHostName, nameof(dnsSettings.DnsHostName));
             Guard.NotNull(connectionSettings, nameof(connectionSettings));
 
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddressManager = peerAddressManager;
             this.dnsServer = dnsServer;
-            this.dnsPeerBlacklistThresholdInSeconds = dnsSettings.DnsPeerBlacklistThresholdInSeconds;
-            this.dnsHostName = dnsSettings.DnsHostName;
-            this.externalEndpoint = connectionSettings.ExternalEndpoint;
-            this.fullNodeMode = dnsSettings.DnsFullNode;
+            this.dnsSettings = dnsSettings;                      
+            this.externalEndpoint = connectionSettings.ExternalEndpoint;            
         }
 
         /// <summary>
@@ -91,6 +93,10 @@ namespace Stratis.Bitcoin.Features.Dns
         public void RefreshWhitelist()
         {
             this.logger.LogTrace("()");
+
+            this.dnsPeerBlacklistThresholdInSeconds = this.dnsSettings.DnsPeerBlacklistThresholdInSeconds;
+            this.dnsHostName = this.dnsSettings.DnsHostName;
+            this.fullNodeMode = this.dnsSettings.DnsFullNode;
 
             DateTimeOffset activePeerLimit = this.dateTimeProvider.GetTimeOffset().AddSeconds(-this.dnsPeerBlacklistThresholdInSeconds);
             
