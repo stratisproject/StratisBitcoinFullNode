@@ -48,6 +48,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Prevents parallel execution of multiple <see cref="SendBatchLockedAsync"/> methods.</summary>
         private readonly AsyncLock asyncLock;
 
+        /// <summary>Most recently invoked <see cref="SendBatchLockedAsync"/> task.</summary>
+        private Task batchSendingTask;
+
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
             ConcurrentChain chain,
@@ -131,7 +134,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         this.batchTimer.Stop();
 
-                        await this.SendBatchLockedAsync().ConfigureAwait(false);
+                        this.batchSendingTask = this.SendBatchLockedAsync();
+                        await this.batchSendingTask.ConfigureAwait(false);
                     }
                     else if (!this.batchTimer.Enabled)
                     {
@@ -149,7 +153,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (!this.batchTimer.Enabled)
                     return;
 
-                await this.SendBatchLockedAsync().ConfigureAwait(false);
+                this.batchSendingTask = this.SendBatchLockedAsync();
+                await this.batchSendingTask.ConfigureAwait(false);
             }
         }
 
@@ -239,7 +244,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
+            // Let current batch sending task finish.
+            this.batchSendingTask?.GetAwaiter().GetResult();
+
             this.blocksToAnnounce.Dispose();
+            this.asyncLock.Dispose();
 
             base.Dispose(disposing);
         }

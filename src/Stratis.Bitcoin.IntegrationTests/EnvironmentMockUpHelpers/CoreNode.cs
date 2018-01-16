@@ -517,7 +517,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             for (int i = 0; i < blockCount; i++)
             {
-                // Wait here with a small interval. Otherwise PoSMiner will wait for this with 1 minute interval.
+                // Wait here with a small interval. Otherwise PoWMiner will wait for this with 1 minute interval.
                 TestHelper.WaitLoop(() => chain.Tip == consensusLoop.Tip);
                 
                 List<uint256> generatedBlock = this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, 1, uint.MaxValue);
