@@ -54,6 +54,12 @@ namespace Stratis.Bitcoin.Base.Deployments
             var nTimeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
             var nTimeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
 
+            // Check if this deployment is always active.
+            if (nTimeStart == Utils.UnixTimeToDateTime(BIP9DeploymentsParameters.AlwaysActive))
+            {
+                return ThresholdState.Active;
+            }
+
             // A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
             if (pindexPrev != null)
             {
