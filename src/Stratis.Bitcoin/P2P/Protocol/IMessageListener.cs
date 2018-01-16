@@ -2,7 +2,7 @@
 /// Contract for a recipient part of a consumer logic that handles incoming messages.
 /// </summary>
 /// <typeparam name="T">Type of the messages that are being handled.</typeparam>
-/// <seealso cref="MessageProducer{T}"/>
+/// <seealso cref="Stratis.Bitcoin.P2P.Protocol.MessageProducer{T}"/>
 public interface IMessageListener<in T>
 {
     /// <summary>

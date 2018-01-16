@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// <summary>
     /// Message listener that waits until a specific payload is received and returns it to the caller.
     /// </summary>
-    /// <typeparam name="T">Type of the messages that are being handled.</typeparam>
     public class NetworkPeerListener : IMessageListener<IncomingMessage>, IDisposable
     {
         /// <summary>Queue of unprocessed messages.</summary>
@@ -56,8 +55,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 while (true)
                 {
                     IncomingMessage message = await this.asyncQueue.DequeueAsync(cancellation.Token).ConfigureAwait(false);
-                    if (message.Message.Payload is TPayload)
-                        return (TPayload)message.Message.Payload;
+                    if (message.Message.Payload is TPayload payload)
+                        return payload;
                 }
             }
         }
