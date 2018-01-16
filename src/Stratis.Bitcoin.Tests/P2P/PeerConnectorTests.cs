@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var nodeSettings = new NodeSettings();
             var connectionSettings = new ConnectionManagerSettings();
+            connectionSettings.Load(nodeSettings);
 
             connectionSettings.AddNode.Add(networkAddressAddNode.Endpoint);
 

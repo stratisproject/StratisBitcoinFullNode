@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();
                     services.AddSingleton<NetworkPeerConnectionParameters>(new NetworkPeerConnectionParameters());
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
-                    services.AddSingleton<ConnectionManagerSettings>(new ConnectionManagerSettings());
+                    services.AddSingleton<ConnectionManagerSettings>();
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
