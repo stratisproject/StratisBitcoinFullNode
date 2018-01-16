@@ -8,13 +8,13 @@ namespace Stratis.SmartContracts
 {
     public static class PersistentState
     {
-        internal static ISmartContractStateRepository StateDb { get; private set; }
+        internal static IRepository StateDb { get; private set; }
 
         private static uint160 _contractAddress;
 
         private static uint _counter;
 
-        internal static void SetDbAndAddress(ISmartContractStateRepository stateDb, uint160 contractAddress)
+        internal static void SetDbAndAddress(IRepository stateDb, uint160 contractAddress)
         {
             StateDb = stateDb;
             _contractAddress = contractAddress;
@@ -27,22 +27,26 @@ namespace Stratis.SmartContracts
 
         public static T GetObject<T>(string key)
         {
-            return StateDb.GetObject<T>(_contractAddress, key);
+            throw new NotImplementedException();
+            //return StateDb.GetObject<T>(_contractAddress, key);
         }
 
         public static void SetObject<T>(string key, T obj)
         {
-            StateDb.SetObject<T>(_contractAddress, key, obj);
+            throw new NotImplementedException();
+            //StateDb.SetObject<T>(_contractAddress, key, obj);
         }
 
         public static T GetObject<T>(object key)
         {
-            return StateDb.GetObject<T>(_contractAddress, key);
+            throw new NotImplementedException();
+            //return StateDb.GetObject<T>(_contractAddress, key);
         }
 
         public static void SetObject<T>(object key, T obj)
         {
-            StateDb.SetObject<T>(_contractAddress, key, obj);
+            throw new NotImplementedException();
+            //StateDb.SetObject<T>(_contractAddress, key, obj);
         }
 
         public static SmartContractMapping<K,V> GetMapping<K, V>()

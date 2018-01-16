@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Stratis.SmartContracts.Trie
+namespace Stratis.SmartContracts.State
 {
     public class ByteArrayComparer : IEqualityComparer<byte[]>
     {

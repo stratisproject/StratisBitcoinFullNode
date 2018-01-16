@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Stratis.SmartContracts.Hashing;
 
-namespace Stratis.SmartContracts.Trie
+namespace Stratis.SmartContracts.State
 {
     // TODO: All of this is taken from EthereumJ. Should clean up a ton before pushing out.
     // Also note that heaps of Asserts were taken out

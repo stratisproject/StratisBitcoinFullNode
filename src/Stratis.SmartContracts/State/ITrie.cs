@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Stratis.SmartContracts.Trie
+namespace Stratis.SmartContracts.State
 {
     public interface ITrie<V> : ISource<byte[], V>
     {

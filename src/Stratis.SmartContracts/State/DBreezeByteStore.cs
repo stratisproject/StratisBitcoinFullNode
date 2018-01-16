@@ -4,7 +4,6 @@ using System.Text;
 using DBreeze;
 using DBreeze.DataTypes;
 using NBitcoin;
-using Stratis.SmartContracts.Trie;
 
 namespace Stratis.SmartContracts.State
 {

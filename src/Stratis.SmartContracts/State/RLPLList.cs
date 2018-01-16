@@ -1,7 +1,7 @@
 ﻿using System;
 using Nethereum.RLP;
 
-namespace Stratis.SmartContracts.Trie
+namespace Stratis.SmartContracts.State
 {
     public class RLPLList
     {

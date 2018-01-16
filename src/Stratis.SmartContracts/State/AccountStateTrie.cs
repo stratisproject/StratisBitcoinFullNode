@@ -4,7 +4,7 @@ using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.State;
 
-namespace Stratis.SmartContracts.Trie
+namespace Stratis.SmartContracts.State
 {
     public class AccountStateTrie : ISource<uint160, AccountState>
     {

@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly ISmartContractStateRepository state;
+        private readonly IRepository state;
         private readonly SmartContractDecompiler smartContractDecompiler;
         private readonly SmartContractValidator smartContractValidator;
         private readonly SmartContractGasInjector smartContractGasInjector;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            ISmartContractStateRepository state,
+            IRepository state,
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
             SmartContractGasInjector smartContractGasInjector)
@@ -176,6 +176,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             foreach (TxOut txOut in transaction.Outputs)
             {
+
                 if (txOut.ScriptPubKey.IsSmartContractExec)
                 {
                     var scTransaction = new SCTransaction(txOut);
@@ -229,7 +230,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             
             if (!result.Revert)
             {
-                this.state.SetCode(contractAddress, adjustedCodeBytes);
+                this.state.SaveCode(contractAddress, adjustedCodeBytes);
                 // anything else to update
             }
         }

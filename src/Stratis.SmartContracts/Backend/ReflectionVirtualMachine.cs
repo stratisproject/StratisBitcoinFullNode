@@ -10,9 +10,9 @@ namespace Stratis.SmartContracts.Backend
     {
         private const string InitMethod = "Init";
 
-        public ISmartContractStateRepository StateDb { get; private set; }
+        public IRepository StateDb { get; private set; }
 
-        public ReflectionVirtualMachine(ISmartContractStateRepository stateDb)
+        public ReflectionVirtualMachine(IRepository stateDb)
         {
             StateDb = stateDb;
         }
