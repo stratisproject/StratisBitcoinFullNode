@@ -1,0 +1,72 @@
+{
+	"info": {
+		"name": "Watch-Only Wallet",
+		"_postman_id": "954d1a8c-13f7-366e-dc7e-b207a12b31fe",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Watch Address",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37221/api/watchonlywallet/watch?address=TQmA9QmWcJfV4zZrvd1579yivgLfPZscg4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"watchonlywallet",
+						"watch"
+					],
+					"query": [
+						{
+							"key": "address",
+							"value": "TQmA9QmWcJfV4zZrvd1579yivgLfPZscg4",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get Watch-Only wallet",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37221/api/watchonlywallet",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"watchonlywallet"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

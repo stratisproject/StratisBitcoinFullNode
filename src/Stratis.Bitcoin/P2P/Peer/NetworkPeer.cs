@@ -468,14 +468,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Processes an incoming message from the peer and calls subscribed event handlers.
         /// </summary>
         /// <param name="message">Message received from the peer.</param>
-        public async Task ProcessMessageAsync(IncomingMessage message)
+        /// <param name="cancellation">Cancellation token to abort message processing.</param>
+        public async Task ProcessMessageAsync(IncomingMessage message, CancellationToken cancellation)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
             switch (message.Message.Payload)
             {
                 case VersionPayload versionPayload:
-                    await this.ProcessVersionMessageAsync(versionPayload).ConfigureAwait(false);
+                    await this.ProcessVersionMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
                     break;
 
                 case HaveWitnessPayload unused:
@@ -535,7 +536,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Processes a "version" message received from a peer.
         /// </summary>
         /// <param name="version">Version message received from a peer.</param>
-        private async Task ProcessVersionMessageAsync(VersionPayload version)
+        /// <param name="cancellation">Cancellation token to abort message processing.</param>
+        private async Task ProcessVersionMessageAsync(VersionPayload version, CancellationToken cancellation)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(version), version);
 
@@ -544,7 +546,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             switch (this.State)
             {
                 case NetworkPeerState.Connected:
-                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version).ConfigureAwait(false);
+                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
                     break;
 
                 case NetworkPeerState.HandShaked:
@@ -555,7 +557,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                             Code = RejectCode.DUPLICATE
                         };
 
-                        await this.SendMessageAsync(rejectPayload).ConfigureAwait(false);
+                        await this.SendMessageAsync(rejectPayload, cancellation).ConfigureAwait(false);
                     }
                     break;
             }
@@ -572,8 +574,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Processes an initial "version" message received from a peer.
         /// </summary>
         /// <param name="version">Version message received from a peer.</param>
+        /// <param name="cancellation">Cancellation token to abort message processing.</param>
         /// <exception cref="OperationCanceledException">Thrown if the response to our "version" message is not received on time.</exception>
-        private async Task ProcessInitialVersionPayloadAsync(VersionPayload version)
+        private async Task ProcessInitialVersionPayloadAsync(VersionPayload version, CancellationToken cancellation)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(version), version);
 
@@ -587,14 +590,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogDebug("Connection to self detected and will be aborted.");
 
                 VersionPayload versionPayload = this.Parameters.CreateVersion(this.PeerAddress.Endpoint, this.Network, this.dateTimeProvider.GetTimeOffset());
-                await this.SendMessageAsync(versionPayload);
+                await this.SendMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
                 this.Disconnect("Connected to self");
 
                 this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                 return;
             }
 
-            using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token))
+            using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token, cancellation))
             {
                 cancellationSource.CancelAfter(TimeSpan.FromSeconds(10.0));
                 try

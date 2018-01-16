@@ -1,0 +1,63 @@
+{
+	"info": {
+		"name": "RPC",
+		"_postman_id": "868e3936-9222-f862-e6e0-d29773855a88",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "List all RPC methods",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37221/api/rpc/listmethods",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"rpc",
+						"listmethods"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Call an RPC method",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:37221/api/rpc/callbyname?methodname=getblockcount",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "37221",
+					"path": [
+						"api",
+						"rpc",
+						"callbyname"
+					],
+					"query": [
+						{
+							"key": "methodname",
+							"value": "getblockcount",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
