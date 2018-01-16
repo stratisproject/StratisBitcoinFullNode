@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("connectionSettings");
         }
-
+/*
         [Fact]
         [Trait("DNS", "UnitTest")]
         public void WhenConstructorCalled_AndNodeSettingsDnsHostNameIsNull_ThenArgumentNullExceptionIsThrown()
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("DnsHostName");
         }
-
+*/
         [Fact]
         [Trait("DNS", "UnitTest")]
         public void WhenConstructorCalled_AndConnectionSettingsConnectionManagerIsNull_ThenArgumentNullExceptionIsThrown()
