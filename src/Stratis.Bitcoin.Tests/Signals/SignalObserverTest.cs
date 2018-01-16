@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Tests.Signals
     {
         private SignalObserver<Block> observer;
 
-        public SignalObserverTest() : base()
+        public SignalObserverTest()
         {
             this.observer = new TestBlockSignalObserver();
         }

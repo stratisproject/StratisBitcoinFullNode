@@ -793,15 +793,17 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (o.IsEmpty)
                             return false;
 
+                        // Check if the destination script is one of the wallet's.
                         bool found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
 
-                        // Include the keys we don't hold.
+                        // Include the keys not included in our wallets (external payees).
                         if (!found)
                             return true;
 
-                        // Include the keys we do hold but that are for receiving
-                        // addresses (which would mean the user paid itself).
-                        return !addr.IsChangeAddress();
+                        // Include the keys that are in the wallet but that are for receiving
+                        // addresses (which would mean the user paid itself). 
+                        // We also exclude the keys involved in a staking transaction.
+                        return !addr.IsChangeAddress() && !transaction.IsCoinStake;
                     });
 
                     this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);

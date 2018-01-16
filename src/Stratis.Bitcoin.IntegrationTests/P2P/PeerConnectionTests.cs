@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -90,11 +91,8 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             var testFolder = TestDirectory.Create(folder);
 
-            this.nodeSettings = new NodeSettings
-            {
-                DataDir = testFolder.FolderName
-            };
-
+            this.nodeSettings = new NodeSettings();
+            this.nodeSettings.LoadArguments(new string[] { });
             this.nodeSettings.DataFolder = new DataFolder(this.nodeSettings);
 
             this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder, this.loggerFactory);
