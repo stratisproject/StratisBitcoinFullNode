@@ -78,7 +78,8 @@ namespace Stratis.Bitcoin.Connection
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
-                this.peerBanning.BanPeer(peer.RemoteSocketEndpoint, this.nodeSettings.ConnectionManager.BanTimeSeconds, "Invalid block header received");
+                var connectionSettings = this.connectionManagerBehavior.ConnectionManager.ConnectionSettings;
+                this.peerBanning.BanPeer(peer.RemoteSocketEndpoint, connectionSettings.BanTimeSeconds, "Invalid block header received");
                 this.logger.LogTrace("Invalid block header received from peer '{0}'.", peer.RemoteSocketEndpoint);
                 peer.Disconnect("Invalid block header received");
             }
