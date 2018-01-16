@@ -94,26 +94,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Act and Assert.
             a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("connectionSettings");
         }
-/*
-        [Fact]
-        [Trait("DNS", "UnitTest")]
-        public void WhenConstructorCalled_AndNodeSettingsDnsHostNameIsNull_ThenArgumentNullExceptionIsThrown()
-        {
-            // Arrange.
-            IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings();
-            connectionSettings.Load(nodeSettings);
 
-            Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, connectionSettings, DnsSettings.Load(nodeSettings)); };
-
-            // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("DnsHostName");
-        }
-*/
         [Fact]
         [Trait("DNS", "UnitTest")]
         public void WhenConstructorCalled_AndConnectionSettingsConnectionManagerIsNull_ThenArgumentNullExceptionIsThrown()
