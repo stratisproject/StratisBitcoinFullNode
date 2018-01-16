@@ -689,48 +689,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Waits for a message of specific type to be received from the peer.
-        /// </summary>
-        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
-        /// <param name="timeout">How long to wait for the message.</param>
-        /// <returns>Received message.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the wait timed out.</exception>
-        public TPayload ReceiveMessage<TPayload>(TimeSpan timeout) where TPayload : Payload
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(timeout), timeout);
-
-            using (var source = new CancellationTokenSource())
-            {
-                source.CancelAfter(timeout);
-                TPayload res = this.ReceiveMessage<TPayload>(source.Token);
-
-                this.logger.LogTrace("(-):'{0}'", res);
-                return res;
-            }
-        }
-
-        /// <summary>
-        /// Waits for a message of specific type to be received from the peer.
-        /// </summary>
-        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation.</param>
-        /// <returns>Received message.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the cancellation token was cancelled.</exception>
-        public TPayload ReceiveMessage<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
-        {
-            this.logger.LogTrace("()");
-
-            using (var listener = new NetworkPeerListener(this))
-            {
-                TPayload res = listener.ReceivePayload<TPayload>(cancellationToken);
-
-                this.logger.LogTrace("(-):'{0}'", res);
-                return res;
-            }
-
-        }
-
-        /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
         /// <para>Both parties have to send their "version" messages to the other party 
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
@@ -738,7 +696,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         public async Task VersionHandshakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            await this.VersionHandshakeAsync(null, cancellationToken);
+            await this.VersionHandshakeAsync(null, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -753,57 +711,71 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (var listener = new NetworkPeerListener(this).Where(p => (p.Message.Payload is VersionPayload)
-                || (p.Message.Payload is RejectPayload)
-                || (p.Message.Payload is VerAckPayload)))
+            using (var listener = new NetworkPeerListener(this))
             {
                 this.logger.LogTrace("Sending my version.");
-                await this.SendMessageAsync(this.MyVersion).ConfigureAwait(false);
+                await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
                 this.logger.LogTrace("Waiting for version or rejection message.");
-                Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
-                if (payload is RejectPayload)
+                bool versionReceived = false;
+                bool verAckReceived = false;
+                while (!versionReceived || !verAckReceived)
                 {
-                    this.logger.LogTrace("(-)[HANDSHAKE_REJECTED]");
-                    throw new ProtocolException("Handshake rejected: " + ((RejectPayload)payload).Reason);
+                    Payload payload = await listener.ReceivePayloadAsync<Payload>(cancellationToken).ConfigureAwait(false);
+                    switch (payload)
+                    {
+                        case RejectPayload rejectPayload:
+                            this.logger.LogTrace("(-)[HANDSHAKE_REJECTED]");
+                            throw new ProtocolException("Handshake rejected: " + rejectPayload.Reason);
+
+                        case VersionPayload versionPayload:
+                            versionReceived = true;
+
+                            this.PeerVersion = versionPayload;
+                            if (!versionPayload.AddressReceiver.Address.Equals(this.MyVersion.AddressFrom.Address))
+                            {
+                                this.logger.LogDebug("Different external address detected by the node '{0}' instead of '{1}'.", versionPayload.AddressReceiver.Address, this.MyVersion.AddressFrom.Address);
+                            }
+
+                            if (versionPayload.Version < ProtocolVersion.MIN_PEER_PROTO_VERSION)
+                            {
+                                this.logger.LogDebug("Outdated version {0} received, disconnecting peer.", versionPayload.Version);
+
+                                this.Disconnect("Outdated version");
+                                this.logger.LogTrace("(-)[OUTDATED]");
+                                return;
+                            }
+
+                            if (!requirements.Check(versionPayload))
+                            {
+                                this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
+                                this.Disconnect("The peer does not support the required services requirement");
+                                return;
+                            }
+
+                            this.logger.LogTrace("Sending version acknowledgement.");
+                            await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
+                            break;
+
+                        case VerAckPayload verAckPayload:
+                            verAckReceived = true;
+                            break;
+                    }
                 }
 
-                var version = (VersionPayload)payload;
-                this.PeerVersion = version;
-                if (!version.AddressReceiver.Address.Equals(this.MyVersion.AddressFrom.Address))
-                {
-                    this.logger.LogDebug("Different external address detected by the node '{0}' instead of '{1}'.", version.AddressReceiver.Address, this.MyVersion.AddressFrom.Address);
-                }
-
-                if (version.Version < ProtocolVersion.MIN_PEER_PROTO_VERSION)
-                {
-                    this.logger.LogDebug("Outdated version {0} received, disconnecting peer.", version.Version);
-
-                    this.Disconnect("Outdated version");
-                    this.logger.LogTrace("(-)[OUTDATED]");
-                    return;
-                }
-
-                if (!requirements.Check(version))
-                {
-                    this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
-                    this.Disconnect("The peer does not support the required services requirement");
-                    return;
-                }
-
-                this.logger.LogTrace("Sending version acknowledgement.");
-                await this.SendMessageAsync(new VerAckPayload()).ConfigureAwait(false);
-
-                this.logger.LogTrace("Waiting for version acknowledgement.");
-                listener.ReceivePayload<VerAckPayload>(cancellationToken);
                 this.State = NetworkPeerState.HandShaked;
 
                 if (this.Advertize && this.MyVersion.AddressFrom.Address.IsRoutable(true))
                 {
-                    this.SendMessageVoidAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
-                    {
-                        Time = this.dateTimeProvider.GetTimeOffset()
-                    }));
+                    var addrPayload = new AddrPayload
+                    (
+                        new NetworkAddress(this.MyVersion.AddressFrom)
+                        {
+                            Time = this.dateTimeProvider.GetTimeOffset()
+                        }
+                    );
+
+                    await this.SendMessageAsync(addrPayload, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -815,28 +787,34 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <exception cref="ProtocolException">Thrown when the peer rejected our "version" message.</exception>
-        public async Task RespondToHandShakeAsync(CancellationToken cancellation = default(CancellationToken))
+        public async Task RespondToHandShakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
-            using (var listener = new NetworkPeerListener(this).Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
+            using (var listener = new NetworkPeerListener(this))
             {
                 this.logger.LogTrace("Responding to handshake with my version.");
-                await this.SendMessageAsync(this.MyVersion);
+                await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
                 this.logger.LogTrace("Waiting for version acknowledgement or rejection message.");
-                IncomingMessage message = listener.ReceiveMessage(cancellation);
 
-                if (message.Message.Payload is RejectPayload reject)
+                while (this.State != NetworkPeerState.HandShaked)
                 {
-                    this.logger.LogTrace("Version rejected: code {0}, reason '{1}'.", reject.Code, reject.Reason);
-                    this.logger.LogTrace("(-)[VERSION_REJECTED]");
-                    throw new ProtocolException("Version rejected " + reject.Code + ": " + reject.Reason);
-                }
+                    Payload payload = await listener.ReceivePayloadAsync<Payload>(cancellationToken).ConfigureAwait(false);
+                    switch (payload)
+                    {
+                        case RejectPayload rejectPayload:
+                            this.logger.LogTrace("Version rejected: code {0}, reason '{1}'.", rejectPayload.Code, rejectPayload.Reason);
+                            this.logger.LogTrace("(-)[VERSION_REJECTED]");
+                            throw new ProtocolException("Version rejected " + rejectPayload.Code + ": " + rejectPayload.Reason);
 
-                this.logger.LogTrace("Sending version acknowledgement.");
-                await this.SendMessageAsync(new VerAckPayload());
-                this.State = NetworkPeerState.HandShaked;
+                        case VerAckPayload verAckPayload:
+                            this.logger.LogTrace("Sending version acknowledgement.");
+                            await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
+                            this.State = NetworkPeerState.HandShaked;
+                            break;
+                    }
+                }
             }
 
             this.logger.LogTrace("(-)");

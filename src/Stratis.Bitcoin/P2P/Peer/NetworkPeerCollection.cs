@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.Utilities;
 
