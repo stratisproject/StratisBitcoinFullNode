@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreRpc.Generate(450);
 
                 BIP9DeploymentsArray bip9Constants = node1.FullNode.Network.Consensus.BIP9Deployments;
-                ConsensusLoop consensusLoop = node1.FullNode.NodeService<ConsensusLoop>();
+                IConsensusLoop consensusLoop = node1.FullNode.NodeService<IConsensusLoop>();
                 ThresholdState[] bip9State = consensusLoop.NodeDeployments.BIP9.GetStates(node1.FullNode.Chain.Tip.Previous);
 
                 Money amount = new Money(5.0m, MoneyUnit.BTC);
