@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
@@ -173,6 +175,44 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
             }
             return model;
+        }
+
+        /// <summary>
+        /// Returns information about a bitcoin address
+        /// </summary>
+        /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
+        /// <returns>JObject containing a boolean indicating address validity</returns>
+        [ActionName("validateaddress")]
+        [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
+        public JObject ValidateAddress(string address)
+        {
+            if (string.IsNullOrEmpty(address))
+                throw new ArgumentNullException("address");
+
+            var res = new JObject();
+            res["isvalid"] = false;
+
+            // P2PKH
+            if(BitcoinPubKeyAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            // P2SH
+            else if(BitcoinScriptAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            // P2WPKH
+            else if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network))
+            {
+                res ["isvalid"] = true;
+            }
+            // P2WSH
+            else if (BitcoinWitScriptAddress.IsValid(address, ref this.Network))
+            {
+                res ["isvalid"] = true;
+            }
+            return res;
         }
 
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
