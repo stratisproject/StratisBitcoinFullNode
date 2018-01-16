@@ -47,58 +47,58 @@ namespace Stratis.Bitcoin.Base.Deployments
                 .ToArray();
         }
 
-        public ThresholdState GetState(ChainedBlock pindexPrev, BIP9Deployments deployment)
+        public ThresholdState GetState(ChainedBlock indexPrev, BIP9Deployments deployment)
         {
-            int nPeriod = this.consensus.MinerConfirmationWindow;
-            int nThreshold = this.consensus.RuleChangeActivationThreshold;
-            var nTimeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
-            var nTimeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
+            int period = this.consensus.MinerConfirmationWindow;
+            int threshold = this.consensus.RuleChangeActivationThreshold;
+            var timeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
+            var timeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
 
             // Check if this deployment is always active.
-            if (nTimeStart == Utils.UnixTimeToDateTime(BIP9DeploymentsParameters.AlwaysActive))
+            if (timeStart == Utils.UnixTimeToDateTime(BIP9DeploymentsParameters.AlwaysActive))
             {
                 return ThresholdState.Active;
             }
 
             // A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
-            if (pindexPrev != null)
+            if (indexPrev != null)
             {
-                pindexPrev = pindexPrev.GetAncestor(pindexPrev.Height - ((pindexPrev.Height + 1) % nPeriod));
+                indexPrev = indexPrev.GetAncestor(indexPrev.Height - ((indexPrev.Height + 1) % period));
             }
 
             // Walk backwards in steps of nPeriod to find a pindexPrev whose information is known
             List<ChainedBlock> vToCompute = new List<ChainedBlock>();
-            while (!this.ContainsKey(pindexPrev?.HashBlock, deployment))
+            while (!this.ContainsKey(indexPrev?.HashBlock, deployment))
             {
-                if (pindexPrev.GetMedianTimePast() < nTimeStart)
+                if (indexPrev.GetMedianTimePast() < timeStart)
                 {
                     // Optimization: don't recompute down further, as we know every earlier block will be before the start time
-                    this.Set(pindexPrev?.HashBlock, deployment, ThresholdState.Defined);
+                    this.Set(indexPrev?.HashBlock, deployment, ThresholdState.Defined);
                     break;
                 }
-                vToCompute.Add(pindexPrev);
-                pindexPrev = pindexPrev.GetAncestor(pindexPrev.Height - nPeriod);
+                vToCompute.Add(indexPrev);
+                indexPrev = indexPrev.GetAncestor(indexPrev.Height - period);
             }
             // At this point, cache[pindexPrev] is known
-            this.Assert(this.ContainsKey(pindexPrev?.HashBlock, deployment));
-            ThresholdState state = this.Get(pindexPrev?.HashBlock, deployment);
+            this.Assert(this.ContainsKey(indexPrev?.HashBlock, deployment));
+            ThresholdState state = this.Get(indexPrev?.HashBlock, deployment);
 
             // Now walk forward and compute the state of descendants of pindexPrev
             while (vToCompute.Count != 0)
             {
                 ThresholdState stateNext = state;
-                pindexPrev = vToCompute[vToCompute.Count - 1];
+                indexPrev = vToCompute[vToCompute.Count - 1];
                 vToCompute.RemoveAt(vToCompute.Count - 1);
 
                 switch (state)
                 {
                     case ThresholdState.Defined:
                         {
-                            if (pindexPrev.GetMedianTimePast() >= nTimeTimeout)
+                            if (indexPrev.GetMedianTimePast() >= timeTimeout)
                             {
                                 stateNext = ThresholdState.Failed;
                             }
-                            else if (pindexPrev.GetMedianTimePast() >= nTimeStart)
+                            else if (indexPrev.GetMedianTimePast() >= timeStart)
                             {
                                 stateNext = ThresholdState.Started;
                             }
@@ -106,15 +106,15 @@ namespace Stratis.Bitcoin.Base.Deployments
                         }
                     case ThresholdState.Started:
                         {
-                            if (pindexPrev.GetMedianTimePast() >= nTimeTimeout)
+                            if (indexPrev.GetMedianTimePast() >= timeTimeout)
                             {
                                 stateNext = ThresholdState.Failed;
                                 break;
                             }
                             // We need to count
-                            ChainedBlock pindexCount = pindexPrev;
+                            ChainedBlock pindexCount = indexPrev;
                             int count = 0;
-                            for (int i = 0; i < nPeriod; i++)
+                            for (int i = 0; i < period; i++)
                             {
                                 if (this.Condition(pindexCount, deployment))
                                 {
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                                 }
                                 pindexCount = pindexCount.Previous;
                             }
-                            if (count >= nThreshold)
+                            if (count >= threshold)
                             {
                                 stateNext = ThresholdState.LockedIn;
                             }
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                             break;
                         }
                 }
-                this.Set(pindexPrev?.HashBlock, deployment, state = stateNext);
+                this.Set(indexPrev?.HashBlock, deployment, state = stateNext);
             }
 
             return state;

@@ -1,18 +1,17 @@
 ﻿using NBitcoin;
+using NBitcoin.RPC;
+using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.WatchOnlyWallet;
-using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
-using Stratis.Bitcoin.Base.Deployments;
-using NBitcoin.RPC;
 using static NBitcoin.Consensus;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -39,8 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseBlockNotification()
                         .UseTransactionNotification()
                         .AddMining()
-                        .UseWallet()
-                        .UseWatchOnlyWallet()
+                        .UseWallet()                        
                         .UseApi()
                         .AddRPC();
                 });
