@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Base
         private readonly List<IDisposable> disposableResources = new List<IDisposable>();
 
         /// <summary>Information about node's chain.</summary>
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         /// <summary>Access to the database of blocks.</summary>
         private readonly ChainRepository chainRepository;
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Base
             DataFolder dataFolder,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
-            ChainState chainState,
+            IChainState chainState,
             IConnectionManager connectionManager,
             ChainRepository chainRepository,
             IDateTimeProvider dateTimeProvider,
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
-                    services.AddSingleton<ChainState>();
+                    services.AddSingleton<IChainState, ChainState>();
                     services.AddSingleton<ChainRepository>();
                     services.AddSingleton<TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();

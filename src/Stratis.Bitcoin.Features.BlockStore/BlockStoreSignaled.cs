@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly ConcurrentChain chain;
 
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         private readonly IConnectionManager connection;
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             BlockStoreLoop blockStoreLoop,
             ConcurrentChain chain,
             StoreSettings storeSettings,
-            ChainState chainState,
+            IChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
