@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         this.batchTimer.Stop();
 
-                        await SendBatchLockedAsync().ConfigureAwait(false);
+                        await this.SendBatchLockedAsync().ConfigureAwait(false);
                     }
                     else if (!this.batchTimer.Enabled)
                     {
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (!this.batchTimer.Enabled)
                     return;
 
-                await SendBatchLockedAsync().ConfigureAwait(false);
+                await this.SendBatchLockedAsync().ConfigureAwait(false);
             }
         }
 
