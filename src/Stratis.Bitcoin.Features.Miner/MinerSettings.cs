@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -44,16 +45,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public MinerSettings()
-        {
-        }
-
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
         /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
-        public MinerSettings(Action<MinerSettings> callback)
-        {
+        public MinerSettings(Action<MinerSettings> callback = null)
+        {        
             this.callback = callback;
         }
 
@@ -63,6 +57,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Mine = config.GetOrDefault<bool>("mine", false);

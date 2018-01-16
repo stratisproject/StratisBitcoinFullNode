@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -9,23 +11,29 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <summary>
     /// Provides an interface for creating block templates of different types.
     /// </summary>
-    public abstract class AssemblerFactory
+    public interface IAssemblerFactory
     {
-        public abstract BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null);
+        /// <summary>
+        /// Creates a <see cref="BlockAssembler"/> which can be used to create new blocks.
+        /// </summary>
+        /// <param name="chainTip">The tip of the chain that this instance will work with without touching any shared chain resources.</param>
+        /// <param name="options">The block assembler options.</param>
+        /// <returns>A new block assembler.</returns>
+        BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null);
     }
 
     /// <summary>
     /// Provides functionality for creating PoW block templates.
     /// </summary>
-    public class PowAssemblerFactory : AssemblerFactory
+    public class PowAssemblerFactory : IAssemblerFactory
     {
-        protected readonly ConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
         protected readonly Network network;
 
         protected readonly MempoolSchedulerLock mempoolLock;
 
-        protected readonly TxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -38,10 +46,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         public PowAssemblerFactory(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolLock,
-            TxMempool mempool,
+            ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             StakeChain stakeChain = null)
@@ -56,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public override BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
+        public BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
         {
             return new PowBlockAssembler(this.consensusLoop, this.network, this.mempoolLock, this.mempool, this.dateTimeProvider, chainTip, this.loggerFactory, options);
         }
@@ -65,15 +73,15 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <summary>
     /// Provides functionality for creating PoS block templates.
     /// </summary>
-    public class PosAssemblerFactory : AssemblerFactory
+    public class PosAssemblerFactory : IAssemblerFactory
     {
-        protected readonly ConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
         protected readonly Network network;
 
         protected readonly MempoolSchedulerLock mempoolScheduler;
 
-        protected readonly TxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -83,17 +91,17 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly StakeValidator stakeValidator;
+        private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
         public PosAssemblerFactory(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             Network network,
             MempoolSchedulerLock mempoolScheduler,
-            TxMempool mempool,
-            StakeValidator stakeValidator,
+            ITxMempool mempool,
+            IStakeValidator stakeValidator,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             StakeChain stakeChain = null)
@@ -109,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public override BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
+        public BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
         {
             return new PosBlockAssembler(this.consensusLoop, this.network, this.mempoolScheduler, this.mempool,
                 this.dateTimeProvider, this.stakeChain, this.stakeValidator, chainTip, this.loggerFactory, options);
