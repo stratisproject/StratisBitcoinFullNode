@@ -74,8 +74,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.localBatch = new List<ChainedBlock>();
 
             // Configure batch timer.
-            this.batchTimer = new Timer(this.batchInterval.TotalMilliseconds);
-            this.batchTimer.AutoReset = false;
+            this.batchTimer = new Timer(this.batchInterval.TotalMilliseconds) { AutoReset = false };
         }
 
         protected override void OnNextCore(Block block)
