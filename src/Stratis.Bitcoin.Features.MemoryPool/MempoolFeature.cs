@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
@@ -140,7 +141,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<MempoolSchedulerLock>();
-                        services.AddSingleton<TxMempool>();
+                        services.AddSingleton<ITxMempool, TxMempool>();
                         services.AddSingleton<BlockPolicyEstimator>();
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();

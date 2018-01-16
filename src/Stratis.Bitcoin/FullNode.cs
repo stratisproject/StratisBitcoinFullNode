@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin
         public List<IDisposable> Resources { get; private set; }
 
         /// <summary>Information about the best chain.</summary>
-        public ChainState ChainBehaviorState { get; private set; }
+        public IChainState ChainBehaviorState { get; private set; }
 
         /// <summary>Provider of IBD state.</summary>
         public IInitialBlockDownloadState InitialBlockDownloadState { get; private set; }
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin
             this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
-            this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainState>();
+            this.ChainBehaviorState = this.Services.ServiceProvider.GetService<IChainState>();
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();

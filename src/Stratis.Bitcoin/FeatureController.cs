@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin
 
         protected ChainBase Chain;
 
-        protected ChainState ChainState;
+        protected IChainState ChainState;
 
         protected Connection.IConnectionManager ConnectionManager;
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin
             NodeSettings nodeSettings = null,
             Network network = null,
             ConcurrentChain chain = null,
-            ChainState chainState = null,
+            IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null)
         {
             this.FullNode = fullNode;
