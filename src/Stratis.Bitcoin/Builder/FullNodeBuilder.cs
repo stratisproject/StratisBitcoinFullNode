@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Builder
                 throw new InvalidOperationException("full node already built");
             this.fullNodeBuilt = true;
 
-            this.NodeSettings.LoadConfiguration();
+            this.NodeSettings?.LoadConfiguration();
 
             this.Services = this.BuildServices();
 
