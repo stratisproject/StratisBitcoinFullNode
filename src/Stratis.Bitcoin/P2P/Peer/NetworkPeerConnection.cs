@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerConnection(Network network, NetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
-            this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peer.PeerAddress}] ");
+            this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peer.PeerEndPoint}] ");
 
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;

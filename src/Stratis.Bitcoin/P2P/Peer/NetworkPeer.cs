@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
 
         /// <summary>IP address and port on the side of the peer.</summary>
-        public IPEndPoint PeerAddress { get; private set; }
+        public IPEndPoint PeerEndPoint { get; private set; }
 
         /// <summary>Last time in UTC the node received something from this peer.</summary>
         public DateTime LastSeen { get; set; }
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            this.PeerAddress = new IPEndPoint(IPAddress.Loopback, 1);
+            this.PeerEndPoint = new IPEndPoint(IPAddress.Loopback, 1);
             this.Connection = new NetworkPeerConnection(null, this, new TcpClient(), 0, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
         }
 
@@ -302,12 +302,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
         /// <param name="inbound"><c>true</c> for inbound peers, <c>false</c> for outbound peers.</param>
-        /// <param name="peerAddress">IP address and port on the side of the peer.</param>
+        /// <param name="peerEndPoint">IP address and port on the side of the peer.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        private NetworkPeer(bool inbound, IPEndPoint peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        private NetworkPeer(bool inbound, IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
@@ -317,25 +317,25 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Inbound = inbound;
             this.LastSeen = this.dateTimeProvider.GetUtcNow();
-            this.PeerAddress = peerAddress;
+            this.PeerEndPoint = peerEndPoint;
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
 
             this.Parameters = parameters ?? new NetworkPeerConnectionParameters();
-            this.MyVersion = this.Parameters.CreateVersion(this.PeerAddress, network, this.dateTimeProvider.GetTimeOffset());
+            this.MyVersion = this.Parameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
         }
 
         /// <summary>
         /// Initializes an instance of the object for outbound network peers.
         /// </summary>
-        /// <param name="peerAddress">IP address and port on the side of the peer.</param>
+        /// <param name="peerEndPoint">IP address and port on the side of the peer.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(IPEndPoint peerAddress, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
+        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory)
         {
             TcpClient client = new TcpClient(AddressFamily.InterNetworkV6);
             client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -344,7 +344,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerAddress}] ");
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
             this.logger.LogTrace("()");
 
             this.logger.LogTrace("(-)");
@@ -353,28 +353,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Initializes an instance of the object for inbound network peers with already established connection.
         /// </summary>
-        /// <param name="peerAddress">IP address and port on the side of the peer.</param>
+        /// <param name="peerEndPoint">IP address and port on the side of the peer.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="client">Already connected network client.</param>
         /// <param name="peerVersion">Version message payload received from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(IPEndPoint peerAddress, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory)
-            : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
+        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory)
+            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory)
         {
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerAddress}] ");
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
             this.logger.LogTrace("()");
 
-            this.RemoteSocketEndpoint = this.PeerAddress;
+            this.RemoteSocketEndpoint = this.PeerEndPoint;
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
             this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
             this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
-            this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress);
+            this.logger.LogTrace("Connected to peer '{0}'.", this.PeerEndPoint);
             this.State = NetworkPeerState.Connected;
 
             this.InitDefaultBehaviors(this.Parameters);
@@ -394,9 +394,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.logger.LogTrace("Connecting to '{0}'.", this.PeerAddress);
+                this.logger.LogTrace("Connecting to '{0}'.", this.PeerEndPoint);
 
-                await this.Connection.ConnectAsync(this.PeerAddress, cancellation).ConfigureAwait(false);
+                await this.Connection.ConnectAsync(this.PeerEndPoint, cancellation).ConfigureAwait(false);
 
                 this.RemoteSocketEndpoint = this.Connection.RemoteEndPoint;
                 this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
@@ -408,11 +408,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.InitDefaultBehaviors(this.Parameters);
                 this.Connection.StartReceiveMessages();
 
-                this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerAddress);
+                this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerEndPoint);
             }
             catch (OperationCanceledException)
             {
-                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerAddress);
+                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
                 this.State = NetworkPeerState.Offline;
 
                 this.logger.LogTrace("(-)[CANCELLED]");
@@ -589,7 +589,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogDebug("Connection to self detected and will be aborted.");
 
-                VersionPayload versionPayload = this.Parameters.CreateVersion(this.PeerAddress, this.Network, this.dateTimeProvider.GetTimeOffset());
+                VersionPayload versionPayload = this.Parameters.CreateVersion(this.PeerEndPoint, this.Network, this.dateTimeProvider.GetTimeOffset());
                 await this.SendMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
                 this.Disconnect("Connected to self");
 
@@ -853,7 +853,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("{0} ({1})", this.State, this.PeerAddress);
+            return string.Format("{0} ({1})", this.State, this.PeerEndPoint);
         }
 
         /// <summary>

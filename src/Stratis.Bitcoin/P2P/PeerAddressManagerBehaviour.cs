@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                    this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerAddress, this.dateTimeProvider.GetUtcNow());
+                    this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (peer.State == NetworkPeerState.HandShaked)
-                    this.peerAddressManager.PeerHandshaked(peer.PeerAddress, this.dateTimeProvider.GetUtcNow());
+                    this.peerAddressManager.PeerHandshaked(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 
