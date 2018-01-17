@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.State
         public virtual bool Flush()
         {
             bool ret = FlushImpl();
-            if (flushSource)
+            if (this.flushSource)
                 ret |= GetSource().Flush();
             return ret;
         }

@@ -9,7 +9,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class WriteCacheTest
     {
-
         private byte[] IntToKey(int i)
         {
             return HashHelper.Keccak256(BitConverter.GetBytes(i));
@@ -25,6 +24,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return BitConverter.ToString(bytes).Replace("-", string.Empty);
         }
 
+        // TODO: MAKE THIS DELETE WORK!
+
         [Fact]
         public void TestSimple()
         {
@@ -35,8 +36,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 writeCache.Put(IntToKey(i), IntToValue(i));
             }
             // Everything is cached
-            Assert.Equal(ToHexString(IntToValue(0)), ToHexString(writeCache.GetCached(IntToKey(0)).Value()));
-            Assert.Equal(ToHexString(IntToValue(9_999)), ToHexString(writeCache.GetCached(IntToKey(9_999)).Value()));
+            Assert.Equal(ToHexString(IntToValue(0)), ToHexString(writeCache.GetCached(IntToKey(0)).Value));
+            Assert.Equal(ToHexString(IntToValue(9_999)), ToHexString(writeCache.GetCached(IntToKey(9_999)).Value));
 
             // Everything is flushed
             writeCache.Flush();
@@ -49,18 +50,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // Deleting key that is currently in cache
             writeCache.Put(IntToKey(0), IntToValue(12345));
-            Assert.Equal(ToHexString(IntToValue(12345)), ToHexString(writeCache.GetCached(IntToKey(0)).Value()));
+            Assert.Equal(ToHexString(IntToValue(12345)), ToHexString(writeCache.GetCached(IntToKey(0)).Value));
             writeCache.Delete(IntToKey(0));
-            Assert.True(null == writeCache.GetCached(IntToKey(0)) || null == writeCache.GetCached(IntToKey(0)).Value());
+            var test = writeCache.GetCached(IntToKey(0));
+            Assert.True(null == writeCache.GetCached(IntToKey(0)) || null == writeCache.GetCached(IntToKey(0)).Value);
             Assert.Equal(ToHexString(IntToValue(0)), ToHexString(src.Get(IntToKey(0))));
             writeCache.Flush();
             Assert.Null(src.Get(IntToKey(0)));
 
             // Deleting key that is not currently in cache
-            Assert.True(null == writeCache.GetCached(IntToKey(1)) || null == writeCache.GetCached(IntToKey(1)).Value());
+            Assert.True(null == writeCache.GetCached(IntToKey(1)) || null == writeCache.GetCached(IntToKey(1)).Value);
             Assert.Equal(ToHexString(IntToValue(1)), ToHexString(src.Get(IntToKey(1))));
             writeCache.Delete(IntToKey(1));
-            Assert.True(null == writeCache.GetCached(IntToKey(1)) || null == writeCache.GetCached(IntToKey(1)).Value());
+            Assert.True(null == writeCache.GetCached(IntToKey(1)) || null == writeCache.GetCached(IntToKey(1)).Value);
             Assert.Equal(ToHexString(IntToValue(1)), ToHexString(src.Get(IntToKey(1))));
             writeCache.Flush();
             Assert.Null(src.Get(IntToKey(1)));

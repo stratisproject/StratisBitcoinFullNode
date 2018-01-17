@@ -15,18 +15,18 @@ namespace Stratis.SmartContracts.State
             COUNTING
         }
 
-        public abstract class CacheEntry<V> : Entry<V>
+        public abstract class CacheEntry<V> : IEntry<V>
         {
             // dedicated value instance which indicates that the entry was deleted
             // (ref counter decremented) but we don't know actual value behind it
             public static object UNKNOWN_VALUE = new object();
 
-            public V value;
+            public V Value { get; set; }
             public int counter = 0;
 
             protected CacheEntry(V value)
             {
-                this.value = value;
+                this.Value = value;
             }
 
             public abstract void Deleted();
@@ -34,12 +34,6 @@ namespace Stratis.SmartContracts.State
             public abstract void Added();
 
             public abstract V GetValue();
-
-            public V Value()
-            {
-                V v = GetValue();
-                return v;
-            }
         }
 
         public class SimpleCacheEntry<V> : CacheEntry<V>
@@ -51,17 +45,17 @@ namespace Stratis.SmartContracts.State
 
             public override void Deleted()
             {
-                counter = -1;
+                this.counter = -1;
             }
 
             public override void Added()
             {
-                counter = 1;
+                this.counter = 1;
             }
 
             public override V GetValue()
             {
-                return counter < 0 ? default(V) : value;
+                return this.counter < 0 ? default(V) : this.Value;
             }
         }
 
@@ -74,17 +68,17 @@ namespace Stratis.SmartContracts.State
 
             public override void Deleted()
             {
-                counter--;
+                this.counter--;
             }
 
             public override void Added()
             {
-                counter++;
+                this.counter++;
             }
 
             public override V GetValue()
             {
-                return value;
+                return this.Value;
             }
         }
 
@@ -95,12 +89,6 @@ namespace Stratis.SmartContracts.State
         protected object readLock = new object();
         protected object writeLock = new object();
         protected object updateLock = new object();
-
-        //protected ReadWriteUpdateLock rwuLock = new ReentrantReadWriteUpdateLock();
-        //protected ALock readLock = new ALock(rwuLock.readLock());
-        //protected ALock writeLock = new ALock(rwuLock.writeLock());
-        //protected ALock updateLock = new ALock(rwuLock.updateLock());
-
 
         public WriteCache(ISource<byte[], Value> src, CacheType cacheType) : base(src)
         {
@@ -115,21 +103,21 @@ namespace Stratis.SmartContracts.State
 
         public override ICollection<byte[]> GetModified()
         {
-            lock (readLock)
+            lock (this.readLock)
             {
-                return cache.Keys;
+                return this.cache.Keys;
             }
         }
 
 
         public override bool HasModified()
         {
-            return cache.Keys.Count > 0;
+            return this.cache.Keys.Count > 0;
         }
 
         private CacheEntry<Value> CreateCacheEntry(Value val)
         {
-            if (isCounting)
+            if (this.isCounting)
             {
                 return new CountCacheEntry<Value>(val);
             }
@@ -146,38 +134,38 @@ namespace Stratis.SmartContracts.State
                 Delete(key);
                 return;
             }
-            lock (writeLock)
+            lock (this.writeLock)
             {
                 CacheEntry<Value> curVal = null;
-                if (cache.ContainsKey(key))
-                    curVal = cache[key];
+                if (this.cache.ContainsKey(key))
+                    curVal = this.cache[key];
                 if (curVal == null)
                 {
                     curVal = CreateCacheEntry(val);
                     CacheEntry<Value> oldVal = null;
-                    if (cache.ContainsKey(key))
-                        oldVal = cache[key];
-                    cache[key] = curVal;
+                    if (this.cache.ContainsKey(key))
+                        oldVal = this.cache[key];
+                    this.cache[key] = curVal;
                     if (oldVal != null)
                     {
-                        CacheRemoved(key, oldVal.value);
+                        CacheRemoved(key, oldVal.Value);
                     }
-                    CacheAdded(key, curVal.value);
+                    CacheAdded(key, curVal.Value);
                 }
                 // assigning for non-counting cache only
                 // for counting cache the value should be immutable (see HashedKeySource)
-                curVal.value = val;
+                curVal.Value = val;
                 curVal.Added();
             }
         }
 
         public override Value Get(byte[] key)
         {
-            lock (readLock)
+            lock (this.readLock)
             {
                 CacheEntry<Value> curVal = null;
-                if (cache.ContainsKey(key))
-                    curVal = cache[key];
+                if (this.cache.ContainsKey(key))
+                    curVal = this.cache[key];
                 if (curVal == null)
                 {
                     return GetSource() == null ? default(Value) : GetSource().Get(key);
@@ -200,23 +188,23 @@ namespace Stratis.SmartContracts.State
 
         public override void Delete(byte[] key)
         {
-            lock (writeLock)
+            lock (this.writeLock)
             {
                 CacheEntry<Value> curVal = null;
-                if (cache.ContainsKey(key))
-                    curVal = cache[key];
+                if (this.cache.ContainsKey(key))
+                    curVal = this.cache[key];
                 if (curVal == null)
                 {
                     curVal = CreateCacheEntry(default(Value));
                     CacheEntry<Value> oldVal = null;
-                    if (cache.ContainsKey(key))
-                        oldVal = cache[key];
-                    cache[key] = curVal;
+                    if (this.cache.ContainsKey(key))
+                        oldVal = this.cache[key];
+                    this.cache[key] = curVal;
                     if (oldVal != null)
                     {
-                        CacheRemoved(key, oldVal.value);
+                        CacheRemoved(key, oldVal.Value);
                     }
-                    CacheAdded(key, curVal.value);
+                    CacheAdded(key, curVal.Value);
                 }
                 curVal.Deleted();
             }
@@ -225,15 +213,15 @@ namespace Stratis.SmartContracts.State
         public override bool Flush()
         {
             bool ret = false;
-            lock (updateLock)
+            lock (this.updateLock)
             {
-                foreach (var entry in cache)
+                foreach (KeyValuePair<byte[], CacheEntry<Value>> entry in this.cache)
                 {
                     if (entry.Value.counter > 0)
                     {
                         for (int i = 0; i < entry.Value.counter; i++)
                         {
-                            GetSource().Put(entry.Key, entry.Value.value);
+                            GetSource().Put(entry.Key, entry.Value.Value);
                         }
                         ret = true;
                     }
@@ -246,13 +234,13 @@ namespace Stratis.SmartContracts.State
                         ret = true;
                     }
                 }
-                if (flushSource)
+                if (this.flushSource)
                 {
                     GetSource().Flush();
                 }
-                lock (writeLock)
+                lock (this.writeLock)
                 {
-                    cache.Clear();
+                    this.cache.Clear();
                     CacheCleared();
                 }
                 return ret;
@@ -264,13 +252,13 @@ namespace Stratis.SmartContracts.State
             return false;
         }
 
-        public override Entry<Value> GetCached(byte[] key)
+        public override IEntry<Value> GetCached(byte[] key)
         {
-            lock (readLock)
+            lock (this.readLock)
             {
                 CacheEntry<Value> entry = null;
-                if (cache.ContainsKey(key))
-                    entry = cache[key];
+                if (this.cache.ContainsKey(key))
+                    entry = this.cache[key];
                 if (entry == null)
                 {
                     return null;
@@ -285,10 +273,10 @@ namespace Stratis.SmartContracts.State
         public long DebugCacheSize()
         {
             long ret = 0;
-            foreach (var entry in cache)
+            foreach (KeyValuePair<byte[], CacheEntry<Value>> entry in this.cache)
             {
-                ret += keySizeEstimator.EstimateSize(entry.Key);
-                ret += valueSizeEstimator.EstimateSize(entry.Value.Value());
+                ret += this.keySizeEstimator.EstimateSize(entry.Key);
+                ret += this.valueSizeEstimator.EstimateSize(entry.Value.Value);
             }
             return ret;
         }

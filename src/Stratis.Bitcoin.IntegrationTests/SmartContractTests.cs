@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public Money HIGHERFEE = 4 * Money.COIN;
             public int baseheight;
             public CachedCoinView cachedCoinView;
-            public Repository state;
+            public ContractStateRepository state;
 
             private bool useCheckpoints = true;
 
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     UseCheckpoints = this.useCheckpoints
                 };
 
-                this.state = new Repository();
+                this.state = new ContractStateRepository();
                 this.state.Refresh(); // just for unit tests
                 SmartContractDecompiler smartContractDecompiler = new SmartContractDecompiler();
                 SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>

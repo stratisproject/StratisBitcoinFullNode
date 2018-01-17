@@ -8,13 +8,13 @@ namespace Stratis.SmartContracts
 {
     public static class PersistentState
     {
-        internal static IRepository StateDb { get; private set; }
+        internal static IContractStateRepository StateDb { get; private set; }
 
         private static uint160 _contractAddress;
 
         private static uint _counter;
 
-        internal static void SetDbAndAddress(IRepository stateDb, uint160 contractAddress)
+        internal static void SetDbAndAddress(IContractStateRepository stateDb, uint160 contractAddress)
         {
             StateDb = stateDb;
             _contractAddress = contractAddress;

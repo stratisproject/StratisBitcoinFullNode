@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
                         });
+                        // TODO: Add repository
                         services.AddSingleton<SmartContractValidator>(validator);
                         services.AddSingleton<SmartContractGasInjector>();
                         services.AddSingleton<PowConsensusValidator, SCConsensusValidator>();

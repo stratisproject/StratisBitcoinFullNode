@@ -4,76 +4,71 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
-    public abstract class AbstractCachedSource<Key, Value> :AbstractChainedSource<Key, Value, Key, Value>, ICachedSource<Key, Value>
+    public abstract class AbstractCachedSource<Key, Value> : AbstractChainedSource<Key, Value, Key, Value>, ICachedSource<Key, Value>
     {
-
         private object aLock = new object();
 
-        public interface Entry<V>
+        public interface IEntry<V>
         {
-            V Value();
+            V Value { get; }
         }
 
-        public class SimpleEntry<V> : Entry<V> {
-            private V val;
+        public class SimpleEntry<V> : IEntry<V> {
+
+            public V Value { get; private set; }
 
             public SimpleEntry(V val)
             {
-                this.val = val;
-            }
-            public V Value()
-            {
-                return val;
+                this.Value = val;
             }
         }
 
         protected IMemSizeEstimator<Key> keySizeEstimator;
         protected IMemSizeEstimator<Value> valueSizeEstimator;
-        private int size = 0;
+        private long size = 0;
 
         public AbstractCachedSource(ISource<Key, Value> source) : base(source)
         {
         }
 
-
-        public abstract Entry<Value> GetCached(Key key);
+        public abstract IEntry<Value> GetCached(Key key);
 
 
         protected void CacheAdded(Key key, Value value)
         {
-            lock (aLock)
+            lock (this.aLock)
             {
-                if (keySizeEstimator != null)
+                if (this.keySizeEstimator != null)
                 {
-                    size += (int) keySizeEstimator.EstimateSize(key);
+                    this.size += this.keySizeEstimator.EstimateSize(key);
                 }
-                if (valueSizeEstimator != null)
+                if (this.valueSizeEstimator != null)
                 {
-                    size += (int) valueSizeEstimator.EstimateSize(value);
+                    this.size += this.valueSizeEstimator.EstimateSize(value);
                 }
             }
         }
 
         protected void CacheRemoved(Key key, Value value)
         {
-            lock (aLock)
+            lock (this.aLock)
             {
-                if (keySizeEstimator != null)
+                if (this.keySizeEstimator != null)
                 {
-                    size -= (int) keySizeEstimator.EstimateSize(key);
+                    this.size -= this.keySizeEstimator.EstimateSize(key);
                 }
-                if (valueSizeEstimator != null)
+                if (this.valueSizeEstimator != null)
                 {
-                    size -= (int) valueSizeEstimator.EstimateSize(value);
+                    this.size -= (int) this.valueSizeEstimator.EstimateSize(value);
                 }
             }
         }
 
         protected void CacheCleared()
         {
-            lock (aLock)
+            lock (this.aLock)
             {
-                size = 0;
+                this.size = 0;
             }
         }
 
@@ -86,7 +81,7 @@ namespace Stratis.SmartContracts.State
 
         public long EstimateCacheSize()
         {
-            return size;
+            return this.size;
         }
 
         public abstract ICollection<Key> GetModified();

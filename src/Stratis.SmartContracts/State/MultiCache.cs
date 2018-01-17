@@ -13,8 +13,8 @@ namespace Stratis.SmartContracts.State
 
         public override V Get(byte[] key)
         {
-            AbstractCachedSource<byte[], V>.Entry<V> ownCacheEntry = GetCached(key);
-            V ownCache = ownCacheEntry == null ? default(V) : ownCacheEntry.Value();
+            AbstractCachedSource<byte[], V>.IEntry<V> ownCacheEntry = GetCached(key);
+            V ownCache = ownCacheEntry == null ? default(V) : ownCacheEntry.Value;
             if (ownCache == null)
             {
                 V v = GetSource() != null ? base.Get(key) : default(V);
@@ -27,7 +27,7 @@ namespace Stratis.SmartContracts.State
         protected override bool FlushImpl()
         {
             bool ret = false;
-            foreach (byte[] key in writeCache.GetModified())
+            foreach (byte[] key in this.writeCache.GetModified())
             {
                 V value = base.Get(key);
                 if (value == null)

@@ -7,9 +7,7 @@ namespace Stratis.SmartContracts.State
     public interface ITrie<V> : ISource<byte[], V>
     {
         byte[] GetRootHash();
-
         void SetRoot(byte[] root);
-
         void Clear();
     }
 }

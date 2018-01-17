@@ -16,15 +16,14 @@ namespace Stratis.SmartContracts.State
 
         public ReadCache<Value> WithCache(Dictionary<byte[], Value> cache)
         {
-            // EthereumJ does something with synchronising here
             this.cache = cache;
             return this;
         }
 
-        public ReadCache<Value> withMaxCapacity(int maxCapacity)
-        {
-            throw new NotImplementedException(); // Shouldn't need surely.
-        }
+        //public ReadCache<Value> withMaxCapacity(int maxCapacity)
+        //{
+        //    throw new NotImplementedException(); // Shouldn't need surely.
+        //}
 
         public override void Put(byte[] key, Value val)
         {
@@ -34,7 +33,7 @@ namespace Stratis.SmartContracts.State
             }
             else
             {
-                cache[key] = val;
+                this.cache[key] = val;
                 CacheAdded(key, val);
                 GetSource().Put(key, val);
             }
@@ -43,14 +42,14 @@ namespace Stratis.SmartContracts.State
         public override Value Get(byte[] key)
         {
             Value ret = default(Value);
-            if (cache.ContainsKey(key))
-                ret = cache[key];
+            if (this.cache.ContainsKey(key))
+                ret = this.cache[key];
 
             if (ret == null)
             {
                 ret = GetSource().Get(key);
                 if (ret != null)
-                    cache[key] = ret;
+                    this.cache[key] = ret;
                 CacheAdded(key, ret);
             }
             return ret;
@@ -58,8 +57,8 @@ namespace Stratis.SmartContracts.State
 
         public override void Delete(byte[] key)
         {
-            Value value = cache[key];
-            cache.Remove(key);
+            Value value = this.cache[key];
+            this.cache.Remove(key);
             CacheRemoved(key, value);
             GetSource().Delete(key);
         }
@@ -78,10 +77,10 @@ namespace Stratis.SmartContracts.State
             return false;
         }
 
-        public override Entry<Value> GetCached(byte[] key) {
+        public override IEntry<Value> GetCached(byte[] key) {
             Value value = default(Value);
-            if (cache.ContainsKey(key))
-                value = cache[key];
+            if (this.cache.ContainsKey(key))
+                value = this.cache[key];
             return value == null ? null : new SimpleEntry<Value>(value);
         }
         

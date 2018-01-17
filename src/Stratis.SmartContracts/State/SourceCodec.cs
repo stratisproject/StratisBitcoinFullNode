@@ -18,17 +18,17 @@ namespace Stratis.SmartContracts.State
 
         public override void Put(Key key, Value val)
         {
-            GetSource().Put(keySerializer.Serialize(key), valSerializer.Serialize(val));
+            GetSource().Put(this.keySerializer.Serialize(key), this.valSerializer.Serialize(val));
         }
 
         public override Value Get(Key key)
         {
-            return valSerializer.Deserialize(GetSource().Get(keySerializer.Serialize(key)));
+            return this.valSerializer.Deserialize(GetSource().Get(this.keySerializer.Serialize(key)));
         }
 
         public override void Delete(Key key)
         {
-            GetSource().Delete(keySerializer.Serialize(key));
+            GetSource().Delete(this.keySerializer.Serialize(key));
         }
 
         protected override bool FlushImpl()

@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Used to compare byte arrays in dictionaries. They are otherwise compared via reference, which isn't very useful for us.
+    /// </summary>
     public class ByteArrayComparer : IEqualityComparer<byte[]>
     {
         public bool Equals(byte[] left, byte[] right)
