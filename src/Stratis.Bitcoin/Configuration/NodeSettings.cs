@@ -71,6 +71,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
 
+        /// <summary>Load arguments.</summary>
+        public string[] LoadArgs { get; private set; }
+
         /// <summary>List of paths to important files and folders.</summary>
         public DataFolder DataFolder { get; set; }
 
@@ -91,6 +94,9 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
         public int MaxTipAge { get; set; }
+
+        /// <summary>Indicates whether the command line arguments have been processed.</summary>
+        public bool Processed { get; set; }
 
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; set; }
@@ -132,14 +138,15 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Initializes configuration from command line arguments.
-        /// <para>This includes loading configuration from file.</para>
+        /// Records the command line arguments.
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
-        /// <returns>Initialized node configuration.</returns>
-        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args)
+        /// <returns>Node configuration with arguments recorded.</returns>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
+        public NodeSettings LoadArguments(string[] args, bool delayedProcessing = false)
         {
+            this.LoadArgs = args;
+
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
@@ -182,7 +189,26 @@ namespace Stratis.Bitcoin.Configuration
             if (!Directory.Exists(this.DataDir))
                 throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
-            // If no configuration file path is passed in the args, load the default file.
+            if (!delayedProcessing)
+                LoadConfiguration();
+
+            return this;
+        }
+
+        /// <summary>
+        /// Initializes configuration from command line arguments.
+        /// <para>This includes loading configuration from file.</para>
+        /// </summary>
+        /// <param name="args">Application command line arguments.</param>
+        /// <returns>Initialized node configuration.</returns>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
+        public NodeSettings LoadConfiguration()
+        {
+            if (this.Processed)
+                return this;
+
+            var args = this.LoadArgs;
+
             if (this.ConfigurationFile == null)
             {
                 this.ConfigurationFile = this.CreateDefaultConfigurationFile();
@@ -217,6 +243,8 @@ namespace Stratis.Bitcoin.Configuration
 
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
+
+            this.Processed = true;
 
             return this;
         }
