@@ -34,24 +34,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
     public class NetworkPeerCollection : IEnumerable<NetworkPeer>, IReadOnlyNetworkPeerCollection
     {
-        private class Bridge : IMessageListener<IncomingMessage>
-        {
-            private MessageProducer<IncomingMessage> prod;
-            public Bridge(MessageProducer<IncomingMessage> prod)
-            {
-                this.prod = prod;
-            }
-
-            public void PushMessage(IncomingMessage message)
-            {
-                this.prod.PushMessage(message);
-            }
-        }
-
-        private Bridge bridge;
-
-        public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
-
         private ConcurrentDictionary<NetworkPeer, NetworkPeer> networkPeers;
 
         public int Count
@@ -89,8 +71,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerCollection()
         {
-            this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.bridge = new Bridge(this.MessageProducer);
             this.networkPeers = new ConcurrentDictionary<NetworkPeer, NetworkPeer>(new NetworkPeerComparer());
         }
 
@@ -100,7 +80,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (this.networkPeers.TryAdd(peer, peer))
             {
-                peer.MessageProducer.AddMessageListener(this.bridge);
                 this.OnPeerAdded(peer);
                 return true;
             }
@@ -113,7 +92,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             NetworkPeer old;
             if (this.networkPeers.TryRemove(peer, out old))
             {
-                peer.MessageProducer.RemoveMessageListener(this.bridge);
                 this.OnPeerRemoved(old);
                 peer.Dispose(reason);
                 return true;
