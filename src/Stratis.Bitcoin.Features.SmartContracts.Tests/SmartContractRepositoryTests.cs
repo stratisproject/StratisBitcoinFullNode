@@ -204,20 +204,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txTrack.CreateAccount(testAddress);
             txTrack.AddStorageRow(testAddress, dog, cat);
             txTrack.Commit();
+            repository.Commit();
+            byte[] root1 = repository.GetRoot();
 
-            IRepository txrepository2 = repository.StartTracking();
-            txrepository2.AddStorageRow(testAddress, dog, fish);
-            txrepository2.Rollback();
+            IRepository txTrack2 = repository.StartTracking();
+            txTrack2.AddStorageRow(testAddress, dog, fish);
+            txTrack2.Rollback();
 
-            IRepository txrepository3 = repository.StartTracking();
-            txrepository3.AddStorageRow(testAddress, dodecahedron, bird);
-            txrepository3.Commit();
+            IRepository txTrack3 = repository.StartTracking();
+            txTrack3.AddStorageRow(testAddress, dodecahedron, bird);
+            txTrack3.Commit();
+            repository.Commit();
+
+            byte[] upToDateRoot = repository.GetRoot();
 
             Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
             Assert.Equal(bird, repository.GetStorageValue(testAddress, dodecahedron));
 
-            //repository.LoadSnapshot(rootTx1);
-            //var stuff = repository.GetObject<byte[]>(testAddress, dog);
+            IRepository snapshot = repository.GetSnapshotTo(root1);
+
+            repository.SyncToRoot(root1);
+            Assert.Equal(cat, snapshot.GetStorageValue(testAddress, dog));
+            Assert.Null(snapshot.GetStorageValue(testAddress, dodecahedron));
         }
 
         private static byte[] StringToByteArray(string hex)

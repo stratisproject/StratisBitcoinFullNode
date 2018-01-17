@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Really magic class. Any time you commit(), you can get the root and use that to load the state at that particular time. 
+    /// </summary>
     public class RepositoryRoot : Repository
     {
         private class StorageCache : ReadWriteCache<byte[]>
