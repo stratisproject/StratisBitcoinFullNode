@@ -4,10 +4,10 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
-    public abstract class MultiCache<V> : ReadWriteCache<byte[], V> where V : ICachedSource<byte[], byte[]>
+    public abstract class MultiCache<V> : ReadWriteCache<V> where V : ICachedSource<byte[], byte[]>
     {
 
-        public MultiCache(ICachedSource<byte[], V> src) : base(src, WriteCache<byte[], V>.CacheType.SIMPLE)
+        public MultiCache(ICachedSource<byte[], V> src) : base(src, WriteCache<V>.CacheType.SIMPLE)
         {
         }
 
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.State
             return ret;
         }
 
-        protected bool FlushChild(byte[] key, V childCache)
+        protected virtual bool FlushChild(byte[] key, V childCache)
         {
             return childCache != null ? childCache.Flush() : true;
         }
@@ -68,7 +68,7 @@ namespace Stratis.SmartContracts.State
 
         protected override ICachedSource<byte[], byte[]> Create(byte[] key, ICachedSource<byte[], byte[]> srcCache)
         {
-            return new WriteCache<byte[], byte[]>(srcCache, WriteCache<byte[], byte[]>.CacheType.SIMPLE);
+            return new WriteCache<byte[]>(srcCache, WriteCache<byte[]>.CacheType.SIMPLE);
         }
     }
 }

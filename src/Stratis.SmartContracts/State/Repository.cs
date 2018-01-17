@@ -108,9 +108,9 @@ namespace Stratis.SmartContracts.State
 
         public IRepository StartTracking()
         {
-            ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<byte[], AccountState>(accountStateCache,
-                    WriteCache<byte[], AccountState>.CacheType.SIMPLE);
-            ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[], byte[]>(codeCache, WriteCache<byte[], byte[]>.CacheType.SIMPLE);
+            ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(accountStateCache,
+                    WriteCache<AccountState>.CacheType.SIMPLE);
+            ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(codeCache, WriteCache< byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(storageCache);
             Repository ret = new Repository(trackAccountStateCache, trackCodeCache, trackStorageCache);
             ret.parent = this;

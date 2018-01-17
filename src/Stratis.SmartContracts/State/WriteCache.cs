@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.State
 
     // I already know there's going to be issues here with retrieving keys. Just need to go through and be consistent
 
-    public class WriteCache<Key, Value> : AbstractCachedSource<Key, Value>
+    public class WriteCache<Value> : AbstractCachedSource<byte[], Value>
     {
         public enum CacheType
         {
@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.State
 
         private bool isCounting;
 
-        protected volatile Dictionary<Key, CacheEntry<Value>> cache = new Dictionary<Key, CacheEntry<Value>>();
+        protected volatile Dictionary<byte[], CacheEntry<Value>> cache = new Dictionary<byte[], CacheEntry<Value>>(new ByteArrayComparer());
 
         protected object readLock = new object();
         protected object writeLock = new object();
@@ -101,20 +101,19 @@ namespace Stratis.SmartContracts.State
         //protected ALock writeLock = new ALock(rwuLock.writeLock());
         //protected ALock updateLock = new ALock(rwuLock.updateLock());
 
-        private bool isChecked = false;
 
-        public WriteCache(ISource<Key, Value> src, CacheType cacheType) : base(src)
+        public WriteCache(ISource<byte[], Value> src, CacheType cacheType) : base(src)
         {
             this.isCounting = cacheType == CacheType.COUNTING;
         }
 
-        public WriteCache<Key, Value> WithCache(Dictionary<Key, CacheEntry<Value>> cache)
+        public WriteCache<Value> WithCache(Dictionary<byte[], CacheEntry<Value>> cache)
         {
             this.cache = cache;
             return this;
         }
 
-        public override ICollection<Key> GetModified()
+        public override ICollection<byte[]> GetModified()
         {
             lock (readLock)
             {
@@ -140,9 +139,8 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public override void Put(Key key, Value val)
+        public override void Put(byte[] key, Value val)
         {
-            CheckByteArrKey(key);
             if (val == null)
             {
                 Delete(key);
@@ -173,9 +171,8 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public override Value Get(Key key)
+        public override Value Get(byte[] key)
         {
-            CheckByteArrKey(key);
             lock (readLock)
             {
                 CacheEntry<Value> curVal = null;
@@ -201,9 +198,8 @@ namespace Stratis.SmartContracts.State
 
         }
 
-        public override void Delete(Key key)
+        public override void Delete(byte[] key)
         {
-            CheckByteArrKey(key);
             lock (writeLock)
             {
                 CacheEntry<Value> curVal = null;
@@ -268,7 +264,7 @@ namespace Stratis.SmartContracts.State
             return false;
         }
 
-        public override Entry<Value> GetCached(Key key)
+        public override Entry<Value> GetCached(byte[] key)
         {
             lock (readLock)
             {
@@ -284,11 +280,6 @@ namespace Stratis.SmartContracts.State
                     return entry;
                 }
             }
-        }
-
-        private void CheckByteArrKey(Key key)
-        {
-            // for us this is dumb I think. Just return true.
         }
 
         public long DebugCacheSize()

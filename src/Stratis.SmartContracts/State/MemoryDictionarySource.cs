@@ -26,7 +26,9 @@ namespace Stratis.SmartContracts.State
 
         public byte[] Get(byte[] key)
         {
-            return this.Db[key];
+            if (this.Db.ContainsKey(key))
+                return this.Db[key];
+            return null;
         }
 
         public void Put(byte[] key, byte[] val)

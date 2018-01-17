@@ -6,11 +6,11 @@ namespace Stratis.SmartContracts.State
 {
     public class RepositoryRoot : Repository
     {
-        private class StorageCache : ReadWriteCache<byte[], byte[]>
+        private class StorageCache : ReadWriteCache<byte[]>
         {
             public ITrie<byte[]> trie;
 
-            public StorageCache(ITrie<byte[]> trie) : base(trie) // In EthereumJ this uses some SourceCodec shiz
+            public StorageCache(ITrie<byte[]> trie) : base(new SourceCodec<byte[],byte[],byte[],byte[]>(trie, new Serializers.NoSerializer<byte[]>(), new Serializers.NoSerializer<byte[]>()), WriteCache<byte[]>.CacheType.SIMPLE)
             {
                 this.trie = trie;
             }
@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.State
                 return new StorageCache(storageTrie);
             }
 
-            public new bool FlushChild(byte[] key, ICachedSource<byte[],byte[]> childCache)
+            protected override bool FlushChild(byte[] key, ICachedSource<byte[],byte[]> childCache)
             {
                 if (base.FlushChild(key, childCache))
                 {
@@ -119,13 +119,13 @@ namespace Stratis.SmartContracts.State
         {
             this.stateDS = stateDS;
 
-            trieCache = new WriteCache<byte[], byte[]>(stateDS, WriteCache<byte[],byte[]>.CacheType.COUNTING);
+            trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             stateTrie = new PatriciaTrie(trieCache, root);
             SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
-            ReadWriteCache<byte[], AccountState> accountStateCache = new ReadWriteCache<byte[], AccountState>(accountStateCodec, WriteCache<byte[], AccountState>.CacheType.SIMPLE);
+            ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
 
             MultiCache<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
-            ISource<byte[], byte[]> codeCache = new WriteCache<byte[], byte[]>(stateDS, WriteCache<byte[], byte[]>.CacheType.COUNTING);
+            ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
 
             Init(accountStateCache, codeCache, storageCache);
         }

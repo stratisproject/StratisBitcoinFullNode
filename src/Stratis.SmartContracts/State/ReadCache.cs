@@ -6,46 +6,28 @@ namespace Stratis.SmartContracts.State
 {
     public class ReadCache<Value> : AbstractCachedSource<byte[], Value>
     {
-        private Dictionary<Key, Value> cache;
+        private Dictionary<byte[], Value> cache;
         private bool byteKeyMap;
 
-        public ReadCache(ISource<Key, Value> src) : base(src)
+        public ReadCache(ISource<byte[], Value> src) : base(src)
         {
-            WithCache(new Dictionary<Key, Value>());
+            WithCache(new Dictionary<byte[], Value>(new ByteArrayComparer()));
         }
 
-        public ReadCache<Key, Value> WithCache(Dictionary<Key, Value> cache)
+        public ReadCache<Value> WithCache(Dictionary<byte[], Value> cache)
         {
             // EthereumJ does something with synchronising here
             this.cache = cache;
             return this;
         }
 
-        public ReadCache<Key, Value> withMaxCapacity(int maxCapacity)
+        public ReadCache<Value> withMaxCapacity(int maxCapacity)
         {
             throw new NotImplementedException(); // Shouldn't need surely.
         }
 
-        private bool isChecked = false;
-
-        private void CheckByteArrKey(Key key)
+        public override void Put(byte[] key, Value val)
         {
-            return; // this is SO DUMB 
-
-            //if (isChecked) return;
-
-            //if (key is byte[]) {
-            //    if (!byteKeyMap)
-            //    {
-            //        throw new Exception("Wrong map/set for byte[] key");
-            //    }
-            //}
-            //isChecked = true;
-        }
-
-        public override void Put(Key key, Value val)
-        {
-            CheckByteArrKey(key); // IS this necessary? Dumb? Just make it for always bytes?
             if (val == null)
             {
                 Delete(key);
@@ -58,9 +40,8 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public override Value Get(Key key)
+        public override Value Get(byte[] key)
         {
-            CheckByteArrKey(key);
             Value ret = default(Value);
             if (cache.ContainsKey(key))
                 ret = cache[key];
@@ -75,9 +56,8 @@ namespace Stratis.SmartContracts.State
             return ret;
         }
 
-        public override void Delete(Key key)
+        public override void Delete(byte[] key)
         {
-            CheckByteArrKey(key);
             Value value = cache[key];
             cache.Remove(key);
             CacheRemoved(key, value);
@@ -89,8 +69,8 @@ namespace Stratis.SmartContracts.State
             return false;
         }
 
-        public override ICollection<Key> GetModified() {
-            return new List<Key>();
+        public override ICollection<byte[]> GetModified() {
+            return new List<byte[]>();
         }
 
         public override bool HasModified()
@@ -98,7 +78,7 @@ namespace Stratis.SmartContracts.State
             return false;
         }
 
-        public override Entry<Value> GetCached(Key key) {
+        public override Entry<Value> GetCached(byte[] key) {
             Value value = default(Value);
             if (cache.ContainsKey(key))
                 value = cache[key];

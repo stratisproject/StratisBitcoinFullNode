@@ -4,24 +4,24 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
-    public class ReadWriteCache<Key, Value> : SourceChainBox<Key, Value, Key, Value>, ICachedSource<Key, Value>
+    public class ReadWriteCache<Value> : SourceChainBox<byte[], Value, byte[], Value>, ICachedSource<byte[], Value>
     {
 
-        protected ReadCache<Key, Value> readCache;
-        protected WriteCache<Key, Value> writeCache;
+        protected ReadCache<Value> readCache;
+        protected WriteCache<Value> writeCache;
 
-        protected ReadWriteCache(ISource<Key, Value> source) : base(source)
+        protected ReadWriteCache(ISource<byte[], Value> source) : base(source)
         {
         }
 
-        public ReadWriteCache(ISource<Key, Value> src, WriteCache<Key, Value>.CacheType cacheType) : base(src)
+        public ReadWriteCache(ISource<byte[], Value> src, WriteCache<Value>.CacheType cacheType) : base(src)
         {
-            Add(writeCache = new WriteCache<Key, Value>(src, cacheType));
-            Add(readCache = new ReadCache<Key, Value>(writeCache));
+            Add(writeCache = new WriteCache<Value>(src, cacheType));
+            Add(readCache = new ReadCache<Value>(writeCache));
             readCache.SetFlushSource(true);
         }
 
-        public ICollection<Key> GetModified()
+        public ICollection<byte[]> GetModified()
         {
             return writeCache.GetModified();
         }
@@ -31,9 +31,9 @@ namespace Stratis.SmartContracts.State
             return writeCache.HasModified();
         }
 
-        protected AbstractCachedSource<Key, Value>.Entry<Value> GetCached(Key key)
+        protected AbstractCachedSource<byte[], Value>.Entry<Value> GetCached(byte[] key)
         {
-            AbstractCachedSource<Key, Value>.Entry<Value> v = readCache.GetCached(key);
+            AbstractCachedSource<byte[], Value>.Entry<Value> v = readCache.GetCached(key);
             if (v == null)
             {
                 v = writeCache.GetCached(key);
