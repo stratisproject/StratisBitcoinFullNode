@@ -190,7 +190,10 @@ namespace Stratis.Bitcoin.Configuration
                 throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
             if (!delayedProcessing)
+            {
+                this.Processed = false;
                 LoadConfiguration();
+            }
 
             return this;
         }
