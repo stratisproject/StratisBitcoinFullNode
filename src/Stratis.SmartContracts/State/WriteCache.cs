@@ -15,18 +15,22 @@ namespace Stratis.SmartContracts.State
             COUNTING
         }
 
+        // TODO: Make this whole 'value' setup much cleaner. This ugly af
+
         public abstract class CacheEntry<V> : IEntry<V>
         {
-            // dedicated value instance which indicates that the entry was deleted
-            // (ref counter decremented) but we don't know actual value behind it
-            public static object UNKNOWN_VALUE = new object();
+            public V value; 
 
-            public V Value { get; set; }
             public int counter = 0;
 
             protected CacheEntry(V value)
             {
-                this.Value = value;
+                this.value = value;
+            }
+
+            public V Value()
+            {
+                return GetValue();
             }
 
             public abstract void Deleted();
@@ -55,7 +59,7 @@ namespace Stratis.SmartContracts.State
 
             public override V GetValue()
             {
-                return this.counter < 0 ? default(V) : this.Value;
+                return this.counter < 0 ? default(V) : this.value;
             }
         }
 
@@ -78,7 +82,7 @@ namespace Stratis.SmartContracts.State
 
             public override V GetValue()
             {
-                return this.Value;
+                return this.value;
             }
         }
 
@@ -148,13 +152,13 @@ namespace Stratis.SmartContracts.State
                     this.cache[key] = curVal;
                     if (oldVal != null)
                     {
-                        CacheRemoved(key, oldVal.Value);
+                        CacheRemoved(key, oldVal.Value());
                     }
-                    CacheAdded(key, curVal.Value);
+                    CacheAdded(key, curVal.Value());
                 }
                 // assigning for non-counting cache only
                 // for counting cache the value should be immutable (see HashedKeySource)
-                curVal.Value = val;
+                curVal.value = val;
                 curVal.Added();
             }
         }
@@ -202,9 +206,9 @@ namespace Stratis.SmartContracts.State
                     this.cache[key] = curVal;
                     if (oldVal != null)
                     {
-                        CacheRemoved(key, oldVal.Value);
+                        CacheRemoved(key, oldVal.value);
                     }
-                    CacheAdded(key, curVal.Value);
+                    CacheAdded(key, curVal.value);
                 }
                 curVal.Deleted();
             }
@@ -221,7 +225,7 @@ namespace Stratis.SmartContracts.State
                     {
                         for (int i = 0; i < entry.Value.counter; i++)
                         {
-                            GetSource().Put(entry.Key, entry.Value.Value);
+                            GetSource().Put(entry.Key, entry.Value.value);
                         }
                         ret = true;
                     }
@@ -276,7 +280,7 @@ namespace Stratis.SmartContracts.State
             foreach (KeyValuePair<byte[], CacheEntry<Value>> entry in this.cache)
             {
                 ret += this.keySizeEstimator.EstimateSize(entry.Key);
-                ret += this.valueSizeEstimator.EstimateSize(entry.Value.Value);
+                ret += this.valueSizeEstimator.EstimateSize(entry.Value.value);
             }
             return ret;
         }

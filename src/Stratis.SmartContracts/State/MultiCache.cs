@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.State
         public override V Get(byte[] key)
         {
             AbstractCachedSource<byte[], V>.IEntry<V> ownCacheEntry = GetCached(key);
-            V ownCache = ownCacheEntry == null ? default(V) : ownCacheEntry.Value;
+            V ownCache = ownCacheEntry == null ? default(V) : ownCacheEntry.Value();
             if (ownCache == null)
             {
                 V v = GetSource() != null ? base.Get(key) : default(V);

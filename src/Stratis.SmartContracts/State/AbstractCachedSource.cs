@@ -10,16 +10,21 @@ namespace Stratis.SmartContracts.State
 
         public interface IEntry<V>
         {
-            V Value { get; }
+            V Value();
         }
 
         public class SimpleEntry<V> : IEntry<V> {
 
-            public V Value { get; private set; }
+            private V val;
 
             public SimpleEntry(V val)
             {
-                this.Value = val;
+                this.val = val;
+            }
+
+            public V Value()
+            {
+                return this.val;
             }
         }
 
