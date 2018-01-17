@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Configuration
             this.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
-            this.DataFolder = new DataFolder(this);
+            this.DataFolder = new DataFolder(this.DataDir);
             if (!Directory.Exists(this.DataFolder.CoinViewPath))
                 Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 

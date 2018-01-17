@@ -476,7 +476,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             }
             Directory.CreateDirectory(dataFolderDirectory);
 
-            var peerFolder = new DataFolder(new NodeSettings { DataDir = dataFolderDirectory });
+            var peerFolder = new DataFolder(new NodeSettings { DataDir = dataFolderDirectory }.DataDir);
 
             Mock<ILogger> mockLogger = new Mock<ILogger>();
             Mock<ILoggerFactory> mockLoggerFactory = new Mock<ILoggerFactory>();
