@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <item>Coinbase 'scriptSig' starts with serialized block height value. This means that coinbase transaction commits to the height of the block it appears in.</item>
     /// </list>
     /// </remarks>
-    public class PosConsensusValidator : PowConsensusValidator
+    public class PosConsensusValidator : PowConsensusValidator, IPosConsensusValidator
     {
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        public StakeValidator StakeValidator { get; }
+        public IStakeValidator StakeValidator { get; }
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosConsensusValidator(
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             ICheckpoints checkpoints,
             Network network,
             StakeChain stakeChain,
@@ -505,14 +506,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.IsPremine(height))
                 return this.consensusOptions.PremineReward;
 
-            return this.ConsensusOptions.ProofOfWorkReward;
+            return this.consensusOptions.ProofOfWorkReward;
         }
 
-        /// <summary>
-        /// Gets miner's coin stake reward.
-        /// </summary>
-        /// <param name="height">Target block height.</param>
-        /// <returns>Miner's coin stake reward.</returns>
+        /// <inheritdoc />
         public Money GetProofOfStakeReward(int height)
         {
             if (this.IsPremine(height))

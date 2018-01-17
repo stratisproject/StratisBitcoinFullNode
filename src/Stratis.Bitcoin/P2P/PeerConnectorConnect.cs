@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -26,8 +27,9 @@ namespace Stratis.Bitcoin.P2P
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
+            ConnectionManagerSettings connectionSettings,
             IPeerAddressManager peerAddressManager) :
-            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager)
         {
             this.Requirements.RequiredServices = NetworkPeerServices.Nothing;
         }
@@ -35,10 +37,10 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.MaxOutboundConnections = this.NodeSettings.ConnectionManager.Connect.Count;
+            this.MaxOutboundConnections = this.ConnectionSettings.Connect.Count;
 
             // Add the endpoints from the -connect arg to the address manager
-            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
+            foreach (var ipEndpoint in this.ConnectionSettings.Connect)
             {
                 this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
             }
@@ -47,7 +49,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>This connector is only started if there are peers in the -connect args.</summary>
         public override bool CanStartConnect
         {
-            get { return this.NodeSettings.ConnectionManager.Connect.Any(); }
+            get { return this.ConnectionSettings.Connect.Any(); }
         }
 
         /// <inheritdoc/>
@@ -61,13 +63,13 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.Connect)
+            foreach (var ipEndpoint in this.ConnectionSettings.Connect)
             {
                 if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                     return;
 
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.EndPoint))
                     await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }
