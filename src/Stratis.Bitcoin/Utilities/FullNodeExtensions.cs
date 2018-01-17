@@ -37,10 +37,10 @@ namespace Stratis.Bitcoin.Utilities
                     
                     done.Wait();
                 };
-#if !NOASSEMBLYCONTEXT
+
                 var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
                 assemblyLoadContext.Unloading += context => shutdown();
-#endif
+
                 Console.CancelKeyPress += (sender, eventArgs) =>
                 {
                     shutdown();
