@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>List of node's modules attached to the peer to receive notifications about various events related to the peer.</summary>
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
 
-        /// <summary>Information about the peer including its network address, protocol version, time of last contact.</summary>
+        /// <summary>IP address and port on the side of the peer.</summary>
         public IPEndPoint PeerAddress { get; private set; }
 
         /// <summary>Last time in UTC the node received something from this peer.</summary>
