@@ -101,6 +101,21 @@ namespace NBitcoin.Tests
         }
 
         [Fact]
+        public void TryValidateAddress()
+        {
+            using (var builder = NodeBuilder.Create())
+            {
+                var node = builder.CreateNode();
+                node.Start();
+                node.Generate(101);
+                var rpc = node.CreateRPCClient();
+                // RegTest
+                var pkh = rpc.GetNewAddress();
+                Assert.True(rpc.ValidateAddress(pkh).IsValid);
+            }
+        }
+
+        [Fact]
         public void TryEstimateFeeRate()
         {
             using(var builder = NodeBuilder.Create())
