@@ -2,7 +2,7 @@
 using System.Net;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -15,28 +15,11 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>EndPoint of this peer.</summary>
         [JsonProperty(PropertyName = "endpoint")]
         [JsonConverter(typeof(IPEndPointConverter))]
-        private IPEndPoint endpoint;
+        public IPEndPoint EndPoint { get; set; }
 
         /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
         [JsonProperty(PropertyName = "addressTime", NullValueHandling = NullValueHandling.Ignore)]
         private DateTimeOffset? addressTime;
-
-        /// <summary>The <see cref="NetworkAddress"/> of this peer.</summary>
-        [JsonIgnore]
-        public NetworkAddress NetworkAddress
-        {
-            get
-            {
-                if (this.endpoint == null)
-                    return null;
-
-                var networkAddress = new NetworkAddress(this.endpoint);
-                if (this.addressTime != null)
-                    networkAddress.Time = this.addressTime.Value;
-
-                return networkAddress;
-            }
-        }
 
         /// <summary>The source address of this peer.</summary>
         [JsonProperty(PropertyName = "loopback")]
@@ -168,7 +151,6 @@ namespace Stratis.Bitcoin.P2P
         internal void SetConnected(DateTimeOffset peerConnectedAt)
         {
             this.addressTime = peerConnectedAt;
-            this.NetworkAddress.Time = peerConnectedAt;
 
             this.LastConnectionAttempt = null;
             this.ConnectionAttempts = 0;
@@ -191,7 +173,7 @@ namespace Stratis.Bitcoin.P2P
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
-                endpoint = address.Endpoint,
+                EndPoint = address.Endpoint,
                 loopback = IPAddress.Loopback.ToString()
             };
         }
@@ -206,45 +188,6 @@ namespace Stratis.Bitcoin.P2P
             var peer = Create(address);
             peer.loopback = loopback.ToString();
             return peer;
-        }
-    }
-
-    /// <summary>
-    /// Converter used to convert <see cref="IPEndPoint"/> to and from JSON.
-    /// </summary>
-    /// <seealso cref="JsonConverter" />
-    public sealed class IPEndPointConverter : JsonConverter
-    {
-        /// <inheritdoc />
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(IPEndPoint);
-        }
-
-        /// <inheritdoc />
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            var json = JToken.Load(reader).ToString();
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            var endPointComponents = json.Split('|');
-            return new IPEndPoint(IPAddress.Parse(endPointComponents[0]), Convert.ToInt32(endPointComponents[1]));
-        }
-
-        /// <inheritdoc />
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            if (value is IPEndPoint ipEndPoint)
-            {
-                if (ipEndPoint.Address != null || ipEndPoint.Port != 0)
-                {
-                    JToken.FromObject(string.Format("{0}|{1}", ipEndPoint.Address, ipEndPoint.Port)).WriteTo(writer);
-                    return;
-                }
-            }
-
-            writer.WriteNull();
         }
     }
 }

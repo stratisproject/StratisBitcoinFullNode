@@ -18,13 +18,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
-        private readonly IBlockRepository blockRepository;
-
         private readonly BlockStoreLoop blockStoreLoop;
 
         private readonly ConcurrentChain chain;
 
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         private readonly IConnectionManager connection;
 
@@ -38,6 +36,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
+        private readonly IBlockStoreCache blockStoreCache;
+
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly ConcurrentQueue<ChainedBlock> blocksToAnnounce;
 
@@ -45,17 +45,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
             BlockStoreLoop blockStoreLoop,
             ConcurrentChain chain,
             StoreSettings storeSettings,
-            ChainState chainState,
+            IChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
-            IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
+            IBlockStoreCache blockStoreCache,
             string name = "BlockStore")
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blocksToAnnounce = new ConcurrentQueue<ChainedBlock>();
-            this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
             this.chainState = chainState;
@@ -64,6 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
+            this.blockStoreCache = blockStoreCache;
         }
 
         protected override void OnNextCore(Block block)
@@ -94,6 +94,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[IBD]");
                 return;
             }
+
+            // Add to cache if not in IBD.
+            this.blockStoreCache.AddToCache(block);
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedBlock);
             this.blocksToAnnounce.Enqueue(chainedBlock);
@@ -149,26 +152,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
 
-                    // The first block that is not on disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(block.HashBlock).ConfigureAwait(false))
+                    // Check if we've reorged away from the current block.
+                    if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                     {
-                        this.logger.LogTrace("Block '{0}' not found in the store.", block);
+                        this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
 
-                        // In cases when the node had a reorg the 'blocksToAnnounce' contain blocks
-                        // that are not anymore on the main chain, those blocks are removed from 'blocksToAnnounce'.
-
-                        // Check if the reason why we don't have a block is a reorg or it hasn't been downloaded yet.
-                        if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
-                        {
-                            this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
-
-                            // Remove hash that we've reorged away from.
-                            this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
-                            continue;
-                        }
-                        else this.logger.LogTrace("Block header '{0}' found in the consensus chain, will wait until it is stored on disk.", block);
-
-                        break;
+                        // Remove hash that we've reorged away from.
+                        this.blocksToAnnounce.TryDequeue(out ChainedBlock unused);
+                        continue;
                     }
 
                     if (this.blocksToAnnounce.TryDequeue(out ChainedBlock blockToBroadcast))

@@ -8,9 +8,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreLoop BlockStoreLoop { get; }
 
-        public ChainState ChainState { get; }
+        public IChainState ChainState { get; }
 
-        public BlockStoreManager(IBlockRepository blockRepository, ChainState chainState, BlockStoreLoop blockStoreLoop)
+        public BlockStoreManager(IBlockRepository blockRepository, IChainState chainState, BlockStoreLoop blockStoreLoop)
         {
             this.BlockRepository = blockRepository;
             this.ChainState = chainState;

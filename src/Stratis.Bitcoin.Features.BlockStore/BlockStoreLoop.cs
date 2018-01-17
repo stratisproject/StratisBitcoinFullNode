@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Provider of IBD state.</summary>
         public IInitialBlockDownloadState InitialBlockDownloadState { get; }
 
-        public ChainState ChainState { get; }
+        public IChainState ChainState { get; }
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IBlockRepository blockRepository,
             IBlockStoreCache cache,
             ConcurrentChain chain,
-            ChainState chainState,
+            IChainState chainState,
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,

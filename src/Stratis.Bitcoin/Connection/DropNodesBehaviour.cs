@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Connection
             message.Message.IfPayloadIs<VersionPayload>(version =>
             {
                 IPeerConnector peerConnector = null;
-                if (this.connection.NodeSettings.ConnectionManager.Connect.Any())
+                if (this.connection.ConnectionSettings.Connect.Any())
                     peerConnector = this.connection.PeerConnectors.First(pc => pc is PeerConnectorConnectNode);
                 else
                     peerConnector = this.connection.PeerConnectors.First(pc => pc is PeerConnectorDiscovery);

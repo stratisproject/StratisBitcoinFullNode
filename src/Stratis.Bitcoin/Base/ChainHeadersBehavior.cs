@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Base
         private readonly ILogger logger;
 
         /// <summary>Information about node's chain.</summary>
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        public ChainHeadersBehavior(ConcurrentChain chain, ChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
+        public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
 

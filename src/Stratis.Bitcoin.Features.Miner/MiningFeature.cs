@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
+                        services.AddSingleton<IAssemblerFactory, PowAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IPosMinting, PosMinting>();
-                        services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
+                        services.AddSingleton<IAssemblerFactory, PosAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<IWalletManager, WalletManager>();

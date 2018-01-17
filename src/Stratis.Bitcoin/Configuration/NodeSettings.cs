@@ -55,7 +55,6 @@ namespace Stratis.Bitcoin.Configuration
             this.Network = innerNetwork;
             this.ProtocolVersion = protocolVersion;
 
-            this.ConnectionManager = new ConnectionManagerSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
             this.LoggerFactory.AddConsoleWithFilters();
@@ -68,9 +67,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
-
-        /// <summary>Configuration related to incoming and outgoing connections.</summary>
-        public ConnectionManagerSettings ConnectionManager { get; set; }
 
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
@@ -221,8 +217,6 @@ namespace Stratis.Bitcoin.Configuration
 
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
-
-            this.ConnectionManager.Load(this);
 
             return this;
         }
