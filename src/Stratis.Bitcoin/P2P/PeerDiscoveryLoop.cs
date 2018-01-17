@@ -84,8 +84,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void DiscoverPeers(IConnectionManager connectionManager)
         {
-            // If peers are specified in the -connect arg then discovery does not happen.
-            if (this.nodeSettings.ConnectionManager.Connect.Any())
+            // If peers are specified in the -connect arg then discovery does not happen.            
+            if (connectionManager.ConnectionSettings.Connect.Any())
                 return;
 
             if (!connectionManager.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))

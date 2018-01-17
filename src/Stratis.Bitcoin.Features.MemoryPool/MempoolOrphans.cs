@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
@@ -26,7 +28,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int OrphanTxExpireInterval = 5 * 60;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
-        private readonly TxMempool memPool;
+        private readonly ITxMempool memPool;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -35,7 +37,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly Signals.Signals signals;
 
         /// <summary>Proof of work consensus validator used for validating orphan transactions.</summary>
-        private readonly PowConsensusValidator consensusValidator;
+        private readonly IPowConsensusValidator consensusValidator;
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
@@ -82,11 +84,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
             MempoolSchedulerLock mempoolLock,
-            TxMempool memPool,
+            ITxMempool memPool,
             ConcurrentChain chain,
             Signals.Signals signals,
             IMempoolValidator validator,
-            PowConsensusValidator consensusValidator,
+            IPowConsensusValidator consensusValidator,
             CoinView coinView,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,

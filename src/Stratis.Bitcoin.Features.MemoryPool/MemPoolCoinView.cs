@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="mempoolLock"/>.</remarks>
-        private readonly TxMempool memPool;
+        private readonly ITxMempool memPool;
 
         /// <summary>A lock for protecting access to <see cref="memPool"/>.</summary>
         private readonly SchedulerLock mempoolLock;
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
-        public MempoolCoinView(CoinView inner, TxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
+        public MempoolCoinView(CoinView inner, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
             this.Inner = inner;
             this.memPool = memPool;

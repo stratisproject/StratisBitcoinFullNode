@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             NodeSettings nodeSettings = null,
             Network network = null,
             ConcurrentChain chain = null,
-            ChainState chainState = null,
+            IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null)
             : base(
                   fullNode: fullNode,
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<ConsensusLoop>();
+            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<IConsensusLoop>();
             return consensusLoop.Tip.Height;
         }
 

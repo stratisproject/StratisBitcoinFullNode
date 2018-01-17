@@ -11,7 +11,9 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -193,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
         /// <summary>Consumes incoming blocks, validates and executes them.</summary>
-        private readonly ConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -209,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Provides an interface for creating block templates of different types.</summary>
-        private readonly AssemblerFactory blockAssemblerFactory;
+        private readonly IAssemblerFactory blockAssemblerFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -221,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly StakeChain stakeChain;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly StakeValidator stakeValidator;
+        private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -230,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly WalletManager walletManager;
 
         /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
-        private readonly PosConsensusValidator posConsensusValidator;
+        private readonly IPosConsensusValidator posConsensusValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -254,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>Memory pool of pending transactions.</summary>
-        protected readonly TxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
@@ -312,19 +314,19 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
-            AssemblerFactory blockAssemblerFactory,
+            IAssemblerFactory blockAssemblerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
             StakeChain stakeChain,
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
-            TxMempool mempool,
+            ITxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
@@ -352,7 +354,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
 
-            this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
+            this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }

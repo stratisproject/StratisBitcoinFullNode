@@ -35,6 +35,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Consumer of messages coming from connected clients.</summary>
         private readonly CallbackMessageListener<IncomingMessage> messageListener;
 
+        /// <summary>Registration to the message producer of the connected peer.</summary>
+        private readonly MessageProducerRegistration<IncomingMessage> messageProducerRegistration;
+
         /// <summary>Unique identifier of a client.</summary>
         public int Id { get; private set; }
 
@@ -131,7 +134,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
             this.messageListener = new CallbackMessageListener<IncomingMessage>(processMessageAsync);
-            this.MessageProducer.AddMessageListener(this.messageListener);
+            this.messageProducerRegistration = this.MessageProducer.AddMessageListener(this.messageListener);
         }
 
         /// <summary>
@@ -629,7 +632,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.receiveMessageTask?.Wait();
             this.ShutdownComplete.Task.Wait();
 
-            this.MessageProducer.RemoveMessageListener(this.messageListener);
+            this.messageProducerRegistration.Dispose();
             this.messageListener.Dispose();
 
             this.CancellationSource.Dispose();

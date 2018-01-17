@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
@@ -298,7 +299,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// confTarget blocks. If no answer can be given at confTarget, return an
         /// estimate at the lowest target where one can be given.
         /// </summary>
-        public FeeRate EstimateSmartFee(int confTarget, TxMempool pool, out int answerFoundAtTarget)
+        public FeeRate EstimateSmartFee(int confTarget, ITxMempool pool, out int answerFoundAtTarget)
         {
             answerFoundAtTarget = confTarget;
 
@@ -368,7 +369,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="pool">Memory pool transactions.</param>
         /// <param name="answerFoundAtTarget">Block height where answer was found.</param>
         /// <returns>The smart priority.</returns>
-        public double EstimateSmartPriority(int confTarget, TxMempool pool, out int answerFoundAtTarget)
+        public double EstimateSmartPriority(int confTarget, ITxMempool pool, out int answerFoundAtTarget)
         {
             answerFoundAtTarget = confTarget;
 

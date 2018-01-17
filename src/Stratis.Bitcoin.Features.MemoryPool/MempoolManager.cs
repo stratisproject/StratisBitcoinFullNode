@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ILogger mempoolLogger;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
-        private readonly TxMempool memPool;
+        private readonly ITxMempool memPool;
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
             MempoolSchedulerLock mempoolLock,
-            TxMempool memPool,
+            ITxMempool memPool,
             IMempoolValidator validator,
             MempoolOrphans orphans,
             IDateTimeProvider dateTimeProvider,
