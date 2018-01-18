@@ -168,7 +168,10 @@ namespace Stratis.Bitcoin.P2P
         public IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount)
         {
             // If there are no peers or just one then just return the list.
-            if (!this.peerAddresses.Any() || this.peerAddresses.Count == 1)
+            if (!this.peerAddresses.Any())
+                return Enumerable.Empty<PeerAddress>();
+
+            if (this.peerAddresses.Count == 1)
                 return this.peerAddresses.Select(pa => pa.Value);
 
             var peersToReturn = new List<PeerAddress>();
