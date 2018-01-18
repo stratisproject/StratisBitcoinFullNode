@@ -45,13 +45,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreRpc.AddNode(stratisNode.Endpoint, false);
                 stratisNodeRpc.AddNode(coreNode.Endpoint, false);
 
-                // core does not mine segwit blocks by default so we disable the segwit auto activation on regtest
+                // core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
+                // future versions of core will change that behaviour so this test may need ot be changed in the future
+                // see issue for more details https://github.com/stratisproject/StratisBitcoinFullNode/issues/1028
                 var prevSegwitDeployment = Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
                 Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
 
                 try
                 {
-                    // generate 450 blocks, block431 will have segwit activated.
+                    // generate 450 blocks, block 431 will have segwit activated.
                     coreRpc.Generate(450);
 
                     TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
