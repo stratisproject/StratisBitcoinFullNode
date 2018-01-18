@@ -155,10 +155,6 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
-            // If there are no peers or just one then just return the list.
-            if (!this.peerAddresses.Any() || this.peerAddresses.Count == 1)
-                return this.peerAddresses.Select(pa => pa.Value);
-
             // Randomly order the list of peers and return the amount asked for.
             var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
             return allPeers.Select(p => p.Value).Take(1000);
@@ -167,10 +163,11 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount)
         {
-            // If there are no peers or just one then just return the list.
+            // If there are no peers return an empty list.
             if (!this.peerAddresses.Any())
                 return Enumerable.Empty<PeerAddress>();
 
+            // If there's one peer then just return the list.
             if (this.peerAddresses.Count == 1)
                 return this.peerAddresses.Select(pa => pa.Value);
 
