@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <returns>Latency.</returns>
         public async Task<TimeSpan> PingPongAsync(NetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            using (var listener = new NetworkPeerListener(peer).OfType<PongPayload>())
+            using (var listener = new NetworkPeerListener(peer))
             {
                 var ping = new PingPayload()
                 {
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 DateTimeOffset before = DateTimeOffset.UtcNow;
                 await peer.SendMessageAsync(ping);
 
-                while (listener.ReceivePayload<PongPayload>(cancellation).Nonce != ping.Nonce)
+                while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation).ConfigureAwait(false)).Nonce != ping.Nonce)
                 {
                 }
 
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
 
-            using (var listener = new NetworkPeerListener(peer).OfType<HeadersPayload>())
+            using (var listener = new NetworkPeerListener(peer))
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)
@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                             headersCancel.CancelAfter(TimeSpan.FromMinutes(1.0));
                             try
                             {
-                                headers = listener.ReceivePayload<HeadersPayload>(headersCancel.Token);
+                                headers = listener.ReceivePayloadAsync<HeadersPayload>(headersCancel.Token).GetAwaiter().GetResult();
                             }
                             catch (OperationCanceledException)
                             {

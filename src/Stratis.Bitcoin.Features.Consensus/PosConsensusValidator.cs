@@ -506,7 +506,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.IsPremine(height))
                 return this.consensusOptions.PremineReward;
 
-            return this.ConsensusOptions.ProofOfWorkReward;
+            return this.consensusOptions.ProofOfWorkReward;
         }
 
         /// <inheritdoc />

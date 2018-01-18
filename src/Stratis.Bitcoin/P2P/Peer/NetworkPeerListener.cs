@@ -1,78 +1,71 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
-using NBitcoin.Protocol;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public class NetworkPeerListener : PollMessageListener<IncomingMessage>, IDisposable
+    /// <summary>
+    /// Message listener that waits until a specific payload is received and returns it to the caller.
+    /// </summary>
+    public class NetworkPeerListener : IMessageListener<IncomingMessage>, IDisposable
     {
-        public NetworkPeer Peer { get; private set; }
-        private IDisposable subscription;
-        private List<Func<IncomingMessage, bool>> predicates = new List<Func<IncomingMessage, bool>>();
+        /// <summary>Queue of unprocessed messages.</summary>
+        private readonly AsyncQueue<IncomingMessage> asyncQueue;
 
+        /// <summary>Connected network peer that we receive messages from.</summary>
+        private readonly NetworkPeer peer;
+
+        /// <summary>Registration to the message producer of the connected peer.</summary>
+        private readonly MessageProducerRegistration<IncomingMessage> messageProducerRegistration;
+
+        /// <summary>
+        /// Initializes the instance of the object and subscribes to the peer's message producer.
+        /// </summary>
+        /// <param name="peer">Connected network peer that we receive messages from.</param>
         public NetworkPeerListener(NetworkPeer peer)
         {
-            this.subscription = peer.MessageProducer.AddMessageListener(this);
-            this.Peer = peer;
+            this.asyncQueue = new AsyncQueue<IncomingMessage>();
+            this.messageProducerRegistration = peer.MessageProducer.AddMessageListener(this);
+            this.peer = peer;
         }
 
-        public NetworkPeerListener Where(Func<IncomingMessage, bool> predicate)
+        /// <inheritdoc/>
+        /// <remarks>Adds the newly received message to the queue.</remarks>
+        public void PushMessage(IncomingMessage message)
         {
-            this.predicates.Add(predicate);
-            return this;
+            this.asyncQueue.Enqueue(message);
         }
 
-        public NetworkPeerListener OfType<TPayload>() where TPayload : Payload
+        /// <summary>
+        /// Waits until a message with a specific payload arrives from the peer.
+        /// </summary>
+        /// <typeparam name="TPayload">Type of payload to wait for.</typeparam>
+        /// <param name="cancellationToken">Cancellation token to abort the waiting operation.</param>
+        /// <returns>Payload of the specific type received from the peer.</returns>
+        public async Task<TPayload> ReceivePayloadAsync<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
         {
-            this.predicates.Add(i => i.Message.Payload is TPayload);
-            return this;
-        }
-
-        public TPayload ReceivePayload<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
-        {
-            if (!this.Peer.IsConnected)
+            if (!this.peer.IsConnected)
                 throw new InvalidOperationException("The peer is not in a connected state");
 
-            Queue<IncomingMessage> pushedAside = new Queue<IncomingMessage>();
-            try
+            using (CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.peer.Connection.CancellationSource.Token))
             {
-                using (CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Peer.Connection.CancellationSource.Token))
+                while (true)
                 {
-                    while (true)
-                    {
-                        IncomingMessage message = this.ReceiveMessage(cancellation.Token);
-                        if (this.predicates.All(p => p(message)))
-                        {
-                            if (message.Message.Payload is TPayload)
-                                return (TPayload)message.Message.Payload;
-
-                            pushedAside.Enqueue(message);
-                        }
-                    }
+                    IncomingMessage message = await this.asyncQueue.DequeueAsync(cancellation.Token).ConfigureAwait(false);
+                    if (message.Message.Payload is TPayload payload)
+                        return payload;
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                if (this.Peer.Connection.CancellationSource.IsCancellationRequested)
-                    throw new InvalidOperationException("The peer is not in a connected state");
-
-                throw;
-            }
-            finally
-            {
-                while (pushedAside.Count != 0)
-                    this.PushMessage(pushedAside.Dequeue());
             }
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.subscription?.Dispose();
+            this.messageProducerRegistration.Dispose();
+            this.asyncQueue.Dispose();
         }
     }
 }
