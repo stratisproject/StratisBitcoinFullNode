@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using DBreeze;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.SmartContracts.ContractValidation;
+using Stratis.SmartContracts.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -34,9 +36,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
                         });
-                        // TODO: Add repository
                         services.AddSingleton<SmartContractValidator>(validator);
                         services.AddSingleton<SmartContractGasInjector>();
+
+                        // TODO: Get root from somewhere and get these strings from somewhere
+                        DBreezeEngine engine = new DBreezeEngine("C:/data");
+                        DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+                        ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
+                        byte[] root = null; 
+                        ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
+                        services.AddSingleton<IContractStateRepository>(repository);
                         services.AddSingleton<PowConsensusValidator, SCConsensusValidator>();
                     });
             });
