@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-        
+
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
@@ -39,15 +39,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Local batch of blocks that will be announced to the peers.</summary>
         private readonly List<ChainedBlock> localBatch;
 
-        /// <summary>Interval between batches.</summary>
-        private readonly TimeSpan batchInterval;
+        /// <summary>Interval between batches in milliseconds.</summary>
+        private const int batchIntervalMs = 5000;
 
         /// <summary>Timer that invokes <see cref="SendBatchLockedAsync"/> when runs out.</summary>
         private readonly Timer batchTimer;
 
         /// <summary>Prevents parallel execution of multiple <see cref="SendBatchLockedAsync"/> methods.</summary>
         private readonly AsyncLock asyncLock;
-
+        
         /// <summary>Most recently invoked <see cref="SendBatchLockedAsync"/> task.</summary>
         private Task batchSendingTask;
 
@@ -71,13 +71,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockStoreCache = blockStoreCache;
             this.asyncLock = new AsyncLock();
 
-            // Set interval between batches.
-            this.batchInterval = TimeSpans.FiveSeconds;
-
             this.localBatch = new List<ChainedBlock>();
 
             // Configure batch timer.
-            this.batchTimer = new Timer(this.batchInterval.TotalMilliseconds) { AutoReset = false };
+            this.batchTimer = new Timer(batchIntervalMs) { AutoReset = false };
         }
 
         protected override void OnNextCore(Block block)
@@ -98,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedBlock.HashBlock);
 
-            BlockPair blockPair = new BlockPair(block, chainedBlock);
+            var blockPair = new BlockPair(block, chainedBlock);
 
             // Ensure the block is written to disk before relaying.
             this.blockStoreLoop.AddToPending(blockPair);
@@ -121,7 +118,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Initializes the <see cref="BlockStoreSignaled"/>.</summary>
         public void Initialize()
         {
-            this.batchTimer.Elapsed += async (sender, args) => { await this.OnBatchTimerRunsOutAsync().ConfigureAwait(false); };
+            this.batchTimer.Elapsed += this.OnBatchTimerRunsOutAsync;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedBlock>(async (item, cancellation) =>
             {
@@ -146,7 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary><see cref="batchTimer"/>'s elapsed callback.</summary>
-        private async Task OnBatchTimerRunsOutAsync()
+        private async void OnBatchTimerRunsOutAsync(object o, ElapsedEventArgs elapsedEventArgs)
         {
             using (await this.asyncLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
@@ -199,26 +196,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // This +4 extra size is in case new items will be added to the queue during the loop.
             var broadcastItems = new List<ChainedBlock>(announceBlockCount + 4);
 
-            while (this.localBatch.Count > 0)
+            foreach (ChainedBlock block in this.localBatch)
             {
-                ChainedBlock block = this.localBatch.First();
-
-                this.logger.LogTrace("Checking if block '{0}' is on disk.", block);
-
                 // Check if we've reorged away from the current block.
                 if (this.chainState.ConsensusTip.FindAncestorOrSelf(block) == null)
                 {
                     this.logger.LogTrace("Block header '{0}' not found in the consensus chain.", block);
 
-                    // Remove hash that we've reorged away from.
-                    this.localBatch.Remove(block);
+                    // Skip hash that we've reorged away from.
                     continue;
                 }
-               
+
                 this.logger.LogTrace("Block '{0}' moved from the announce queue to broadcast list.", block);
-                this.localBatch.Remove(block);
                 broadcastItems.Add(block);
             }
+            
+            this.localBatch.Clear();
 
             if (!broadcastItems.Any())
             {
@@ -245,11 +238,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected override void Dispose(bool disposing)
         {
             // Let current batch sending task finish.
-            this.batchSendingTask?.GetAwaiter().GetResult();
-
-            this.blocksToAnnounce.Dispose();
+            using (this.asyncLock.LockAsync().GetAwaiter().GetResult())
+            {
+                this.blocksToAnnounce.Dispose();
+                this.batchSendingTask?.GetAwaiter().GetResult();
+                this.batchTimer.Dispose();
+            }
+             
             this.asyncLock.Dispose();
-            this.batchTimer.Dispose();
 
             base.Dispose(disposing);
         }
