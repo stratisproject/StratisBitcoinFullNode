@@ -9,13 +9,13 @@ namespace Stratis.SmartContracts
 {
     public class SmartContractList<T> : IEnumerable<T>
     {
-        private readonly uint _baseNumber;
+        private readonly uint baseNumber;
 
         private byte[] BaseNumberBytes
         {
             get
             {
-                return BitConverter.GetBytes(_baseNumber);
+                return BitConverter.GetBytes(this.baseNumber);
             }
         }
 
@@ -23,17 +23,17 @@ namespace Stratis.SmartContracts
         {
             get
             {
-                return PersistentState.GetObject<uint>(BaseNumberBytes);
+                return PersistentState.GetObject<uint>(this.BaseNumberBytes);
             }
             private set
             {
-                PersistentState.SetObject(BaseNumberBytes, value);
+                PersistentState.SetObject(this.BaseNumberBytes, value);
             }
         }
 
         internal SmartContractList(uint baseNumber)
         {
-            _baseNumber = baseNumber;
+            this.baseNumber = baseNumber;
         }
 
         public void Add(T item)
@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new SmartContractListEnum<T>(_baseNumber, Count);
+            return new SmartContractListEnum<T>(this.baseNumber, Count);
         }
 
         private byte[] GetKeyBytes(uint key)
@@ -67,15 +67,15 @@ namespace Stratis.SmartContracts
 
     public class SmartContractListEnum<T> : IEnumerator<T>
     {
-        private readonly uint _baseNumber;
-        private readonly uint _length;
-        private int _position = -1;
+        private readonly uint baseNumber;
+        private readonly uint length;
+        private int position = -1;
 
         private byte[] BaseNumberBytes
         {
             get
             {
-                return BitConverter.GetBytes(_baseNumber);
+                return BitConverter.GetBytes(this.baseNumber);
             }
         }
 
@@ -83,7 +83,7 @@ namespace Stratis.SmartContracts
         {
             get
             {
-                var keyBytes = HashHelper.Keccak256(GetKeyBytes(Convert.ToUInt32(_position)));
+                var keyBytes = HashHelper.Keccak256(GetKeyBytes(Convert.ToUInt32(this.position)));
                 return PersistentState.GetObject<T>(keyBytes);
             }
         }
@@ -92,26 +92,26 @@ namespace Stratis.SmartContracts
 
         public SmartContractListEnum(uint baseNumber, uint length)
         {
-            _baseNumber = baseNumber;
-            _length = length;
+            this.baseNumber = baseNumber;
+            this.length = length;
         }
 
         public void Dispose() {}
 
         public bool MoveNext()
         {
-            _position++;
-            return (_position < _length);
+            this.position++;
+            return (this.position < this.length);
         }
 
         public void Reset()
         {
-            _position = -1;
+            this.position = -1;
         }
 
         private byte[] GetKeyBytes(uint key)
         {
-            return BaseNumberBytes.Concat(BitConverter.GetBytes(key)).ToArray();
+            return this.BaseNumberBytes.Concat(BitConverter.GetBytes(key)).ToArray();
         }
     }
 }

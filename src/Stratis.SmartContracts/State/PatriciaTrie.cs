@@ -10,7 +10,6 @@ namespace Stratis.SmartContracts.State
     // Also note that heaps of Asserts were taken out
     public class PatriciaTrie : ITrie<byte[]>
     {
-
         public enum NodeType
         {
             BranchNode,
@@ -18,10 +17,7 @@ namespace Stratis.SmartContracts.State
             KVNodeNode
         }
 
-        private static readonly byte[] EMPTY_ELEMENT_RLP = RLP.EncodeElement(new byte[0]);
-        private static readonly byte[] EMPTY_TRIE_HASH = HashHelper.Keccak256(EMPTY_ELEMENT_RLP);
-        private static readonly byte[] EMPTY_BYTE_ARRAY = new byte[0];
-        private static readonly object NULL_NODE = new object();
+        private static readonly object NullNode = new object();
 
         public sealed class Node
         {
@@ -119,7 +115,7 @@ namespace Stratis.SmartContracts.State
                         for (int i = 0; i < 16; i++)
                         {
                             Node child = BranchNodeGetChild(i);
-                            encoded[i] = child == null ? EMPTY_ELEMENT_RLP : child.Encode(depth + 1, false);
+                            encoded[i] = child == null ? HashHelper.EmptyElementRlp : child.Encode(depth + 1, false);
                         }
                         byte[] value = BranchNodeGetValue();
                         encoded[16] = RLP.EncodeElement(value);
@@ -133,7 +129,7 @@ namespace Stratis.SmartContracts.State
                     {
                         byte[] value = KvNodeGetValue();
                         ret = RLP.EncodeList(RLP.EncodeElement(KvNodeGetKey().ToPacked()),
-                                        RLP.EncodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
+                                        RLP.EncodeElement(value == null ? HashHelper.EmptyByteArray : value));
                     }
                     if (Hash != null)
                     {
@@ -197,7 +193,7 @@ namespace Stratis.SmartContracts.State
                         byte[] bytes = parsedRlp.GetBytes(hex);
                         if (bytes.Length == 0)
                         {
-                            n = NULL_NODE;
+                            n = NullNode;
                         }
                         else
                         {
@@ -206,13 +202,13 @@ namespace Stratis.SmartContracts.State
                     }
                     children[hex] = n;
                 }
-                return n == NULL_NODE ? null : (Node)n;
+                return n == NullNode ? null : (Node)n;
             }
 
             public Node BranchNodeSetChild(int hex, Node node)
             {
                 Parse();
-                children[hex] = node == null ? NULL_NODE : node;
+                children[hex] = node == null ? NullNode : node;
                 Dirty = true;
                 return this;
             }
@@ -226,7 +222,7 @@ namespace Stratis.SmartContracts.State
                     byte[] bytes = parsedRlp.GetBytes(16);
                     if (bytes.Length == 0)
                     {
-                        n = NULL_NODE;
+                        n = NullNode;
                     }
                     else
                     {
@@ -234,13 +230,13 @@ namespace Stratis.SmartContracts.State
                     }
                     children[16] = n;
                 }
-                return n == NULL_NODE ? null : (byte[])n;
+                return n == NullNode ? null : (byte[])n;
             }
 
             public Node BranchNodeSetValue(byte[] val)
             {
                 Parse();
-                children[16] = val == null ? NULL_NODE : val;
+                children[16] = val == null ? NullNode : val;
                 Dirty = true;
                 return this;
             }
@@ -346,7 +342,7 @@ namespace Stratis.SmartContracts.State
 
         public void SetRoot(byte[] root)
         {
-            if (root != null && !new ByteArrayComparer().Equals(root, EMPTY_TRIE_HASH))
+            if (root != null && !new ByteArrayComparer().Equals(root, HashHelper.EmptyTrieHash))
             {
                 this.root = new Node(root, this);
             }
@@ -617,7 +613,7 @@ namespace Stratis.SmartContracts.State
         public byte[] GetRootHash()
         {
             Encode();
-            return root != null ? root.Hash : EMPTY_TRIE_HASH;
+            return root != null ? root.Hash : HashHelper.EmptyTrieHash;
         }
 
         private void Encode()

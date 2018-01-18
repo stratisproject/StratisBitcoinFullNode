@@ -5,13 +5,13 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts
 {
-    // This is only really used to aid Smart Contract Developers' understanding of addresses
-
-    // They may not easily understand the idea of sending to a uint160
-
+    /// <summary>
+    /// This is only really used to aid Smart Contract Developers' understanding of addresses.
+    /// They may not easily understand the idea of sending to a uint160
+    /// </summary>
     public class Address
     {
-        private uint160 _numeric;
+        private uint160 numeric;
 
         public Address(string address)
         {
@@ -20,12 +20,37 @@ namespace Stratis.SmartContracts
 
         public Address(uint160 numeric)
         {
-            _numeric = numeric;
+            this.numeric = numeric;
         }
 
         public uint160 ToUint160()
         {
-            return _numeric;
+            return this.numeric;
+        }
+
+        public static bool operator ==(Address obj1, Address obj2)
+        {
+            if (ReferenceEquals(obj1, obj2))
+                return true;
+            else if (ReferenceEquals(obj1, null) != ReferenceEquals(obj2, null))
+                return false;
+
+            return obj1.numeric == obj2.numeric;
+        }
+
+        public static bool operator !=(Address obj1, Address obj2)
+        {
+            return !(obj1 == obj2);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this == (Address) obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }

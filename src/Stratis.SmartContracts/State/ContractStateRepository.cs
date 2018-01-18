@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.State
             this.storageCache.Delete(addr.ToBytes());
         }
 
-        public void SaveCode(uint160 addr, byte[] code)
+        public void SetCode(uint160 addr, byte[] code)
         {
             byte[] codeHash = HashHelper.Keccak256(code);
             this.codeCache.Put(codeHash, code);
@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.State
             return accountState != null ? accountState.CodeHash : new byte[0]; // TODO: REPLACE THIS BYTE0 with something
         }
 
-        public void AddStorageRow(uint160 addr, byte[] key, byte[] value)
+        public void SetStorageValue(uint160 addr, byte[] key, byte[] value)
         {
             GetOrCreateAccountState(addr);
             ISource<byte[], byte[]> contractStorage = this.storageCache.Get(addr.ToBytes());

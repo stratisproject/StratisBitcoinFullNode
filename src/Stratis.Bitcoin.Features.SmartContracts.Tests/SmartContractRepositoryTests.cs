@@ -51,8 +51,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] cowCode = StringToByteArray("A1A2A3");
             byte[] horseCode = StringToByteArray("B1B2B3");
 
-            repository.SaveCode(cow, cowCode);
-            repository.SaveCode(horse, horseCode);
+            repository.SetCode(cow, cowCode);
+            repository.SetCode(horse, horseCode);
 
             Assert.Equal(cowCode, repository.GetCode(cow));
             Assert.Equal(horseCode, repository.GetCode(horse));
@@ -67,8 +67,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IContractStateRepository repository = root.StartTracking();
 
-            repository.AddStorageRow(new uint160(cow), cowKey, cowValue);
-            repository.AddStorageRow(new uint160(horse), horseKey, horseValue);
+            repository.SetStorageValue(new uint160(cow), cowKey, cowValue);
+            repository.SetStorageValue(new uint160(horse), horseKey, horseValue);
             repository.Commit();
 
             Assert.Equal(cowValue, root.GetStorageValue(new uint160(cow), cowKey));
@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(new MemoryDictionarySource());
             IContractStateRepository track = repository.StartTracking();
 
-            track.SaveCode(new uint160(cow), cowCode);
-            track.SaveCode(new uint160(horse), horseCode);
+            track.SetCode(new uint160(cow), cowCode);
+            track.SetCode(new uint160(horse), horseCode);
 
             Assert.Equal(cowCode, track.GetCode(new uint160(cow)));
             Assert.Equal(horseCode, track.GetCode(new uint160(horse)));
@@ -104,16 +104,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 horseAddress = new uint160(horse);
 
             IContractStateRepository track2 = repository.StartTracking(); //repository
-            track2.AddStorageRow(cowAddress, cowKey1, cowVal1);
-            track2.AddStorageRow(horseAddress, horseKey1, horseVal1);
+            track2.SetStorageValue(cowAddress, cowKey1, cowVal1);
+            track2.SetStorageValue(horseAddress, horseKey1, horseVal1);
             track2.Commit();
             repository.Commit();
 
             byte[] root2 = repository.GetRoot();
 
             track2 = repository.StartTracking(); //repository
-            track2.AddStorageRow(cowAddress, cowKey2, cowVal0);
-            track2.AddStorageRow(horseAddress, horseKey2, horseVal0);
+            track2.SetStorageValue(cowAddress, cowKey2, cowVal0);
+            track2.SetStorageValue(horseAddress, horseKey2, horseVal0);
             track2.Commit();
             repository.Commit();
 
@@ -155,16 +155,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 horseAddress = new uint160(horse);
 
             IContractStateRepository track2 = repository.StartTracking(); //repository
-            track2.AddStorageRow(cowAddress, cowKey1, cowVal1);
-            track2.AddStorageRow(horseAddress, horseKey1, horseVal1);
+            track2.SetStorageValue(cowAddress, cowKey1, cowVal1);
+            track2.SetStorageValue(horseAddress, horseKey1, horseVal1);
             track2.Commit();
             repository.Commit();
 
             byte[] root2 = repository.GetRoot();
 
             track2 = repository.StartTracking(); //repository
-            track2.AddStorageRow(cowAddress, cowKey2, cowVal0);
-            track2.AddStorageRow(horseAddress, horseKey2, horseVal0);
+            track2.SetStorageValue(cowAddress, cowKey2, cowVal0);
+            track2.SetStorageValue(horseAddress, horseKey2, horseVal0);
             track2.Commit();
             repository.Commit();
 
@@ -196,17 +196,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
             IContractStateRepository txTrack = repository.StartTracking();
             txTrack.CreateAccount(testAddress);
-            txTrack.AddStorageRow(testAddress, dog, cat);
+            txTrack.SetStorageValue(testAddress, dog, cat);
             txTrack.Commit();
             repository.Commit();
             byte[] root1 = repository.GetRoot();
 
             IContractStateRepository txTrack2 = repository.StartTracking();
-            txTrack2.AddStorageRow(testAddress, dog, fish);
+            txTrack2.SetStorageValue(testAddress, dog, fish);
             txTrack2.Rollback();
 
             IContractStateRepository txTrack3 = repository.StartTracking();
-            txTrack3.AddStorageRow(testAddress, dodecahedron, bird);
+            txTrack3.SetStorageValue(testAddress, dodecahedron, bird);
             txTrack3.Commit();
             repository.Commit();
 

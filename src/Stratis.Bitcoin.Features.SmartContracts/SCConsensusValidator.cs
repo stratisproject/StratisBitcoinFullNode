@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             
             if (!result.Revert)
             {
-                this.state.SaveCode(contractAddress, adjustedCodeBytes);
+                this.state.SetCode(contractAddress, adjustedCodeBytes);
                 // anything else to update
             }
         }

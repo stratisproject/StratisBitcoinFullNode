@@ -9,10 +9,10 @@ namespace Stratis.SmartContracts.State
         bool IsExist(uint160 addr);
         AccountState GetAccountState(uint160 addr);
         void Delete(uint160 addr);
-        void SaveCode(uint160 addr, byte[] code);
+        void SetCode(uint160 addr, byte[] code);
         byte[] GetCode(uint160 addr);
         byte[] GetCodeHash(uint160 addr);
-        void AddStorageRow(uint160 addr, byte[] key, byte[] value);
+        void SetStorageValue(uint160 addr, byte[] key, byte[] value);
         byte[] GetStorageValue(uint160 addr, byte[] key);
         IContractStateRepository StartTracking();
         void Flush();
