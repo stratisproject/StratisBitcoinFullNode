@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
 
             // Remove blocks that we've reorged away from.
-            foreach (ChainedBlock reorgedBlock in batch.Where(x => this.chainState.ConsensusTip.FindAncestorOrSelf(x) == null))
+            foreach (ChainedBlock reorgedBlock in batch.Where(x => this.chainState.ConsensusTip.FindAncestorOrSelf(x) == null).ToList())
             {
                 this.logger.LogTrace("Block header '{0}' not found in the consensus chain and will be skipped.", reorgedBlock);
 

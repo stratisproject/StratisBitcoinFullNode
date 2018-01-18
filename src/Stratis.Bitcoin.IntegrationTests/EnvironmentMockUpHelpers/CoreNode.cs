@@ -510,21 +510,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
-            List<uint256> blocks = new List<uint256>();
-
-            ConsensusLoop consensusLoop = this.FullNode.NodeService<ConsensusLoop>();
-            ConcurrentChain chain = this.FullNode.NodeService<ConcurrentChain>();
-
-            for (int i = 0; i < blockCount; i++)
-            {
-                // Wait here with a small interval. Otherwise PoWMiner will wait for this with 1 minute interval.
-                TestHelper.WaitLoop(() => chain.Tip == consensusLoop.Tip);
-                
-                List<uint256> generatedBlock = this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, 1, uint.MaxValue);
-                blocks.AddRange(generatedBlock);
-            }
-
-            return blocks;
+            return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
         }
 
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
