@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Utilities
     public class MemoryCache<TKey, TValue>
     {
         /// <summary>Cache item for the inner usage of the <see cref="MemoryCache{TKey,TValue}"/> class.</summary>
-        private class CacheItem<TKey, TValue>
+        private class CacheItem
         {
             public readonly TKey Key;
 
@@ -29,11 +29,11 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Dictionary that contains cached items.</summary>
         /// <remarks>Should be accessed inside a lock using <see cref="mutex"/>.</remarks>
-        private readonly Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>> cache;
+        private readonly Dictionary<TKey, LinkedListNode<CacheItem>> cache;
 
         /// <summary>Keys sorted by their last access time with most recent ones at the end.</summary>
         /// <remarks>Should be accessed inside a lock using <see cref="mutex"/>.</remarks>
-        private readonly LinkedList<CacheItem<TKey, TValue>> keys;
+        private readonly LinkedList<CacheItem> keys;
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
         private readonly int maxItemsCount;
@@ -52,8 +52,8 @@ namespace Stratis.Bitcoin.Utilities
 
             this.maxItemsCount = maxItemsCount;
 
-            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem<TKey, TValue>>>(this.maxItemsCount, comparer);
-            this.keys = new LinkedList<CacheItem<TKey, TValue>>();
+            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem>>(this.maxItemsCount, comparer);
+            this.keys = new LinkedList<CacheItem>();
             this.mutex = new object();
         }
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="value">The value to add to the cache.</param>
         public void AddOrUpdate(TKey key, TValue value)
         {
-            LinkedListNode<CacheItem<TKey, TValue>> node;
+            LinkedListNode<CacheItem> node;
 
             lock (this.mutex)
             {
@@ -88,12 +88,12 @@ namespace Stratis.Bitcoin.Utilities
                     if (this.keys.Count == this.maxItemsCount)
                     {
                         // Remove the item that was not used for the longest time.
-                        LinkedListNode<CacheItem<TKey, TValue>> lastNode = this.keys.First;
+                        LinkedListNode<CacheItem> lastNode = this.keys.First;
                         this.cache.Remove(lastNode.Value.Key);
                         this.keys.RemoveFirst();
                     }
 
-                    node = new LinkedListNode<CacheItem<TKey, TValue>>(new CacheItem<TKey, TValue>(key, value));
+                    node = new LinkedListNode<CacheItem>(new CacheItem(key, value));
                     this.cache.Add(key, node);
                 }
 
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             lock (this.mutex)
             {
-                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem<TKey, TValue>> node))
+                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem> node))
                 {
                     this.cache.Remove(node.Value.Key);
                     this.keys.Remove(node);
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             lock (this.mutex)
             {
-                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem<TKey, TValue>> node))
+                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem> node))
                 {
                     this.keys.Remove(node);
                     this.keys.AddLast(node);
