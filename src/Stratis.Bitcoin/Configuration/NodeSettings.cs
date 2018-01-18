@@ -357,7 +357,6 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             // Create the data directories if they don't exist.
-            Directory.CreateDirectory(directoryPath);
             directoryPath = Path.Combine(directoryPath, network.Name);
             Directory.CreateDirectory(directoryPath);
 

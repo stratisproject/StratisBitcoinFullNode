@@ -49,10 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <summary>
         /// Copies the test wallet into data folder for node if it isnt' already present.
         /// </summary>
-        /// <param name="node">Core node for the test.</param>
-        protected void InitializeTestWallet(CoreNode node)
+        /// <param name="path">The path of the folder to move the wallet to.</param>
+        protected void InitializeTestWallet(string path)
         {
-            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);
         }

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             this.Builder = NodeBuilder.Create();
             this.Node = this.Builder.CreateNode();
-            this.InitializeTestWallet(this.Node);
+            this.InitializeTestWallet(this.Node.DataFolder);
             this.Builder.StartAll();
 
             this.RpcClient = this.Node.CreateRPCClient();
