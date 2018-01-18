@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.asyncLock = new AsyncLock();
 
             // Set interval between batches.
-            this.batchInterval = TimeSpans.Second;
+            this.batchInterval = TimeSpans.FiveSeconds;
 
             this.localBatch = new List<ChainedBlock>();
 
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// The list <see cref="localBatch"/> contains hashes of blocks that were validated by the consensus rules.
         /// </para>
         /// <para>
-        /// This block hashes need to be relayed to connected peers. A peer that does not have a block
+        /// These block hashes need to be relayed to connected peers. A peer that does not have a block
         /// will then ask for the entire block, that means only blocks that have been stored/cached should be relayed.
         /// </para>
         /// <para>
@@ -249,6 +249,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.blocksToAnnounce.Dispose();
             this.asyncLock.Dispose();
+            this.batchTimer.Dispose();
 
             base.Dispose(disposing);
         }
