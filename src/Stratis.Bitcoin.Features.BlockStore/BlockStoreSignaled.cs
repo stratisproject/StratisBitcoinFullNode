@@ -120,7 +120,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.batchTimer.Elapsed += this.OnBatchTimerRunsOutAsync;
 
-            this.blocksToAnnounce = new AsyncQueue<ChainedBlock>(async (item, cancellation) =>
+            this.blocksToAnnounce = new AsyncQueue<ChainedBlock>(this.OnEnqueueAsync);
+        }
+
+        /// <summary>Callback that is called when a new item is added to the <see cref="blocksToAnnounce"/>.</summary>
+        /// <param name="item"><see cref="ChainedBlock"/> that was enqueued.</param>
+        /// <param name="cancellation"><see cref="blocksToAnnounce"/>'s cancellation token.</param>
+        private async Task OnEnqueueAsync(ChainedBlock item, System.Threading.CancellationToken cancellation)
+        {
+            try
             {
                 using (await this.asyncLock.LockAsync(cancellation).ConfigureAwait(false))
                 {
@@ -139,19 +147,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.batchTimer.Start();
                     }
                 }
-            });
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         /// <summary><see cref="batchTimer"/>'s elapsed callback.</summary>
         private async void OnBatchTimerRunsOutAsync(object o, ElapsedEventArgs elapsedEventArgs)
         {
-            using (await this.asyncLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
+            try
             {
-                if (!this.batchTimer.Enabled)
-                    return;
+                using (await this.asyncLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
+                {
+                    if (!this.batchTimer.Enabled)
+                        return;
 
-                this.batchSendingTask = this.SendBatchLockedAsync();
-                await this.batchSendingTask.ConfigureAwait(false);
+                    this.batchSendingTask = this.SendBatchLockedAsync();
+                    await this.batchSendingTask.ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
             }
         }
 
