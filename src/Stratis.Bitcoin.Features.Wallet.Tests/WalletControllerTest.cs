@@ -607,7 +607,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedNodes)
+            connectionManagerMock.Setup(c => c.ConnectedPeers)
                 .Returns(new NetworkPeerCollection());
 
             var mockWalletWrapper = new Mock<IWalletManager>();
@@ -1357,7 +1357,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedNodes).Returns(new TestReadOnlyNetworkPeerCollection());
+            connectionManagerMock.Setup(c => c.ConnectedPeers).Returns(new TestReadOnlyNetworkPeerCollection());
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
                 new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
@@ -1379,7 +1379,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
 
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedNodes)
+            connectionManagerMock.Setup(c => c.ConnectedPeers)
                 .Returns(new NetworkPeerCollection());
 
             WalletController controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
@@ -1611,6 +1611,73 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(400, error.Status);
             Assert.StartsWith("System.InvalidOperationException", error.Description);
             Assert.StartsWith("Wallet not found.", error.Message);
+        }
+
+        [Fact]
+        public void GetAllAddressesWithValidModelReturnsAllAddresses()
+        {
+            var walletName = "myWallet";
+
+            // Receive address with a transaction
+            HdAddress usedReceiveAddress = WalletTestsHelpers.CreateAddress();
+            TransactionData receiveTransaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1);
+            usedReceiveAddress.Transactions.Add(receiveTransaction);
+
+            // Receive address without a transaction
+            HdAddress unusedReceiveAddress = WalletTestsHelpers.CreateAddress();
+
+            // Change address with a transaction
+            HdAddress usedChangeAddress = WalletTestsHelpers.CreateAddress(true);
+            TransactionData changeTransaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1);
+            usedChangeAddress.Transactions.Add(changeTransaction);
+
+            // Change address without a transaction
+            HdAddress unusedChangeAddress = WalletTestsHelpers.CreateAddress(true);
+            
+            var receiveAddresses = new List<HdAddress> { usedReceiveAddress, unusedReceiveAddress };
+            var changeAddresses = new List<HdAddress> { usedChangeAddress, unusedChangeAddress };
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot()
+            {
+                Accounts = new List<HdAccount> { new HdAccount
+                {
+                    ExternalAddresses = receiveAddresses,
+                    InternalAddresses = changeAddresses,
+                    Name = "Account 0"
+                } }
+            });
+
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(m => m.GetWallet(walletName)).Returns(wallet);
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.GetAllAddresses(new GetAllAddressesModel{WalletName = "myWallet", AccountName = "Account 0"});
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as AddressesModel;
+
+            Assert.NotNull(model);
+            Assert.Equal(4, model.Addresses.Count());
+
+            var modelUsedReceiveAddress = model.Addresses.Single(a => a.Address == usedReceiveAddress.Address);
+            Assert.Equal(modelUsedReceiveAddress.Address, model.Addresses.Single(a => a.Address == modelUsedReceiveAddress.Address).Address);
+            Assert.False(model.Addresses.Single(a => a.Address == modelUsedReceiveAddress.Address).IsChange);
+            Assert.True(model.Addresses.Single(a => a.Address == modelUsedReceiveAddress.Address).IsUsed);
+
+            var modelUnusedReceiveAddress = model.Addresses.Single(a => a.Address == unusedReceiveAddress.Address);
+            Assert.Equal(modelUnusedReceiveAddress.Address, model.Addresses.Single(a => a.Address == modelUnusedReceiveAddress.Address).Address);
+            Assert.False(model.Addresses.Single(a => a.Address == modelUnusedReceiveAddress.Address).IsChange);
+            Assert.False(model.Addresses.Single(a => a.Address == modelUnusedReceiveAddress.Address).IsUsed);
+
+            var modelUsedChangeAddress = model.Addresses.Single(a => a.Address == usedChangeAddress.Address);
+            Assert.Equal(modelUsedChangeAddress.Address, model.Addresses.Single(a => a.Address == modelUsedChangeAddress.Address).Address);
+            Assert.True(model.Addresses.Single(a => a.Address == modelUsedChangeAddress.Address).IsChange);
+            Assert.True(model.Addresses.Single(a => a.Address == modelUsedChangeAddress.Address).IsUsed);
+
+            var modelUnusedChangeAddress = model.Addresses.Single(a => a.Address == unusedChangeAddress.Address);
+            Assert.Equal(modelUnusedChangeAddress.Address, model.Addresses.Single(a => a.Address == modelUnusedChangeAddress.Address).Address);
+            Assert.True(model.Addresses.Single(a => a.Address == modelUnusedChangeAddress.Address).IsChange);
+            Assert.False(model.Addresses.Single(a => a.Address == modelUnusedChangeAddress.Address).IsUsed);
         }
 
         [Fact]

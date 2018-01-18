@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -25,18 +25,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var node1 = builder.CreateStratisPowNode();
                 var node2 = builder.CreateStratisPowNode();
                 builder.StartAll();
-                Assert.Empty(node1.FullNode.ConnectionManager.ConnectedNodes);
-                Assert.Empty(node2.FullNode.ConnectionManager.ConnectedNodes);
+                Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
+                Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
                 var rpc1 = node1.CreateRPCClient();
-                var rpc2 = node2.CreateRPCClient();
                 rpc1.AddNode(node2.Endpoint, true);
-                Assert.Single(node1.FullNode.ConnectionManager.ConnectedNodes);
-                Assert.Single(node2.FullNode.ConnectionManager.ConnectedNodes);
+                Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
+                Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
 
-                var behavior = node1.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
+                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
                 Assert.False(behavior.Inbound);
                 Assert.True(behavior.OneTry);
-                behavior = node2.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
+                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
                 Assert.True(behavior.Inbound);
                 Assert.False(behavior.OneTry);
             }
@@ -51,8 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreNode = builder.CreateNode();
                 builder.StartAll();
 
-                // not in IBD
-                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.NotInIBD();
 
                 var tip = coreNode.FindBlock(10).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
@@ -80,9 +78,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreCreateNode = builder.CreateNode();
                 builder.StartAll();
 
-                // not in IBD
-                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-                stratisNodeSync.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.NotInIBD();
+                stratisNodeSync.NotInIBD();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
@@ -113,8 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreCreateNode = builder.CreateNode();
                 builder.StartAll();
 
-                // not in IBD
-                stratisNode.FullNode.InitialBlockDownloadState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+                stratisNode.NotInIBD();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
@@ -207,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     TestHelper.TriggerSync(stratisSyncer);
 
                     // wait for the synced chain to get headers updated.
-                    TestHelper.WaitLoop(() => !stratisReorg.FullNode.ConnectionManager.ConnectedNodes.Any());
+                    TestHelper.WaitLoop(() => !stratisReorg.FullNode.ConnectionManager.ConnectedPeers.Any());
 
                     TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
                     TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReorg, stratisMiner) == false);
@@ -294,6 +290,80 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Transaction.TimeStamp = false;
                 Block.BlockSignature = false;
             }
+        }
+
+        /// <summary>
+        /// This test simulates scenario from issue #862.
+        /// <para>
+        /// Connection scheme:
+        /// Network - Node1 - MiningNode
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void MiningNodeWithOneConnectionAlwaysSynced()
+        {
+            NetworkSimulator simulator = new NetworkSimulator();
+
+            simulator.Initialize(4);
+
+            var miner = simulator.Nodes[0];
+            var connector = simulator.Nodes[1];
+            var networkNode1 = simulator.Nodes[2];
+            var networkNode2 = simulator.Nodes[3];
+
+            // Connect nodes with each other. Miner is connected to connector and connector, node1, node2 are connected with each other.
+            miner.CreateRPCClient().AddNode(connector.Endpoint, true);
+            connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);
+            connector.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
+            networkNode1.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
+
+            simulator.MakeSureEachNodeCanMineAndSync();
+
+            int networkHeight = miner.FullNode.Chain.Height;
+            Assert.Equal(networkHeight, simulator.Nodes.Count);
+
+            // Random node on network generates a block.
+            networkNode1.GenerateStratis(1);
+
+            // Wait until connector get the hash of network's block.
+            while ((connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
+                   (networkNode1.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight))
+                Thread.Sleep(1);
+
+            // Make sure that miner did not advance yet but connector did.
+            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
+            Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight+1);
+
+            // Miner mines the block.
+            miner.GenerateStratis(1);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
+
+            networkHeight++;
+
+            // Make sure that at this moment miner's tip != network's and connector's tip.
+            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
+            Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
+            Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight);
+
+            connector.GenerateStratis(1);
+            networkHeight++;
+
+            int delay = 0;
+
+            while (true)
+            {
+                Thread.Sleep(50);
+                if (simulator.DidAllNodesReachHeight(networkHeight))
+                    break;
+                delay += 50;
+
+                Assert.True(delay < 10 * 1000, "Miner node was not able to advance!");
+            }
+
+            Assert.Equal(networkNode1.FullNode.Chain.Tip.HashBlock, miner.FullNode.Chain.Tip.HashBlock);
         }
     }
 }

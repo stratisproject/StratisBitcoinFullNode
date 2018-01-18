@@ -103,6 +103,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
             var nodeSettings = new NodeSettings();
+            nodeSettings.LoadArguments(new string[] { });
             nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
 

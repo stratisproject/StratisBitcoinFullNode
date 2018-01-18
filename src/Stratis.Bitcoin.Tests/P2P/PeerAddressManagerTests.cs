@@ -29,9 +29,8 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var savedPeer = addressManager.FindPeer(networkAddress.Endpoint);
 
-            Assert.Equal("::ffff:192.168.0.1", savedPeer.NetworkAddress.Endpoint.Address.ToString());
-            Assert.Equal(applicableDate, savedPeer.NetworkAddress.Time);
-            Assert.Equal(80, savedPeer.NetworkAddress.Endpoint.Port);
+            Assert.Equal("::ffff:192.168.0.1", savedPeer.EndPoint.Address.ToString());
+            Assert.Equal(80, savedPeer.EndPoint.Port);
             Assert.Equal(0, savedPeer.ConnectionAttempts);
             Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Null(savedPeer.LastConnectionHandshake);
@@ -60,9 +59,8 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var savedPeer = addressManager.FindPeer(networkAddress.Endpoint);
 
-            Assert.Equal("::ffff:192.168.0.1", savedPeer.NetworkAddress.Endpoint.Address.ToString());
-            Assert.Equal(applicableDate, savedPeer.NetworkAddress.Time);
-            Assert.Equal(80, savedPeer.NetworkAddress.Endpoint.Port);
+            Assert.Equal("::ffff:192.168.0.1", savedPeer.EndPoint.Address.ToString());
+            Assert.Equal(80, savedPeer.EndPoint.Port);
             Assert.Equal(0, savedPeer.ConnectionAttempts);
             Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);

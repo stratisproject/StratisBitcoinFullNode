@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
@@ -85,8 +84,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void DiscoverPeers(IConnectionManager connectionManager)
         {
-            // If peers are specified in the -connect arg then discovery does not happen.
-            if (this.nodeSettings.ConnectionManager.Connect.Any())
+            // If peers are specified in the -connect arg then discovery does not happen.            
+            if (connectionManager.ConnectionSettings.Connect.Any())
                 return;
 
             if (!connectionManager.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
@@ -112,15 +111,15 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private Task DiscoverPeersAsync()
         {
-            var peersToDiscover = new List<NetworkAddress>();
-            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeers(1000).Select(p => p.NetworkAddress));
+            var peersToDiscover = new List<IPEndPoint>();
+            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.EndPoint));
 
             if (peersToDiscover.Count == 0)
             {
                 this.AddDNSSeedNodes(peersToDiscover);
                 this.AddSeedNodes(peersToDiscover);
 
-                peersToDiscover = new List<NetworkAddress>(peersToDiscover.OrderBy(a => RandomUtils.GetInt32()));
+                peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
                 if (peersToDiscover.Count == 0)
                     return Task.CompletedTask;
             }
@@ -130,7 +129,7 @@ namespace Stratis.Bitcoin.P2P
                 MaxDegreeOfParallelism = 2,
                 CancellationToken = this.nodeLifetime.ApplicationStopping,
             },
-            async peer =>
+            async endPoint =>
             {
                 using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
@@ -147,7 +146,7 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Clear();
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-                        networkPeer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peer.Endpoint, clonedParameters).ConfigureAwait(false);
+                        networkPeer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, endPoint, clonedParameters).ConfigureAwait(false);
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
                         await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
@@ -158,7 +157,7 @@ namespace Stratis.Bitcoin.P2P
                     }
                     finally
                     {
-                        networkPeer?.DisconnectWithException();
+                        networkPeer?.Dispose("Discovery job done");
                     }
                 }
             });
@@ -169,28 +168,28 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Add peers to the address manager from the network DNS's seed nodes.
         /// </summary>
-        private void AddDNSSeedNodes(List<NetworkAddress> peers)
+        private void AddDNSSeedNodes(List<IPEndPoint> endPoints)
         {
-            peers.AddRange(this.network.DNSSeeds.SelectMany(seed =>
+            foreach (var seed in this.network.DNSSeeds)
             {
                 try
                 {
-                    return seed.GetAddressNodes();
+                    var ipAddresses = seed.GetAddressNodes();
+                    endPoints.AddRange(ipAddresses.Select(ip => new IPEndPoint(ip, this.network.DefaultPort)));
                 }
                 catch (Exception)
                 {
-                    return new IPAddress[0];
+                    this.logger.LogWarning("Error getting seed node addresses from {0}.", seed.Host);
                 }
-            })
-            .Select(d => new NetworkAddress(d, this.network.DefaultPort)));
+            }
         }
 
         /// <summary>
         /// Add peers to the address manager from the network's seed nodes.
         /// </summary>
-        private void AddSeedNodes(List<NetworkAddress> peers)
+        private void AddSeedNodes(List<IPEndPoint> endPoints)
         {
-            peers.AddRange(this.network.SeedNodes);
+            endPoints.AddRange(this.network.SeedNodes.Select(ipAddress => ipAddress.Endpoint));
         }
 
         /// <inheritdoc />

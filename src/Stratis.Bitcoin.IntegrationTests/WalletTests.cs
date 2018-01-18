@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;

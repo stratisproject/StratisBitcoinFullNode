@@ -1,7 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,234 +114,17 @@ namespace Stratis.Bitcoin.P2P.Peer
     public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
 
     /// <summary>
-    /// Represents a network connection to a peer. It is responsible for reading incoming messages from the peer 
-    /// and sending messages from the node to the peer.
+    /// Represents a counterparty of the node on the network. This is usually another node, but it can be 
+    /// a wallet, an analytical robot, or any other network client or server that understands the protocol.
+    /// <para>The network peer is either inbound, if it was the counterparty that established the connection to our 
+    /// node's listener, or outbound, if our node was the one connecting to a remote server.
+    /// </para>
     /// </summary>
-    public class NetworkPeerConnection : IDisposable
-    {
-        /// <summary>Logger for the node.</summary>
-        private readonly ILogger logger;
-
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        /// <summary>Network peer this connection connects to.</summary>
-        public NetworkPeer Peer { get; private set; }
-
-        /// <summary>Connected network socket to the peer.</summary>
-        public NetworkPeerClient Client { get; private set; }
-
-        /// <summary>Event that is set when the connection is closed.</summary>
-        public ManualResetEventSlim Disconnected { get; private set; }
-
-        /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
-        public CancellationTokenSource CancellationSource { get; private set; }
-
-        /// <summary>Registration of callback routine to shutdown the connection when <see cref="CancellationSource"/>'s token is cancelled.</summary>
-        private CancellationTokenRegistration cancelRegistration;
-
-        /// <summary>Task responsible for reading incoming messages from the stream.</summary>
-        private Task receiveMessageTask;
-
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        /// <param name="peer">Network peer the node is connected to.</param>
-        /// <param name="client">Connected network client to the peer.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerConnection(NetworkPeer peer, NetworkPeerClient client, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-        {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{peer.PeerAddress.Endpoint}] ");
-            this.dateTimeProvider = dateTimeProvider;
-
-            this.Peer = peer;
-            this.Client = client;
-            this.CancellationSource = new CancellationTokenSource();
-            this.cancelRegistration = this.CancellationSource.Token.Register(this.InitiateShutdown);
-            this.Disconnected = new ManualResetEventSlim(false);
-        }
-
-        /// <summary>
-        /// Sends message to the connected counterparty.
-        /// </summary>
-        /// <param name="payload">Payload of the message to send.</param>
-        /// <param name="cancellation">Cancellation token that allows aborting the sending operation.</param>
-        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
-        public async Task SendAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
-
-            CancellationTokenSource cts = null;
-            if (cancellation != default(CancellationToken))
-            {
-                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
-                cancellation = cts.Token;
-            }
-            else cancellation = this.CancellationSource.Token;
-
-            try
-            {
-                var message = new Message
-                {
-                    Magic = this.Peer.Network.Magic,
-                    Payload = payload
-                };
-
-                this.logger.LogTrace("Sending message: '{0}'", message);
-
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    message.ReadWrite(new BitcoinStream(ms, true)
-                    {
-                        ProtocolVersion = this.Peer.Version,
-                        TransactionOptions = this.Peer.SupportedTransactionOptions
-                    });
-
-                    byte[] bytes = ms.ToArray();
-
-                    await this.Client.SendAsync(bytes, cancellation).ConfigureAwait(false);
-                    this.Peer.Counter.AddWritten(bytes.Length);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (ex is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Sending cancelled.");
-                }
-                else
-                {
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-
-                    this.Peer.State = NetworkPeerState.Failed;
-                    this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                    {
-                        Reason = "Unexpected exception while sending a message",
-                        Exception = ex
-                    };
-                }
-
-                this.CancellationSource.Cancel();
-            }
-            finally
-            {
-                cts?.Dispose();
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Starts waiting for incoming messages.
-        /// </summary>
-        public void StartReceiveMessages()
-        {
-            this.logger.LogTrace("()");
-
-            this.receiveMessageTask = this.ReceiveMessagesAsync();
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Reads messages from the connection stream.
-        /// </summary>
-        public async Task ReceiveMessagesAsync()
-        {
-            this.logger.LogTrace("()");
-
-            try
-            {
-                while (!this.CancellationSource.Token.IsCancellationRequested)
-                {
-                    Message message = await this.Client.ReadAndParseMessageAsync(this.Peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
-
-                    this.logger.LogTrace("Received message: '{0}'", message);
-
-                    this.Peer.LastSeen = this.dateTimeProvider.GetUtcNow();
-                    this.Peer.Counter.AddRead(message.MessageSize);
-                    this.Peer.OnMessageReceived(new IncomingMessage()
-                    {
-                        Message = message,
-                        Client = this.Client,
-                        Length = message.MessageSize,
-                        NetworkPeer = this.Peer
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                if (ex is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Receiving cancelled.");
-                }
-                else
-                {
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-
-                    this.Peer.State = NetworkPeerState.Failed;
-                    this.Peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                    {
-                        Reason = "Unexpected exception while waiting for a message",
-                        Exception = ex
-                    };
-                }
-
-                this.CancellationSource.Cancel();
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// When the connection is terminated, this method cleans up and informs connected behaviors about the termination.
-        /// </summary>
-        private void InitiateShutdown()
-        {
-            this.logger.LogTrace("()");
-
-            if (this.Peer.State != NetworkPeerState.Failed)
-                this.Peer.State = NetworkPeerState.Offline;
-
-            this.Client.Dispose();
-            this.Client.ProcessingCompletion.SetResult(true);
-            this.Disconnected.Set();
-
-            foreach (INetworkPeerBehavior behavior in this.Peer.Behaviors)
-            {
-                try
-                {
-                    behavior.Detach();
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
-                }
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.logger.LogTrace("()");
-
-            if (this.CancellationSource.IsCancellationRequested == false)
-                this.CancellationSource.Cancel();
-
-            this.receiveMessageTask.Wait();
-            this.Disconnected.WaitHandle.WaitOne();
-
-            this.Disconnected.Dispose();
-            this.CancellationSource.Dispose();
-            this.cancelRegistration.Dispose();
-
-            this.logger.LogTrace("(-)");
-        }
-    }
-
+    /// <remarks>
+    /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods 
+    /// have the same functionality and the disconnecting method is provided only for better readability of the code. 
+    /// <para>It is safe to try to disconnect or dispose this object multiple times, only the first call will be processed.</para>
+    /// </remarks>
     public class NetworkPeer : IDisposable
     {
         /// <summary>Factory for creating loggers.</summary>
@@ -396,8 +179,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>List of node's modules attached to the peer to receive notifications about various events related to the peer.</summary>
         public NetworkPeerBehaviorsCollection Behaviors { get; private set; }
 
-        /// <summary>Information about the peer including its network address, protocol version, time of last contact.</summary>
-        public NetworkAddress PeerAddress { get; private set; }
+        /// <summary>IP address and port on the side of the peer.</summary>
+        public IPEndPoint PeerEndPoint { get; private set; }
 
         /// <summary>Last time in UTC the node received something from this peer.</summary>
         public DateTime LastSeen { get; set; }
@@ -445,9 +228,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <summary>Queue of incoming messages distributed to message consumers.</summary>
-        public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
-
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
         public bool Advertize { get; set; }
 
@@ -457,8 +237,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Version message payload received from the peer.</summary>
         public VersionPayload PeerVersion { get; private set; }
 
-        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary>
-        private int disconnecting;
+        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary> 
+        private int disconnected;
 
         /// <summary>Transaction options we would like.</summary>
         private NetworkOptions preferredTransactionOptions;
@@ -498,6 +278,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         public NetworkPeerConnectionParameters Parameters { get; private set; }
 
+        /// <summary>Queue of the connections' incoming messages distributed to message consumers.</summary>
+        public MessageProducer<IncomingMessage> MessageProducer { get { return this.Connection.MessageProducer; } }
+
         /// <summary>
         /// Dummy constructor for testing only.
         /// </summary>
@@ -511,54 +294,58 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.PeerEndPoint = new IPEndPoint(IPAddress.Loopback, 1);
+            this.Connection = new NetworkPeerConnection(null, this, new TcpClient(), 0, this.ProcessMessageAsync, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
         /// <param name="inbound"><c>true</c> for inbound peers, <c>false</c> for outbound peers.</param>
-        /// <param name="peerAddress">Information about the peer including its network address, protocol version, time of last contact.</param>
+        /// <param name="peerEndPoint">IP address and port on the side of the peer.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        private NetworkPeer(bool inbound, NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        private NetworkPeer(bool inbound, IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
-
-            this.MessageProducer = new MessageProducer<IncomingMessage>();
 
             this.preferredTransactionOptions = network.NetworkOptions;
             this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
 
             this.Inbound = inbound;
-            this.LastSeen = peerAddress.Time.UtcDateTime;
-            this.PeerAddress = peerAddress;
+            this.LastSeen = this.dateTimeProvider.GetUtcNow();
+            this.PeerEndPoint = peerEndPoint;
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
 
             this.Parameters = parameters ?? new NetworkPeerConnectionParameters();
-            this.MyVersion = this.Parameters.CreateVersion(peerAddress.Endpoint, network, this.dateTimeProvider.GetTimeOffset());
+            this.MyVersion = this.Parameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
         }
 
         /// <summary>
         /// Initializes an instance of the object for outbound network peers.
         /// </summary>
-        /// <param name="peerAddress">Information about the peer including its network address, protocol version, time of last contact.</param>
+        /// <param name="peerEndPoint">IP address and port on the side of the peer.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(false, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
+        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory)
         {
-            NetworkPeerClient client = networkPeerFactory.CreateNetworkPeerClient(parameters);
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
-            this.logger.LogTrace("()");
+            TcpClient client = new TcpClient(AddressFamily.InterNetworkV6);
+            client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+            client.Client.ReceiveBufferSize = parameters.ReceiveBufferSize;
+            client.Client.SendBufferSize = parameters.SendBufferSize;
 
-            this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
+            this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
+            this.logger.LogTrace("()");
 
             this.logger.LogTrace("(-)");
         }
@@ -566,28 +353,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Initializes an instance of the object for inbound network peers with already established connection.
         /// </summary>
-        /// <param name="peerAddress">Information about the peer including its network address, protocol version, time of last contact.</param>
+        /// <param name="peerEndPoint">IP address and port on the side of the peer.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="client">Already connected network client.</param>
         /// <param name="peerVersion">Version message payload received from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(NetworkAddress peerAddress, Network network, NetworkPeerConnectionParameters parameters, NetworkPeerClient client, VersionPayload peerVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(true, peerAddress, network, parameters, dateTimeProvider, loggerFactory)
+        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory)
+            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{client.Id}-{peerAddress.Endpoint}] ");
+            this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
             this.logger.LogTrace("()");
 
-            this.RemoteSocketEndpoint = client.RemoteEndPoint;
+            this.RemoteSocketEndpoint = this.PeerEndPoint;
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
             this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
-            this.PeerVersion = peerVersion;
-            this.Connection = new NetworkPeerConnection(this, client, this.dateTimeProvider, this.loggerFactory);
             this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
 
-            this.logger.LogTrace("Connected to advertised node '{0}'.", this.PeerAddress.Endpoint);
+            this.logger.LogTrace("Connected to peer '{0}'.", this.PeerEndPoint);
             this.State = NetworkPeerState.Connected;
 
             this.InitDefaultBehaviors(this.Parameters);
@@ -607,11 +394,11 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                this.logger.LogTrace("Connecting to '{0}'.", this.PeerAddress.Endpoint);
+                this.logger.LogTrace("Connecting to '{0}'.", this.PeerEndPoint);
 
-                await this.Connection.Client.ConnectAsync(this.PeerAddress.Endpoint, cancellation).ConfigureAwait(false);
+                await this.Connection.ConnectAsync(this.PeerEndPoint, cancellation).ConfigureAwait(false);
 
-                this.RemoteSocketEndpoint = this.Connection.Client.RemoteEndPoint;
+                this.RemoteSocketEndpoint = this.Connection.RemoteEndPoint;
                 this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
                 this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
@@ -621,12 +408,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.InitDefaultBehaviors(this.Parameters);
                 this.Connection.StartReceiveMessages();
 
-                this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerAddress.Endpoint);
+                this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerEndPoint);
             }
             catch (OperationCanceledException)
             {
-                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerAddress.Endpoint);
-                this.Connection.Client.Dispose();
+                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
                 this.State = NetworkPeerState.Offline;
 
                 this.logger.LogTrace("(-)[CANCELLED]");
@@ -635,7 +421,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception ex)
             {
                 this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                this.Connection.Client.Dispose();
+
                 this.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
                     Reason = "Unexpected exception while connecting to socket",
@@ -657,7 +443,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private void OnStateChanged(NetworkPeerState previous)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(previous), previous);
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(previous), previous, nameof(this.State), this.State);
 
             NetworkPeerStateChangedEventHandler stateChanged = this.StateChanged;
             if (stateChanged != null)
@@ -679,36 +465,38 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Calls event handlers when a new message is received from the peer.
+        /// Processes an incoming message from the peer and calls subscribed event handlers.
         /// </summary>
-        /// <param name="message">Message that was received.</param>
-        public void OnMessageReceived(IncomingMessage message)
+        /// <param name="message">Message received from the peer.</param>
+        /// <param name="cancellation">Cancellation token to abort message processing.</param>
+        public async Task ProcessMessageAsync(IncomingMessage message, CancellationToken cancellation)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
-            var version = message.Message.Payload as VersionPayload;
-            if ((version != null) && (this.State == NetworkPeerState.HandShaked))
+            switch (message.Message.Payload)
             {
-                if (message.NetworkPeer.Version >= ProtocolVersion.REJECT_VERSION)
-                {
-                    message.NetworkPeer.SendMessageVoidAsync(new RejectPayload()
-                    {
-                        Code = RejectCode.DUPLICATE
-                    });
-                }
-            }
+                case VersionPayload versionPayload:
+                    await this.ProcessVersionMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
+                    break;
 
-            if (version != null)
-            {
-                this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
-                if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
+                case HaveWitnessPayload unused:
                     this.SupportedTransactionOptions |= NetworkOptions.Witness;
+                    break;
             }
 
-            if (message.Message.Payload is HaveWitnessPayload)
-                this.SupportedTransactionOptions |= NetworkOptions.Witness;
+            this.CallMessageReceivedHandlers(message);
 
-            this.MessageProducer.PushMessage(message);
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Calls event handlers when a new message is received from the peer.
+        /// </summary>
+        /// <param name="message">Message that was received.</param>
+        private void CallMessageReceivedHandlers(IncomingMessage message)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
+
             NetworkPeerMessageReceivedEventHandler messageReceivedPriority = this.MessageReceivedPriority;
             if (messageReceivedPriority != null)
             {
@@ -738,6 +526,101 @@ namespace Stratis.Bitcoin.P2P.Peer
                     {
                         this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
                     }
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Processes a "version" message received from a peer.
+        /// </summary>
+        /// <param name="version">Version message received from a peer.</param>
+        /// <param name="cancellation">Cancellation token to abort message processing.</param>
+        private async Task ProcessVersionMessageAsync(VersionPayload version, CancellationToken cancellation)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(version), version);
+
+            this.logger.LogTrace("Peer's state is {0}.", this.State);
+
+            switch (this.State)
+            {
+                case NetworkPeerState.Connected:
+                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+                    break;
+
+                case NetworkPeerState.HandShaked:
+                    if (this.Version >= ProtocolVersion.REJECT_VERSION)
+                    {
+                        var rejectPayload = new RejectPayload()
+                        {
+                            Code = RejectCode.DUPLICATE
+                        };
+
+                        await this.SendMessageAsync(rejectPayload, cancellation).ConfigureAwait(false);
+                    }
+                    break;
+            }
+
+            this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
+            if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
+                this.SupportedTransactionOptions |= NetworkOptions.Witness;
+
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Processes an initial "version" message received from a peer.
+        /// </summary>
+        /// <param name="version">Version message received from a peer.</param>
+        /// <param name="cancellation">Cancellation token to abort message processing.</param>
+        /// <exception cref="OperationCanceledException">Thrown if the response to our "version" message is not received on time.</exception>
+        private async Task ProcessInitialVersionPayloadAsync(VersionPayload version, CancellationToken cancellation)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(version), version);
+
+            this.PeerVersion = version;
+            bool connectedToSelf = version.Nonce == this.Parameters.Nonce;
+
+            this.logger.LogDebug("First message received from peer '{0}'.", version.AddressFrom);
+
+            if (connectedToSelf)
+            {
+                this.logger.LogDebug("Connection to self detected and will be aborted.");
+
+                VersionPayload versionPayload = this.Parameters.CreateVersion(this.PeerEndPoint, this.Network, this.dateTimeProvider.GetTimeOffset());
+                await this.SendMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
+                this.Disconnect("Connected to self");
+
+                this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
+                return;
+            }
+
+            using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token, cancellation))
+            {
+                cancellationSource.CancelAfter(TimeSpan.FromSeconds(10.0));
+                try
+                {
+                    await this.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
+
+                    this.Disconnect("Handshake timeout");
+
+                    this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+
+                    this.Disconnect("Handshake exception", ex);
+
+                    this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
+                    throw;
                 }
             }
 
@@ -794,7 +677,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(payload, nameof(payload));
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
 
-            TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();
             if (!this.IsConnected)
             {
                 this.logger.LogTrace("(-)[NOT_CONNECTED]");
@@ -807,47 +689,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Waits for a message of specific type to be received from the peer.
-        /// </summary>
-        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
-        /// <param name="timeout">How long to wait for the message.</param>
-        /// <returns>Received message.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the wait timed out.</exception>
-        public TPayload ReceiveMessage<TPayload>(TimeSpan timeout) where TPayload : Payload
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(timeout), timeout);
-
-            using (var source = new CancellationTokenSource())
-            {
-                source.CancelAfter(timeout);
-                TPayload res = this.ReceiveMessage<TPayload>(source.Token);
-
-                this.logger.LogTrace("(-):'{0}'", res);
-                return res;
-            }
-        }
-
-        /// <summary>
-        /// Waits for a message of specific type to be received from the peer.
-        /// </summary>
-        /// <typeparam name="TPayload">Type of message to wait for.</typeparam>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation.</param>
-        /// <returns>Received message.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the cancellation token was cancelled.</exception>
-        public TPayload ReceiveMessage<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
-        {
-            this.logger.LogTrace("()");
-
-            using (var listener = new NetworkPeerListener(this))
-            {
-                TPayload res = listener.ReceivePayload<TPayload>(cancellationToken);
-
-                this.logger.LogTrace("(-):'{0}'", res);
-                return res;
-            }
-        }
-
-        /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
         /// <para>Both parties have to send their "version" messages to the other party 
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
@@ -855,7 +696,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         public async Task VersionHandshakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            await this.VersionHandshakeAsync(null, cancellationToken);
+            await this.VersionHandshakeAsync(null, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -865,56 +706,76 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (var listener = new NetworkPeerListener(this).Where(p => (p.Message.Payload is VersionPayload)
-                || (p.Message.Payload is RejectPayload)
-                || (p.Message.Payload is VerAckPayload)))
+            using (var listener = new NetworkPeerListener(this))
             {
-                await this.SendMessageAsync(this.MyVersion).ConfigureAwait(false);
-                Payload payload = listener.ReceivePayload<Payload>(cancellationToken);
-                if (payload is RejectPayload)
+                this.logger.LogTrace("Sending my version.");
+                await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
+
+                this.logger.LogTrace("Waiting for version or rejection message.");
+                bool versionReceived = false;
+                bool verAckReceived = false;
+                while (!versionReceived || !verAckReceived)
                 {
-                    this.logger.LogTrace("(-)[HANDSHAKE_REJECTED]");
-                    throw new ProtocolException("Handshake rejected: " + ((RejectPayload)payload).Reason);
+                    Payload payload = await listener.ReceivePayloadAsync<Payload>(cancellationToken).ConfigureAwait(false);
+                    switch (payload)
+                    {
+                        case RejectPayload rejectPayload:
+                            this.logger.LogTrace("(-)[HANDSHAKE_REJECTED]");
+                            throw new ProtocolException("Handshake rejected: " + rejectPayload.Reason);
+
+                        case VersionPayload versionPayload:
+                            versionReceived = true;
+
+                            this.PeerVersion = versionPayload;
+                            if (!versionPayload.AddressReceiver.Address.Equals(this.MyVersion.AddressFrom.Address))
+                            {
+                                this.logger.LogDebug("Different external address detected by the node '{0}' instead of '{1}'.", versionPayload.AddressReceiver.Address, this.MyVersion.AddressFrom.Address);
+                            }
+
+                            if (versionPayload.Version < ProtocolVersion.MIN_PEER_PROTO_VERSION)
+                            {
+                                this.logger.LogDebug("Outdated version {0} received, disconnecting peer.", versionPayload.Version);
+
+                                this.Disconnect("Outdated version");
+                                this.logger.LogTrace("(-)[OUTDATED]");
+                                return;
+                            }
+
+                            if (!requirements.Check(versionPayload))
+                            {
+                                this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
+                                this.Disconnect("The peer does not support the required services requirement");
+                                return;
+                            }
+
+                            this.logger.LogTrace("Sending version acknowledgement.");
+                            await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
+                            break;
+
+                        case VerAckPayload verAckPayload:
+                            verAckReceived = true;
+                            break;
+                    }
                 }
 
-                var version = (VersionPayload)payload;
-                this.PeerVersion = version;
-                if (!version.AddressReceiver.Address.Equals(this.MyVersion.AddressFrom.Address))
-                {
-                    this.logger.LogDebug("Different external address detected by the node '{0}' instead of '{1}'.", version.AddressReceiver.Address, this.MyVersion.AddressFrom.Address);
-                }
-
-                if (version.Version < ProtocolVersion.MIN_PEER_PROTO_VERSION)
-                {
-                    this.logger.LogDebug("Outdated version {0} received, disconnecting peer.", version.Version);
-
-                    this.Disconnect("Outdated version");
-                    this.logger.LogTrace("(-)[OUTDATED]");
-                    return;
-                }
-
-                if (!requirements.Check(version))
-                {
-                    this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
-                    this.Disconnect("The peer does not support the required services requirement");
-                    return;
-                }
-
-                await this.SendMessageAsync(new VerAckPayload()).ConfigureAwait(false);
-                listener.ReceivePayload<VerAckPayload>(cancellationToken);
                 this.State = NetworkPeerState.HandShaked;
 
                 if (this.Advertize && this.MyVersion.AddressFrom.Address.IsRoutable(true))
                 {
-                    this.SendMessageVoidAsync(new AddrPayload(new NetworkAddress(this.MyVersion.AddressFrom)
-                    {
-                        Time = this.dateTimeProvider.GetTimeOffset()
-                    }));
+                    var addrPayload = new AddrPayload
+                    (
+                        new NetworkAddress(this.MyVersion.AddressFrom)
+                        {
+                            Time = this.dateTimeProvider.GetTimeOffset()
+                        }
+                    );
+
+                    await this.SendMessageAsync(addrPayload, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -926,53 +787,34 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <exception cref="ProtocolException">Thrown when the peer rejected our "version" message.</exception>
-        public async Task RespondToHandShakeAsync(CancellationToken cancellation = default(CancellationToken))
+        public async Task RespondToHandShakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
-            using (var listener = new NetworkPeerListener(this).Where(m => (m.Message.Payload is VerAckPayload) || (m.Message.Payload is RejectPayload)))
+            using (var listener = new NetworkPeerListener(this))
             {
-                this.logger.LogTrace("Responding to handshake.");
-                await this.SendMessageAsync(this.MyVersion);
-                IncomingMessage message = listener.ReceiveMessage(cancellation);
+                this.logger.LogTrace("Responding to handshake with my version.");
+                await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
-                if (message.Message.Payload is RejectPayload reject)
+                this.logger.LogTrace("Waiting for version acknowledgement or rejection message.");
+
+                while (this.State != NetworkPeerState.HandShaked)
                 {
-                    this.logger.LogTrace("Version rejected: code {0}, reason {1}.", reject.Code, reject.Reason);
-                    this.logger.LogTrace("(-)[VERSION_REJECTED]");
-                    throw new ProtocolException("Version rejected " + reject.Code + " : " + reject.Reason);
+                    Payload payload = await listener.ReceivePayloadAsync<Payload>(cancellationToken).ConfigureAwait(false);
+                    switch (payload)
+                    {
+                        case RejectPayload rejectPayload:
+                            this.logger.LogTrace("Version rejected: code {0}, reason '{1}'.", rejectPayload.Code, rejectPayload.Reason);
+                            this.logger.LogTrace("(-)[VERSION_REJECTED]");
+                            throw new ProtocolException("Version rejected " + rejectPayload.Code + ": " + rejectPayload.Reason);
+
+                        case VerAckPayload verAckPayload:
+                            this.logger.LogTrace("Sending version acknowledgement.");
+                            await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
+                            this.State = NetworkPeerState.HandShaked;
+                            break;
+                    }
                 }
-
-                await this.SendMessageAsync(new VerAckPayload());
-                this.State = NetworkPeerState.HandShaked;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Disconnects the peer and cleans up.
-        /// </summary>
-        /// <param name="reason">Human readable reason for disconnecting.</param>
-        public void Disconnect(string reason = null)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
-
-            if (this.IsConnected == false)
-            {
-                this.logger.LogTrace("(-)[NOT_CONNECTED]");
-                return;
-            }
-
-            this.DisconnectInternal(reason, null);
-
-            try
-            {
-                this.Connection.Disconnected.WaitHandle.WaitOne();
-            }
-            finally
-            {
-                this.Connection.Dispose();
             }
 
             this.logger.LogTrace("(-)");
@@ -983,39 +825,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="reason">Human readable reason for disconnecting.</param>
         /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
-        public void DisconnectWithException(string reason = null, Exception exception = null)
+        public void Disconnect(string reason, Exception exception = null)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
 
-            if (this.IsConnected == false)
+            if (Interlocked.CompareExchange(ref this.disconnected, 1, 0) == 1)
             {
-                this.logger.LogTrace("(-)[NOT_CONNECTED]");
+                this.logger.LogTrace("(-)[DISCONNECTED]");
                 return;
             }
 
-            this.DisconnectInternal(reason, exception);
+            if (this.IsConnected) this.State = NetworkPeerState.Disconnecting;
             this.Connection.Dispose();
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Disconnects the peer and cleans up.
-        /// </summary>
-        /// <param name="reason">Human readable reason for disconnecting.</param>
-        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
-        private void DisconnectInternal(string reason = null, Exception exception = null)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
-
-            if (Interlocked.CompareExchange(ref this.disconnecting, 1, 0) == 1)
-            {
-                this.logger.LogTrace("(-)[DISCONNECTING");
-                return;
-            }
-
-            this.State = NetworkPeerState.Disconnecting;
-            this.Connection.CancellationSource.Cancel();
 
             if (this.DisconnectReason == null)
             {
@@ -1032,7 +853,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("{0} ({1})", this.State, this.PeerAddress.Endpoint);
+            return string.Format("{0} ({1})", this.State, this.PeerEndPoint);
         }
 
         /// <summary>
@@ -1048,10 +869,24 @@ namespace Stratis.Bitcoin.P2P.Peer
             return inventoryType;
         }
 
+        /// <summary>
+        /// Disconnects the peer and cleans up.
+        /// </summary>
+        /// <param name="reason">Human readable reason for disconnecting.</param>
+        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
+        public void Dispose(string reason, Exception exception = null)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(reason), reason);
+
+            this.Disconnect(reason, exception);
+
+            this.logger.LogTrace("(-)");
+        }
+
         /// <inheritdoc />
         public void Dispose()
         {
-            this.Disconnect("Node disposed");
+            this.Dispose("Peer disposed");
         }
     }
 }

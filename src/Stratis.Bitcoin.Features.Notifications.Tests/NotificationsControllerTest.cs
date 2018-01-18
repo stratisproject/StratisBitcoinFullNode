@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             ChainedBlock chainedBlock = new ChainedBlock(new BlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedBlock);
+            chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns(chainedBlock);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
@@ -76,6 +76,30 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Assert
             chain.Verify(c => c.GetBlock(heightLocation), Times.Never);
             blockNotification.Verify(b => b.SyncFrom(hash), Times.Once);
+        }
+
+        [Fact]
+        public void Given_SyncActionIsCalled_When_ANonExistingBlockHashIsSpecified_Then_ABadRequestErrorIsReturned()
+        {
+            // Set up
+            string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
+            
+            var chain = new Mock<ConcurrentChain>();
+            chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns((ChainedBlock)null);
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+
+            // Act
+            var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
+
+            // Assert
+            IActionResult result = notificationController.SyncFrom(hashLocation);
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
         }
 
         [Fact]

@@ -45,13 +45,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             var expectedOrderedPropertyNames = AllPropertyNames;
             var info = new GetInfoModel
             {
-                connections = 0,
-                walletversion = default(uint),
-                balance = default(decimal),
-                keypoololdest = default(long),
-                keypoolsize = default(int),
-                unlocked_until = default(uint),
-                paytxfee = default(decimal),
+                Connections = 0,
+                WalletVersion = default(uint),
+                Balance = default(decimal),
+                KeypoolOldest = default(long),
+                KeypoolSize = default(int),
+                UnlockedUntil = default(uint),
+                PayTxFee = default(decimal),
             };
 
             JObject obj = ModelToJObject(info);
@@ -124,21 +124,21 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             GetInfoModel model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetInfoModel>(json);
 
             Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
-            Assert.Equal(1010000u, model.version);
-            Assert.Equal(70012u, model.protocolversion);
-            Assert.Equal(Money.Satoshis(2).ToUnit(MoneyUnit.BTC), model.balance);
-            Assert.Equal(460828, model.blocks);
-            Assert.Equal(0, model.timeoffset);
-            Assert.Equal(44, model.connections);
-            Assert.Empty(model.proxy);
-            Assert.Equal(499635929816.6675, model.difficulty, 3);
-            Assert.False(model.testnet);
-            Assert.Equal(1437418454, model.keypoololdest);
-            Assert.Equal(101, model.keypoolsize);
-            Assert.Equal(0u, model.unlocked_until);
-            Assert.Equal(Money.Satoshis(10000).ToUnit(MoneyUnit.BTC), model.paytxfee);
-            Assert.Equal(Money.Satoshis(1000).ToUnit(MoneyUnit.BTC), model.relayfee);
-            Assert.Equal("URGENT: Alert key compromised, upgrade required", model.errors);
+            Assert.Equal(1010000u, model.Version);
+            Assert.Equal(70012u, model.ProtocolVersion);
+            Assert.Equal(Money.Satoshis(2).ToUnit(MoneyUnit.BTC), model.Balance);
+            Assert.Equal(460828, model.Blocks);
+            Assert.Equal(0, model.TimeOffset);
+            Assert.Equal(44, model.Connections);
+            Assert.Empty(model.Proxy);
+            Assert.Equal(499635929816.6675, model.Difficulty, 3);
+            Assert.False(model.Testnet);
+            Assert.Equal(1437418454, model.KeypoolOldest);
+            Assert.Equal(101, model.KeypoolSize);
+            Assert.Equal(0u, model.UnlockedUntil);
+            Assert.Equal(Money.Satoshis(10000).ToUnit(MoneyUnit.BTC), model.PayTxFee);
+            Assert.Equal(Money.Satoshis(1000).ToUnit(MoneyUnit.BTC), model.RelayFee);
+            Assert.Equal("URGENT: Alert key compromised, upgrade required", model.Errors);
         }
     }
 }

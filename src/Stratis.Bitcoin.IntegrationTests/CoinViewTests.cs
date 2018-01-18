@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static NBitcoin.Transaction;

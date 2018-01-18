@@ -19,11 +19,17 @@ namespace Stratis.Bitcoin.P2P
         PeerAddress SelectPeer();
 
         /// <summary>
-        /// Select preferred peers from the address manager for sending
-        /// via address payload and peer discovery.
+        /// Select a random set of peers from the address manager for peer discovery.
         /// </summary>
         /// <param name="peerCount">The amount of peers to return.</param>
-        IEnumerable<PeerAddress> SelectPeers(int peerCount);
+        IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount);
+
+        /// <summary>
+        /// Select preferred peers from the address manager for sending
+        /// via address payload.
+        /// </summary>
+        /// <param name="peerCount">The amount of peers to return.</param>
+        IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount);
     }
 
     public sealed class PeerSelector : IPeerSelector
@@ -64,8 +70,8 @@ namespace Stratis.Bitcoin.P2P
             var peers = this.SelectPreferredPeers();
             if (peers.Any())
             {
-                peerAddress = peers.Random();
-                this.logger.LogTrace("(-):'{0}'", peerAddress.NetworkAddress.Endpoint);
+                peerAddress = Random(peers);
+                this.logger.LogTrace("(-):'{0}'", peerAddress.EndPoint);
             }
             else
                 this.logger.LogTrace("(-)[NO_PEER]");
@@ -82,25 +88,27 @@ namespace Stratis.Bitcoin.P2P
 
             // First check to see if there are handshaked peers. If so,
             // give them a 50% chance to be picked over all the other peers.
-            if (this.peerAddresses.Handshaked().Any())
+            var handshaked = this.peerAddresses.Handshaked();
+            if (handshaked.Any())
             {
                 int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
                     this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
-                    return this.peerAddresses.Handshaked();
+                    return handshaked;
                 }
             }
 
             // If there are peers that have recently connected, give them
             // a 50% chance to be picked over fresh and/or attempted peers.
-            if (this.peerAddresses.Connected().Any())
+            var connected = this.peerAddresses.Connected();
+            if (connected.Any())
             {
                 int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
                     this.logger.LogTrace("(-)[RETURN_CONNECTED]");
-                    return this.peerAddresses.Connected();
+                    return connected;
                 }
             }
 
@@ -145,17 +153,68 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public IEnumerable<PeerAddress> SelectPeers(int peerCount)
+        public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
-            // If there are no peers, just one or if the amount peers is less than
-            // the amount of peers asked for, just return the list.
-            if (!this.peerAddresses.Any() || this.peerAddresses.Count == 1)
-                return this.peerAddresses.Select(pa => pa.Value);
-
-            // Randomly order the list of peers and return the amount
-            // asked for.
+            // Randomly order the list of peers and return the amount asked for.
             var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
             return allPeers.Select(p => p.Value).Take(1000);
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount)
+        {
+            // If there are no peers return an empty list.
+            if (!this.peerAddresses.Any())
+                return Enumerable.Empty<PeerAddress>();
+
+            // If there's one peer then just return the list.
+            if (this.peerAddresses.Count == 1)
+                return this.peerAddresses.Select(pa => pa.Value);
+
+            var peersToReturn = new List<PeerAddress>();
+
+            var connectedAndHandshaked = this.peerAddresses.Connected().Concat(this.peerAddresses.Handshaked()).OrderBy(p => this.random.Next());
+            var freshAndAttempted = this.peerAddresses.Attempted().Concat(this.peerAddresses.Fresh()).OrderBy(p => this.random.Next());
+
+            //If there are connected and/or handshaked peers in the address list,
+            //we need to split the list 50 / 50 between them and
+            //peers we have not yet connected to and/or that are fresh.
+            if (connectedAndHandshaked.Any())
+            {
+                //50% of the peers to return
+                var toTake = peerCount / 2;
+
+                //If the amount of connected and/or handshaked peers is less
+                //than 50% of the peers asked for, just take all of them.
+                if (connectedAndHandshaked.Count() < toTake)
+                    peersToReturn.AddRange(connectedAndHandshaked);
+                //If not take 50% of the amount requested.
+                else
+                    peersToReturn.AddRange(connectedAndHandshaked.Take(toTake));
+
+                //Fill up the list with the rest.
+                peersToReturn.AddRange(freshAndAttempted.Take(peerCount - peersToReturn.Count()));
+            }
+
+            //If there are no connected or handshaked peers in the address list,
+            //just return an amount of peers that has been asked for. 
+            else
+            {
+                peersToReturn.AddRange(freshAndAttempted.Take(peerCount));
+            }
+
+            return peersToReturn;
+        }
+
+        /// <summary>Return a random peer from a given set of peers.</summary>
+        private PeerAddress Random(IEnumerable<PeerAddress> peers)
+        {
+            if (peers.Count() == 1)
+                return peers.First();
+
+            var randomPeerIndex = this.random.Next(peers.Count() - 1);
+            var randomPeer = peers.ElementAt(randomPeerIndex);
+            return randomPeer;
         }
     }
 
@@ -214,21 +273,6 @@ namespace Stratis.Bitcoin.P2P
                                 p.Value.Handshaked &&
                                 p.Value.LastConnectionHandshake < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
             return result;
-        }
-
-        /// <summary>
-        /// Return a random peer from a given set of peers.
-        /// </summary>
-        public static PeerAddress Random(this IEnumerable<PeerAddress> peers)
-        {
-            var random = new Random();
-
-            if (peers.Count() == 1)
-                return peers.First();
-
-            var randomPeerIndex = random.Next(peers.Count() - 1);
-            var randomPeer = peers.ElementAt(randomPeerIndex);
-            return randomPeer;
         }
     }
 }

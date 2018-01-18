@@ -11,7 +11,9 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -19,7 +21,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
-{  
+{
     /// <summary>
     /// <see cref="PosMinting"/> is used in order to generate new blocks. It involves a sort of lottery, similar to proof-of-work,
     /// but the chances of winning this lottery is proportional to how many coins you are staking, not on hashing power.
@@ -193,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
         /// <summary>Consumes incoming blocks, validates and executes them.</summary>
-        private readonly ConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -209,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Provides an interface for creating block templates of different types.</summary>
-        private readonly AssemblerFactory blockAssemblerFactory;
+        private readonly IAssemblerFactory blockAssemblerFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -221,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly StakeChain stakeChain;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly StakeValidator stakeValidator;
+        private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -230,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly WalletManager walletManager;
 
         /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
-        private readonly PosConsensusValidator posConsensusValidator;
+        private readonly IPosConsensusValidator posConsensusValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -254,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>Memory pool of pending transactions.</summary>
-        protected readonly TxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
@@ -312,19 +314,19 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
-            AssemblerFactory blockAssemblerFactory,
+            IAssemblerFactory blockAssemblerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
             StakeChain stakeChain,
-            StakeValidator stakeValidator,
+            IStakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
-            TxMempool mempool,
+            ITxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
@@ -352,11 +354,11 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
 
-            this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
+            this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
-        
+
         /// <inheritdoc/>
         public IAsyncLoop Stake(WalletSecret walletSecret)
         {
@@ -408,13 +410,13 @@ namespace Stratis.Bitcoin.Features.Miner
             },
             this.stakeCancellationTokenSource.Token,
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-            startAfter: TimeSpans.TenSeconds);
+            startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
             return this.stakingLoop;
         }
-        
-        ///<inheritdoc/>
+
+        /// <inheritdoc/>
         public void StopStake()
         {
             this.logger.LogTrace("()");
@@ -445,13 +447,16 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!this.connection.ConnectedNodes.Any() || this.initialBlockDownloadState.IsInitialBlockDownload())
+                // Wait until we have at least one connected peer who's headers are synced with ours AND until not in IBD.
+                while (!this.connection.ConnectedPeers.Any(x => x.Behavior<ChainHeadersBehavior>().IsSynced())
+                    || this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
-                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
-                    else this.logger.LogTrace("Waiting for IBD to complete...");
+                    if (this.initialBlockDownloadState.IsInitialBlockDownload()) this.logger.LogTrace("Waiting for IBD to complete...");
+                    else this.logger.LogTrace("Waiting to be connected with at least one synced network peer...");
 
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
+
 
                 ChainedBlock chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)
@@ -959,7 +964,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions)
         {
@@ -1113,7 +1118,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public double GetNetworkWeight()
         {
@@ -1154,7 +1159,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <inheritdoc/>
         public Models.GetStakingInfoModel GetGetStakingInfoModel()
         {

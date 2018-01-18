@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
@@ -15,26 +12,20 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <seealso cref="IInitialBlockDownloadState" />
     public class InitialBlockDownloadState : IInitialBlockDownloadState
     {
+        /// <summary>A provider of the date and time.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
 
-        /// <summary>A provider of the date and time.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
         /// <summary>Information about node's chain.</summary>
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         /// <summary>User defined node settings.</summary>
         private readonly NodeSettings nodeSettings;
-
-        /// <summary>Time until IBD state can be checked.</summary>
-        private DateTime lockIbdUntil;
-
-        /// <summary>A cached result of the IBD method.</summary>
-        private bool ibdCached;
 
         /// <summary>
         /// Creates a new instance of the <see cref="InitialBlockDownloadState" /> class.
@@ -43,23 +34,18 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="nodeSettings">User defined node settings.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        public InitialBlockDownloadState(ChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
+        public InitialBlockDownloadState(IChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             this.network = network;
             this.nodeSettings = nodeSettings;
             this.chainState = chainState;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = DateTimeProvider.Default;
-
-            this.lockIbdUntil = DateTime.MinValue;
         }
 
         /// <inheritdoc />
         public bool IsInitialBlockDownload()
         {
-            if (this.lockIbdUntil >= this.dateTimeProvider.GetUtcNow())
-                return this.ibdCached;
-
             if (this.chainState == null)
                 return false;
 
@@ -76,13 +62,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return true;
 
             return false;
-        }
-
-        /// <inheritdoc />
-        public void SetIsInitialBlockDownload(bool blockDownloadState, DateTime lockStateUntil)
-        {
-            this.lockIbdUntil = lockStateUntil;
-            this.ibdCached = blockDownloadState;
         }
     }
 }

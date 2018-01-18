@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                    this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                    this.peerAddressManager.PeerConnected(this.AttachedPeer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 
@@ -64,8 +65,9 @@ namespace Stratis.Bitcoin.P2P
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
                 {
-                    var peers = this.peerAddressManager.PeerSelector.SelectPeers(1000).Select(p => p.NetworkAddress).ToArray();
-                    peer.SendMessageVoidAsync(new AddrPayload(peers));
+                    var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
+                    var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
+                    peer.SendMessageVoidAsync(addressPayload);
                 }
             }
 
@@ -81,7 +83,7 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (peer.State == NetworkPeerState.HandShaked)
-                    this.peerAddressManager.PeerHandshaked(peer.PeerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                    this.peerAddressManager.PeerHandshaked(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 

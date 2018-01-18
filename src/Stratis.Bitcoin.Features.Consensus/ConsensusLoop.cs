@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -78,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
     /// </para>
     /// </remarks>
-    public class ConsensusLoop
+    public class ConsensusLoop : IConsensusLoop
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -96,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public CoinView UTXOSet { get; }
 
         /// <summary>The validation logic for the consensus rules.</summary>
-        public PowConsensusValidator Validator { get; }
+        public IPowConsensusValidator Validator { get; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedBlock Tip { get; private set; }
@@ -114,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Holds state related to the block chain.</summary>
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
 
         /// <summary>Connection manager of all the currently connected peers.</summary>
         private readonly IConnectionManager connectionManager;
@@ -159,14 +160,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
-            PowConsensusValidator validator,
+            IPowConsensusValidator validator,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
             CoinView utxoSet,
             LookaheadBlockPuller puller,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
-            ChainState chainState,
+            IChainState chainState,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
@@ -214,9 +215,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeChain = stakeChain;
         }
 
-        /// <summary>
-        /// Initialize components in <see cref="ConsensusLoop"/>.
-        /// </summary>
+        /// <inheritdoc/>
         public async Task StartAsync()
         {
             this.logger.LogTrace("()");
@@ -245,11 +244,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Dispose components in <see cref="ConsensusLoop"/>.
-        /// </summary>
+        /// <inheritdoc/>
         public void Stop()
         {
+            this.Puller.Dispose();
             this.asyncLoop.Dispose();
         }
 
@@ -342,12 +340,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// A method that will accept a new block to the node.
-        /// The block will be validated and the <see cref="CoinView"/> db will be updated.
-        /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
-        /// </summary>
-        /// <param name="blockValidationContext">Information about the block to validate.</param>
+        /// <inheritdoc/>
         public async Task AcceptBlockAsync(BlockValidationContext blockValidationContext)
         {
             this.logger.LogTrace("()");
@@ -360,7 +353,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 try
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext).ConfigureAwait(false);
+                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -406,7 +399,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds != BlockValidationContext.BanDurationNoBan))
                     {
-                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.nodeSettings.ConnectionManager.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
+                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
                         this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
                     }
 
@@ -441,9 +434,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(blockValidationContext.ChainedBlock), blockValidationContext.ChainedBlock, nameof(blockValidationContext.Error), blockValidationContext.Error?.Message);
         }
 
-        /// <summary>
-        /// Validates a block using the consensus rules.
-        /// </summary>
+        /// <inheritdoc/>
         public void ValidateBlock(RuleContext context, bool skipRules = false)
         {
             this.logger.LogTrace("()");
@@ -457,34 +448,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
                 }
 
-                // Check that the current block has not been reorged.
-                // Catching a reorg at this point will not require a rewind.
-                if (context.BlockValidationContext.Block.Header.HashPrevBlock != this.Tip.HashBlock)
-                {
-                    this.logger.LogTrace("Reorganization detected.");
-                    ConsensusErrors.InvalidPrevTip.Throw();
-                }
-
-                this.logger.LogTrace("Validating new block.");
-
-                // Build the next block in the chain of headers. The chain header is most likely already created by
-                // one of the peers so after we create a new chained block (mainly for validation)
-                // we ask the chain headers for its version (also to prevent memory leaks).
-                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header,
-                    context.BlockValidationContext.Block.Header.GetHash(this.nodeSettings.Network.NetworkOptions), this.Tip);
-
-                // Liberate from memory the block created above if possible.
-                context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-                context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
-
-                // == Validation flow ==
-
                 // Check the block header is correct.
                 this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
-
-                // Calculate the consensus flags and check they are valid.
-                context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
                 if (!context.SkipValidation)
                 {
@@ -503,11 +469,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        public async Task ValidateAndExecuteBlockAsync(RuleContext context)
+        internal async Task ValidateAndExecuteBlockAsync(RuleContext context, bool skipRules = false)
         {
             this.logger.LogTrace("()");
 
-            this.ValidateBlock(context, true);
+            this.ValidateBlock(context, skipRules);
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
@@ -528,7 +494,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("Executing block.");
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                this.Validator.ExecuteBlock(context, null);
+                this.Validator.ExecuteBlock(context);
             }
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
@@ -541,10 +507,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
-        /// <summary>
-        /// Flushes changes in the cached coinview to the disk.
-        /// </summary>
-        /// <param name="force"><c>true</c> to enforce flush, <c>false</c> to flush only if the cached coinview itself wants to be flushed.</param>
+        /// <inheritdoc/>
         public async Task FlushAsync(bool force)
         {
             this.logger.LogTrace("({0}:{1})", nameof(force), force);
@@ -573,12 +536,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Get transaction identifiers to try to pre-fetch them from cache.
-        /// </summary>
-        /// <param name="block">The block containing transactions to fetch.</param>
-        /// <param name="enforceBIP30"><c>true</c> to enforce BIP30.</param>
-        /// <returns>List of transaction ids.</returns>
+        /// <inheritdoc/>
         public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(NetworkOptions.TemporaryOptions), nameof(enforceBIP30), enforceBIP30);

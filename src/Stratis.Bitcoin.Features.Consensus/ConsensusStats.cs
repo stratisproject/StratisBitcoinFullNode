@@ -3,11 +3,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private CachePerformanceSnapshot lastSnapshot3;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly ConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public ConsensusStats(
             CoinView coinView,
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             IInitialBlockDownloadState initialBlockDownloadState,
             ConcurrentChain chain,
             IConnectionManager connectionManager,

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -17,12 +17,12 @@ namespace Stratis.Bitcoin.Features.Miner
         {
         }
 
-        public ReserveScript(Script reserveSfullNodecript)
+        public ReserveScript(Script reserveFullNodeScript)
         {
-            this.reserveSfullNodecript = reserveSfullNodecript;
+            this.ReserveFullNodeScript = reserveFullNodeScript;
         }
 
-        public Script reserveSfullNodecript { get; set; }
+        public Script ReserveFullNodeScript { get; set; }
     }
 
     public class PowMining : IPowMining
@@ -44,13 +44,13 @@ namespace Stratis.Bitcoin.Features.Miner
         private const int InnerLoopCount = 0x10000;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly ConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         private readonly ConcurrentChain chain;
 
         private readonly Network network;
 
-        private readonly AssemblerFactory blockAssemblerFactory;
+        private readonly IAssemblerFactory blockAssemblerFactory;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -65,10 +65,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         public PowMining(
-            ConsensusLoop consensusLoop,
+            IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
-            AssemblerFactory blockAssemblerFactory,
+            IAssemblerFactory blockAssemblerFactory,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
@@ -82,6 +82,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        ///<inheritdoc/>
         public IAsyncLoop Mine(Script reserveScript)
         {
             if (this.mining != null)
@@ -89,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.mining = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
-                this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, int.MaxValue, int.MaxValue);
+                this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
                 this.mining = null;
                 return Task.CompletedTask;
             },
@@ -124,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
+                BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.ReserveFullNodeScript);
 
                 if (this.network.NetworkOptions.IsProofOfStake)
                 {
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
                 }
 
-                this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
+                nExtraNonce = this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                 Block pblock = pblockTemplate.Block;
 
                 while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
@@ -188,7 +189,8 @@ namespace Stratis.Bitcoin.Features.Miner
             return blocks;
         }
 
-        public void IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+        ///<inheritdoc/>
+        public int IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
         {
             // Update nExtraNonce
             if (this.hashPrevBlock != pblock.Header.HashPrevBlock)
@@ -204,6 +206,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
             pblock.UpdateMerkleRoot();
+
+            return nExtraNonce;
         }
     }
 }

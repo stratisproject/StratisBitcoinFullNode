@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security;
-using System.Text;
 using Moq;
 using NBitcoin;
 using Newtonsoft.Json;
@@ -93,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.walletManager.Setup(w => w.GetUnusedAddress(It.IsAny<WalletAccountReference>()))
                 .Returns(address);
 
-            this.powMining.Setup(p => p.GenerateBlocks(It.Is<ReserveScript>(r => r.reserveSfullNodecript == address.Pubkey), 1, int.MaxValue))
+            this.powMining.Setup(p => p.GenerateBlocks(It.Is<ReserveScript>(r => r.ReserveFullNodeScript == address.Pubkey), 1, int.MaxValue))
                 .Returns(new List<NBitcoin.uint256>() {
                     new NBitcoin.uint256(1255632623)
                 });

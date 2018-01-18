@@ -16,27 +16,29 @@ namespace NBitcoin
 
         private static string Validate(string bech32, ref Network expectedNetwork)
         {
-            if(bech32 == null)
-                throw new ArgumentNullException("bech32");
-            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
-            foreach(var network in networks)
-            {
-                var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
-                if(encoder == null)
-                    continue;
-                try
-                {
-                    byte witVersion;
-                    var data = encoder.Decode(bech32, out witVersion);
-                    if(data.Length == 20 && witVersion == 0)
-                    {
-                        return bech32;
-                    }
-                }
-                catch(Bech32FormatException) { throw; }
-                catch(FormatException) { continue; }
-            }
+            if (IsValid(bech32, ref expectedNetwork))
+                return bech32;
             throw new FormatException("Invalid BitcoinWitPubKeyAddress");
+        }
+
+        public static bool IsValid(string bech32, ref Network expectedNetwork)
+        {
+            if (bech32 == null)
+                throw new ArgumentNullException("bech32");
+            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
+            if (encoder == null)
+                return false;
+            try
+            {
+                byte witVersion;
+                var data = encoder.Decode(bech32, out witVersion);
+                if (data.Length == 20 && witVersion == 0)
+                {
+                    return true;
+                }
+            }
+            catch (FormatException) { }
+            return false;
         }
 
         public BitcoinWitPubKeyAddress(WitKeyId segwitKeyId, Network network) :
@@ -50,6 +52,12 @@ namespace NBitcoin
             if(segwitKeyId == null)
                 throw new ArgumentNullException("segwitKeyId");
             return null;
+        }
+
+        public bool VerifyMessage(string message, string signature)
+        {
+            var key = PubKey.RecoverFromMessage(message, signature);
+            return key.WitHash == this.Hash;
         }
 
         WitKeyId _Hash;
@@ -89,27 +97,30 @@ namespace NBitcoin
 
         private static string Validate(string bech32, ref Network expectedNetwork)
         {
-            if(bech32 == null)
-                throw new ArgumentNullException("bech32");
-            var networks = expectedNetwork == null ? Network.GetNetworks() : new[] { expectedNetwork };
-            foreach(var network in networks)
-            {
-                var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
-                if(encoder == null)
-                    continue;
-                try
-                {
-                    byte witVersion;
-                    var data = encoder.Decode(bech32, out witVersion);
-                    if(data.Length == 32 && witVersion == 0)
-                    {
-                        return bech32;
-                    }
-                }
-                catch(Bech32FormatException) { throw; }
-                catch(FormatException) { continue; }
-            }
+            if (IsValid(bech32, ref expectedNetwork))
+                return bech32;
             throw new FormatException("Invalid BitcoinWitScriptAddress");
+        }
+
+        public static bool IsValid(string bech32, ref Network expectedNetwork)
+        {
+            if (bech32 == null)
+                throw new ArgumentNullException("bech32");
+
+            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
+            if (encoder == null)
+                return false;
+            try
+            {
+                byte witVersion;
+                var data = encoder.Decode(bech32, out witVersion);
+                if (data.Length == 32 && witVersion == 0)
+                {
+                    return true;
+                }
+            }
+            catch (FormatException) { }
+            return false;
         }
 
         public BitcoinWitScriptAddress(WitScriptId segwitScriptId, Network network)

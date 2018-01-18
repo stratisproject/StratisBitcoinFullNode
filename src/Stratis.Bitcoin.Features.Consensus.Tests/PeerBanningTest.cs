@@ -48,17 +48,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
-            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
-            node.Behaviors.Add(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
+            using (var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory))
+            {
+                node.Behaviors.Add(connectionManagerBehavior);
+                context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer }); 
-
-            Assert.True(context.PeerBanning.IsBanned(peer));
+                var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
+                // create a new block that breaks consensus.
+                var block = blocks.First();
+                block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
+                await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer });
+                Assert.True(context.PeerBanning.IsBanned(peer));
+            }
         }
 
         [Fact]
@@ -71,17 +72,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
-            node.Behaviors.Add(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
+            using (var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory))
+            {
+                node.Behaviors.Add(connectionManagerBehavior);
+                context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer });
+                var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
+                // create a new block that breaks consensus.
+                var block = blocks.First();
+                block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
+                await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer });
 
-            Assert.False(context.PeerBanning.IsBanned(peer));
+                Assert.False(context.PeerBanning.IsBanned(peer));
+            }
         }
 
         [Fact]
@@ -94,17 +97,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
-            node.Behaviors.Add(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
+            using (var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory))
+            {
+                node.Behaviors.Add(connectionManagerBehavior);
+                context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = BlockValidationContext.BanDurationNoBan });
+                var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
+                // create a new block that breaks consensus.
+                var block = blocks.First();
+                block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
+                await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = BlockValidationContext.BanDurationNoBan });
 
-            Assert.False(context.PeerBanning.IsBanned(peer));
+                Assert.False(context.PeerBanning.IsBanned(peer));
+            }
         }
 
         [Fact]
@@ -117,20 +122,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory);
-            node.Behaviors.Add(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
+            using (var node = new NetworkPeer(context.DateTimeProvider, context.LoggerFactory))
+            {
+                node.Behaviors.Add(connectionManagerBehavior);
+                context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(node);
 
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = 1 }); // ban for 1 second
+                var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
+                // create a new block that breaks consensus.
+                var block = blocks.First();
+                block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
+                await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer, BanDurationSeconds = 1 }); // ban for 1 second
 
-            // wait 1 sec for ban to expire.
-            Thread.Sleep(1000);
+                // wait 1 sec for ban to expire.
+                Thread.Sleep(1000);
 
-            Assert.False(context.PeerBanning.IsBanned(peer));
+                Assert.False(context.PeerBanning.IsBanned(peer));
+            }
         }
 
     }

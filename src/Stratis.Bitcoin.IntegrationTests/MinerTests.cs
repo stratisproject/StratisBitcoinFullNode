@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -118,10 +119,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             private bool useCheckpoints = true;
 
-            public TestContext()
-            {
-            }
-
             public async Task InitializeAsync()
             {
                 this.blockinfo = new List<Blockinfo>();
@@ -145,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = NodeSettings.Default();
+                NodeSettings nodeSettings = NodeSettings.Default();
                 var consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory)
                 {
                     UseCheckpoints = this.useCheckpoints
@@ -156,7 +153,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
-                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery);
+                var connectionSettings = new ConnectionManagerSettings();
+                connectionSettings.Load(nodeSettings);
+                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings);
 
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
@@ -171,7 +170,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 date1.time = dateTimeProvider.GetTime();
                 date1.timeutc = dateTimeProvider.GetUtcNow();
                 this.date = date1;
-                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
+                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
@@ -355,7 +354,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 tx.Outputs[0].Value -= context.LOWFEE;
                 context.hash = tx.GetHash();
-                bool spendsCoinbase = (i == 0) ? true : false; // only first tx spends coinbase
+                bool spendsCoinbase = (i == 0); // only first tx spends coinbase
                                                                // If we don't set the # of sig ops in the CTxMemPoolEntry, template creation fails
                 context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.date.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
                 tx = tx.Clone();
@@ -371,7 +370,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 tx.Outputs[0].Value -= context.LOWFEE;
                 context.hash = tx.GetHash();
-                bool spendsCoinbase = (i == 0) ? true : false; // only first tx spends coinbase
+                bool spendsCoinbase = (i == 0); // only first tx spends coinbase
                                                                // If we do set the # of sig ops in the CTxMemPoolEntry, template creation passes
                 context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.date.GetTime()).SpendsCoinbase(spendsCoinbase).SigOpsCost(80).FromTx(tx));
                 tx = tx.Clone();
@@ -407,7 +406,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 tx.Outputs[0].Value -= context.LOWFEE;
                 context.hash = tx.GetHash();
-                bool spendsCoinbase = (i == 0) ? true : false; // only first tx spends coinbase
+                bool spendsCoinbase = (i == 0); // only first tx spends coinbase
                 context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.date.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
                 tx = tx.Clone();
                 tx.Inputs[0].PrevOut.Hash = context.hash;

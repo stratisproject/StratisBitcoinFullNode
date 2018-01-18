@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -25,23 +26,19 @@ namespace Stratis.Bitcoin.P2P
             INetworkPeerFactory networkPeerFactory,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
+            ConnectionManagerSettings connectionSettings,
             IPeerAddressManager peerAddressManager) :
-            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, peerAddressManager)
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager)
         {
+            this.Requirements.RequiredServices = NetworkPeerServices.Nothing;
         }
 
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            this.MaximumNodeConnections = this.NodeSettings.ConnectionManager.AddNode.Count;
+            this.MaxOutboundConnections = this.ConnectionSettings.AddNode.Count;
 
-            this.Requirements = new NetworkPeerRequirement
-            {
-                MinVersion = this.NodeSettings.ProtocolVersion,
-                RequiredServices = NetworkPeerServices.Nothing
-            };
-
-            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
+            foreach (var ipEndpoint in this.ConnectionSettings.AddNode)
             {
                 this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
             }
@@ -64,10 +61,13 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            foreach (var ipEndpoint in this.NodeSettings.ConnectionManager.AddNode)
+            foreach (var ipEndpoint in this.ConnectionSettings.AddNode)
             {
+                if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    return;
+
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.NetworkAddress.Endpoint))
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.EndPoint))
                     await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }

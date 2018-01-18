@@ -4,9 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -316,7 +314,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return ret;
             });
 
-            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node?.RemoteSocketEndpoint);
+            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(node, sends.Select(s => s.Trx.GetHash()));
             this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();
 
@@ -506,8 +504,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task RelayTransaction(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-            IReadOnlyNetworkPeerCollection nodes = this.connectionManager.ConnectedNodes;
-            if (!nodes.Any())
+            IReadOnlyNetworkPeerCollection peers = this.connectionManager.ConnectedPeers;
+            if (!peers.Any())
             {
                 this.logger.LogTrace("(-)[NO_NODES]");
                 return Task.CompletedTask;
@@ -515,7 +513,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // find all behaviours then start an exclusive task
             // to add the hash to each local collection
-            IEnumerable<MempoolBehavior> behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
+            IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
             this.logger.LogTrace("(-)");
             return this.manager.MempoolLock.WriteAsync(() =>
             {

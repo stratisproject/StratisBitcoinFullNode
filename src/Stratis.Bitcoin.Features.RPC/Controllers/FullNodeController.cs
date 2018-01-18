@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -26,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             NodeSettings nodeSettings = null,
             Network network = null,
             ConcurrentChain chain = null,
-            ChainState chainState = null,
+            IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null)
             : base(
                   fullNode: fullNode,
@@ -114,7 +117,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<ConsensusLoop>();
+            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<IConsensusLoop>();
             return consensusLoop.Tip.Height;
         }
 
@@ -124,24 +127,24 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             var model = new GetInfoModel
             {
-                version = this.FullNode?.Version.ToUint() ?? 0,
-                protocolversion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
-                blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
-                timeoffset = this.ConnectionManager?.ConnectedNodes?.GetMedianTimeOffset() ?? 0,
-                connections = this.ConnectionManager?.ConnectedNodes?.Count(),
-                proxy = string.Empty,
-                difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
-                testnet = this.Network.IsTest(),
-                relayfee = this.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC),
-                errors = string.Empty,
+                Version = this.FullNode?.Version.ToUint() ?? 0,
+                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                Blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
+                TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
+                Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
+                Proxy = string.Empty,
+                Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
+                Testnet = this.Network.IsTest(),
+                RelayFee = this.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC),
+                Errors = string.Empty,
 
                 //TODO: Wallet related infos: walletversion, balance, keypoololdest, keypoolsize, unlocked_until, paytxfee
-                walletversion = null,
-                balance = null,
-                keypoololdest = null,
-                keypoolsize = null,
-                unlocked_until = null,
-                paytxfee = null
+                WalletVersion = null,
+                Balance = null,
+                KeypoolOldest = null,
+                KeypoolSize = null,
+                UnlockedUntil = null,
+                PayTxFee = null
             };
 
             return model;
@@ -173,6 +176,44 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
             }
             return model;
+        }
+
+        /// <summary>
+        /// Returns information about a bitcoin address
+        /// </summary>
+        /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
+        /// <returns>JObject containing a boolean indicating address validity</returns>
+        [ActionName("validateaddress")]
+        [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
+        public JObject ValidateAddress(string address)
+        {
+            if (string.IsNullOrEmpty(address))
+                throw new ArgumentNullException("address");
+
+            var res = new JObject();
+            res["isvalid"] = false;
+
+            // P2PKH
+            if(BitcoinPubKeyAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            // P2SH
+            else if(BitcoinScriptAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            // P2WPKH
+            else if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network))
+            {
+                res ["isvalid"] = true;
+            }
+            // P2WSH
+            else if (BitcoinWitScriptAddress.IsValid(address, ref this.Network))
+            {
+                res ["isvalid"] = true;
+            }
+            return res;
         }
 
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
