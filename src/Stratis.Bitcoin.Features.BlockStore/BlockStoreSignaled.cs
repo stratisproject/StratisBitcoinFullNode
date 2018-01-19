@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await task.ConfigureAwait(false);
 
                     // Send batch if timer ran out or we've received a tip.  
-                    var sendBatch = false;
+                    bool sendBatch = false;
                     if (dequeueTask.Status == TaskStatus.RanToCompletion)
                     {
                         ChainedBlock item = dequeueTask.Result;
