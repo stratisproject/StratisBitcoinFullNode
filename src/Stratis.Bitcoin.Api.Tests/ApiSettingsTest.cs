@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if no API settings are passed and we're on the bitcoin network, the defaults settings are used.
         /// </summary>
         [Fact]
-        public void GivenNoApiSettingsAreProvidedAndOnBitcoinNetworkThenDefaultSettingAreUsed()
+        public void GivenNoApiSettingsAreProvided_AndOnBitcoinNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
             Network network = Network.Main;
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if no API settings are passed and we're on the Stratis network, the defaults settings are used.
         /// </summary>
         [Fact]
-        public void GivenNoApiSettingsAreProvidedAndOnStratisNetworkThenDefaultSettingAreUsed()
+        public void GivenNoApiSettingsAreProvided_AndOnStratisNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
             Transaction.TimeStamp = true;
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if a custom API port is passed, the port is used in conjunction with the default API URI.
         /// </summary>
         [Fact]
-        public void GivenApiPortIsProvidedThenPortIsUsedWithDefaultApiUri()
+        public void GivenApiPortIsProvided_ThenPortIsUsedWithDefaultApiUri()
         {
             // Arrange.
             int customPort = 55555;
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if a custom API URI is passed and we're on the bitcoin network, the bitcoin port is used in conjunction with the passed API URI.
         /// </summary>
         [Fact]
-        public void GivenApiUriIsProvidedAndGivenBitcoinNetworkThenApiUriIsUsedWithDefaultBitcoinApiPort()
+        public void GivenApiUriIsProvided_AndGivenBitcoinNetwork_ThenApiUriIsUsedWithDefaultBitcoinApiPort()
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if a custom API URI is passed and we're on the Stratis network, the bitcoin port is used in conjunction with the passed API URI.
         /// </summary>
         [Fact]
-        public void GivenApiUriIsProvidedAndGivenStratisNetworkThenApiUriIsUsedWithDefaultStratisApiPort()
+        public void GivenApiUriIsProvided_AndGivenStratisNetwork_ThenApiUriIsUsedWithDefaultStratisApiPort()
         {
             // Arrange.
             Transaction.TimeStamp = true;
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if a custom API URI and a custom API port are passed, both are used in conjunction to make the API URI.
         /// </summary>
         [Fact]
-        public void GivenApiUriAndApiPortIsProvidedAndGivenBitcoinNetworkThenApiUriIsUsedWithApiPort()
+        public void GivenApiUri_AndApiPortIsProvided_AndGivenBitcoinNetwork_ThenApiUriIsUsedWithApiPort()
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Api.Tests
         /// Tests that if a custom API URI is passed and we're on the Stratis network, the bitcoin port is used in conjunction with the passed API URI.
         /// </summary>
         [Fact]
-        public void GivenApiUriIncludingPortIsProvidedThenUseThePassedApiUri()
+        public void GivenApiUriIncludingPortIsProvided_ThenUseThePassedApiUri()
         {
             // Arrange.
             int customPort = 5522;
