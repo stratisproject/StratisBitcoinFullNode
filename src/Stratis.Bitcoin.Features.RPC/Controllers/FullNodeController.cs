@@ -31,12 +31,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private readonly INetworkDifficulty networkDifficulty;
 
+        private readonly IConsensusLoop consensusLoop;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
             IPooledTransaction pooledTransaction,
             IPooledGetUnspentTransaction pooledGetUnspentTransaction,
             IGetUnspentTransaction getUnspentTransaction,
             INetworkDifficulty networkDifficulty,
+            IConsensusLoop consensusLoop,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
@@ -56,6 +59,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
+            this.consensusLoop = consensusLoop;
         }
 
         [ActionName("stop")]
@@ -133,8 +137,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<IConsensusLoop>();
-            return consensusLoop.Tip.Height;
+            return this.consensusLoop.Tip.Height;
         }
 
         [ActionName("getinfo")]
