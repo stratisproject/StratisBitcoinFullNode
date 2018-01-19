@@ -23,8 +23,20 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        private readonly IPooledTransaction pooledTransaction;
+
+        private readonly IPooledGetUnspentTransaction pooledGetUnspentTransaction;
+
+        private readonly IGetUnspentTransaction getUnspentTransaction;
+
+        private readonly INetworkDifficulty networkDifficulty;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
+            IPooledTransaction pooledTransaction,
+            IPooledGetUnspentTransaction pooledGetUnspentTransaction,
+            IGetUnspentTransaction getUnspentTransaction,
+            INetworkDifficulty networkDifficulty,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
@@ -40,6 +52,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   connectionManager: connectionManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.pooledTransaction = pooledTransaction;
+            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.getUnspentTransaction = getUnspentTransaction;
+            this.networkDifficulty = networkDifficulty;
         }
 
         [ActionName("stop")]
@@ -62,7 +78,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            Transaction trx = await this.FullNode.NodeService<IPooledTransaction>(true)?.GetTransaction(trxid);
+            Transaction trx = await this.pooledTransaction.GetTransaction(trxid);
 
             if (trx == null)
             {
@@ -99,11 +115,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid);
             }
             else
             {
-                unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid);
             }
 
             if (unspentOutputs == null)
@@ -227,7 +243,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private Target GetNetworkDifficulty()
         {
-            return this.FullNode.NodeService<INetworkDifficulty>(true)?.GetNetworkDifficulty();
+            return this.networkDifficulty.GetNetworkDifficulty();
         }
     }
 }
