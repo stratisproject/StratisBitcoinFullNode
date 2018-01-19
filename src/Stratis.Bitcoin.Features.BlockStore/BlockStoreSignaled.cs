@@ -118,10 +118,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
+                    // Start new dequeue task if not started already.
                     dequeueTask = dequeueTask ?? this.blocksToAnnounce.DequeueAsync();
 
-                    // wait for one of the tasks: dequeue and timer (if available) to finish.
-                    Task task = (timerTask == null)? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
+                    // Wait for one of the tasks: dequeue and timer (if available) to finish.
+                    Task task = timerTask == null ? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
                     await task.ConfigureAwait(false);
 
                     // Send batch if timer ran out or we've received a tip.  
@@ -129,6 +130,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     if (dequeueTask.Status == TaskStatus.RanToCompletion)
                     {
                         ChainedBlock item = dequeueTask.Result;
+                        // Set the dequeue task to null so it can be assigned on the next iteration.
                         dequeueTask = null;
                         batch.Add(item);
                         sendBatch = item == this.chain.Tip;
@@ -217,6 +219,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviours.Count());
             foreach (BlockStoreBehavior behaviour in behaviours)
                 await behaviour.AnnounceBlocksAsync(batch).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
