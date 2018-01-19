@@ -135,9 +135,22 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Records the command line arguments.
+        /// Processes the command line arguments only.
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
+        /// <param name="delayedProcessing">Set to <c>true</c> if the configuration file should not be read yet.</param>
+        /// <returns>Node configuration with arguments recorded.</returns>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
+        public NodeSettings LoadArgumentsDelayed(string[] args)
+        {
+            return LoadArguments(args, true);
+        }
+
+        /// <summary>
+        /// Processes the command line arguments and the configuration file (default).
+        /// </summary>
+        /// <param name="args">Application command line arguments.</param>
+        /// <param name="delayedProcessing">Set to <c>true</c> if the configuration file should not be read yet.</param>
         /// <returns>Node configuration with arguments recorded.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args, bool delayedProcessing = false)
