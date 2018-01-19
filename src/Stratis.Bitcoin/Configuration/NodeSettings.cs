@@ -199,6 +199,10 @@ namespace Stratis.Bitcoin.Configuration
             if (!Directory.Exists(this.DataDir))
                 throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
+            this.DataFolder = new DataFolder(this);
+            if (!Directory.Exists(this.DataFolder.CoinViewPath))
+                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
+
             if (!delayedConfigurationFileProcessing)
             {
                 this.ConfigReader = null;
@@ -232,10 +236,6 @@ namespace Stratis.Bitcoin.Configuration
             var config = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
             this.ConfigReader = config;
             consoleConfig.MergeInto(config);
-
-            this.DataFolder = new DataFolder(this);
-            if (!Directory.Exists(this.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
             // Set the configuration filter and file path.
             this.Log.Load(config);
