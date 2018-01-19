@@ -135,7 +135,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildConfiguresFullNodeUsingConfiguration()
         {
             var nodeSettings = new NodeSettings();
+            nodeSettings.LoadArguments(new string[] { });
             nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
             this.fullNodeBuilder.ConfigureServices(e =>
             {
@@ -181,7 +183,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildTwiceThrowsException()
         {
             var nodeSettings = new NodeSettings();
+            nodeSettings.LoadArguments(new string[] { });
             nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
             Assert.Throws<InvalidOperationException>(() =>
             {
