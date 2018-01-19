@@ -636,6 +636,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.messageListener.Dispose();
 
             this.CancellationSource.Dispose();
+            this.writeLock.Dispose();
 
             this.logger.LogTrace("(-)");
         }
