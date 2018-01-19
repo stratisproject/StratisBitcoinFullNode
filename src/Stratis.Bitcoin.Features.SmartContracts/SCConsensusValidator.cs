@@ -176,7 +176,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             foreach (TxOut txOut in transaction.Outputs)
             {
-
                 if (txOut.ScriptPubKey.IsSmartContractExec)
                 {
                     var scTransaction = new SCTransaction(txOut);

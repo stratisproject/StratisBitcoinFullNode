@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using DBreeze;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -10,6 +12,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -155,8 +158,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     UseCheckpoints = this.useCheckpoints
                 };
 
-                this.state = new ContractStateRepository();
-                this.state.Refresh(); // just for unit tests
+
+                DBreezeEngine engine = new DBreezeEngine("C:/data");
+                DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+                ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
+                byte[] root = null;
+                this.state = new ContractStateRepositoryRoot(stateDB, root);
                 SmartContractDecompiler smartContractDecompiler = new SmartContractDecompiler();
                 SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
@@ -169,7 +176,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
-                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery);
+                var connectionSettings = new ConnectionManagerSettings();
+                connectionSettings.Load(nodeSettings);
+                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings);
 
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
@@ -265,8 +274,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-            var hopefullyOwner = context.state.GetObject<uint160>(0, "Owner");
-
+            var ownerFromStorage = context.state.GetStorageValue(new uint160(0), Encoding.UTF8.GetBytes("Owner"));
+            Assert.Equal(ownerFromStorage, new uint160(100).ToBytes());
         }
     }
 }

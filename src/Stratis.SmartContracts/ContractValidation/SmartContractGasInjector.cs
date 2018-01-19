@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts.ContractValidation
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
             MethodReference gasMethodReference = contractType.Module.Import(gasMethod);
 
-            foreach (var method in contractType.Methods)
+            foreach (MethodDefinition method in contractType.Methods)
             {
                 InjectSpendGasMethod(method, gasMethodReference);
             }
