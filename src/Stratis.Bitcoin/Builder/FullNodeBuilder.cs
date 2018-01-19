@@ -157,8 +157,6 @@ namespace Stratis.Bitcoin.Builder
                 throw new InvalidOperationException("full node already built");
             this.fullNodeBuilt = true;
 
-            this.NodeSettings?.LoadConfiguration();
-
             this.Services = this.BuildServices();
 
             var fullNodeServiceProvider = this.Services.BuildServiceProvider();
@@ -176,6 +174,8 @@ namespace Stratis.Bitcoin.Builder
             var fullNode = fullNodeServiceProvider.GetService<FullNode>();
             if (fullNode == null)
                 throw new InvalidOperationException("Fullnode not registered with provider");
+
+            nodeSettings.LoadConfiguration();
 
             fullNode.Initialize(new FullNodeServiceProvider(
                 fullNodeServiceProvider,
