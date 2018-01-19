@@ -62,6 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockStoreCache = blockStoreCache;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedBlock>();
+            this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
         protected override void OnNextCore(Block block)
@@ -102,12 +103,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Initializes the <see cref="BlockStoreSignaled"/>.</summary>
-        public void Initialize()
-        {
-            this.dequeueLoopTask = this.DequeueContinuouslyAsync();
-        }
-
         /// <summary>
         /// Continuously dequeues items from <see cref="blocksToAnnounce"/> and sends
         /// them  to the peers after the timer runs out or if the last item is a tip.
@@ -123,35 +118,34 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
-                    if (dequeueTask == null)
-                        dequeueTask = this.blocksToAnnounce.DequeueAsync();
+                    dequeueTask = dequeueTask ?? this.blocksToAnnounce.DequeueAsync();
 
-                    if (timerTask == null)
-                        await dequeueTask;
-                    else
-                        await Task.WhenAny(dequeueTask, timerTask);
-                    
-                    bool dequeueTriggered = dequeueTask.IsCompleted;
-                    
-                    // If triggered by the dequeue task- add result to the local batch.
-                    if (dequeueTriggered)
-                        batch.Add(dequeueTask.Result);
-                    
-                    // Send batch if the timer was triggered or we've got tip.
-                    if (!dequeueTriggered || (dequeueTask.Result == this.chain.Tip))
+                    // wait for one of the tasks: dequeue and timer (if available) to finish.
+                    Task task = (timerTask == null)? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
+                    await task.ConfigureAwait(false);
+
+                    // Send batch if timer ran out or we've received a tip.  
+                    var sendBatch = false;
+                    if (dequeueTask.Status == TaskStatus.RanToCompletion)
                     {
-                        await this.SendBatchAsync(batch).ConfigureAwait(false);
+                        ChainedBlock item = dequeueTask.Result;
+                        dequeueTask = null;
+                        batch.Add(item);
+                        sendBatch = item == this.chain.Tip;
+                    }
+                    else sendBatch = true;
+
+                    if (sendBatch)
+                    {
+                        this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
+                        await this.SendBatchAsync(batch).ConfigureAwait(false);                        
+                        batch.Clear();
 
                         timerTask = null;
                     }
-                    else if (timerTask == null)
-                        timerTask = Task.Delay(BatchIntervalMs, this.nodeLifetime.ApplicationStopping);
-                    
-                    if (dequeueTriggered)
-                    {
-                        // Set the dequeue task to null so it can be assigned on the next iteration.
-                        dequeueTask = null;
-                    }
+                    // Start timer if it is not started already.
+                    else timerTask = timerTask ?? Task.Delay(BatchIntervalMs, this.nodeLifetime.ApplicationStopping);
                 }
             }
             catch (OperationCanceledException)
@@ -223,8 +217,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviours.Count());
             foreach (BlockStoreBehavior behaviour in behaviours)
                 await behaviour.AnnounceBlocksAsync(batch).ConfigureAwait(false);
-
-            batch.Clear();
         }
 
         /// <inheritdoc />
@@ -232,7 +224,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             // Let current batch sending task finish.
             this.blocksToAnnounce.Dispose();
-            this.dequeueLoopTask?.GetAwaiter().GetResult();
+            this.dequeueLoopTask.GetAwaiter().GetResult();
 
             base.Dispose(disposing);
         }

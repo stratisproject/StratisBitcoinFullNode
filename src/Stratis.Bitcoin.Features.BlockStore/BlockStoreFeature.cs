@@ -126,7 +126,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
             this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
-            this.blockStoreSignaled.Initialize();
             this.blockStoreLoop.InitializeAsync().GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
