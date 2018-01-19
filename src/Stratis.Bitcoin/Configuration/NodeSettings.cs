@@ -150,10 +150,10 @@ namespace Stratis.Bitcoin.Configuration
         /// Processes the command line arguments and the configuration file (default).
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
-        /// <param name="delayedProcessing">Set to <c>true</c> if the configuration file should not be read yet.</param>
+        /// <param name="delayedConfigurationFileProcessing">Set to <c>true</c> if the configuration file should not be processed now.</param>
         /// <returns>Node configuration with arguments recorded.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args, bool delayedProcessing = false)
+        public NodeSettings LoadArguments(string[] args, bool delayedConfigurationFileProcessing = false)
         {
             this.LoadArgs = args;
 
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Configuration
             if (!Directory.Exists(this.DataDir))
                 throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
-            if (!delayedProcessing)
+            if (!delayedConfigurationFileProcessing)
             {
                 this.ConfigReader = null;
                 LoadConfiguration();
