@@ -2,14 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -25,12 +22,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private readonly IPooledTransaction pooledTransaction;
 
+        /// <summary>An interface implementation used to retrieve unspent transactions from a pooled source.</summary>
         private readonly IPooledGetUnspentTransaction pooledGetUnspentTransaction;
 
+        /// <summary>An interface implementation used to retrieve unspent transactions.</summary>
         private readonly IGetUnspentTransaction getUnspentTransaction;
 
         private readonly INetworkDifficulty networkDifficulty;
 
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly IConsensusLoop consensusLoop;
 
         public FullNodeController(
