@@ -95,9 +95,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
         public int MaxTipAge { get; set; }
 
-        /// <summary>Indicates whether the command line arguments have been processed.</summary>
-        public bool Processed { get; set; }
-
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; set; }
 
@@ -191,7 +188,7 @@ namespace Stratis.Bitcoin.Configuration
 
             if (!delayedProcessing)
             {
-                this.Processed = false;
+                this.ConfigReader = null;
                 LoadConfiguration();
             }
 
@@ -207,7 +204,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadConfiguration()
         {
-            if (this.Processed)
+            // Configuration already loaded?
+            if (this.ConfigReader != null)
                 return this;
 
             var args = this.LoadArgs;
@@ -246,8 +244,6 @@ namespace Stratis.Bitcoin.Configuration
 
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
-
-            this.Processed = true;
 
             return this;
         }
