@@ -37,16 +37,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly AsyncQueue<ChainedBlock> blocksToAnnounce;
 
         /// <summary>Interval between batches in milliseconds.</summary>
-        private const int batchIntervalMs = 5000;
-
-        /// <summary>Timer that invokes <see cref="SendBatchAsync"/> when runs out.</summary>
-        private readonly Timer batchTimer;
+        private const int BatchIntervalMs = 5000;
 
         /// <summary>Task that runs <see cref="DequeueContinuouslyAsync"/>.</summary>
-        private Task dequeueTask;
-
-        /// <summary>Set to <c>true</c> by timer when it runs out.</summary>
-        private bool timerTriggered;
+        private Task dequeueLoopTask;
 
         public BlockStoreSignaled(
             BlockStoreLoop blockStoreLoop,
@@ -68,11 +62,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockStoreCache = blockStoreCache;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedBlock>();
-
-            // Configure batch timer.
-            this.batchTimer = new Timer(batchIntervalMs) { AutoReset = false };
-            this.batchTimer.Elapsed += (sender, args) => { this.timerTriggered = true; };
-            this.timerTriggered = false;
         }
 
         protected override void OnNextCore(Block block)
@@ -116,55 +105,52 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Initializes the <see cref="BlockStoreSignaled"/>.</summary>
         public void Initialize()
         {
-            this.dequeueTask = this.DequeueContinuouslyAsync();
+            this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
         /// <summary>
-        /// Continuously dequeues items from <see cref="blocksToAnnounce"/> and sends them to the peers after the timer runs out or if the last item is a tip.
+        /// Continuously dequeues items from <see cref="blocksToAnnounce"/> and sends
+        /// them  to the peers after the timer runs out or if the last item is a tip.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// There are 2 possible scenarios: 
-        /// <list type="number">
-        /// <item> 
-        /// We've received a tip- send it right away.
-        /// </item>
-        /// <item>
-        /// We've received a block that is behind the tip. In this case we start the timer and continue dequeuing. 
-        /// Eventually the timer runs out and sets <see cref="timerTriggered"/> to <c>true</c>. But that won't trigger batch sending directly, 
-        /// instead when we receive next block we check for the <see cref="timerTriggered"/> and if it's <c>true</c> we're sending the batch. 
-        /// The trick here is that we can perfectly afford doing that for 2 reasons: we don't need to have a perfect interval times between the batches and,
-        /// most importantly, if we've received a block that is not a tip it means that the next block (after dequeuing which we will send the batch) 
-        /// will arrive shortly (a few ms) after the previous one.
-        /// </item>
-        /// </list>
-        /// </para>
-        /// <para>
-        /// This approach helps avoiding any locks in the code and it is preventing scenarios when two <see cref="SendBatchAsync"/> are being executed in parallel.
-        /// </para>
-        /// </remarks>
         private async Task DequeueContinuouslyAsync()
         {
             var batch = new List<ChainedBlock>();
+
+            Task<ChainedBlock> dequeueTask = null;
+            Task timerTask = null;
 
             try
             {
                 while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
-                    ChainedBlock block = await this.blocksToAnnounce.DequeueAsync();
+                    if (dequeueTask == null)
+                        dequeueTask = this.blocksToAnnounce.DequeueAsync();
 
-                    batch.Add(block);
-
-                    if (this.timerTriggered || (block == this.chain.Tip))
+                    if (timerTask == null)
+                        await dequeueTask;
+                    else
+                        await Task.WhenAny(dequeueTask, timerTask);
+                    
+                    bool dequeueTriggered = dequeueTask.IsCompleted;
+                    
+                    // If triggered by the dequeue task- add result to the local batch.
+                    if (dequeueTriggered)
+                        batch.Add(dequeueTask.Result);
+                    
+                    // Send batch if the timer was triggered or we've got tip.
+                    if (!dequeueTriggered || (dequeueTask.Result == this.chain.Tip))
                     {
-                        this.batchTimer.Stop();
-                        this.timerTriggered = false;
-
                         await this.SendBatchAsync(batch).ConfigureAwait(false);
+
+                        timerTask = null;
                     }
-                    else if (!this.batchTimer.Enabled)
+                    else if (timerTask == null)
+                        timerTask = Task.Delay(BatchIntervalMs, this.nodeLifetime.ApplicationStopping);
+                    
+                    if (dequeueTriggered)
                     {
-                        this.batchTimer.Start();
+                        // Set the dequeue task to null so it can be assigned on the next iteration.
+                        dequeueTask = null;
                     }
                 }
             }
@@ -246,8 +232,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             // Let current batch sending task finish.
             this.blocksToAnnounce.Dispose();
-            this.dequeueTask.GetAwaiter().GetResult();
-            this.batchTimer.Dispose();
+            this.dequeueLoopTask?.GetAwaiter().GetResult();
 
             base.Dispose(disposing);
         }
