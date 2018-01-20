@@ -118,29 +118,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public DateTime ConnectedAt { get; private set; }
 
         /// <summary>State of the network connection to the peer.</summary>
-        private volatile NetworkPeerState state = NetworkPeerState.Offline;
-        /// <summary>State of the network connection to the peer.</summary>
-        public NetworkPeerState State
-        {
-            get
-            {
-                return this.state;
-            }
-            set
-            {
-                this.logger.LogTrace("State changed from {0} to {1}.", this.state, value);
-                NetworkPeerState previous = this.state;
-                this.state = value;
-                if (previous != this.state)
-                {
-                    this.OnStateChangedAsync(previous).GetAwaiter().GetResult();
-                    if ((value == NetworkPeerState.Failed) || (value == NetworkPeerState.Offline))
-                    {
-                        this.logger.LogTrace("Communication closed.");
-                    }
-                }
-            }
-        }
+        public NetworkPeerState State { get; private set; }
 
         /// <summary>IP address and port of the connected peer.</summary>
         public IPEndPoint RemoteSocketEndpoint { get; private set; }
@@ -285,6 +263,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.preferredTransactionOptions = network.NetworkOptions;
             this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
 
+            this.State = NetworkPeerState.Offline;
             this.Inbound = inbound;
             this.LastSeen = this.dateTimeProvider.GetUtcNow();
             this.PeerEndPoint = peerEndPoint;
@@ -357,6 +336,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
+        /// Sets a new network state of the peer.
+        /// </summary>
+        /// <param name="newState">New network state to be set.</param>
+        /// <remarks>This method is not thread safe.</remarks>
+        public async Task SetStateAsync(NetworkPeerState newState)
+        {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(newState), newState, nameof(this.State), this.State);
+
+            NetworkPeerState previous = this.State;
+            if (previous != newState)
+            {
+                this.State = newState;
+                await this.OnStateChangedAsync(previous).ConfigureAwait(false);
+
+                if ((newState == NetworkPeerState.Failed) || (newState == NetworkPeerState.Offline))
+                    this.logger.LogTrace("Communication with the peer has been closed.");
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
         /// Connects the node to an outbound peer using already initialized information about the peer and starts receiving messages in a separate task.
         /// </summary>
         /// <param name="cancellation">Cancellation that allows aborting establishing the connection with the peer.</param>
@@ -377,7 +378,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.State = NetworkPeerState.Connected;
                 this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
-
+                
                 this.InitDefaultBehaviors(this.Parameters);
                 this.Connection.StartReceiveMessages();
 
@@ -386,7 +387,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (OperationCanceledException)
             {
                 this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
-                this.State = NetworkPeerState.Offline;
+                await this.SetStateAsync(NetworkPeerState.Offline).ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)[CANCELLED]");
                 throw;
@@ -401,7 +402,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     Exception = ex
                 };
 
-                this.State = NetworkPeerState.Failed;
+                await this.SetStateAsync(NetworkPeerState.Failed).ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)[EXCEPTION]");
                 throw;
@@ -695,7 +696,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                 }
 
-                this.State = NetworkPeerState.HandShaked;
+                await this.SetStateAsync(NetworkPeerState.HandShaked).ConfigureAwait(false);
 
                 if (this.Advertize && this.MyVersion.AddressFrom.Address.IsRoutable(true))
                 {
@@ -743,7 +744,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         case VerAckPayload verAckPayload:
                             this.logger.LogTrace("Sending version acknowledgement.");
                             await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
-                            this.State = NetworkPeerState.HandShaked;
+                            await this.SetStateAsync(NetworkPeerState.HandShaked).ConfigureAwait(false);
                             break;
                     }
                 }
@@ -767,7 +768,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            if (this.IsConnected) this.State = NetworkPeerState.Disconnecting;
+            if (this.IsConnected) this.SetStateAsync(NetworkPeerState.Disconnecting).GetAwaiter().GetResult();
             this.Connection.Dispose();
 
             if (this.DisconnectReason == null)

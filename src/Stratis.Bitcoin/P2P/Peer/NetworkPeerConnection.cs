@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Disconnect();
 
             if ((this.peer.State != NetworkPeerState.Failed) && (this.peer.State != this.setPeerStateOnShutdown))
-                this.peer.State = this.setPeerStateOnShutdown;
+                this.peer.SetStateAsync(this.setPeerStateOnShutdown).GetAwaiter().GetResult();
 
             foreach (INetworkPeerBehavior behavior in this.peer.Behaviors)
             {
