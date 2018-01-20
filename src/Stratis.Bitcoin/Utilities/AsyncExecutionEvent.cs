@@ -44,6 +44,10 @@ namespace Stratis.Bitcoin.Utilities
         /// Set to <c>true</c> if the current async execution context is the one that executes the callbacks,
         /// set to <c>false</c> otherwise.
         /// </summary>
+        /// <remarks>
+        /// This allows <see cref="Register(AsyncExecutionEventCallback{TSender, TArg}, bool)"/> and <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/>
+        /// to recognize whether they are executing from a callback or not.
+        /// </remarks>
         private AsyncLocal<bool> callbackExecutionInProgress;
 
         /// <summary>
