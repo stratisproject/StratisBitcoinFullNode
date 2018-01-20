@@ -198,5 +198,47 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 Assert.Equal(30, orderIndex);
             }
         }
+
+        /// <summary>
+        /// Checks that the callback method can unregister itself.
+        /// </summary>
+        [Fact]
+        public async void AsyncExecutionEvent_CanUnregisterFromCallback_Async()
+        {
+            using (var executionEvent = new AsyncExecutionEvent<object, object>())
+            {
+                int value = 0;
+                Task callback1Async(object sender, object arg)
+                {
+                    value++;
+
+                    // Try to unregister itself.
+                    executionEvent.Unregister(callback1Async);
+                    return Task.CompletedTask;
+                }
+
+                async Task callback2Async(object sender, object arg)
+                {
+                    value++;
+
+                    // Try to unregister itself, but first await a bit.
+                    await Task.Delay(20);
+                    executionEvent.Unregister(callback2Async);
+                }
+
+                executionEvent.Register(callback1Async);
+                executionEvent.Register(callback2Async);
+
+                // First execution should increment the value twice and unregister the callbacks.
+                await executionEvent.ExecuteCallbacksAsync(null, null);
+
+                Assert.Equal(2, value);
+
+                // Second execution should do nothing as there should be no registered callbacks.
+                await executionEvent.ExecuteCallbacksAsync(null, null);
+
+                Assert.Equal(2, value);
+            }
+        }
     }
 }
