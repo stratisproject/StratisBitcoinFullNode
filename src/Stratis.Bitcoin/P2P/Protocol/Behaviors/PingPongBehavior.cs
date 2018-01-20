@@ -167,10 +167,16 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
             if ((message.Message.Payload is PingPayload ping) && this.Mode.HasFlag(PingPongMode.RespondPong))
             {
-                await peer.SendMessageAsync(new PongPayload()
+                try
                 {
-                    Nonce = ping.Nonce
-                }).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new PongPayload()
+                    {
+                        Nonce = ping.Nonce
+                    }).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
             }
 
             if ((message.Message.Payload is PongPayload pong)

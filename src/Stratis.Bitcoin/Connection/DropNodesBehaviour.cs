@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            message.Message.IfPayloadIs<VersionPayload>(version =>
+            if (message.Message.Payload is VersionPayload version)
             {
                 IPeerConnector peerConnector = null;
                 if (this.connection.ConnectionSettings.Connect.Any())
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Connection
                 if (thresholdCount < this.connection.ConnectedPeers.Count())
                     if (version.StartHeight < this.chain.Height)
                         peer.Disconnect($"Node at height = {version.StartHeight} too far behind current height");
-            });
+            }
 
             this.logger.LogTrace("(-)");
             return Task.CompletedTask;

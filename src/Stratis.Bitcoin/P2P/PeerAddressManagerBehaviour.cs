@@ -62,20 +62,26 @@ namespace Stratis.Bitcoin.P2P
 
         private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
-            if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
+            try
             {
-                if (message.Message.Payload is GetAddrPayload getaddr)
+                if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
-                    var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
-                    await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
+                    if (message.Message.Payload is GetAddrPayload getaddr)
+                    {
+                        var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
+                        var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
+                        await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
+                    }
+                }
+
+                if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
+                {
+                    if (message.Message.Payload is AddrPayload addr)
+                        this.peerAddressManager.AddPeers(addr.Addresses, peer.RemoteSocketAddress);
                 }
             }
-
-            if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
+            catch (OperationCanceledException)
             {
-                if (message.Message.Payload is AddrPayload addr)
-                    this.peerAddressManager.AddPeers(addr.Addresses, peer.RemoteSocketAddress);
             }
         }
 

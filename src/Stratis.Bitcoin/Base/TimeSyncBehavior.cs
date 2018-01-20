@@ -443,8 +443,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            VerAckPayload verack = message.Message.Payload as VerAckPayload;
-            if (verack != null)
+            if (message.Message.Payload is VerAckPayload verack)
             {
                 IPAddress address = peer.RemoteSocketAddress;
                 if (address != null)

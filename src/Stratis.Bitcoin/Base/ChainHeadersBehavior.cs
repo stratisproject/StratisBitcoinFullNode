@@ -153,19 +153,25 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            switch (message.Message.Payload)
+            try
             {
-                case InvPayload inv:
-                    await this.ProcessInvAsync(inv).ConfigureAwait(false);
-                    break;
+                switch (message.Message.Payload)
+                {
+                    case InvPayload inv:
+                        await this.ProcessInvAsync(inv).ConfigureAwait(false);
+                        break;
 
-                case GetHeadersPayload getHeaders:
-                    await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
-                    break;
+                    case GetHeadersPayload getHeaders:
+                        await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
+                        break;
 
-                case HeadersPayload headers:
-                    await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
-                    break;
+                    case HeadersPayload headers:
+                        await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                        break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
             }
 
             this.logger.LogTrace("(-)");
