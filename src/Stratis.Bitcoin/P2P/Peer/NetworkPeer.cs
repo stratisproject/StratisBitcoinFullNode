@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.state = value;
                 if (previous != this.state)
                 {
-                    this.OnStateChanged(previous);
+                    this.OnStateChangedAsync(previous).GetAwaiter().GetResult();
                     if ((value == NetworkPeerState.Failed) || (value == NetworkPeerState.Offline))
                     {
                         this.logger.LogTrace("Communication closed.");
@@ -254,8 +254,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
-        /// <summary>Event that is triggered on network peer disconnection.</summary>
-        public event NetworkPeerStateChangedEventHandler StateChanged;
+        /// <summary>Event that is triggered when the peer's network state is changed.</summary>
+        public readonly AsyncExecutionEvent<NetworkPeer, NetworkPeerState> StateChanged;
 
         /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
         public readonly AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived;
@@ -310,6 +310,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MyVersion = this.Parameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
 
             this.MessageReceived = new AsyncExecutionEvent<NetworkPeer, IncomingMessage>();
+            this.StateChanged = new AsyncExecutionEvent<NetworkPeer, NetworkPeerState>();
         }
 
         /// <summary>
@@ -428,24 +429,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Calls event handlers when the network state of the peer is changed.
         /// </summary>
         /// <param name="previous">Previous network state of the peer.</param>
-        private void OnStateChanged(NetworkPeerState previous)
+        private async Task OnStateChangedAsync(NetworkPeerState previous)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(previous), previous, nameof(this.State), this.State);
 
-            NetworkPeerStateChangedEventHandler stateChanged = this.StateChanged;
-            if (stateChanged != null)
+            try
             {
-                foreach (NetworkPeerStateChangedEventHandler handler in stateChanged.GetInvocationList().Cast<NetworkPeerStateChangedEventHandler>())
-                {
-                    try
-                    {
-                        handler.DynamicInvoke(this, previous);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
-                    }
-                }
+                await this.StateChanged.ExecuteCallbacksAsync(this, previous).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred while calling state changed callbacks: {0}", e.ToString());
+                throw;
             }
 
             this.logger.LogTrace("(-)");
@@ -800,6 +795,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.MessageReceived.Dispose();
+            this.StateChanged.Dispose();
 
             this.logger.LogTrace("(-)");
         }
