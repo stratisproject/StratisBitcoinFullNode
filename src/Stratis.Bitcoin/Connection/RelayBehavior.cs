@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Connection
 
         protected override void AttachCore()
         {
-            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
@@ -27,14 +27,15 @@ namespace Stratis.Bitcoin.Connection
             return Task.CompletedTask;
         }
 
-        private void AttachedNode_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
         {
+            return Task.CompletedTask;
         }
 
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
         }
     }
 }

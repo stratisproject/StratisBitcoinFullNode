@@ -94,9 +94,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 return;
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.callbacksRegistered = true;
 
-            this.AttachedPeer.StateChanged += AttachedPeer_StateChanged;
             this.RegisterDisposable(new Timer(Ping, null, 0, (int)this.PingInterval.TotalMilliseconds));
         }
 
@@ -106,10 +106,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             return (peer != null) && (peer.Version > NBitcoin.Protocol.ProtocolVersion.BIP0031_VERSION);
         }
 
-        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
         {
             if (peer.State == NetworkPeerState.HandShaked)
                 this.Ping(null);
+
+            return Task.CompletedTask;
         }
 
         private void Ping(object unused)
@@ -127,7 +129,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
                     this.currentPing = new PingPayload();
                     this.dateSent = DateTimeOffset.UtcNow;
-                    peer.SendMessageVoidAsync(this.currentPing);
+                    peer.SendMessageAsync(this.currentPing).GetAwaiter().GetResult();
                     this.pingTimeoutTimer = new Timer(PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
                 finally
@@ -201,7 +203,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             if (this.callbacksRegistered)
             {
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-                this.AttachedPeer.StateChanged -= AttachedPeer_StateChanged;
+                this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
             }
             this.ClearCurrentPing();
         }

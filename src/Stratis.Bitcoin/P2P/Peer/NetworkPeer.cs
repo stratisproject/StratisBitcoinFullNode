@@ -100,13 +100,6 @@ namespace Stratis.Bitcoin.P2P.Peer
     public delegate void NetworkPeerDisconnectedEventHandler(NetworkPeer peer);
 
     /// <summary>
-    /// Type of event handler that is triggered when the network state of a peer was changed.
-    /// </summary>
-    /// <param name="peer">Network peer which network state was changed.</param>
-    /// <param name="oldState">Previous network state of the peer.</param>
-    public delegate void NetworkPeerStateChangedEventHandler(NetworkPeer peer, NetworkPeerState oldState);
-
-    /// <summary>
     /// Represents a counterparty of the node on the network. This is usually another node, but it can be 
     /// a wallet, an analytical robot, or any other network client or server that understands the protocol.
     /// <para>The network peer is either inbound, if it was the counterparty that established the connection to our 

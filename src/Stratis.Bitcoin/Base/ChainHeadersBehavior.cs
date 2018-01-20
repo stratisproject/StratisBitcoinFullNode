@@ -128,8 +128,7 @@ namespace Stratis.Bitcoin.Base
                 this.AttachedPeer.MyVersion.StartHeight = highPoW?.Height ?? 0;
             }
 
-            this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
-
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
 
             this.logger.LogTrace("(-)");
@@ -140,7 +139,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -416,11 +415,11 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private async Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            this.TrySyncAsync().GetAwaiter().GetResult();
+            await this.TrySyncAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }

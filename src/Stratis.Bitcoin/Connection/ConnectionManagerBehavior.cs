@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -51,12 +52,12 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
 
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private async Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.ConnectionManager.AddConnectedPeer(peer);
                 this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
-                peer.SendMessageVoidAsync(new SendHeadersPayload());
+                await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
             }
 
             if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
 
             this.logger.LogTrace("(-)");
         }
