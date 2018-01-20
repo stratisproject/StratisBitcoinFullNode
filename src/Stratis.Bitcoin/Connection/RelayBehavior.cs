@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -18,21 +19,22 @@ namespace Stratis.Bitcoin.Connection
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged += this.AttachedNode_StateChanged;
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
-        private void AttachedNode_MessageReceived(NetworkPeer node, IncomingMessage message)
+        private Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
+            return Task.CompletedTask;
         }
 
-        private void AttachedNode_StateChanged(NetworkPeer node, NetworkPeerState oldState)
+        private void AttachedNode_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
         {
         }
 
         protected override void DetachCore()
         {
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged -= this.AttachedNode_StateChanged;
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
         }
     }
 }

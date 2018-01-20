@@ -35,20 +35,20 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void AttachCore()
         {
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         protected override void DetachCore()
         {
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
-        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             try
             {
                 //Guard.Assert(node == this.AttachedNode); // just in case
-                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -68,14 +68,14 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
+        private Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
             // check the type of message received.
             // we're only interested in Inventory and Transaction messages.
             var invPayload = message.Message.Payload as InvPayload;
             if (invPayload != null)
             {
-                return this.ProcessInvAsync(node, invPayload);
+                return this.ProcessInvAsync(peer, invPayload);
             }
 
             var txPayload = message.Message.Payload as TxPayload;

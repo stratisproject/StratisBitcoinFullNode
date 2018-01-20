@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -175,16 +175,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Handler for processing incoming message from node.
+        /// Handler for processing incoming message from the peer.
         /// </summary>
-        /// <param name="node">Node sending the message.</param>
+        /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">Incoming message.</param>
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
             // TODO: Add exception handling
             // TODO: this should probably be on the mempool scheduler and wrapped in a try/catch
             // async void methods are considered fire and forget and not catch exceptions (typical for event handlers)
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             try
             {
-                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -215,41 +215,41 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Handler for processing node messages.
+        /// Handler for processing peer messages.
         /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
         /// </summary>
-        /// <param name="node">Node sending the message.</param>
+        /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
+        private Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             TxPayload txPayload = message.Message.Payload as TxPayload;
             if (txPayload != null)
             {
                 this.logger.LogTrace("(-)[TX_PAYLOAD]");
-                return this.ProcessTxPayloadAsync(node, txPayload);
+                return this.ProcessTxPayloadAsync(peer, txPayload);
             }
 
             MempoolPayload mempoolPayload = message.Message.Payload as MempoolPayload;
             if (mempoolPayload != null)
             {
                 this.logger.LogTrace("(-)[MEMPOOL_PAYLOAD]");
-                return this.SendMempoolPayloadAsync(node, mempoolPayload);
+                return this.SendMempoolPayloadAsync(peer, mempoolPayload);
             }
 
             GetDataPayload getDataPayload = message.Message.Payload as GetDataPayload;
             if (getDataPayload != null)
             {
                 this.logger.LogTrace("(-)[GET_DATA_PAYLOAD]");
-                return this.ProcessGetDataAsync(node, getDataPayload);
+                return this.ProcessGetDataAsync(peer, getDataPayload);
             }
 
             InvPayload invPayload = message.Message.Payload as InvPayload;
             if (invPayload != null)
             {
                 this.logger.LogTrace("(-)[INV_PAYLOAD]");
-                return this.ProcessInvAsync(node, invPayload);
+                return this.ProcessInvAsync(peer, invPayload);
             }
 
             this.logger.LogTrace("(-)");
