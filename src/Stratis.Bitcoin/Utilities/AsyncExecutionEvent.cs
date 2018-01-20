@@ -112,17 +112,8 @@ namespace Stratis.Bitcoin.Utilities
         /// </remarks>
         public void Unregister(AsyncExecutionEventCallback<TSender, TArg> callbackAsync)
         {
-            IDisposable lockReleaser;
-
             // We only lock if we are outside of the execution context of ExecuteCallbacksAsync.
-            try
-            {
-                lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock(this.cancellationSource.Token) : null;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock(this.cancellationSource.Token) : null;
             try
             {
                 LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>> node;
@@ -200,8 +191,8 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         private void DisposeInternal()
         {
-            this.lockObject.Lock();
             this.cancellationSource.Cancel();
+            this.lockObject.Lock();
 
             // Now every waiting thread has been cancelled, we can safely dispose the resources.
             this.lockObject.Dispose();
