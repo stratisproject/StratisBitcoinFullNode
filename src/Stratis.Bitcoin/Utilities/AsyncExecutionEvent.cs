@@ -48,7 +48,10 @@ namespace Stratis.Bitcoin.Utilities
         /// This allows <see cref="Register(AsyncExecutionEventCallback{TSender, TArg}, bool)"/> and <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/>
         /// to recognize whether they are executing from a callback or not.
         /// </remarks>
-        private AsyncLocal<bool> callbackExecutionInProgress;
+        private readonly AsyncLocal<bool> callbackExecutionInProgress;
+
+        /// <summary>Cancellation source to abort waiting for <see cref="lockObject"/> after <see cref="Dispose"/> has been executed.</summary>
+        private readonly CancellationTokenSource cancellationSource;
 
         /// <summary>Set to <c>1</c> if <see cref="Dispose"/> was called, <c>0</c> otherwise.</summary> 
         private int disposed;
@@ -63,6 +66,7 @@ namespace Stratis.Bitcoin.Utilities
             this.callbackToListNodeMapping = new Dictionary<AsyncExecutionEventCallback<TSender, TArg>, LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>>>();
 
             this.callbackExecutionInProgress = new AsyncLocal<bool>() { Value = false };
+            this.cancellationSource = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -78,7 +82,7 @@ namespace Stratis.Bitcoin.Utilities
         public void Register(AsyncExecutionEventCallback<TSender, TArg> callbackAsync, bool addFirst = false)
         {
             // We only lock if we are outside of the execution context of ExecuteCallbacksAsync.
-            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock() : null;
+            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock(this.cancellationSource.Token) : null;
             try
             {
                 if (this.callbackToListNodeMapping.ContainsKey(callbackAsync))
@@ -109,7 +113,7 @@ namespace Stratis.Bitcoin.Utilities
         public void Unregister(AsyncExecutionEventCallback<TSender, TArg> callbackAsync)
         {
             // We only lock if we are outside of the execution context of ExecuteCallbacksAsync.
-            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock() : null;
+            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock(this.cancellationSource.Token) : null;
             try
             {
                 LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>> node;
@@ -141,7 +145,7 @@ namespace Stratis.Bitcoin.Utilities
             this.callbackExecutionInProgress.Value = true;
             try
             {
-                using (await this.lockObject.LockAsync().ConfigureAwait(false))
+                using (await this.lockObject.LockAsync(this.cancellationSource.Token).ConfigureAwait(false))
                 {
                     // We need to make a copy of the list because callbacks may call Register or Unregister,
                     // which modifies the list.
@@ -168,6 +172,8 @@ namespace Stratis.Bitcoin.Utilities
             if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
                 return;
 
+            this.cancellationSource.Cancel();
+
             if (this.callbackExecutionInProgress.Value)
             {
                 // We are currently in the middle of executing callbacks, we can't dispose the async lock now.
@@ -178,12 +184,14 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     this.lockObject.Lock();
                     this.lockObject.Dispose();
+                    this.cancellationSource.Dispose();
                 });
                 
             }
             else
             {
                 this.lockObject.Dispose();
+                this.cancellationSource.Dispose();
             }
         }
     }
