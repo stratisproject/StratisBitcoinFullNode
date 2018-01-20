@@ -585,23 +585,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Send a message to the peer asynchronously and ignores the returned task.
-        /// </summary>
-        /// <param name="payload">The payload to send.</param>
-        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected.</param>
-        /// <remarks>
-        /// TODO: Remove this method from the code base as it is a bad practise to use it anyway.
-        /// If we used proper SendMessageAsync instead, it would throw an exception if the connection to the peer 
-        /// is terminated, which is what we want - detect the failure as early as possible and not to advance 
-        /// in the code in such a case. Also most of the time we send the message and wait for the response, 
-        /// in which case we save nothing by sending the message and not awaiting the send operation.
-        /// </remarks>
-        public void SendMessageVoidAsync(Payload payload)
-        {
-            Task unused = this.SendMessageAsync(payload);
-        }
-
-        /// <summary>
         /// Send a message to the peer asynchronously.
         /// </summary>
         /// <param name="payload">The payload to send.</param>
