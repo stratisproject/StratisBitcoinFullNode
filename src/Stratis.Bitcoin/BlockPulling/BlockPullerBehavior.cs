@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>
         /// If there are any more blocks the node wants to download, this method assigns and starts
-        /// a new download task for a specific peer node that this behavior represents.
+        /// a new download task for a specific peer that this behavior represents.
         /// </summary>
         private async Task AssignPendingVectorAsync()
         {
