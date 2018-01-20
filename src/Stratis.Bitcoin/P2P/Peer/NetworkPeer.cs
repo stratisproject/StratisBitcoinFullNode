@@ -100,13 +100,6 @@ namespace Stratis.Bitcoin.P2P.Peer
     public delegate void NetworkPeerDisconnectedEventHandler(NetworkPeer peer);
 
     /// <summary>
-    /// Type of event handler that is triggered when a new message is received from a network peer.
-    /// </summary>
-    /// <param name="peer">Network peer from which the message was received.</param>
-    /// <param name="message">Message that was received.</param>
-    public delegate void NetworkPeerMessageReceivedEventHandler(NetworkPeer peer, IncomingMessage message);
-
-    /// <summary>
     /// Type of event handler that is triggered when the network state of a peer was changed.
     /// </summary>
     /// <param name="peer">Network peer which network state was changed.</param>
@@ -265,15 +258,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public event NetworkPeerStateChangedEventHandler StateChanged;
 
         /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
-        public event NetworkPeerMessageReceivedEventHandler MessageReceived;
-
-        /// <summary>
-        /// Event that is triggered when a new message is received from a network peer.
-        /// <para>This event is triggered before <see cref="MessageReceived"/>.</para>
-        /// </summary>
-        /// <seealso cref="Stratis.Bitcoin.Base.ChainHeadersBehavior.AttachCore"/>
-        /// <remarks>TODO: Remove this once the events are refactored.</remarks>
-        public event NetworkPeerMessageReceivedEventHandler MessageReceivedPriority;
+        public readonly AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived;
 
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         public NetworkPeerConnectionParameters Parameters { get; private set; }
@@ -323,6 +308,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Parameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.Parameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
+
+            this.MessageReceived = new AsyncExecutionEvent<NetworkPeer, IncomingMessage>();
         }
 
         /// <summary>
@@ -484,49 +471,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                     break;
             }
 
-            this.CallMessageReceivedHandlers(message);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Calls event handlers when a new message is received from the peer.
-        /// </summary>
-        /// <param name="message">Message that was received.</param>
-        private void CallMessageReceivedHandlers(IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
-
-            NetworkPeerMessageReceivedEventHandler messageReceivedPriority = this.MessageReceivedPriority;
-            if (messageReceivedPriority != null)
+            try
             {
-                foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceivedPriority.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
-                {
-                    try
-                    {
-                        handler.DynamicInvoke(this, message);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
-                    }
-                }
+                await this.MessageReceived.ExecuteCallbacksAsync(this, message).ConfigureAwait(false);
             }
-
-            NetworkPeerMessageReceivedEventHandler messageReceived = this.MessageReceived;
-            if (messageReceived != null)
+            catch (Exception e)
             {
-                foreach (NetworkPeerMessageReceivedEventHandler handler in messageReceived.GetInvocationList().Cast<NetworkPeerMessageReceivedEventHandler>())
-                {
-                    try
-                    {
-                        handler.DynamicInvoke(this, message);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        this.logger.LogError("Exception occurred: {0}", ex.InnerException.ToString());
-                    }
-                }
+                this.logger.LogError("Exception occurred while calling message received callbacks: {0}", e.ToString());
+                throw;
             }
 
             this.logger.LogTrace("(-)");
@@ -846,6 +798,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     Exception = exception
                 };
             }
+
+            this.MessageReceived.Dispose();
 
             this.logger.LogTrace("(-)");
         }
