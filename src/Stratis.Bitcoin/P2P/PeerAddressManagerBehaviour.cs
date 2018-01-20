@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.P2P
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
-            this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
                     var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
-                    peer.SendMessageVoidAsync(addressPayload);
+                    await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
                 }
             }
 
@@ -89,6 +90,7 @@ namespace Stratis.Bitcoin.P2P
 
         protected override void DetachCore()
         {
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
         }
 

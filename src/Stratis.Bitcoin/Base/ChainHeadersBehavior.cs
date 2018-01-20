@@ -130,16 +130,7 @@ namespace Stratis.Bitcoin.Base
 
             this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
 
-            // TODO: Previously, this has been implemented using filters, which guaranteed
-            // that ChainHeadersBehavior will be first to be notified about the message.
-            // This is no longer EXPLICITLY guaranteed with event approach,
-            // and the order of notifications only depends on the order of component
-            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior
-            // is first to go again.
-            //
-            // To guarantee that priority for ChainHeadersBehavior until events are refactored
-            // we use special MessageReceivedPriority now instead of normal MessageReceived event.
-            this.AttachedPeer.MessageReceivedPriority += this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
 
             this.logger.LogTrace("(-)");
         }
@@ -148,15 +139,10 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceivedPriority -= this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
 
             this.logger.LogTrace("(-)");
-        }
-
-        private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
-        {
-            this.MessageReceivedAsync(peer, message).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -164,7 +150,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
-        private async Task MessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
