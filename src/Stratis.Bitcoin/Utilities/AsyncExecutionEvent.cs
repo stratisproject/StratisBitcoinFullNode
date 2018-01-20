@@ -50,6 +50,9 @@ namespace Stratis.Bitcoin.Utilities
         /// </remarks>
         private AsyncLocal<bool> callbackExecutionInProgress;
 
+        /// <summary>Set to <c>1</c> if <see cref="Dispose"/> was called, <c>0</c> otherwise.</summary> 
+        private int disposed;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -156,9 +159,32 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// It is allowed that the callback in execution calls this method to dispose the execution event,
+        /// in which case, the disposing is deferred after the execution of callbacks is complete.
+        /// </remarks>
         public void Dispose()
         {
-            this.lockObject.Dispose();
+            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
+                return;
+
+            if (this.callbackExecutionInProgress.Value)
+            {
+                // We are currently in the middle of executing callbacks, we can't dispose the async lock now.
+                // We need to create a separate task that will attempt to acquire the lock,
+                // which can only succeed after the execution of the callbacks is finished.
+                // This lock will never be released, but that is not a problem because the lock is destroyed.
+                Task.Run(() =>
+                {
+                    this.lockObject.Lock();
+                    this.lockObject.Dispose();
+                });
+                
+            }
+            else
+            {
+                this.lockObject.Dispose();
+            }
         }
     }
 }
