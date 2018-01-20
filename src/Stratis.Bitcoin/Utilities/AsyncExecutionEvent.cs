@@ -112,8 +112,17 @@ namespace Stratis.Bitcoin.Utilities
         /// </remarks>
         public void Unregister(AsyncExecutionEventCallback<TSender, TArg> callbackAsync)
         {
+            IDisposable lockReleaser;
+
             // We only lock if we are outside of the execution context of ExecuteCallbacksAsync.
-            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock(this.cancellationSource.Token) : null;
+            try
+            {
+                lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock(this.cancellationSource.Token) : null;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
             try
             {
                 LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>> node;
@@ -172,27 +181,31 @@ namespace Stratis.Bitcoin.Utilities
             if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
                 return;
 
-            this.cancellationSource.Cancel();
-
             if (this.callbackExecutionInProgress.Value)
             {
                 // We are currently in the middle of executing callbacks, we can't dispose the async lock now.
                 // We need to create a separate task that will attempt to acquire the lock,
                 // which can only succeed after the execution of the callbacks is finished.
-                // This lock will never be released, but that is not a problem because the lock is destroyed.
-                Task.Run(() =>
-                {
-                    this.lockObject.Lock();
-                    this.lockObject.Dispose();
-                    this.cancellationSource.Dispose();
-                });
-                
+                Task.Run(() => this.DisposeInternal());
             }
             else
             {
-                this.lockObject.Dispose();
-                this.cancellationSource.Dispose();
+                this.DisposeInternal();
             }
+        }
+
+        /// <summary>
+        /// Acquires <see cref="lockObject"/> and disposes resources including the lock. 
+        /// This lock will never be released, but that is not a problem since it is destroyed.
+        /// </summary>
+        private void DisposeInternal()
+        {
+            this.lockObject.Lock();
+            this.cancellationSource.Cancel();
+
+            // Now every waiting thread has been cancelled, we can safely dispose the resources.
+            this.lockObject.Dispose();
+            this.cancellationSource.Dispose();
         }
     }
 }
