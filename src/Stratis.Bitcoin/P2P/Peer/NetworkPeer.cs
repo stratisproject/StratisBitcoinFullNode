@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -92,12 +90,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             return true;
         }
     }
-
-    /// <summary>
-    /// Type of event handler that is triggered on network peer disconnection.
-    /// </summary>
-    /// <param name="peer">Network peer that was disconnected.</param>
-    public delegate void NetworkPeerDisconnectedEventHandler(NetworkPeer peer);
 
     /// <summary>
     /// Represents a counterparty of the node on the network. This is usually another node, but it can be 
