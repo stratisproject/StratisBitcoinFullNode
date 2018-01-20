@@ -240,5 +240,40 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 Assert.Equal(2, value);
             }
         }
+
+        /// <summary>
+        /// Checks that the callback method can unregister itself and dispose the execution event.
+        /// </summary>
+        [Fact]
+        public async void AsyncExecutionEvent_CanDisposeFromCallback_Async()
+        {
+            var executionEvent = new AsyncExecutionEvent<object, object>();
+
+            int value = 0;
+            Task callbackAsync(object sender, object arg)
+            {
+                value++;
+
+                // Try to unregister itself.
+                executionEvent.Unregister(callbackAsync);
+                executionEvent.Dispose();
+
+                return Task.CompletedTask;
+            }
+
+            executionEvent.Register(callbackAsync);
+
+            // Execution should increment the value and unregister the callbacks and dispose the execution event.
+            await executionEvent.ExecuteCallbacksAsync(null, null);
+
+            Assert.Equal(1, value);
+
+            // After a while, no more executions are not possible because the event's lock is disposed.
+            await Task.Delay(100);
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () => await executionEvent.ExecuteCallbacksAsync(null, null));
+
+            // Further attempts to dispose execution event won't do any harm.
+            executionEvent.Dispose();
+        }
     }
 }
