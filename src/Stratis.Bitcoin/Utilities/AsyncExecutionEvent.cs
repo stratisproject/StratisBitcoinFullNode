@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
@@ -40,6 +41,12 @@ namespace Stratis.Bitcoin.Utilities
         private readonly Dictionary<AsyncExecutionEventCallback<TSender, TArg>, LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>>> callbackToListNodeMapping;
 
         /// <summary>
+        /// Set to <c>true</c> if the current async execution context is the one that executes the callbacks,
+        /// set to <c>false</c> otherwise.
+        /// </summary>
+        private AsyncLocal<bool> callbackExecutionInProgress;
+
+        /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         public AsyncExecutionEvent()
@@ -47,6 +54,8 @@ namespace Stratis.Bitcoin.Utilities
             this.lockObject = new AsyncLock();
             this.callbackList = new LinkedList<AsyncExecutionEventCallback<TSender, TArg>>();
             this.callbackToListNodeMapping = new Dictionary<AsyncExecutionEventCallback<TSender, TArg>, LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>>>();
+
+            this.callbackExecutionInProgress = new AsyncLocal<bool>() { Value = false };
         }
 
         /// <summary>
@@ -56,9 +65,14 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="addFirst"><c>true</c> to insert the new callback as the first callback to be called,
         /// <c>false</c> to add it as the last one.</param>
         /// <exception cref="ArgumentException">Thrown if <paramref name="callbackAsync"/> has already been registered.</exception>
+        /// <remarks>
+        /// It is allowed that a callback method registers another callback.
+        /// </remarks>
         public void Register(AsyncExecutionEventCallback<TSender, TArg> callbackAsync, bool addFirst = false)
         {
-            using (this.lockObject.Lock())
+            // We only lock if we are outside of the execution context of ExecuteCallbacksAsync.
+            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock() : null;
+            try
             {
                 if (this.callbackToListNodeMapping.ContainsKey(callbackAsync))
                     throw new ArgumentException("Callback already registered.");
@@ -70,6 +84,10 @@ namespace Stratis.Bitcoin.Utilities
 
                 this.callbackToListNodeMapping.Add(callbackAsync, node);
             }
+            finally
+            {
+                lockReleaser?.Dispose();
+            }
         }
 
         /// <summary>
@@ -79,10 +97,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <exception cref="ArgumentException">Thrown if <paramref name="callbackAsync"/> was not found among registered callbacks.</exception>
         /// <remarks>
         /// The caller is guaranteed that once this method completes, <paramref name="callbackAsync"/> will not be called by this executor.
+        /// <para>It is allowed that a callback method unregisters itself (or another callback).</para>
         /// </remarks>
         public void Unregister(AsyncExecutionEventCallback<TSender, TArg> callbackAsync)
         {
-            using (this.lockObject.Lock())
+            // We only lock if we are outside of the execution context of ExecuteCallbacksAsync.
+            IDisposable lockReleaser = !this.callbackExecutionInProgress.Value ? this.lockObject.Lock() : null;
+            try
             {
                 LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>> node;
                 if (!this.callbackToListNodeMapping.TryGetValue(callbackAsync, out node))
@@ -90,6 +111,10 @@ namespace Stratis.Bitcoin.Utilities
 
                 this.callbackList.Remove(node);
                 this.callbackToListNodeMapping.Remove(callbackAsync);
+            }
+            finally
+            {
+                lockReleaser?.Dispose();
             }
         }
 
@@ -99,15 +124,30 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="sender">Source of the event.</param>
         /// <param name="arg">Argument to pass to the callbacks.</param>
         /// <remarks>
-        /// It is necessary to hold the lock while calling the callbacks to provide gurantees described in <see cref="Unregister(AsyncExecutionEventCallback{T})"/>.
-        /// This means no new callback can be registered or unregistered while callbacks are being executed.
+        /// It is necessary to hold the lock while calling the callbacks to provide gurantees described in <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/>.
+        /// However, we do support new callbacks to be registered or unregistered while callbacks are being executed, 
+        /// but this is only possible from the same execution context - i.e. another task or thread is unable to register or unregister callbacks
+        /// while callbacks execution is in progress.
         /// </remarks>
         public async Task ExecuteCallbacksAsync(TSender sender, TArg arg)
         {
-            using (await this.lockObject.LockAsync().ConfigureAwait(false))
+            this.callbackExecutionInProgress.Value = true;
+            try
             {
-                foreach (AsyncExecutionEventCallback<TSender, TArg> callbackAsync in this.callbackList)
-                    await callbackAsync(sender, arg).ConfigureAwait(false);
+                using (await this.lockObject.LockAsync().ConfigureAwait(false))
+                {
+                    // We need to make a copy of the list because callbacks may call Register or Unregister,
+                    // which modifies the list.
+                    var listCopy = new AsyncExecutionEventCallback<TSender, TArg>[this.callbackList.Count];
+                    this.callbackList.CopyTo(listCopy, 0);
+
+                    foreach (AsyncExecutionEventCallback<TSender, TArg> callbackAsync in listCopy)
+                        await callbackAsync(sender, arg).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                this.callbackExecutionInProgress.Value = false;
             }
         }
 
