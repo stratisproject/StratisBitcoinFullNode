@@ -771,6 +771,19 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             if (this.IsConnected) this.SetStateAsync(NetworkPeerState.Disconnecting).GetAwaiter().GetResult();
+
+            // We have to dispose our execution events, but we need to do that only 
+            // after the Connection is fully disposed as well. Because the Connection
+            // can be disposed with another thread, the following call to dispose
+            // can return immediately and the disposing can still be in progress. 
+            // Setting up the continuation task will make sure the disposing is done 
+            // in correct order regardless of current state of Connection.ShutdownComplete.
+            this.Connection.ShutdownComplete.Task.ContinueWith((result) =>
+            {
+                this.MessageReceived.Dispose();
+                this.StateChanged.Dispose();
+            });
+
             this.Connection.Dispose();
 
             if (this.DisconnectReason == null)
@@ -781,9 +794,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     Exception = exception
                 };
             }
-
-            this.MessageReceived.Dispose();
-            this.StateChanged.Dispose();
 
             this.logger.LogTrace("(-)");
         }
