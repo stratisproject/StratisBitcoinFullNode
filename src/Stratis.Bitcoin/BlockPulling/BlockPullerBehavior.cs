@@ -183,24 +183,34 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Sends a message to the connected peer requesting specific data.
         /// </summary>
         /// <param name="getDataPayload">Specification of the data to download - <see cref="GetDataPayload"/>.</param>
+        /// <returns><c>true</c> if the message was successfully sent to the peer, <c>false</c> if the peer got disconnected.</returns>
         /// <remarks>Caller is responsible to add the puller to the map if necessary.</remarks>
-        internal void StartDownload(GetDataPayload getDataPayload)
+        internal async Task<bool> StartDownloadAsync(GetDataPayload getDataPayload)
         {
             this.logger.LogTrace("()");
 
             NetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
-                this.logger.LogTrace("(-)[ATTACHED_NODE]");
-                return;
+                this.logger.LogTrace("(-)[ATTACHED_PEER]:false");
+                return false;
             }
 
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
-            attachedNode.SendMessageVoidAsync(getDataPayload);
+            try
+            {
+                await attachedNode.SendMessageAsync(getDataPayload).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("(-)[CANCELLED]:false");
+                return false;
+            }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):true");
+            return true;
         }
 
         /// <summary>
