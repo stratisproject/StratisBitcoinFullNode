@@ -111,9 +111,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             int iterations = 0;
 
-            IAsyncLoop asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
+            IAsyncLoop asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, token =>
             {
                 iterations++;
+                return Task.CompletedTask;
             });
 
             Task loopRun = asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(300)).RunningTask;
