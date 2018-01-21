@@ -443,15 +443,24 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
-            switch (message.Message.Payload)
+            try
             {
-                case VersionPayload versionPayload:
-                    await this.ProcessVersionMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
-                    break;
+                switch (message.Message.Payload)
+                {
+                    case VersionPayload versionPayload:
+                        await this.ProcessVersionMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
+                        break;
 
-                case HaveWitnessPayload unused:
-                    this.SupportedTransactionOptions |= NetworkOptions.Witness;
-                    break;
+                    case HaveWitnessPayload unused:
+                        this.SupportedTransactionOptions |= NetworkOptions.Witness;
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+                this.logger.LogDebug("Exception occurred while processing a message from the peer. Connection has been closed and message won't be processed further.");
+                this.logger.LogTrace("(-)[EXCEPTION]");
+                return;
             }
 
             try
@@ -460,7 +469,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred while calling message received callbacks: {0}", e.ToString());
+                this.logger.LogFatal("Exception occurred while calling message received callbacks: {0}", e.ToString());
                 throw;
             }
 
@@ -500,7 +509,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
             if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
                 this.SupportedTransactionOptions |= NetworkOptions.Witness;
-
 
             this.logger.LogTrace("(-)");
         }
