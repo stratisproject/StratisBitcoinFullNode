@@ -469,7 +469,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogFatal("Exception occurred while calling message received callbacks: {0}", e.ToString());
+                this.logger.LogCritical("Exception occurred while calling message received callbacks: {0}", e.ToString());
                 throw;
             }
 
