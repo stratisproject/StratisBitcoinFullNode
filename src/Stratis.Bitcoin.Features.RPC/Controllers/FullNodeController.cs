@@ -71,6 +71,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 this.FullNode.Dispose();
                 this.FullNode = null;
             }
+
             return Task.CompletedTask;
         }
 
@@ -84,6 +85,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             Transaction trx = this.pooledTransaction != null? await this.pooledTransaction.GetTransaction(trxid) : null;
 
+            if (pooledTransaction != null)
+                trx = await pooledTransaction.GetTransaction(trxid);
+
             if (trx == null)
             {
                 var blockStore = this.FullNode.NodeFeature<IBlockStore>();
@@ -91,8 +95,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
             }
 
-            if (trx == null)
-                return null;
+                if (trx == null)
+                    return null;
+            }
 
             if (verbose != 0)
             {
@@ -129,9 +134,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             }
 
             if (unspentOutputs == null)
-            {
                 return null;
-            }
+
             return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
         }
 
@@ -148,7 +152,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             var model = new GetInfoModel
             {
-                Version = this.FullNode?.Version.ToUint() ?? 0,
+                Version = this.FullNode?.Version?.ToUint() ?? 0,
                 ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
                 Blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
                 TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
@@ -156,10 +160,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 Proxy = string.Empty,
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
                 Testnet = this.Network.IsTest(),
-                RelayFee = this.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC),
+                RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 Errors = string.Empty,
 
-                //TODO: Wallet related infos: walletversion, balance, keypoololdest, keypoolsize, unlocked_until, paytxfee
+                //TODO: Wallet related infos: walletversion, balance, keypNetwoololdest, keypoolsize, unlocked_until, paytxfee
                 WalletVersion = null,
                 Balance = null,
                 KeypoolOldest = null,
@@ -194,8 +198,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             BlockHeaderModel model = null;
             if (this.Chain != null)
             {
-                model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
+                var blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
+                if (blockHeader != null)
+                    model = new BlockHeaderModel(blockHeader);
             }
+
             return model;
         }
 
@@ -214,26 +221,27 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             var res = new JObject();
             res["isvalid"] = false;
 
-            // P2PKH
-            if(BitcoinPubKeyAddress.IsValid(address, ref this.Network))
-            {
-                res["isvalid"] = true;
-            }
-            // P2SH
-            else if(BitcoinScriptAddress.IsValid(address, ref this.Network))
-            {
-                res["isvalid"] = true;
-            }
             // P2WPKH
-            else if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network))
+            if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network))
             {
-                res ["isvalid"] = true;
+                res["isvalid"] = true;
             }
             // P2WSH
             else if (BitcoinWitScriptAddress.IsValid(address, ref this.Network))
             {
-                res ["isvalid"] = true;
+                res["isvalid"] = true;
             }
+            // P2PKH
+            else if (BitcoinPubKeyAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+            // P2SH
+            else if (BitcoinScriptAddress.IsValid(address, ref this.Network))
+            {
+                res["isvalid"] = true;
+            }
+
             return res;
         }
 
@@ -245,6 +253,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             uint256 blockid = blockStore != null? await blockStore.GetTrxBlockIdAsync(trxid) : null;
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
+
             return block;
         }
 
