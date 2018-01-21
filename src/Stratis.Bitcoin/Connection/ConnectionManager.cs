@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        internal void RemoveConnectedNode(NetworkPeer peer, string reason)
+        internal void RemoveConnectedPeer(NetworkPeer peer, string reason)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
 
@@ -428,15 +428,15 @@ namespace Stratis.Bitcoin.Connection
             });
 
             NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
+            this.AddConnectedPeer(peer);
             try
             {
-                this.AddConnectedPeer(peer);
                 this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
                 await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                peer.Dispose("Error while connecting", e);
+                this.RemoveConnectedPeer(peer, "Connection failed");
                 this.logger.LogTrace("(-)[ERROR]");
                 throw e;
             }
