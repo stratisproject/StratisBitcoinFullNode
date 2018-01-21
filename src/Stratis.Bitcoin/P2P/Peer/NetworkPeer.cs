@@ -633,6 +633,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
+        /// <exception cref="ProtocolException">Thrown when the peer rejected our "version" message.</exception>
+        /// <exception cref="OperationCanceledException">Thrown during the shutdown or when the peer disconnects.</exception>
         public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(requirements), nameof(requirements.RequiredServices), requirements?.RequiredServices);
@@ -714,6 +716,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <exception cref="ProtocolException">Thrown when the peer rejected our "version" message.</exception>
+        /// <exception cref="OperationCanceledException">Thrown during the shutdown or when the peer disconnects.</exception>
         public async Task RespondToHandShakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
