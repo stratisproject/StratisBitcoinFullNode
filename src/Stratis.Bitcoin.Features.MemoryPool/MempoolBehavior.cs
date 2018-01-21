@@ -477,23 +477,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Sends transactions as inventory to attached node.
+        /// Sends transactions as inventory to attached peer.
         /// </summary>
-        /// <param name="node">Node to receive message.</param>
+        /// <param name="peer">Peer to send transactions to.</param>
         /// <param name="trxList">List of transactions.</param>
-        private async Task SendAsTxInventoryAsync(NetworkPeer node, IEnumerable<uint256> trxList)
+        private async Task SendAsTxInventoryAsync(NetworkPeer peer, IEnumerable<uint256> trxList)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
-            Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(node.AddSupportedOptions(InventoryType.MSG_TX), s)));
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
+
+            Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), s)));
             while (queue.Count > 0)
             {
                 InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
-                if (node.IsConnected)
+                if (peer.IsConnected)
                 {
-                    this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node.RemoteSocketEndpoint);
-                    await node.SendMessageAsync(new InvPayload(items));
+                    this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                    await peer.SendMessageAsync(new InvPayload(items)).ConfigureAwait(false);
                 }
             }
+
             this.logger.LogTrace("(-)");
         }
 
@@ -533,9 +535,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public async Task SendTrickleAsync()
         {
             this.logger.LogTrace("()");
+
             if (!this.CanSend)
             {
                 this.logger.LogTrace("(-)[NO_SEND]");
+                return;
+            }
+
+            NetworkPeer peer = this.AttachedPeer;
+            if (peer == null)
+            {
+                this.logger.LogTrace("(-)[NO_PEER]");
                 return;
             }
 
@@ -550,6 +560,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             List<uint256> sends = await this.manager.MempoolLock.WriteAsync(() =>
             {
                 this.logger.LogTrace("Creating list of transaction inventory to send.");
+                
                 // Determine transactions to relay
                 // Produce a vector with all candidates for sending
                 List<uint256> invs = this.inventoryTxToSend.Keys.Take(InventoryBroadcastMax).ToList();
@@ -558,27 +569,31 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     // Remove it from the to-be-sent set
                     this.inventoryTxToSend.Remove(hash);
+
                     // Check if not in the filter already
                     if (this.filterInventoryKnown.ContainsKey(hash))
                         continue;
+                    
                     // Not in the mempool anymore? don't bother sending it.
                     TxMempoolInfo txInfo = this.manager.Info(hash);
                     if (txInfo == null)
                         continue;
+                    
                     //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
                     //{
                     //  continue;
                     //}
                     ret.Add(hash);
                 }
+
                 this.logger.LogTrace("Transaction inventory list created.");
                 return ret;
             });
 
             if (sends.Any())
             {
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", this.AttachedPeer.RemoteSocketEndpoint);
-                await this.SendAsTxInventoryAsync(this.AttachedPeer, sends);
+                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                await this.SendAsTxInventoryAsync(peer, sends).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
