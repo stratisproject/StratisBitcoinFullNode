@@ -621,6 +621,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
+        /// <exception cref="ProtocolException">Thrown when the peer rejected our "version" message.</exception>
+        /// <exception cref="OperationCanceledException">Thrown during the shutdown or when the peer disconnects.</exception>
         public async Task VersionHandshakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             await this.VersionHandshakeAsync(null, cancellationToken).ConfigureAwait(false);
