@@ -904,5 +904,24 @@ namespace NBitcoin.Tests
             Assert.True(
                 b1_2.SequenceEqual(new IMoney[] { new AssetMoney(msft, 9), new AssetMoney(goog, 8), new Money(10000) }));
         }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void BoundedDictionaryTest()
+        {
+            BoundedDictionary<int, string> boundedDictionary = new BoundedDictionary<int, string>(2);
+            boundedDictionary.TryAdd(1, "a");
+            boundedDictionary.TryAdd(2, "b");
+            boundedDictionary.TryAdd(3, "c");
+
+            Assert.Equal(2, boundedDictionary.Count);
+            Assert.True(boundedDictionary.TryGetValue(3, out string value3));
+            Assert.Equal("c", value3);
+
+            Assert.True(boundedDictionary.TryGetValue(2, out string value2));
+            Assert.Equal("b", value2);
+
+            Assert.False(boundedDictionary.TryGetValue(1, out string value1));
+        }
     }
 }
