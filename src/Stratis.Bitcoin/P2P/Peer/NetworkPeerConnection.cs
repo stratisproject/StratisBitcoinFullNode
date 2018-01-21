@@ -77,9 +77,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Task completion that is completed when the work of the shutdown procedure is finished, including detaching from behaviors.</summary>
         /// <seealso cref="Shutdown"/>
+        /// <see cref="DisposeComplete"/>
         public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
 
         /// <summary>Task completion that is completed when the work of <see cref="Dispose"/> is finished.</summary>
+        /// <remarks>Note that first, <see cref="ShutdownComplete"/> is completed and then some more disposing 
+        /// occurs in <see cref="Dispose"/>. Only when all disposing work is done, this source is completed.</remarks>
         public TaskCompletionSource<bool> DisposeComplete { get; private set; }
 
         /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="shutdownCalled"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
