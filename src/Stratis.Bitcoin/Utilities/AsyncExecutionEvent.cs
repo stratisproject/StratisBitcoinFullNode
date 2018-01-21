@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Asynchronous event handler that can be registered with <see cref="AsyncExecutionEvent{TSender, TArg}/>.
+    /// Asynchronous event handler that can be registered with <see cref="AsyncExecutionEvent{TSender, TArg}"/>.
     /// </summary>
     /// <typeparam name="TSender">Type of the sender object that is the source of the event.</typeparam>
     /// <typeparam name="TArg">Type of the argument that is passed to the callback.</typeparam>
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Utilities
     {
         /// <summary>
         /// Protects access to <see cref="callbackList"/> and <see cref="callbackToListNodeMapping"/>,
-        /// and also provides gurantees of <see cref="Unregister(T)"/> method.
+        /// and also provides guarantees of <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/> method.
         /// </summary>
         private readonly AsyncLock lockObject;
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="sender">Source of the event.</param>
         /// <param name="arg">Argument to pass to the callbacks.</param>
         /// <remarks>
-        /// It is necessary to hold the lock while calling the callbacks to provide gurantees described in <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/>.
+        /// It is necessary to hold the lock while calling the callbacks to provide guarantees described in <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/>.
         /// However, we do support new callbacks to be registered or unregistered while callbacks are being executed, 
         /// but this is only possible from the same execution context - i.e. another task or thread is unable to register or unregister callbacks
         /// while callbacks execution is in progress.

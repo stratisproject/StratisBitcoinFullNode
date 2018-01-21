@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public TaskCompletionSource<bool> DisposeComplete { get; private set; }
 
         /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="shutdownCalled"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
-        private object shutdownLock = new object();
+        private readonly object shutdownLock;
 
         /// <summary>Set to <c>true</c> during the execution of shutdown procedure, <c>false</c> otherwise.</summary>
         /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
@@ -135,6 +135,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ShutdownComplete = new TaskCompletionSource<bool>();
             this.DisposeComplete = new TaskCompletionSource<bool>();
 
+            this.shutdownLock = new object();
             this.writeLock = new AsyncLock();
 
             this.CancellationSource = new CancellationTokenSource();

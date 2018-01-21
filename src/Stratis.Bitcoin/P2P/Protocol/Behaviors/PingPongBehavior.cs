@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         protected override void AttachCore()
         {
-            if ((this.AttachedPeer.PeerVersion != null) && !PingVersion()) // If not handshaked, still attach (the callback will also check version).
+            if ((this.AttachedPeer.PeerVersion != null) && !this.PingVersion()) // If not handshaked, still attach (the callback will also check version).
                 return;
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                     NetworkPeer peer = this.AttachedPeer;
 
                     if (peer == null) return;
-                    if (!PingVersion()) return;
+                    if (!this.PingVersion()) return;
                     if (peer.State != NetworkPeerState.HandShaked) return;
                     if (this.currentPing != null) return;
 
