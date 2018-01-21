@@ -428,9 +428,18 @@ namespace Stratis.Bitcoin.Connection
             });
 
             NetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(this.Network, ipEndpoint, cloneParameters).ConfigureAwait(false);
-            this.AddConnectedPeer(peer);
-            this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
-            await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+            try
+            {
+                this.AddConnectedPeer(peer);
+                this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
+                await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                peer.Dispose("Error while connecting", e);
+                this.logger.LogTrace("(-)[ERROR]");
+                throw e;
+            }
 
             this.logger.LogTrace("(-)");
             return peer;
