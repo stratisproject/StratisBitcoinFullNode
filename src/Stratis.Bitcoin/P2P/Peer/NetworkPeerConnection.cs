@@ -79,6 +79,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <seealso cref="Shutdown"/>
         public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
 
+        /// <summary>Task completion that is completed when the work of <see cref="Dispose"/> is finished.</summary>
+        public TaskCompletionSource<bool> DisposeComplete { get; private set; }
+
         /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="shutdownCalled"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
         private object shutdownLock = new object();
 
@@ -127,6 +130,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
             this.ShutdownComplete = new TaskCompletionSource<bool>();
+            this.DisposeComplete = new TaskCompletionSource<bool>();
 
             this.writeLock = new AsyncLock();
 
@@ -637,6 +641,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.CancellationSource.Dispose();
             this.writeLock.Dispose();
+
+            this.DisposeComplete.SetResult(true);
 
             this.logger.LogTrace("(-)");
         }
