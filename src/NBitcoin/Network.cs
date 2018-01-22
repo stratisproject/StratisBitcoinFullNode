@@ -73,51 +73,7 @@ namespace NBitcoin
         WITNESS_PUBKEY_ADDRESS,
         WITNESS_SCRIPT_ADDRESS
     }
-
-    public partial class Network
-    {
-        internal byte[][] base58Prefixes = new byte[12][];
-        internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
-
-        public Bech32Encoder GetBech32Encoder(Bech32Type type, bool throws)
-        {
-            var encoder = this.bech32Encoders[(int) type];
-            if (encoder == null && throws)
-                throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
-                                                  Enum.GetName(typeof(Bech32Type), type));
-            return encoder;
-        }
-
-        public byte[] GetVersionBytes(Base58Type type, bool throws)
-        {
-            var prefix = this.base58Prefixes[(int) type];
-            if (prefix == null && throws)
-                throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
-                                                  Enum.GetName(typeof(Base58Type), type));
-            return prefix?.ToArray();
-        }
-
-        internal static string CreateBase58(Base58Type type, byte[] bytes, Network network)
-        {
-            if (network == null)
-                throw new ArgumentNullException("network");
-            if (bytes == null)
-                throw new ArgumentNullException("bytes");
-            var versionBytes = network.GetVersionBytes(type, true);
-            return Encoders.Base58Check.EncodeData(versionBytes.Concat(bytes));
-        }
-
-        internal static string CreateBech32(Bech32Type type, byte[] bytes, byte witnessVersion, Network network)
-        {
-            if (network == null)
-                throw new ArgumentNullException("network");
-            if (bytes == null)
-                throw new ArgumentNullException("bytes");
-            Bech32Encoder encoder = network.GetBech32Encoder(type, true);
-            return encoder.Encode(witnessVersion, bytes);
-        }
-    }
-
+    
     public enum BuriedDeployments : int
     {
         /// <summary>
@@ -831,6 +787,48 @@ namespace NBitcoin
                     i = this.MagicBytesArray[0] == bytes[0] ? 0 : -1;
             }
             return true;
+        }
+
+        internal byte[][] base58Prefixes = new byte[12][];
+
+        internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
+
+        public Bech32Encoder GetBech32Encoder(Bech32Type type, bool throws)
+        {
+            var encoder = this.bech32Encoders[(int)type];
+            if (encoder == null && throws)
+                throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
+                                                  Enum.GetName(typeof(Bech32Type), type));
+            return encoder;
+        }
+
+        public byte[] GetVersionBytes(Base58Type type, bool throws)
+        {
+            var prefix = this.base58Prefixes[(int)type];
+            if (prefix == null && throws)
+                throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
+                                                  Enum.GetName(typeof(Base58Type), type));
+            return prefix?.ToArray();
+        }
+
+        internal static string CreateBase58(Base58Type type, byte[] bytes, Network network)
+        {
+            if (network == null)
+                throw new ArgumentNullException("network");
+            if (bytes == null)
+                throw new ArgumentNullException("bytes");
+            var versionBytes = network.GetVersionBytes(type, true);
+            return Encoders.Base58Check.EncodeData(versionBytes.Concat(bytes));
+        }
+
+        internal static string CreateBech32(Bech32Type type, byte[] bytes, byte witnessVersion, Network network)
+        {
+            if (network == null)
+                throw new ArgumentNullException("network");
+            if (bytes == null)
+                throw new ArgumentNullException("bytes");
+            Bech32Encoder encoder = network.GetBech32Encoder(type, true);
+            return encoder.Encode(witnessVersion, bytes);
         }
     }
 }
