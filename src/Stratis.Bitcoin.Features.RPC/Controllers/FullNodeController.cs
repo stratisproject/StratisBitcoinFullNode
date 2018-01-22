@@ -35,11 +35,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         public FullNodeController(
             ILoggerFactory loggerFactory,
-            IPooledTransaction pooledTransaction,
-            IPooledGetUnspentTransaction pooledGetUnspentTransaction,
-            IGetUnspentTransaction getUnspentTransaction,
-            INetworkDifficulty networkDifficulty,
-            IConsensusLoop consensusLoop,
+            IPooledTransaction pooledTransaction = null,
+            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+            IGetUnspentTransaction getUnspentTransaction = null,
+            INetworkDifficulty networkDifficulty = null,
+            IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
