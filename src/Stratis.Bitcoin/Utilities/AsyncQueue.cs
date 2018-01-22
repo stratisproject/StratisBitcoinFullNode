@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="item">Newly added item.</param>
         /// <param name="cancellationToken">Cancellation token that the callback method should use for its async operations to avoid blocking the queue during shutdown.</param>
+        /// <remarks>Note that it is not allowed to call <see cref="Dispose"/> from within the callback method.</remarks>
         public delegate Task OnEnqueueAsync(T item, CancellationToken cancellationToken);
 
         /// <summary>Lock object to protect access to <see cref="items"/>.</summary>
