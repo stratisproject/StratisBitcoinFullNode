@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class SegWitTests
     {
         [Fact]
-        public void TestSegwit_MinedOnCore_ActivatedOn_Stratisnode()
+        public void TestSegwit_MinedOnCore_ActivatedOn_StratisNode()
         {
             using (NodeBuilder builder = NodeBuilder.Create(version: "0.15.1"))
             {
@@ -46,25 +46,25 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeRpc.AddNode(coreNode.Endpoint, false);
 
                 // core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
-                // future versions of core will change that behaviour so this test may need ot be changed in the future
+                // future versions of core will change that behaviour so this test may need to be changed in the future
                 // see issue for more details https://github.com/stratisproject/StratisBitcoinFullNode/issues/1028
-                var prevSegwitDeployment = Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
+                BIP9DeploymentsParameters prevSegwitDeployment = Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
                 Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
 
                 try
                 {
-                    // generate 450 blocks, block 431 will have segwit activated.
+                    // generate 450 blocks, block 431 will be segwit activated.
                     coreRpc.Generate(450);
 
                     TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
 
-                    // segwit activation on Bitcoin regtest
+                    // segwit activation on Bitcoin regtest.
                     // - On regtest deployment state changes every 144 block, the threshold for activating a rule is 108 blocks.
                     // segwit deployment status should be:
-                    // - Defined up to block 142
-                    // - Started at block 143 to block 286 
-                    // - LockedIn 287 (as segwit should already be signaled in blocks)
-                    // - Active at block 431 
+                    // - Defined up to block 142.
+                    // - Started at block 143 to block 286 .
+                    // - LockedIn 287 (as segwit should already be signaled in blocks).
+                    // - Active at block 431.
 
                     IConsensusLoop consensusLoop = stratisNode.FullNode.NodeService<IConsensusLoop>();
                     ThresholdState[] segwitDefinedState = consensusLoop.NodeDeployments.BIP9.GetStates(stratisNode.FullNode.Chain.GetBlock(142));
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private void TestSegwit_MinedOnStratisNode_ActivatedOn_Corenode()
+        private void TestSegwit_MinedOnStratisNode_ActivatedOn_CoreNode()
         {
             // TODO: mine segwit onh a stratis node on the bitcoin network
             // write a tests that mines segwit blocks on the stratis node 
