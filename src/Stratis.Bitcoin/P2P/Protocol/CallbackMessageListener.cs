@@ -22,9 +22,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
     /// <typeparam name="T">Type of the messages that are being handled.</typeparam>
     public class CallbackMessageListener<T> : IMessageListener<T>, IDisposable
     { 
-        /// <summary>User defined callback routine to be executed when a new message arrives to the listener.</summary>
-        private readonly ProcessMessageAsync<T> processMessageAsync;
-
         /// <summary>Queue of the unprocessed incoming messages.</summary>
         private readonly AsyncQueue<T> asyncQueue;
 
@@ -35,7 +32,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
         public CallbackMessageListener(ProcessMessageAsync<T> processMessageAsync)
         {
             this.asyncQueue = new AsyncQueue<T>(new AsyncQueue<T>.OnEnqueueAsync(processMessageAsync));
-            this.processMessageAsync = processMessageAsync;
         }
 
         /// <inheritdoc/>
