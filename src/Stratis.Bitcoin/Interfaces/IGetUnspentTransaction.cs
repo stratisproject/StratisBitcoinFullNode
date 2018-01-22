@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Interfaces
 {
     /// <summary>
-    /// An interface used to retieve unspent transactions
+    /// An interface used to retrieve unspent transactions
     /// </summary>
     public interface IGetUnspentTransaction
     {

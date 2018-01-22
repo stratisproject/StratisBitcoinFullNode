@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Api
         public override void Initialize()
         {
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
-            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode);
+            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings);
 
             this.TryStartKeepaliveMonitor();
         }
