@@ -52,12 +52,10 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     await node.RunAsync(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.").ConfigureAwait(false);
                 }
-                catch (Exception e)
+                finally
                 {
-                    Console.WriteLine(e);
+                    done.Set();
                 }
-
-                done.Set();
             }
         }
 
