@@ -28,18 +28,18 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>Dictionary that contains cached items.</summary>
-        /// <remarks>Should be accessed inside a lock using <see cref="mutex"/>.</remarks>
+        /// <remarks>Should be accessed inside a lock using <see cref="lockObject"/>.</remarks>
         private readonly Dictionary<TKey, LinkedListNode<CacheItem>> cache;
 
         /// <summary>Keys sorted by their last access time with most recent ones at the end.</summary>
-        /// <remarks>Should be accessed inside a lock using <see cref="mutex"/>.</remarks>
+        /// <remarks>Should be accessed inside a lock using <see cref="lockObject"/>.</remarks>
         private readonly LinkedList<CacheItem> keys;
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
         private readonly int maxItemsCount;
         
         /// <summary>Lock to protect access to <see cref="keys"/> and <see cref="cache"/>.</summary>
-        private readonly object mutex;
+        private readonly object lockObject;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCache{TKey, TValue}"/> class.
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Utilities
 
             this.cache = new Dictionary<TKey, LinkedListNode<CacheItem>>(this.maxItemsCount, comparer);
             this.keys = new LinkedList<CacheItem>();
-            this.mutex = new object();
+            this.lockObject = new object();
         }
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                lock (this.mutex)
+                lock (this.lockObject)
                 {
                     return this.keys.Count;
                 }
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             LinkedListNode<CacheItem> node;
 
-            lock (this.mutex)
+            lock (this.lockObject)
             {
                 if (this.cache.TryGetValue(key, out node))
                 {
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="key">Key of that item that will be removed from the cache.</param>
         public void Remove(TKey key)
         {
-            lock (this.mutex)
+            lock (this.lockObject)
             {
                 if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem> node))
                 {
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            lock (this.mutex)
+            lock (this.lockObject)
             {
                 if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem> node))
                 {
