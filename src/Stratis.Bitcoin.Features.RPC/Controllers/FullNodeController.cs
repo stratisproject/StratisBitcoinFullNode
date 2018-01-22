@@ -82,11 +82,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            Transaction trx = await this.pooledTransaction.GetTransaction(trxid);
+            Transaction trx = this.pooledTransaction != null? await this.pooledTransaction.GetTransaction(trxid) : null;
 
             if (trx == null)
             {
-                trx = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxAsync(trxid);
+                var blockStore = this.FullNode.NodeFeature<IBlockStore>();
+
+                trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
             }
 
             if (trx == null)
@@ -119,11 +121,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = this.pooledGetUnspentTransaction != null? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
             else
             {
-                unspentOutputs = await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = this.getUnspentTransaction != null? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
 
             if (unspentOutputs == null)
@@ -137,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            return this.consensusLoop.Tip.Height;
+            return this.consensusLoop?.Tip.Height ?? -1;
         }
 
         [ActionName("getinfo")]
@@ -238,7 +240,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedBlock block = null;
-            uint256 blockid = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxBlockIdAsync(trxid);
+            var blockStore = this.FullNode.NodeFeature<IBlockStore>();
+
+            uint256 blockid = blockStore != null? await blockStore.GetTrxBlockIdAsync(trxid) : null;
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
             return block;
@@ -246,7 +250,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private Target GetNetworkDifficulty()
         {
-            return this.networkDifficulty.GetNetworkDifficulty();
+            return this.networkDifficulty?.GetNetworkDifficulty();
         }
     }
 }
