@@ -227,6 +227,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <returns>Whether any wallet files are loaded.</returns>
         bool ContainsWallets { get; }
 
+        /// <summary>
+        /// Gets the extended public key of an account.
+        /// </summary>
+        /// <param name="accountReference">The account.</param>
+        /// <returns>The extended plublic key.</returns>
         string GetExtPubKey(WalletAccountReference accountReference);
 
         /// <summary>
