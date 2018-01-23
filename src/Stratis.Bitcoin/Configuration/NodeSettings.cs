@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Configuration
             if (this.DataDir == null)
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
 
-            this.DataFolder = new DataFolder(this);
+            this.DataFolder = new DataFolder(this.DataDir);
             if (!Directory.Exists(this.DataFolder.CoinViewPath))
                 Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
