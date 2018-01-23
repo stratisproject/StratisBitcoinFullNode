@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -28,9 +29,10 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>
         /// Loads the API related settings from the application configuration.
         /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             var port = nodeSettings.Network.IsBitcoin() ? 37220 : 37221;
@@ -38,6 +40,8 @@ namespace Stratis.Bitcoin.Features.Api
             this.ApiUri = config.GetOrDefault("apiuri", new Uri($"http://localhost:{port}"));
 
             this.callback?.Invoke(this);
+
+            logger.LogDebug("ApiUri is {0}.", this.ApiUri);
         }
     }
 }
