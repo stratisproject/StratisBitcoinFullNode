@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="message">Message received from the peer.</param>
         /// <param name="cancellation">Cancellation token to abort message processing.</param>
-        public async Task ProcessMessageAsync(IncomingMessage message, CancellationToken cancellation)
+        private async Task ProcessMessageAsync(IncomingMessage message, CancellationToken cancellation)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
 
