@@ -47,7 +47,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
@@ -73,7 +72,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
@@ -97,7 +95,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(customPort, settings.ApiPort);
@@ -122,7 +119,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
@@ -149,7 +145,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
@@ -175,7 +170,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(customPort, settings.ApiPort);
@@ -201,7 +195,6 @@ namespace Stratis.Bitcoin.Api.Tests
                 .UseApi()
                 .Build()
                 .NodeService<ApiSettings>();
-            //settings.Load(nodeSettings);
 
             // Assert.
             Assert.Equal(customPort, settings.ApiPort);
