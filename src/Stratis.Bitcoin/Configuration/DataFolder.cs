@@ -16,10 +16,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Initializes the path locations.
         /// </summary>
-        /// <param name="settings">Node configuration.</param>
-        public DataFolder(NodeSettings settings)
+        /// <param name="path">The data directory root path.</param>
+        public DataFolder(string path)
         {
-            string path = settings.DataDir;
             this.CoinViewPath = Path.Combine(path, "coinview");
             this.AddressManagerFilePath = path;
             this.ChainPath = Path.Combine(path, "chain");

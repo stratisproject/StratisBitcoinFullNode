@@ -13,11 +13,11 @@ namespace Stratis.Bitcoin.Features.Api
         {
         }
 
-        public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode)
+        public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode, ApiSettings apiSettings)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
-            Uri apiUri = fullNode.NodeService<ApiSettings>().ApiUri;
+            Uri apiUri = apiSettings.ApiUri;
 
             IWebHost host = new WebHostBuilder()
                 .UseKestrel()

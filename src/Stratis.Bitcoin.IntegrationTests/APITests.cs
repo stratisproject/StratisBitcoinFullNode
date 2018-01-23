@@ -211,9 +211,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // start api on different ports
             this.stratisPowNode.ConfigParameters.Add("apiuri", "http://localhost:37221");
-
-            this.InitializeTestWallet(this.stratisPowNode);
             this.builder.StartAll();
+
+            // Move a wallet file to the right folder and restart the wallet manager to take it into account.
+            this.InitializeTestWallet(this.stratisPowNode.FullNode.DataFolder.WalletPath);
+            var walletManager = this.stratisPowNode.FullNode.NodeService<IWalletManager>() as WalletManager;
+            walletManager.Start();
 
             Block.BlockSignature = true;
 
@@ -244,10 +247,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>
         /// Copies the test wallet into data folder for node if it isnt' already present.
         /// </summary>
-        /// <param name="node">Core node for the test.</param>
-        private void InitializeTestWallet(CoreNode node)
+        /// <param name="path">The path of the folder to move the wallet to.</param>
+        public void InitializeTestWallet(string path)
         {
-            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);
         }

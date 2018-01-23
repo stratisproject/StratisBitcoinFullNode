@@ -2,14 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -23,8 +20,26 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        private readonly IPooledTransaction pooledTransaction;
+
+        /// <summary>An interface implementation used to retrieve unspent transactions from a pooled source.</summary>
+        private readonly IPooledGetUnspentTransaction pooledGetUnspentTransaction;
+
+        /// <summary>An interface implementation used to retrieve unspent transactions.</summary>
+        private readonly IGetUnspentTransaction getUnspentTransaction;
+
+        private readonly INetworkDifficulty networkDifficulty;
+
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
+        private readonly IConsensusLoop consensusLoop;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
+            IPooledTransaction pooledTransaction = null,
+            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+            IGetUnspentTransaction getUnspentTransaction = null,
+            INetworkDifficulty networkDifficulty = null,
+            IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
@@ -40,6 +55,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   connectionManager: connectionManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.pooledTransaction = pooledTransaction;
+            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.getUnspentTransaction = getUnspentTransaction;
+            this.networkDifficulty = networkDifficulty;
+            this.consensusLoop = consensusLoop;
         }
 
         [ActionName("stop")]
@@ -62,11 +82,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            Transaction trx = await this.FullNode.NodeService<IPooledTransaction>(true)?.GetTransaction(trxid);
+            Transaction trx = this.pooledTransaction != null? await this.pooledTransaction.GetTransaction(trxid) : null;
 
             if (trx == null)
             {
-                trx = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxAsync(trxid);
+                var blockStore = this.FullNode.NodeFeature<IBlockStore>();
+
+                trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
             }
 
             if (trx == null)
@@ -99,11 +121,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = this.pooledGetUnspentTransaction != null? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
             else
             {
-                unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = this.getUnspentTransaction != null? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
 
             if (unspentOutputs == null)
@@ -117,8 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<IConsensusLoop>();
-            return consensusLoop.Tip.Height;
+            return this.consensusLoop?.Tip.Height ?? -1;
         }
 
         [ActionName("getinfo")]
@@ -219,7 +240,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedBlock block = null;
-            uint256 blockid = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxBlockIdAsync(trxid);
+            var blockStore = this.FullNode.NodeFeature<IBlockStore>();
+
+            uint256 blockid = blockStore != null? await blockStore.GetTrxBlockIdAsync(trxid) : null;
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
             return block;
@@ -227,7 +250,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private Target GetNetworkDifficulty()
         {
-            return this.FullNode.NodeService<INetworkDifficulty>(true)?.GetNetworkDifficulty();
+            return this.networkDifficulty?.GetNetworkDifficulty();
         }
     }
 }

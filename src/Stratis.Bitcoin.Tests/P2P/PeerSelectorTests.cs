@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -76,7 +77,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(networkAddressTwo, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressThree, IPAddress.Loopback);
 
-            var peers = peerAddressManager.Peers.Fresh();
+            var peers = peerAddressManager.PeerSelector.Fresh();
             Assert.Equal(3, peers.Count());
         }
 
@@ -115,7 +116,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.PeerAttempted(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
             peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow.AddSeconds(-80));
 
-            var peers = peerAddressManager.Peers.Attempted();
+            var peers = peerAddressManager.PeerSelector.Attempted();
             Assert.Equal(2, peers.Count());
             Assert.DoesNotContain(peers, p => p.EndPoint.Match(networkAddressOne.Endpoint));
         }
@@ -159,7 +160,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
             }
 
-            var peers = peerAddressManager.Peers.Attempted();
+            var peers = peerAddressManager.PeerSelector.Attempted();
             Assert.Equal(2, peers.Count());
             Assert.DoesNotContain(peers, p => p.EndPoint.Match(networkAddressThree.Endpoint));
         }
@@ -199,7 +200,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.PeerConnected(networkAddressTwo.Endpoint, DateTime.UtcNow.AddSeconds(-80));
             peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
 
-            var peers = peerAddressManager.Peers.Connected();
+            var peers = peerAddressManager.PeerSelector.Connected();
             Assert.Single(peers);
             Assert.Contains(peers, p => p.EndPoint.Match(networkAddressTwo.Endpoint));
         }
@@ -243,10 +244,181 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             peerAddressManager.PeerAttempted(networkAddressThree.Endpoint, DateTime.UtcNow);
 
-            var peers = peerAddressManager.Peers.Handshaked();
+            var peers = peerAddressManager.PeerSelector.Handshaked();
             Assert.Single(peers);
             Assert.Contains(peers, p => p.EndPoint.Match(networkAddressTwo.Endpoint));
         }
 
+        /// <summary>
+        /// Tests how peers are returned from the selector during GetAddrPayload.
+        ///
+        /// Scenario 1:
+        /// PeerAddressManager contains 15 peers.
+        /// 7 Peers = Handshaked.
+        /// 8 Peers = Fresh.
+        /// 
+        /// We ask for 8 peers.
+        /// 
+        /// Result:
+        /// 4 handshaked peers returned.
+        /// 4 fresh peers returned.
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForGetAddrPayload_Scenario1()
+        {
+            var peersToAdd = new List<NetworkAddress>();
+
+            for (int i = 1; i <= 15; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peersToAdd.Add(new NetworkAddress(ipAddress, 80));
+            }
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
+            peerAddressManager.AddPeers(peersToAdd.ToArray(), IPAddress.Loopback);
+
+            for (int i = 1; i <= 7; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerConnected(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerHandshaked(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            }
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(8);
+            Assert.Equal(8, peers.Count());
+            Assert.Equal(4, peers.Count(p => p.Handshaked));
+            Assert.Equal(4, peers.Count(p => p.Fresh));
+        }
+
+        /// <summary>
+        /// Tests how peers are returned from the selector during GetAddrPayload.
+        ///
+        /// Scenario 2:
+        /// PeerAddressManager contains 15 peers.
+        /// 7 Peers = Handshaked.
+        /// 8 Peers = Fresh.
+        /// 
+        /// We ask for 15 peers.
+        /// 
+        /// Result:
+        /// 7 handshaked peers returned.
+        /// 8 fresh peers returned.
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForGetAddrPayload_Scenario2()
+        {
+            var peersToAdd = new List<NetworkAddress>();
+
+            for (int i = 1; i <= 15; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peersToAdd.Add(new NetworkAddress(ipAddress, 80));
+            }
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
+            peerAddressManager.AddPeers(peersToAdd.ToArray(), IPAddress.Loopback);
+
+            for (int i = 1; i <= 7; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerConnected(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerHandshaked(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            }
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(15);
+            Assert.Equal(15, peers.Count());
+            Assert.Equal(7, peers.Count(p => p.Handshaked));
+            Assert.Equal(8, peers.Count(p => p.Fresh));
+        }
+
+        /// <summary>
+        /// Tests how peers are returned from the selector during GetAddrPayload.
+        ///
+        /// Scenario 3:
+        /// PeerAddressManager contains 15 peers.
+        /// 
+        /// 7 Peers = Attempted.
+        /// 8 Peers = Fresh.
+        /// 
+        /// We ask for 15 peers.
+        /// 
+        /// Result:
+        /// 7 attempted peers returned.
+        /// 8 fresh peers returned.
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForGetAddrPayload_Scenario3()
+        {
+            var peersToAdd = new List<NetworkAddress>();
+
+            for (int i = 1; i <= 15; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peersToAdd.Add(new NetworkAddress(ipAddress, 80));
+            }
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
+            peerAddressManager.AddPeers(peersToAdd.ToArray(), IPAddress.Loopback);
+
+            for (int i = 1; i <= 7; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerAttempted(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            }
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(15);
+            Assert.Equal(15, peers.Count());
+            Assert.Equal(7, peers.Count(p => p.Attempted));
+            Assert.Equal(8, peers.Count(p => p.Fresh));
+        }
+
+        /// <summary>
+        /// Tests how peers are returned from the selector during GetAddrPayload.
+        ///
+        /// Scenario 4:
+        /// PeerAddressManager contains 15 peers.
+        /// 
+        /// 2 Peers = Connected
+        /// 13 Peers = Fresh
+        /// 
+        /// We ask for 15 peers.
+        /// 
+        /// Result:
+        /// 2 connected peers returned.
+        /// 13 fresh peers returned.
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForGetAddrPayload_Scenario4()
+        {
+            var peersToAdd = new List<NetworkAddress>();
+
+            for (int i = 1; i <= 15; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peersToAdd.Add(new NetworkAddress(ipAddress, 80));
+            }
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
+            peerAddressManager.AddPeers(peersToAdd.ToArray(), IPAddress.Loopback);
+
+            for (int i = 1; i <= 2; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerConnected(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+            }
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(15);
+            Assert.Equal(15, peers.Count());
+            Assert.Equal(2, peers.Count(p => p.Connected));
+            Assert.Equal(13, peers.Count(p => p.Fresh));
+        }
     }
 }

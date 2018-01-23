@@ -33,7 +33,8 @@ namespace Stratis.Bitcoin.Features.RPC
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env,
             ILoggerFactory loggerFactory,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            RpcSettings rpcSettings)
         {
             if (env.IsDevelopment())
             {
@@ -46,12 +47,11 @@ namespace Stratis.Bitcoin.Features.RPC
             var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
             File.WriteAllText(fullNode.DataFolder.RpcCookieFile, cookieStr);
             authorizedAccess.Authorized.Add(cookieStr);
-            var settings = fullNode.NodeService<RpcSettings>();
-            if (settings.RpcPassword != null)
+            if (rpcSettings.RpcPassword != null)
             {
-                authorizedAccess.Authorized.Add(settings.RpcUser + ":" + settings.RpcPassword);
+                authorizedAccess.Authorized.Add(rpcSettings.RpcUser + ":" + rpcSettings.RpcPassword);
             }
-            authorizedAccess.AllowIp.AddRange(settings.AllowIp);
+            authorizedAccess.AllowIp.AddRange(rpcSettings.AllowIp);
 
             var options = GetMVCOptions(serviceProvider);
             Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);

@@ -18,8 +18,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Connected network peer that we receive messages from.</summary>
         private readonly NetworkPeer peer;
 
-        /// <summary>Subscription to the message producer of the connected peer.</summary>
-        private readonly IDisposable subscription;
+        /// <summary>Registration to the message producer of the connected peer.</summary>
+        private readonly MessageProducerRegistration<IncomingMessage> messageProducerRegistration;
 
         /// <summary>
         /// Initializes the instance of the object and subscribes to the peer's message producer.
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerListener(NetworkPeer peer)
         {
             this.asyncQueue = new AsyncQueue<IncomingMessage>();
-            this.subscription = peer.MessageProducer.AddMessageListener(this);
+            this.messageProducerRegistration = peer.MessageProducer.AddMessageListener(this);
             this.peer = peer;
         }
 
@@ -64,8 +64,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public void Dispose()
         {
+            this.messageProducerRegistration.Dispose();
             this.asyncQueue.Dispose();
-            this.subscription.Dispose();
         }
     }
 }
