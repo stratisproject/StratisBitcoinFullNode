@@ -128,9 +128,9 @@ namespace Stratis.Bitcoin.Base
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            IInitialBlockDownloadState initialBlockDownloadState = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));

@@ -84,9 +84,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IChainState chainState,
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState initialBlockDownloadState,
-            IDateTimeProvider dateTimeProvider)
+            ILoggerFactory loggerFactory,            
+            IDateTimeProvider dateTimeProvider,
+            IInitialBlockDownloadState initialBlockDownloadState = null)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;

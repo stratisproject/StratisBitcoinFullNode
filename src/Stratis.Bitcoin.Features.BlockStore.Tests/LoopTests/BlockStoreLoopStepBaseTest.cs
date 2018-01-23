@@ -113,8 +113,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     new StoreSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }).LoadConfiguration()),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
-                    this.initialBlockDownloadState,
-                    DateTimeProvider.Default);
+                    DateTimeProvider.Default,
+                    this.initialBlockDownloadState);
         }
 
         #region IDisposable Support
