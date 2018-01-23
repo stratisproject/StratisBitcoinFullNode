@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Load the consensus settings from the config settings.
         /// </summary>
         /// <returns>These consensus config settings.</returns>
-        private ConsensusSettings LoadFromConfig()
+        public ConsensusSettings LoadFromConfig()
         {
             TextFileConfiguration config = this.nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
