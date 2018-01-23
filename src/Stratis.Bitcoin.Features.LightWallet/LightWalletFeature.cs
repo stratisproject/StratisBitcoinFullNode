@@ -95,6 +95,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.loggerFactory = loggerFactory;
         }
 
+        /// <inheritdoc>
+        public override void LoadConfiguration()
+        {
+        }
+
         /// <inheritdoc />
         public override void Initialize()
         {

@@ -13,6 +13,11 @@ namespace Stratis.Bitcoin.Builder.Feature
         void Initialize();
 
         /// <summary>
+        /// Triggered when the feature should load its configuration.
+        /// </summary>
+        void LoadConfiguration();
+
+        /// <summary>
         /// Validates the feature's required dependencies are all present.
         /// </summary>
         /// <exception cref="MissingDependencyException">should be thrown if dependency is missing</exception>
@@ -34,6 +39,9 @@ namespace Stratis.Bitcoin.Builder.Feature
     {
         /// <inheritdoc />
         public abstract void Initialize();
+
+        /// <inheritdoc />
+        public abstract void LoadConfiguration();
 
         /// <inheritdoc />
         public virtual void Dispose()

@@ -45,7 +45,12 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Defines the DNS settings for the node.
         /// </summary>
-        private readonly DnsSettings dnsSettings;
+        private DnsSettings dnsSettings;
+
+        /// <summary>
+        /// Defines the node settings for the node.
+        /// </summary>
+        private readonly NodeSettings nodeSettings;
 
         /// <summary>
         /// Defines the data folders of the system.
@@ -96,8 +101,19 @@ namespace Stratis.Bitcoin.Features.Dns
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
-            this.dnsSettings = DnsSettings.Load(nodeSettings, dnsSettings);
+            this.dnsSettings = dnsSettings;
+            this.nodeSettings = nodeSettings;
             this.dataFolders = dataFolders;
+        }
+
+        public override void LoadConfiguration()
+        {
+            this.logger.LogTrace("()");
+
+            // Load the DNS settings
+            this.dnsSettings = DnsSettings.Load(this.nodeSettings, this.dnsSettings);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -106,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Dns
         public override void Initialize()
         {
             this.logger.LogTrace("()");
-
+          
             // Create long running task for DNS service.
             this.dnsTask = Task.Factory.StartNew(this.RunDnsService, TaskCreationOptions.LongRunning);
 

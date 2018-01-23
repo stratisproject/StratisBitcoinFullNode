@@ -34,8 +34,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.nodeSettings = nodeSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
-            this.LoadFromConfig();
         }
 
         /// <summary>

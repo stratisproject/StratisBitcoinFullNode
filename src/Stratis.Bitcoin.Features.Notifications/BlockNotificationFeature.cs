@@ -42,6 +42,10 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.loggerFactory = loggerFactory;
         }
 
+        public override void LoadConfiguration()
+        {           
+        }
+
         public override void Initialize()
         {
             var connectionParameters = this.connectionManager.Parameters;

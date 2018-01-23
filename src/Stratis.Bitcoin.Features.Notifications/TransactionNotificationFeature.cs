@@ -21,6 +21,10 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.transactionBehavior = transactionBehavior;
         }
 
+        public override void LoadConfiguration()
+        {            
+        }
+
         public override void Initialize()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.transactionBehavior);

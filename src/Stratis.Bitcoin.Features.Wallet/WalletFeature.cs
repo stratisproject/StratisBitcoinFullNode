@@ -68,6 +68,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+        }
+
+        /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
             WalletManager walletManager = this.walletManager as WalletManager;

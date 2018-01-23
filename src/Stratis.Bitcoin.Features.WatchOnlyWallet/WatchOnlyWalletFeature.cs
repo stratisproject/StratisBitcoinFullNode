@@ -33,6 +33,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+        }
+
+        /// <inheritdoc />
         public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
