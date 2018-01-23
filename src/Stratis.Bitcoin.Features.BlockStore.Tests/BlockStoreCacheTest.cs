@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.blockRepository = new Mock<IBlockRepository>();
 
             this.nodeSettings = new NodeSettings();
-            this.nodeSettings.LoadArguments(new string[] { });
+            this.nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
 
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings);
         }

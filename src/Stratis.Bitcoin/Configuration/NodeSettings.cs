@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Configuration
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
             NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
-            nodeSettings.LoadArguments(new string[0]);
+            nodeSettings.LoadArguments(new string[0]).LoadConfiguration();
             return nodeSettings;
         }
 
@@ -138,24 +138,12 @@ namespace Stratis.Bitcoin.Configuration
         /// Processes the command line arguments only.
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
-        /// <param name="delayedProcessing">Set to <c>true</c> if the configuration file should not be read yet.</param>
         /// <returns>Node configuration with arguments recorded.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
-        public NodeSettings LoadArgumentsDelayed(string[] args)
-        {
-            return LoadArguments(args, true);
-        }
-
-        /// <summary>
-        /// Processes the command line arguments and the configuration file (default).
-        /// </summary>
-        /// <param name="args">Application command line arguments.</param>
-        /// <param name="delayedConfigurationFileProcessing">Set to <c>true</c> if the configuration file should not be processed now.</param>
-        /// <returns>Node configuration with arguments recorded.</returns>
-        /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args, bool delayedConfigurationFileProcessing = false)
+        public NodeSettings LoadArguments(string[] args)
         {
             this.LoadArgs = args;
+            this.ConfigReader = null;
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
@@ -168,45 +156,6 @@ namespace Stratis.Bitcoin.Configuration
                 bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
                 if (isRelativePath)
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
-            }
-
-            // Find out if we need to run on testnet or regtest from the config file.
-            if (this.ConfigurationFile != null)
-            {
-                AssertConfigFileExists(this.ConfigurationFile);
-                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
-                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
-            }
-
-            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
-                this.Testnet = true;
-
-            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
-                this.RegTest = true;
-
-            if (this.Testnet && this.RegTest)
-                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
-
-            this.Network = this.GetNetwork();
-            if (this.DataDir == null)
-            {
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
-            }
-
-            if (!Directory.Exists(this.DataDir))
-                throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
-
-            this.DataFolder = new DataFolder(this);
-            if (!Directory.Exists(this.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
-
-            if (!delayedConfigurationFileProcessing)
-            {
-                this.ConfigReader = null;
-                LoadConfiguration();
             }
 
             return this;
@@ -227,15 +176,53 @@ namespace Stratis.Bitcoin.Configuration
 
             var args = this.LoadArgs;
 
-            if (this.ConfigurationFile == null)
-            {
-                this.ConfigurationFile = this.CreateDefaultConfigurationFile();
-            }
+            // Ensure that we have a configuration file
+            var fileArgs = (this.ConfigurationFile != null && File.Exists(this.ConfigurationFile)) ? 
+                File.ReadAllText(this.ConfigurationFile) : 
+                this.DefaultConfigurationFile();
+
+            // Find out if we need to run on testnet or regtest from the config file.
+            var config = new TextFileConfiguration(fileArgs);
+            this.Testnet = config.GetOrDefault<bool>("testnet", false);
+            this.RegTest = config.GetOrDefault<bool>("regtest", false);
+
+            // Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
+            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
+                this.Testnet = true;
+
+            // Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
+            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
+                this.RegTest = true;
+
+            if (this.Testnet && this.RegTest)
+                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
             var consoleConfig = new TextFileConfiguration(args);
-            var config = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-            this.ConfigReader = config;
             consoleConfig.MergeInto(config);
+            this.ConfigReader = config;
+
+            this.Network = this.GetNetwork();
+
+            if (this.DataDir == null)
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
+
+            this.DataFolder = new DataFolder(this);
+            if (!Directory.Exists(this.DataFolder.CoinViewPath))
+                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
+
+            if (!Directory.Exists(this.DataDir))
+                throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
+
+            // Create a default configuration file if required
+            if (this.ConfigurationFile == null || !File.Exists(this.ConfigurationFile))
+            {
+                this.ConfigurationFile = this.ConfigurationFile ?? (Path.Combine(this.DataDir, this.Name) + " .conf");
+                this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
+                File.WriteAllText(this.ConfigurationFile, fileArgs);
+            }
+
+            if (this.ConfigurationFile != null)
+                AssertConfigFileExists(this.ConfigurationFile);
 
             // Set the configuration filter and file path.
             this.Log.Load(config);
@@ -259,7 +246,7 @@ namespace Stratis.Bitcoin.Configuration
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
             return this;
-        }
+        }        
 
         /// <summary>
         /// Asserts the configuration file exists.
@@ -314,27 +301,20 @@ namespace Stratis.Bitcoin.Configuration
         /// Creates a default configuration file if no configuration file is found.
         /// </summary>
         /// <returns>Path to the configuration file.</returns>
-        private string CreateDefaultConfigurationFile()
+        private string DefaultConfigurationFile()
         {
-            string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
-            this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
+            this.Logger.LogDebug("Creating configuration file...");
 
-            // Create a config file if none exist.
-            if (!File.Exists(configFilePath))
-            {
-                this.Logger.LogDebug("Creating configuration file...");
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("####RPC Settings####");
+            builder.AppendLine("#Activate RPC Server (default: 0)");
+            builder.AppendLine("#server=0");
+            builder.AppendLine("#Where the RPC Server binds (default: 127.0.0.1 and ::1)");
+            builder.AppendLine("#rpcbind=127.0.0.1");
+            builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
+            builder.AppendLine("#rpcallowip=127.0.0.1");
 
-                StringBuilder builder = new StringBuilder();
-                builder.AppendLine("####RPC Settings####");
-                builder.AppendLine("#Activate RPC Server (default: 0)");
-                builder.AppendLine("#server=0");
-                builder.AppendLine("#Where the RPC Server binds (default: 127.0.0.1 and ::1)");
-                builder.AppendLine("#rpcbind=127.0.0.1");
-                builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
-                builder.AppendLine("#rpcallowip=127.0.0.1");
-                File.WriteAllText(configFilePath, builder.ToString());
-            }
-            return configFilePath;
+            return builder.ToString();           
         }
 
         /// <summary>

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 "-walletname=mytestwallet",
                 "-walletpassword=test",
                 "-mineaddress=TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms"
-            });
+            }).LoadConfiguration();
 
             minersettings.Load(nodeSettings);
 
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 "-walletname=mytestwallet",
                 "-walletpassword=test",
                 "-mineaddress=TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms"
-            });
+            }).LoadConfiguration();
 
             minersettings.Load(nodeSettings);
 
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 "-walletname=mytestwallet",
                 "-walletpassword=test",
                 "-mineaddress=TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms"
-            });
+            }).LoadConfiguration();
 
             minersettings.Load(nodeSettings);
 
