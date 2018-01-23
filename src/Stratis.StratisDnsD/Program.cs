@@ -42,7 +42,7 @@ namespace Stratis.StratisDnsD
             try
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = new NodeSettings("stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
                 DnsSettings dnsSettings = DnsSettings.Load(nodeSettings);
 
                 // Verify that the DNS host, nameserver and mailbox arguments are set.

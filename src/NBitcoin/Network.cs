@@ -283,6 +283,12 @@ namespace NBitcoin
 
         public string Name { get; private set; }
 
+        /// <summary> The name of the root folder containing the different blockchains. </summary>
+        public string RootFolderName { get; private set; }
+
+        /// <summary> The default name used for the network configuration file. </summary>
+        public string DefaultConfigFilename { get; private set; }
+
         public IEnumerable<NetworkAddress> SeedNodes => this.fixedSeeds;
 
         public IEnumerable<DNSSeedData> DNSSeeds => this.seeds;
@@ -324,6 +330,8 @@ namespace NBitcoin
 
             Network network = new Network();
             network.Name = builder.Name;
+            network.RootFolderName = builder.RootFolderName;
+            network.DefaultConfigFilename = builder.DefaultConfigFilename;
             network.consensus = builder.Consensus;
             network.magic = builder.Magic;
             network.DefaultPort = builder.Port;
