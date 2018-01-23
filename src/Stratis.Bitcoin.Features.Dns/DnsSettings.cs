@@ -90,6 +90,10 @@ namespace Stratis.Bitcoin.Features.Dns
 
             dnsSettings.callback?.Invoke(dnsSettings);
 
+            // Verify that the DNS host, nameserver and mailbox arguments are set.
+            if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
+                throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+
             logger.LogTrace("(-)");
 
             return dnsSettings;
