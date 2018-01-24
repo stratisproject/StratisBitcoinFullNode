@@ -173,12 +173,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             // Need to update balances for these transactions
-
             foreach (TxOut txOut in transaction.Outputs)
             {
                 if (txOut.ScriptPubKey.IsSmartContractExec)
                 {
-                    var scTransaction = new SCTransaction(txOut);
+                    var scTransaction = new SmartContractTransaction(txOut, transaction);
                     if (scTransaction.OpCodeType == OpcodeType.OP_CREATECONTRACT)
                     {
                         ExecuteCreateContractTransaction(context, scTransaction);
@@ -191,9 +190,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
-        private void ExecuteCreateContractTransaction(RuleContext context, SCTransaction transaction)
+        private void ExecuteCreateContractTransaction(RuleContext context, SmartContractTransaction transaction)
         {
-            uint160 contractAddress = 0; // TODO: GET ACTUAL NUM
+            uint160 contractAddress = transaction.GetNewContractAddress(); // TODO: GET ACTUAL NUM
             this.state.CreateAccount(0);
             SmartContractDecompilation decomp = this.smartContractDecompiler.GetModuleDefinition(transaction.ContractCode);
             SmartContractValidationResult validationResult = this.smartContractValidator.ValidateContract(decomp);
@@ -234,11 +233,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
-        private void ExecuteCallContractTransaction(RuleContext context, SCTransaction transaction)
+        private void ExecuteCallContractTransaction(RuleContext context, SmartContractTransaction transaction)
         {
-            uint160 contractAddress = 0; // TODO: GET ACTUAL NUM
-
             byte[] contractCode = this.state.GetCode(transaction.To);
+            SmartContractDecompilation decomp = this.smartContractDecompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
+
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
             SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, new SmartContractExecutionContext
             {
@@ -250,11 +249,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 GasPrice = transaction.GasPrice,
                 Parameters = transaction.Parameters ?? new object[0],
                 CoinbaseAddress = 0, //TODO: FIX THIS
-                ContractAddress = contractAddress,
+                ContractAddress = transaction.To,
                 ContractMethod = transaction.MethodName,
-                // TODO: Get contract name
+                ContractTypeName = decomp.ContractType.Name 
             });
-            throw new NotImplementedException();
+
+
         }
     }
 }

@@ -55,5 +55,17 @@ namespace Stratis.SmartContracts.State
         {
             throw new NotImplementedException("Can't flush - no underlying DB");
         }
+
+        /// <summary>
+        /// Only use for testing at the moment.
+        /// </summary>
+        internal void Empty()
+        {
+            using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
+            {
+                t.RemoveAllKeys(this.table, false);
+                t.Commit();
+            }
+        }
     }
 }

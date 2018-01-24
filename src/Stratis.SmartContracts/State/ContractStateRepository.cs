@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Stratis.SmartContracts.Hashing;
 using NBitcoin;
+using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.State
 {
@@ -15,6 +16,8 @@ namespace Stratis.SmartContracts.State
         public ISource<byte[], AccountState> accountStateCache;
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
+
+        protected List<TransferInfo> transfers;
 
         protected ContractStateRepository() { }
 
@@ -30,6 +33,7 @@ namespace Stratis.SmartContracts.State
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
             this.storageCache = storageCache;
+            this.transfers = new List<TransferInfo>();
         }
 
         public AccountState CreateAccount(uint160 addr)
@@ -144,5 +148,24 @@ namespace Stratis.SmartContracts.State
         {
             throw new Exception("Not supported");
         }
+
+        #region Account Abstraction Layer
+
+        public void TransferBalance(uint160 from, uint160 to, ulong value)
+        {
+            this.transfers.Add(new TransferInfo
+            {
+                From = from,
+                To = to,
+                Value = value
+            });
+        }
+
+        public Vin Vin(uint160 address)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin;
+using Stratis.SmartContracts.Hashing;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.SmartContracts
 {
-    public class SCTransaction
+    public class SmartContractTransaction
     {
         public uint VmVersion { get; set; }
         public ulong GasLimit { get; set; }
@@ -17,17 +18,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public byte[] ContractCode { get; set; }
 
         public uint160 To { get; set; }
+        public uint160 From { get; set; }
         public string MethodName { get; set; }
 
         public OpcodeType OpCodeType { get; set; }
+
+        public uint256 Hash { get; set; }
+        public uint Nvout { get; set; }
         
-        public SCTransaction() { }
+        public SmartContractTransaction() { }
 
         /// <summary>
-        /// So heinous! Can adjust later.
+        /// So heinous! Can adjust later. Also TODO: parameters
         /// </summary>
         /// <param name="txOut"></param>
-        public SCTransaction(TxOut txOut)
+        public SmartContractTransaction(TxOut txOut, Transaction transaction)
         {
             var bytes = txOut.ScriptPubKey.ToBytes();
             OpCodeType = (OpcodeType)bytes.LastOrDefault();
@@ -42,9 +47,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else if (OpCodeType == OpcodeType.OP_CALLCONTRACT)
             {
-                // for now might make this json. gross but temporary
-                throw new NotImplementedException();
+                To = new uint160(bytes.Skip(20).Take(20).ToArray());
+                MethodName = Encoding.UTF8.GetString(bytes.Skip(40).SkipLast(1).ToArray());
             }
+
+            Hash = transaction.GetHash();
         }
 
         public IEnumerable<byte> ToBytes()
@@ -53,9 +60,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             bytes.AddRange(BitConverter.GetBytes(VmVersion));
             bytes.AddRange(BitConverter.GetBytes(GasLimit));
             bytes.AddRange(BitConverter.GetBytes(GasPrice));
-            bytes.AddRange(ContractCode);
+            if (this.OpCodeType == OpcodeType.OP_CREATECONTRACT)
+            {
+                bytes.AddRange(ContractCode);
+            }
+            else
+            {
+                bytes.AddRange(To.ToBytes());
+                bytes.AddRange(Encoding.UTF8.GetBytes(MethodName));
+            }
             bytes.Add((byte)this.OpCodeType);
             return bytes;
+        }
+
+        /// <summary>
+        /// Could put this on the 'Transaction' object in NBitcoin if allowed
+        /// </summary>
+        /// <returns></returns>
+        public uint160 GetNewContractAddress()
+        {
+            return new uint160(HashHelper.Keccak256(this.Hash.ToBytes()).Take(20).ToArray());
         }
     }
 }

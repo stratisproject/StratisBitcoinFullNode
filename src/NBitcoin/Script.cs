@@ -317,7 +317,8 @@ namespace NBitcoin
 
         // smart contracts
         OP_CREATECONTRACT = 0xc0,
-        OP_CALLCONTRACT = 0xc1
+        OP_CALLCONTRACT = 0xc1,
+        OP_SPEND = 0xc2
     };
 
     public enum HashVersion

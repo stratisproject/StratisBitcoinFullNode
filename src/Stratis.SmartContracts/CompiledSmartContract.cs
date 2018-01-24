@@ -33,8 +33,14 @@ namespace Stratis.SmartContracts
             GasUsed += spend;
         }
 
+        protected void Transfer(Address addressTo, ulong amount)
+        {
+            PersistentState.StateDb.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
+        }
+
         protected object Call(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
         {
+            throw new NotImplementedException();
             var contractCode = PersistentState.StateDb.GetCode(addressTo.ToUint160());
 
             if (Balance < amount)

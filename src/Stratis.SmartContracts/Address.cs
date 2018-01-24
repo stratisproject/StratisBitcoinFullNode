@@ -18,7 +18,9 @@ namespace Stratis.SmartContracts
             throw new NotImplementedException("Need to convert the string to a numeric representation");
         }
 
-        public Address(uint160 numeric)
+        public Address(ulong numeric) : this( (uint160) numeric) { }
+
+        internal Address(uint160 numeric)
         {
             this.numeric = numeric;
         }
