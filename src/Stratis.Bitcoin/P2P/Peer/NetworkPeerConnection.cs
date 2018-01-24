@@ -351,7 +351,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="payload">Payload of the message to send.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the sending operation.</param>
-        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected 
+        /// or the cancellation token has been cancelled or another error occurred.</param>
         public async Task SendAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
@@ -366,7 +367,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-
                 var message = new Message
                 {
                     Magic = this.peer.Network.Magic,
@@ -389,30 +389,31 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.peer.Counter.AddWritten(bytes.Length);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                this.CallShutdown();
+                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
+                throw;
+            }
             catch (Exception ex)
             {
-                if (ex is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Sending cancelled.");
-                }
-                else
-                {
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    if (this.peer.DisconnectReason == null)
+                if (this.peer.DisconnectReason == null)
+                {
+                    this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
-                        this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                        {
-                            Reason = "Unexpected exception while sending a message",
-                            Exception = ex
-                        };
-                    }
-
-                    if (this.peer.State != NetworkPeerState.Offline)
-                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
+                        Reason = "Unexpected exception while sending a message",
+                        Exception = ex
+                    };
                 }
+
+                if (this.peer.State != NetworkPeerState.Offline)
+                    this.setPeerStateOnShutdown = NetworkPeerState.Failed;
 
                 this.CallShutdown();
+                this.logger.LogTrace("(-)[EXCEPTION]");
+                throw new OperationCanceledException();
             }
             finally
             {
