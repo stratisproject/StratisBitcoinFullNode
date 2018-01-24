@@ -132,6 +132,38 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             Assert.NotNull(transactionExpected.MerkleProof);
         }
 
+        [Fact]
+        [Trait("Module", "WatchOnlyWalletManager")]
+        public void Given_AWatchedAddress_When_ATransactionIsReceivedInABlock_ThenCanCalculateRelativeBalance()
+        {
+            // Arrange.
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            // Create the wallet to watch.
+            var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
+
+            // Create the address to watch.
+            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;
+            string newAddress = newScript.GetDestinationAddress(Network.TestNet).ToString();
+
+            // Create a transaction to be received.
+            string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
+            Transaction transaction = new Transaction(transactionHex);
+            var block = new Block();
+            block.AddTransaction(transaction);
+            block.UpdateMerkleRoot();
+
+            // Act.
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            walletManager.Initialize();
+            walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
+            walletManager.ProcessBlock(block);
+
+            // Assert.
+            Money balance = walletManager.GetRelativeBalance("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
+            Assert.Equal(Money.Coins(1.60128533m), balance);
+        }
+
         /// <summary>
         /// Helper method that constructs a <see cref="WatchOnlyWallet"/> object and saved it to the file system.
         /// </summary>
@@ -161,6 +193,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 
             wallet.WatchedAddresses[script.ToString()].Transactions.AddOrReplace(transactionHash.ToString(), new TransactionData
             {
+                Id = Transaction.Parse(transactionHex).GetHash(),
                 BlockHash = uint256.Zero,
                 Hex = transactionHex
             });
