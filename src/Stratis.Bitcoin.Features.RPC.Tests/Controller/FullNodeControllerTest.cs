@@ -23,7 +23,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
-    public class FullNodeControllerTest : LogsTestBase
+    public class FullNodeControllerTest : LogsTestBase, IDisposable
     {
         private ConcurrentChain chain;
 
@@ -33,16 +33,26 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         private Network network;
         private NodeSettings nodeSettings;
         private FullNodeController controller;
+        private bool initialBlockSignature;
 
         public FullNodeControllerTest()
         {
+            this.initialBlockSignature = Block.BlockSignature;
+
+            Block.BlockSignature = false;
+
             this.fullNode = new Mock<IFullNode>();
             this.chainState = new Mock<IChainState>();
             this.connectionManager = new Mock<IConnectionManager>();
-            this.network = Network.StratisTest;
+            this.network = Network.TestNet;
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
             this.nodeSettings = new NodeSettings();
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = this.initialBlockSignature;
         }
 
         [Fact]
@@ -492,7 +502,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetInfo_MainNet_ReturnsInfoModel()
         {
-            this.network = Network.StratisMain;
+            this.network = Network.Main;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();

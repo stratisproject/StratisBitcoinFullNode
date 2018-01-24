@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -12,28 +13,38 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CallWithDependencies()
         {
-            string dir = CreateTestDir(this);
-            IFullNode fullNode = this.BuildServicedNode(dir);
-            FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
+            var initialBlockSignature = Block.BlockSignature;
 
-            Assert.NotNull(fullNode.NodeService<INetworkDifficulty>(true));
+            try
+            {
+                Block.BlockSignature = false;
+                string dir = CreateTestDir(this);
+                IFullNode fullNode = this.BuildServicedNode(dir);
+                FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
 
-            GetInfoModel info = controller.GetInfo();
+                Assert.NotNull(fullNode.NodeService<INetworkDifficulty>(true));
 
-            NodeSettings nodeSettings = NodeSettings.Default();
-            uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
-            var expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
-            Assert.NotNull(info);
-            Assert.Equal(0, info.Blocks);
-            Assert.NotEqual<uint>(0, info.Version);
-            Assert.Equal(expectedProtocolVersion, info.ProtocolVersion);
-            Assert.Equal(0, info.TimeOffset);
-            Assert.Equal(0, info.Connections);
-            Assert.NotNull(info.Proxy);
-            Assert.Equal(0, info.Difficulty);
-            Assert.False(info.Testnet);
-            Assert.Equal(expectedRelayFee, info.RelayFee);
-            Assert.Empty(info.Errors);
+                GetInfoModel info = controller.GetInfo();
+
+                NodeSettings nodeSettings = NodeSettings.Default();
+                uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
+                var expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
+                Assert.NotNull(info);
+                Assert.Equal(0, info.Blocks);
+                Assert.NotEqual<uint>(0, info.Version);
+                Assert.Equal(expectedProtocolVersion, info.ProtocolVersion);
+                Assert.Equal(0, info.TimeOffset);
+                Assert.Equal(0, info.Connections);
+                Assert.NotNull(info.Proxy);
+                Assert.Equal(0, info.Difficulty);
+                Assert.False(info.Testnet);
+                Assert.Equal(expectedRelayFee, info.RelayFee);
+                Assert.Empty(info.Errors);
+            }
+            finally
+            {
+                Block.BlockSignature = initialBlockSignature;
+            }
         }
     }
 }

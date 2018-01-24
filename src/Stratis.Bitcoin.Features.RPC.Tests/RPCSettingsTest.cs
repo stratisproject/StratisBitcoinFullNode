@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Tests;
@@ -11,28 +12,39 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         [Fact]
         public void CanSpecifyRPCSettings()
         {
-            var dir = CreateTestDir(this);
+            var initialBlockSignature = Block.BlockSignature;
 
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
+            try
+            {
+                Block.BlockSignature = false;
+                var dir = CreateTestDir(this);                
 
-            var node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseConsensus()
-                .AddRPC(x =>
-                {
-                    x.RpcUser = "abc";
-                    x.RpcPassword = "def";
-                    x.RPCPort = 91;
-                })
-                .Build();
+                NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
 
-            var settings = node.NodeService<RpcSettings>();
+                var node = new FullNodeBuilder()
+                    .UseNodeSettings(nodeSettings)
+                    .UseConsensus()
+                    .AddRPC(x =>
+                    {
+                        x.RpcUser = "abc";
+                        x.RpcPassword = "def";
+                        x.RPCPort = 91;
+                    })
+                    .Build();
 
-            settings.Load(nodeSettings);
+                var settings = node.NodeService<RpcSettings>();
 
-            Assert.Equal("abc", settings.RpcUser);
-            Assert.Equal("def", settings.RpcPassword);
-            Assert.Equal(91, settings.RPCPort);
+                settings.Load(nodeSettings);
+
+                Assert.Equal("abc", settings.RpcUser);
+                Assert.Equal("def", settings.RpcPassword);
+                Assert.Equal(91, settings.RPCPort);
+            }
+            finally
+            {
+                Block.BlockSignature = initialBlockSignature;
+            }
+            
         }
     }
 }

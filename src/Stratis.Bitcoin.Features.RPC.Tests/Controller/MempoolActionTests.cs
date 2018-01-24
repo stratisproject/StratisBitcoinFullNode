@@ -12,13 +12,23 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task CanCall_GetRawMempoolAsync()
         {
-            string dir = CreateTestDir(this);
-            IFullNode fullNode = this.BuildServicedNode(dir);
-            MempoolController controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
+            var initialBlockSignature = Block.BlockSignature;
 
-            List<uint256> result = await controller.GetRawMempool();
+            try
+            {
+                Block.BlockSignature = false;
+                string dir = CreateTestDir(this);
+                IFullNode fullNode = this.BuildServicedNode(dir);
+                MempoolController controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
 
-            Assert.NotNull(result);
+                List<uint256> result = await controller.GetRawMempool();
+
+                Assert.NotNull(result);
+            }
+            finally
+            {
+                Block.BlockSignature = initialBlockSignature;
+            }
         }
     }
 }
