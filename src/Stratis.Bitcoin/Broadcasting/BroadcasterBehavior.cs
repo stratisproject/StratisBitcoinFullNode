@@ -53,13 +53,8 @@ namespace Stratis.Bitcoin.Broadcasting
             {
                 await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
-            catch (OperationCanceledException opx)
+            catch (OperationCanceledException)
             {
-                if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedPeer?.IsConnected ?? false)
-                        throw;
-
-                // do nothing
             }
             catch (Exception ex)
             {

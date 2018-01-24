@@ -115,8 +115,14 @@ namespace Stratis.Bitcoin.Base
             {
                 this.logger.LogTrace("()");
 
-                if (this.AutoSync)
-                    await this.TrySyncAsync().ConfigureAwait(false);
+                try
+                {
+                    if (this.AutoSync)
+                        await this.TrySyncAsync().ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
 
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
@@ -425,7 +431,13 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            await this.TrySyncAsync().ConfigureAwait(false);
+            try
+            {
+                await this.TrySyncAsync().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
 
             this.logger.LogTrace("(-)");
         }

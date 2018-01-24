@@ -47,16 +47,10 @@ namespace Stratis.Bitcoin.Features.Notifications
         {
             try
             {
-                //Guard.Assert(node == this.AttachedNode); // just in case
                 await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
-            catch (OperationCanceledException opx)
+            catch (OperationCanceledException)
             {
-                if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedPeer?.IsConnected ?? false)
-                        throw;
-
-                // do nothing
             }
             catch (Exception ex)
             {
@@ -68,23 +62,20 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
-            // check the type of message received.
-            // we're only interested in Inventory and Transaction messages.
-            var invPayload = message.Message.Payload as InvPayload;
-            if (invPayload != null)
+            // Check the type of message received.
+            // We're only interested in Inventory and Transaction messages.
+            switch (message.Message.Payload)
             {
-                return this.ProcessInvAsync(peer, invPayload);
-            }
+                case InvPayload invPayload:
+                    await this.ProcessInvAsync(peer, invPayload).ConfigureAwait(false);
+                    break;
 
-            var txPayload = message.Message.Payload as TxPayload;
-            if (txPayload != null)
-            {
-                this.ProcessTxPayload(txPayload);
+                case TxPayload txPayload:
+                    this.ProcessTxPayload(txPayload);
+                    break;
             }
-
-            return Task.CompletedTask;
         }
 
         private void ProcessTxPayload(TxPayload txPayload)

@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
@@ -61,17 +62,23 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            if (peer.State == NetworkPeerState.HandShaked)
+            try
             {
-                this.ConnectionManager.AddConnectedPeer(peer);
-                this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
-                await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
-            }
+                if (peer.State == NetworkPeerState.HandShaked)
+                {
+                    this.ConnectionManager.AddConnectedPeer(peer);
+                    this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
+                    await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
+                }
 
-            if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
+                if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
+                {
+                    this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
+                    this.ConnectionManager.RemoveConnectedPeer(peer, "Peer offline");
+                }
+            }
+            catch (OperationCanceledException)
             {
-                this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
-                this.ConnectionManager.RemoveConnectedPeer(peer, "Peer offline");
             }
 
             this.logger.LogTrace("(-)");

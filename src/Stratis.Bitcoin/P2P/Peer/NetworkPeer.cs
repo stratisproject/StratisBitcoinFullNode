@@ -456,7 +456,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         break;
                 }
             }
-            catch (Exception)
+            catch
             {
                 this.logger.LogDebug("Exception occurred while processing a message from the peer. Connection has been closed and message won't be processed further.");
                 this.logger.LogTrace("(-)[EXCEPTION_PROCESSING]");
