@@ -132,6 +132,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                     peer.SendMessageAsync(this.currentPing).GetAwaiter().GetResult();
                     this.pingTimeoutTimer = new Timer(PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
+                catch (OperationCanceledException)
+                {
+                }
                 finally
                 {
                     Monitor.Exit(this.cs);
