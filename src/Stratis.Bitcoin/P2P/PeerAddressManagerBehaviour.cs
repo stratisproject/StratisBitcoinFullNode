@@ -69,6 +69,12 @@ namespace Stratis.Bitcoin.P2P
                     var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
                     peer.SendMessageVoidAsync(addressPayload);
                 }
+
+                if (message.Message.Payload is PingPayload pingPong)
+                {
+                    if (this.AttachedPeer.State == NetworkPeerState.HandShaked)
+                        this.peerAddressManager.PeerSeen(this.AttachedPeer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
+                }
             }
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)

@@ -54,6 +54,15 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
 
         /// <summary>
+        /// The last time this peer was seen.
+        /// <para>
+        /// This is set via <see cref="Protocol.Behaviors.PingPongBehavior"/> to ensure that a peer is live.
+        /// </para>
+        /// </summary>
+        [JsonProperty(PropertyName = "lastSeen", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? LastSeen { get; private set; }
+
+        /// <summary>
         /// <c>True</c> if the peer has had connection attempts but none successful.
         /// </summary>
         [JsonIgnore]
@@ -162,6 +171,12 @@ namespace Stratis.Bitcoin.P2P
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
             this.LastConnectionHandshake = peerHandshakedAt;
+        }
+
+        /// <summary>Sets the <see cref="LastSeen"/> date.</summary>
+        internal void SetLastSeen(DateTime lastSeenAt)
+        {
+            this.LastSeen = lastSeenAt;
         }
 
         /// <summary>
