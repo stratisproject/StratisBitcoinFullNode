@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Indicates that the stake flag is in progress.</summary>
         public const int StakeInProgress = 1;
 
-        /// <summary>Indicates that stake is in progress.</summary>
+        /// <summary>a flag that indicates if stake is on/off based on the <see cref="StakeInProgress"/> and <see cref="StakeNotInProgress"/> constants.</summary>
         private int stakeProgressFlag;
 
         /// <summary>
