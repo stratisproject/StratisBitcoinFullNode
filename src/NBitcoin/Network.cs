@@ -283,7 +283,7 @@ namespace NBitcoin
 
         public string Name { get; private set; }
 
-        /// <summary> The name of the root folder containing the different blockchains. </summary>
+        /// <summary> The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis). </summary>
         public string RootFolderName { get; private set; }
 
         /// <summary> The default name used for the network configuration file. </summary>
