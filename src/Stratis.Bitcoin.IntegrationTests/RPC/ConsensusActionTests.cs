@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
+namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class ConsensusActionTests : BaseRPCControllerTest
     {

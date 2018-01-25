@@ -4,7 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
+namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class AddNodeActionTest : BaseRPCControllerTest
     {

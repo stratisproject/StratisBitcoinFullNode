@@ -2,10 +2,11 @@
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Tests;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests
+namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class RPCSettingsTest : TestBase
     {
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             try
             {
                 Block.BlockSignature = false;
-                var dir = CreateTestDir(this);                
+                var dir = CreateTestDir(this);
 
                 NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
 
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             {
                 Block.BlockSignature = initialBlockSignature;
             }
-            
+
         }
     }
 }

@@ -5,7 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
+namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class MempoolActionTests : BaseRPCControllerTest
     {

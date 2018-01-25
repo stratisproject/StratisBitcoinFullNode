@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
+namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class GetInfoActionTests : BaseRPCControllerTest
     {
