@@ -35,28 +35,22 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void AttachCore()
         {
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         protected override void DetachCore()
         {
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
-        private async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             try
             {
-                //Guard.Assert(node == this.AttachedNode); // just in case
-                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
-            catch (OperationCanceledException opx)
+            catch (OperationCanceledException)
             {
-                if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedPeer?.IsConnected ?? false)
-                        throw;
-
-                // do nothing
             }
             catch (Exception ex)
             {
@@ -68,23 +62,20 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
+        private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
-            // check the type of message received.
-            // we're only interested in Inventory and Transaction messages.
-            var invPayload = message.Message.Payload as InvPayload;
-            if (invPayload != null)
+            // Check the type of message received.
+            // We're only interested in Inventory and Transaction messages.
+            switch (message.Message.Payload)
             {
-                return this.ProcessInvAsync(node, invPayload);
-            }
+                case InvPayload invPayload:
+                    await this.ProcessInvAsync(peer, invPayload).ConfigureAwait(false);
+                    break;
 
-            var txPayload = message.Message.Payload as TxPayload;
-            if (txPayload != null)
-            {
-                this.ProcessTxPayload(txPayload);
+                case TxPayload txPayload:
+                    this.ProcessTxPayload(txPayload);
+                    break;
             }
-
-            return Task.CompletedTask;
         }
 
         private void ProcessTxPayload(TxPayload txPayload)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -40,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var networkPeer = new NetworkPeer(networkAddress.Endpoint, this.network, new NetworkPeerConnectionParameters(), this.networkPeerFactory, DateTimeProvider.Default, this.extendedLoggerFactory);
-            networkPeer.State = NetworkPeerState.HandShaked;
+            networkPeer.SetStateAsync(NetworkPeerState.HandShaked).GetAwaiter().GetResult();
 
             var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer);
@@ -48,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var message = new IncomingMessage(new PingPayload(), this.network);
 
             //Trigger the event handler
-            networkPeer.ProcessMessageAsync(message, CancellationToken.None).GetAwaiter().GetResult();
+            networkPeer.MessageReceived.ExecuteCallbacksAsync(networkPeer, message).GetAwaiter().GetResult();
 
             var peer = addressManager.FindPeer(networkAddress.Endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);
@@ -65,7 +64,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var networkPeer = new NetworkPeer(networkAddress.Endpoint, this.network, new NetworkPeerConnectionParameters(), this.networkPeerFactory, DateTimeProvider.Default, this.extendedLoggerFactory);
-            networkPeer.State = NetworkPeerState.HandShaked;
+            networkPeer.SetStateAsync(NetworkPeerState.HandShaked).GetAwaiter().GetResult();
 
             var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer);
@@ -73,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var message = new IncomingMessage(new PongPayload(), this.network);
 
             //Trigger the event handler
-            networkPeer.ProcessMessageAsync(message, CancellationToken.None).GetAwaiter().GetResult();
+            networkPeer.MessageReceived.ExecuteCallbacksAsync(networkPeer, message).GetAwaiter().GetResult();
 
             var peer = addressManager.FindPeer(networkAddress.Endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);

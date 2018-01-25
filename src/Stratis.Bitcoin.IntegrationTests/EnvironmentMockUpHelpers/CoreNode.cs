@@ -423,11 +423,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 {
                     // Get before last so, at the end, we should only receive 1 header equals to this one (so we will not have race problems with concurrent GetChains).
                     BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
-                    peer.SendMessageVoidAsync(new GetHeadersPayload()
+                    peer.SendMessageAsync(new GetHeadersPayload()
                     {
                         BlockLocators = awaited,
                         HashStop = hashStop
-                    });
+                    }).GetAwaiter().GetResult();
 
                     while (true)
                     {
