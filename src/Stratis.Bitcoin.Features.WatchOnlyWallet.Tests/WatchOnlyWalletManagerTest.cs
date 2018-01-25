@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             // Create the wallet to watch.
-            var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
+            WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
             // Create the address to watch.
             Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;

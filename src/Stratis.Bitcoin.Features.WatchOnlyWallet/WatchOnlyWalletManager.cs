@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// This includes both transactions under watched addresses, as well as stored
         /// transactions.
         /// </summary>
-        internal Dictionary<uint256, TransactionData> txLookup;
+        private Dictionary<uint256, TransactionData> txLookup;
 
         public WatchOnlyWalletManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
         {
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             // load the watch only wallet into memory
             this.Wallet = this.LoadWatchOnlyWallet();
 
-            LoadTransactionLookup();
+            this.LoadTransactionLookup();
         }
 
         /// <inheritdoc />
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
             this.Wallet.WatchedTransactions.TryGetValue(transactionHash.ToString(), out TransactionData existingWatchedTransaction);
 
-            if (existingWatchedTransaction != null)
+            if (existingWatchedTransaction != null && block != null)
             {
                 // The transaction was previously stored, in an unconfirmed state.
                 // So now update the block hash and Merkle proof since it has
@@ -267,17 +267,17 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private void LoadTransactionLookup()
         {
             var lookup = new Dictionary<uint256, TransactionData>();
-            var watchOnlyWallet = this.GetWatchOnlyWallet();
+            WatchOnlyWallet watchOnlyWallet = this.GetWatchOnlyWallet();
 
-            foreach (var address in watchOnlyWallet.WatchedAddresses.Values)
+            foreach (WatchedAddress address in watchOnlyWallet.WatchedAddresses.Values)
             {
-                foreach (var transaction in address.Transactions.Values)
+                foreach (TransactionData transaction in address.Transactions.Values)
                 {
                     lookup.Add(transaction.Id, transaction);
                 }
             }
 
-            foreach (var transaction in watchOnlyWallet.WatchedTransactions.Values)
+            foreach (TransactionData transaction in watchOnlyWallet.WatchedTransactions.Values)
             {
                 // It is conceivable that a transaction could be both watched
                 // in isolation and watched as a transaction under one or
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     // the watched transaction than the watched address.
                     // If there is, use the watched transaction instead.
 
-                    var existingTx = lookup[transaction.Id];
+                    TransactionData existingTx = lookup[transaction.Id];
 
                     if ((existingTx.MerkleProof == null && transaction.MerkleProof != null) ||
                         (existingTx.BlockHash == null && transaction.BlockHash != null))
@@ -372,7 +372,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <param name="address">The Base58 representation of the address to interrogate</param>
         public Money GetRelativeBalance(string address)
         {
-            var scriptToCheck = BitcoinAddress.Create(address, this.network).ScriptPubKey;
+            Script scriptToCheck = BitcoinAddress.Create(address, this.network).ScriptPubKey;
 
             Money balance = new Money(0);
 
@@ -380,7 +380,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 // Returning zero would be misleading.
                 return null;
 
-            foreach (var transaction in this.Wallet.WatchedAddresses[scriptToCheck.ToString()].Transactions.Values)
+            foreach (TransactionData transaction in this.Wallet.WatchedAddresses[scriptToCheck.ToString()].Transactions.Values)
             {
                 foreach (TxIn input in transaction.Transaction.Inputs)
                 {
@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 }
 
                 // Check if the outputs contain the watched address
-                foreach (var output in transaction.Transaction.Outputs)
+                foreach (TxOut output in transaction.Transaction.Outputs)
                 {
                     if (output.ScriptPubKey == scriptToCheck)
                     {
