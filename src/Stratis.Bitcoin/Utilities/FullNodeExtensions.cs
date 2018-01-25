@@ -34,13 +34,13 @@ namespace Stratis.Bitcoin.Utilities
                             Console.WriteLine(exception.Message);
                         }
                     }
-
+                    
                     done.Wait();
                 };
-#if !NOASSEMBLYCONTEXT
+
                 var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
                 assemblyLoadContext.Unloading += context => shutdown();
-#endif
+
                 Console.CancelKeyPress += (sender, eventArgs) =>
                 {
                     shutdown();
@@ -48,8 +48,14 @@ namespace Stratis.Bitcoin.Utilities
                     eventArgs.Cancel = true;
                 };
 
-                await node.RunAsync(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.").ConfigureAwait(false);
-                done.Set();
+                try
+                {
+                    await node.RunAsync(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.").ConfigureAwait(false);
+                }
+                finally
+                {
+                    done.Set();
+                }
             }
         }
 
@@ -63,7 +69,7 @@ namespace Stratis.Bitcoin.Utilities
         public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
         {
             node.Start();
-
+            
             if (!string.IsNullOrEmpty(shutdownMessage))
             {
                 Console.WriteLine();

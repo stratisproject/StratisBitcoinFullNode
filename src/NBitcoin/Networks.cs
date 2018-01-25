@@ -26,6 +26,18 @@ namespace NBitcoin
             Block.BlockSignature = saveSig;
         }
 
+        /// <summary> The name of the root folder containing the different Bitcoin blockchains (Main, TestNet, RegTest). </summary>
+        public const string BitcoinRootFolderName = "bitcoin";
+
+        /// <summary> The default name used for the Bitcoin configuration file. </summary>
+        public const string BitcoinDefaultConfigFilename = "bitcoin.conf";
+
+        /// <summary> The name of the root folder containing the different Stratis blockchains (StratisMain, StratisTest, StratisRegTest). </summary>
+        public const string StratisRootFolderName = "stratis";
+
+        /// <summary> The default name used for the Stratis configuration file. </summary>
+        public const string StratisDefaultConfigFilename = "stratis.conf";
+
         public static Network Main => Network.GetNetwork("Main") ?? InitMain();
 
         public static Network TestNet => Network.GetNetwork("TestNet") ?? InitTest();
@@ -40,9 +52,12 @@ namespace NBitcoin
 
         private static Network InitMain()
         {
-            Network network = new Network();
-
-            network.Name = "Main";
+            Network network = new Network
+            {
+                Name = "Main",
+                RootFolderName = BitcoinRootFolderName,
+                DefaultConfigFilename = BitcoinDefaultConfigFilename
+            };
 
             Consensus consensus = network.consensus;
 
@@ -134,9 +149,12 @@ namespace NBitcoin
 
         private static Network InitTest()
         {
-            Network network = new Network();
-
-            network.Name = "TestNet";
+            Network network = new Network
+            {
+                Name = "TestNet",
+                RootFolderName = BitcoinRootFolderName,
+                DefaultConfigFilename = BitcoinDefaultConfigFilename
+            };
 
             network.consensus.SubsidyHalvingInterval = 210000;
             network.consensus.MajorityEnforceBlockUpgrade = 51;
@@ -207,9 +225,13 @@ namespace NBitcoin
 
         private static Network InitReg()
         {
-            Network network = new Network();
-
-            network.Name = "RegTest";
+            Network network = new Network
+            {
+                Name = "RegTest",
+                RootFolderName = BitcoinRootFolderName,
+                DefaultConfigFilename = BitcoinDefaultConfigFilename
+            };
+            
             network.consensus.SubsidyHalvingInterval = 150;
             network.consensus.MajorityEnforceBlockUpgrade = 750;
             network.consensus.MajorityRejectBlockOutdated = 950;
@@ -322,6 +344,8 @@ namespace NBitcoin
 
             var builder = new NetworkBuilder()
                 .SetName("StratisMain")
+                .SetRootFolderName(StratisRootFolderName)
+                .SetDefaultConfigFilename(StratisDefaultConfigFilename)
                 .SetConsensus(consensus)
                 .SetMagic(magic)
                 .SetGenesis(genesis)
@@ -403,6 +427,8 @@ namespace NBitcoin
 
             var builder = new NetworkBuilder()
                 .SetName("StratisTest")
+                .SetRootFolderName(StratisRootFolderName)
+                .SetDefaultConfigFilename(StratisDefaultConfigFilename)
                 .SetConsensus(consensus)
                 .SetMagic(magic)
                 .SetGenesis(genesis)
@@ -464,6 +490,8 @@ namespace NBitcoin
 
             var builder = new NetworkBuilder()
                 .SetName("StratisRegTest")
+                .SetRootFolderName(StratisRootFolderName)
+                .SetDefaultConfigFilename(StratisDefaultConfigFilename)
                 .SetConsensus(consensus)
                 .SetMagic(magic)
                 .SetGenesis(genesis)
