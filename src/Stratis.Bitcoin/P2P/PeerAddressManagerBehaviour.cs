@@ -70,10 +70,11 @@ namespace Stratis.Bitcoin.P2P
                     peer.SendMessageVoidAsync(addressPayload);
                 }
 
-                if (message.Message.Payload is PingPayload pingPong)
+                if (message.Message.Payload is PingPayload ping ||
+                    message.Message.Payload is PongPayload pong)
                 {
-                    if (this.AttachedPeer.State == NetworkPeerState.HandShaked)
-                        this.peerAddressManager.PeerSeen(this.AttachedPeer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
+                    if (peer.State == NetworkPeerState.HandShaked)
+                        this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
                 }
             }
 
