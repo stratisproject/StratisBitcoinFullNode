@@ -14,10 +14,11 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SCConsensusValidator : PowConsensusValidator
+    public class SmartContractConsensusValidator : PowConsensusValidator
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly SmartContractValidator smartContractValidator;
         private readonly SmartContractGasInjector smartContractGasInjector;
 
-        public SCConsensusValidator(
+        public SmartContractConsensusValidator(
             Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
@@ -254,7 +255,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 ContractTypeName = decomp.ContractType.Name 
             });
 
-
+            IList<TransferInfo> transfers = this.state.GetTransfers();
+            CondensingTx condensingTx = new CondensingTx(transfers, transaction);
+            Transaction newTx = condensingTx.CreateCondensingTx();
+            context.BlockValidationContext.Block.AddTransaction(newTx);
         }
     }
 }

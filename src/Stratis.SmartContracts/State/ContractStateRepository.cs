@@ -18,6 +18,7 @@ namespace Stratis.SmartContracts.State
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
 
         protected List<TransferInfo> transfers;
+        protected Dictionary<uint160, Vin> cacheUTXO;
 
         protected ContractStateRepository() { }
 
@@ -161,9 +162,9 @@ namespace Stratis.SmartContracts.State
             });
         }
 
-        public Vin Vin(uint160 address)
+        public IList<TransferInfo> GetTransfers()
         {
-            throw new NotImplementedException();
+            return this.transfers;
         }
 
         #endregion

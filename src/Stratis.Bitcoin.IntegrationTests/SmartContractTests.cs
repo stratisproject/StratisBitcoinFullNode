@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                             new SmartContractDeterminismValidator()
                         });
                 SmartContractGasInjector gasInjector = new SmartContractGasInjector();
-                SCConsensusValidator consensusValidator = new SCConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, smartContractDecompiler, validator, gasInjector);
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, smartContractDecompiler, validator, gasInjector);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
@@ -324,10 +324,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx2.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
             tx2.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction.ToBytes())));
 
+            // this is tough cos we need to add transactions to the block after-the-fact
+
             uint256 hashTx2 = tx2.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx2));
             var pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate.Block.Header);
+            context.chain.SetTip(pblocktemplate2.Block.Header);
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             // Now that it works - we will need to actually test that the transfer produced the required effect.
         }

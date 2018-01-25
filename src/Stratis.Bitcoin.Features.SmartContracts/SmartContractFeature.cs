@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         byte[] root = null; 
                         ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
                         services.AddSingleton<IContractStateRepository>(repository);
-                        services.AddSingleton<PowConsensusValidator, SCConsensusValidator>();
+                        services.AddSingleton<PowConsensusValidator, SmartContractConsensusValidator>();
                     });
             });
             return fullNodeBuilder;

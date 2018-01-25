@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         // Add a tx to the block.
-        private void AddToBlock(TxMempoolEntry iter)
+        protected virtual void AddToBlock(TxMempoolEntry iter)
         {
             this.logger.LogTrace("({0}.{1}:'{2}')", nameof(iter), nameof(iter.TransactionHash), iter.TransactionHash);
 
