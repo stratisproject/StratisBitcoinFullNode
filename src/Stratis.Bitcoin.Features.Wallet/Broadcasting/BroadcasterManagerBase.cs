@@ -74,16 +74,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
             var invPayload = new InvPayload(transaction);
 
-            foreach (var peer in peers)
+            foreach (NetworkPeer peer in peers)
             {
-                await peer.SendMessageAsync(invPayload);
+                try
+                {
+                    await peer.SendMessageAsync(invPayload).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
             }
         }
 
         protected bool IsPropagated(Transaction transaction)
         {
             TransactionBroadcastEntry broadcastEntry = this.GetTransaction(transaction.GetHash());
-            return broadcastEntry != null && broadcastEntry.State == State.Propagated;
+            return (broadcastEntry != null) && (broadcastEntry.State == State.Propagated);
         }
     }
 }
