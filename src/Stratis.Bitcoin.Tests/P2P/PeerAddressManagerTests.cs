@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var applicableDate = DateTime.UtcNow.Date;
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
 
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var applicableDate = DateTime.UtcNow.Date;
