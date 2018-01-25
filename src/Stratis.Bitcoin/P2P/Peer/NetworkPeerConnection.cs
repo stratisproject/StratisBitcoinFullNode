@@ -172,17 +172,16 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
-                    this.peer.LastSeen = this.dateTimeProvider.GetUtcNow();
                     this.peer.Counter.AddRead(message.MessageSize);
 
-                    var incommingMessage = new IncomingMessage()
+                    var incomingMessage = new IncomingMessage()
                     {
                         Message = message,
                         Length = message.MessageSize,
                         NetworkPeer = this.peer
                     };
 
-                    this.MessageProducer.PushMessage(incommingMessage);
+                    this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
             catch (Exception ex)

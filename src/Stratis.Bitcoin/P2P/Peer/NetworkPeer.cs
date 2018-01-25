@@ -138,9 +138,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>IP address and port on the side of the peer.</summary>
         public IPEndPoint PeerEndPoint { get; private set; }
 
-        /// <summary>Last time in UTC the node received something from this peer.</summary>
-        public DateTime LastSeen { get; set; }
-
         /// <summary>Difference between the local clock and the clock that peer claims, or <c>null</c> if this information has not been initialized yet.</summary>
         public TimeSpan? TimeOffset { get; private set; }
 
@@ -267,7 +264,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.State = NetworkPeerState.Offline;
             this.Inbound = inbound;
-            this.LastSeen = this.dateTimeProvider.GetUtcNow();
             this.PeerEndPoint = peerEndPoint;
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
