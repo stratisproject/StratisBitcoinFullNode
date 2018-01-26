@@ -50,24 +50,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
         private readonly CancellationTokenSource serverCancel;
 
-        /// <summary>Nonce for server's version payload.</summary>
-        private ulong nonce;
-        /// <summary>Nonce for server's version payload.</summary>
-        public ulong Nonce
-        {
-            get
-            {
-                if (this.nonce == 0)
-                    this.nonce = RandomUtils.GetUInt64();
-
-                return this.nonce;
-            }
-            set
-            {
-                this.nonce = value;
-            }
-        }
-
         /// <summary>List of active clients' connections mapped by their unique identifiers.</summary>
         private readonly ConcurrentDictionary<int, NetworkPeerConnection> connectionsById;
 
@@ -297,7 +279,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             IPEndPoint myExternal = this.ExternalEndpoint;
             NetworkPeerConnectionParameters param2 = this.InboundNetworkPeerConnectionParameters.Clone();
-            param2.Nonce = this.Nonce;
             param2.Version = this.Version;
             param2.AddressFrom = myExternal;
             return param2;
