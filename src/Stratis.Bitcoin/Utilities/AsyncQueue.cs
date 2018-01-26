@@ -20,6 +20,20 @@ namespace Stratis.Bitcoin.Utilities
     public class AsyncQueue<T> : IDisposable
     {
         /// <summary>
+        /// Execution context holding information about the current status of the execution
+        /// in order to recognize if <see cref="Dispose"/> was called within the callback method.
+        /// </summary>
+        private class AsyncContext
+        {
+            /// <summary>
+            /// Set to <c>true</c> if <see cref="Dispose"/> was called from within the callback routine,
+            /// set to <c>false</c> otherwise.
+            /// </summary>
+            /// <seealso cref="callbackExecutionInProgress"/>
+            public bool DisposeRequested { get; set; }
+        }
+
+        /// <summary>
         /// Represents a callback method to be executed when a new item is added to the queue.
         /// </summary>
         /// <param name="item">Newly added item.</param>
@@ -57,20 +71,13 @@ namespace Stratis.Bitcoin.Utilities
         private readonly bool callbackMode;
 
         /// <summary>
-        /// Set to <c>true</c> if the queue is operating in callback mode and the current async execution context is the one that executes the callbacks,
-        /// set to <c>false</c> otherwise.
+        /// Async context to allow to recognize whether <see cref="Dispose"/> was called from within the callback routine.
+        /// <para>
+        /// Is not <c>null</c> if the queue is operating in callback mode and the current async execution context is the one that executes the callbacks,
+        /// set to <c>null</c> otherwise.
+        /// </para>
         /// </summary>
-        /// <remarks>
-        /// This allows <see cref="Dispose"/> to be called from within the callback routine.
-        /// </remarks>
-        private readonly AsyncLocal<bool> callbackExecutionInProgress;
-
-        /// <summary>
-        /// Set to <c>true</c> if <see cref="Dispose"/> was called from within the callback routine,
-        /// set to <c>false</c> otherwise.
-        /// </summary>
-        /// <seealso cref="callbackExecutionInProgress"/>
-        private readonly AsyncLocal<bool> disposeRequested;
+        private readonly AsyncLocal<AsyncContext> asyncContext;
 
         /// <summary>
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
@@ -84,9 +91,8 @@ namespace Stratis.Bitcoin.Utilities
             this.signal = new AsyncManualResetEvent();
             this.onEnqueueAsync = onEnqueueAsync;
             this.cancellationTokenSource = new CancellationTokenSource();
+            this.asyncContext = new AsyncLocal<AsyncContext>();
             this.ConsumerTask = this.callbackMode ? this.ConsumerAsync() : null;
-            this.callbackExecutionInProgress = new AsyncLocal<bool>() { Value = false };
-            this.disposeRequested = new AsyncLocal<bool>() { Value = false };
         }
 
         /// <summary>
@@ -111,6 +117,9 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         private async Task ConsumerAsync()
         {
+            // Set the context, so that Dispose called from callback will recognize it.
+            this.asyncContext.Value = new AsyncContext();
+
             bool callDispose = false;
             CancellationToken cancellationToken = this.cancellationTokenSource.Token;
             while (!callDispose && !cancellationToken.IsCancellationRequested)
@@ -124,13 +133,9 @@ namespace Stratis.Bitcoin.Utilities
                     T item;
                     while (this.TryDequeue(out item) && !cancellationToken.IsCancellationRequested)
                     {
-                        this.callbackExecutionInProgress.Value = true;
-
                         await this.onEnqueueAsync(item, cancellationToken).ConfigureAwait(false);
 
-                        this.callbackExecutionInProgress.Value = false;
-
-                        if (this.disposeRequested.Value)
+                        if (this.asyncContext.Value.DisposeRequested)
                         {
                             callDispose = true;
                             break;
@@ -219,11 +224,11 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this.callbackExecutionInProgress.Value)
+            if (this.asyncContext.Value != null)
             {
                 // We can't dispose now as we would end up in deadlock because we are called from within the callback.
                 // We just mark that dispose was requested and process with the dispose once we return from the callback.
-                this.disposeRequested.Value = true;
+                this.asyncContext.Value.DisposeRequested = true;
                 return;
             }
 
