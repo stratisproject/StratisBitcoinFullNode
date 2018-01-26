@@ -162,10 +162,11 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
                 return;
 
-            //Reset the attempted count if the last attempt was:
-            //1: More than 12 hours ago.
-            //2: More than 10 attempts was made.
-            if (peer.Attempted && peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-12) &&
+            //Reset the attempted count if:
+            //1: The last attempt was more than the threshold time ago.
+            //2: More than the threshold attempts was made.
+            if (peer.Attempted &&
+                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdTime) &&
                 peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)
             {
                 peer.ResetAttempts();

@@ -13,10 +13,15 @@ namespace Stratis.Bitcoin.P2P
     public sealed class PeerAddress
     {
         /// <summary>
-        /// The maximum amount of times a peer can be attempted within a
-        /// 12 hours period.
+        /// The maximum amount of times a peer can be attempted within a give time frame.
         /// </summary>
         internal static readonly int AttemptThreshold = 10;
+
+        /// <summary>
+        /// The amount of hours after which the peer's failed connection attempts
+        /// will be reset.
+        /// </summary>
+        internal static readonly int AttempThresholdTime = 12;
 
         /// <summary>EndPoint of this peer.</summary>
         [JsonProperty(PropertyName = "endpoint")]
@@ -138,7 +143,12 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
         /// <summary>
-        /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastAttempt"/>.
+        /// Resets the amount of <see cref="ConnectionAttempts"/>.
+        /// <para>
+        /// This is reset when the amount of failed connection attempts reaches 
+        /// the <see cref="PeerAddress.AttemptThreshold"/> and the last attempt was 
+        /// made more than <see cref="PeerAddress.AttempThresholdTime"/> ago.
+        /// </para>
         /// </summary>
         internal void ResetAttempts()
         {
