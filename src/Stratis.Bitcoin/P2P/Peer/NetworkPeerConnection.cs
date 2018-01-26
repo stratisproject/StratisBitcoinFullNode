@@ -77,10 +77,16 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Task completion that is completed when the work of the shutdown procedure is finished, including detaching from behaviors.</summary>
         /// <seealso cref="Shutdown"/>
+        /// <see cref="DisposeComplete"/>
         public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
 
+        /// <summary>Task completion that is completed when the work of <see cref="Dispose"/> is finished.</summary>
+        /// <remarks>Note that first, <see cref="ShutdownComplete"/> is completed and then some more disposing 
+        /// occurs in <see cref="Dispose"/>. Only when all disposing work is done, this source is completed.</remarks>
+        public TaskCompletionSource<bool> DisposeComplete { get; private set; }
+
         /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="shutdownCalled"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
-        private object shutdownLock = new object();
+        private readonly object shutdownLock;
 
         /// <summary>Set to <c>true</c> during the execution of shutdown procedure, <c>false</c> otherwise.</summary>
         /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
@@ -127,7 +133,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
             this.ShutdownComplete = new TaskCompletionSource<bool>();
+            this.DisposeComplete = new TaskCompletionSource<bool>();
 
+            this.shutdownLock = new object();
             this.writeLock = new AsyncLock();
 
             this.CancellationSource = new CancellationTokenSource();
@@ -164,17 +172,16 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
-                    this.peer.LastSeen = this.dateTimeProvider.GetUtcNow();
                     this.peer.Counter.AddRead(message.MessageSize);
 
-                    var incommingMessage = new IncomingMessage()
+                    var incomingMessage = new IncomingMessage()
                     {
                         Message = message,
                         Length = message.MessageSize,
                         NetworkPeer = this.peer
                     };
 
-                    this.MessageProducer.PushMessage(incommingMessage);
+                    this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
             catch (Exception ex)
@@ -258,7 +265,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Disconnect();
 
             if ((this.peer.State != NetworkPeerState.Failed) && (this.peer.State != this.setPeerStateOnShutdown))
-                this.peer.State = this.setPeerStateOnShutdown;
+                this.peer.SetStateAsync(this.setPeerStateOnShutdown).GetAwaiter().GetResult();
 
             foreach (INetworkPeerBehavior behavior in this.peer.Behaviors)
             {
@@ -330,7 +337,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception e)
             {
                 if (e is AggregateException) e = e.InnerException;
-                this.logger.LogDebug("Error connecting to '{0}', exception: {1}", endPoint, e.ToString());
+                this.logger.LogDebug("Error connecting to '{0}', exception message: {1}", endPoint, e.Message);
                 this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                 throw e;
             }
@@ -343,7 +350,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="payload">Payload of the message to send.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the sending operation.</param>
-        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected 
+        /// or the cancellation token has been cancelled or another error occurred.</param>
         public async Task SendAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
@@ -358,7 +366,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-
                 var message = new Message
                 {
                     Magic = this.peer.Network.Magic,
@@ -381,30 +388,31 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.peer.Counter.AddWritten(bytes.Length);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                this.CallShutdown();
+                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
+                throw;
+            }
             catch (Exception ex)
             {
-                if (ex is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Sending cancelled.");
-                }
-                else
-                {
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                    if (this.peer.DisconnectReason == null)
+                if (this.peer.DisconnectReason == null)
+                {
+                    this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
                     {
-                        this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                        {
-                            Reason = "Unexpected exception while sending a message",
-                            Exception = ex
-                        };
-                    }
-
-                    if (this.peer.State != NetworkPeerState.Offline)
-                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
+                        Reason = "Unexpected exception while sending a message",
+                        Exception = ex
+                    };
                 }
+
+                if (this.peer.State != NetworkPeerState.Offline)
+                    this.setPeerStateOnShutdown = NetworkPeerState.Failed;
 
                 this.CallShutdown();
+                this.logger.LogTrace("(-)[EXCEPTION]");
+                throw new OperationCanceledException();
             }
             finally
             {
@@ -636,6 +644,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.messageListener.Dispose();
 
             this.CancellationSource.Dispose();
+            this.writeLock.Dispose();
+
+            this.DisposeComplete.SetResult(true);
 
             this.logger.LogTrace("(-)");
         }

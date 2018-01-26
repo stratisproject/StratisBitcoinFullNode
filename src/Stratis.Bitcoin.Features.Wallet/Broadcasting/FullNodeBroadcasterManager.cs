@@ -29,10 +29,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 return;
 
             var state = new MempoolValidationState(false);
-            if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction))
+            if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
                 this.AddOrUpdate(transaction, State.CantBroadcast);
             else
-                await this.PropagateTransactionToPeersAsync(transaction, this.connectionManager.ConnectedPeers.ToList());
+                await this.PropagateTransactionToPeersAsync(transaction, this.connectionManager.ConnectedPeers.ToList()).ConfigureAwait(false);
         }
     }
 }

@@ -40,26 +40,21 @@ namespace Stratis.Bitcoin.Broadcasting
         }
 
         /// <summary>
-        /// Handler for processing incoming message from node.
+        /// Handler for processing incoming message from the peer.
         /// </summary>
-        /// <param name="node">Node sending the message.</param>
+        /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">Incoming message.</param>
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-        protected async void AttachedNode_MessageReceivedAsync(NetworkPeer node, IncomingMessage message)
+        protected async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             try
             {
-                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
-            catch (OperationCanceledException opx)
+            catch (OperationCanceledException)
             {
-                if (!opx.CancellationToken.IsCancellationRequested)
-                    if (this.AttachedPeer?.IsConnected ?? false)
-                        throw;
-
-                // do nothing
             }
             catch (Exception ex)
             {
@@ -72,17 +67,17 @@ namespace Stratis.Bitcoin.Broadcasting
         }
 
         /// <summary>
-        /// Handler for processing node messages.
+        /// Handler for processing peer messages.
         /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
         /// </summary>
-        /// <param name="node">Node sending the message.</param>
+        /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        protected async Task ProcessMessageAsync(NetworkPeer node, IncomingMessage message)
+        protected async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
             {
                 case GetDataPayload getDataPayload:
-                    await this.ProcessGetDataPayloadAsync(node, getDataPayload).ConfigureAwait(false);
+                    await this.ProcessGetDataPayloadAsync(peer, getDataPayload).ConfigureAwait(false);
                     break;
 
                 case InvPayload invPayload:
@@ -124,13 +119,13 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
         protected override void DetachCore()
         {
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
     }
 }

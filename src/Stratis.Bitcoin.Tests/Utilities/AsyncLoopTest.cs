@@ -111,23 +111,23 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             int iterations = 0;
 
-            IAsyncLoop asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, token =>
+            IAsyncLoop asyncLoop = null;
+
+            asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, token =>
             {
                 iterations++;
+
+                if (iterations == 3)
+                    asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(100);
+
                 return Task.CompletedTask;
             });
 
             Task loopRun = asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(300)).RunningTask;
-
-            await Task.Delay(500);
-            asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(100);
-
-            // At this point there were 2 iterations, 600 ms passed.
-
+            
             await loopRun;
 
-            // Should be 6 but in some slow environments occasionally can be 5.
-            Assert.True(iterations >= 5);
+            Assert.True(iterations >= 6);
         }
 
         private Task DoExceptionalTask(CancellationToken token)

@@ -41,16 +41,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
-        public NodeSettings(string name = "bitcoin", Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
+        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ConfigurationException("A network name is mandatory.");
-
-            this.Name = name;
             this.Agent = agent;
             this.Network = innerNetwork;
             this.ProtocolVersion = protocolVersion;
@@ -97,10 +92,7 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
-
-        /// <summary>Blockchain name. Currently only "bitcoin" and "stratis" are used.</summary>
-        public string Name { get; set; }
-
+        
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
 
@@ -174,16 +166,16 @@ namespace Stratis.Bitcoin.Configuration
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
             this.Network = this.GetNetwork();
-
+            
             // Setting the data directory.
             if (dataDir == null)
             {
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
             }
             else
             {
                 // Create the data directories if they don't exist.
-                string directoryPath = Path.Combine(dataDir, this.Name, this.Network.Name);
+                string directoryPath = Path.Combine(dataDir, this.Network.RootFolderName, this.Network.Name);
                 Directory.CreateDirectory(directoryPath);
                 this.DataDir = directoryPath;
                 this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
@@ -283,7 +275,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Path to the configuration file.</returns>
         private string CreateDefaultConfigurationFile()
         {
-            string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
+            string configFilePath = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
             this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
 
             // Create a config file if none exist.
