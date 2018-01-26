@@ -534,7 +534,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.Disconnect("Connected to self");
 
                 this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
-                return;
+                throw new OperationCanceledException();
             }
 
             using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token, cancellation))
