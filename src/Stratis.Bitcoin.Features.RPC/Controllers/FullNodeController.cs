@@ -83,10 +83,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            Transaction trx = this.pooledTransaction != null? await this.pooledTransaction.GetTransaction(trxid) : null;
+            Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
 
-            if (pooledTransaction != null)
-                trx = await pooledTransaction.GetTransaction(trxid);
+            if (this.pooledTransaction != null)
+                trx = await this.pooledTransaction.GetTransaction(trxid);
 
             if (trx == null)
             {
@@ -95,9 +95,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
             }
 
-                if (trx == null)
-                    return null;
-            }
+            if (trx == null)
+                return null;
 
             if (verbose != 0)
             {
@@ -126,11 +125,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = this.pooledGetUnspentTransaction != null? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
             else
             {
-                unspentOutputs = this.getUnspentTransaction != null? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
 
             if (unspentOutputs == null)
@@ -250,7 +249,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             ChainedBlock block = null;
             var blockStore = this.FullNode.NodeFeature<IBlockStore>();
 
-            uint256 blockid = blockStore != null? await blockStore.GetTrxBlockIdAsync(trxid) : null;
+            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid) : null;
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
 
