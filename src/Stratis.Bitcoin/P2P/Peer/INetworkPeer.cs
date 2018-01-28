@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="payload">The payload to send.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the sending operation.</param>
-        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</param>
+        /// <exception cref="OperationCanceledException">Thrown when the peer has been disconnected or the cancellation token has been cancelled.</exception>
         Task SendMessageAsync(Payload payload, CancellationToken cancellation = default(CancellationToken));
 
         /// <summary>
