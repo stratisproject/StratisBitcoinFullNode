@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <summary>
         /// Provides a rapid lookup of transactions appearing in the watch-only wallet.
         /// This includes both transactions under watched addresses, as well as stored
-        /// transactions.
+        /// transactions. Enables quicker computation of address balances etc.
         /// </summary>
         private ConcurrentDictionary<uint256, TransactionData> txLookup;
 
@@ -275,38 +275,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// </summary>
         private void LoadTransactionLookup()
         {
-            var lookup = new ConcurrentDictionary<uint256, TransactionData>();
-
-            foreach (WatchedAddress address in this.Wallet.WatchedAddresses.Values)
-            {
-                foreach (TransactionData transaction in address.Transactions.Values)
-                {
-                    lookup.TryAdd(transaction.Id, transaction);
-                }
-            }
-
-            foreach (TransactionData transaction in this.Wallet.WatchedTransactions.Values)
-            {
-                // It is conceivable that a transaction could be both watched
-                // in isolation and watched as a transaction under one or
-                // more watched addresses.
-                if (!lookup.TryAdd(transaction.Id, transaction))
-                {
-                    // Check to see if there is better information in
-                    // the watched transaction than the watched address.
-                    // If there is, use the watched transaction instead.
-
-                    TransactionData existingTx = lookup[transaction.Id];
-
-                    if ((existingTx.MerkleProof == null && transaction.MerkleProof != null) ||
-                        (existingTx.BlockHash == null && transaction.BlockHash != null))
-                    {
-                        lookup.TryUpdate(transaction.Id, transaction, existingTx);
-                    }
-                }
-            }
-
-            this.txLookup = lookup;
+            this.txLookup = this.Wallet.GetWatchedTransactions();
         }
 
         /// <inheritdoc />

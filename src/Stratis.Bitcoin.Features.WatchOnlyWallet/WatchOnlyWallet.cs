@@ -56,6 +56,47 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "watchedTransactions")]
         [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
         public ConcurrentDictionary<string, TransactionData> WatchedTransactions { get; set; }
+
+        /// <summary>
+        /// Returns a dictionary of all the transactions being watched (both under addresses
+        /// and standalone).
+        /// </summary>
+        /// <returns></returns>
+        public ConcurrentDictionary<uint256, TransactionData> GetWatchedTransactions()
+        {
+            var txDict = new ConcurrentDictionary<uint256, TransactionData>();
+
+            foreach (WatchedAddress address in this.WatchedAddresses.Values)
+            {
+                foreach (TransactionData transaction in address.Transactions.Values)
+                {
+                    txDict.TryAdd(transaction.Id, transaction);
+                }
+            }
+
+            foreach (TransactionData transaction in this.WatchedTransactions.Values)
+            {
+                // It is conceivable that a transaction could be both watched
+                // in isolation and watched as a transaction under one or
+                // more watched addresses.
+                if (!txDict.TryAdd(transaction.Id, transaction))
+                {
+                    // Check to see if there is better information in
+                    // the watched transaction than the watched address.
+                    // If there is, use the watched transaction instead.
+
+                    TransactionData existingTx = txDict[transaction.Id];
+
+                    if ((existingTx.MerkleProof == null && transaction.MerkleProof != null) ||
+                        (existingTx.BlockHash == null && transaction.BlockHash != null))
+                    {
+                        txDict.TryUpdate(transaction.Id, transaction, existingTx);
+                    }
+                }
+            }
+
+            return txDict;
+        }
     }
 
     /// <summary>
