@@ -164,6 +164,49 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             Assert.Equal(Money.Coins(1.60128533m), balance);
         }
 
+        [Fact]
+        [Trait("Module", "WatchOnlyWalletManager")]
+        public void Given_AWatchedAddress_ThenCanCalculateComplexRelativeBalance()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            
+            // Create transactions to be received.
+            string[] transactionsHex = new[]
+            {
+                "01000000018161735257ebaf9586bac9fd71955cbb833ea88a845d3a146d462c925c951c97010000001716001463a186b12a8e7c03d80eddc84c73f88e7ac41e3cffffffff02c03b4703000000001976a91454e37ad52373b08ad47dac9c909e2a86562740c088acfa4fc8fa0000000017a9148d26b9dc3a4d6105164567e37fe3a8e53fb60e958700000000",
+                "0100000001cfc7db3f85932c636170ea95f3f77ea674283f981a6a1b36c9b2fd9a8248ea2c000000006b483045022100ba70c4538193e4a228666b8db58256c6bb9225f6fe39441a949f49f6964a947d022048508c50ed4a30df1f222d3dd010c10d5a0852d47843e96277c5b730b3194843012102a31bf228b4508abe3f0aa5f91c53732dfd49233c2fef3c5cfa68f2aa12cc71b4ffffffff02b0e13403000000001976a914546f3bb7a70a077d51bed1bf6acb55dead27024388ace0c810000000000017a914e3925ce02760a2fec19871938b0ae5c740fa2b908700000000",
+                "0100000001a6391afc9adf3f385bd7261d6e120511203b60a9dacd3e99cc7010c7a22722ce0100000017160014096a4e906d7807137a10824ce68a0297a3d14e50ffffffff02e09da301000000001976a91454e37ad52373b08ad47dac9c909e2a86562740c088acb94b56e90000000017a91421649ed0b7412724abba0b27c3224beb3a7530e18700000000",
+                "010000000180f6a5f49b79029333d1ab406424da4bd5f4378b19b1f8246b496f32cf215dc6000000006a4730440220080b0dfa1a93e8f4ebf9415727f60504df95c3a7dea7fe4e4053d0bb3f54540202202e9d02bbb642d7c55d637bd9a56265f42dc1626e933031d638507223846a5e53012102a31bf228b4508abe3f0aa5f91c53732dfd49233c2fef3c5cfa68f2aa12cc71b4ffffffff02225b9101000000001976a914e15f2eb7b19ae02102a1c24452fbd3f516dca8f888ace0c810000000000017a914585cffb7dc06ac82119fba0e36e1e95b534443958700000000",
+                "01000000017f926a306647e0bf3ad12c86fca22dbce2f31161006d0723041963dbf31b17ae0100000017160014c72367e145246374dbb748fa274661cd7aece41effffffff02f0ced100000000001976a91454e37ad52373b08ad47dac9c909e2a86562740c088acf120a8d80000000017a9149bdfb11d7b870c364b4167d921339284b52ba1dc8700000000",
+                "0100000001dd19f894733ab950ae8e772ef781fe299f80f4e813ee4cb6ac067fedea3a052c000000006b483045022100d4d6570c054bcbafa8178e9074f2be32b078e0761537bfe4fb7ad1eea949ab66022022e31d6f43d9418b6dc02147aefb380a4730386364bd406365e790826400570b012102a31bf228b4508abe3f0aa5f91c53732dfd49233c2fef3c5cfa68f2aa12cc71b4ffffffff029e90bf00000000001976a914128240d302a4aadcdd08d241b54fa4ef11acb21388ace0c810000000000017a914188d767b139ef64ce4efa091c2957c6137fbe0ce8700000000"
+            };
+
+            var block = new Block();
+            foreach (var transactionHex in transactionsHex)
+            {
+                block.AddTransaction(new Transaction(transactionHex));
+            }
+
+            block.UpdateMerkleRoot();
+
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            walletManager.Initialize();
+            walletManager.WatchAddress("moFoZk1figjfEe1Z49GUePXy2KqYr6DioL");
+            walletManager.ProcessBlock(block);
+
+            // Manual calculation of expected result
+            // 2cea48829afdb2c9361b6a1a983f2874a67ef7f395ea7061632c93853fdbc7cf +0.55
+            // c65d21cf326f496b24f8b1198b37f4d54bda246440abd1339302799bf4a5f680 +0.275
+            // 2c053aeaed7f06acb64cee13e8f4809f29fe81f72e778eae50b93a7394f819dd +0.1375
+            // 15c4f72e80a7607d87911969a418b18cc513b70588d27694179073ccdcf966f1 -0.1375
+            // 3aeabae1ec7bd6362babf02b0bb51e4b5c183f30fbe593e170365afcdd5a6f7c -0.275
+            // 240afed9840527f55f0087f4594a245219759307b034a983378d5dda91ea08a0 -0.55 = 0
+            // Block explorer confirmation: https://testnet.smartbit.com.au/address/moFoZk1figjfEe1Z49GUePXy2KqYr6DioL
+
+            Money balance = walletManager.GetRelativeBalance("moFoZk1figjfEe1Z49GUePXy2KqYr6DioL");
+            Assert.Equal(Money.Coins(0m), balance);
+        }
+
         /// <summary>
         /// Helper method that constructs a <see cref="WatchOnlyWallet"/> object and saved it to the file system.
         /// </summary>

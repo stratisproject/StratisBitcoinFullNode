@@ -61,7 +61,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Returns a dictionary of all the transactions being watched (both under addresses
         /// and standalone).
         /// </summary>
-        /// <returns></returns>
         public ConcurrentDictionary<uint256, TransactionData> GetWatchedTransactions()
         {
             var txDict = new ConcurrentDictionary<uint256, TransactionData>();
