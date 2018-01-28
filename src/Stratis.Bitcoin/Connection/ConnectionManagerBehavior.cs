@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        private async Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
+        private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public RPCClient RpcClient { get; protected set; }
 
         /// <summary>The network peer client for the test fixture.</summary>
-        public NetworkPeer NetworkPeerClient { get; protected set; }
+        public INetworkPeer NetworkPeerClient { get; protected set; }
 
         /// <summary>
         /// Constructs the test fixture by calling initialize which should initialize the properties of the fixture.

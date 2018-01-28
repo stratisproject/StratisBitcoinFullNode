@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Connection
         {
             List<PeerNodeModel> peerList = new List<PeerNodeModel>();
 
-            List<NetworkPeer> peers = this.ConnectionManager.ConnectedPeers.ToList();
-            foreach (NetworkPeer peer in peers)
+            List<INetworkPeer> peers = this.ConnectionManager.ConnectedPeers.ToList();
+            foreach (INetworkPeer peer in peers)
             {
                 if ((peer != null) && (peer.RemoteSocketAddress != null))
                 {

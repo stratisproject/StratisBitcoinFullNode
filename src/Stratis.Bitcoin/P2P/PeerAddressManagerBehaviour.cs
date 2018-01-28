@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState previousState)
+        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {

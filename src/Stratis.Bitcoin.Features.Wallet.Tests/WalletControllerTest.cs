@@ -1781,32 +1781,32 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public event EventHandler<NetworkPeerEventArgs> Added;
         public event EventHandler<NetworkPeerEventArgs> Removed;
 
-        private List<NetworkPeer> networkPeers;
+        private List<INetworkPeer> networkPeers;
 
         public TestReadOnlyNetworkPeerCollection()
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.networkPeers = new List<NetworkPeer>();
+            this.networkPeers = new List<INetworkPeer>();
             this.networkPeers.Add(null);
         }
 
-        public NetworkPeer FindByEndpoint(IPEndPoint endpoint)
+        public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
             return null;
         }
 
-        public NetworkPeer FindByIp(IPAddress ip)
+        public INetworkPeer FindByIp(IPAddress ip)
         {
             return null;
         }
 
-        public NetworkPeer FindLocal()
+        public INetworkPeer FindLocal()
         {
             return null;
         }
 
-        public IEnumerator<NetworkPeer> GetEnumerator()
+        public IEnumerator<INetworkPeer> GetEnumerator()
         {
             return this.networkPeers.GetEnumerator();
         }

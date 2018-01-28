@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(this.Network, tcpClient, this.CreateNetworkPeerConnectionParameters());
+                    INetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(this.Network, tcpClient, this.CreateNetworkPeerConnectionParameters());
 
                     this.ConnectedNetworkPeers.Add(networkPeer);
                     networkPeer.StateChanged.Register(this.OnStateChangedAsync);
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="peer">The connected peer.</param>
         /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="NetworkPeer.State"/> property.</param>
-        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
+        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerEndPoint, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
 

@@ -22,12 +22,12 @@ namespace Stratis.Bitcoin.Connection
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
-        private Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             return Task.CompletedTask;
         }
 
-        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
+        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             return Task.CompletedTask;
         }

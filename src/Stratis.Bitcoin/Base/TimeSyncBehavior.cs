@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.Base
         /// does not deliver this message for inbound peers to node behaviors.
         /// </para>
         /// </remarks>
-        private Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
