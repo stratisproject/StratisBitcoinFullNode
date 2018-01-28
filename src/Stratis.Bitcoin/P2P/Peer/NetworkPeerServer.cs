@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <para>The peer is removed from the list of connected peers if the connection has been terminated for any reason.</para>
         /// </summary>
         /// <param name="peer">The connected peer.</param>
-        /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="NetworkPeer.State"/> property.</param>
+        /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="INetworkPeer.State"/> property.</param>
         private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerEndPoint, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);

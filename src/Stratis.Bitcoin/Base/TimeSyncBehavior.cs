@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.Base
         /// This handler only cares about "verack" messages, which are only sent once per node
         /// and at the time they are sent the time offset information is parsed by underlaying logic.
         /// <para>
-        /// Note that it is not possible to use "version" message here as <see cref="NetworkPeer"/>
+        /// Note that it is not possible to use "version" message here as <see cref="INetworkPeer"/>
         /// does not deliver this message for inbound peers to node behaviors.
         /// </para>
         /// </remarks>

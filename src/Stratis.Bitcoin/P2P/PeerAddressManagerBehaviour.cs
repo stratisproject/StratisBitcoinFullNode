@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
-    /// Subscribes to state change events from <see cref="NetworkPeer"/> and relays connection and handshake attempts to
+    /// Subscribes to state change events from <see cref="INetworkPeer"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>

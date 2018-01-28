@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((NetworkPeer)null);
+            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((INetworkPeer)null);
 
             var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
             var block = blocks.First();
