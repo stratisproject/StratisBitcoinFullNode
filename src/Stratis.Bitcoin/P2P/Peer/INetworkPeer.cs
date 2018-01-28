@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived { get; }
 
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
-        NetworkPeerConnectionParameters Parameters { get; }
+        NetworkPeerConnectionParameters ConnectionParameters { get; }
 
         /// <summary>Queue of the connections' incoming messages distributed to message consumers.</summary>
         MessageProducer<IncomingMessage> MessageProducer { get; }

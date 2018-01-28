@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// have the same functionality and the disconnecting method is provided only for better readability of the code. 
     /// <para>It is safe to try to disconnect or dispose this object multiple times, only the first call will be processed.</para>
     /// </remarks>
-    public class NetworkPeer : IDisposable
+    public class NetworkPeer : INetworkPeer, IDisposable
     {
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public TimeSpan? TimeOffset { get; private set; }
 
         /// <inheritdoc/>
-        internal readonly NetworkPeerConnection Connection;
+        public NetworkPeerConnection Connection { get; private set; }
 
         /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         private PerformanceCounter counter;
@@ -195,10 +195,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public Network Network { get; set; }
 
         /// <inheritdoc/>
-        public readonly AsyncExecutionEvent<NetworkPeer, NetworkPeerState> StateChanged;
+        public AsyncExecutionEvent<NetworkPeer, NetworkPeerState> StateChanged { get; private set; }
 
         /// <inheritdoc/>
-        public readonly AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived;
+        public AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived { get; private set; }
 
         /// <inheritdoc/>
         public NetworkPeerConnectionParameters ConnectionParameters { get; private set; }
