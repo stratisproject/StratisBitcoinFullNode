@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// have the same functionality and the disconnecting method is provided only for better readability of the code. 
     /// <para>It is safe to try to disconnect or dispose this object multiple times, only the first call will be processed.</para>
     /// </remarks>
-    public class NetworkPeer : INetworkPeer, IDisposable
+    public class NetworkPeer : INetworkPeer
     {
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -195,10 +195,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public Network Network { get; set; }
 
         /// <inheritdoc/>
-        public AsyncExecutionEvent<NetworkPeer, NetworkPeerState> StateChanged { get; private set; }
+        public AsyncExecutionEvent<INetworkPeer, NetworkPeerState> StateChanged { get; private set; }
 
         /// <inheritdoc/>
-        public AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived { get; private set; }
+        public AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived { get; private set; }
 
         /// <inheritdoc/>
         public NetworkPeerConnectionParameters ConnectionParameters { get; private set; }
@@ -232,8 +232,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
 
-            this.MessageReceived = new AsyncExecutionEvent<NetworkPeer, IncomingMessage>();
-            this.StateChanged = new AsyncExecutionEvent<NetworkPeer, NetworkPeerState>();
+            this.MessageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
+            this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
         }
 
         /// <summary>
@@ -720,6 +720,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                 inventoryType |= InventoryType.MSG_WITNESS_FLAG;
 
             return inventoryType;
+        }
+
+        /// <inheritdoc />
+        public T Behavior<T>() where T : NetworkPeerBehavior
+        {
+            return this.Behaviors.Find<T>();
         }
 
         /// <inheritdoc />

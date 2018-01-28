@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// the connection to our node's listener, or outbound, if our node was the one connecting to a remote server.
     /// </para>
     /// </summary>
-    public interface INetworkPeer
+    public interface INetworkPeer: IDisposable
     {
         /// <summary>State of the network connection to the peer.</summary>
         NetworkPeerState State { get; }
@@ -68,16 +68,16 @@ namespace Stratis.Bitcoin.P2P.Peer
         NetworkOptions SupportedTransactionOptions { get; }
 
         /// <summary>When a peer is disconnected this is set to human readable information about why it happened.</summary>
-        NetworkPeerDisconnectReason DisconnectReason { get; }
+        NetworkPeerDisconnectReason DisconnectReason { get; set; }
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         Network Network { get; }
 
         /// <summary>Event that is triggered when the peer's network state is changed.</summary>
-        AsyncExecutionEvent<NetworkPeer, NetworkPeerState> StateChanged { get; }
+        AsyncExecutionEvent<INetworkPeer, NetworkPeerState> StateChanged { get; }
 
         /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
-        AsyncExecutionEvent<NetworkPeer, IncomingMessage> MessageReceived { get; }
+        AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived { get; }
 
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         NetworkPeerConnectionParameters ConnectionParameters { get; }
@@ -151,10 +151,17 @@ namespace Stratis.Bitcoin.P2P.Peer
         InventoryType AddSupportedOptions(InventoryType inventoryType);
 
         /// <summary>
-        /// Disconnects the peer and cleans up.
+        /// Finds all behaviors of a specific behavior type among the peer's behaviors.
         /// </summary>
-        /// <param name="reason">Human readable reason for disconnecting.</param>
-        /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
+        /// <typeparam name="T">Type of the behavior to find.</typeparam>
+        /// <returns>Collection of behaviors of specific type.</returns>
+        T Behavior<T>() where T : NetworkPeerBehavior;
+
+        /// <summary>
+       /// Disconnects the peer and cleans up.
+       /// </summary>
+       /// <param name="reason">Human readable reason for disconnecting.</param>
+       /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
         void Dispose(string reason, Exception exception = null);
     }
 }
