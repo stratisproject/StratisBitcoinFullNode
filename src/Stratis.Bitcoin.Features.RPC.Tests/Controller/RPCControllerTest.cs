@@ -28,17 +28,17 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class RPCControllerTest : LogsTestBase, IDisposable
     {
-        private Network network;
-        private Mock<IFullNode> fullNode;
-        private RpcSettings rpcSettings;
-        private RPCController controller;
-        private Mock<IRPCClientFactory> rpcClientFactory;
-        private Mock<IWebHost> rpcHost;
-        private Mock<IServiceProvider> serviceProvider;
-        private Mock<IActionDescriptorCollectionProvider> actionDescriptorCollectionProvider;
-        private Mock<IRPCClient> rpcClient;
-        private List<ActionDescriptor> descriptors;
-        private bool initialBlockSignature;
+        private readonly Network network;
+        private readonly Mock<IFullNode> fullNode;
+        private readonly RpcSettings rpcSettings;
+        private readonly RPCController controller;
+        private readonly Mock<IRPCClientFactory> rpcClientFactory;
+        private readonly Mock<IWebHost> rpcHost;
+        private readonly Mock<IServiceProvider> serviceProvider;
+        private readonly Mock<IActionDescriptorCollectionProvider> actionDescriptorCollectionProvider;
+        private readonly Mock<IRPCClient> rpcClient;
+        private readonly List<ActionDescriptor> descriptors;
+        private readonly bool initialBlockSignature;
 
         public RPCControllerTest()
         {

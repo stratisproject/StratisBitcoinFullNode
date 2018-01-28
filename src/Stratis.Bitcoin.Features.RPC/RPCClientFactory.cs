@@ -15,9 +15,9 @@ namespace Stratis.Bitcoin.Features.RPC
     public interface IRPCClientFactory
     {
         /// <summary>
-        /// Create a new RPCClient instance
+        /// Create a new RPCClient instance.
         /// </summary>
-        /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure</param>
+        /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure.</param>
         /// <param name="address">The binding address.</param>
         /// <param name="network">The network.</param>
         IRPCClient Create(string authenticationString, Uri address, Network network);

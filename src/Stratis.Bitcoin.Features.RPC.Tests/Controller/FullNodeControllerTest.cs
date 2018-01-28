@@ -26,19 +26,18 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
     public class FullNodeControllerTest : LogsTestBase, IDisposable
     {
         private ConcurrentChain chain;
-
-        private Mock<IFullNode> fullNode;
-        private Mock<IChainState> chainState;
-        private Mock<IConnectionManager> connectionManager;
+        private readonly Mock<IFullNode> fullNode;
+        private readonly Mock<IChainState> chainState;
+        private readonly Mock<IConnectionManager> connectionManager;
         private Network network;
         private NodeSettings nodeSettings;
-        private Mock<IPooledTransaction> pooledTransaction;
-        private Mock<IPooledGetUnspentTransaction> pooledGetUnspentTransaction;
-        private Mock<IGetUnspentTransaction> getUnspentTransaction;
-        private Mock<IConsensusLoop> consensusLoop;
-        private Mock<INetworkDifficulty> networkDifficulty;
+        private readonly Mock<IPooledTransaction> pooledTransaction;
+        private readonly Mock<IPooledGetUnspentTransaction> pooledGetUnspentTransaction;
+        private readonly Mock<IGetUnspentTransaction> getUnspentTransaction;
+        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<INetworkDifficulty> networkDifficulty;
         private FullNodeController controller;
-        private bool initialBlockSignature;
+        private readonly bool initialBlockSignature;
 
         public FullNodeControllerTest()
         {
@@ -115,7 +114,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null);
 
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             var blockStore = new Mock<IBlockStore>();
             blockStore.Setup(b => b.GetTrxAsync(txId))
                 .ReturnsAsync(transaction);
@@ -135,7 +134,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             uint256 txId = new uint256(12142124);
 
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             var blockStore = new Mock<IBlockStore>();
             blockStore.Setup(b => b.GetTrxAsync(txId))
                 .ReturnsAsync(transaction);
@@ -174,7 +173,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .Returns(this.chain.Tip);
             var block = this.chain.GetBlock(1);
 
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             uint256 txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
@@ -222,7 +221,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task GetTaskAsync_Verbose_ChainStateTipNull_DoesNotCalulateConfirmationsAsync()
         {
             var block = this.chain.GetBlock(1);
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             uint256 txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
@@ -245,7 +244,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task GetTaskAsync_Verbose_BlockNotFoundOnChain_ReturnsTransactionVerboseModelWithoutBlockInformationAsync()
         {
             var block = this.chain.GetBlock(1);
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             uint256 txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
@@ -323,7 +322,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task GetTxOutAsync_NotIncludeInMempool_UnspentTransactionFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
             this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
@@ -345,7 +344,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task GetTxOutAsync_IncludeInMempool_UnspentTransactionFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
             this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
@@ -368,7 +367,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task GetTxOutAsync_NotIncludeInMempool_UnspentTransactionFound_VOutNotFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
             this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
@@ -389,7 +388,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task GetTxOutAsync_IncludeInMempool_UnspentTransactionFound_VOutNotFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
-            Transaction transaction = CreateTransaction();
+            Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
             this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
@@ -687,46 +686,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 (byte)(compact >> 8),
                 (byte)(compact)
             };
-        }
-
-        private class TestReadOnlyNetworkPeerCollection : IReadOnlyNetworkPeerCollection
-        {
-            public event EventHandler<NetworkPeerEventArgs> Added;
-            public event EventHandler<NetworkPeerEventArgs> Removed;
-
-            private List<NetworkPeer> networkPeers;
-
-            public TestReadOnlyNetworkPeerCollection()
-            {
-                this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-                this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-                this.networkPeers = new List<NetworkPeer>();
-            }
-
-            public NetworkPeer FindByEndpoint(IPEndPoint endpoint)
-            {
-                return null;
-            }
-
-            public NetworkPeer FindByIp(IPAddress ip)
-            {
-                return null;
-            }
-
-            public NetworkPeer FindLocal()
-            {
-                return null;
-            }
-
-            public IEnumerator<NetworkPeer> GetEnumerator()
-            {
-                return this.networkPeers.GetEnumerator();
-            }
-
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            {
-                return this.GetEnumerator();
-            }
         }
     }
 }
