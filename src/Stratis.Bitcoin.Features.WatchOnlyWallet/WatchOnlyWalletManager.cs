@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// This includes both transactions under watched addresses, as well as stored
         /// transactions.
         /// </summary>
-        private Dictionary<uint256, TransactionData> txLookup;
+        private ConcurrentDictionary<uint256, TransactionData> txLookup;
 
         public WatchOnlyWalletManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
         {
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                             {
                                 Id = transactionHash,
                                 Hex = transaction.ToHex(),
-                                BlockHash = block?.GetHash(),
+                                BlockHash = block?.GetHash()
                             };
 
                             // Add the Merkle proof to the transaction.
@@ -165,23 +165,28 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                             addressInWallet.Transactions.TryAdd(transactionHash.ToString(), newTransaction);
 
                             // Update the lookup cache with the new transaction information.
-                            this.txLookup.Remove(newTransaction.Id);
-                            this.txLookup.Add(newTransaction.Id, newTransaction);
+                            // Since the WO record is new it probably isn't in the lookup cache.
+                            this.txLookup.TryAdd(newTransaction.Id, newTransaction);
                         }
                         else
                         {
-                            // If there is a transaction already present, update the hash of the block containing it.
-                            existingTransaction.BlockHash = block?.GetHash();
+                            // If there was a transaction already present in the WO wallet,
+                            // it is most likely that it has now been confirmed in a block.
+                            // Therefore, update the transaction record with the hash of the
+                            // block containing the transaction.
+                            if (existingTransaction.BlockHash == null)
+                                existingTransaction.BlockHash = block?.GetHash();
 
-                            // Add the Merkle proof now that the transaction is confirmed in a block.
                             if (block != null && existingTransaction.MerkleProof == null)
                             {
+                                // Add the Merkle proof now that the transaction is confirmed in a block.
                                 existingTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                             }
 
                             // Update the lookup cache with the new transaction information.
-                            this.txLookup.Remove(existingTransaction.Id);
-                            this.txLookup.Add(existingTransaction.Id, existingTransaction);
+                            // Since the WO record was not new it probably is already in the lookup cache.
+                            // Therefore, unconditionally update it.
+                            this.txLookup.AddOrUpdate(existingTransaction.Id, existingTransaction, (key, oldValue) => existingTransaction);
                         }
 
                         this.SaveWatchOnlyWallet();
@@ -218,23 +223,28 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                         addressInWallet.Transactions.TryAdd(transactionHash.ToString(), newTransaction);
 
                         // Update the lookup cache with the new transaction information.
-                        this.txLookup.Remove(newTransaction.Id);
-                        this.txLookup.Add(newTransaction.Id, newTransaction);
+                        // Since the WO record is new it probably isn't in the lookup cache.
+                        this.txLookup.TryAdd(newTransaction.Id, newTransaction);
                     }
                     else
                     {
-                        // If there is a transaction already present, update the hash of the block containing it.
-                        existingTransaction.BlockHash = block?.GetHash();
+                        // If there was a transaction already present in the WO wallet,
+                        // it is most likely that it has now been confirmed in a block.
+                        // Therefore, update the transaction record with the hash of the
+                        // block containing the transaction.
+                        if (existingTransaction.BlockHash == null)
+                            existingTransaction.BlockHash = block?.GetHash();
 
-                        // Add the Merkle proof now that the transaction is confirmed in a block.
                         if (block != null && existingTransaction.MerkleProof == null)
                         {
+                            // Add the Merkle proof now that the transaction is confirmed in a block.
                             existingTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                         }
 
                         // Update the lookup cache with the new transaction information.
-                        this.txLookup.Remove(existingTransaction.Id);
-                        this.txLookup.Add(existingTransaction.Id, existingTransaction);
+                        // Since the WO record was not new it probably is already in the lookup cache.
+                        // Therefore, unconditionally update it.
+                        this.txLookup.AddOrUpdate(existingTransaction.Id, existingTransaction, (key, oldValue) => existingTransaction);
                     }
 
                     this.SaveWatchOnlyWallet();
@@ -252,8 +262,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 existingWatchedTransaction.MerkleProof = new MerkleBlock(block, new[] {transaction.GetHash()}).PartialMerkleTree;
 
                 // Update the lookup cache with the new transaction information.
-                this.txLookup.Remove(existingWatchedTransaction.Id);
-                this.txLookup.Add(existingWatchedTransaction.Id, existingWatchedTransaction);
+                this.txLookup.AddOrUpdate(existingWatchedTransaction.Id, existingWatchedTransaction, (key, oldValue) => existingWatchedTransaction);
 
                 this.SaveWatchOnlyWallet();
             }
@@ -266,13 +275,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// </summary>
         private void LoadTransactionLookup()
         {
-            var lookup = new Dictionary<uint256, TransactionData>();
+            var lookup = new ConcurrentDictionary<uint256, TransactionData>();
 
             foreach (WatchedAddress address in this.Wallet.WatchedAddresses.Values)
             {
                 foreach (TransactionData transaction in address.Transactions.Values)
                 {
-                    lookup.Add(transaction.Id, transaction);
+                    lookup.TryAdd(transaction.Id, transaction);
                 }
             }
 
@@ -292,8 +301,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     if ((existingTx.MerkleProof == null && transaction.MerkleProof != null) ||
                         (existingTx.BlockHash == null && transaction.BlockHash != null))
                     {
-                        lookup.Remove(transaction.Id);
-                        lookup.Add(transaction.Id, transaction);
+                        lookup.TryUpdate(transaction.Id, transaction, existingTx);
                     }
                 }
             }
