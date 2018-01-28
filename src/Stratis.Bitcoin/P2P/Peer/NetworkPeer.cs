@@ -767,7 +767,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.MessageReceived.Dispose();
                 this.StateChanged.Dispose();
-            });
+            }, TaskContinuationOptions.ExecuteSynchronously);
 
             this.Connection.Dispose();
 
