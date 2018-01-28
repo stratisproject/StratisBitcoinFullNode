@@ -252,18 +252,18 @@ namespace Stratis.Bitcoin.Connection
             {
                 PerformanceSnapshot diffTotal = new PerformanceSnapshot(0, 0);
                 builder.AppendLine("=======Connections=======");
-                foreach (NetworkPeer node in this.ConnectedPeers)
+                foreach (NetworkPeer peer in this.ConnectedPeers)
                 {
-                    PerformanceSnapshot newSnapshot = node.Counter.Snapshot();
+                    PerformanceSnapshot newSnapshot = peer.Counter.Snapshot();
                     PerformanceSnapshot lastSnapshot = null;
-                    if (this.downloads.TryGetValue(node, out lastSnapshot))
+                    if (this.downloads.TryGetValue(peer, out lastSnapshot))
                     {
-                        BlockPullerBehavior behavior = node.Behaviors.OfType<BlockPullerBehavior>()
+                        BlockPullerBehavior behavior = peer.Behaviors.OfType<BlockPullerBehavior>()
                             .FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
 
                         PerformanceSnapshot diff = newSnapshot - lastSnapshot;
                         diffTotal = new PerformanceSnapshot(diff.TotalReadBytes + diffTotal.TotalReadBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
-                        builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diff.WrittenBytesPerSecond));
+                        builder.Append((peer.RemoteSocketAddress + ":" + peer.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diff.WrittenBytesPerSecond));
                         if (behavior != null)
                         {
                             int intQuality = (int)behavior.QualityScore;
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Connection
                         builder.AppendLine();
                     }
 
-                    this.downloads.AddOrReplace(node, newSnapshot);
+                    this.downloads.AddOrReplace(peer, newSnapshot);
                 }
 
                 builder.AppendLine("=================");
