@@ -267,9 +267,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private void LoadTransactionLookup()
         {
             var lookup = new Dictionary<uint256, TransactionData>();
-            WatchOnlyWallet watchOnlyWallet = this.GetWatchOnlyWallet();
 
-            foreach (WatchedAddress address in watchOnlyWallet.WatchedAddresses.Values)
+            foreach (WatchedAddress address in this.Wallet.WatchedAddresses.Values)
             {
                 foreach (TransactionData transaction in address.Transactions.Values)
                 {
@@ -277,7 +276,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 }
             }
 
-            foreach (TransactionData transaction in watchOnlyWallet.WatchedTransactions.Values)
+            foreach (TransactionData transaction in this.Wallet.WatchedTransactions.Values)
             {
                 // It is conceivable that a transaction could be both watched
                 // in isolation and watched as a transaction under one or
