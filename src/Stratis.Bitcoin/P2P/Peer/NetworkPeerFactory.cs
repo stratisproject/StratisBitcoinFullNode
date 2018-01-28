@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             var peer = new NetworkPeer(peerEndPoint, network, parameters, this, this.dateTimeProvider, this.loggerFactory);
             try
             {
-                await peer.ConnectAsync(peer.Parameters.ConnectCancellation).ConfigureAwait(false);
+                await peer.ConnectAsync(peer.ConnectionParameters.ConnectCancellation).ConfigureAwait(false);
             }
             catch (Exception e)
             {
