@@ -114,9 +114,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Time in UTC when the connection to the peer was established.</summary>
-        public DateTime ConnectedAt { get; private set; }
-
         /// <summary>State of the network connection to the peer.</summary>
         public NetworkPeerState State { get; private set; }
 
@@ -322,8 +319,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
             this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
-            this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
-
             this.logger.LogTrace("Connected to peer '{0}'.", this.PeerEndPoint);
             this.State = NetworkPeerState.Connected;
 
@@ -375,7 +370,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
                 this.State = NetworkPeerState.Connected;
-                this.ConnectedAt = this.dateTimeProvider.GetUtcNow();
                 
                 this.InitDefaultBehaviors(this.Parameters);
                 this.Connection.StartReceiveMessages();
