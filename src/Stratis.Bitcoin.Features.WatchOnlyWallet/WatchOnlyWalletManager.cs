@@ -320,9 +320,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 Network = this.network,
                 CoinType = this.coinType,
-                CreationTime = this.dateTimeProvider.GetTimeOffset(),
-                WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>(),
-                WatchedTransactions = new ConcurrentDictionary<string, TransactionData>()
+                CreationTime = this.dateTimeProvider.GetTimeOffset()
             };
 
             this.fileStorage.SaveToFile(watchOnlyWallet, WalletFileName);
