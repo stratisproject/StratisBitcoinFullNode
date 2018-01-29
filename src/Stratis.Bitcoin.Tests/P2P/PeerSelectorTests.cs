@@ -420,5 +420,52 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(2, peers.Count(p => p.Connected));
             Assert.Equal(13, peers.Count(p => p.Fresh));
         }
+
+        /// <summary>
+        /// Tests how peers are returned from the selector during discovery.
+        ///
+        /// Scenario 1:
+        /// PeerAddressManager contains 5 peers.
+        /// 3 Peers was recently discovered from in the last 24 hours.
+        /// 2 Peers was discovered from more than 24 hours ago.
+        /// 
+        /// We ask for 5 peers.
+        /// 
+        /// Result:
+        /// 2 peers returned.
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForDiscovery_Scenario1()
+        {
+            var peersToAdd = new List<NetworkAddress>();
+
+            for (int i = 1; i <= 5; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peersToAdd.Add(new NetworkAddress(ipAddress, 80));
+            }
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
+            peerAddressManager.AddPeers(peersToAdd.ToArray(), IPAddress.Loopback);
+
+            //These peers were all discovered from in the last 24 hours
+            for (int i = 1; i <= 3; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerDiscoveredFrom(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddHours(-5));
+            }
+
+            //These peers were all discovered from more than 24 hours ago
+            for (int i = 4; i <= 5; i++)
+            {
+                var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerDiscoveredFrom(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddHours(-25));
+            }
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForDiscovery(5);
+            Assert.Equal(2, peers.Count());
+        }
     }
 }

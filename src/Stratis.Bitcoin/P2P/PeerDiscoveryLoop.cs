@@ -150,6 +150,8 @@ namespace Stratis.Bitcoin.P2P
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
                         await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
+                        this.peerAddressManager.PeerDiscoveredFrom(endPoint, DateTimeProvider.Default.GetUtcNow());
+
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }
                     catch

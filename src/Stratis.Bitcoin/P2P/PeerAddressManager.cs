@@ -64,6 +64,11 @@ namespace Stratis.Bitcoin.P2P
         void PeerConnected(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
 
         /// <summary>
+        /// Sets the last time the peer was asked for addresses via discovery.
+        /// </summary>
+        void PeerDiscoveredFrom(IPEndPoint endpoint, DateTime peerDiscoveredFrom);
+
+        /// <summary>
         /// A version handshake between two peers was successful.
         /// <para>
         /// Sets the peer's <see cref="PeerAddress.LastConnectionHandshake"/> time to now.
@@ -174,6 +179,16 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             peer.SetConnected(peerConnectedAt);
+        }
+
+        /// <inheritdoc/>
+        public void PeerDiscoveredFrom(IPEndPoint endpoint, DateTime peerDiscoveredFrom)
+        {
+            var peer = this.FindPeer(endpoint);
+            if (peer == null)
+                return;
+
+            peer.SetDiscoveredFrom(peerDiscoveredFrom);
         }
 
         /// <inheritdoc/>
