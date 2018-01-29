@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
-        public void PeerAddressManager_AttemptThresholdTimeNotReached_()
+        public void PeerAddressManager_AttemptThresholdTimeNotReached_DoNotReset()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var networkAddress = new NetworkAddress(ipAddress, 80);
@@ -155,17 +155,14 @@ namespace Stratis.Bitcoin.Tests.P2P
                 addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate.AddHours(-i));
             }
 
-            //Ensure that the last attempt was more than 12 hours ago
-            addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate.AddHours(-13));
-
-            //This call should now reset the counts
-            var resetTimestamp = DateTimeProvider.Default.GetUtcNow();
-            addressManager.PeerAttempted(networkAddress.Endpoint, resetTimestamp);
+            //Capture the last attempt timestamp
+            var lastAttempt = DateTimeProvider.Default.GetUtcNow();
+            addressManager.PeerAttempted(networkAddress.Endpoint, lastAttempt);
 
             var savedPeer = addressManager.FindPeer(networkAddress.Endpoint);
 
-            Assert.Equal(1, savedPeer.ConnectionAttempts);
-            Assert.Equal(resetTimestamp, savedPeer.LastAttempt);
+            Assert.Equal(11, savedPeer.ConnectionAttempts);
+            Assert.Equal(lastAttempt, savedPeer.LastAttempt);
             Assert.Null(savedPeer.LastConnectionSuccess);
             Assert.Null(savedPeer.LastConnectionHandshake);
             Assert.Null(savedPeer.LastSeen);
