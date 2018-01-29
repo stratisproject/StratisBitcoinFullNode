@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Cli
                     {
                         var options = optionList.ToArray();
 
-                        NodeSettings nodeSettings = new NodeSettings(blockchain, network).LoadArguments(options).LoadConfiguration();
+                        NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(options).LoadConfiguration();
 
                         var rpcSettings = new RpcSettings();
 

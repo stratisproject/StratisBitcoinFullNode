@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             var testChainContext = new TestChainContext() { Network = network };
 
-            testChainContext.NodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" }).LoadConfiguration();
+            testChainContext.NodeSettings = new NodeSettings(network).LoadArguments(new string[] { $"-datadir={dataDir}" }).LoadConfiguration();
 
             if (dataDir != null)
             {
