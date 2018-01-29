@@ -60,8 +60,6 @@ namespace Stratis.Bitcoin.P2P
 
         public override async Task OnConnectAsync()
         {
-            this.logger.LogTrace("()");
-
             int peerSelectionFailed = 0;
 
             PeerAddress peer = null;
@@ -73,14 +71,13 @@ namespace Stratis.Bitcoin.P2P
                     peerSelectionFailed = 0;
                     peer = null;
 
-                    this.logger.LogTrace("Peer selection failed, maximum amount of failed attempts reached.");
+                    this.logger.LogTrace("Peer selection failed, maximum amount of selection attempts reached.");
                     break;
                 }
 
                 peer = this.peerAddressManager.PeerSelector.SelectPeer();
                 if (peer == null)
                 {
-                    this.logger.LogTrace("Peer selection failed, peer is null.");
                     peerSelectionFailed++;
                     continue;
                 }
@@ -123,12 +120,15 @@ namespace Stratis.Bitcoin.P2P
                 break;
             }
 
-            this.logger.LogTrace("Peer selected: '{0}'", peer?.EndPoint);
-
-            if (peer != null)
+            //If the peer selector returns nothing, we need to wait a bit,
+            //effectively override the connector's burst mode.
+            if (peer == null)
+            {
+                this.logger.LogTrace("Peer selection failed, executing selection delay...");
+                await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+            }
+            else
                 await ConnectAsync(peer).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

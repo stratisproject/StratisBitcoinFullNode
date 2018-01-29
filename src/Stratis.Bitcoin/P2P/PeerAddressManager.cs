@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.P2P
             //1: The last attempt was more than the threshold time ago.
             //2: More than the threshold attempts was made.
             if (peer.Attempted &&
-                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdTime) &&
+                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttemptThresholdTime) &&
                 peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)
             {
                 peer.ResetAttempts();
