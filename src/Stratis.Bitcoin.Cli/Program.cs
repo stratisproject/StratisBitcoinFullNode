@@ -87,19 +87,16 @@ namespace Stratis.Bitcoin.Cli
                 }
 
                 // Determine API port.
-                string blockchain = string.Empty;
                 int defaultRestApiPort = 0;
                 Network network = null;
 
                 if (networkName.Contains("stratis"))
                 {
-                    blockchain = "stratis";
                     defaultRestApiPort = 37221;
                     network = Network.StratisMain;
                 }
                 else
                 {
-                    blockchain = "bitcoin";
                     defaultRestApiPort = 37220;
                     network = Network.Main;
                 }

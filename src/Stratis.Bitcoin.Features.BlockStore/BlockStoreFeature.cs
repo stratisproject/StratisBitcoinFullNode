@@ -130,7 +130,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
             this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
-            this.blockStoreSignaled.RelayWorker();
             this.blockStoreLoop.InitializeAsync().GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
@@ -141,7 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogInformation("Stopping {0}...", this.name);
 
-            this.blockStoreSignaled.ShutDown();
+            this.blockStoreSignaled.Dispose();
             this.blockStoreManager.BlockStoreLoop.ShutDown();
             this.blockRepository.Dispose();
         }

@@ -314,6 +314,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 stratisSender.GenerateStratisWithMiner(5);
 
+                TestHelper.TriggerSync(stratisReceiver);
+                TestHelper.TriggerSync(stratisSender);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
             }

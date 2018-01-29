@@ -16,6 +16,12 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
         public const int DefaultStratisApiPort = 37221;
 
+        /// <summary>The default port used by the API when the node runs on the bitcoin testnet network.</summary>
+        public const int TestBitcoinApiPort = 38220;
+
+        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
+        public const int TestStratisApiPort = 38221;
+
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
         public const string DefaultApiHost = "http://localhost";
 
@@ -50,7 +56,18 @@ namespace Stratis.Bitcoin.Features.Api
             var apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
             Uri apiUri = new Uri(apiHost);
 
-            var apiPort = config.GetOrDefault("apiport", nodeSettings.Network.IsBitcoin() ? DefaultBitcoinApiPort : DefaultStratisApiPort);
+            // Find out which port should be used for the API.
+            int port;
+            if (nodeSettings.Network.IsBitcoin())
+            {
+                port = nodeSettings.Network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
+            }
+            else
+            {
+                port = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
+            }
+
+            var apiPort = config.GetOrDefault("apiport", port);
             
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)

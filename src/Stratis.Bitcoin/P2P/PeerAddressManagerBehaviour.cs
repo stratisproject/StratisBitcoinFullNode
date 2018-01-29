@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -49,8 +50,8 @@ namespace Stratis.Bitcoin.P2P
 
         protected override void AttachCore()
         {
-            this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
-            this.AttachedPeer.MessageReceived += this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
@@ -59,37 +60,52 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
-            if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
+            try
             {
-                if (message.Message.Payload is GetAddrPayload getaddr)
+                if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
-                    var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
-                    peer.SendMessageVoidAsync(addressPayload);
+                    if (message.Message.Payload is GetAddrPayload)
+                    {
+                        var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
+                        var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
+                        await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
+                    }
+
+                    if (message.Message.Payload is PingPayload ping || message.Message.Payload is PongPayload pong)
+                    {
+                        if (peer.State == NetworkPeerState.HandShaked)
+                            this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
+                    }
+                }
+
+                if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
+                {
+                    if (message.Message.Payload is AddrPayload addr)
+                        this.peerAddressManager.AddPeers(addr.Addresses, peer.RemoteSocketAddress);
                 }
             }
-
-            if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
+            catch (OperationCanceledException)
             {
-                if (message.Message.Payload is AddrPayload addr)
-                    this.peerAddressManager.AddPeers(addr.Addresses, peer.RemoteSocketAddress);
             }
         }
 
-        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState previousState)
+        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (peer.State == NetworkPeerState.HandShaked)
                     this.peerAddressManager.PeerHandshaked(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
+
+            return Task.CompletedTask;
         }
 
         protected override void DetachCore()
         {
-            this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
         }
 
         public override object Clone()

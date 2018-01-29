@@ -41,16 +41,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
-        public NodeSettings(string name = "bitcoin", Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
+        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ConfigurationException("A network name is mandatory.");
-
-            this.Name = name;
             this.Agent = agent;
             this.Network = innerNetwork;
             this.ProtocolVersion = protocolVersion;
@@ -100,10 +95,7 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
-
-        /// <summary>Blockchain name. Currently only "bitcoin" and "stratis" are used.</summary>
-        public string Name { get; set; }
-
+        
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
 
@@ -203,20 +195,24 @@ namespace Stratis.Bitcoin.Configuration
 
             this.Network = this.GetNetwork();
 
+            // Setting the data directory.
             if (this.DataDir == null)
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
-
-            this.DataFolder = new DataFolder(this.DataDir);
-            if (!Directory.Exists(this.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
-
-            if (!Directory.Exists(this.DataDir))
-                throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
-
-            // Create a default configuration file if required
-            if (this.ConfigurationFile == null || !File.Exists(this.ConfigurationFile))
             {
-                this.ConfigurationFile = this.ConfigurationFile ?? (Path.Combine(this.DataDir, this.Name) + " .conf");
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
+            }
+            else
+            {
+                // Create the data directories if they don't exist.
+                string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
+                Directory.CreateDirectory(directoryPath);
+                this.DataDir = directoryPath;
+                this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
+            }
+            
+            // If no configuration file path is passed in the args, load the default file.
+            if (this.ConfigurationFile == null)
+            {
+                this.ConfigurationFile = this.ConfigurationFile ?? (Path.Combine(this.DataDir, this.Network.RootFolderName) + " .conf");
                 this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
                 File.WriteAllText(this.ConfigurationFile, fileArgs);
             }
@@ -314,7 +310,7 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
             builder.AppendLine("#rpcallowip=127.0.0.1");
 
-            return builder.ToString();           
+            return builder.ToString();
         }
 
         /// <summary>

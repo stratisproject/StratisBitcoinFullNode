@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             uint256 validHexBlock = new uint256("00000000229d9fb87182d73870d53f9fdd9b76bfc02c059e6d9a6c7a3507031d");
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
-            NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-assumevalid={validHexBlock.ToString()}" }).LoadConfiguration();
+            NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(new string[] { $"-assumevalid={validHexBlock.ToString()}" }).LoadConfiguration();
             ConsensusSettings settings = new ConsensusSettings(nodeSettings, loggerFactory).LoadFromConfig();
             Assert.Equal(validHexBlock, settings.BlockAssumedValid);
         }
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
-            NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { "-assumevalid=0" }).LoadConfiguration();
+            NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(new string[] { "-assumevalid=0" }).LoadConfiguration();
             ConsensusSettings settings = new ConsensusSettings(nodeSettings, loggerFactory).LoadFromConfig();
             Assert.Null(settings.BlockAssumedValid);
         }
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
-            NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { "-assumevalid=xxx" }).LoadConfiguration();
+            NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(new string[] { "-assumevalid=xxx" }).LoadConfiguration();
             Assert.Throws<ConfigurationException>(() => new ConsensusSettings(nodeSettings, loggerFactory).LoadFromConfig());
         }
 
