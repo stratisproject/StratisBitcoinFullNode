@@ -447,16 +447,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                // Wait until we have at least one connected peer who's headers are synced with ours AND until not in IBD.
-                while (!this.connection.ConnectedPeers.Any(x => x.Behavior<ChainHeadersBehavior>().IsSynced())
-                    || this.initialBlockDownloadState.IsInitialBlockDownload())
+                // Prevent mining if not fully synced.
+                if (this.initialBlockDownloadState.IsInitialBlockDownload() || 
+                    this.consensusLoop.Tip != this.chain.Tip)
                 {
-                    if (this.initialBlockDownloadState.IsInitialBlockDownload()) this.logger.LogTrace("Waiting for IBD to complete...");
-                    else this.logger.LogTrace("Waiting to be connected with at least one synced network peer...");
+                    this.logger.LogTrace("Waiting for synchronization before mining can be started...");
 
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                    continue;
                 }
-
 
                 ChainedBlock chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)
