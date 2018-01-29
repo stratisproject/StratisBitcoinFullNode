@@ -222,6 +222,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Null(snapshot.GetStorageValue(testAddress, dodecahedron));
         }
 
+        [Fact]
+        public void CommitPushesToUnderlyingSource()
+        {
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
+            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
+            IContractStateRepository txTrack = repository.StartTracking();
+            txTrack.CreateAccount(testAddress);
+            txTrack.SetStorageValue(testAddress, dog, cat);
+            Assert.Null(repository.GetStorageValue(testAddress, dog));
+            txTrack.Commit();
+            Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
+        }
+
         private static byte[] StringToByteArray(string hex)
         {
             int NumberChars = hex.Length;

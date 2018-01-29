@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
+            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.state, testContext.decompiler, testContext.validator, testContext.gasInjector, options);
         }
 
         public class Blockinfo
@@ -123,6 +123,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             public int baseheight;
             public CachedCoinView cachedCoinView;
             public ContractStateRepository state;
+            public SmartContractDecompiler decompiler;
+            public SmartContractValidator validator;
+            public SmartContractGasInjector gasInjector;
 
             private bool useCheckpoints = true;
 
@@ -166,14 +169,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
                 byte[] root = null;
                 this.state = new ContractStateRepositoryRoot(stateDB, root);
-                SmartContractDecompiler smartContractDecompiler = new SmartContractDecompiler();
-                SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
+                this.decompiler = new SmartContractDecompiler();
+                this.validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
                         });
-                SmartContractGasInjector gasInjector = new SmartContractGasInjector();
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, smartContractDecompiler, validator, gasInjector);
+                this.gasInjector = new SmartContractGasInjector();
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, this.decompiler, this.validator, this.gasInjector);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
@@ -310,6 +313,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
 
+            context.mempool.Clear();
+
             var transferTransaction = new SmartContractTransaction
             {
                 VmVersion = 1,
@@ -324,14 +329,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx2.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
             tx2.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction.ToBytes())));
 
-            // this is tough cos we need to add transactions to the block after-the-fact
-
             uint256 hashTx2 = tx2.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx2));
             var pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate2.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-            // Now that it works - we will need to actually test that the transfer produced the required effect.
+            //context.chain.SetTip(pblocktemplate2.Block.Header);
+            //await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            //// Now that it works - we will need to actually test that the transfer produced the required effect.
         }
     }
 }

@@ -23,27 +23,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IContractStateRepository state;
-        private readonly SmartContractDecompiler smartContractDecompiler;
-        private readonly SmartContractValidator smartContractValidator;
-        private readonly SmartContractGasInjector smartContractGasInjector;
+        private readonly IContractStateRepository stateRoot;
+        SmartContractDecompiler decompiler;
+        SmartContractValidator validator;
+        SmartContractGasInjector gasInjector;
 
         public SmartContractConsensusValidator(
             Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            IContractStateRepository state,
-            SmartContractDecompiler smartContractDecompiler,
-            SmartContractValidator smartContractValidator,
-            SmartContractGasInjector smartContractGasInjector)
+            IContractStateRepository stateRoot,
+            SmartContractDecompiler decompiler,
+            SmartContractValidator validator,
+            SmartContractGasInjector gasInjector)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.state = state;
-            this.smartContractDecompiler = smartContractDecompiler;
-            this.smartContractValidator = smartContractValidator;
-            this.smartContractGasInjector = smartContractGasInjector;
+            this.stateRoot = stateRoot;
+            this.decompiler = decompiler;
+            this.validator = validator;
+            this.gasInjector = gasInjector;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
@@ -173,92 +173,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 return;
             }
 
-            // Need to update balances for these transactions
+            ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
+            ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
+
             foreach (TxOut txOut in transaction.Outputs)
             {
                 if (txOut.ScriptPubKey.IsSmartContractExec)
                 {
-                    var scTransaction = new SmartContractTransaction(txOut, transaction);
-                    if (scTransaction.OpCodeType == OpcodeType.OP_CREATECONTRACT)
-                    {
-                        ExecuteCreateContractTransaction(context, scTransaction);
-                    }
-                    else if (scTransaction.OpCodeType == OpcodeType.OP_CALLCONTRACT)
-                    {
-                        ExecuteCallContractTransaction(context, scTransaction);
-                    }
+                    IContractStateRepository track =  this.stateRoot.StartTracking();
+                    var scTransaction = new SmartContractTransaction(txOut, transaction);    
+                    SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty);
+                    SmartContractExecutionResult result = exec.Execute();
+                    track.Commit();
+                    // we could check here if the transactions are found in the block afterwards.
                 }
             }
-        }
-
-        private void ExecuteCreateContractTransaction(RuleContext context, SmartContractTransaction transaction)
-        {
-            uint160 contractAddress = transaction.GetNewContractAddress(); // TODO: GET ACTUAL NUM
-            this.state.CreateAccount(0);
-            SmartContractDecompilation decomp = this.smartContractDecompiler.GetModuleDefinition(transaction.ContractCode);
-            SmartContractValidationResult validationResult = this.smartContractValidator.ValidateContract(decomp);
-            
-            if (!validationResult.Valid)
-            {
-                // expend all of users fee - no deployment
-                throw new NotImplementedException();
-            }
-
-            this.smartContractGasInjector.AddGasCalculationToContract(decomp.ContractType, decomp.BaseType);
-            MemoryStream adjustedCodeMem = new MemoryStream();
-            decomp.ModuleDefinition.Write(adjustedCodeMem);
-            byte[] adjustedCodeBytes = adjustedCodeMem.ToArray();
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
-
-            MethodDefinition initMethod = decomp.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y=>y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
- 
-            SmartContractExecutionResult result = vm.ExecuteMethod(adjustedCodeMem.ToArray(), new SmartContractExecutionContext {
-                BlockNumber = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height),
-                Difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty),
-                CallerAddress = 100, // TODO: FIX THIS
-                CallValue = transaction.Value,
-                GasLimit = transaction.GasLimit,
-                GasPrice = transaction.GasPrice,
-                Parameters = transaction.Parameters ?? new object[0],
-                CoinbaseAddress = 0, //TODO: FIX THIS
-                ContractAddress = contractAddress,
-                ContractMethod = initMethod?.Name, // probably better ways of doing this
-                ContractTypeName = decomp.ContractType.Name // probably better ways of doing this
-            });
-            // do something with gas
-            
-            if (!result.Revert)
-            {
-                this.state.SetCode(contractAddress, adjustedCodeBytes);
-                // anything else to update
-            }
-        }
-
-        private void ExecuteCallContractTransaction(RuleContext context, SmartContractTransaction transaction)
-        {
-            byte[] contractCode = this.state.GetCode(transaction.To);
-            SmartContractDecompilation decomp = this.smartContractDecompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
-
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
-            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, new SmartContractExecutionContext
-            {
-                BlockNumber = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height),
-                Difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty),
-                CallerAddress = 0, // TODO: FIX THIS
-                CallValue = transaction.Value,
-                GasLimit = transaction.GasLimit,
-                GasPrice = transaction.GasPrice,
-                Parameters = transaction.Parameters ?? new object[0],
-                CoinbaseAddress = 0, //TODO: FIX THIS
-                ContractAddress = transaction.To,
-                ContractMethod = transaction.MethodName,
-                ContractTypeName = decomp.ContractType.Name 
-            });
-
-            IList<TransferInfo> transfers = this.state.GetTransfers();
-            CondensingTx condensingTx = new CondensingTx(transfers, transaction);
-            Transaction newTx = condensingTx.CreateCondensingTx();
-            context.BlockValidationContext.Block.AddTransaction(newTx);
         }
     }
 }

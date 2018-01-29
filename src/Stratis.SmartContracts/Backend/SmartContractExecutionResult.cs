@@ -12,30 +12,22 @@ namespace Stratis.SmartContracts.Backend
         public object Return { get; set; }
         public SmartContractRuntimeException RuntimeException { get; set; }
         public bool Revert { get; set; }
-
-        public HashSet<uint256> DeleteAccounts { get; set; }
-        //public List<InternalTransaction> InternalTransactions { get; set; }
-        public HashSet<uint256> TouchedAccounts { get; set; }
-        // TODO: List of log info here?
-        // TODO: List of CallCreate?
+        public List<Transaction> Transactions { get; set; }
         public ulong FutureRefund { get; set; }
-
         public uint160 NewContractAddress { get; set; }
 
         public SmartContractExecutionResult()
         {
-            DeleteAccounts = new HashSet<uint256>();
-            //InternalTransactions = new List<InternalTransaction>();
+            this.Transactions = new List<Transaction>();
         }
 
         public void Merge(SmartContractExecutionResult another)
         {
-            //InternalTransactions.AddRange(another.InternalTransactions);
+            throw new NotImplementedException();
             if (another.RuntimeException == null && !another.Revert)
             {
-                DeleteAccounts.UnionWith(another.DeleteAccounts);
-                FutureRefund += another.FutureRefund;
-                another.TouchedAccounts.UnionWith(another.TouchedAccounts);
+                this.FutureRefund += another.FutureRefund;
+                this.Transactions.AddRange(another.Transactions);
             }
         }
 
