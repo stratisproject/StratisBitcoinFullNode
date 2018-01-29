@@ -85,13 +85,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
 
-            if (this.pooledTransaction != null)
-                trx = await this.pooledTransaction.GetTransaction(trxid);
-
             if (trx == null)
             {
                 var blockStore = this.FullNode.NodeFeature<IBlockStore>();
-
                 trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
             }
 
