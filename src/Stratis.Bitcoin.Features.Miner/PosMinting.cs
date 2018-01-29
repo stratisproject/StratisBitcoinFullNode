@@ -9,7 +9,6 @@ using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -259,9 +258,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Memory pool of pending transactions.</summary>
         protected readonly ITxMempool mempool;
 
-        /// <summary>Contains logic for interacting with the blocks stored in the database.</summary>
-        private readonly IBlockRepository blockRepository;
-
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
@@ -320,7 +316,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public PosMinting(
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
-            IBlockRepository blockRepository,
             Network network,
             IConnectionManager connection,
             IDateTimeProvider dateTimeProvider,
@@ -338,7 +333,6 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.consensusLoop = consensusLoop;
             this.chain = chain;
-            this.blockRepository = blockRepository;
             this.network = network;
             this.connection = connection;
             this.dateTimeProvider = dateTimeProvider;
@@ -453,22 +447,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
-                bool readyToMine = !this.initialBlockDownloadState.IsInitialBlockDownload();
-
-                // If not in IBD- check if fully synced.
-                if (readyToMine)
-                {
-                    // Most advanced peer's pending tip.
-                    ChainedBlock chainedBlock = this.connection.ConnectedPeers
-                        .Select(x => x.Behavior<ChainHeadersBehavior>().PendingTip)
-                        .Where(x => x != null).OrderByDescending(x => x.Height)
-                        .FirstOrDefault();
-
-                    if ((chainedBlock == null) || (this.blockRepository.HighestPersistedBlock.Height < chainedBlock.Height))
-                        readyToMine = false;
-                }
-
-                if (!readyToMine)
+                // Prevent mining if not fully synced.
+                if (this.initialBlockDownloadState.IsInitialBlockDownload() || 
+                    this.consensusLoop.Tip != this.chain.Tip)
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started...");
 
