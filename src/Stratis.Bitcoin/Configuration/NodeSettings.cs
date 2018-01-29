@@ -197,20 +197,17 @@ namespace Stratis.Bitcoin.Configuration
 
             // Setting the data directory.
             if (this.DataDir == null)
-            {
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
-            }
-            else
-            {
-                // Create the data directories if they don't exist.
-                string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
-                Directory.CreateDirectory(directoryPath);
-                this.DataDir = directoryPath;
-                this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
-            }
-            
-            // If no configuration file path is passed in the args, load the default file.
-            if (this.ConfigurationFile == null)
+
+            this.DataFolder = new DataFolder(this.DataDir);
+            if (!Directory.Exists(this.DataFolder.CoinViewPath))
+                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
+
+            if (!Directory.Exists(this.DataDir))
+                throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
+
+            // Create a default configuration file if required
+            if (this.ConfigurationFile == null || !File.Exists(this.ConfigurationFile))
             {
                 this.ConfigurationFile = this.ConfigurationFile ?? (Path.Combine(this.DataDir, this.Network.RootFolderName) + " .conf");
                 this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
