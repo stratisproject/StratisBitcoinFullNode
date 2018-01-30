@@ -45,6 +45,11 @@ namespace NBitcoin
         private uint256 hashMerkleRoot;
         public uint256 HashMerkleRoot { get { return this.hashMerkleRoot; } set { this.hashMerkleRoot = value; } }
 
+        // Added for Smart Contracts - in the future we can derive classes
+        private uint256 hashStateRoot;
+        public uint256 HashStateRoot { get { return this.hashStateRoot; } set { this.hashStateRoot = value; } }
+        // End added for Smart Contracts
+
         public bool IsNull { get { return (this.bits == 0); } }
 
         private uint256[] hashes;

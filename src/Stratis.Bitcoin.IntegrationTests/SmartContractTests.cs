@@ -332,9 +332,33 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashTx2 = tx2.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx2));
             var pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            //context.chain.SetTip(pblocktemplate2.Block.Header);
-            //await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-            //// Now that it works - we will need to actually test that the transfer produced the required effect.
+            Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
+
+            context.mempool.Clear();
+
+            var transferTransaction2 = new SmartContractTransaction
+            {
+                VmVersion = 1,
+                GasLimit = 500000,
+                GasPrice = 1,
+                To = newContractAddress,
+                OpCodeType = OpcodeType.OP_CALLCONTRACT,
+                MethodName = "Test"
+            };
+
+            Transaction tx3 = new Transaction();
+            tx3.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            tx3.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction2.ToBytes())));
+
+            uint256 hashTx3 = tx3.GetHash();
+            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx3));
+            var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            Assert.Equal(3, pblocktemplate3.Block.Transactions.Count);
+
+            // Tomorrow: look at how block pulling is validated 
+            // See what other integration tests can be applied
+            // See if it's possible to build a node
+            // Still need to expend gas
         }
     }
 }
