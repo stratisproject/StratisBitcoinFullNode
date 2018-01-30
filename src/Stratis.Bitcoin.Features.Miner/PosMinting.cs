@@ -500,7 +500,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         utxoStakeDescription.TxOut = utxo;
                         utxoStakeDescription.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
                         utxoStakeDescription.Address = infoTransaction.Address;
-                        utxoStakeDescription.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
+                        utxoStakeDescription.HashBlock = this.chain.GetBlock((int)set.Height)?.HashBlock ?? uint256.Zero;
                         utxoStakeDescription.UtxoSet = set;
                         utxoStakeDescription.Secret = walletSecret; // Temporary.
                         utxoStakeDescriptions.Add(utxoStakeDescription);
