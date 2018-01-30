@@ -503,9 +503,9 @@ namespace Stratis.Bitcoin.Features.Miner
                         utxoStakeDescription.HashBlock = this.chain.GetBlock((int)set.Height)?.HashBlock;
                         utxoStakeDescription.UtxoSet = set;
                         utxoStakeDescription.Secret = walletSecret; // Temporary.
-						if(utxoStakeDescription.HashBlock==null) continue; //skip utxo with Null hashblock
-
-	                    utxoStakeDescriptions.Add(utxoStakeDescription); 
+                        // Skip utxo with Null HashBlock
+                        if (utxoStakeDescription.HashBlock == null) continue;
+                        utxoStakeDescriptions.Add(utxoStakeDescription);
                         totalBalance += utxo.Value;
                         this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
                     }
