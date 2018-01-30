@@ -127,9 +127,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string[] args = null)
         {
-            NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
-            nodeSettings.LoadArguments(args).LoadConfiguration();
-            return nodeSettings;
+            return new NodeSettings(innerNetwork: network, args:args, loadConfiguration:true);
         }
 
         /// <summary>
