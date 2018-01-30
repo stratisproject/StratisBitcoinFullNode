@@ -13,6 +13,13 @@ namespace Stratis.SmartContracts
         public ulong GasLimit { get; set; }
         public ulong GasPrice { get; set; }
         public ulong Value { get; set; }
+        public ulong TotalGas
+        {
+            get
+            {
+                return this.GasPrice * this.GasLimit;
+            }
+        }
         public object[] Parameters { get; set; }
 
         public byte[] ContractCode { get; set; }

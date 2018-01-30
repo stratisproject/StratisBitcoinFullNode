@@ -119,13 +119,13 @@ namespace Stratis.Bitcoin.Features.Miner
         // transactions in the memory pool. When we select transactions from the
         // pool, we select by highest fee rate of a transaction combined with all
         // its ancestors.
-        private static long lastBlockTx = 0;
+        protected static long lastBlockTx = 0;
 
-        private static long lastBlockSize = 0;
+        protected static long lastBlockSize = 0;
 
-        private static long lastBlockWeight = 0;
+        protected static long lastBlockWeight = 0;
 
-        private static long medianTimePast;
+        protected static long medianTimePast;
 
         protected readonly IConsensusLoop consensusLoop;
 
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Block pblock;
 
         // Configuration parameters for the block size.
-        private bool fIncludeWitness;
+        protected bool fIncludeWitness;
 
         private uint blockMaxWeight, blockMaxSize;
 
@@ -156,11 +156,11 @@ namespace Stratis.Bitcoin.Features.Miner
         private FeeRate blockMinFeeRate;
 
         // Information on the current status of the block.
-        private long blockWeight;
+        protected long blockWeight;
 
-        private long blockSize;
+        protected long blockSize;
 
-        private long blockTx;
+        protected long blockTx;
 
         private long blockSigOpsCost;
 
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.Miner
         // Chain context for the block.
         protected int height;
 
-        private long lockTimeCutoff;
+        protected long lockTimeCutoff;
 
         protected Network network;
 

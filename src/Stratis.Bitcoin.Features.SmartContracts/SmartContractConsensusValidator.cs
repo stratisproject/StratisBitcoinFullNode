@@ -166,28 +166,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            // check if it is a boring transaction and can be handled normally
-            if (!transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractExec))
-            {
-                base.UpdateCoinView(context, transaction);
+            base.UpdateCoinView(context, transaction);
+
+            TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+
+            if (contractTxOut == null)
                 return;
-            }
 
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
-            foreach (TxOut txOut in transaction.Outputs)
-            {
-                if (txOut.ScriptPubKey.IsSmartContractExec)
-                {
-                    IContractStateRepository track =  this.stateRoot.StartTracking();
-                    var scTransaction = new SmartContractTransaction(txOut, transaction);    
-                    SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty);
-                    SmartContractExecutionResult result = exec.Execute();
-                    track.Commit();
-                    // we could check here if the transactions are found in the block afterwards.
-                }
-            }
+            IContractStateRepository track = this.stateRoot.StartTracking();
+            var scTransaction = new SmartContractTransaction(contractTxOut, transaction);
+            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty);
+            SmartContractExecutionResult result = exec.Execute();
+            track.Commit();
         }
     }
 }
