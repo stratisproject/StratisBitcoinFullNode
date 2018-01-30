@@ -22,11 +22,6 @@ namespace Stratis.Bitcoin.Api.Tests
             Block.BlockSignature = false;
         }
 
-        private string GetTestDataDir([CallerMemberName] string path = null)
-        {
-            return System.IO.Path.Combine("TestData", path);
-        }
-
         /// <summary>
         /// Tests that if no API settings are passed and we're on the bitcoin network, the defaults settings are used.
         /// </summary>
@@ -35,7 +30,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-datadir={CreateTestDir(this)}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -59,7 +54,7 @@ namespace Stratis.Bitcoin.Api.Tests
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
             Network network = Network.StratisMain;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={CreateTestDir(this)}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -82,7 +77,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             int customPort = 55555;
             NodeSettings nodeSettings = new NodeSettings(
-                args:new[] { $"-apiport={customPort}", $"-datadir={this.GetTestDataDir()}" }, loadConfiguration:true);
+                args:new[] { $"-apiport={customPort}", $"-datadir={CreateTestDir(this)}" }, loadConfiguration:true);
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -105,7 +100,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={CreateTestDir(this)}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -130,7 +125,7 @@ namespace Stratis.Bitcoin.Api.Tests
             Block.BlockSignature = true;
             string customApiUri = "http://0.0.0.0";
             Network network = Network.StratisMain;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={CreateTestDir(this)}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -155,7 +150,7 @@ namespace Stratis.Bitcoin.Api.Tests
             int customPort = 55555;
             Network network = Network.Main;
             NodeSettings nodeSettings = new NodeSettings(
-                network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}", $"-datadir={this.GetTestDataDir()}" });
+                network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}", $"-datadir={CreateTestDir(this)}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -179,7 +174,7 @@ namespace Stratis.Bitcoin.Api.Tests
             int customPort = 5522;
             string customApiUri = $"http://0.0.0.0:{customPort}";
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={CreateTestDir(this)}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
