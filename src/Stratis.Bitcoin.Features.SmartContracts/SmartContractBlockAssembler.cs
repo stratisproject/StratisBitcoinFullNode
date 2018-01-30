@@ -92,6 +92,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // add to block sigopscost
                 // add to this.fees
             }
+
+            // Add to coinbase
+            // Refund transaction
         }
     }
 }
