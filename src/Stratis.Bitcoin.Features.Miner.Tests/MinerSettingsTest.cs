@@ -20,14 +20,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(callback);
 
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.LoadArguments(new string[] {
+            var nodeSettings = NodeSettings.Default(args:new string[] {
                 "-mine=true",
                 "-stake=true",
                 "-walletname=mytestwallet",
                 "-walletpassword=test",
                 "-mineaddress=TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms"
-            }).LoadConfiguration();
+            });
 
             minersettings.Load(nodeSettings);
 
@@ -50,14 +49,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(callback);
 
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.LoadArguments(new string[] {
+            var nodeSettings = NodeSettings.Default(args:new string[] {
                 "-mine=false",
                 "-stake=true",
                 "-walletname=mytestwallet",
                 "-walletpassword=test",
                 "-mineaddress=TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms"
-            }).LoadConfiguration();
+            });
 
             minersettings.Load(nodeSettings);
 
@@ -80,14 +78,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(callback);
 
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.LoadArguments(new string[] {
+            var nodeSettings = NodeSettings.Default(args:new string[] {
                 "-mine=true",
                 "-stake=false",
                 "-walletname=mytestwallet",
                 "-walletpassword=test",
                 "-mineaddress=TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms"
-            }).LoadConfiguration();
+            });
 
             minersettings.Load(nodeSettings);
 

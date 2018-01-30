@@ -13,14 +13,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             string dir = CreateTestDir(this);
 
             var node1 = new FullNodeBuilder()
-                .UseNodeSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}.1" }))
+                .UseNodeSettings(new NodeSettings(args:new string[] { $"-datadir={dir}.1" }))
                 .UseBlockStore()
                 .Build();
             
             var settings1 = node1.NodeService<StoreSettings>();
        
             var node2 = new FullNodeBuilder()
-                .UseNodeSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}.2" }))
+                .UseNodeSettings(new NodeSettings(args:new string[] { $"-datadir={dir}.2" }))
                 .UseBlockStore(x => x.ReIndex = true)
                 .Build();
             

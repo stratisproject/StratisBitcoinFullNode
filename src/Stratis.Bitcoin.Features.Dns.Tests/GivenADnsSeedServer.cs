@@ -33,9 +33,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(null, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolder); };
 
@@ -53,9 +51,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, null, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolder); };
 
@@ -73,9 +69,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, null, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolder); };
 
@@ -93,9 +87,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, null, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolder); };
 
@@ -113,9 +105,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, null, dateTimeProvider, DnsSettings.Load(nodeSettings), dataFolder); };
 
@@ -133,9 +123,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, null, DnsSettings.Load(nodeSettings), dataFolder); };
 
@@ -172,9 +160,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             nodeSettings.DataDir = @"C:\";
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, DnsSettings.Load(nodeSettings), null); };
 
@@ -193,9 +179,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
 
             // Act.

@@ -44,7 +44,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
-        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
+        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
+            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = false)
         {
             this.Agent = agent;
             this.Network = innerNetwork;
@@ -55,6 +56,11 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+
+            LoadArguments(args);
+
+            if (loadConfiguration)
+                this.LoadConfiguration();
         }
 
         /// <summary>Factory to create instance logger.</summary>
@@ -119,10 +125,10 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <returns>Default node configuration.</returns>
-        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
+        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string[] args = null)
         {
             NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
-            nodeSettings.LoadArguments(new string[0]).LoadConfiguration();
+            nodeSettings.LoadArguments(args).LoadConfiguration();
             return nodeSettings;
         }
 
@@ -132,15 +138,15 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="args">Application command line arguments.</param>
         /// <returns>Node configuration with arguments recorded.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args)
+        private NodeSettings LoadArguments(string[] args)
         {
-            this.LoadArgs = args;
+            this.LoadArgs = args ?? new string[] { };
             this.ConfigReader = null;
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+            this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths
             if (this.DataDir != null && this.ConfigurationFile != null)

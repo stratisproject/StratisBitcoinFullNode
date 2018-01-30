@@ -42,7 +42,7 @@ namespace Stratis.StratisDnsD
             try
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
 
                 // Run as a full node with DNS or just a DNS service?
                 if (args.Contains("-dnsfullnode"))

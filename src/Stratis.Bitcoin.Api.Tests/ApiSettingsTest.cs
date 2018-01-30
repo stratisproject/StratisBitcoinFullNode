@@ -35,8 +35,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network)
-                .LoadArguments(new[] { $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-datadir={this.GetTestDataDir()}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -60,8 +59,7 @@ namespace Stratis.Bitcoin.Api.Tests
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
             Network network = Network.StratisMain;
-            NodeSettings nodeSettings = new NodeSettings(network)
-                .LoadArguments(new string[] { $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={this.GetTestDataDir()}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -83,8 +81,8 @@ namespace Stratis.Bitcoin.Api.Tests
         {    
             // Arrange.
             int customPort = 55555;
-            NodeSettings nodeSettings = new NodeSettings()
-                .LoadArguments(new[] { $"-apiport={customPort}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(
+                args:new[] { $"-apiport={customPort}", $"-datadir={this.GetTestDataDir()}" }, loadConfiguration:true);
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -107,8 +105,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network)
-                .LoadArguments(new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -133,8 +130,7 @@ namespace Stratis.Bitcoin.Api.Tests
             Block.BlockSignature = true;
             string customApiUri = "http://0.0.0.0";
             Network network = Network.StratisMain;
-            NodeSettings nodeSettings = new NodeSettings(network)
-                .LoadArguments(new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -158,8 +154,8 @@ namespace Stratis.Bitcoin.Api.Tests
             string customApiUri = "http://0.0.0.0";
             int customPort = 55555;
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network)
-                .LoadArguments(new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(
+                network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}", $"-datadir={this.GetTestDataDir()}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()
@@ -183,8 +179,7 @@ namespace Stratis.Bitcoin.Api.Tests
             int customPort = 5522;
             string customApiUri = $"http://0.0.0.0:{customPort}";
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network)
-                .LoadArguments(new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
+            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-datadir={this.GetTestDataDir()}" });
 
             // Act.
             ApiSettings settings = new FullNodeBuilder()

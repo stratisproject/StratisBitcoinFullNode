@@ -44,9 +44,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, null, loggerFactory, nodeLifetime, DnsSettings.Load(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
@@ -63,9 +61,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, null, nodeLifetime, DnsSettings.Load(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
@@ -83,9 +79,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, null, DnsSettings.Load(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
@@ -103,9 +97,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, DnsSettings.Load(nodeSettings), null, dataFolder, asyncLoopFactory); };
@@ -140,9 +132,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             DataFolder dataFolder = CreateDataFolder(this);
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
@@ -171,9 +161,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Mock<IWhitelistManager> whitelistManager = new Mock<IWhitelistManager>();
 
             Mock<INodeLifetime> nodeLifetime = new Mock<INodeLifetime>();
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
             DataFolder dataFolder = CreateDataFolder(this);
 
@@ -219,9 +207,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
             INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
 
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
             DataFolder dataFolder = CreateDataFolder(this);
 
@@ -264,9 +250,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
             INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
 
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
             DataFolder dataFolder = CreateDataFolder(this);
 
@@ -316,9 +300,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
             INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
 
-            NodeSettings nodeSettings = NodeSettings.Default()
-                .LoadArguments(new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" })
-                .LoadConfiguration();
+            NodeSettings nodeSettings = NodeSettings.Default(args: new string[] { "-dnshostname=a", "-dnsnameserver=b", "-dnsmailbox=c" });
             nodeSettings.DataDir = Directory.GetCurrentDirectory();
             DataFolder dataFolder = CreateDataFolder(this);
 

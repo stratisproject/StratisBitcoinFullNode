@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsUsingTestNetConfiguresNodeBuilderWithTestnetSettings()
         {
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { "-testnet" });
+            NodeSettings nodeSettings = new NodeSettings(args:new string[] { "-testnet" });
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
 
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsUsingRegTestNetConfiguresNodeBuilderWithRegTestNet()
         {
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { "-regtest" });
+            NodeSettings nodeSettings = new NodeSettings(args:new string[] { "-regtest" });
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
 

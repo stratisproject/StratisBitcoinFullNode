@@ -50,8 +50,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(networkAddressAddNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressDiscoverNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
 
@@ -69,8 +68,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
             var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
 
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
 
@@ -97,8 +95,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(networkAddressConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressDiscoverNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
@@ -121,8 +118,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
             var networkAddressConnectNode = new NetworkAddress(ipAddressThree, 80);
 
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
@@ -138,8 +134,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
             var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
@@ -167,8 +162,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(networkAddressConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(networkAddressDiscoverNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
@@ -189,8 +183,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
             var peerAddressManager = new PeerAddressManager(peerFolder, this.extendedLoggerFactory);
 
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
@@ -202,8 +195,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorDiscover_WithConnectPeersSpecified_CanNotStart()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { }).LoadConfiguration();
+            var nodeSettings = new NodeSettings(args:new string[] { }, loadConfiguration:true);
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
