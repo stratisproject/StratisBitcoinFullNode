@@ -243,6 +243,15 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
         private IAsyncLoop stakingLoop;
 
+        /// <summary>Indicates that the stake flag is not in progress.</summary>
+        public const int StakeNotInProgress = -1;
+
+        /// <summary>Indicates that the stake flag is in progress.</summary>
+        public const int StakeInProgress = 1;
+
+        /// <summary>a flag that indicates if stake is on/off based on the <see cref="StakeInProgress"/> and <see cref="StakeNotInProgress"/> constants.</summary>
+        private int stakeProgressFlag;
+
         /// <summary>
         /// Target reserved balance that will not participate in staking.
         /// It is possible that less than this amount will be reserved.
@@ -353,6 +362,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
+            this.stakeProgressFlag = StakeNotInProgress;
 
             this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
@@ -363,7 +373,8 @@ namespace Stratis.Bitcoin.Features.Miner
         public IAsyncLoop Stake(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
-            if (this.stakingLoop != null)
+
+            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
                 return this.stakingLoop;
@@ -421,7 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (this.stakingLoop == null)
+            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeNotInProgress, StakeInProgress) == StakeNotInProgress)
             {
                 this.logger.LogTrace("(-)[NOT_MINING]");
                 return;
