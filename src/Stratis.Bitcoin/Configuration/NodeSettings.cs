@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Configuration
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
                 if (this.ConfigurationFile == null)
                 {
-                    this.ConfigurationFile = this.ConfigurationFile ?? Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
+                    this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
                     if (File.Exists(this.ConfigurationFile))
                         fileArgs = File.ReadAllText(this.ConfigurationFile);
                 }
