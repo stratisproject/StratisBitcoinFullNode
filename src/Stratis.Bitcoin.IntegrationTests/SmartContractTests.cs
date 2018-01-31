@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             Assert.Equal(ownerFromStorage, new uint160(100).ToBytes());
             Assert.NotNull(context.state.GetCode(newContractAddress));
-            // TODO: Check gas expenditure and refund in block
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
 
         [Fact]
@@ -305,7 +305,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             };
             tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.ToBytes())));
 
-            // This tx has a low fee: 1000 satoshis
             uint256 hashTx = tx.GetHash();
             context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
@@ -313,6 +312,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
 
@@ -334,6 +334,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx2));
             var pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
+            Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
 
@@ -354,12 +355,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashTx3 = tx3.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx3));
             var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            Assert.Equal(3, pblocktemplate3.Block.Transactions.Count);
-
-            // Tomorrow: look at how block pulling is validated 
-            // See what other integration tests can be applied
-            // See if it's possible to build a node
-            // Still need to expend gas
+            Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 send from contract
+            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].TotalOut);
+            Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
+
+
     }
 }

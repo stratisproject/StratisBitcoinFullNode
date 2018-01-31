@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.gasInjector = gasInjector;
         }
 
-        // Copied from PowBlockAssembler, got rid of junk 
+        // Copied from PowBlockAssembler, got rid of comments 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
@@ -143,8 +143,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     this.blockSize += transaction.GetSerializedSize();
                 this.blockTx++;
             }
-            
-            
 
             // Setup refunds
             this.refundSender += toRefund;
@@ -154,7 +152,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 Op.GetPushOp(scTransaction.From.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
-            ); // hope this is doing the right thing ???
+            ); 
             this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
     }

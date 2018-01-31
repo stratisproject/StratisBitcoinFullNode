@@ -90,6 +90,13 @@ namespace Stratis.SmartContracts
                 return result;
             }
 
+            IList<TransferInfo> transfers = this.state.GetTransfers();
+            if (transfers.Any())
+            {
+                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
+                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
+            }
+
             this.stateTrack.SetCode(contractAddress, adjustedCodeBytes);
             this.stateTrack.Commit();
             return result;
@@ -117,9 +124,12 @@ namespace Stratis.SmartContracts
             });
 
             IList<TransferInfo> transfers = this.state.GetTransfers();
-            CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
-            Transaction newTx = condensingTx.CreateCondensingTx();
-            result.InternalTransactions.Add(newTx);
+            if (transfers.Any())
+            {
+                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
+                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
+            }
+
             return result;
         }
     }

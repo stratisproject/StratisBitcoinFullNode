@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
 
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 features
                     .AddFeature<SmartContractFeature>()
                     .DependOn<ConsensusFeature>()
+                    .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<SmartContractDecompiler>();
@@ -47,6 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
                         services.AddSingleton<IContractStateRepository>(repository);
                         services.AddSingleton<PowConsensusValidator, SmartContractConsensusValidator>();
+                        services.AddSingleton<PowBlockAssembler, SmartContractBlockAssembler>();
                     });
             });
             return fullNodeBuilder;
