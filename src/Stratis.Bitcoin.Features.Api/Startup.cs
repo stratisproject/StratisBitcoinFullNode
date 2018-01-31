@@ -49,7 +49,17 @@ namespace Stratis.Bitcoin.Features.Api
                 });
 
             // Add framework services.
-            services.AddMvc(options => options.Filters.Add(typeof(LoggingActionFilter)))
+            services.AddMvc(options =>
+                {
+                    options.Filters.Add(typeof(LoggingActionFilter));
+
+                    ServiceProvider serviceProvider = services.BuildServiceProvider();
+                    ApiFeatureOptions apiFeatureOptions = (ApiFeatureOptions)serviceProvider.GetRequiredService(typeof(ApiFeatureOptions));
+                    if (apiFeatureOptions.KeepaliveTimer != null)
+                    {
+                        options.Filters.Add(typeof(KeepaliveActionFilter));
+                    }
+                })
                 // add serializers for NBitcoin objects
                 .AddJsonOptions(options => NBitcoin.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddControllers(services);

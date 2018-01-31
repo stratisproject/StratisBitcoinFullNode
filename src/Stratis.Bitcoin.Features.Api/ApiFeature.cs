@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Timers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Features.Api.Models;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
@@ -58,7 +58,21 @@ namespace Stratis.Bitcoin.Features.Api
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
             this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings);
 
-            this.TryStartKeepaliveMonitor();
+            // Start the keepalive timer, if set.
+            // If the timer expires, the node will shut down.
+            if (this.apiFeatureOptions.KeepaliveTimer != null)
+            {
+                this.apiFeatureOptions.KeepaliveTimer.Elapsed += (sender, args) =>
+                {
+                    this.logger.LogInformation($"The application will shut down because the keepalive timer has elapsed.");
+
+                    this.apiFeatureOptions.KeepaliveTimer.Stop();
+                    this.apiFeatureOptions.KeepaliveTimer.Enabled = false;
+                    this.fullNode.Dispose();
+                };
+
+                this.apiFeatureOptions.KeepaliveTimer.Start();
+            }
         }
 
         /// <inheritdoc />
@@ -74,41 +88,19 @@ namespace Stratis.Bitcoin.Features.Api
                 this.webHost = null;
             }
         }
-
-        /// <summary>
-        /// A KeepaliveMonitor when enabled will shutdown the
-        /// node if no one is calling the keepalive endpoint
-        /// during a certain trashold window
-        /// </summary>
-        public void TryStartKeepaliveMonitor()
-        {
-            if (this.apiFeatureOptions.KeepaliveMonitor?.KeepaliveInterval.TotalSeconds > 0)
-            {
-                this.asyncLoop = this.asyncLoopFactory.Run("ApiFeature.KeepaliveMonitor", token =>
-                {
-                    // shortened for redability
-                    KeepaliveMonitor monitor = this.apiFeatureOptions.KeepaliveMonitor;
-
-                    // check the trashold to trigger a shutdown
-                    if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < this.fullNode.DateTimeProvider.GetUtcNow())
-                        this.fullNode.Dispose();
-
-                    return Task.CompletedTask;
-                },
-                this.fullNode.NodeLifetime.ApplicationStopping,
-                repeatEvery: this.apiFeatureOptions.KeepaliveMonitor?.KeepaliveInterval,
-                startAfter: TimeSpans.Minute);
-            }
-        }
     }
 
     public sealed class ApiFeatureOptions
     {
-        public KeepaliveMonitor KeepaliveMonitor { get; private set; }
+        public Timer KeepaliveTimer { get; private set; }
 
         public void Keepalive(TimeSpan timeSpan)
         {
-            this.KeepaliveMonitor = new KeepaliveMonitor { KeepaliveInterval = timeSpan };
+            this.KeepaliveTimer = new Timer
+            {
+                AutoReset = false,
+                Interval = timeSpan.TotalSeconds * 1000
+            };
         }
     }
 

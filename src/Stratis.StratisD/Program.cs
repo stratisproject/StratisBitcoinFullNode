@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.StratisD
 {
@@ -31,7 +33,6 @@ namespace Stratis.StratisD
                 NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
-
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseStratisConsensus()
@@ -39,7 +40,15 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseWallet()
                     .AddPowPosMining()
-                    .UseApi()
+                    .UseApi(null, options =>
+                    {
+                        // To set a keepalive interval, set -keepalive=xx in the commmand line, xx being the interval in seconds.
+                        bool keepaliveSet = int.TryParse(args.GetValueOf("-keepalive"), out int keepaliveTimeOut);
+                        if (keepaliveSet && keepaliveTimeOut > 0)
+                        {
+                            options.Keepalive(TimeSpan.FromSeconds(keepaliveTimeOut));
+                        }
+                    })
                     .AddRPC()
                     .Build();
 

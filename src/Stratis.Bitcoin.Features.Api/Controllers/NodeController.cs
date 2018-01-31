@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api.Controllers
 {
@@ -43,16 +44,15 @@ namespace Stratis.Bitcoin.Features.Api.Controllers
         /// <summary>
         /// Set the keepalive flag.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An HTTP status code indicating success (200).</returns>
         [HttpPost]
         [Route("keepalive")]
         public IActionResult Keepalive()
         {
-            if (this.apiFeatureOptions.KeepaliveMonitor == null)
+            if (this.apiFeatureOptions.KeepaliveTimer == null)
                 return new ObjectResult("Keepalive Disabled") { StatusCode = 405 }; // (405) Method Not Allowed
 
-            this.apiFeatureOptions.KeepaliveMonitor.LastBeat = this.fullNode.DateTimeProvider.GetUtcNow();
-
+            this.apiFeatureOptions.KeepaliveTimer.Reset();
             return this.Ok();
         }
     }
