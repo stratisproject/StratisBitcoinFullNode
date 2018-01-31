@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.P2P
                 break;
             }
 
-            //If the peer selector returns nothing, we need to wait a bit,
+            //If the peer selector returns nothing, we wait 2 seconds to
             //effectively override the connector's burst mode.
             if (peer == null)
             {
