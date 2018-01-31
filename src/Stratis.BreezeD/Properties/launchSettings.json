@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Bitcoin Main": {
-      "commandName": "Project",
-      "commandLineArgs": "stratis -testnet"
+      "commandName": "Project"
     },
     "Bitcoin Test": {
       "commandName": "Project",
