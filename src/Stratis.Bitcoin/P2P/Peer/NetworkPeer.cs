@@ -527,14 +527,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (connectedToSelf)
             {
-                this.logger.LogDebug("Connection to self detected and will be aborted.");
+                this.logger.LogDebug("Connection to self detected, disconnecting.");
 
-                VersionPayload versionPayload = this.Parameters.CreateVersion(this.PeerEndPoint, this.Network, this.dateTimeProvider.GetTimeOffset());
-                await this.SendMessageAsync(versionPayload, cancellation).ConfigureAwait(false);
                 this.Disconnect("Connected to self");
 
                 this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
-                return;
+                throw new OperationCanceledException();
             }
 
             using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token, cancellation))

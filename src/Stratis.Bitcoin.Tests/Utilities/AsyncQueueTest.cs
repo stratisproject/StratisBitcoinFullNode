@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> triggers waits until the on-enqueue callback (and the consumer task) 
+        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> waits until the on-enqueue callback (and the consumer task) 
         /// are finished before returning to the caller.
         /// </summary>
         [Fact]
