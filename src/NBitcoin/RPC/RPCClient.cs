@@ -353,7 +353,7 @@ namespace NBitcoin.RPC
 
         public RPCResponse SendCommand(RPCOperations commandName, params object[] parameters)
         {
-            return SendCommand(commandName, parameters);
+            return SendCommand(commandName.ToString(), parameters);
         }
 
         public BitcoinAddress GetNewAddress()
