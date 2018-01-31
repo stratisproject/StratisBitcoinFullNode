@@ -206,7 +206,8 @@ namespace Stratis.Bitcoin.Configuration
                 if (this.ConfigurationFile == null)
                 {
                     this.ConfigurationFile = this.ConfigurationFile ?? Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
-                    fileArgs = File.ReadAllText(this.ConfigurationFile);
+                    if (File.Exists(this.ConfigurationFile))
+                        fileArgs = File.ReadAllText(this.ConfigurationFile);
                 }
             }
 
