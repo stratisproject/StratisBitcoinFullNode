@@ -119,7 +119,7 @@ namespace Stratis.SmartContracts
             IList<TransferInfo> transfers = this.state.GetTransfers();
             CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
             Transaction newTx = condensingTx.CreateCondensingTx();
-            result.Transactions.Add(newTx);
+            result.InternalTransactions.Add(newTx);
             return result;
         }
     }

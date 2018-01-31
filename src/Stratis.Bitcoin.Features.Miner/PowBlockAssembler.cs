@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private uint blockMaxWeight, blockMaxSize;
 
-        private bool needSizeAccounting;
+        protected bool needSizeAccounting;
 
         private FeeRate blockMinFeeRate;
 
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected long blockTx;
 
-        private long blockSigOpsCost;
+        protected long blockSigOpsCost;
 
         public Money fees;
 

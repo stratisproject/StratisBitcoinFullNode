@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var contractTransaction = new SmartContractTransaction
             {
                 VmVersion = 1,
-                GasLimit = 500000,
+                GasLimit = 500,
                 GasPrice = 1,
                 ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"),
                 OpCodeType = OpcodeType.OP_CREATECONTRACT
@@ -281,6 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             Assert.Equal(ownerFromStorage, new uint160(100).ToBytes());
             Assert.NotNull(context.state.GetCode(newContractAddress));
+            // TODO: Check gas expenditure and refund in block
         }
 
         [Fact]
@@ -297,7 +298,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var contractTransaction = new SmartContractTransaction
             {
                 VmVersion = 1,
-                GasLimit = 500000,
+                GasLimit = 500,
                 GasPrice = 1,
                 ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"),
                 OpCodeType = OpcodeType.OP_CREATECONTRACT
@@ -318,7 +319,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var transferTransaction = new SmartContractTransaction
             {
                 VmVersion = 1,
-                GasLimit = 500000,
+                GasLimit = 500,
                 GasPrice = 1,
                 To = newContractAddress,
                 OpCodeType = OpcodeType.OP_CALLCONTRACT,
@@ -339,7 +340,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var transferTransaction2 = new SmartContractTransaction
             {
                 VmVersion = 1,
-                GasLimit = 500000,
+                GasLimit = 500,
                 GasPrice = 1,
                 To = newContractAddress,
                 OpCodeType = OpcodeType.OP_CALLCONTRACT,

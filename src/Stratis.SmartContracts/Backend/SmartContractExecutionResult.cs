@@ -12,13 +12,13 @@ namespace Stratis.SmartContracts.Backend
         public object Return { get; set; }
         public SmartContractRuntimeException RuntimeException { get; set; }
         public bool Revert { get; set; }
-        public List<Transaction> Transactions { get; set; }
+        public List<Transaction> InternalTransactions { get; set; }
         public ulong FutureRefund { get; set; }
         public uint160 NewContractAddress { get; set; }
 
         public SmartContractExecutionResult()
         {
-            this.Transactions = new List<Transaction>();
+            this.InternalTransactions = new List<Transaction>();
         }
 
         public void Merge(SmartContractExecutionResult another)
@@ -27,7 +27,7 @@ namespace Stratis.SmartContracts.Backend
             if (another.RuntimeException == null && !another.Revert)
             {
                 this.FutureRefund += another.FutureRefund;
-                this.Transactions.AddRange(another.Transactions);
+                this.InternalTransactions.AddRange(another.InternalTransactions);
             }
         }
 

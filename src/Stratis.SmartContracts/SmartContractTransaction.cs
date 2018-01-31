@@ -59,6 +59,7 @@ namespace Stratis.SmartContracts
             }
 
             Hash = transaction.GetHash();
+            From = GetSenderAddress();
         }
 
         public IEnumerable<byte> ToBytes()
@@ -87,6 +88,12 @@ namespace Stratis.SmartContracts
         public uint160 GetNewContractAddress()
         {
             return new uint160(HashHelper.Keccak256(this.Hash.ToBytes()).Take(20).ToArray());
+        }
+
+        public uint160 GetSenderAddress()
+        {
+            return 100;
+            throw new NotImplementedException(); // TODO: Full node dev?
         }
     }
 }
