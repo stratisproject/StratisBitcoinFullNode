@@ -128,9 +128,9 @@ namespace Stratis.Bitcoin.Base
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            IInitialBlockDownloadState initialBlockDownloadState = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -159,6 +159,11 @@ namespace Stratis.Bitcoin.Base
             benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                     this.chain.Tip.Height.ToString().PadRight(8) +
                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.chain.Tip.HashBlock);
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {            
         }
 
         /// <inheritdoc />

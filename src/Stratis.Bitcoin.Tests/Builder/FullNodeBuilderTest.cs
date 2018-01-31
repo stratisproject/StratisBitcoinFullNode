@@ -17,6 +17,11 @@ namespace Stratis.Bitcoin.Tests.Builder
             {
                 // nothing.
             }
+
+            public override void LoadConfiguration()
+            {
+                // nothing.
+            }
         }
 
         private FeatureCollection featureCollection;
@@ -102,10 +107,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { });
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
-            nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
+            var nodeSettings = new NodeSettings(args:new string[] { "-datadir=TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration" });
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
@@ -134,8 +136,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildConfiguresFullNodeUsingConfiguration()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            var nodeSettings = new NodeSettings(args:new string[] { "-datadir=TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration" });
 
             this.fullNodeBuilder.ConfigureServices(e =>
             {
@@ -180,8 +181,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildTwiceThrowsException()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            var nodeSettings = new NodeSettings(args:new string[] { "-datadir=TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration" });
 
             Assert.Throws<InvalidOperationException>(() =>
             {

@@ -25,6 +25,11 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             }
 
             /// <inheritdoc />
+            public void LoadConfiguration()
+            {                
+            }
+
+            /// <inheritdoc />
             public void Dispose()
             {
                 throw new NotImplementedException();

@@ -109,6 +109,11 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 throw new NotImplementedException();
             }
 
+            public void LoadConfiguration()
+            {
+                throw new NotImplementedException();
+            }
+
             public void Dispose()
             {
                 throw new NotImplementedException();

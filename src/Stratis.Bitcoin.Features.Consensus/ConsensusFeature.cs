@@ -102,6 +102,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
+        public override void LoadConfiguration()
+        {            
+        }
+
+        /// <inheritdoc />
         public override void Initialize()
         {
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();

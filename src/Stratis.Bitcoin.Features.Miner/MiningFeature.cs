@@ -28,6 +28,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Settings relevant to mining or staking.</summary>
         private readonly MinerSettings minerSettings;
 
+        /// <summary>Settings relevant to node.</summary>
+        private readonly NodeSettings nodeSettings;
+
         /// <summary>POW miner.</summary>
         private readonly IPowMining powMining;
 
@@ -67,11 +70,16 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.network = network;
             this.minerSettings = minerSettings;
-            this.minerSettings.Load(nodeSettings);
+            this.nodeSettings = nodeSettings;
             this.powMining = powMining;
             this.posMinting = posMinting;
             this.walletManager = walletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        public override void LoadConfiguration()
+        {
+            this.minerSettings.Load(this.nodeSettings);
         }
 
         /// <summary>

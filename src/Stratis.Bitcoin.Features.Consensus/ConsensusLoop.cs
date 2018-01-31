@@ -153,7 +153,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
-        /// <param name="consensusSettings">Consensus settings for the full node.</param>
         /// <param name="nodeSettings">Settings for the full node.</param>
         /// <param name="peerBanning">Handles the banning of peers.</param>
         /// <param name="consensusRules">The consensus rules to validate.</param>
@@ -171,7 +170,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
-            ConsensusSettings consensusSettings,
             NodeSettings nodeSettings,
             IPeerBanning peerBanning,
             IConsensusRules consensusRules,
@@ -187,7 +185,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(consensusSettings, nameof(consensusSettings));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(peerBanning, nameof(peerBanning));
             Guard.NotNull(consensusRules, nameof(consensusRules));
