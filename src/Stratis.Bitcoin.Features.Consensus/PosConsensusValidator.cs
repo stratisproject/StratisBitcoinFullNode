@@ -199,6 +199,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
+            base.CheckTransaction(transaction);
+
             foreach (TxOut txout in transaction.Outputs)
             {
                 if (txout.IsEmpty && !transaction.IsCoinBase && !transaction.IsCoinStake)
