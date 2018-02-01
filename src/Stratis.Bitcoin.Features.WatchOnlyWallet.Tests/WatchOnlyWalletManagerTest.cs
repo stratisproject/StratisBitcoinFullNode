@@ -207,6 +207,53 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             Assert.Equal(Money.Coins(0m), balance);
         }
 
+        [Fact]
+        [Trait("Module", "WatchOnlyWalletManager")]
+        public void Given_AWatchedAddress_And_A_WatchedTransaction_CanPopulateLookup()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var watchOnlyWallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
+
+            // Only need to watch a single address/transaction
+            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;
+            string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
+
+            // Ensure transaction appears in block
+            Transaction transaction = new Transaction(transactionHex);
+            var block = new Block();
+            block.AddTransaction(transaction);
+            block.UpdateMerkleRoot();
+            
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            walletManager.Initialize();
+            walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
+            walletManager.StoreTransaction(new TransactionData()
+            {
+                Id = transaction.GetHash(),
+                Hex = transactionHex
+            });
+            walletManager.ProcessBlock(block);
+
+            var wallet = walletManager.GetWatchOnlyWallet();
+
+            // Artificially remove info from the watched address version of the transaction
+            var addressInWallet = wallet.WatchedAddresses[newScript.ToString()];
+            var watchedTransaction = addressInWallet.Transactions.Values.First();
+            watchedTransaction.MerkleProof = null;
+            watchedTransaction.BlockHash = null;
+
+            // Now populate lookup
+            var lookup = wallet.GetWatchedTransactions();
+
+            // Expect that the cached version of the transaction has a
+            // Merkle proof and block hash
+
+            var lookupTransaction = lookup[transaction.GetHash()];
+
+            Assert.NotNull(lookupTransaction.MerkleProof);
+            Assert.NotNull(lookupTransaction.BlockHash);
+        }
+
         /// <summary>
         /// Helper method that constructs a <see cref="WatchOnlyWallet"/> object and saved it to the file system.
         /// </summary>

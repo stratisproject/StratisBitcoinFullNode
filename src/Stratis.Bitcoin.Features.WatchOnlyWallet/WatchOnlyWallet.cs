@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
                     if (existingTx.BlockHash == null)
                     {
-                        existingTx.MerkleProof = transaction.MerkleProof;
+                        existingTx.BlockHash = transaction.BlockHash;
                     }
 
                     // At this stage the transaction info in txDict should
