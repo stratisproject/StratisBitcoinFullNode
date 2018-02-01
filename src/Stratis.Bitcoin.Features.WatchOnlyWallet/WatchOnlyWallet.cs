@@ -82,15 +82,24 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 {
                     // Check to see if there is better information in
                     // the watched transaction than the watched address.
-                    // If there is, use the watched transaction instead.
+                    // If there is, use the watched transaction info instead.
 
                     TransactionData existingTx = txDict[transaction.Id];
 
-                    if ((existingTx.MerkleProof == null && transaction.MerkleProof != null) ||
-                        (existingTx.BlockHash == null && transaction.BlockHash != null))
+                    if (existingTx.MerkleProof == null)
                     {
-                        txDict.TryUpdate(transaction.Id, transaction, existingTx);
+                        existingTx.MerkleProof = transaction.MerkleProof;
                     }
+
+                    if (existingTx.BlockHash == null)
+                    {
+                        existingTx.MerkleProof = transaction.MerkleProof;
+                    }
+
+                    // At this stage the transaction info in txDict should
+                    // include the best available information from both
+                    // sources. There is therefore no need to explicitly
+                    // update txDict.
                 }
             }
 
