@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 {
@@ -8,24 +9,65 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
     {
         private IList<TransferInfo> transfers;
         private SmartContractTransaction transaction;
+        private Dictionary<uint160, Tuple<ulong, ulong>> plusMinusInfo;
+        private Dictionary<uint160, ulong> balances;
 
         public CondensingTx(IList<TransferInfo> transfers, SmartContractTransaction transaction)
         {
             this.transfers = transfers;
             this.transaction = transaction;
+            this.plusMinusInfo = new Dictionary<uint160, Tuple<ulong, ulong>>();
+            this.balances = new Dictionary<uint160, ulong>();
         }
 
         public Transaction CreateCondensingTx()
         {
+            //SelectionVin();
+            CalculatePlusAndMinus();
+            CreateNewBalances();
+
             Transaction ret = new Transaction();
-            foreach(TransferInfo transfer in this.transfers)
+            foreach (TransferInfo transfer in this.transfers)
             {
                 ret.AddInput(CreateInput(transfer));
                 ret.AddOutput(CreateOutput(transfer));
             }
             return ret;
         }
-        
+
+        private void CalculatePlusAndMinus()
+        {
+            foreach(TransferInfo transfer in this.transfers)
+            {
+                if (!this.plusMinusInfo.ContainsKey(transfer.From))
+                {
+                    this.plusMinusInfo.Add(transfer.From, new Tuple<ulong, ulong>(0, transfer.Value));
+                }
+                else
+                {
+                    this.plusMinusInfo[transfer.From] = new Tuple<ulong, ulong>(this.plusMinusInfo[transfer.From].Item1, this.plusMinusInfo[transfer.To].Item2 + transfer.Value);
+                }
+
+                if (!this.plusMinusInfo.ContainsKey(transfer.To))
+                {
+                    this.plusMinusInfo.Add(transfer.To, new Tuple<ulong, ulong>(transfer.Value, 0));
+                }
+                else
+                {
+                    this.plusMinusInfo[transfer.To] = new Tuple<ulong, ulong>(this.plusMinusInfo[transfer.From].Item1 + transfer.Value, this.plusMinusInfo[transfer.To].Item2);
+                }
+            }
+        }
+
+        private void CreateNewBalances()
+        {
+            foreach(var kvp in this.plusMinusInfo)
+            {
+                ulong balance = 0;
+                new CachedCoinView().
+            }
+        }
+
         private TxIn CreateInput(TransferInfo transfer)
         {
             // for now we use the hash and nvout from the transaction but in the future this will have to be changed to get it from somewhere real

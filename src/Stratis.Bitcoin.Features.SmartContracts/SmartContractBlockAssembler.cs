@@ -19,7 +19,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractBlockAssembler : PowBlockAssembler
     {
-        // TODO: Append refundOutputs to coinbase at end of block creation and add to list after first creations
         private Money refundSender = 0;
         private List<TxOut> refundOutputs = new List<TxOut>();
         
