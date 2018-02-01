@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var networkAddress = new NetworkAddress(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var applicableDate = DateTime.UtcNow.Date;
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
 
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var applicableDate = DateTime.UtcNow.Date;
@@ -75,7 +76,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
 
-            var addressManager = new PeerAddressManager(peerFolder, this.loggerFactory);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
             addressManager.AddPeer(networkAddress, IPAddress.Loopback);
 
             var applicableDate = DateTime.UtcNow.Date;
@@ -96,6 +97,75 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastSeen.Value.Date);
+            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+        }
+
+        [Fact]
+        public void PeerAddressManager_AttemptThresholdReached_ResetAttempts()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var networkAddress = new NetworkAddress(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
+            addressManager.AddPeer(networkAddress, IPAddress.Loopback);
+
+            var applicableDate = DateTimeProvider.Default.GetUtcNow();
+
+            //Ensure that there was 10 failed attempts
+            for (int i = 0; i < 10; i++)
+            {
+                addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate.AddHours(-i));
+            }
+
+            //Ensure that the last attempt was more than 12 hours ago
+            addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate.AddHours(-13));
+
+            //This call should now reset the counts
+            var resetTimestamp = DateTimeProvider.Default.GetUtcNow();
+            addressManager.PeerAttempted(networkAddress.Endpoint, resetTimestamp);
+
+            var savedPeer = addressManager.FindPeer(networkAddress.Endpoint);
+
+            Assert.Equal(1, savedPeer.ConnectionAttempts);
+            Assert.Equal(resetTimestamp, savedPeer.LastAttempt);
+            Assert.Null(savedPeer.LastConnectionSuccess);
+            Assert.Null(savedPeer.LastConnectionHandshake);
+            Assert.Null(savedPeer.LastSeen);
+            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+        }
+
+        [Fact]
+        public void PeerAddressManager_AttemptThresholdTimeNotReached_DoNotReset()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var networkAddress = new NetworkAddress(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory);
+            addressManager.AddPeer(networkAddress, IPAddress.Loopback);
+
+            var applicableDate = DateTimeProvider.Default.GetUtcNow();
+
+            //Ensure that there was 10 failed attempts
+            for (int i = 0; i < 10; i++)
+            {
+                addressManager.PeerAttempted(networkAddress.Endpoint, applicableDate.AddHours(-i));
+            }
+
+            //Capture the last attempt timestamp
+            var lastAttempt = DateTimeProvider.Default.GetUtcNow();
+            addressManager.PeerAttempted(networkAddress.Endpoint, lastAttempt);
+
+            var savedPeer = addressManager.FindPeer(networkAddress.Endpoint);
+
+            Assert.Equal(11, savedPeer.ConnectionAttempts);
+            Assert.Equal(lastAttempt, savedPeer.LastAttempt);
+            Assert.Null(savedPeer.LastConnectionSuccess);
+            Assert.Null(savedPeer.LastConnectionHandshake);
+            Assert.Null(savedPeer.LastSeen);
             Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
         }
     }

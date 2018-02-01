@@ -52,12 +52,12 @@ namespace Stratis.Bitcoin.P2P
         /// Increments <see cref="PeerAddress.ConnectionAttempts"/> of the peer as well as the <see cref="PeerAddress.LastConnectionSuccess"/>
         /// </para>
         /// </summary>
-        void PeerAttempted(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
+        void PeerAttempted(IPEndPoint endpoint, DateTime peerAttemptedAt);
 
         /// <summary>
         /// A peer was successfully connected to.
         /// <para>
-        /// Resets the <see cref="PeerAddress.ConnectionAttempts"/> and <see cref="PeerAddress.LastConnectionAttempt"/> of the peer.
+        /// Resets the <see cref="PeerAddress.ConnectionAttempts"/> and <see cref="PeerAddress.LastAttempt"/> of the peer.
         /// Sets the peer's <see cref="PeerAddress.LastConnectionSuccess"/> to now.
         /// </para>
         /// </summary>
@@ -88,6 +88,9 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
     {
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -107,8 +110,9 @@ namespace Stratis.Bitcoin.P2P
         public IPeerSelector PeerSelector { get; private set; }
 
         /// <summary>Constructor used by dependency injection.</summary>
-        public PeerAddressManager(DataFolder peerFilePath, ILoggerFactory loggerFactory)
+        public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory)
         {
+            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
@@ -157,11 +161,21 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void PeerAttempted(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt)
+        public void PeerAttempted(IPEndPoint endpoint, DateTime peerAttemptedAt)
         {
             var peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
+
+            //Reset the attempted count if:
+            //1: The last attempt was more than the threshold time ago.
+            //2: More than the threshold attempts was made.
+            if (peer.Attempted &&
+                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttemptResetThresholdHours) &&
+                peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)
+            {
+                peer.ResetAttempts();
+            }
 
             peer.SetAttempted(peerAttemptedAt);
         }
