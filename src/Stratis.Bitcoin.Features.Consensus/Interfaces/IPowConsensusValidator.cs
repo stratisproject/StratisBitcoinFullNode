@@ -46,14 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <exception cref="ConsensusErrors.BadMultipleCoinbase">Thrown if block contains more then one coinbase transactions.</exception>
         /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if block's signature operation cost is greater than maximum allowed one.</exception>
         void CheckBlock(RuleContext context);
-
-        /// <summary>
-        /// Checks if <paramref name="context.BlockValidationContext.Block"/> has a valid PoW header.
-        /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
-        void CheckBlockHeader(RuleContext context);
-
+    
         /// <summary>
         /// Checks that transaction's inputs are valid.
         /// </summary>
