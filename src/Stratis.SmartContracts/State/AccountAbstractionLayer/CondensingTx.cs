@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 {
@@ -23,8 +22,8 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         public Transaction CreateCondensingTx()
         {
             //SelectionVin();
-            CalculatePlusAndMinus();
-            CreateNewBalances();
+            //CalculatePlusAndMinus();
+            //CreateNewBalances();
 
             Transaction ret = new Transaction();
             foreach (TransferInfo transfer in this.transfers)
@@ -59,14 +58,14 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             }
         }
 
-        private void CreateNewBalances()
-        {
-            foreach(var kvp in this.plusMinusInfo)
-            {
-                ulong balance = 0;
-                new CachedCoinView().
-            }
-        }
+        //private void CreateNewBalances()
+        //{
+        //    foreach(var kvp in this.plusMinusInfo)
+        //    {
+        //        ulong balance = 0;
+        //        new CachedCoinView().
+        //    }
+        //}
 
         private TxIn CreateInput(TransferInfo transfer)
         {
