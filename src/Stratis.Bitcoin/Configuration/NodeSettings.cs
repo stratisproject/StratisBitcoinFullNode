@@ -44,7 +44,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
-        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
+        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
+            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = false)
         {
             this.Agent = agent;
             this.Network = innerNetwork;
@@ -55,10 +56,46 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+
+            // Load arguments or configuration from .ctor?
+            if (args != null || loadConfiguration)
+                SetArgs(args);
+
+            // Load configuration from .ctor?
+            if (loadConfiguration)
+                this.LoadConfiguration();
+        }
+
+        /// <summary>
+        /// Sets the "command line" arguments.
+        /// </summary>
+        /// <param name="args">Arguments to set.</param>
+        private void SetArgs(string[] args)
+        {
+            this.LoadArgs = args ?? new string[] { };
+
+            // By default, we look for a file named '<network>.conf' in the network's data directory,
+            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
+            this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+
+            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
+            if (this.DataDir != null && this.ConfigurationFile != null)
+            {
+                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
+                if (isRelativePath)
+                    this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
+            }
+
+            // Ensure the config is processed.
+            this.ConfigReader = null;
         }
 
         /// <summary>Factory to create instance logger.</summary>
         public ILoggerFactory LoggerFactory { get; }
+
+        /// <summary>Arguments to load.</summary>
+        public string[] LoadArgs { get; private set;  }
 
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
@@ -132,18 +169,24 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args)
         {
-            // By default, we look for a file named '<network>.conf' in the network's data directory,
-            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            var dataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+            this.SetArgs(args);
+            this.LoadConfiguration();
+            return this;
+        }
 
-            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
-            if (dataDir != null && this.ConfigurationFile != null)
-            {
-                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
-                if (isRelativePath)
-                    this.ConfigurationFile = Path.Combine(dataDir, this.ConfigurationFile);
-            }
+        /// <summary>
+        /// Loads the configuration file.
+        /// </summary>
+        /// <returns>Initialized node configuration.</returns>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
+        public NodeSettings LoadConfiguration()
+        {
+            // Configuration already loaded?
+            if (this.ConfigReader != null)
+                return this;
+
+            // Get the arguments set previously
+            var args = this.LoadArgs ?? new string[] { };
 
             // Find out if we need to run on testnet or regtest from the config file.
             if (this.ConfigurationFile != null)
@@ -166,21 +209,21 @@ namespace Stratis.Bitcoin.Configuration
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
             this.Network = this.GetNetwork();
-            
+
             // Setting the data directory.
-            if (dataDir == null)
+            if (this.DataDir == null)
             {
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
             }
             else
             {
                 // Create the data directories if they don't exist.
-                string directoryPath = Path.Combine(dataDir, this.Network.RootFolderName, this.Network.Name);
+                string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
                 Directory.CreateDirectory(directoryPath);
                 this.DataDir = directoryPath;
                 this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
             }
-            
+
             // If no configuration file path is passed in the args, load the default file.
             if (this.ConfigurationFile == null)
             {
