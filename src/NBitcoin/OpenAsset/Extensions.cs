@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.ExceptionServices;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace NBitcoin.OpenAsset
 {
@@ -8,15 +6,7 @@ namespace NBitcoin.OpenAsset
     {
         public static ColoredTransaction GetColoredTransaction(this Transaction tx, IColoredTransactionRepository repo)
         {
-            try
-            {
-                return tx.GetColoredTransactionAsync(repo).Result;
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null;
-            }
+            return tx.GetColoredTransactionAsync(repo).GetAwaiter().GetResult();
         }
 
         public static async Task<ColoredTransaction> GetColoredTransactionAsync(this Transaction tx, IColoredTransactionRepository repo)
