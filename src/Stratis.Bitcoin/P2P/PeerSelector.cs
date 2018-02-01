@@ -252,7 +252,10 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Attempted()
         {
-            return this.peerAddresses.Values.Where(p => p.Attempted && p.ConnectionAttempts < 10 && p.LastAttempt < DateTime.UtcNow.AddHours(-1));
+            return this.peerAddresses.Values.Where(p =>
+                                p.Attempted &&
+                                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
+                                p.LastAttempt < DateTime.UtcNow.AddHours(-PeerAddress.AttempThresholdHours));
         }
 
         /// <inheritdoc/>
