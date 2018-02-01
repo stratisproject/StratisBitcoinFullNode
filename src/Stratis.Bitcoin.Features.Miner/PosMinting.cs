@@ -243,6 +243,15 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
         private IAsyncLoop stakingLoop;
 
+        /// <summary>Indicates that the stake flag is not in progress.</summary>
+        public const int StakeNotInProgress = -1;
+
+        /// <summary>Indicates that the stake flag is in progress.</summary>
+        public const int StakeInProgress = 1;
+
+        /// <summary>a flag that indicates if stake is on/off based on the <see cref="StakeInProgress"/> and <see cref="StakeNotInProgress"/> constants.</summary>
+        private int stakeProgressFlag;
+
         /// <summary>
         /// Target reserved balance that will not participate in staking.
         /// It is possible that less than this amount will be reserved.
@@ -353,6 +362,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
+            this.stakeProgressFlag = StakeNotInProgress;
 
             this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
@@ -363,7 +373,8 @@ namespace Stratis.Bitcoin.Features.Miner
         public IAsyncLoop Stake(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
-            if (this.stakingLoop != null)
+
+            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
                 return this.stakingLoop;
@@ -421,7 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (this.stakingLoop == null)
+            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeNotInProgress, StakeInProgress) == StakeNotInProgress)
             {
                 this.logger.LogTrace("(-)[NOT_MINING]");
                 return;
@@ -492,19 +503,19 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
                     TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
+                    uint256 hashBock = this.chain.GetBlock((int) set.Height)?.HashBlock;
 
-                    if ((utxo != null) && (utxo.Value > Money.Zero))
+                    if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBock != null))
                     {
                         var utxoStakeDescription = new UtxoStakeDescription();
 
                         utxoStakeDescription.TxOut = utxo;
                         utxoStakeDescription.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
                         utxoStakeDescription.Address = infoTransaction.Address;
-                        utxoStakeDescription.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
+                        utxoStakeDescription.HashBlock = hashBock;
                         utxoStakeDescription.UtxoSet = set;
                         utxoStakeDescription.Secret = walletSecret; // Temporary.
                         utxoStakeDescriptions.Add(utxoStakeDescription);
-
                         totalBalance += utxo.Value;
                         this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
                     }

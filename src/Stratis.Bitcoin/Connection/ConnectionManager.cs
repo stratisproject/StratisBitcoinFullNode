@@ -291,17 +291,18 @@ namespace Stratis.Bitcoin.Connection
         {
             var builder = new StringBuilder();
 
-            foreach (NetworkPeer node in this.ConnectedPeers)
+            foreach (NetworkPeer peer in this.ConnectedPeers)
             {
-                ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
-                ChainHeadersBehavior chainHeadersBehavior = node.Behavior<ChainHeadersBehavior>();
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
-                string agent = node.PeerVersion != null ? node.PeerVersion.UserAgent : "[Unknown]";
+                string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 builder.AppendLine(
-                    "Peer:" + (node.RemoteInfo() + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
+                    "Peer:" + (peer.RemoteInfo() + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LoggingConfiguration.ColumnLength + 7) +
                     (" agent " + agent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
-                    " height=" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : "unknown"));
+                    " height=" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : 
+                        peer.PeerVersion?.StartHeight.ToString() ?? "unknown"));
             }
 
             return builder.ToString();
