@@ -264,6 +264,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 var result = await this.stepChain.ExecuteAsync(nextChainedBlock, disposeMode, cancellationToken).ConfigureAwait(false);
                 if (result == StepResult.Stop)
                     break;
+
+                if (result == StepResult.Continue)
+                    await Task.Delay(100);
             }
 
             this.logger.LogTrace("(-)");
