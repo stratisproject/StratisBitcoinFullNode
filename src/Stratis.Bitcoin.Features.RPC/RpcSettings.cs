@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.RPC
             // "AddRpc" callback provided a user and password implying that the Rpc feature will be used.
             if (this.RpcPassword != null && this.RpcUser != null)
             {
-                this.Server = true;
+                // this.Server = true;
 
                 // If the "Bind" list has not been specified via callback..
                 if (this.Bind.Count == 0)
