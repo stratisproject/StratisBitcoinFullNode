@@ -29,7 +29,6 @@ namespace Stratis.Bitcoin.Utilities
             /// Set to <c>true</c> if <see cref="Dispose"/> was called from within the callback routine,
             /// set to <c>false</c> otherwise.
             /// </summary>
-            /// <seealso cref="callbackExecutionInProgress"/>
             public bool DisposeRequested { get; set; }
         }
 
@@ -162,7 +161,7 @@ namespace Stratis.Bitcoin.Utilities
         public async Task<T> DequeueAsync(CancellationToken cancellation = default(CancellationToken))
         {
             if (this.callbackMode)
-                throw new InvalidOperationException($"{nameof(DequeueAsync)} called on queue in callback mode.");
+                throw new InvalidOperationException($"{nameof(this.DequeueAsync)} called on queue in callback mode.");
 
             // Increment the counter so that the queue's cancellation source is not disposed when we are using it.
             Interlocked.Increment(ref this.unfinishedDequeueCount);
@@ -178,7 +177,7 @@ namespace Stratis.Bitcoin.Utilities
                     return item;
 
                 // If the queue is empty, we need to wait until there is an item available.
-                using (var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.cancellationTokenSource.Token))
+                using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.cancellationTokenSource.Token))
                 {
                     while (true)
                     {

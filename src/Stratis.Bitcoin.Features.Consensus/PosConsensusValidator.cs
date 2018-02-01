@@ -195,6 +195,23 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
+        public override void CheckTransaction(Transaction transaction)
+        {
+            this.logger.LogTrace("()");
+
+            foreach (TxOut txout in transaction.Outputs)
+            {
+                if (txout.IsEmpty && !transaction.IsCoinBase && !transaction.IsCoinStake)
+                {
+                    this.logger.LogTrace("(-)[USER_TXOUT_EMPTY]");
+                    ConsensusErrors.BadTransactionEmptyOutput.Throw();
+                }
+            }
+
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <inheritdoc />
         protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.logger.LogTrace("()");
