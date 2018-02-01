@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void ValidateEnvironmentFails()
         {
-            string adjustedSource = TestString.Replace(ReplaceCodeString, "int test = Environment.TickCount;")
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "int hashCode = GetHashCode();")
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
@@ -292,6 +292,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         #endregion Exceptions
+
+        #region GetHashCode
+
+        [Fact]
+        public void ValidateGetHashCodeFails()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "int test = Environment.TickCount;")
+                .Replace(ReplaceReferencesString, "");
+
+            var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
+            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
+            var result = Validator.Validate(decomp);
+            Assert.False(result.Valid);
+        }
+
+        #endregion
 
         [Fact]
         public void ValidateCantGetAroundWithExtensionMethods()
