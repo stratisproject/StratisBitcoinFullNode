@@ -433,27 +433,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             return verifyRes;
         }
 
-        /// <inheritdoc />
-        public override void CheckBlockHeader(RuleContext context)
-        {
-            this.logger.LogTrace("()");
-            context.SetStake();
-
-            if (context.Stake.BlockStake.IsProofOfWork())
-            {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
-                {
-                    this.logger.LogTrace("(-)[HIGH_HASH]");
-                    ConsensusErrors.HighHash.Throw();
-                }
-            }
-
-            context.NextWorkRequired = this.StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
-                context.Stake.BlockStake.IsProofOfStake());
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
         /// <summary>
         /// Checks and computes stake.
         /// </summary>

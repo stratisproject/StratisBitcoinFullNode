@@ -8,7 +8,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
-    /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
     public class CalculateStakeRule : ConsensusRule
     {
         /// <summary>Quick easy access to the POS rules.</summary>
@@ -22,6 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
             context.SetStake();
@@ -35,10 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            context.NextWorkRequired = this.posParent.StakeValidator.GetNextTargetRequired(
-                this.posParent.StakeChain, 
-                context.BlockValidationContext.ChainedBlock.Previous, 
-                context.Consensus, 
+            context.NextWorkRequired = this.posParent.StakeValidator.GetNextTargetRequired(this.posParent.StakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus, 
                 context.Stake.BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;
