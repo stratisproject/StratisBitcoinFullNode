@@ -105,12 +105,12 @@ namespace NBitcoin.Tests
         {
             using (var builder = NodeBuilder.Create())
             {
-                var node = builder.CreateNode();
+                CoreNode node = builder.CreateNode();
                 node.Start();
                 node.Generate(101);
-                var rpc = node.CreateRPCClient();
+                RPCClient rpc = node.CreateRPCClient();
                 // RegTest
-                var pkh = rpc.GetNewAddress();
+                BitcoinAddress pkh = rpc.GetNewAddress();
                 Assert.True(rpc.ValidateAddress(pkh).IsValid);
             }
         }
