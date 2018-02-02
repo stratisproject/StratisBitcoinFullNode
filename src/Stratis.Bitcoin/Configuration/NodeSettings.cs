@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Configuration
         public NodeSettings LoadArguments(string[] args)
         {
             if (this.LoadArgs != null)
-                throw new ArgumentException("The arguments have already been loaded");
+                throw new ConfigurationException("The arguments have already been loaded");
 
             this.SetArgs(args);
             this.LoadConfiguration();
