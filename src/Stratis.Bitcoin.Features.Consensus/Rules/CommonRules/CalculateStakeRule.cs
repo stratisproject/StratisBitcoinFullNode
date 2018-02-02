@@ -9,6 +9,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class CalculateStakeRule : PosConsensusRule
     {
+        /// <summary>
+        /// This rules calculates the next difficulty target so it has to run every time.
+        /// </summary>
+        public override bool ValidationOnlyRule => false;
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
