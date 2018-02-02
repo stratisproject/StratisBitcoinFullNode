@@ -1,25 +1,14 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
-    public class CalculateStakeRule : ConsensusRule
+    public class CalculateStakeRule : PosConsensusRule
     {
-        /// <summary>Quick easy access to the POS rules.</summary>
-        private PosConsensusRules posParent;
-
-        public override void Initialize()
-        {
-            this.posParent = this.Parent as PosConsensusRules;
-
-            Guard.NotNull(this.posParent, nameof(this.posParent));
-        }
-
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
@@ -35,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            context.NextWorkRequired = this.posParent.StakeValidator.GetNextTargetRequired(this.posParent.StakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus, 
+            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus, 
                 context.Stake.BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;

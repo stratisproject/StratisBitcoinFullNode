@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
@@ -49,5 +51,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     {
         /// <inheritdoc />
         public override bool ValidationOnlyRule => false;
+    }
+
+    /// <summary>
+    /// Rules that provide easy access to the <see cref="PosConsensusRules"/> parent.
+    /// </summary>
+    public abstract class PosConsensusRule : ConsensusRule
+    {
+        /// <summary>Allow access to the POS parent.</summary>
+        protected PosConsensusRules PosParent;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.PosParent = this.Parent as PosConsensusRules;
+
+            Guard.NotNull(this.PosParent, nameof(this.PosParent));
+        }
     }
 }

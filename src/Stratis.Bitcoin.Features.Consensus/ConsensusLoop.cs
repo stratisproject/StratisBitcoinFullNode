@@ -451,7 +451,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
                 }
 
-                // Check the block header is correct.
                 this.Validator.ContextualCheckBlockHeader(context);
 
                 if (!context.SkipValidation)
