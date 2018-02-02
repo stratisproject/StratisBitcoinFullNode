@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
@@ -26,6 +27,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>RPC Settings.</summary>
         private readonly RpcSettings rpcSettings;
 
+        /// <summary>RPC Client Factory.</summary>
+        private readonly IRPCClientFactory rpcClientFactory;
+
         /// <summary>ControllerActionDescriptor dictionary.</summary>
         private Dictionary<string, ControllerActionDescriptor> ActionDescriptors { get; set; }
 
@@ -35,11 +39,17 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="fullNode">The full node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="rpcSettings">The RPC Settings of the full node.</param>
-        public RPCController(IFullNode fullNode, ILoggerFactory loggerFactory, RpcSettings rpcSettings)
+        public RPCController(IFullNode fullNode, ILoggerFactory loggerFactory, RpcSettings rpcSettings, IRPCClientFactory rpcClientFactory)
         {
+            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(rpcSettings, nameof(rpcSettings));
+            Guard.NotNull(rpcClientFactory, nameof(rpcClientFactory));
+
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.rpcSettings = rpcSettings;
+            this.rpcClientFactory = rpcClientFactory;
         }
 
         /// <summary>
@@ -50,7 +60,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (this.ActionDescriptors == null)
             {
                 this.ActionDescriptors = new Dictionary<string, ControllerActionDescriptor>();
-                var actionDescriptorProvider = (this.fullNode as FullNode)?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
+                var actionDescriptorProvider = this.fullNode?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
                 // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors
                 // that RPC would normally act on subject to the method name matching the "ActionName".
                 foreach (var actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
@@ -69,7 +79,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
             IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
-            var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
+            var rpcClient = this.rpcClientFactory.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);            
 
             return rpcClient.SendCommand(request);
         }

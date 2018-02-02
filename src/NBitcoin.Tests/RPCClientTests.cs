@@ -182,7 +182,7 @@ namespace NBitcoin.Tests
                 builder.StartAll();
                 Key key = new Key();
                 var passphrase = "password1234";
-                rpc.SendCommand("encryptwallet", passphrase);
+                rpc.SendCommand(RPCOperations.encryptwallet, passphrase);
                 builder.Nodes[0].Restart();
                 rpc.ImportAddress(key.PubKey.GetAddress(Network.RegTest), TestAccount, false);
                 BitcoinAddress address = rpc.GetAccountAddress(TestAccount);
@@ -486,21 +486,6 @@ namespace NBitcoin.Tests
                 }
             }
         }
-
-        [Fact]
-        public void CanEstimatePriority()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                node.Start();
-                var rpc = node.CreateRPCClient();
-                node.Generate(101);
-                var priority = rpc.EstimatePriority(10);
-                Assert.True(priority > 0 || priority == -1);
-            }
-        }
-
 
         private void AssertJsonEquals(string json1, string json2)
         {

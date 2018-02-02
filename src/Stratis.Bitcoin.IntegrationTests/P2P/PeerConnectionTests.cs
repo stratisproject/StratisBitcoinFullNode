@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 {
                     // Add the network peers to the connection manager's
                     // add node collection.
-                    connectionManager.AddNodeAddress(networkPeer.PeerAddress.Endpoint);
+                    connectionManager.AddNodeAddress(networkPeer.PeerEndPoint);
 
                     // Add the peer to the already connected
                     // peer collection of connection manager.
@@ -98,12 +98,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
 
             this.nodeSettings = new NodeSettings();
             this.nodeSettings.LoadArguments(new string[] { });
-            this.nodeSettings.DataFolder = new DataFolder(this.nodeSettings);
+            this.nodeSettings.DataFolder = new DataFolder(this.nodeSettings.DataDir);
 
             this.connectionSetting = new ConnectionManagerSettings();
             this.connectionSetting.Load(this.nodeSettings);
 
-            this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder, this.loggerFactory);
+            this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory);
             var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, this.peerAddressManager)
             {
                 PeersToDiscover = 10

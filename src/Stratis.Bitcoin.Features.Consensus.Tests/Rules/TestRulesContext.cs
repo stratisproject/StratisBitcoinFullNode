@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             string dataDir = Path.Combine("TestData", pathName);
             Directory.CreateDirectory(dataDir);
 
-            testRulesContext.NodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" });
+            testRulesContext.NodeSettings = new NodeSettings(network).LoadArguments(new[] { $"-datadir={dataDir}" });
 
             if (dataDir != null)
             {

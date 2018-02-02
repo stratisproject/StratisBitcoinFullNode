@@ -17,23 +17,23 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public async void AsyncManualResetEvent_WaitAsync()
         {
-            AsyncManualResetEvent manualResetEvent = new AsyncManualResetEvent(false);
+            var manualResetEvent = new AsyncManualResetEvent(false);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             Task task = Task.Run(async () =>
             {
-                await Task.Delay(500);
+                await Task.Delay(510);
                 manualResetEvent.Set();
             });
 
             Task mreAwaitingTask = manualResetEvent.WaitAsync();
             await mreAwaitingTask;
 
-            stopwatch.Stop();
+            stopwatch.Stop(); 
 
-            Assert.True(stopwatch.ElapsedMilliseconds >= 500);
-            Assert.True(mreAwaitingTask.IsCompletedSuccessfully);
+            Assert.True(stopwatch.ElapsedMilliseconds >= 500, $"Elapsed: {stopwatch.ElapsedMilliseconds}");
+            Assert.True(mreAwaitingTask.IsCompletedSuccessfully, "Task was not completed successfully.");
         }
 
         [Fact]

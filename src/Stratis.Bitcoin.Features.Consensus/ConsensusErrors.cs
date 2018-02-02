@@ -134,6 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static readonly ConsensusError BadTransactionNoInput = new ConsensusError("bad-txns-vin-empty", "no input in the transaction");
         public static readonly ConsensusError BadTransactionNoOutput = new ConsensusError("bad-txns-vout-empty", "no output in the transaction");
         public static readonly ConsensusError BadTransactionOversize = new ConsensusError("bad-txns-oversize", "oversized transaction");
+        public static readonly ConsensusError BadTransactionEmptyOutput = new ConsensusError("user-txout-empty", "user transaction output is empty");
         public static readonly ConsensusError BadTransactionNegativeOutput = new ConsensusError("bad-txns-vout-negative", "the transaction contains a negative value output");
         public static readonly ConsensusError BadTransactionTooLargeOutput = new ConsensusError("bad-txns-vout-toolarge", "the transaction contains a too large value output");
         public static readonly ConsensusError BadTransactionTooLargeTotalOutput = new ConsensusError("bad-txns-txouttotal-toolarge", "the sum of outputs'value is too large for this transaction");

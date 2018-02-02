@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             List<NetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
             int propagateToCount = (int)Math.Ceiling(peers.Count / 2.0);
 
-            await this.PropagateTransactionToPeersAsync(transaction, peers.Take(propagateToCount).ToList());
+            await this.PropagateTransactionToPeersAsync(transaction, peers.Take(propagateToCount).ToList()).ConfigureAwait(false);
         }
     }
 }

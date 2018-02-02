@@ -249,6 +249,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.Puller.Dispose();
             this.asyncLoop.Dispose();
+            this.consensusLock.Dispose();
         }
 
         /// <summary>
@@ -351,13 +352,16 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 await this.consensusRules.ExecuteAsync(blockValidationContext);
 
-                try
+                if (blockValidationContext.Error == null)
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
-                }
-                catch (ConsensusErrorException ex)
-                {
-                    blockValidationContext.Error = ex.ConsensusError;
+                    try
+                    {
+                        await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
+                    }
+                    catch (ConsensusErrorException ex)
+                    {
+                        blockValidationContext.Error = ex.ConsensusError;
+                    }
                 }
 
                 if (blockValidationContext.Error != null)

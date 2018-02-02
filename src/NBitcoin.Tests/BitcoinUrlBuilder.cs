@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 #if !NOHTTPCLIENT
@@ -114,15 +113,8 @@ namespace NBitcoin.Tests
         {
             if (this.PaymentRequestUrl == null)
                 throw new InvalidOperationException("No PaymentRequestUrl specified");
-            try
-            {
-                return GetPaymentRequestAsync().Result;
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null;
-            }
+
+            return GetPaymentRequestAsync().GetAwaiter().GetResult();
         }
         public async Task<PaymentRequest> GetPaymentRequestAsync(HttpClient httpClient = null)
         {

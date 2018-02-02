@@ -41,19 +41,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Creates a new network peer which is connected to a specified counterparty.
         /// </summary>
         /// <param name="network">The network to connect to.</param>
-        /// <param name="endPoint">Address and port of the counterparty to connect to.</param>
+        /// <param name="peerEndPoint">Address and port of the counterparty to connect to.</param>
         /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
-        Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, IPEndPoint endPoint, NetworkPeerConnectionParameters parameters = null);
-
-        /// <summary>
-        /// Creates a new network peer which is connected to a specified counterparty.
-        /// </summary>
-        /// <param name="network">The network to connect to.</param>
-        /// <param name="peerAddress">Address and port of the counterparty to connect to.</param>
-        /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
-        /// <returns>Network peer connected to the specified counterparty.</returns>
-        Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, NetworkAddress peerAddress, NetworkPeerConnectionParameters parameters = null);
+        Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null);
 
         /// <summary>
         /// Creates a new network peer server.
@@ -122,13 +113,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(client, nameof(client));
 
-            var peerAddress = new NetworkAddress()
-            {
-                Endpoint = (IPEndPoint)client.Client.RemoteEndPoint,
-                Time = this.dateTimeProvider.GetUtcNow()
-            };
-
-            return new NetworkPeer(peerAddress, network, parameters, client, this.dateTimeProvider, this, this.loggerFactory);
+            return new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, network, parameters, client, this.dateTimeProvider, this, this.loggerFactory);
         }
 
         /// <inheritdoc/>
@@ -150,27 +135,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public async Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, IPEndPoint endPoint, NetworkPeerConnectionParameters parameters = null)
+        public async Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null)
         {
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(endPoint, nameof(endPoint));
+            Guard.NotNull(peerEndPoint, nameof(peerEndPoint));
 
-            var peerAddress = new NetworkAddress()
-            {
-                Time = this.dateTimeProvider.GetTimeOffset(),
-                Endpoint = endPoint
-            };
-
-            return await this.CreateConnectedNetworkPeerAsync(network, peerAddress, parameters);
-        }
-
-        /// <inheritdoc/>
-        public async Task<NetworkPeer> CreateConnectedNetworkPeerAsync(Network network, NetworkAddress peerAddress, NetworkPeerConnectionParameters parameters = null)
-        {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(peerAddress, nameof(peerAddress));
-
-            var peer = new NetworkPeer(peerAddress, network, parameters, this, this.dateTimeProvider, this.loggerFactory);
+            var peer = new NetworkPeer(peerEndPoint, network, parameters, this, this.dateTimeProvider, this.loggerFactory);
             try
             {
                 await peer.ConnectAsync(peer.Parameters.ConnectCancellation).ConfigureAwait(false);

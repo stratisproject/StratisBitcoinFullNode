@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests
 
         public static DataFolder AssureEmptyDirAsDataFolder(string dir)
         {
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = AssureEmptyDir(dir) });
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = AssureEmptyDir(dir) }.DataDir);
             return dataFolder;
         }
 
