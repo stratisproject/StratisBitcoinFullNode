@@ -169,6 +169,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args)
         {
+            if (this.LoadArgs != null)
+                throw new ArgumentException("The arguments have already been loaded");
+
             this.SetArgs(args);
             this.LoadConfiguration();
             return this;
