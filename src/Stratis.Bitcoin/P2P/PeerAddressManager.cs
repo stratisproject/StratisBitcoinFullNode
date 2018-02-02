@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -27,7 +26,7 @@ namespace Stratis.Bitcoin.P2P
         /// Only routable IP addresses will be added. See <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>.
         /// </para>
         /// </summary>
-        void AddPeer(NetworkAddress networkAddress, IPAddress source);
+        void AddPeer(IPEndPoint endPoint, IPAddress source);
 
         /// <summary>
         /// Add a set of peers to the <see cref="Peers"/> dictionary.
@@ -35,7 +34,7 @@ namespace Stratis.Bitcoin.P2P
         /// Only routable IP addresses will be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
         /// </para>
         /// </summary>
-        void AddPeers(NetworkAddress[] networkAddress, IPAddress source);
+        void AddPeers(IPEndPoint[] endPoints, IPAddress source);
 
         /// <summary> Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);
@@ -127,7 +126,7 @@ namespace Stratis.Bitcoin.P2P
             var peers = fileStorage.LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
-                this.Peers.TryAdd(peer.EndPoint, peer);
+                this.Peers.TryAdd(peer.Endpoint, peer);
             });
         }
 
@@ -142,21 +141,21 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddPeer(NetworkAddress networkAddress, IPAddress source)
+        public void AddPeer(IPEndPoint endPoint, IPAddress source)
         {
-            if (networkAddress.Endpoint.Address.IsRoutable(true) == false)
+            if (!endPoint.Address.IsRoutable(true))
                 return;
 
-            var peerToAdd = PeerAddress.Create(networkAddress, source);
-            this.Peers.TryAdd(peerToAdd.EndPoint, peerToAdd);
+            var peerToAdd = PeerAddress.Create(endPoint, source);
+            this.Peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
 
         /// <inheritdoc/>
-        public void AddPeers(NetworkAddress[] networkAddresses, IPAddress source)
+        public void AddPeers(IPEndPoint[] endPoints, IPAddress source)
         {
-            foreach (var networkAddress in networkAddresses)
+            foreach (var endPoint in endPoints)
             {
-                this.AddPeer(networkAddress, source);
+                this.AddPeer(endPoint, source);
             }
         }
 

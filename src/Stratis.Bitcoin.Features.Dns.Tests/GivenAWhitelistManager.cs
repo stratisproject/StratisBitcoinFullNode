@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             foreach (Tuple<NetworkAddress, DateTimeOffset> testData in testDataSet)
             {
-                peerAddressManager.AddPeer(testData.Item1, IPAddress.Loopback);
+                peerAddressManager.AddPeer(testData.Item1.Endpoint, IPAddress.Loopback);
                 peerAddressManager.PeerHandshaked(testData.Item1.Endpoint, testData.Item2);
             }
 
