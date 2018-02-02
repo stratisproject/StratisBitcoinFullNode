@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.stratisPowNode = this.builder.CreateStratisPowNode(false, fullNodeBuilder =>
             {
                 fullNodeBuilder
-               .UseConsensus()
+               .UsePowConsensus()
                .UseBlockStore()
                .UseMempool()
                .AddMining()
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.stratisStakeNode = this.builder.CreateStratisPosNode(false, fullNodeBuilder =>
             {
                 fullNodeBuilder
-                .UseStratisConsensus()
+                .UsePosConsensus()
                 .UseBlockStore()
                 .UseMempool()
                 .UseWallet()

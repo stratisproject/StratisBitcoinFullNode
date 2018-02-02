@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             var node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
-                .UseConsensus()
+                .UsePowConsensus()
                 .AddRPC(x =>
                 {
                     x.RpcUser = "abc";

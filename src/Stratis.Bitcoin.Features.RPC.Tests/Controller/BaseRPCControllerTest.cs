@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                .UseConsensus()
+                .UsePowConsensus()
                 .UseBlockStore()
                 .UseMempool()
                 .AddRPC()
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                .UseStratisConsensus()
+                .UsePosConsensus()
                 .UseBlockStore()
                 .UseMempool()
                 .UseWallet()

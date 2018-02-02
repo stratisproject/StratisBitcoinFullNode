@@ -34,7 +34,7 @@ namespace Stratis.StratisD
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
-                    .UseStratisConsensus()
+                    .UsePosConsensus()
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()

@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisNode = builder.CreateStratisPowNode(true, fullNodeBuilder =>
                 {
                     fullNodeBuilder
-                        .UseConsensus()
+                        .UsePowConsensus()
                         .UseBlockStore()
                         .UseWallet()
                         .UseMempool()
