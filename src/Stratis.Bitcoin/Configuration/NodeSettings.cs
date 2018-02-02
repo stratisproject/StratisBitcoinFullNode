@@ -153,10 +153,10 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <returns>Default node configuration.</returns>
-        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
+        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string[] args = null)
         {
             NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
-            nodeSettings.LoadArguments(new string[0]);
+            nodeSettings.LoadArguments(args ?? new string[0]);
             return nodeSettings;
         }
 
