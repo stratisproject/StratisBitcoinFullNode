@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.P2P
             var peers = fileStorage.LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
-                this.Peers.TryAdd(peer.EndPoint, peer);
+                this.Peers.TryAdd(peer.Endpoint, peer);
             });
         }
 
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             var peerToAdd = PeerAddress.Create(endPoint, source);
-            this.Peers.TryAdd(peerToAdd.EndPoint, peerToAdd);
+            this.Peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
 
         /// <inheritdoc/>

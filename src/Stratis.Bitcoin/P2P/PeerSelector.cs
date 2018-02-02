@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P
             if (peers.Any())
             {
                 peerAddress = Random(peers);
-                this.logger.LogTrace("(-):'{0}'", peerAddress.EndPoint);
+                this.logger.LogTrace("(-):'{0}'", peerAddress.Endpoint);
             }
             else
                 this.logger.LogTrace("(-)[NO_PEER]");

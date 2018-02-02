@@ -26,21 +26,21 @@ namespace Stratis.Bitcoin.Tests.P2P
         public void PeerState_AllConnectionDataGetsReset()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var endPoint = new IPEndPoint(ipAddress, 80);
+            var endpoint = new IPEndPoint(ipAddress, 80);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory);
-            addressManager.AddPeer(endPoint, IPAddress.Loopback);
+            addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
-            addressManager.PeerConnected(endPoint, DateTime.UtcNow);
+            addressManager.PeerConnected(endpoint, DateTime.UtcNow);
 
-            addressManager.PeerAttempted(endPoint, DateTime.UtcNow);
-            addressManager.PeerAttempted(endPoint, DateTime.UtcNow);
-            addressManager.PeerAttempted(endPoint, DateTime.UtcNow);
+            addressManager.PeerAttempted(endpoint, DateTime.UtcNow);
+            addressManager.PeerAttempted(endpoint, DateTime.UtcNow);
+            addressManager.PeerAttempted(endpoint, DateTime.UtcNow);
 
-            addressManager.PeerConnected(endPoint, DateTime.UtcNow);
+            addressManager.PeerConnected(endpoint, DateTime.UtcNow);
 
-            var peerOne = addressManager.FindPeer(endPoint);
+            var peerOne = addressManager.FindPeer(endpoint);
 
             Assert.Equal(0, peerOne.ConnectionAttempts);
             Assert.Null(peerOne.LastAttempt);
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.PeerSelector.Attempted();
             Assert.Equal(2, peers.Count());
-            Assert.DoesNotContain(peers, p => p.EndPoint.Match(endPointOne));
+            Assert.DoesNotContain(peers, p => p.Endpoint.Match(endPointOne));
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.PeerSelector.Attempted();
             Assert.Equal(2, peers.Count());
-            Assert.DoesNotContain(peers, p => p.EndPoint.Match(endPointThree));
+            Assert.DoesNotContain(peers, p => p.Endpoint.Match(endPointThree));
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.PeerSelector.Connected();
             Assert.Single(peers);
-            Assert.Contains(peers, p => p.EndPoint.Match(endPointTwo));
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointTwo));
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peers = peerAddressManager.PeerSelector.Handshaked();
             Assert.Single(peers);
-            Assert.Contains(peers, p => p.EndPoint.Match(endPointTwo));
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointTwo));
         }
 
         /// <summary>
@@ -283,8 +283,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             for (int i = 1; i <= 7; i++)
             {
                 var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
-                peerAddressManager.PeerConnected(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
-                peerAddressManager.PeerHandshaked(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerHandshaked(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             }
 
             var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(8);
@@ -326,8 +326,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             for (int i = 1; i <= 7; i++)
             {
                 var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
-                peerAddressManager.PeerConnected(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
-                peerAddressManager.PeerHandshaked(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerHandshaked(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             }
 
             var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(15);
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             for (int i = 1; i <= 7; i++)
             {
                 var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
-                peerAddressManager.PeerAttempted(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddHours(-2));
+                peerAddressManager.PeerAttempted(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddHours(-2));
             }
 
             var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(15);
@@ -413,7 +413,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             for (int i = 1; i <= 2; i++)
             {
                 var ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
-                peerAddressManager.PeerConnected(new NetworkAddress(ipAddress, 80).Endpoint, DateTime.UtcNow.AddSeconds(-80));
+                peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             }
 
             var peers = peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(15);

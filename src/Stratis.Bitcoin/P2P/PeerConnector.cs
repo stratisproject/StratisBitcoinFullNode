@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Attempts to connect to a random peer.</summary>
         internal async Task ConnectAsync(PeerAddress peerAddress)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.EndPoint);
+            this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.Endpoint);
 
             NetworkPeer peer = null;
 
@@ -236,13 +236,13 @@ namespace Stratis.Bitcoin.P2P
             {
                 using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
-                    this.peerAddressManager.PeerAttempted(peerAddress.EndPoint, this.dateTimeProvider.GetUtcNow());
+                    this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
                     var clonedConnectParamaters = this.CurrentParameters.Clone();
                     timeoutTokenSource.CancelAfter(5000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peerAddress.EndPoint, clonedConnectParamaters).ConfigureAwait(false);
+                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, peerAddress.Endpoint, clonedConnectParamaters).ConfigureAwait(false);
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                     this.AddPeer(peer);
                 }
@@ -251,12 +251,12 @@ namespace Stratis.Bitcoin.P2P
             {
                 if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
-                    this.logger.LogDebug("Peer {0} connection canceled because application is stopping.", peerAddress.EndPoint);
+                    this.logger.LogDebug("Peer {0} connection canceled because application is stopping.", peerAddress.Endpoint);
                     peer?.Dispose("Application stopping");
                 }
                 else
                 {
-                    this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.EndPoint);
+                    this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.Endpoint);
                     peer?.Dispose("Connection timeout");
                 }
             }

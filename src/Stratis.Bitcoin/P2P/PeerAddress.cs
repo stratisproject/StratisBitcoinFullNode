@@ -28,10 +28,10 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         internal const int AttemptResetThresholdHours = 12;
 
-        /// <summary>EndPoint of this peer.</summary>
+        /// <summary>Endpoint of this peer.</summary>
         [JsonProperty(PropertyName = "endpoint")]
         [JsonConverter(typeof(IPEndPointConverter))]
-        public IPEndPoint EndPoint { get; set; }
+        public IPEndPoint Endpoint { get; set; }
 
         /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
         [JsonProperty(PropertyName = "addressTime", NullValueHandling = NullValueHandling.Ignore)]
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.P2P
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
-                EndPoint = endPoint,
+                Endpoint = endPoint,
                 loopback = IPAddress.Loopback.ToString()
             };
         }
