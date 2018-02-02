@@ -125,7 +125,7 @@ namespace NBitcoin.RPC
         wallet             walletpassphrasechange
         wallet             walletpassphrase            yes
     */
-    public partial class RPCClient : INBitcoinBlockRepository
+    public partial class RPCClient : INBitcoinBlockRepository, IRPCClient
     {
         private string authentication;
         private readonly Uri address;
