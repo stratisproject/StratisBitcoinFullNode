@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.State
         void Rollback();
         void SyncToRoot(byte[] root);
         byte[] GetRoot();
-        IContractStateRepository GetSnapshotTo(byte[] root);
+        IContractStateRepository GetSnapshotTo(byte[] stateRoot, byte[] utxoRoot = null);
 
         #region Account Abstraction Layer
         void TransferBalance(uint160 from, uint160 to, ulong value);

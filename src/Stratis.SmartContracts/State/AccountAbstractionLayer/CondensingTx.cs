@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 {
@@ -10,20 +11,24 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         private SmartContractTransaction transaction;
         private Dictionary<uint160, Tuple<ulong, ulong>> plusMinusInfo;
         private Dictionary<uint160, ulong> balances;
+        //private CoinView utxoSet;
 
-        public CondensingTx(IList<TransferInfo> transfers, SmartContractTransaction transaction)
+        public CondensingTx(IList<TransferInfo> transfers, SmartContractTransaction transaction 
+            //CoinView utxoSet
+            )
         {
             this.transfers = transfers;
             this.transaction = transaction;
             this.plusMinusInfo = new Dictionary<uint160, Tuple<ulong, ulong>>();
             this.balances = new Dictionary<uint160, ulong>();
+            //this.utxoSet = utxoSet;
         }
 
         public Transaction CreateCondensingTx()
         {
             //SelectionVin();
-            //CalculatePlusAndMinus();
-            //CreateNewBalances();
+            CalculatePlusAndMinus();
+            CreateNewBalances();
 
             Transaction ret = new Transaction();
             foreach (TransferInfo transfer in this.transfers)
@@ -33,6 +38,27 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             }
             return ret;
         }
+
+        //private Vin Vin(uint160 address)
+        //{
+
+        //    auto it = cacheUTXO.find(_addr);
+        //    if (it == cacheUTXO.end())
+        //    {
+        //        std::string stateBack = stateUTXO.at(_addr);
+        //        if (stateBack.empty())
+        //            return nullptr;
+
+        //        dev::RLP state(stateBack);
+        //        auto i = cacheUTXO.emplace(
+        //            std::piecewise_construct,
+        //            std::forward_as_tuple(_addr),
+        //            std::forward_as_tuple(Vin{ state[0].toHash<dev::h256>(), state[1].toInt<uint32_t>(), state[2].toInt<dev::u256>(), state[3].toInt<uint8_t>()})
+        //);
+        //        return &i.first->second;
+        //    }
+        //    return &it->second;
+        //}
 
         private void CalculatePlusAndMinus()
         {
@@ -58,14 +84,13 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             }
         }
 
-        //private void CreateNewBalances()
-        //{
-        //    foreach(var kvp in this.plusMinusInfo)
-        //    {
-        //        ulong balance = 0;
-        //        new CachedCoinView().
-        //    }
-        //}
+        private void CreateNewBalances()
+        {
+            foreach (var kvp in this.plusMinusInfo)
+            {
+                ulong balance = 0;
+            }
+        }
 
         private TxIn CreateInput(TransferInfo transfer)
         {

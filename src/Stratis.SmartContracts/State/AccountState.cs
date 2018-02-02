@@ -31,7 +31,6 @@ namespace Stratis.SmartContracts.State
 
         public byte[] ToBytes()
         {
-
             return RLP.EncodeList(RLP.EncodeElement(this.CodeHash ?? new byte[0]), RLP.EncodeElement(this.StateRoot ?? new byte[0]));
         }
 

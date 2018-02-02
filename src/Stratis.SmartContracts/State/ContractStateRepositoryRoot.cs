@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.State
 {
@@ -65,21 +66,36 @@ namespace Stratis.SmartContracts.State
         }
 
         private ISource<byte[], byte[]> stateDS;
+
         private ICachedSource<byte[], byte[]> trieCache;
         private ITrie<byte[]> stateTrie;
 
-        public ContractStateRepositoryRoot(ISource<byte[],byte[]> stateDS) : this(stateDS, null) {}
+        private ICachedSource<byte[],byte[]> utxoCache;
+        private ITrie<byte[]> utxoTrie;
 
-        public ContractStateRepositoryRoot(ISource<byte[],byte[]> stateDS, byte[] root)
+        public ContractStateRepositoryRoot(ISource<byte[],byte[]> stateDS) : this(stateDS, null, null) {}
+
+        public ContractStateRepositoryRoot(ISource<byte[],byte[]> stateDS, byte[] stateRoot, byte[] utxoRoot = null)
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
-            this.stateTrie = new PatriciaTrie(this.trieCache, root);
+            this.stateTrie = new PatriciaTrie(this.trieCache, stateRoot);
+
+            this.utxoCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
+            this.utxoTrie = new PatriciaTrie(this.utxoTrie, utxoRoot);
+
             SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
             ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
 
             MultiCache<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
+
+
+            //SourceCodec<byte[], StoredVin, byte[], byte[]> vinCodec = new SourceCodec<byte[], StoredVin, byte[], byte[]>(this.utxoTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
+            //ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
+
+
+            //ReadWriteCache<byte[]> utxoReadWriteCache = new ReadWriteCache<byte[]>(this.utxoTrie, WriteCache<byte[]>.CacheType.SIMPLE);
 
             Init(accountStateCache, codeCache, storageCache);
         }
@@ -89,6 +105,8 @@ namespace Stratis.SmartContracts.State
             base.Commit();
             this.stateTrie.Flush();
             this.trieCache.Flush();
+            this.utxoTrie.Flush();
+            this.utxoCache.Flush();
         }
 
         public override byte[] GetRoot()
@@ -104,9 +122,9 @@ namespace Stratis.SmartContracts.State
             Commit();
         }
 
-        public override IContractStateRepository GetSnapshotTo(byte[] root)
+        public override IContractStateRepository GetSnapshotTo(byte[] stateRoot, byte[] utxoRoot = null)
         {
-            return new ContractStateRepositoryRoot(this.stateDS, root);
+            return new ContractStateRepositoryRoot(this.stateDS, stateRoot, utxoRoot);
         }
 
         public override void SyncToRoot(byte[] root)

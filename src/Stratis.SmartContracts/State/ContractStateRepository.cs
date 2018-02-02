@@ -16,9 +16,17 @@ namespace Stratis.SmartContracts.State
         public ISource<byte[], AccountState> accountStateCache;
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
-
         protected List<TransferInfo> transfers;
-        protected Dictionary<uint160, Vin> cacheUTXO;
+
+        //protected ISource<byte[], byte[]> dbUTXO; //KV store containing all values 
+        //protected Dictionary<uint160, StoredVin> cacheUTXO;
+        //protected ITrie<byte[]> stateUTXO;
+
+
+        private void CommitCacheUTXO()
+        {
+
+        }
 
         protected ContractStateRepository() { }
 
@@ -35,6 +43,7 @@ namespace Stratis.SmartContracts.State
             this.codeCache = codeCache;
             this.storageCache = storageCache;
             this.transfers = new List<TransferInfo>();
+            //this.cacheUTXO = new Dictionary<uint160, StoredVin>();
         }
 
         public AccountState CreateAccount(uint160 addr)
@@ -115,9 +124,9 @@ namespace Stratis.SmartContracts.State
             return ret;
         }
 
-        public virtual IContractStateRepository GetSnapshotTo(byte[] root)
+        public virtual IContractStateRepository GetSnapshotTo(byte[] stateRoot, byte[] utxoRoot = null)
         {
-            return this.parent.GetSnapshotTo(root);
+            return this.parent.GetSnapshotTo(stateRoot, utxoRoot);
         }
 
         public virtual void Commit()
