@@ -21,8 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
+        private Task storeBlocksTask;
         
         public IBlockRepository BlockRepository { get; }
 
@@ -63,6 +62,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private ProcessPendingStorageStep processPendingStorageStep;
 
+        private AsyncManualResetEvent blockProcessingRequestedTrigger;
+
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
 
@@ -90,6 +91,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, dateTimeProvider, this.logger);
+
+            this.blockProcessingRequestedTrigger = new AsyncManualResetEvent(false);
         }
 
         /// <summary>
@@ -154,7 +157,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.processPendingStorageStep = new ProcessPendingStorageStep(this, this.loggerFactory);
 
-            this.StartLoop();
+            this.StartSavingBlocksToTheRepository();
 
             this.logger.LogTrace("(-)");
         }
@@ -172,7 +175,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
 
             if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
+            {
                 this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
+                this.blockProcessingRequestedTrigger.Set();
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -187,20 +193,24 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// TODO change to Dispose()
         internal void ShutDown()
         {
-            this.asyncLoop.Dispose();
-            this.StoreBlocksAsync(CancellationToken.None, true).Wait();
+            this.storeBlocksTask?.Wait();
         }
 
         /// <summary>Executes <see cref="StoreBlocksAsync"/>.</summary>
-        private void StartLoop()
+        private void StartSavingBlocksToTheRepository()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
+            this.storeBlocksTask = Task.Run(async () =>
             {
-                await this.StoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Second,
-            startAfter: TimeSpans.FiveSeconds);
+                try
+                {
+                    await Task.Delay(TimeSpans.FiveSeconds, this.nodeLifetime.ApplicationStopping);
+
+                    await this.StoreBlocksAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            });
         }
 
         /// <summary>
@@ -219,19 +229,32 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// </summary>
         /// <param name="cancellationToken">CancellationToken to check</param>
-        /// <param name="disposeMode">This will <c>true</c> if the Flush() was called</param>
-        private async Task StoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
+        private async Task StoreBlocksAsync(CancellationToken cancellationToken)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
+            bool disposeMode = false;
 
-            while (!cancellationToken.IsCancellationRequested)
+            while (true)
             {
-                if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
-                    break;
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    if (!disposeMode)
+                        // Force this iteration to flush.
+                        disposeMode = true;
+                    else
+                        break;
+                }
 
+
+                // Wait for signal before continuing.
+                await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
+                this.blockProcessingRequestedTrigger.Reset();
+                
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
                 if (nextChainedBlock == null)
+                {
+                    //TODO handle this scenario- download blocks manually
                     break;
+                }
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
@@ -250,12 +273,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.SetStoreTip(nextChainedBlock);
 
                     this.logger.LogTrace("(-)[EXIST]");
-                    break;
+                    continue;
                 }
 
                 StepResult result = await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode).ConfigureAwait(false);
                 if (result == StepResult.Stop)
-                    break;
+                    continue;
 
                 // TODO support cases when node wasn't shutted down properly so some blocks are missing and lookahead block puller doesnt downlaod them
 

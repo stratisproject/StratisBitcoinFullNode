@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// the loop again.
     /// </para>
     /// </summary>
-    internal sealed class ProcessPendingStorageStep : BlockStoreLoopStep
+    internal sealed class ProcessPendingStorageStep
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -61,15 +61,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         internal ConcurrentStack<BlockPair> PendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
 
+        private readonly BlockStoreLoop BlockStoreLoop;
 
         internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
-            : base(blockStoreLoop, loggerFactory)
         {
+            this.BlockStoreLoop = blockStoreLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
-
-        /// <inheritdoc/>
-        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        
+        internal async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
