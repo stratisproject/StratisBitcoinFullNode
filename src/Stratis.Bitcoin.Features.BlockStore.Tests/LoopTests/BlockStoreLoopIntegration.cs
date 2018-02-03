@@ -48,6 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             }
         }
 
+        /*
         [Fact]
         public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks()
         {
@@ -86,6 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
             }
         }
+        */
 
         [Fact]
         public void ProcessPendingStorage_PushToRepo_BeforeDownloadingNewBlocks()

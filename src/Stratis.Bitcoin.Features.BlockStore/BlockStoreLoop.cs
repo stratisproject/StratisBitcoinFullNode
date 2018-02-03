@@ -157,7 +157,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.SetHighestPersistedBlock(this.StoreTip);
 
             this.stepChain = new BlockStoreStepChain();
-            this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
 
@@ -242,12 +241,68 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
+                StepResult repositoryReorgRes = await this.ReorganiseBlockRepositoryAsync(nextChainedBlock, disposeMode).ConfigureAwait(false);
+                if (repositoryReorgRes == StepResult.Stop)
+                    break;
+
                 StepResult result = await this.stepChain.ExecuteAsync(nextChainedBlock, disposeMode, cancellationToken).ConfigureAwait(false);
                 if (result == StepResult.Stop)
                     break;
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Reorganises the <see cref="BlockStore.BlockRepository"/>.
+        /// <para>
+        /// This will happen when the block store's tip does not match
+        /// the next chained block's previous header.
+        /// </para>
+        /// <para>
+        /// Steps:
+        /// <list type="bullet">
+        ///     <item>1: Add blocks to delete from the repository by walking back the chain until the last chained block is found.</item>
+        ///     <item>2: Delete those blocks from the BlockRepository.</item>
+        ///     <item>3: Set the last stored block (tip) to the last found chained block.</item>
+        /// </list>
+        /// </para>
+        /// </summary>
+        /// <returns>
+        /// If the store/repository does not require reorganising the step will return <see cref="StepResult.Next"/>. 
+        /// If not- it will return <see cref="StepResult.Stop"/> which will cause the <see cref="BlockStoreLoop" /> to break execution and start again.
+        /// </returns>
+        private async Task<StepResult> ReorganiseBlockRepositoryAsync(ChainedBlock nextChainedBlock, bool disposeMode)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
+
+            if (this.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
+            {
+                if (disposeMode)
+                {
+                    this.logger.LogTrace("(-)[DISPOSE]:{0}", StepResult.Stop);
+                    return StepResult.Stop;
+                }
+
+                var blocksToDelete = new List<uint256>();
+                ChainedBlock blockToDelete = this.StoreTip;
+
+                while (this.Chain.GetBlock(blockToDelete.HashBlock) == null)
+                {
+                    blocksToDelete.Add(blockToDelete.HashBlock);
+                    blockToDelete = blockToDelete.Previous;
+                }
+
+                await this.BlockRepository.DeleteAsync(blockToDelete.HashBlock, blocksToDelete);
+
+                this.SetStoreTip(blockToDelete);
+
+                this.logger.LogTrace("(-)[MISMATCH]:{0}", StepResult.Stop);
+                return StepResult.Stop;
+            }
+
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
+            return StepResult.Next;
         }
 
         /// <summary>Set the store's tip</summary>
