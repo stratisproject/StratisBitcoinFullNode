@@ -39,10 +39,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
         
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
-        internal const uint MaxPendingInsertBlockSize = 5 * 1024 * 1024;
+        public const uint MaxPendingInsertBlockSize = 5 * 1024 * 1024;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private ProcessPendingStorageStep processPendingStorageStep;
 
-        private AsyncManualResetEvent blockProcessingRequestedTrigger;
+        private readonly AsyncManualResetEvent blockProcessingRequestedTrigger;
 
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
@@ -232,6 +232,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             bool disposeMode = false;
 
+            // TODO handle here a scenario when consensus tip is ahead of the block store tip. Node wasn't shutted down properly last time and we need to download missing blocks.
+
             while (true)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -274,8 +276,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 StepResult result = await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode).ConfigureAwait(false);
                 if (result == StepResult.Stop)
                     continue;
-
-                // TODO support cases when node wasn't shutted down properly so some blocks are missing and lookahead block puller doesnt downlaod them
             }
 
             this.logger.LogTrace("(-)");
