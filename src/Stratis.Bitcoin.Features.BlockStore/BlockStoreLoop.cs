@@ -35,10 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public IInitialBlockDownloadState InitialBlockDownloadState { get; }
 
         public IChainState ChainState { get; }
-
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
+        
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -49,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
 
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
-        internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
+        internal const uint MaxPendingInsertBlockSize = 5 * 1024 * 1024;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -93,11 +90,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.storeSettings = storeSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
-            this.dateTimeProvider = dateTimeProvider;
             this.InitialBlockDownloadState = initialBlockDownloadState;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, dateTimeProvider, this.logger);
         }
 
         /// <summary>
@@ -198,17 +194,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal void ShutDown()
         {
             this.asyncLoop.Dispose();
-            this.DownloadAndStoreBlocksAsync(CancellationToken.None, true).Wait();
+            this.StoreBlocksAsync(CancellationToken.None, true).Wait();
         }
 
-        /// <summary>
-        /// Executes DownloadAndStoreBlocks()
-        /// </summary>
+        /// <summary>Executes <see cref="StoreBlocksAsync"/>.</summary>
         private void StartLoop()
         {
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
             {
-                await this.DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
+                await this.StoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
@@ -216,14 +210,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Finds and downloads blocks to store in the BlockRepository.
+        /// Saves blocks from <see cref="PendingStorage"/> to the <see cref="BlockRepository"/>.
         /// <para>
         /// This method executes a chain of steps in order:
         /// <list>
-        ///     <item>1. Reorganise the repository</item>
-        ///     <item>2. Check if the block exists in store, if it does move on to the next block</item>
-        ///     <item>3. Process the blocks in pending storage</item>
-        ///     <item>4. Find and download blocks</item>
+        ///     <item>1. Reorganise the repository.</item>
+        ///     <item>2. Check if the block exists in store, if it does move on to the next block.</item>
+        ///     <item>3. Process the blocks in pending storage.</item>
         /// </list>
         /// </para>
         /// <para>
@@ -233,14 +226,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="cancellationToken">CancellationToken to check</param>
         /// <param name="disposeMode">This will <c>true</c> if the Flush() was called</param>
-        /// <remarks>
-        /// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
-        /// When in IBD we may need many reads for the block key without fetching the block
-        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD
-        /// a read is normally done when a peer is asking for the entire block (not just the key)
-        /// then if LazyLoadingOn = false the read will be faster on the entire block
-        /// </remarks>
-        private async Task DownloadAndStoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
+        private async Task StoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
         {
             this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
 
@@ -249,14 +235,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
                     break;
 
-                var nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
+                ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
                 if (nextChainedBlock == null)
                     break;
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                var result = await this.stepChain.ExecuteAsync(nextChainedBlock, disposeMode, cancellationToken).ConfigureAwait(false);
+                StepResult result = await this.stepChain.ExecuteAsync(nextChainedBlock, disposeMode, cancellationToken).ConfigureAwait(false);
                 if (result == StepResult.Stop)
                     break;
             }
@@ -277,7 +263,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>Set the highest persisted block in the chain.</summary>
-        protected virtual void SetHighestPersistedBlock(ChainedBlock block)
+        private void SetHighestPersistedBlock(ChainedBlock block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);
 
