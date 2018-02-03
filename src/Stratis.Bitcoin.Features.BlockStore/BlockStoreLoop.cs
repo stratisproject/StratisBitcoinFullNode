@@ -168,7 +168,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
-            this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory, this.dateTimeProvider));
 
             this.StartLoop();
 

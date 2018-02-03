@@ -262,14 +262,5 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.logger.LogTrace("(-):true");
             return true;
         }
-
-        public override string ToString()
-        {
-            return (string.Format("{0}:{1} / {2}.{3}:{4} / {5}:{6} / {7}:{8}",
-                    nameof(this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload), this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload(),
-                    nameof(this.PendingBlockPairsToStore), nameof(this.PendingBlockPairsToStore.Count),
-                    this.PendingBlockPairsToStore?.Count, nameof(this.PendingStorageBatchSize), this.PendingStorageBatchSize,
-                    nameof(this.BlockStoreLoop.StoreTip), this.BlockStoreLoop.StoreTip));
-        }
     }
 }
