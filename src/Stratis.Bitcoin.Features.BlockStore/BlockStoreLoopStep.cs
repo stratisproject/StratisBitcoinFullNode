@@ -7,49 +7,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    /// <summary>
-    /// The chain of block store loop steps that is executed when the
-    /// BlockStoreLoop's DownloadAndStoreBlocks is called.
-    /// <seealso cref="BlockStoreLoop.DownloadAndStoreBlocksAsync"/>
-    /// </summary>
-    internal sealed class BlockStoreStepChain
-    {
-        private List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
-
-        /// <summary>Set the next step to execute in the BlockStoreLoop.</summary>
-        /// <param name="step">The next step to execute.</param>
-        internal void SetNextStep(BlockStoreLoopStep step)
-        {
-            this.steps.Add(step);
-        }
-
-        /// <summary>
-        /// Executes the chain of <see cref="BlockStoreLoop"/> steps.
-        /// <para>
-        /// Each step will return a <see cref="StepResult"/> which will either:
-        /// <list>
-        ///     <item>1: Break out of the foreach loop.</item>
-        ///     <item>2: Continue execution of the foreach loop.</item>
-        /// </list>
-        /// </para>
-        /// </summary>
-        /// <param name="nextChainedBlock">Next chained block to process.</param>
-        /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.ShutDown"/> was called.</param>
-        /// <param name="cancellationToken">Cancellation token to check.</param>
-        /// <returns>BlockStoreLoopStepResult</returns>
-        internal async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
-        {
-            foreach (var step in this.steps)
-            {
-                var stepResult = await step.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode);
-                if ((stepResult == StepResult.Continue) || (stepResult == StepResult.Stop))
-                    return stepResult;
-            }
-
-            return StepResult.Next;
-        }
-    }
-
     /// <summary>Base class for each block store step.</summary>
     internal abstract class BlockStoreLoopStep
     {

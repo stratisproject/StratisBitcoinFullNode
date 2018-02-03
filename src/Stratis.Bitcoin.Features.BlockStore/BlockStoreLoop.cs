@@ -41,10 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Maximum number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
-        internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
-
+        
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxPendingInsertBlockSize = 5 * 1024 * 1024;
 
@@ -57,15 +54,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
         public const int PendingStorageBatchThreshold = 10;
 
-        /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
-        private BlockStoreStepChain stepChain;
-
         public virtual string StoreName
         {
             get { return "BlockStore"; }
         }
 
         private readonly StoreSettings storeSettings;
+
+        private ProcessPendingStorageStep processPendingStorageStep;
 
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
@@ -156,9 +152,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.SetHighestPersistedBlock(this.StoreTip);
 
-            this.stepChain = new BlockStoreStepChain();
-            this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this, this.loggerFactory));
-            this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
+            this.processPendingStorageStep = new ProcessPendingStorageStep(this, this.loggerFactory);
 
             this.StartLoop();
 
@@ -190,6 +184,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// has completed.
         /// </para>
         /// </summary>
+        /// TODO change to Dispose()
         internal void ShutDown()
         {
             this.asyncLoop.Dispose();
@@ -241,12 +236,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
+                //TODO remove step results
+
                 StepResult repositoryReorgRes = await this.ReorganiseBlockRepositoryAsync(nextChainedBlock, disposeMode).ConfigureAwait(false);
-                if (repositoryReorgRes == StepResult.Stop)
+                if (repositoryReorgRes == StepResult.Continue)
                     break;
 
-                StepResult result = await this.stepChain.ExecuteAsync(nextChainedBlock, disposeMode, cancellationToken).ConfigureAwait(false);
+                // Check if block was already saved to the BlockRepository.
+                if (await this.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
+                {
+                    await this.BlockRepository.SetBlockHashAsync(nextChainedBlock.HashBlock);
+
+                    this.SetStoreTip(nextChainedBlock);
+
+                    this.logger.LogTrace("(-)[EXIST]:{0}");
+                    break;
+                }
+
+                StepResult result = await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode).ConfigureAwait(false);
                 if (result == StepResult.Stop)
+                    break;
+
+                // TODO support cases when node wasn't shutted down properly so some blocks are missing and lookahead block puller doesnt downlaod them
+
+                if (disposeMode)
                     break;
             }
 
@@ -304,7 +317,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
-
+        
         /// <summary>Set the store's tip</summary>
         internal void SetStoreTip(ChainedBlock chainedBlock)
         {
