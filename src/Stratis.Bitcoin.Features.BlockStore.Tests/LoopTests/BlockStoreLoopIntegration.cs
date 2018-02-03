@@ -125,41 +125,5 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
             }
         }
-
-        [Fact]
-        public void DownloadBlockStep_WithNewBlocksToDownload_DownloadBlocksAndPushToRepo()
-        {
-            var blocks = this.CreateBlocks(10);
-
-            using (var fluent = new FluentBlockStoreLoop())
-            {
-                fluent.WithConcreteRepository(Path.Combine(AppContext.BaseDirectory, "BlockStore", "DownloadBlocks_Integration"));
-
-                // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
-
-                // The chain has 10 blocks appended
-                var chain = new ConcurrentChain(blocks[0].Header);
-                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
-
-                // Create block store loop
-                fluent.Create(chain);
-
-                // Push blocks 5 - 9 to the downloaded blocks collection
-                for (int i = 5; i <= 9; i++)
-                {
-                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
-                }
-
-                // Start processing blocks to download from block 5
-                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
-
-                var step = new DownloadBlockStep(fluent.Loop, this.loggerFactory, DateTimeProvider.Default);
-                step.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
-
-                Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
-                Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
-            }
-        }
     }
 }

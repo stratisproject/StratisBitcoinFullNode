@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     /// <summary>
-    /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
+    /// The BlockStoreLoop stores blocks downloaded by <see cref="LookaheadBlockPuller"/> to the BlockRepository.
     /// </summary>
     public class BlockStoreLoop
     {
@@ -23,9 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
-
-        public StoreBlockPuller BlockPuller { get; }
-
+        
         public IBlockRepository BlockRepository { get; }
 
         private readonly BlockStoreStats blockStoreStats;
@@ -77,7 +75,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
-            StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
             IBlockStoreCache cache,
             ConcurrentChain chain,
@@ -89,7 +86,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
             this.Chain = chain;
             this.ChainState = chainState;

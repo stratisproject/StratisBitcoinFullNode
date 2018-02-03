@@ -29,7 +29,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     internal class FluentBlockStoreLoop : IDisposable
     {
         private IAsyncLoopFactory asyncLoopFactory;
-        private StoreBlockPuller blockPuller;
         internal IBlockRepository BlockRepository { get; private set; }
         private Mock<ChainState> chainState;
         private Mock<IConnectionManager> connectionManager;
@@ -98,14 +97,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
         internal void Create(ConcurrentChain chain)
         {
-            this.blockPuller = new StoreBlockPuller(chain, this.connectionManager.Object, this.loggerFactory.Object);
-
             if (this.asyncLoopFactory == null)
                 this.asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
 
             this.Loop = new BlockStoreLoop(
                     this.asyncLoopFactory,
-                    this.blockPuller,
                     this.BlockRepository,
                     null,
                     chain,
