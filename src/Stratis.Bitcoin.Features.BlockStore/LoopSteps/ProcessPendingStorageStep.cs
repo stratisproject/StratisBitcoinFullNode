@@ -33,166 +33,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
-            : base(blockStoreLoop, loggerFactory)
-        {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-        }
-
-        /// <inheritdoc/>
-        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
-
-            var context = new ProcessPendingStorageContext(this.logger, this.BlockStoreLoop, nextChainedBlock, cancellationToken);
-
-            // Next block does not exist in pending storage, continue onto the download blocks step.
-            if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
-            {
-                this.logger.LogTrace("(-)[NOT_FOUND]:{0}", StepResult.Next);
-                return StepResult.Next;
-            }
-
-            if (disposeMode)
-            {
-                StepResult lres = await this.ProcessWhenDisposingAsync(context);
-                this.logger.LogTrace("(-)[DISPOSE]:{0}", lres);
-                return lres;
-            }
-
-            if (this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
-            {
-                StepResult lres = await this.ProcessWhenInIBDAsync(context);
-                this.logger.LogTrace("(-)[IBD]:{0}", lres);
-                return lres;
-            }
-
-            StepResult res = await this.ProcessWhenNotInIBDAsync(context);
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
         /// <summary>
-        /// When the node disposes, process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
-        /// its empty
+        /// The block currently being processed.
         /// </summary>
-        private async Task<StepResult> ProcessWhenDisposingAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
-
-            while (this.BlockStoreLoop.PendingStorage.Count > 0)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
-                if (result == StepResult.Stop)
-                    break;
-            }
-
-            if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync(context);
-
-            this.logger.LogTrace("(-):{0}", StepResult.Stop);
-            return StepResult.Stop;
-        }
-
-        /// <summary>
-        /// When the node is in IBD wait for <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
-        /// a stop condition is found, the blocks will be pushed to the repository in batches of size <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/>.
-        /// </summary>
-        private async Task<StepResult> ProcessWhenInIBDAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(context.NextChainedBlock), context.NextChainedBlock, nameof(this.BlockStoreLoop.PendingStorage), nameof(this.BlockStoreLoop.PendingStorage.Count), this.BlockStoreLoop.PendingStorage.Count);
-
-            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
-                return StepResult.Continue;
-
-            while (context.CancellationToken.IsCancellationRequested == false)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
-                if (result == StepResult.Stop)
-                    break;
-
-                if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
-                    await this.PushBlocksToRepositoryAsync(context);
-            }
-
-            if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync(context);
-
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
-            return StepResult.Continue;
-        }
-
-        /// <summary>
-        /// When the node is NOT in IBD, process and push the blocks in <see cref="BlockStoreLoop.PendingStorage"/> immediately
-        /// to the block repository without checking batch size.
-        /// </summary>
-        private async Task<StepResult> ProcessWhenNotInIBDAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
-
-            while (context.CancellationToken.IsCancellationRequested == false)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
-                if (result == StepResult.Stop)
-                    break;
-            }
-
-            if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync(context);
-
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
-            return StepResult.Continue;
-        }
-
-        /// <summary>
-        /// Tries to get and remove the next block from pending storage. If it exists
-        /// then add it to <see cref="ProcessPendingStorageContext.PendingBlockPairsToStore"/>.
-        /// This will also check if the next block can be processed.
-        /// </summary>
-        /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
-        private StepResult PrepareNextBlockFromPendingStorage(ProcessPendingStorageContext context)
-        {
-            var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
-            if (blockIsInPendingStorage)
-            {
-                context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-                context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
-            }
-
-            return context.CanProcessNextBlock() ? StepResult.Next : StepResult.Stop;
-        }
-
-        /// <summary>
-        /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
-        /// </summary>
-        /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
-        private async Task PushBlocksToRepositoryAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogDebug(context.ToString());
-
-            await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
-            this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
-
-            context.PendingBlockPairToStore = null;
-            context.PendingBlockPairsToStore.Clear();
-            context.PendingStorageBatchSize = 0;
-        }
-    }
-
-    /// <summary>
-    /// Context class thats used by <see cref="ProcessPendingStorageStep"/>
-    /// </summary>
-    internal sealed class ProcessPendingStorageContext
-    {
-        internal ProcessPendingStorageContext(ILogger logger, BlockStoreLoop blockStoreLoop, ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
-        {
-            this.logger = logger;
-            this.BlockStoreLoop = blockStoreLoop;
-            this.NextChainedBlock = nextChainedBlock;
-            this.CancellationToken = cancellationToken;
-        }
-
-        internal BlockStoreLoop BlockStoreLoop { get; private set; }
+        internal ChainedBlock NextChainedBlock { get; private set; }
 
         internal CancellationToken CancellationToken { get; private set; }
 
@@ -201,14 +45,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// match this block's hash.
         /// </summary>
         internal ChainedBlock PreviousChainedBlock { get; private set; }
-
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
-        /// <summary>
-        /// The block currently being processed.
-        /// </summary>
-        internal ChainedBlock NextChainedBlock { get; private set; }
 
         /// <summary>
         /// If this value reaches <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> the step will exit./>
@@ -224,6 +60,143 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// A collection of blocks that are pending to be pushed to store.
         /// </summary>
         internal ConcurrentStack<BlockPair> PendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
+
+
+        internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+            : base(blockStoreLoop, loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <inheritdoc/>
+        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
+
+            this.NextChainedBlock = nextChainedBlock;
+            this.CancellationToken = cancellationToken;
+            
+            // Next block does not exist in pending storage, continue onto the download blocks step.
+            if (!this.BlockStoreLoop.PendingStorage.ContainsKey(this.NextChainedBlock.HashBlock))
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]:{0}", StepResult.Next);
+                return StepResult.Next;
+            }
+
+            if (disposeMode)
+            {
+                StepResult lres = await this.ProcessWhenDisposingAsync();
+                this.logger.LogTrace("(-)[DISPOSE]:{0}", lres);
+                return lres;
+            }
+
+            if (this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
+            {
+                StepResult lres = await this.ProcessWhenInIBDAsync();
+                this.logger.LogTrace("(-)[IBD]:{0}", lres);
+                return lres;
+            }
+
+            StepResult res = await this.ProcessWhenNotInIBDAsync();
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
+        }
+
+        /// <summary>
+        /// When the node disposes, process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
+        /// its empty
+        /// </summary>
+        private async Task<StepResult> ProcessWhenDisposingAsync()
+        {
+            while (this.BlockStoreLoop.PendingStorage.Count > 0)
+            {
+                StepResult result = this.PrepareNextBlockFromPendingStorage();
+                if (result == StepResult.Stop)
+                    break;
+            }
+
+            if (this.PendingBlockPairsToStore.Any())
+                await this.PushBlocksToRepositoryAsync();
+
+            this.logger.LogTrace("(-):{0}", StepResult.Stop);
+            return StepResult.Stop;
+        }
+
+        /// <summary>
+        /// When the node is in IBD wait for <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
+        /// a stop condition is found, the blocks will be pushed to the repository in batches of size <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/>.
+        /// </summary>
+        private async Task<StepResult> ProcessWhenInIBDAsync()
+        {
+            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
+                return StepResult.Continue;
+
+            while (this.CancellationToken.IsCancellationRequested == false)
+            {
+                StepResult result = this.PrepareNextBlockFromPendingStorage();
+                if (result == StepResult.Stop)
+                    break;
+
+                if (this.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
+                    await this.PushBlocksToRepositoryAsync();
+            }
+
+            if (this.PendingBlockPairsToStore.Any())
+                await this.PushBlocksToRepositoryAsync();
+
+            this.logger.LogTrace("(-):{0}", StepResult.Continue);
+            return StepResult.Continue;
+        }
+
+        /// <summary>
+        /// When the node is NOT in IBD, process and push the blocks in <see cref="BlockStoreLoop.PendingStorage"/> immediately
+        /// to the block repository without checking batch size.
+        /// </summary>
+        private async Task<StepResult> ProcessWhenNotInIBDAsync()
+        {
+            while (this.CancellationToken.IsCancellationRequested == false)
+            {
+                StepResult result = this.PrepareNextBlockFromPendingStorage();
+                if (result == StepResult.Stop)
+                    break;
+            }
+
+            if (this.PendingBlockPairsToStore.Any())
+                await this.PushBlocksToRepositoryAsync();
+
+            this.logger.LogTrace("(-):{0}", StepResult.Continue);
+            return StepResult.Continue;
+        }
+
+        /// <summary>
+        /// Tries to get and remove the next block from pending storage. If it exists
+        /// then add it to <see cref="ProcessPendingStoragethis.PendingBlockPairsToStore"/>.
+        /// This will also check if the next block can be processed.
+        /// </summary>
+        private StepResult PrepareNextBlockFromPendingStorage()
+        {
+            var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(this.NextChainedBlock.HashBlock, out this.PendingBlockPairToStore);
+            if (blockIsInPendingStorage)
+            {
+                this.PendingBlockPairsToStore.Push(this.PendingBlockPairToStore);
+                this.PendingStorageBatchSize += this.PendingBlockPairToStore.Block.GetSerializedSize();
+            }
+
+            return this.CanProcessNextBlock() ? StepResult.Next : StepResult.Stop;
+        }
+
+        /// <summary>
+        /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="NextChainedBlock"/>
+        /// </summary>
+        private async Task PushBlocksToRepositoryAsync()
+        {
+            await this.BlockStoreLoop.BlockRepository.PutAsync(this.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, this.PendingBlockPairsToStore.Select(b => b.Block).ToList());
+            this.BlockStoreLoop.SetStoreTip(this.PendingBlockPairsToStore.First().ChainedBlock);
+
+            this.PendingBlockPairToStore = null;
+            this.PendingBlockPairsToStore.Clear();
+            this.PendingStorageBatchSize = 0;
+        }
 
         /// <summary>
         /// Break execution if:

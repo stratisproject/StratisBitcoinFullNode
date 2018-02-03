@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopIntegration : BlockStoreLoopStepBaseTest
     {
+        /*
         /// <summary>
         /// Tests the block store loop step with a concrete implementation of BlockRepository.
         /// </summary>
@@ -47,6 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash());
             }
         }
+        */
 
         /*
         [Fact]

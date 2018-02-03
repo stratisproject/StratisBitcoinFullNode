@@ -8,6 +8,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepCheckNextChainedBlockExistStepTest : BlockStoreLoopStepBaseTest
     {
+        /*
         [Fact]
         public void CheckNextChainedBlockExists_WithNextChainedBlock_Exists_SetStoreTipAndBlockHash_InMemory()
         {
@@ -38,5 +39,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash(options));
             }
         }
+        */
     }
 }

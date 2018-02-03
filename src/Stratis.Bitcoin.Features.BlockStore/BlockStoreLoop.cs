@@ -238,10 +238,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 //TODO remove step results
 
-                StepResult repositoryReorgRes = await this.ReorganiseBlockRepositoryAsync(nextChainedBlock, disposeMode).ConfigureAwait(false);
-                if (repositoryReorgRes == StepResult.Continue)
+                // Reorganize the repository if needed. If not- continue.
+                if (await this.TryReorganiseBlockRepositoryAsync(nextChainedBlock, disposeMode).ConfigureAwait(false))
                     break;
-
+                
                 // Check if block was already saved to the BlockRepository.
                 if (await this.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
                 {
@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.SetStoreTip(nextChainedBlock);
 
-                    this.logger.LogTrace("(-)[EXIST]:{0}");
+                    this.logger.LogTrace("(-)[EXIST]");
                     break;
                 }
 
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// If the store/repository does not require reorganising the step will return <see cref="StepResult.Next"/>. 
         /// If not- it will return <see cref="StepResult.Stop"/> which will cause the <see cref="BlockStoreLoop" /> to break execution and start again.
         /// </returns>
-        private async Task<StepResult> ReorganiseBlockRepositoryAsync(ChainedBlock nextChainedBlock, bool disposeMode)
+        private async Task<bool> TryReorganiseBlockRepositoryAsync(ChainedBlock nextChainedBlock, bool disposeMode)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
@@ -293,8 +293,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 if (disposeMode)
                 {
-                    this.logger.LogTrace("(-)[DISPOSE]:{0}", StepResult.Stop);
-                    return StepResult.Stop;
+                    this.logger.LogTrace("(-)[DISPOSE]");
+                    return true;
                 }
 
                 var blocksToDelete = new List<uint256>();
@@ -310,12 +310,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 this.SetStoreTip(blockToDelete);
 
-                this.logger.LogTrace("(-)[MISMATCH]:{0}", StepResult.Stop);
-                return StepResult.Stop;
+                this.logger.LogTrace("(-)[MISMATCH]");
+                return true;
             }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Next);
-            return StepResult.Next;
+            this.logger.LogTrace("(-)");
+            return false;
         }
         
         /// <summary>Set the store's tip</summary>
