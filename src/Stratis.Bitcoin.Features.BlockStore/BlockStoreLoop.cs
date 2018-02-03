@@ -96,16 +96,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Initialize the BlockStore
+        /// Initializes the BlockStore.
         /// <para>
-        /// If StoreTip is <c>null</c>, the store is out of sync. This can happen when:</para>
-        /// <list>
-        ///     <item>1. The node crashed.</item>
-        ///     <item>2. The node was not closed down properly.</item>
-        /// </list>
+        /// If StoreTip is <c>null</c>, the store is out of sync. This can happen if the node has crashed or was not closed down properly.
+        /// </para>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found
-        /// and set the BlockStore's StoreTip to that.
+        /// To recover we walk back the chain until a common block header is found and set the BlockStore's StoreTip to that.
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
@@ -165,11 +161,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Adds a block to Pending Storage.
         /// <para>
-        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if the store's tip is behind the given block.
+        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available.
         /// </para>
         /// </summary>
         /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
-        /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
         public void AddToPending(BlockPair blockPair)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
@@ -181,18 +176,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Persists unsaved blocks to disk when the node shuts down.
-        /// <para>
-        /// Before we can shut down we need to ensure that the current async loop
-        /// has completed.
-        /// </para>
-        /// </summary>
-        public void Dispose()
-        {
-            this.storeBlocksTask?.Wait();
         }
 
         /// <summary>Executes <see cref="StoreBlocksAsync"/>.</summary>
@@ -222,12 +205,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///     <item>3. Process the blocks in pending storage.</item>
         /// </list>
         /// </para>
-        /// <para>
-        /// Steps return a <see cref="StepResult"/> which either signals the While loop
-        /// to break or continue execution.
-        /// </para>
         /// </summary>
-        /// <param name="cancellationToken">CancellationToken to check</param>
+        /// <param name="cancellationToken">CancellationToken to check.</param>
         private async Task StoreBlocksAsync(CancellationToken cancellationToken)
         {
             bool disposeMode = false;
@@ -284,8 +263,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Reorganises the <see cref="BlockStore.BlockRepository"/>.
         /// <para>
-        /// This will happen when the block store's tip does not match
-        /// the next chained block's previous header.
+        /// This will happen when the block store's tip does not match the next chained block's previous header.
         /// </para>
         /// <para>
         /// Steps:
@@ -297,8 +275,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// </summary>
         /// <returns>
-        /// If the store/repository does not require reorganising the step will return <see cref="StepResult.Next"/>. 
-        /// If not- it will return <see cref="StepResult.Stop"/> which will cause the <see cref="BlockStoreLoop" /> to break execution and start again.
+        /// If the store/repository did not require reorganising <c>false</c> will be returned. Otherwise: <c>true</c>.
         /// </returns>
         private async Task<bool> TryReorganiseBlockRepositoryAsync(ChainedBlock nextChainedBlock, bool disposeMode)
         {
@@ -354,6 +331,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 blockRepository.HighestPersistedBlock = block;
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Persists unsaved blocks to disk when the node shuts down.</summary>
+        public void Dispose()
+        {
+            this.storeBlocksTask?.Wait();
         }
     }
 }
