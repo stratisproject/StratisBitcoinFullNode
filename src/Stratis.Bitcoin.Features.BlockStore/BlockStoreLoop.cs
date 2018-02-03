@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// The BlockStoreLoop stores blocks downloaded by <see cref="LookaheadBlockPuller"/> to the BlockRepository.
     /// </summary>
-    public class BlockStoreLoop
+    public class BlockStoreLoop : IDisposable
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -190,8 +190,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// has completed.
         /// </para>
         /// </summary>
-        /// TODO change to Dispose()
-        internal void ShutDown()
+        public void Dispose()
         {
             this.storeBlocksTask?.Wait();
         }
@@ -243,18 +242,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     else
                         break;
                 }
-
-
+                
                 // Wait for signal before continuing.
                 await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
                 this.blockProcessingRequestedTrigger.Reset();
                 
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
                 if (nextChainedBlock == null)
-                {
-                    //TODO handle this scenario- download blocks manually
-                    break;
-                }
+                    continue;
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
@@ -281,9 +276,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     continue;
 
                 // TODO support cases when node wasn't shutted down properly so some blocks are missing and lookahead block puller doesnt downlaod them
-
-                if (disposeMode)
-                    break;
             }
 
             this.logger.LogTrace("(-)");
