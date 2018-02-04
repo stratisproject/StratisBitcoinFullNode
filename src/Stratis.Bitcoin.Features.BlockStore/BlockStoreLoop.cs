@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.blockProcessingRequestedTrigger.Reset();
                 if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
                 {
-                    this.logger.LogTrace("Store Tip has reached the Consensus Tip. Waiting for new block.");
+                    this.logger.LogDebug("Store Tip has reached the Consensus Tip. Waiting for new block.");
                     await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
                 
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.SetStoreTip(nextChainedBlock);
 
-                    this.logger.LogTrace("Block {0} already exist in the repository.", nextChainedBlock);
+                    this.logger.LogDebug("Block {0} already exist in the repository.", nextChainedBlock);
                     continue;
                 }
 
@@ -258,7 +258,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.PendingStorage.ContainsKey(nextChainedBlock.HashBlock))
                 {
                     this.blockProcessingRequestedTrigger.Reset();
+
+                    this.logger.LogTrace("Processing pending storage.");
                     await this.pendingStorageProcessor.ExecuteAsync(nextChainedBlock, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+
+                    this.logger.LogTrace("Pending storage processing finished, waiting for a new block.");
 
                     // Wait for next block.
                     await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
@@ -268,7 +272,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Consensus tip is ahead of the block store tip and the pending storage. 
                     // This is only possible if node wasn't shutted down properly last time so we need to download the missing blocks.
                     List<ChainedBlock> missing = await this.FindMissingBlocksAsync(nextChainedBlock);
-                    this.logger.LogTrace("At least {0} blocks are missing in the repository. Start downloading them.", missing.Count);
+                    this.logger.LogDebug("At least {0} blocks are missing in the repository. Start downloading them.", missing.Count);
                     await this.DownloadBlocksAsync(missing);
                 }
             }
