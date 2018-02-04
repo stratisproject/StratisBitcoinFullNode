@@ -26,13 +26,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private ChainedBlock previousChainedBlock;
 
         /// <summary>If this value reaches <see cref="BlockStoreLoop.TargetPendingInsertSize"/> the step will exit./></summary>
-        private int pendingStorageBatchSize = 0;
+        private int pendingStorageBatchSize;
 
         /// <summary>The last item that was dequeued from <see cref="pendingBlockPairsToStore"/>.</summary>
         private BlockPair pendingBlockPairToStore;
 
         /// <summary>A collection of blocks that are pending to be pushed to store.</summary>
-        private ConcurrentStack<BlockPair> pendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
+        private readonly ConcurrentStack<BlockPair> pendingBlockPairsToStore;
 
         private readonly BlockStoreLoop blockStoreLoop;
 
@@ -44,6 +44,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.blockStoreLoop = blockStoreLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.pendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
+            this.pendingStorageBatchSize = 0;
         }
 
         /// <summary>Processes the blockStoreLoop.PendingStorage.</summary>
