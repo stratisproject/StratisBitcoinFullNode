@@ -237,9 +237,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                // Reorganize the repository if needed. If not- continue.
+                // Reorganize the repository if needed.
                 if (await this.TryReorganiseBlockRepositoryAsync(nextChainedBlock, disposeMode).ConfigureAwait(false))
-                    break;
+                    continue;
                 
                 // Check if block was already saved to the BlockRepository.
                 if (await this.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
