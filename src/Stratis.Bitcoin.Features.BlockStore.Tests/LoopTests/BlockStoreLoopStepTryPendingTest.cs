@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken()).GetAwaiter().GetResult();
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken()).GetAwaiter().GetResult();
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken()).GetAwaiter().GetResult();
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[2499].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[2499].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken()).GetAwaiter().GetResult();
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);

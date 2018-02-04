@@ -7,7 +7,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepReorganiseTest : BlockStoreLoopStepBaseTest
     {
-        /*
         [Fact]
         public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks_InMemory()
         {
@@ -38,13 +37,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 //Reorganise (delete) blocks from the block repository that is not found
                 var nextChainedBlock = block10;
-                var reorganiseStep = new ReorganiseBlockRepositoryStep(fluent.Loop, this.loggerFactory);
-                reorganiseStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+
+                fluent.Loop.TryReorganiseBlockRepositoryAsync(nextChainedBlock, false).GetAwaiter().GetResult();
 
                 Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
             }
         }
-        */
     }
 }

@@ -9,45 +9,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopIntegration : BlockStoreLoopStepBaseTest
     {
-        /*
-        /// <summary>
-        /// Tests the block store loop step with a concrete implementation of BlockRepository.
-        /// </summary>
-        [Fact]
-        public void CheckNextChainedBlockExists_WithNextChainedBlock_Exists_SetStoreTipAndBlockHash()
-        {
-            var blocks = this.CreateBlocks(5);
-
-            using (var fluent = new FluentBlockStoreLoop())
-            {
-                fluent.WithConcreteRepository(Path.Combine(AppContext.BaseDirectory, "BlockStore", "CheckNextChainedBlockExists_Integration"));
-
-                // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
-
-                // The chain has 4 blocks appended
-                var chain = new ConcurrentChain(blocks[0].Header);
-                this.AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
-
-                // Create the last chained block without appending to the chain
-                var block03 = chain.GetBlock(blocks[3].GetHash());
-                var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
-
-                fluent.Create(chain);
-
-                Assert.Null(fluent.Loop.StoreTip);
-
-                var nextChainedBlock = block04;
-                var checkExistsStep = new CheckNextChainedBlockExistStep(fluent.Loop, this.loggerFactory);
-                checkExistsStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
-
-                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block04.Header.GetHash());
-                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash());
-            }
-        }
-        */
-
-        /*
         [Fact]
         public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks()
         {
@@ -79,15 +40,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block14.Header.GetHash());
 
                 var nextChainedBlock = block10;
-                var reorganiseStep = new ReorganiseBlockRepositoryStep(fluent.Loop, this.loggerFactory);
-                reorganiseStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
+                bool reorged = fluent.Loop.TryReorganiseBlockRepositoryAsync(nextChainedBlock, false).GetAwaiter().GetResult();
+
+                Assert.True(reorged);
                 Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
             }
         }
-        */
-
+        
         [Fact]
         public void ProcessPendingStorage_PushToRepo_BeforeDownloadingNewBlocks()
         {
@@ -120,7 +81,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken()).GetAwaiter().GetResult();
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);

@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <returns>
         /// If the store/repository did not require reorganising <c>false</c> will be returned. Otherwise: <c>true</c>.
         /// </returns>
-        private async Task<bool> TryReorganiseBlockRepositoryAsync(ChainedBlock nextChainedBlock, bool disposeMode)
+        internal async Task<bool> TryReorganiseBlockRepositoryAsync(ChainedBlock nextChainedBlock, bool disposeMode)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
