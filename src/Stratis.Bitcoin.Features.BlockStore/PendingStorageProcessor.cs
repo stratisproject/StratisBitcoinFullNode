@@ -18,16 +18,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>The block currently being processed.</summary>
         private ChainedBlock nextChainedBlock;
-
-        private CancellationToken cancellationToken;
-
+        
         /// <summary>
         /// Used to check if we should break execution when the next block's previous hash doesn't
         /// match this block's hash.
         /// </summary>
         private ChainedBlock previousChainedBlock;
 
-        /// <summary>If this value reaches <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> the step will exit./></summary>
+        /// <summary>If this value reaches <see cref="BlockStoreLoop.TargetPendingInsertSize"/> the step will exit./></summary>
         private int pendingStorageBatchSize = 0;
 
         /// <summary>The last item that was dequeued from <see cref="pendingBlockPairsToStore"/>.</summary>
@@ -38,6 +36,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly BlockStoreLoop blockStoreLoop;
 
+        /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
+        /// <remarks>This value depends on the average block size.</remarks>
+        private int pendingStorageBatchThreshold = 10;
+
         public PendingStorageProcessor(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
         {
             this.blockStoreLoop = blockStoreLoop;
@@ -45,29 +47,37 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>Processes the blockStoreLoop.PendingStorage.</summary>
-        public async Task ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(ChainedBlock nextChainedBlock, bool forceFlush)
         {
             this.nextChainedBlock = nextChainedBlock;
-            this.cancellationToken = cancellationToken;
             
             bool ibd = this.blockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload();
 
-            if (ibd && this.blockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
+            // In case if IBD do not save every single block- persist them in batches.
+            if (ibd && this.blockStoreLoop.PendingStorage.Count < this.pendingStorageBatchThreshold && !forceFlush)
                 return;
 
-            while (this.cancellationToken.IsCancellationRequested == false)
+            while (true)
             {
                 this.PrepareNextBlockFromPendingStorage();
 
                 if (!this.CanProcessNextBlock())
                     break;
 
-                if (ibd && this.pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
+                if (ibd && this.pendingStorageBatchSize > BlockStoreLoop.TargetPendingInsertSize)
+                {
+                    this.logger.LogDebug("Batch size is {0} bytes, saving the blocks.", this.pendingStorageBatchSize);
                     await this.PushBlocksToRepositoryAsync().ConfigureAwait(false);
+                    this.logger.LogDebug("Blocks saved.");
+                }
             }
 
             if (this.pendingBlockPairsToStore.Any())
+            {
+                this.logger.LogDebug("Pending blocks count: {0}, saving the blocks.", this.pendingBlockPairsToStore.Count);
                 await this.PushBlocksToRepositoryAsync().ConfigureAwait(false);
+                this.logger.LogDebug("Blocks saved.");
+            }
         }
         
         /// <summary>
@@ -91,6 +101,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             await this.blockStoreLoop.BlockRepository.PutAsync(this.pendingBlockPairsToStore.First().ChainedBlock.HashBlock, this.pendingBlockPairsToStore.Select(b => b.Block).ToList());
             this.blockStoreLoop.SetStoreTip(this.pendingBlockPairsToStore.First().ChainedBlock);
+
+            // Set blocks threshold.
+            int oldThreshold = this.pendingStorageBatchThreshold;
+            
+            int averageBlockSize = this.pendingStorageBatchSize / this.pendingBlockPairsToStore.Count;
+            this.pendingStorageBatchThreshold = BlockStoreLoop.TargetPendingInsertSize / averageBlockSize;
+
+            // Do not allow batch threshold to be changed significantly because there may be an anomaly in the network.
+            int maxTimesChange = 10;
+
+            if (this.pendingStorageBatchThreshold > oldThreshold * maxTimesChange)
+                this.pendingStorageBatchThreshold = oldThreshold * maxTimesChange;
+            else if (this.pendingStorageBatchThreshold * maxTimesChange < oldThreshold)
+                this.pendingStorageBatchThreshold = oldThreshold / maxTimesChange;
+
+            this.logger.LogDebug("Pending Storage Batch Threshold is set to: {0}", this.pendingStorageBatchThreshold);
 
             this.pendingBlockPairToStore = null;
             this.pendingBlockPairsToStore.Clear();

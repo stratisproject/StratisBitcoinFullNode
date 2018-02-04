@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// <list>
         /// <item>1: Pending storage count has reached <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/>.</item>
         /// <item>2: A break condition is found.</item>
-        /// <item>3: <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> has been reached. </item>
+        /// <item>3: <see cref="BlockStoreLoop.TargetPendingInsertSize"/> has been reached. </item>
         /// </list>
         /// </summary>
         [Fact]
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// <list>
         /// <item>1: Pending storage count has reached <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/>.</item>
         /// <item>2: A break condition is found.</item>
-        /// <item>3: <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> has been reached. </item>
+        /// <item>3: <see cref="BlockStoreLoop.TargetPendingInsertSize"/> has been reached. </item>
         /// </list>
         /// </summary>
         [Fact]

@@ -41,17 +41,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ILoggerFactory loggerFactory;
         
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
-        public const uint MaxPendingInsertBlockSize = 5 * 1024 * 1024;
+        public const int TargetPendingInsertSize = 5 * 1024 * 1024;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
-
-        /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
-        public const int PendingStorageBatchThreshold = 10;
-
+        
         /// <summary>Maximum number of milliseconds to get a block from the block puller before reducing quality score of the peers that owe us blocks.</summary>
         public const int StallDelayMs = 200;
 
@@ -185,15 +182,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.storeBlocksTask = Task.Run(async () =>
             {
-                try
-                {
-                    await Task.Delay(TimeSpans.FiveSeconds, this.nodeLifetime.ApplicationStopping);
-
-                    await this.StoreBlocksAsync().ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                }
+                await this.StoreBlocksAsync().ConfigureAwait(false);
             });
         }
 
@@ -229,7 +218,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
                 {
                     this.logger.LogDebug("Store Tip has reached the Consensus Tip. Waiting for new block.");
-                    await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+
+                    try
+                    {
+                        await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Carry on to the next iteration that will be ran in dispose mode.
+                        continue;
+                    }
                 }
                 
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
@@ -260,12 +258,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.blockProcessingRequestedTrigger.Reset();
 
                     this.logger.LogTrace("Processing pending storage.");
-                    await this.pendingStorageProcessor.ExecuteAsync(nextChainedBlock, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    await this.pendingStorageProcessor.ExecuteAsync(nextChainedBlock, this.nodeLifetime.ApplicationStopping.IsCancellationRequested).ConfigureAwait(false);
 
                     this.logger.LogTrace("Pending storage processing finished, waiting for a new block.");
 
                     // Wait for next block.
-                    await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    try
+                    {
+                        if (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                            await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Carry on to the next iteration that will be ran in dispose mode.
+                        continue;
+                    }
                 }
                 else if (!disposeMode)
                 {
