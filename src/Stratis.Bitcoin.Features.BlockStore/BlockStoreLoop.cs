@@ -18,9 +18,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop : IDisposable
     {
-        /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
         private Task storeBlocksTask;
 
         public StoreBlockPuller BlockPuller { get; }
@@ -73,8 +70,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal ChainedBlock StoreTip { get; private set; }
 
         /// <summary>Public constructor for unit testing.</summary>
-        public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
-            StoreBlockPuller blockPuller,
+        public BlockStoreLoop(StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
             IBlockStoreCache cache,
             ConcurrentChain chain,
@@ -85,7 +81,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IInitialBlockDownloadState initialBlockDownloadState,
             IDateTimeProvider dateTimeProvider)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
             this.Chain = chain;
@@ -215,6 +210,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         private async Task StoreBlocksAsync()
         {
+            this.logger.LogTrace("()");
+
             bool disposeMode = false;
 
             while (true)
@@ -271,7 +268,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Consensus tip is ahead of the block store tip and the pending storage. 
                     // This is only possible if node wasn't shutted down properly last time so we need to download the missing blocks.
                     List<ChainedBlock> missing = await this.FindMissingBlocksAsync(nextChainedBlock);
-                    this.logger.LogTrace("{0} blocks are missing in the repository. Start downloading them.", missing.Count);
+                    this.logger.LogTrace("At least {0} blocks are missing in the repository. Start downloading them.", missing.Count);
                     await this.DownloadBlocksAsync(missing);
                 }
             }
@@ -350,6 +347,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task DownloadBlocksAsync(List<ChainedBlock> blocks)
         {
+            this.logger.LogTrace("()");
+
             this.BlockPuller.AskForMultipleBlocks(blocks.ToArray());
 
             while (blocks.Count > 0 && !this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
@@ -388,18 +387,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     timeoutSource.Dispose();
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Set the store's tip</summary>
         internal void SetStoreTip(ChainedBlock chainedBlock)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock?.HashBlock);
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
 
             this.StoreTip = chainedBlock;
             this.SetHighestPersistedBlock(chainedBlock);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("Store Tip was set to '{0}'", chainedBlock);
         }
 
         /// <summary>Set the highest persisted block in the chain.</summary>
@@ -416,8 +416,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Persists unsaved blocks to disk when the node shuts down.</summary>
         public void Dispose()
         {
+            this.logger.LogTrace("()");
+
             this.storeBlocksTask?.Wait();
             this.BlockPuller.Dispose();
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
