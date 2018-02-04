@@ -3,10 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {

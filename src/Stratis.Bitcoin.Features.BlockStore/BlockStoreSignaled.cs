@@ -9,8 +9,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using System.Timers;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
