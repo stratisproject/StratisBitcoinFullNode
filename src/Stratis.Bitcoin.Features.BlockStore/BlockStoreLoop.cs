@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private Task storeBlocksTask;
 
-        public StoreBlockPuller BlockPuller { get; }
+        private StoreBlockPuller BlockPuller { get; }
 
         public IBlockRepository BlockRepository { get; }
 
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Represents the last block stored to disk.</summary>
         public ChainedBlock HighestPersistedBlock { get; private set; }
 
-        /// <summary>Public constructor for unit testing.</summary>
+        /// <summary>Creates new instance of <see cref="BlockStoreLoop"/>.</summary>
         public BlockStoreLoop(StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
             IBlockStoreCache cache,
