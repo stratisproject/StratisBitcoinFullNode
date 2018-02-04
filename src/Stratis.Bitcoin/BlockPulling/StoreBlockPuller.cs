@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         public async Task<DownloadedBlock> GetNextDownloadedBlockAsync(CancellationToken cancellation)
         {
-            return await this.downloadedBlocks.DequeueAsync(cancellation);
+            return await this.downloadedBlocks.DequeueAsync(cancellation).ConfigureAwait(false);
         }
 
         public override void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)

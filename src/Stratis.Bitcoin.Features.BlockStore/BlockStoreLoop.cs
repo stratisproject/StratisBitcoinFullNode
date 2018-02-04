@@ -245,9 +245,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     continue;
                 
                 // Check if block was already saved to the BlockRepository.
-                if (await this.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
+                if (await this.BlockRepository.ExistAsync(nextChainedBlock.HashBlock).ConfigureAwait(false))
                 {
-                    await this.BlockRepository.SetBlockHashAsync(nextChainedBlock.HashBlock);
+                    await this.BlockRepository.SetBlockHashAsync(nextChainedBlock.HashBlock).ConfigureAwait(false);
 
                     this.SetStoreTip(nextChainedBlock);
 
@@ -281,9 +281,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     // Consensus tip is ahead of the block store tip and the pending storage. 
                     // This is only possible if node wasn't shutted down properly last time so we need to download the missing blocks.
-                    List<ChainedBlock> missing = await this.FindMissingBlocksAsync(nextChainedBlock);
+                    List<ChainedBlock> missing = await this.FindMissingBlocksAsync(nextChainedBlock).ConfigureAwait(false);
                     this.logger.LogDebug("At least {0} blocks are missing in the repository. Start downloading them.", missing.Count);
-                    await this.DownloadBlocksAsync(missing);
+                    await this.DownloadBlocksAsync(missing).ConfigureAwait(false);
                 }
             }
 
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     blockToDelete = blockToDelete.Previous;
                 }
 
-                await this.BlockRepository.DeleteAsync(blockToDelete.HashBlock, blocksToDelete);
+                await this.BlockRepository.DeleteAsync(blockToDelete.HashBlock, blocksToDelete).ConfigureAwait(false);
 
                 this.SetStoreTip(blockToDelete);
 
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (currentBlock == null || this.PendingStorage.ContainsKey(currentBlock.HashBlock))
                     break;
 
-                if (await this.BlockRepository.ExistAsync(currentBlock.HashBlock))
+                if (await this.BlockRepository.ExistAsync(currentBlock.HashBlock).ConfigureAwait(false))
                     break;
 
                 missedBlocks.Add(currentBlock);

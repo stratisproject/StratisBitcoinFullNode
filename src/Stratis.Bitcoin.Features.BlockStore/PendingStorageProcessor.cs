@@ -102,7 +102,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         private async Task PushBlocksToRepositoryAsync()
         {
-            await this.blockStoreLoop.BlockRepository.PutAsync(this.pendingBlockPairsToStore.First().ChainedBlock.HashBlock, this.pendingBlockPairsToStore.Select(b => b.Block).ToList());
+            await this.blockStoreLoop.BlockRepository.PutAsync(this.pendingBlockPairsToStore.First().ChainedBlock.HashBlock,
+                this.pendingBlockPairsToStore.Select(b => b.Block).ToList()).ConfigureAwait(false);
             this.blockStoreLoop.SetStoreTip(this.pendingBlockPairsToStore.First().ChainedBlock);
 
             // Set blocks threshold.
