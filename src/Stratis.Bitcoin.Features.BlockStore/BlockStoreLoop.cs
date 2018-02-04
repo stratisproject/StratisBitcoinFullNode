@@ -56,8 +56,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
         public const int PendingStorageBatchThreshold = 10;
 
-        /// <summary>Number of milliseconds to wait after each failed attempt to get a block from the block puller.</summary>
-        public const int StallDelayMs = 100;
+        /// <summary>Maximum number of milliseconds to get a block from the block puller before reducing quality score of the peers that owe us blocks.</summary>
+        public const int StallDelayMs = 200;
 
         public virtual string StoreName
         {
@@ -273,7 +273,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
                 else if (!disposeMode)
                 {
-                    // Consensus tip is ahead of the block store tip. Node wasn't shutted down properly last time so we need to download missing blocks.
+                    // Consensus tip is ahead of the block store tip and the pending storage. 
+                    // This is only possible if node wasn't shutted down properly last time so we need to download the missing blocks.
                     List<ChainedBlock> missing = await this.FindMissingBlocksAsync(nextChainedBlock);
                     this.logger.LogTrace("{0} blocks are missing in the repository. Start downloading them.", missing.Count);
                     await this.DownloadBlocksAsync(missing);
@@ -383,8 +384,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Do nothing if application is stopping.
                     if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                         return;
-                    
-                    this.BlockPuller.Stall(blocks.First());
+
+                    foreach (ChainedBlock block in blocks)
+                        this.BlockPuller.Stall(block);
                 }
                 finally
                 {
