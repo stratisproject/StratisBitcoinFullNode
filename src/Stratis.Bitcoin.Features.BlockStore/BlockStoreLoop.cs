@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.TxIndex != this.BlockRepository.TxIndex)
             {
                 if (this.StoreTip != this.Chain.Genesis)
-                    throw new BlockStoreException($"You need to rebuild the {this.StoreName} database using -reindex-chainstate to change -txindex");
+                    throw new Exception($"You need to rebuild the {this.StoreName} database using -reindex-chainstate to change -txindex");
 
                 if (this.storeSettings.TxIndex)
                     await this.BlockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
@@ -337,6 +337,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return false;
         }
 
+        /// <summary>
+        /// Finds blocks that are missing in the repository on a range between StorageTip and first block that exist in the <see cref="PendingStorage"/>.
+        /// </summary>
+        /// <param name="firstMissingBlock">First block that does not exist in the <see cref="PendingStorage"/>.</param>
+        /// <param name="maxCount">Upper limit of blocks that should be returned.</param>
         private async Task<List<ChainedBlock>> FindMissingBlocksAsync(ChainedBlock firstMissingBlock, int maxCount = 10)
         {
             var missedBlocks = new List<ChainedBlock>() { firstMissingBlock };
@@ -356,6 +361,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return missedBlocks;
         }
 
+        /// <summary>Schedules download for specified blocks and waits for it to be finished.</summary>
         private async Task DownloadBlocksAsync(List<ChainedBlock> blocks)
         {
             this.logger.LogTrace("()");
