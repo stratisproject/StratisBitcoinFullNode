@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+namespace Stratis.Bitcoin.Features.BlockStore
 {
     /// <summary>
     /// Removes the BlockPairs from PendingStorage and persists the blocks to the hard drive 
     /// or decides to delay persisting if the batch is too small in case we're in IBD.
     /// </summary>
-    internal sealed class ProcessPendingStorageStep
+    internal sealed class PendingStorageProcessor
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         private readonly BlockStoreLoop blockStoreLoop;
 
-        public ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+        public PendingStorageProcessor(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
         {
             this.blockStoreLoop = blockStoreLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

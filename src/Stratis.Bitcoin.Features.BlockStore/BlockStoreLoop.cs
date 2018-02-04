@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
-        private ProcessPendingStorageStep processPendingStorageStep;
+        private PendingStorageProcessor pendingStorageProcessor;
 
         private readonly AsyncManualResetEvent blockProcessingRequestedTrigger;
 
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.SetHighestPersistedBlock(this.StoreTip);
 
-            this.processPendingStorageStep = new ProcessPendingStorageStep(this, this.loggerFactory);
+            this.pendingStorageProcessor = new PendingStorageProcessor(this, this.loggerFactory);
 
             this.StartSavingBlocksToTheRepository();
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.PendingStorage.ContainsKey(nextChainedBlock.HashBlock))
                 {
                     this.blockProcessingRequestedTrigger.Reset();
-                    await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    await this.pendingStorageProcessor.ExecuteAsync(nextChainedBlock, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
 
                     // Wait for next block.
                     await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);

@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
+                var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
                 processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken()).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
