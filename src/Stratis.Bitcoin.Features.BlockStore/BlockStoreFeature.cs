@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected readonly IBlockStoreCache blockStoreCache;
 
-        protected readonly LookaheadBlockPuller blockPuller;
+        protected readonly StoreBlockPuller blockPuller;
 
         protected readonly BlockStoreLoop blockStoreLoop;
 
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Signals.Signals signals,
             IBlockRepository blockRepository,
             IBlockStoreCache blockStoreCache,
-            LookaheadBlockPuller blockPuller,
+            StoreBlockPuller blockPuller,
             BlockStoreLoop blockStoreLoop,
             BlockStoreManager blockStoreManager,
             BlockStoreSignaled blockStoreSignaled,
@@ -159,6 +159,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         services.AddSingleton<IBlockRepository, BlockRepository>();
                         services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
+                        services.AddSingleton<StoreBlockPuller>();
                         services.AddSingleton<BlockStoreLoop>();
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();

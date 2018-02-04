@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         private Task storeBlocksTask;
-        
+
+        public StoreBlockPuller BlockPuller { get; }
+
         public IBlockRepository BlockRepository { get; }
 
         private readonly BlockStoreStats blockStoreStats;
@@ -53,6 +56,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
         public const int PendingStorageBatchThreshold = 10;
 
+        /// <summary>Number of milliseconds to wait after each failed attempt to get a block from the block puller.</summary>
+        public const int StallDelayMs = 100;
+
         public virtual string StoreName
         {
             get { return "BlockStore"; }
@@ -69,6 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
+            StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
             IBlockStoreCache cache,
             ConcurrentChain chain,
@@ -80,6 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
+            this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
             this.Chain = chain;
             this.ChainState = chainState;
@@ -167,7 +175,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
         public void AddToPending(BlockPair blockPair)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
+            this.logger.LogTrace("() New block was received:'{0}'", blockPair.ChainedBlock);
 
             if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
             {
@@ -211,8 +219,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             bool disposeMode = false;
 
-            // TODO handle here a scenario when consensus tip is ahead of the block store tip. Node wasn't shutted down properly last time and we need to download missing blocks.
-
             while (true)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -223,19 +229,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     else
                         break;
                 }
-                
-                // Wait for signal before continuing.
-                await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
+
                 this.blockProcessingRequestedTrigger.Reset();
+                if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
+                {
+                    this.logger.LogTrace("Store Tip has reached the Consensus Tip. Waiting for new block.");
+                    await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
                 
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
                 if (nextChainedBlock == null)
-                    continue;
+                    continue; //TODO is this scenario possible?
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
-
-                //TODO remove step results
 
                 // Reorganize the repository if needed. If not- continue.
                 if (await this.TryReorganiseBlockRepositoryAsync(nextChainedBlock, disposeMode).ConfigureAwait(false))
@@ -248,13 +255,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.SetStoreTip(nextChainedBlock);
 
-                    this.logger.LogTrace("(-)[EXIST]");
+                    this.logger.LogTrace("Block {0} already exist in the repository.", nextChainedBlock);
                     continue;
                 }
 
-                StepResult result = await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode).ConfigureAwait(false);
-                if (result == StepResult.Stop)
-                    continue;
+                // Check if next block exist in pending storage.
+                if (this.PendingStorage.ContainsKey(nextChainedBlock.HashBlock))
+                {
+                    //TODO remove step results.
+                    StepResult result = await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode).ConfigureAwait(false);
+
+                    if (result == StepResult.Continue)
+                    {
+                        this.blockProcessingRequestedTrigger.Reset();
+                        await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                else if (!disposeMode)
+                {
+                    // Consensus tip is ahead of the block store tip. Node wasn't shutted down properly last time so we need to download missing blocks.
+                    List<ChainedBlock> missing = await this.FindMissingBlocksAsync(nextChainedBlock);
+                    this.logger.LogTrace("{0} blocks are missing in the repository. Start downloading them.", missing.Count);
+                    await this.DownloadBlocksAsync(missing);
+                }
             }
 
             this.logger.LogTrace("(-)");
@@ -309,7 +332,67 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
             return false;
         }
-        
+
+        private async Task<List<ChainedBlock>> FindMissingBlocksAsync(ChainedBlock firstMissingBlock, int maxCount = 100)
+        {
+            var missedBlocks = new List<ChainedBlock>() { firstMissingBlock };
+
+            for (int i = 0; i < maxCount - 1; i++)
+            {
+                ChainedBlock currentBlock = this.Chain.GetBlock(missedBlocks.Last().Height + 1);
+                if (currentBlock == null || this.PendingStorage.ContainsKey(currentBlock.HashBlock))
+                    break;
+
+                if (await this.BlockRepository.ExistAsync(currentBlock.HashBlock))
+                    break;
+
+                missedBlocks.Add(currentBlock);
+            }
+
+            return missedBlocks;
+        }
+
+        private async Task DownloadBlocksAsync(List<ChainedBlock> blocks)
+        {
+            this.BlockPuller.AskForMultipleBlocks(blocks.ToArray());
+
+            while (blocks.Count > 0 && !this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                var timeoutSource = new CancellationTokenSource(StallDelayMs);
+
+                try
+                {
+                    BlockPuller.DownloadedBlock downloadedBlock = await this.BlockPuller.GetNextDownloadedBlockAsync(timeoutSource.Token).ConfigureAwait(false);
+
+                    ChainedBlock current = blocks.FirstOrDefault(x => x.HashBlock == downloadedBlock.Block.GetHash());
+
+                    if (current != null)
+                    {
+                        this.logger.LogTrace("Puller provided block '{0}', length {1}.", current, downloadedBlock.Length);
+
+                        this.AddToPending(new BlockPair(downloadedBlock.Block, current));
+                        blocks.Remove(current);
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("Puller provided block that was not requested! '{0}', length {1}.", downloadedBlock.Block.GetHash(), downloadedBlock.Length);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Do nothing if application is stopping.
+                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                        return;
+                    
+                    this.BlockPuller.Stall(blocks.First());
+                }
+                finally
+                {
+                    timeoutSource.Dispose();
+                }
+            }
+        }
+
         /// <summary>Set the store's tip</summary>
         internal void SetStoreTip(ChainedBlock chainedBlock)
         {
@@ -337,6 +420,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public void Dispose()
         {
             this.storeBlocksTask?.Wait();
+            this.BlockPuller.Dispose();
         }
     }
 }

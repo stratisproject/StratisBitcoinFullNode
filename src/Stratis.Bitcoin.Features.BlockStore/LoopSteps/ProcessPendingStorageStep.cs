@@ -76,13 +76,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.nextChainedBlock = nextChainedBlock;
             this.cancellationToken = cancellationToken;
             
-            // Next block does not exist in pending storage, continue onto the download blocks step.
-            if (!this.blockStoreLoop.PendingStorage.ContainsKey(this.nextChainedBlock.HashBlock))
-            {
-                this.logger.LogTrace("(-)[NOT_FOUND]:{0}", StepResult.Next);
-                return StepResult.Next;
-            }
-
             if (disposeMode)
             {
                 StepResult lres = await this.ProcessWhenDisposingAsync();
