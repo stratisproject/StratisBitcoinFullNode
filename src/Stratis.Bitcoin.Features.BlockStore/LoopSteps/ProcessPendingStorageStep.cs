@@ -8,34 +8,15 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Check if the next block is in pending storage i.e. first process pending storage blocks
-    /// before find and downloading more blocks.
-    /// <para>
-    /// Remove the BlockPair from PendingStorage and return for further processing.
-    /// If the next chained block does not exist in pending storage
-    /// return a Next result which cause the <see cref="blockStoreLoop"/> to execute
-    /// the next step <see cref="DownloadBlockStep"/>.
-    /// </para>
-    /// <para>
-    /// If in IBD (Initial Block Download) and batch count is not yet reached,
-    /// return a Break result causing the <see cref="blockStoreLoop"/> to break out of the while loop
-    /// and start again.
-    /// </para>
-    /// <para>
-    /// Loop over the pending blocks and push to the repository in batches.
-    /// if a stop condition is met break from the inner loop and return a Continue() result.
-    /// This will cause the <see cref="blockStoreLoop"/> to skip over <see cref="DownloadBlockStep"/> and start
-    /// the loop again.
-    /// </para>
+    /// Removes the BlockPairs from PendingStorage and persists the blocks to the hard drive 
+    /// or decides to delay persisting if the batch is too small in case we're in IBD.
     /// </summary>
     internal sealed class ProcessPendingStorageStep
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>
-        /// The block currently being processed.
-        /// </summary>
+        /// <summary>The block currently being processed.</summary>
         private ChainedBlock nextChainedBlock;
 
         private CancellationToken cancellationToken;
@@ -46,19 +27,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private ChainedBlock previousChainedBlock;
 
-        /// <summary>
-        /// If this value reaches <see cref="blockStoreLoop.MaxPendingInsertBlockSize"/> the step will exit./>
-        /// </summary>
+        /// <summary>If this value reaches <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> the step will exit./></summary>
         private int pendingStorageBatchSize = 0;
 
-        /// <summary>
-        /// The last item that was dequeued from <see cref="pendingBlockPairsToStore"/>.
-        /// </summary>
+        /// <summary>The last item that was dequeued from <see cref="pendingBlockPairsToStore"/>.</summary>
         private BlockPair pendingBlockPairToStore;
 
-        /// <summary>
-        /// A collection of blocks that are pending to be pushed to store.
-        /// </summary>
+        /// <summary>A collection of blocks that are pending to be pushed to store.</summary>
         private ConcurrentStack<BlockPair> pendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
 
         private readonly BlockStoreLoop blockStoreLoop;
@@ -68,105 +43,38 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.blockStoreLoop = blockStoreLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
-        
-        public async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
+        /// <summary>Processes the blockStoreLoop.PendingStorage.</summary>
+        public async Task ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
+        {
             this.nextChainedBlock = nextChainedBlock;
             this.cancellationToken = cancellationToken;
             
-            if (disposeMode)
-            {
-                StepResult lres = await this.ProcessWhenDisposingAsync();
-                this.logger.LogTrace("(-)[DISPOSE]:{0}", lres);
-                return lres;
-            }
+            bool ibd = this.blockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload();
 
-            if (this.blockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
-            {
-                StepResult lres = await this.ProcessWhenInIBDAsync();
-                this.logger.LogTrace("(-)[IBD]:{0}", lres);
-                return lres;
-            }
-
-            StepResult res = await this.ProcessWhenNotInIBDAsync();
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
-        /// <summary>
-        /// When the node disposes, process all the blocks in <see cref="blockStoreLoop.PendingStorage"/> until
-        /// its empty
-        /// </summary>
-        private async Task<StepResult> ProcessWhenDisposingAsync()
-        {
-            while (this.blockStoreLoop.PendingStorage.Count > 0)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage();
-                if (result == StepResult.Stop)
-                    break;
-            }
-
-            if (this.pendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync();
-
-            this.logger.LogTrace("(-):{0}", StepResult.Stop);
-            return StepResult.Stop;
-        }
-
-        /// <summary>
-        /// When the node is in IBD wait for <see cref="blockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="blockStoreLoop.PendingStorage"/> until
-        /// a stop condition is found, the blocks will be pushed to the repository in batches of size <see cref="blockStoreLoop.MaxPendingInsertBlockSize"/>.
-        /// </summary>
-        private async Task<StepResult> ProcessWhenInIBDAsync()
-        {
-            if (this.blockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
-                return StepResult.Continue;
+            if (ibd && this.blockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
+                return;
 
             while (this.cancellationToken.IsCancellationRequested == false)
             {
-                StepResult result = this.PrepareNextBlockFromPendingStorage();
-                if (result == StepResult.Stop)
+                this.PrepareNextBlockFromPendingStorage();
+
+                if (!this.CanProcessNextBlock())
                     break;
 
-                if (this.pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
-                    await this.PushBlocksToRepositoryAsync();
+                if (ibd && this.pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
+                    await this.PushBlocksToRepositoryAsync().ConfigureAwait(false);
             }
 
             if (this.pendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync();
-
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
-            return StepResult.Continue;
+                await this.PushBlocksToRepositoryAsync().ConfigureAwait(false);
         }
-
-        /// <summary>
-        /// When the node is NOT in IBD, process and push the blocks in <see cref="blockStoreLoop.PendingStorage"/> immediately
-        /// to the block repository without checking batch size.
-        /// </summary>
-        private async Task<StepResult> ProcessWhenNotInIBDAsync()
-        {
-            while (this.cancellationToken.IsCancellationRequested == false)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage();
-                if (result == StepResult.Stop)
-                    break;
-            }
-
-            if (this.pendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync();
-
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
-            return StepResult.Continue;
-        }
-
+        
         /// <summary>
         /// Tries to get and remove the next block from pending storage. If it exists
-        /// then add it to <see cref="ProcessPendingStoragethis.PendingBlockPairsToStore"/>.
-        /// This will also check if the next block can be processed.
+        /// then add it to <see cref="pendingBlockPairToStore"/>.
         /// </summary>
-        private StepResult PrepareNextBlockFromPendingStorage()
+        private void PrepareNextBlockFromPendingStorage()
         {
             bool blockIsInPendingStorage = this.blockStoreLoop.PendingStorage.TryRemove(this.nextChainedBlock.HashBlock, out this.pendingBlockPairToStore);
             if (blockIsInPendingStorage)
@@ -174,8 +82,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 this.pendingBlockPairsToStore.Push(this.pendingBlockPairToStore);
                 this.pendingStorageBatchSize += this.pendingBlockPairToStore.Block.GetSerializedSize();
             }
-
-            return this.CanProcessNextBlock() ? StepResult.Next : StepResult.Stop;
         }
 
         /// <summary>

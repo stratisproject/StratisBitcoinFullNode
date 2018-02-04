@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     await Task.Delay(TimeSpans.FiveSeconds, this.nodeLifetime.ApplicationStopping);
 
-                    await this.StoreBlocksAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                    await this.StoreBlocksAsync().ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -214,14 +214,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </list>
         /// </para>
         /// </summary>
-        /// <param name="cancellationToken">CancellationToken to check.</param>
-        private async Task StoreBlocksAsync(CancellationToken cancellationToken)
+        private async Task StoreBlocksAsync()
         {
             bool disposeMode = false;
 
             while (true)
             {
-                if (cancellationToken.IsCancellationRequested)
+                if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
                     if (!disposeMode)
                         // Force this iteration to flush.
@@ -234,12 +233,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
                 {
                     this.logger.LogTrace("Store Tip has reached the Consensus Tip. Waiting for new block.");
-                    await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
                 
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
                 if (nextChainedBlock == null)
-                    continue; //TODO is this scenario possible?
+                    continue;
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
@@ -262,14 +261,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // Check if next block exist in pending storage.
                 if (this.PendingStorage.ContainsKey(nextChainedBlock.HashBlock))
                 {
-                    //TODO remove step results.
-                    StepResult result = await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode).ConfigureAwait(false);
+                    this.blockProcessingRequestedTrigger.Reset();
+                    await this.processPendingStorageStep.ExecuteAsync(nextChainedBlock, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
 
-                    if (result == StepResult.Continue)
-                    {
-                        this.blockProcessingRequestedTrigger.Reset();
-                        await this.blockProcessingRequestedTrigger.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    }
+                    // Wait for next block.
+                    await this.blockProcessingRequestedTrigger.WaitAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
                 else if (!disposeMode)
                 {
@@ -334,7 +330,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return false;
         }
 
-        private async Task<List<ChainedBlock>> FindMissingBlocksAsync(ChainedBlock firstMissingBlock, int maxCount = 100)
+        private async Task<List<ChainedBlock>> FindMissingBlocksAsync(ChainedBlock firstMissingBlock, int maxCount = 10)
         {
             var missedBlocks = new List<ChainedBlock>() { firstMissingBlock };
 
