@@ -65,6 +65,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
+        
+        /// <summary>Represents the last block stored to disk.</summary>
+        public ChainedBlock HighestPersistedBlock { get; private set; }
 
         /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(StoreBlockPuller blockPuller,
@@ -148,7 +151,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await this.BlockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
 
-            this.SetHighestPersistedBlock(this.StoreTip);
+            this.HighestPersistedBlock = this.StoreTip;
 
             this.pendingStorageProcessor = new PendingStorageProcessor(this, this.loggerFactory);
 
@@ -414,20 +417,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
 
             this.StoreTip = chainedBlock;
-            this.SetHighestPersistedBlock(chainedBlock);
+            this.HighestPersistedBlock = chainedBlock;
 
             this.logger.LogTrace("Store Tip was set to '{0}'", chainedBlock);
-        }
-
-        /// <summary>Set the highest persisted block in the chain.</summary>
-        private void SetHighestPersistedBlock(ChainedBlock block)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);
-
-            if (this.BlockRepository is BlockRepository blockRepository)
-                blockRepository.HighestPersistedBlock = block;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Persists unsaved blocks to disk when the node shuts down.</summary>
