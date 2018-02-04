@@ -40,8 +40,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
         
-        /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
-        public const int TargetPendingInsertSize = 5 * 1024 * 1024;
+        /// <summary>Target number of bytes the pending storage should hold until the downloaded blocks are stored to the disk.</summary>
+        public const int TargetPendingInsertSize = 2 * 1024 * 1024;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
