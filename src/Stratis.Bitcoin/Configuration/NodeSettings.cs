@@ -61,22 +61,19 @@ namespace Stratis.Bitcoin.Configuration
             loadConfiguration = true;
 
             // Load arguments or configuration from .ctor?
-            if (args != null || loadConfiguration)
+            this.LoadArgs = args ?? new string[] { };
+
+            // By default, we look for a file named '<network>.conf' in the network's data directory,
+            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
+            this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+
+            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
+            if (this.DataDir != null && this.ConfigurationFile != null)
             {
-                this.LoadArgs = args ?? new string[] { };
-
-                // By default, we look for a file named '<network>.conf' in the network's data directory,
-                // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-                this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-                this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
-
-                // If the configuration file is relative then assume it is relative to the data folder and combine the paths
-                if (this.DataDir != null && this.ConfigurationFile != null)
-                {
-                    bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
-                    if (isRelativePath)
-                        this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
-                }
+                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
+                if (isRelativePath)
+                    this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
             // Load configuration from .ctor?
@@ -146,9 +143,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <returns>Default node configuration.</returns>
-        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string[] args = null)
+        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
-            return new NodeSettings(network, protocolVersion, args:args);
+            return new NodeSettings(network, protocolVersion, args:new string[0]);
         }
 
         /// <summary>
@@ -163,7 +160,7 @@ namespace Stratis.Bitcoin.Configuration
                 return this;
 
             // Get the arguments set previously
-            var args = this.LoadArgs ?? new string[] { };
+            var args = this.LoadArgs;
 
             // Find out if we need to run on testnet or regtest from the config file.
             if (this.ConfigurationFile != null)
