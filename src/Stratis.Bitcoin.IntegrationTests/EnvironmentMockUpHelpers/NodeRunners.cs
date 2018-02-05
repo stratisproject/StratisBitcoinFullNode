@@ -15,7 +15,6 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
@@ -75,7 +74,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void Start(string dataDir)
         {
-            NodeSettings nodeSettings = new NodeSettings(InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION, args:new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration:false);
+            NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir });
 
             var node = BuildFullNode(nodeSettings, this.callback);
 
@@ -113,58 +112,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
 
         public FullNode FullNode;
-
-        private static Network InitStratisRegTest()
-        {
-            // TODO: move this to Networks
-            var net = Network.GetNetwork("StratisRegTest");
-            if (net != null)
-                return net;
-
-            Block.BlockSignature = true;
-            Transaction.TimeStamp = true;
-
-            var consensus = Network.StratisTest.Consensus.Clone();
-            consensus.PowLimit = new Target(uint256.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-
-            consensus.PowAllowMinDifficultyBlocks = true;
-            consensus.PowNoRetargeting = true;
-
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var pchMessageStart = new byte[4];
-            pchMessageStart[0] = 0xcd;
-            pchMessageStart[1] = 0xf2;
-            pchMessageStart[2] = 0xc0;
-            pchMessageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570;
-
-            var genesis = Network.StratisMain.GetGenesis().Clone();
-            genesis.Header.Time = 1494909211;
-            genesis.Header.Nonce = 2433759;
-            genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash();
-
-            Guard.Assert(consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
-
-            var builder = new NetworkBuilder()
-                .SetName("StratisRegTest")
-                .SetConsensus(consensus)
-                .SetMagic(magic)
-                .SetGenesis(genesis)
-                .SetPort(18444)
-                .SetRPCPort(18442)
-                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
-                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
-                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
-                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
-                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) });
-
-            return builder.BuildAndRegister();
-        }
 
         /// <summary>
         /// Builds a node with POS miner and RPC enabled.

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
 namespace NBitcoin.BitcoinCore
@@ -29,15 +28,7 @@ namespace NBitcoin.BitcoinCore
 
         public Coins GetCoins(uint256 txId)
         {
-            try
-            {
-                return this.Index.GetAsync<Coins>(txId.ToString()).Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; //Can't happen
-            }
+            return this.Index.GetAsync<Coins>(txId.ToString()).GetAwaiter().GetResult();
         }
 
         public Task<Coins> GetCoinsAsync(uint256 txId)
@@ -57,15 +48,7 @@ namespace NBitcoin.BitcoinCore
 
         public uint256 GetBestBlock()
         {
-            try
-            {
-                return GetBestBlockAsync().Result;
-            }
-            catch (AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; //Can't happen
-            }
+            return GetBestBlockAsync().GetAwaiter().GetResult();
         }
 
         public async Task<uint256> GetBestBlockAsync()

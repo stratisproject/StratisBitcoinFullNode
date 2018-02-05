@@ -33,14 +33,7 @@ namespace NBitcoin
                 return this.addresses;
             }
 
-            try
-            {
-                this.addresses = Dns.GetHostAddressesAsync(this.Host).Result;
-            }
-            catch (AggregateException ex)
-            {
-                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-            }
+            this.addresses = Dns.GetHostAddressesAsync(this.Host).GetAwaiter().GetResult();
 
             return this.addresses;
         }

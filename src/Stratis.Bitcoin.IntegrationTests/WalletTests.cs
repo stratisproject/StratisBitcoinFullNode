@@ -10,11 +10,24 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Xunit;
+using System;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class WalletTests
+    public class WalletTests : IDisposable
     {
+        private bool initialBlockSignature;
+        public WalletTests()
+        {
+            this.initialBlockSignature = Block.BlockSignature;
+            Block.BlockSignature = false;
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = this.initialBlockSignature;
+        }
+
         [Fact]
         public void WalletCanReceiveAndSendCorrectly()
         {
