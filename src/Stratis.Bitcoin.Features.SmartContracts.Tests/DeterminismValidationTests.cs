@@ -29,10 +29,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private const string ReplaceReferencesString = "[References]";
         private const string ReplaceCodeString = "[CodeToExecute]";
-        private const string ContractName = "Test";
-        private readonly SmartContractDecompiler Decompiler = new SmartContractDecompiler();
 
-        private readonly SmartContractDeterminismValidator Validator = new SmartContractDeterminismValidator();
+        private readonly SmartContractDecompiler _decompiler = new SmartContractDecompiler();
+
+        private readonly SmartContractDeterminismValidator _validator = new SmartContractDeterminismValidator();
         // Try to keep all of these in alphabetical order
 
         #region Action
@@ -48,8 +48,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
             
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
 
             Assert.True(result.Valid);
         }
@@ -64,8 +64,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             test();").Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -82,8 +82,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             };").Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -99,8 +99,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -116,8 +116,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -132,8 +132,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -144,8 +144,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -161,8 +161,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -173,8 +173,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -185,8 +185,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -201,8 +201,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.True(result.Valid);
         }
 
@@ -213,12 +213,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void ValidateEnvironmentFails()
         {
-            string adjustedSource = TestString.Replace(ReplaceCodeString, "int hashCode = GetHashCode();")
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "int test = Environment.TickCount;")
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -286,8 +286,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ).Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.True(result.Valid);
         }
 
@@ -296,17 +296,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         #region GetHashCode
 
         [Fact]
-        public void ValidateGetHashCodeFails()
+        public void ValidateGetHashCode()
         {
-            string adjustedSource = TestString.Replace(ReplaceCodeString, "int test = Environment.TickCount;")
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "int hashCode = GetHashCode();")
                 .Replace(ReplaceReferencesString, "");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
-
         #endregion
 
         [Fact]
@@ -324,8 +323,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }";
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
 
@@ -336,8 +335,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Replace(ReplaceReferencesString, "using System.Net.Http;");
 
             var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
-            var decomp = Decompiler.GetModuleDefinition(assemblyBytes);
-            var result = Validator.Validate(decomp);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
             Assert.False(result.Valid);
         }
     }

@@ -1,81 +1,11 @@
 ﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Stratis.SmartContracts.Exceptions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Stratis.SmartContracts.ContractValidation
 {
-    internal class GetHashCodeValidator : IMethodDefinitionValidator
-    {
-        public static readonly HashSet<string> RedLightMethods = new HashSet<string>
-        {
-            "System.Int32 System.Object::GetHashCode()"
-        };
-
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
-        {
-            var errors = new List<SmartContractValidationError>();
-
-            if (RedLightMethods.Contains(method.FullName))
-            {
-                errors.Add(new SmartContractValidationError($"Use of {method.FullName} is not deterministic [known non-deterministic method call]"));
-            }
-
-            return errors;
-        }
-    }
-
-    internal class MethodFlagValidator : IMethodDefinitionValidator
-    {
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
-        {
-            var errors = new List<SmartContractValidationError>();
-
-            // Instruction accesses external info.
-            var invalid = method.IsNative || method.IsPInvokeImpl || method.IsUnmanaged || method.IsInternalCall;
-
-            if (invalid)
-            {
-                errors.Add(new SmartContractValidationError($"Use of {method.FullName} is non-deterministic [invalid method flags]"));
-            }
-
-            return errors;
-        }
-    }
-
-    internal class MethodTypeValidator : IMethodDefinitionValidator
-    {
-        private static readonly HashSet<string> _redLightTypes = new HashSet<string>
-        {
-            "System.Threading",
-            "System.AppDomain"
-        };
-
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
-        {
-            var errors = new List<SmartContractValidationError>();
-
-            if (_redLightTypes.Contains(method.DeclaringType.FullName))
-            {
-                errors.Add(new SmartContractValidationError($"Use of {method.DeclaringType.FullName} is non-deterministic [known non-deterministic method call]"));
-            }
-
-            return errors;
-        }
-    }
-
-    public class SmartContractMethodValidator : IMethodDefinitionValidator
-    {
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
-        {
-            //@todo - Validate instructions in here too
-            throw new NotImplementedException();
-        }
-    }
-
     /// <summary>
     /// TODO: Before this is ever close to being used in a test or production environment, 
     /// ensure that NO P/INVOKE OR INTEROP or other outside calls can be made.
@@ -89,12 +19,12 @@ namespace Stratis.SmartContracts.ContractValidation
         /// Sometimes contain 'non-deterministic' calls - e.g. if Resources file was changed.
         /// We assume all resource files are the same, as set in the CompiledSmartContract constructor.
         /// </summary>
-        private static readonly HashSet<string> _greenLightMethods = new HashSet<string>
+        private static readonly HashSet<string> GreenLightMethods = new HashSet<string>
         {
             "System.String System.SR::GetResourceString(System.String,System.String)"
         };
 
-        private static readonly HashSet<string> _greenLightTypes = new HashSet<string>
+        private static readonly HashSet<string> GreenLightTypes = new HashSet<string>
         {
             "System.Boolean",
             "System.Byte",
@@ -118,138 +48,70 @@ namespace Stratis.SmartContracts.ContractValidation
             typeof(CompiledSmartContract).FullName
         };
 
-        private static readonly HashSet<string> _redLightTypes = new HashSet<string>
-        {
-            "System.Threading",
-            "System.AppDomain"
-        };
-
-        /// <summary>
-        /// There may be other intrinsics (values that are inserted via the compiler and are different per machine).
-        /// </summary>
-        private static readonly HashSet<string> _redLightFields = new HashSet<string>
-        {
-            "System.Boolean System.BitConverter::IsLittleEndian"
-        };
-
-        /// <summary>
-        /// Any float-based instructions. Not allowed.
-        /// </summary>
-        private static readonly HashSet<OpCode> _redLightOpCodes = new HashSet<OpCode>
-        {
-            OpCodes.Ldc_R4,
-            OpCodes.Ldc_R8,
-            OpCodes.Ldelem_R4,
-            OpCodes.Ldelem_R8,
-            OpCodes.Conv_R_Un,
-            OpCodes.Conv_R4,
-            OpCodes.Conv_R8,
-            OpCodes.Ldind_R4,
-            OpCodes.Ldind_R8,
-            OpCodes.Stelem_R4,
-            OpCodes.Stelem_R8,
-            OpCodes.Stind_R4,
-            OpCodes.Stind_R8
-        };
-
-        private HashSet<string> _visitedMethods;
-
-        private MethodDefinition _currentMethod;
-        private MethodDefinition _lastUserCall;
-
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<SmartContractValidationError>();
-            _visitedMethods = new HashSet<string>();
 
-            foreach (var method in decompilation.ContractType.Methods)
+            var userDefinedMethods = decompilation.ContractType.Methods.Where(method => method.Body != null);
+            var allMethods = new Dictionary<string, MethodDefinition>();
+
+            // Build a dict of all referenced methods
+            foreach (var method in userDefinedMethods)
             {
-                _currentMethod = method;
-                errors.AddRange(ValidateDeterminismForUserMethod(method));
+                // Exclude safe methods
+                if (GreenLightMethods.Contains(method.FullName) // A method we know is safe
+                    || GreenLightTypes.Contains(method.DeclaringType.FullName)) // A type we know is safe
+                    continue;
+
+                GetMethods(method, allMethods);
+            }
+
+            foreach (var method in allMethods)
+            {
+                errors.AddRange(ValidateDeterminismForMethod(method.Value));
             }
 
             return new SmartContractValidationResult(errors);
         }
 
-        public IEnumerable<SmartContractValidationError> ValidateDeterminismForUserMethod(MethodDefinition method)
+        private static void GetMethods(MethodDefinition methodDefinition, IDictionary<string, MethodDefinition> visitedMethods)
         {
-            // If it's a call we have already analyzed, we already know it's safe
-            if (_visitedMethods.Contains(method.FullName))
-                return Enumerable.Empty<SmartContractValidationError>();
+            if (methodDefinition.Body == null)
+                return;
 
-            var errors = new List<SmartContractValidationError>();
-
-            foreach (var instruction in method.Body.Instructions)
+            var methods = methodDefinition.Body.Instructions
+                .Select(instr => instr.Operand)
+                .OfType<MethodReference>();
+            
+            foreach (var method in methods)
             {
-                var methodReference = instruction.Operand as MethodReference;
+                // Safe
+                if (GreenLightMethods.Contains(method.FullName) // A method we know is safe
+                    || GreenLightTypes.Contains(method.DeclaringType.FullName)) // A type we know is safe
+                    continue;
 
-                if (methodReference != null)
+                var newMethod = method.Resolve();
+
+                if (visitedMethods.ContainsKey(newMethod.FullName))
                 {
-                    var newMethodDefinition = methodReference.Resolve();
-                    _lastUserCall = newMethodDefinition;
+                    continue;
                 }
 
-                errors.AddRange(ValidateInstruction(instruction));
+                visitedMethods.Add(newMethod.FullName, newMethod);
+                GetMethods(newMethod, visitedMethods);
             }
-
-            _visitedMethods.Add(method.FullName);
-
-            return errors;
         }
 
-        public IEnumerable<SmartContractValidationError> ValidateInstruction(Instruction inst)
+        private static IEnumerable<SmartContractValidationError> ValidateDeterminismForMethod(MethodDefinition method)
         {
-            if (_redLightOpCodes.Contains(inst.OpCode))
-            {
-                return new List<SmartContractValidationError>
-                {
-                    new SmartContractValidationError("Float used within " + _lastUserCall + " in " + _currentMethod)
-                };
-            }
-
-            if (inst.Operand is FieldReference)
-            {
-                var fieldReference = (FieldReference)inst.Operand;
-                if (_redLightFields.Contains(fieldReference.FullName))
-                {
-                    return new List<SmartContractValidationError>
-                    {
-                        new SmartContractValidationError(fieldReference.FullName + " in " + _currentMethod + " is not deterministic.")
-                    };
-                }
-            }
-
-            var errors = new List<SmartContractValidationError>();
-
-            var methodReference = inst.Operand as MethodReference;
-
-            if (methodReference != null)
-            {                
-                var newMethodDefinition = methodReference.Resolve();
-                var validationResults = ValidateDeterminismForNonUserMethod(newMethodDefinition);
-                errors.AddRange(validationResults);
-            }
-
-            return errors;
-        }
-
-        public IEnumerable<SmartContractValidationError> ValidateDeterminismForNonUserMethod(MethodDefinition method)
-        {
-            if (_visitedMethods.Contains(method.FullName)) // A call we have already analyzed
-            {
-                return Enumerable.Empty<SmartContractValidationError>();
-            }
-            // Safe
-            if (_greenLightMethods.Contains(method.FullName) // A method we know is safe
-                || _greenLightTypes.Contains(method.DeclaringType.FullName)) // A type we know is safe
-                return Enumerable.Empty<SmartContractValidationError>();
-
             var errors = new List<SmartContractValidationError>();
 
             var validators = new List<IMethodDefinitionValidator>
             {
                 new MethodFlagValidator(),
-                new MethodTypeValidator()
+                new MethodAllowedTypeValidator(),
+                new GetHashCodeValidator(),
+                new MethodInstructionValidator()
             };
 
             foreach (var validator in validators)
@@ -257,17 +119,6 @@ namespace Stratis.SmartContracts.ContractValidation
                 var validationResult = validator.Validate(method);
                 errors.AddRange(validationResult);
             }
-            
-            if (method.Body?.Instructions != null)
-            {
-                foreach (var inst in method.Body.Instructions)
-                {
-                    var instructionValidationResult = ValidateInstruction(inst);
-                    errors.AddRange(instructionValidationResult);
-                }
-            }
-
-            _visitedMethods.Add(method.FullName);
 
             return errors;
         }
