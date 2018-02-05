@@ -1357,7 +1357,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             var connectionManagerMock = new Mock<IConnectionManager>();
-            var peers = new List<NetworkPeer>();
+            var peers = new List<INetworkPeer>();
             peers.Add(null);
             connectionManagerMock.Setup(c => c.ConnectedPeers).Returns(new TestReadOnlyNetworkPeerCollection(peers));
 
