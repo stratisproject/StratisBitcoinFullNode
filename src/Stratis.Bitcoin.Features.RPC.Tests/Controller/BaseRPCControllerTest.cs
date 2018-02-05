@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         /// <returns>Interface to the newly built node.</returns>
         public IFullNode BuildServicedNode(string dir)
         {
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
+            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" }, loadConfiguration:false);
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseConsensus()
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         /// but all the features required for it are enabled.</remarks>
         public IFullNode BuildStakingNode(string dir, bool staking = true)
         {
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
+            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" }, loadConfiguration:false);
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseStratisConsensus()

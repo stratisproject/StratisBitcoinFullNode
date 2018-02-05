@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         {
             var dir = CreateTestDir(this);
 
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
+            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" }, loadConfiguration:false);
 
             var node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)

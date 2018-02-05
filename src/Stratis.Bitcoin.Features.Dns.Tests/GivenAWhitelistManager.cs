@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Verifiable();
 
             Network network = Network.StratisTest;
-            NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(args);
+            NodeSettings nodeSettings = new NodeSettings(network, args:args);
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Verifiable();
 
             Network network = Network.StratisTest;
-            NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(args);
+            NodeSettings nodeSettings = new NodeSettings(network, args:args);
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsFullNode = true;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
@@ -476,7 +476,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             }
             Directory.CreateDirectory(dataFolderDirectory);
 
-            var peerFolder = new DataFolder(new NodeSettings { DataDir = dataFolderDirectory }.DataDir);
+            var peerFolder = new DataFolder(new NodeSettings(args:new string[] { $"-datadir={dataFolderDirectory}" }).DataDir);
 
             Mock<ILogger> mockLogger = new Mock<ILogger>();
             Mock<ILoggerFactory> mockLoggerFactory = new Mock<ILoggerFactory>();

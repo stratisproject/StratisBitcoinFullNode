@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
-            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = false)
+            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
         {
             this.Agent = agent;
             this.Network = innerNetwork;
@@ -56,6 +56,9 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+
+            // TODO: Temporary until Build method updated to call LoadConfiguration
+            loadConfiguration = true;
 
             // Load arguments or configuration from .ctor?
             if (args != null || loadConfiguration)
@@ -155,26 +158,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string[] args = null)
         {
-            NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
-            nodeSettings.LoadArguments(args ?? new string[0]);
-            return nodeSettings;
-        }
-
-        /// <summary>
-        /// Initializes configuration from command line arguments.
-        /// <para>This includes loading configuration from file.</para>
-        /// </summary>
-        /// <param name="args">Application command line arguments.</param>
-        /// <returns>Initialized node configuration.</returns>
-        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args)
-        {
-            if (this.LoadArgs != null)
-                throw new ConfigurationException("The arguments have already been loaded");
-
-            this.SetArgs(args);
-            this.LoadConfiguration();
-            return this;
+            return new NodeSettings(network, protocolVersion, args:args);
         }
 
         /// <summary>
