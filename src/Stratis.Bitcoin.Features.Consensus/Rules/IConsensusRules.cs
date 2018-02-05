@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
         /// </summary>
-        IEnumerable<ConsensusRule> Rules { get; }
+        IEnumerable<ConsensusRuleDescriptor> Rules { get; }
 
         /// <summary>
         /// Register a new rule to the engine
