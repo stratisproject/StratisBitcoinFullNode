@@ -70,6 +70,14 @@ namespace Stratis.Bitcoin.Features.Api
         /// <inheritdoc />
         public override void Dispose()
         {
+            // Make sure the timer is stopped and disposed.
+            if (this.apiFeatureOptions.KeepaliveTimer != null)
+            {
+                this.apiFeatureOptions.KeepaliveTimer.Stop();
+                this.apiFeatureOptions.KeepaliveTimer.Enabled = false;
+                this.apiFeatureOptions.KeepaliveTimer.Dispose();
+            }
+
             // Make sure we are releasing the listening ip address / port.
             if (this.webHost != null)
             {
