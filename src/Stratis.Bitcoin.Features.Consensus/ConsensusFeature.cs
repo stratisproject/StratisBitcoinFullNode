@@ -236,6 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
                     new AssumeValidRule(),
+                    new BlockHeaderPowContextualRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new Bip113ActivationRule(),
@@ -266,6 +267,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
                     new AssumeValidRule(),
+                    new BlockHeaderPowContextualRule(),
+                    new BlockHeaderPosContextualRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new Bip113ActivationRule(),

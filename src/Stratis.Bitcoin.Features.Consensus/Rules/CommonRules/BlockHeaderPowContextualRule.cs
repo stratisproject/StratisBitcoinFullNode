@@ -11,7 +11,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class BlockHeaderPowContextualRule : ConsensusRule
     {
-        /// <inheritdoc />
+        /// <summary>
+        /// Context-dependent validity checks.
+        /// </summary>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
+        /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
+        /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
+        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
+        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
@@ -44,6 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.
+            // TODO: this checks need to be moved to their respective validation rules.
             if (((header.Version < 2) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
                 ((header.Version < 3) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
                 ((header.Version < 4) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))

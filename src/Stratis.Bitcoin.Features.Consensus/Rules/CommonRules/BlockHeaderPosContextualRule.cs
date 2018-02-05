@@ -9,7 +9,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class BlockHeaderPosContextualRule : PosConsensusRule
     {
-        /// <inheritdoc />
+        /// <summary>
+        /// Context-dependent validity checks.
+        /// </summary>
+        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
+        /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
+        /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
+        /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
+        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
@@ -61,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
         private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
-            return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
+            return (blockTime == transactionTime) && ((transactionTime & PosConsensusValidator.StakeTimestampMask) == 0);
         }
 
         /// <summary>
@@ -85,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
         private bool IsDriftReduced(long time)
         {
-            return time > DriftingBugFixTimestamp;
+            return time > PosConsensusValidator.DriftingBugFixTimestamp;
         }
 
     }
