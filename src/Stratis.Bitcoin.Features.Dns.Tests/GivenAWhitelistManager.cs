@@ -483,11 +483,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             mockLoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
             ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-            IPeerAddressManager peerAddressManager = new PeerAddressManager(peerFolder, loggerFactory);
+            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory);
 
             foreach (Tuple<NetworkAddress, DateTimeOffset> testData in testDataSet)
             {
-                peerAddressManager.AddPeer(testData.Item1, IPAddress.Loopback);
+                peerAddressManager.AddPeer(testData.Item1.Endpoint, IPAddress.Loopback);
                 peerAddressManager.PeerHandshaked(testData.Item1.Endpoint, testData.Item2);
             }
 

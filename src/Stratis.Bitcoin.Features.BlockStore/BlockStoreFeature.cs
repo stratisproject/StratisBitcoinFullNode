@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            var highestBlock = (this.blockRepository as BlockRepository)?.HighestPersistedBlock;
+            var highestBlock = this.blockRepository.HighestPersistedBlock;
 
             if (highestBlock != null)
                 benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
