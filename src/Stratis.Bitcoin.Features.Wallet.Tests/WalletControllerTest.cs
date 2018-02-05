@@ -1789,10 +1789,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.networkPeers = new List<NetworkPeer>();            
+            this.networkPeers = new List<INetworkPeer>();            
         }
 
-        public TestReadOnlyNetworkPeerCollection(List<NetworkPeer> peers)
+        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers)
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
