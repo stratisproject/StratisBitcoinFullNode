@@ -56,6 +56,55 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "watchedTransactions")]
         [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
         public ConcurrentDictionary<string, TransactionData> WatchedTransactions { get; set; }
+
+        /// <summary>
+        /// Returns a dictionary of all the transactions being watched (both under addresses
+        /// and standalone).
+        /// </summary>
+        public ConcurrentDictionary<uint256, TransactionData> GetWatchedTransactions()
+        {
+            var txDict = new ConcurrentDictionary<uint256, TransactionData>();
+
+            foreach (WatchedAddress address in this.WatchedAddresses.Values)
+            {
+                foreach (TransactionData transaction in address.Transactions.Values)
+                {
+                    txDict.TryAdd(transaction.Id, transaction);
+                }
+            }
+
+            foreach (TransactionData transaction in this.WatchedTransactions.Values)
+            {
+                // It is conceivable that a transaction could be both watched
+                // in isolation and watched as a transaction under one or
+                // more watched addresses.
+                if (!txDict.TryAdd(transaction.Id, transaction))
+                {
+                    // Check to see if there is better information in
+                    // the watched transaction than the watched address.
+                    // If there is, use the watched transaction info instead.
+
+                    TransactionData existingTx = txDict[transaction.Id];
+
+                    if (existingTx.MerkleProof == null)
+                    {
+                        existingTx.MerkleProof = transaction.MerkleProof;
+                    }
+
+                    if (existingTx.BlockHash == null)
+                    {
+                        existingTx.BlockHash = transaction.BlockHash;
+                    }
+
+                    // At this stage the transaction info in txDict should
+                    // include the best available information from both
+                    // sources. There is therefore no need to explicitly
+                    // update txDict.
+                }
+            }
+
+            return txDict;
+        }
     }
 
     /// <summary>

@@ -1357,7 +1357,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedPeers).Returns(new TestReadOnlyNetworkPeerCollection());
+            var peers = new List<NetworkPeer>();
+            peers.Add(null);
+            connectionManagerMock.Setup(c => c.ConnectedPeers).Returns(new TestReadOnlyNetworkPeerCollection(peers));
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
                 new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, Network.Main, new Mock<ConcurrentChain>().Object, mockWalletWrapper.Object, DateTimeProvider.Default);
@@ -1787,8 +1789,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.networkPeers = new List<INetworkPeer>();
-            this.networkPeers.Add(null);
+            this.networkPeers = new List<NetworkPeer>();            
+        }
+
+        public TestReadOnlyNetworkPeerCollection(List<NetworkPeer> peers)
+        {
+            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.networkPeers = peers;
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)

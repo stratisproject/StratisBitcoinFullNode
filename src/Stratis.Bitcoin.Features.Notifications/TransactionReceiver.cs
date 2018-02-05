@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void DetachCore()
         {
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)

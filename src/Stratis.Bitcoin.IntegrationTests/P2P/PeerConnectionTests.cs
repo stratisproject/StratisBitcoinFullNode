@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             this.connectionSetting = new ConnectionManagerSettings();
             this.connectionSetting.Load(this.nodeSettings);
 
-            this.peerAddressManager = new PeerAddressManager(this.nodeSettings.DataFolder, this.loggerFactory);
+            this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory);
             var peerAddressManagerBehaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, this.peerAddressManager)
             {
                 PeersToDiscover = 10

@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P
 
             foreach (var ipEndpoint in this.ConnectionSettings.AddNode)
             {
-                this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
+                this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
             }
         }
 
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.P2P
                     return;
 
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.EndPoint))
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
                     await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }

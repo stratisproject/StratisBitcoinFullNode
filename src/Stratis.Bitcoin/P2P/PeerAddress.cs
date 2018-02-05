@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using NBitcoin.Protocol;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
@@ -12,10 +11,27 @@ namespace Stratis.Bitcoin.P2P
     [JsonObject]
     public sealed class PeerAddress
     {
-        /// <summary>EndPoint of this peer.</summary>
+        /// <summary>
+        /// The maximum amount of times a peer can be attempted within a give time frame.
+        /// </summary>
+        internal const int AttemptThreshold = 5;
+
+        /// <summary>
+        /// The amount of hours we will wait before selecting an attempted peer again,
+        /// if it hasn't yet reached the <see cref="AttemptThreshold"/> amount of attempts.
+        /// </summary>
+        internal const int AttempThresholdHours = 1;
+
+        /// <summary>
+        /// The amount of hours after which the peer's failed connection attempts
+        /// will be reset to zero.
+        /// </summary>
+        internal const int AttemptResetThresholdHours = 12;
+
+        /// <summary>Endpoint of this peer.</summary>
         [JsonProperty(PropertyName = "endpoint")]
         [JsonConverter(typeof(IPEndPointConverter))]
-        public IPEndPoint EndPoint { get; set; }
+        public IPEndPoint Endpoint { get; set; }
 
         /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
         [JsonProperty(PropertyName = "addressTime", NullValueHandling = NullValueHandling.Ignore)]
@@ -71,7 +87,7 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    (this.LastConnectionAttempt != null) &&
+                    (this.LastAttempt != null) &&
                     (this.LastConnectionSuccess == null) &&
                     (this.LastConnectionHandshake == null);
             }
@@ -86,7 +102,7 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    (this.LastConnectionAttempt == null) &&
+                    (this.LastAttempt == null) &&
                     (this.LastConnectionSuccess != null) &&
                     (this.LastConnectionHandshake == null);
             }
@@ -101,7 +117,7 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    (this.LastConnectionAttempt == null) &&
+                    (this.LastAttempt == null) &&
                     (this.LastConnectionSuccess == null) &&
                     (this.LastConnectionHandshake == null);
             }
@@ -116,7 +132,7 @@ namespace Stratis.Bitcoin.P2P
             get
             {
                 return
-                    (this.LastConnectionAttempt == null) &&
+                    (this.LastAttempt == null) &&
                     (this.LastConnectionSuccess != null) &&
                     (this.LastConnectionHandshake != null);
             }
@@ -129,7 +145,7 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         [JsonProperty(PropertyName = "lastConnectionAttempt", NullValueHandling = NullValueHandling.Ignore)]
-        public DateTimeOffset? LastConnectionAttempt { get; private set; }
+        public DateTimeOffset? LastAttempt { get; private set; }
 
         /// <summary>
         /// The last successful connection attempt.
@@ -141,12 +157,26 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
         /// <summary>
-        /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastConnectionAttempt"/>.
+        /// Resets the amount of <see cref="ConnectionAttempts"/>.
+        /// <para>
+        /// This is reset when the amount of failed connection attempts reaches 
+        /// the <see cref="PeerAddress.AttemptThreshold"/> and the last attempt was 
+        /// made more than <see cref="PeerAddress.AttemptResetThresholdHours"/> ago.
+        /// </para>
         /// </summary>
-        internal void SetAttempted(DateTimeOffset peerAttemptedAt)
+        internal void ResetAttempts()
+        {
+            this.ConnectionAttempts = 0;
+        }
+
+        /// <summary>
+        /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastAttempt"/>.
+        /// </summary>
+        internal void SetAttempted(DateTime peerAttemptedAt)
         {
             this.ConnectionAttempts += 1;
-            this.LastConnectionAttempt = peerAttemptedAt;
+
+            this.LastAttempt = peerAttemptedAt;
             this.LastConnectionSuccess = null;
             this.LastConnectionHandshake = null;
         }
@@ -154,14 +184,14 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Sets the <see cref="LastConnectionSuccess"/>, <see cref="addressTime"/> and <see cref="NetworkAddress.Time"/> properties.
         /// <para>
-        /// Resets <see cref="ConnectionAttempts"/> and <see cref="LastConnectionAttempt"/>.
+        /// Resets <see cref="ConnectionAttempts"/> and <see cref="LastAttempt"/>.
         /// </para>
         /// </summary>
         internal void SetConnected(DateTimeOffset peerConnectedAt)
         {
             this.addressTime = peerConnectedAt;
 
-            this.LastConnectionAttempt = null;
+            this.LastAttempt = null;
             this.ConnectionAttempts = 0;
 
             this.LastConnectionSuccess = peerConnectedAt;
@@ -182,13 +212,13 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Creates a new peer address instance.
         /// </summary>
-        /// <param name="address">The network address of the peer.</param>
-        public static PeerAddress Create(NetworkAddress address)
+        /// <param name="endPoint">The end point of the peer.</param>
+        public static PeerAddress Create(IPEndPoint endPoint)
         {
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
-                EndPoint = address.Endpoint,
+                Endpoint = endPoint,
                 loopback = IPAddress.Loopback.ToString()
             };
         }
@@ -196,11 +226,11 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Creates a new peer address instance and sets the loopback address (source).
         /// </summary>
-        /// <param name="address">The network address of the peer.</param>
+        /// <param name="endPoint">The end point of the peer.</param>
         /// <param name="loopback">The loopback (source) of the peer.</param>
-        public static PeerAddress Create(NetworkAddress address, IPAddress loopback)
+        public static PeerAddress Create(IPEndPoint endPoint, IPAddress loopback)
         {
-            var peer = Create(address);
+            var peer = Create(endPoint);
             peer.loopback = loopback.ToString();
             return peer;
         }
