@@ -9,7 +9,8 @@ namespace Stratis.SmartContracts.ContractValidation
         private static readonly HashSet<string> RedLightTypes = new HashSet<string>
         {
             "System.Threading",
-            "System.AppDomain"
+            "System.AppDomain",
+            "System.Environment"
         };
 
         public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)

@@ -12,5 +12,10 @@ namespace Stratis.SmartContracts.ContractValidation
         {
             Message = message;
         }
+
+        public override string ToString()
+        {
+            return Message;
+        }
     }
 }

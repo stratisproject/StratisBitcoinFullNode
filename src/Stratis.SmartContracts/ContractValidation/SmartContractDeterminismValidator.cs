@@ -58,20 +58,29 @@ namespace Stratis.SmartContracts.ContractValidation
             // Build a dict of all referenced methods
             foreach (var method in userDefinedMethods)
             {
-                // Exclude safe methods
-                if (GreenLightMethods.Contains(method.FullName) // A method we know is safe
-                    || GreenLightTypes.Contains(method.DeclaringType.FullName)) // A type we know is safe
-                    continue;
-
                 GetMethods(method, allMethods);
+                errors.AddRange(ValidateUserDefinedMethod(method));
             }
 
             foreach (var method in allMethods)
             {
-                errors.AddRange(ValidateDeterminismForMethod(method.Value));
+                errors.AddRange(ValidateNonUserMethod(method.Value));
             }
 
             return new SmartContractValidationResult(errors);
+        }
+
+        private static IEnumerable<SmartContractValidationError> ValidateUserDefinedMethod(MethodDefinition method)
+        {
+            var validators = new List<IMethodDefinitionValidator>
+            {
+                new MethodFlagValidator(),
+                new MethodAllowedTypeValidator(),
+                new GetHashCodeValidator(),
+                new MethodInstructionValidator()
+            };
+
+            return ValidateWith(validators, method);
         }
 
         private static void GetMethods(MethodDefinition methodDefinition, IDictionary<string, MethodDefinition> visitedMethods)
@@ -79,17 +88,16 @@ namespace Stratis.SmartContracts.ContractValidation
             if (methodDefinition.Body == null)
                 return;
 
-            var methods = methodDefinition.Body.Instructions
+            var referencedMethods = methodDefinition.Body.Instructions
                 .Select(instr => instr.Operand)
-                .OfType<MethodReference>();
+                .OfType<MethodReference>()
+                .Where(referencedMethod =>
+                    !(GreenLightMethods.Contains(methodDefinition.FullName)
+                        || GreenLightTypes.Contains(methodDefinition.DeclaringType.FullName))
+                );
             
-            foreach (var method in methods)
+            foreach (var method in referencedMethods)
             {
-                // Safe
-                if (GreenLightMethods.Contains(method.FullName) // A method we know is safe
-                    || GreenLightTypes.Contains(method.DeclaringType.FullName)) // A type we know is safe
-                    continue;
-
                 var newMethod = method.Resolve();
 
                 if (visitedMethods.ContainsKey(newMethod.FullName))
@@ -102,10 +110,8 @@ namespace Stratis.SmartContracts.ContractValidation
             }
         }
 
-        private static IEnumerable<SmartContractValidationError> ValidateDeterminismForMethod(MethodDefinition method)
+        private static IEnumerable<SmartContractValidationError> ValidateNonUserMethod(MethodDefinition method)
         {
-            var errors = new List<SmartContractValidationError>();
-
             var validators = new List<IMethodDefinitionValidator>
             {
                 new MethodFlagValidator(),
@@ -113,6 +119,13 @@ namespace Stratis.SmartContracts.ContractValidation
                 new GetHashCodeValidator(),
                 new MethodInstructionValidator()
             };
+
+            return ValidateWith(validators, method);
+        }
+
+        private static IEnumerable<SmartContractValidationError> ValidateWith(IEnumerable<IMethodDefinitionValidator> validators, MethodDefinition method)
+        {
+            var errors = new List<SmartContractValidationError>();
 
             foreach (var validator in validators)
             {
