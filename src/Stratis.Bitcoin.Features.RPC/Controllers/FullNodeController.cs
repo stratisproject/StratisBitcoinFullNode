@@ -205,36 +205,36 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Returns information about a bitcoin address
         /// </summary>
         /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
-        /// <returns>JObject containing a boolean indicating address validity</returns>
+        /// <returns>ValidatedAddress containing a boolean indicating address validity</returns>
         [ActionName("validateaddress")]
         [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
-        public JObject ValidateAddress(string address)
+        public ValidatedAddress ValidateAddress(string address)
         {
             if (string.IsNullOrEmpty(address))
                 throw new ArgumentNullException("address");
 
-            var res = new JObject();
-            res["isvalid"] = false;
+            var res = new ValidatedAddress();
+            res.IsValid = false;
 
             // P2WPKH
             if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network))
             {
-                res["isvalid"] = true;
+                res.IsValid = true;
             }
             // P2WSH
             else if (BitcoinWitScriptAddress.IsValid(address, ref this.Network))
             {
-                res["isvalid"] = true;
+                res.IsValid = true;
             }
             // P2PKH
             else if (BitcoinPubKeyAddress.IsValid(address, ref this.Network))
             {
-                res["isvalid"] = true;
+                res.IsValid = true;
             }
             // P2SH
             else if (BitcoinScriptAddress.IsValid(address, ref this.Network))
             {
-                res["isvalid"] = true;
+                res.IsValid = true;
             }
 
             return res;

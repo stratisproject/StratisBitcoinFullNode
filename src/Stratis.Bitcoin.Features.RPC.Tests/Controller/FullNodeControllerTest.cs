@@ -610,7 +610,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             var result = this.controller.ValidateAddress(address.ToString());
 
-            var isValid = result["isvalid"].ToObject<bool>();
+            var isValid = result.IsValid;
             Assert.False(isValid);
         }
 
@@ -622,7 +622,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             var result = this.controller.ValidateAddress(address.ToString());
 
-            var isValid = result["isvalid"].ToObject<bool>();
+            var isValid = result.IsValid;
             Assert.True(isValid);
         }
 
@@ -634,7 +634,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             var result = this.controller.ValidateAddress(address.ToString());
 
-            var isValid = result["isvalid"].ToObject<bool>();
+            var isValid = result.IsValid;
             Assert.True(isValid);
         }
 
@@ -646,7 +646,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             var result = this.controller.ValidateAddress(address.ToString());
 
-            var isValid = result["isvalid"].ToObject<bool>();
+            var isValid = result.IsValid;
             Assert.True(isValid);
         }
 
@@ -658,7 +658,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             var result = this.controller.ValidateAddress(address.ToString());
 
-            var isValid = result["isvalid"].ToObject<bool>();
+            var isValid = result.IsValid;
             Assert.True(isValid);
         }
 

@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using NBitcoin;
-using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
@@ -52,8 +51,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Empty(connectionManager.ConnectionSettings.AddNode);
 
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var networkAddress = new NetworkAddress(ipAddress, 80);
-            this.rpcTestFixture.RpcClient.AddNode(networkAddress.Endpoint);
+            var endpoint = new IPEndPoint(ipAddress, 80);
+            this.rpcTestFixture.RpcClient.AddNode(endpoint);
 
             Assert.Single(connectionManager.ConnectionSettings.AddNode);
         }
