@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (this.ConnectedNetworkPeers.Count > MaxConnectionThreshold)
                     {
                         this.logger.LogTrace("Maximum connection threshold [{0}] reached, stalling accepting of incoming connections.", MaxConnectionThreshold);
-                        await Task.Delay(MaxConnectionThresholdStallTime).ConfigureAwait(false);
+                        await Task.Delay(MaxConnectionThresholdStallTime, this.serverCancel.Token).ConfigureAwait(false);
                         continue;
                     }
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
 
             this.logger.LogTrace("(-)");
