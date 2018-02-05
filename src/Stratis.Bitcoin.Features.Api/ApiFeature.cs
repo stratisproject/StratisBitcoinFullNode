@@ -92,12 +92,12 @@ namespace Stratis.Bitcoin.Features.Api
     {
         public Timer KeepaliveTimer { get; private set; }
 
-        public void Keepalive(TimeSpan timeSpan)
+        public void Keepalive(int intervalInSeconds)
         {
             this.KeepaliveTimer = new Timer
             {
                 AutoReset = false,
-                Interval = timeSpan.TotalSeconds * 1000
+                Interval = intervalInSeconds * 1000
             };
         }
     }

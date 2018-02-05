@@ -43,10 +43,10 @@ namespace Stratis.StratisD
                     .UseApi(null, options =>
                     {
                         // To set a keepalive interval, set -keepalive=xx in the commmand line, xx being the interval in seconds.
-                        bool keepaliveSet = int.TryParse(args.GetValueOf("-keepalive"), out int keepaliveTimeOut);
-                        if (keepaliveSet && keepaliveTimeOut > 0)
+                        bool keepaliveSet = int.TryParse(args.GetValueOf("-keepalive"), out int intervalInSeconds);
+                        if (keepaliveSet && intervalInSeconds > 0)
                         {
-                            options.Keepalive(TimeSpan.FromSeconds(keepaliveTimeOut));
+                            options.Keepalive(intervalInSeconds);
                         }
                     })
                     .AddRPC()
