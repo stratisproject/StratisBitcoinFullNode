@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// The last time this peer was discovered from.
         /// </summary>
-        [JsonProperty(PropertyName = "lastDiscoveredFrom", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore]
         public DateTime? LastDiscoveredFrom { get; private set; }
 
         /// <summary>
