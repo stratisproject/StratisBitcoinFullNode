@@ -94,6 +94,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             return time > PosConsensusValidator.DriftingBugFixTimestamp;
         }
-
     }
 }
