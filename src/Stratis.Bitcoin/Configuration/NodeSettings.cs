@@ -62,36 +62,26 @@ namespace Stratis.Bitcoin.Configuration
 
             // Load arguments or configuration from .ctor?
             if (args != null || loadConfiguration)
-                SetArgs(args);
+            {
+                this.LoadArgs = args ?? new string[] { };
+
+                // By default, we look for a file named '<network>.conf' in the network's data directory,
+                // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
+                this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+                this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+
+                // If the configuration file is relative then assume it is relative to the data folder and combine the paths
+                if (this.DataDir != null && this.ConfigurationFile != null)
+                {
+                    bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
+                    if (isRelativePath)
+                        this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
+                }
+            }
 
             // Load configuration from .ctor?
             if (loadConfiguration)
                 this.LoadConfiguration();
-        }
-
-        /// <summary>
-        /// Sets the "command line" arguments.
-        /// </summary>
-        /// <param name="args">Arguments to set.</param>
-        private void SetArgs(string[] args)
-        {
-            this.LoadArgs = args ?? new string[] { };
-
-            // By default, we look for a file named '<network>.conf' in the network's data directory,
-            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
-
-            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
-            if (this.DataDir != null && this.ConfigurationFile != null)
-            {
-                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
-                if (isRelativePath)
-                    this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
-            }
-
-            // Ensure the config is processed.
-            this.ConfigReader = null;
         }
 
         /// <summary>Factory to create instance logger.</summary>
