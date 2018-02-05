@@ -52,18 +52,18 @@ namespace Stratis.Bitcoin.Features.Api
 
             // Start the keepalive timer, if set.
             // If the timer expires, the node will shut down.
-            if (this.apiFeatureOptions.KeepaliveTimer != null)
+            if (this.apiSettings.KeepaliveTimer != null)
             {
-                this.apiFeatureOptions.KeepaliveTimer.Elapsed += (sender, args) =>
+                this.apiSettings.KeepaliveTimer.Elapsed += (sender, args) =>
                 {
                     this.logger.LogInformation($"The application will shut down because the keepalive timer has elapsed.");
 
-                    this.apiFeatureOptions.KeepaliveTimer.Stop();
-                    this.apiFeatureOptions.KeepaliveTimer.Enabled = false;
-                    this.fullNode.Dispose();
+                    this.apiSettings.KeepaliveTimer.Stop();
+                    this.apiSettings.KeepaliveTimer.Enabled = false;
+                    this.fullNode.NodeLifetime.StopApplication();
                 };
 
-                this.apiFeatureOptions.KeepaliveTimer.Start();
+                this.apiSettings.KeepaliveTimer.Start();
             }
         }
 
@@ -71,11 +71,11 @@ namespace Stratis.Bitcoin.Features.Api
         public override void Dispose()
         {
             // Make sure the timer is stopped and disposed.
-            if (this.apiFeatureOptions.KeepaliveTimer != null)
+            if (this.apiSettings.KeepaliveTimer != null)
             {
-                this.apiFeatureOptions.KeepaliveTimer.Stop();
-                this.apiFeatureOptions.KeepaliveTimer.Enabled = false;
-                this.apiFeatureOptions.KeepaliveTimer.Dispose();
+                this.apiSettings.KeepaliveTimer.Stop();
+                this.apiSettings.KeepaliveTimer.Enabled = false;
+                this.apiSettings.KeepaliveTimer.Dispose();
             }
 
             // Make sure we are releasing the listening ip address / port.
@@ -90,16 +90,6 @@ namespace Stratis.Bitcoin.Features.Api
 
     public sealed class ApiFeatureOptions
     {
-        public Timer KeepaliveTimer { get; private set; }
-
-        public void Keepalive(int intervalInSeconds)
-        {
-            this.KeepaliveTimer = new Timer
-            {
-                AutoReset = false,
-                Interval = intervalInSeconds * 1000
-            };
-        }
     }
 
     /// <summary>

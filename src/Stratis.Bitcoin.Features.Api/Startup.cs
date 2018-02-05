@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Features.Api
                     options.Filters.Add(typeof(LoggingActionFilter));
 
                     ServiceProvider serviceProvider = services.BuildServiceProvider();
-                    ApiFeatureOptions apiFeatureOptions = (ApiFeatureOptions)serviceProvider.GetRequiredService(typeof(ApiFeatureOptions));
-                    if (apiFeatureOptions.KeepaliveTimer != null)
+                    ApiSettings apiSettings = (ApiSettings)serviceProvider.GetRequiredService(typeof(ApiSettings));
+                    if (apiSettings.KeepaliveTimer != null)
                     {
                         options.Filters.Add(typeof(KeepaliveActionFilter));
                     }

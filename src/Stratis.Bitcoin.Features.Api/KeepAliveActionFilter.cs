@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Timers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Stratis.Bitcoin.Utilities;
@@ -18,15 +17,15 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>
         /// Initializes a new instance of the <see cref="KeepaliveActionFilter"/> class.
         /// </summary>
-        /// <param name="options"></param>
-        public KeepaliveActionFilter(ApiFeatureOptions options)
+        /// <param name="apiSettings">The API settings.</param>
+        public KeepaliveActionFilter(ApiSettings apiSettings)
         {
-            if (options == null)
+            if (apiSettings == null)
             {
                 return;
             }
 
-            this.timer = options.KeepaliveTimer;
+            this.timer = apiSettings.KeepaliveTimer;
         }
 
         /// <inheritdoc />
