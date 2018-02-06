@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -116,14 +115,14 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory);
 
             var ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
-            var endpointConnectNode = new NetworkAddress(ipAddressThree, 80);
+            var endpointConnectNode = new IPEndPoint(ipAddressThree, 80);
 
             var nodeSettings = new NodeSettings();
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
 
-            connectionSettings.Connect.Add(endpointConnectNode.Endpoint);
+            connectionSettings.Connect.Add(endpointConnectNode);
 
             var connector = this.CreatePeerConnectorConnectNode(nodeSettings, connectionSettings, peerAddressManager);
             Assert.True(connector.CanStartConnect);
@@ -201,9 +200,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             connectionSettings.Load(nodeSettings);
 
             var ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
-            var networkAddressConnectNode = new NetworkAddress(ipAddressThree, 80);
+            var networkAddressConnectNode = new IPEndPoint(ipAddressThree, 80);
 
-            connectionSettings.Connect.Add(networkAddressConnectNode.Endpoint);
+            connectionSettings.Connect.Add(networkAddressConnectNode);
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerConnectorTests"));
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory);

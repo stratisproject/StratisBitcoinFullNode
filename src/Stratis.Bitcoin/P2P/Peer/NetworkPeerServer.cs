@@ -32,8 +32,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>The parameters that will be cloned and applied for each peer connecting to <see cref="NetworkPeerServer"/>.</summary>
         public NetworkPeerConnectionParameters InboundNetworkPeerConnectionParameters { get; set; }
 
-        /// <summary>Maximal number of inbound connection that the server is willing to handle simultaneously.</summary>
-        public int MaxConnections { get; set; }
+        /// <summary>Maximum number of inbound connection that the server is willing to handle simultaneously.</summary>
+        public const int MaxConnectionThreshold = 125;
 
         /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
         public IPEndPoint LocalEndpoint { get; private set; }
@@ -79,7 +79,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.LocalEndpoint = Utils.EnsureIPv6(localEndpoint);
             this.ExternalEndpoint = Utils.EnsureIPv6(externalEndpoint);
 
-            this.MaxConnections = 125;
             this.Network = network;
             this.Version = version;
 
@@ -103,10 +102,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Starts listening on the server's initialialized endpoint.
         /// </summary>
-        /// <param name="maxIncoming">Maximal number of newly connected clients waiting to be accepted.</param>
-        public void Listen(int maxIncoming = 20)
+        public void Listen()
         {
-            this.logger.LogTrace("({0}:{1})", nameof(maxIncoming), maxIncoming);
+            this.logger.LogTrace("()");
 
             try
             {
@@ -147,11 +145,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                             acceptTask.Wait(this.serverCancel.Token);
                             return acceptTask.Result;
                         }
-                        catch (Exception e)
+                        catch (Exception exception)
                         {
                             // Record the error.
-                            error = e;
-                            return null;                            
+                            error = exception;
+                            return null;
                         }
                     }).ConfigureAwait(false);
 
@@ -159,9 +157,16 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
+                    if (this.ConnectedNetworkPeers.Count >= MaxConnectionThreshold)
+                    {
+                        this.logger.LogTrace("Maximum connection threshold [{0}] reached, closing the client.", MaxConnectionThreshold);
+                        tcpClient.Close();
+                        continue;
+                    }
+
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    NetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(this.Network, tcpClient, this.CreateNetworkPeerConnectionParameters());
+                    INetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(this.Network, tcpClient, this.CreateNetworkPeerConnectionParameters());
 
                     this.ConnectedNetworkPeers.Add(networkPeer);
                     networkPeer.StateChanged.Register(this.OnStateChangedAsync);
@@ -175,9 +180,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
-            
+
             this.logger.LogTrace("(-)");
         }
 
@@ -214,8 +219,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <para>The peer is removed from the list of connected peers if the connection has been terminated for any reason.</para>
         /// </summary>
         /// <param name="peer">The connected peer.</param>
-        /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="NetworkPeer.State"/> property.</param>
-        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
+        /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="INetworkPeer.State"/> property.</param>
+        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerEndPoint, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
 

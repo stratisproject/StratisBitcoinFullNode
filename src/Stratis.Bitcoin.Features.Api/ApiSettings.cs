@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Timers;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -29,6 +30,9 @@ namespace Stratis.Bitcoin.Features.Api
 
         /// <summary>URI to node's API interface.</summary>
         public int ApiPort { get; set; }
+
+        /// <summary>URI to node's API interface.</summary>
+        public Timer KeepaliveTimer { get; private set; }
 
         /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
         private Action<ApiSettings> callback;
@@ -79,7 +83,18 @@ namespace Stratis.Bitcoin.Features.Api
                 this.ApiUri = apiUri;
                 this.ApiPort = apiUri.Port;
             }
-            
+
+            // Set the keepalive interval (set in seconds).
+            var keepAlive = config.GetOrDefault("keepalive", 0);
+            if (keepAlive > 0)
+            {
+                this.KeepaliveTimer = new Timer
+                {
+                    AutoReset = false,
+                    Interval = keepAlive * 1000
+                };
+            }
+
             this.callback?.Invoke(this);
         }
     }
