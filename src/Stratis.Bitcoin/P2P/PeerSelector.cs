@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -187,9 +188,9 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
-            // Randomly order the list of peers and return the amount asked for.
-            var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
-            return allPeers.Select(p => p.Value).Take(1000);
+            var discoverable = this.peerAddresses.Values.Where(p => p.LastDiscoveredFrom < DateTimeProvider.Default.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours));
+            var allPeers = discoverable.Take(1000).ToList();
+            return allPeers.OrderBy(p => this.random.Next());
         }
 
         /// <inheritdoc/>
