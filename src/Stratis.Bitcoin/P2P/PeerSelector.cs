@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -19,7 +20,11 @@ namespace Stratis.Bitcoin.P2P
         PeerAddress SelectPeer();
 
         /// <summary>
-        /// Select a random set of peers from the address manager for peer discovery.
+        /// Return peers which we can discover (call getAddr) from.
+        /// <para>
+        /// The result filters out peers where the <see cref="PeerAddress.LastDiscoveredFrom"/> is less 
+        /// than the current date less <see cref="PeerSelector.DiscoveryThresholdHours"/>.
+        /// </para>
         /// </summary>
         /// <param name="peerCount">The amount of peers to return.</param>
         IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount);
@@ -66,6 +71,9 @@ namespace Stratis.Bitcoin.P2P
 
     public sealed class PeerSelector : IPeerSelector
     {
+        /// <summary>The amount of hours we should wait before we try and discover from a peer again.</summary>
+        private const int DiscoveryThresholdHours = 24;
+
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -187,9 +195,9 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
-            // Randomly order the list of peers and return the amount asked for.
-            var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
-            return allPeers.Select(p => p.Value).Take(1000);
+            var discoverable = this.peerAddresses.Values.Where(p => p.LastDiscoveredFrom < DateTimeProvider.Default.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours));
+            var allPeers = discoverable.Take(1000).ToList();
+            return allPeers.OrderBy(p => this.random.Next());
         }
 
         /// <inheritdoc/>
@@ -252,16 +260,13 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Attempted()
         {
-            return this.peerAddresses.Values.Where(p =>
-                                p.Attempted &&
-                                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
-                                p.LastAttempt < DateTime.UtcNow.AddHours(-PeerAddress.AttempThresholdHours));
+            return this.peerAddresses.Values.Where(p => p.Attempted && p.ConnectionAttempts < PeerAddress.AttemptThreshold && p.LastAttempt < DateTime.UtcNow.AddHours(-PeerAddress.AttempThresholdHours));
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Connected()
         {
-            return this.peerAddresses.Values.Where(p => p.Connected && p.LastConnectionSuccess < DateTime.UtcNow.AddSeconds(-60));
+            return this.peerAddresses.Values.Where(p => p.Connected && p.LastConnectionSuccess < DateTimeProvider.Default.GetUtcNow().AddSeconds(-60));
         }
 
         /// <inheritdoc/>
@@ -273,7 +278,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Handshaked()
         {
-            return this.peerAddresses.Values.Where(p => p.Handshaked && p.LastConnectionHandshake < DateTime.UtcNow.AddSeconds(-60));
+            return this.peerAddresses.Values.Where(p => p.Handshaked && p.LastConnectionHandshake < DateTimeProvider.Default.GetUtcNow().AddSeconds(-60));
         }
     }
 }
