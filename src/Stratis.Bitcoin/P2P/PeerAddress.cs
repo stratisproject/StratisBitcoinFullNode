@@ -157,6 +157,12 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastConnectionSuccess { get; private set; }
 
         /// <summary>
+        /// The last time this peer was discovered from.
+        /// </summary>
+        [JsonIgnore]
+        public DateTime? LastDiscoveredFrom { get; private set; }
+
+        /// <summary>
         /// Resets the amount of <see cref="ConnectionAttempts"/>.
         /// <para>
         /// This is reset when the amount of failed connection attempts reaches 
@@ -195,6 +201,12 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectionAttempts = 0;
 
             this.LastConnectionSuccess = peerConnectedAt;
+        }
+
+        /// <summary>Sets the <see cref="LastDiscoveredFrom"/> time.</summary>
+        internal void SetDiscoveredFrom(DateTime lastDiscoveredFrom)
+        {
+            this.LastDiscoveredFrom = lastDiscoveredFrom;
         }
 
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
