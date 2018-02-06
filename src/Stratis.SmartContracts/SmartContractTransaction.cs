@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts
         public byte[] ContractCode { get; set; }
 
         public uint160 To { get; set; }
-        public uint160 From { get; set; }
+        public uint160 Sender { get; set; }
         public string MethodName { get; set; }
 
         public OpcodeType OpCodeType { get; set; }
@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts
             }
 
             Hash = transaction.GetHash();
-            From = GetSenderAddress();
+            //From = GetSenderAddress();
         }
 
         public IEnumerable<byte> ToBytes()
@@ -90,10 +90,10 @@ namespace Stratis.SmartContracts
             return new uint160(HashHelper.Keccak256(this.Hash.ToBytes()).Take(20).ToArray());
         }
 
-        public uint160 GetSenderAddress()
-        {
-            return 100;
-            throw new NotImplementedException(); // TODO: Full node dev?
-        }
+        //public uint160 GetSenderAddress()
+        //{
+        //    throw new NotImplementedException(); // TODO: Full node dev?
+        //    //return 100;
+        //}
     }
 }

@@ -49,6 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
         public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
+            
+
             this.logger.LogTrace("()");
 
             NBitcoin.Block block = context.BlockValidationContext.Block;
@@ -178,7 +180,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             IContractStateRepository track = this.stateRoot.StartTracking();
             var scTransaction = new SmartContractTransaction(contractTxOut, transaction);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty);
+
+            // TODO: Set sender and coinbase here
+
+            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty, 0); // TODO: Put coinbase in here
             SmartContractExecutionResult result = exec.Execute();
             track.Commit();
         }

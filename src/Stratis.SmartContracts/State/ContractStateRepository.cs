@@ -14,36 +14,32 @@ namespace Stratis.SmartContracts.State
     {
         protected ContractStateRepository parent;
         public ISource<byte[], AccountState> accountStateCache;
+        public ISource<byte[], StoredVin> vinCache; 
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         protected List<TransferInfo> transfers;
+
 
         //protected ISource<byte[], byte[]> dbUTXO; //KV store containing all values 
         //protected Dictionary<uint160, StoredVin> cacheUTXO;
         //protected ITrie<byte[]> stateUTXO;
 
-
-        private void CommitCacheUTXO()
-        {
-
-        }
-
         protected ContractStateRepository() { }
 
         public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                      MultiCache<ICachedSource<byte[], byte[]>> storageCache)
+                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
         {
-            Init(accountStateCache, codeCache, storageCache);
+            Init(accountStateCache, codeCache, storageCache, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                    MultiCache<ICachedSource<byte[], byte[]>> storageCache)
+                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
             this.storageCache = storageCache;
+            this.vinCache = vinCache;
             this.transfers = new List<TransferInfo>();
-            //this.cacheUTXO = new Dictionary<uint160, StoredVin>();
         }
 
         public AccountState CreateAccount(uint160 addr)
@@ -115,11 +111,12 @@ namespace Stratis.SmartContracts.State
 
         public IContractStateRepository StartTracking()
         {
-            ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache,
-                    WriteCache<AccountState>.CacheType.SIMPLE);
+            ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
+            ISource<byte[], StoredVin> trackVinCache = new WriteCache<StoredVin>(this.vinCache, WriteCache<StoredVin>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache< byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
-            ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache);
+
+            ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache);
             ret.parent = this;
             return ret;
         }
@@ -136,6 +133,7 @@ namespace Stratis.SmartContracts.State
                 this.storageCache.Flush();
                 this.codeCache.Flush();
                 this.accountStateCache.Flush();
+                this.vinCache.Flush();
             }
         }
 
@@ -174,6 +172,16 @@ namespace Stratis.SmartContracts.State
         public IList<TransferInfo> GetTransfers()
         {
             return this.transfers;
+        }
+
+        public StoredVin GetVin(uint160 address)
+        {
+            return this.vinCache.Get(address.ToBytes());
+        }
+
+        public void AddVin(uint160 address, StoredVin vin)
+        {
+            this.vinCache.Put(address.ToBytes(), vin);
         }
 
         #endregion

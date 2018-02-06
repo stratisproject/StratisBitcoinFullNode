@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -26,6 +27,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
+        private readonly CoinView coinView;
+        private uint160 coinbaseAddress;
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -39,12 +42,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
             SmartContractGasInjector gasInjector,
+            CoinView coinView,
             AssemblerOptions options = null) : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
             this.stateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
+            this.coinView = coinView;
         }
 
         // Copied from PowBlockAssembler, got rid of comments 
@@ -52,6 +57,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
             this.scriptPubKeyIn = scriptPubKeyIn;
+
+            this.coinbaseAddress = new uint160(this.scriptPubKeyIn.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false); // TODO: This ugly af
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
@@ -98,6 +105,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             SmartContractTransaction scTransaction = new SmartContractTransaction(contractTxOut, iter.Transaction);
+            scTransaction.Sender = GetSenderAddress(iter.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             AddContractCallToBlock(iter, scTransaction);
         }
 
@@ -106,7 +114,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IContractStateRepository track = this.stateRoot.StartTracking();
             ulong height = Convert.ToUInt64(this.height);// TODO: Optimise so this conversion isn't happening every time.
             ulong difficulty = 0; // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty);
+            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty, this.coinbaseAddress);
 
             ulong gasToSpend = scTransaction.TotalGas;
             SmartContractExecutionResult result = exec.Execute();
@@ -148,11 +156,49 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script senderScript = new Script(
                 OpcodeType.OP_DUP,
                 OpcodeType.OP_HASH160,
-                Op.GetPushOp(scTransaction.From.ToBytes()),
+                Op.GetPushOp(scTransaction.Sender.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
             ); 
             this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
+
+        private uint160 GetSenderAddress(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
+        {
+            Script script = null;
+            bool scriptFilled = false;
+
+            if (blockTxs != null & blockTxs.Count > 0)
+            {
+                foreach(Transaction btx in blockTxs)
+                {
+                    if (btx.GetHash() == tx.Inputs[0].PrevOut.Hash)
+                    {
+                        script = btx.Outputs[tx.Inputs[0].PrevOut.N].ScriptPubKey;
+                        scriptFilled = true;
+                        break;
+                    }
+                }
+            }
+            if (!scriptFilled && coinView != null)
+            {
+                FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { tx.Inputs[0].PrevOut.Hash }).Result;
+                script = fetchCoinResult.UnspentOutputs.FirstOrDefault().Outputs[0].ScriptPubKey;
+                scriptFilled = true;
+            }
+
+            if (new PayToPubkeyTemplate().CheckScriptPubKey(script))
+            {
+                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
+            }
+
+            if (new PayToPubkeyHashTemplate().CheckScriptPubKey(script))
+            {
+                throw new NotImplementedException();
+            }
+
+            throw new NotImplementedException();   
+        }
+
     }
 }

@@ -11,54 +11,79 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         private SmartContractTransaction transaction;
         private Dictionary<uint160, Tuple<ulong, ulong>> plusMinusInfo;
         private Dictionary<uint160, ulong> balances;
-        //private CoinView utxoSet;
+        private Dictionary<uint160, StoredVin> vins;
+        private Dictionary<uint160, uint> nVouts;
+        private IContractStateRepository state;
+        private bool voutOverflow = false;
 
-        public CondensingTx(IList<TransferInfo> transfers, SmartContractTransaction transaction 
-            //CoinView utxoSet
-            )
+        /// <summary>
+        /// Same as in Qtum. Can adjust later
+        /// </summary>
+        private const uint MAX_CONTRACT_VOUTS = 1000;
+
+        public CondensingTx(IList<TransferInfo> transfers, SmartContractTransaction transaction, IContractStateRepository state)
         {
             this.transfers = transfers;
             this.transaction = transaction;
             this.plusMinusInfo = new Dictionary<uint160, Tuple<ulong, ulong>>();
             this.balances = new Dictionary<uint160, ulong>();
-            //this.utxoSet = utxoSet;
+            this.vins = new Dictionary<uint160, StoredVin>();
+            this.nVouts = new Dictionary<uint160, uint>();
+            this.state = state;
         }
 
         public Transaction CreateCondensingTx()
         {
-            //SelectionVin();
+            SelectionVin();
             CalculatePlusAndMinus();
             CreateNewBalances();
 
             Transaction ret = new Transaction();
-            foreach (TransferInfo transfer in this.transfers)
+            IList<TxIn> inputs = CreateInputs();
+            IList<TxOut> outputs = CreateOutputs();
+            foreach(TxIn input in inputs)
             {
-                ret.AddInput(CreateInput(transfer));
-                ret.AddOutput(CreateOutput(transfer));
+                ret.AddInput(input);
+            }
+            foreach(TxOut output in outputs)
+            {
+                ret.AddOutput(output);
             }
             return ret;
         }
 
-        //private Vin Vin(uint160 address)
-        //{
+        private void SelectionVin()
+        {
+            foreach (TransferInfo ti in this.transfers){
 
-        //    auto it = cacheUTXO.find(_addr);
-        //    if (it == cacheUTXO.end())
-        //    {
-        //        std::string stateBack = stateUTXO.at(_addr);
-        //        if (stateBack.empty())
-        //            return nullptr;
+                if (!this.vins.ContainsKey(ti.From))
+                {
+                    StoredVin a = this.state.GetVin(ti.From);
+                    if (a != null)
+                    {
+                        this.vins[ti.From] = a;
+                    }
+                    if (ti.From == this.transaction.Sender && this.transaction.Value > 0)
+                    {
+                        this.vins[ti.From] = new StoredVin
+                        {
+                            Hash = this.transaction.Hash,
+                            Nvout = this.transaction.Nvout,
+                            Value = this.transaction.Value,
+                            Alive = 1
+                        };
+                    }
+                }
 
-        //        dev::RLP state(stateBack);
-        //        auto i = cacheUTXO.emplace(
-        //            std::piecewise_construct,
-        //            std::forward_as_tuple(_addr),
-        //            std::forward_as_tuple(Vin{ state[0].toHash<dev::h256>(), state[1].toInt<uint32_t>(), state[2].toInt<dev::u256>(), state[3].toInt<uint8_t>()})
-        //);
-        //        return &i.first->second;
-        //    }
-        //    return &it->second;
-        //}
+                if (!this.vins.ContainsKey(ti.To))
+                {
+                    StoredVin a = this.state.GetVin(ti.To);
+                    if (a != null)
+                        this.vins[ti.To] = a;
+                }
+
+            }
+        }
 
         private void CalculatePlusAndMinus()
         {
@@ -84,35 +109,105 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             }
         }
 
-        private void CreateNewBalances()
+        private bool CreateNewBalances()
         {
-            foreach (var kvp in this.plusMinusInfo)
+            foreach (KeyValuePair<uint160, Tuple<ulong, ulong>> kvp in this.plusMinusInfo)
             {
                 ulong balance = 0;
+
+                if ((this.vins.ContainsKey(kvp.Key) && this.vins[kvp.Key].Alive != 0)) // something about deleted addresses here?
+                    balance = this.vins[kvp.Key].Value;
+
+                balance += kvp.Value.Item1;
+
+                if (balance < kvp.Value.Item2)
+                    return false;
+
+                balance -= kvp.Value.Item2;
+                this.balances[kvp.Key] = balance;
             }
+            return true;
         }
 
-        private TxIn CreateInput(TransferInfo transfer)
+        private IList<TxIn> CreateInputs()
         {
-            // for now we use the hash and nvout from the transaction but in the future this will have to be changed to get it from somewhere real
-            OutPoint outpoint = new OutPoint(this.transaction.Hash, this.transaction.Nvout);
-            return new TxIn(outpoint, new Script(OpcodeType.OP_SPEND));
+            IList<TxIn> ins = new List<TxIn>();
+            foreach(KeyValuePair<uint160, StoredVin> v in this.vins)
+            {
+                if (v.Value.Value > 0 && v.Value.Alive != 0)
+                {
+                    OutPoint outpoint = new OutPoint(v.Value.Hash, v.Value.Nvout);
+                    ins.Add(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
+                }
+            }
+            return ins;
         }
 
-        private TxOut CreateOutput(TransferInfo transfer)
+        private IList<TxOut> CreateOutputs()
         {
-            // this is only for outputs to ordinary addresses right now - not to contracts
-            // contract calls need to use the OP_CALL transaction. 
-            Script script = new Script(
-                    OpcodeType.OP_DUP,
-                    OpcodeType.OP_HASH160,
-                    Op.GetPushOp(transfer.To.ToBytes()),
-                    OpcodeType.OP_EQUALVERIFY,
-                    OpcodeType.OP_CHECKSIG
-                ); // hope this is doing the right thing ???
+            uint count = 0;
+            List<TxOut> outs = new List<TxOut>();
+            foreach(KeyValuePair<uint160, ulong> b in this.balances)
+            {
+                if (b.Value > 0)
+                {
+                    Script script;
 
-            return new TxOut(new Money(transfer.Value), script);
+                    AccountState a = this.state.GetAccountState(b.Key);
+                    if (a != null)
+                    {
+                        SmartContractTransaction newScTransaction = new SmartContractTransaction
+                        {
+                            To = b.Key,
+                            OpCodeType = OpcodeType.OP_CALLCONTRACT
+                        };
+                        script = new Script(newScTransaction.ToBytes());
+                    }
+                    else
+                    {
+                        script = new Script(
+                                OpcodeType.OP_DUP,
+                                OpcodeType.OP_HASH160,
+                                Op.GetPushOp(b.Key.ToBytes()),
+                                OpcodeType.OP_EQUALVERIFY,
+                                OpcodeType.OP_CHECKSIG
+                            );
+                    }
+                    outs.Add(new TxOut(new Money(b.Value), script));
+                    this.nVouts[b.Key] = count;
+                    count++;
+                }
+
+                if (count > MAX_CONTRACT_VOUTS)
+                {
+                    this.voutOverflow = true;
+                    return outs;
+                }
+            }
+            return outs;
         }
+
+        //private TxIn CreateInput(TransferInfo transfer)
+        //{
+        //    // for now we use the hash and nvout from the transaction but in the future this will have to be changed to get it from somewhere real
+        //    OutPoint outpoint = new OutPoint(this.transaction.Hash, this.transaction.Nvout);
+        //    return new TxIn(outpoint, new Script(OpcodeType.OP_SPEND));
+        //}
+
+        //private TxOut CreateOutput(TransferInfo transfer)
+        //{
+        //    // this is only for outputs to ordinary addresses right now - not to contracts
+        //    // contract calls need to use the OP_CALL transaction. 
+        //    Script script = new Script(
+        //            OpcodeType.OP_DUP,
+        //            OpcodeType.OP_HASH160,
+        //            Op.GetPushOp(transfer.To.ToBytes()),
+        //            OpcodeType.OP_EQUALVERIFY,
+        //            OpcodeType.OP_CHECKSIG
+        //        ); // hope this is doing the right thing ???
+
+        //    return new TxOut(new Money(transfer.Value), script);
+        //}
     }
 }
 

@@ -90,14 +90,10 @@ namespace Stratis.SmartContracts.State
             MultiCache<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
 
+            SourceCodec<byte[], StoredVin, byte[], byte[]> vinCodec = new SourceCodec<byte[], StoredVin, byte[], byte[]>(this.utxoTrie, new Serializers.NoSerializer<byte[]>(), Serializers.VinSerializer);
+            ReadWriteCache<StoredVin> vinCache = new ReadWriteCache<StoredVin>(vinCodec, WriteCache<StoredVin>.CacheType.SIMPLE);
 
-            //SourceCodec<byte[], StoredVin, byte[], byte[]> vinCodec = new SourceCodec<byte[], StoredVin, byte[], byte[]>(this.utxoTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
-            //ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
-
-
-            //ReadWriteCache<byte[]> utxoReadWriteCache = new ReadWriteCache<byte[]>(this.utxoTrie, WriteCache<byte[]>.CacheType.SIMPLE);
-
-            Init(accountStateCache, codeCache, storageCache);
+            Init(accountStateCache, codeCache, storageCache, vinCache);
         }
 
         public override void Commit()

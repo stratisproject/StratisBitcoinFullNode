@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.state, testContext.decompiler, testContext.validator, testContext.gasInjector, options);
+            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.state, testContext.decompiler, testContext.validator, testContext.gasInjector, testContext.cachedCoinView, options);
         }
 
         public class Blockinfo
@@ -105,6 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public List<Blockinfo> blockinfo;
             public Network network;
             public Script scriptPubKey;
+            public uint160 coinbaseAddress;
             public BlockTemplate newBlock;
             public Transaction tx, tx2;
             public Script script;
@@ -144,6 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.network = Network.Main;
                 var hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
                 this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
+                this.coinbaseAddress = new uint160(new Script(hex).Hash.ToBytes(), false);
                 this.newBlock = new BlockTemplate();
 
                 this.entry = new TestMemPoolEntryHelper();
@@ -276,10 +278,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.mempool.AddUnchecked(hashParentTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
             var ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
-            Assert.Equal(ownerFromStorage, new uint160(100).ToBytes());
+            Assert.Equal(ownerFromStorage, context.coinbaseAddress.ToBytes());
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
@@ -327,7 +328,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             };
 
             Transaction tx2 = new Transaction();
-            tx2.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            tx2.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
             tx2.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction.ToBytes())));
 
             uint256 hashTx2 = tx2.GetHash();
@@ -349,7 +350,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             };
 
             Transaction tx3 = new Transaction();
-            tx3.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            tx3.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
             tx3.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction2.ToBytes())));
 
             uint256 hashTx3 = tx3.GetHash();
