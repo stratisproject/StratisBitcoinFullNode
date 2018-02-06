@@ -57,9 +57,6 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
-            // TODO: Temporary until Build method updated to call LoadConfiguration
-            loadConfiguration = true;
-
             // Load arguments or configuration from .ctor?
             this.LoadArgs = args ?? new string[] { };
 
