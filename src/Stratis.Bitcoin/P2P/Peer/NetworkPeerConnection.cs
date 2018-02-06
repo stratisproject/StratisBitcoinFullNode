@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>Network peer this connection connects to.</summary>
-        private INetworkPeer peer;
+        private NetworkPeer peer;
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource CancellationSource { get; private set; }
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="processMessageAsync">Callback to be called when a new message arrives from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeerConnection(Network network, INetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public NetworkPeerConnection(Network network, NetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peer.PeerEndPoint}] ");
@@ -178,6 +178,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     {
                         Message = message,
                         Length = message.MessageSize,
+                        NetworkPeer = this.peer
                     };
 
                     this.MessageProducer.PushMessage(incomingMessage);

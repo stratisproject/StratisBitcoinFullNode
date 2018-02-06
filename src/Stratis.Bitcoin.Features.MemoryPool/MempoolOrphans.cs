@@ -246,7 +246,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             foreach (uint256 hash in vEraseQueue)
-                await this.EraseOrphanTx(hash).ConfigureAwait(false);
+                await this.EraseOrphanTx(hash);
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="from">Source node for transaction.</param>
         /// <param name="tx">Transaction to add.</param>
         /// <returns>Whether the transaction was added to orphans.</returns>
-        public async Task<bool> ProcessesOrphansMissingInputsAsync(INetworkPeer from, Transaction tx)
+        public async Task<bool> ProcessesOrphansMissingInputsAsync(NetworkPeer from, Transaction tx)
         {
             // It may be the case that the orphans parents have all been rejected
             var rejectedParents = await this.MempoolLock.ReadAsync(() =>

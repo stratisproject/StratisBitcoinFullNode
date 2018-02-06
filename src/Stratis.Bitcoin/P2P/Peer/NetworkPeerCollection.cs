@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.Utilities;
@@ -14,28 +13,28 @@ namespace Stratis.Bitcoin.P2P.Peer
     public class NetworkPeerEventArgs : EventArgs
     {
         public bool Added { get; private set; }
-        public INetworkPeer peer { get; private set; }
+        public NetworkPeer peer { get; private set; }
 
-        public NetworkPeerEventArgs(INetworkPeer peer, bool added)
+        public NetworkPeerEventArgs(NetworkPeer peer, bool added)
         {
             this.Added = added;
             this.peer = peer;
         }
     }
 
-    public interface IReadOnlyNetworkPeerCollection : IEnumerable<INetworkPeer>
+    public interface IReadOnlyNetworkPeerCollection : IEnumerable<NetworkPeer>
     {
         event EventHandler<NetworkPeerEventArgs> Added;
         event EventHandler<NetworkPeerEventArgs> Removed;
 
-        INetworkPeer FindByEndpoint(IPEndPoint endpoint);
-        INetworkPeer FindByIp(IPAddress ip);
-        INetworkPeer FindLocal();
+        NetworkPeer FindByEndpoint(IPEndPoint endpoint);
+        NetworkPeer FindByIp(IPAddress ip);
+        NetworkPeer FindLocal();
     }
 
-    public class NetworkPeerCollection : IEnumerable<INetworkPeer>, IReadOnlyNetworkPeerCollection
+    public class NetworkPeerCollection : IEnumerable<NetworkPeer>, IReadOnlyNetworkPeerCollection
     {
-        private ConcurrentHashSet<INetworkPeer> networkPeers;
+        private ConcurrentDictionary<NetworkPeer, NetworkPeer> networkPeers;
 
         public int Count
         {
@@ -51,9 +50,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Provides a comparer to specify how peers are compared for equality.
         /// </summary>
-        public class NetworkPeerComparer : IEqualityComparer<INetworkPeer>
+        public class NetworkPeerComparer : IEqualityComparer<NetworkPeer>
         {
-            public bool Equals(INetworkPeer peerA, INetworkPeer peerB)
+            public bool Equals(NetworkPeer peerA, NetworkPeer peerB)
             {
                 if ((peerA == null) || (peerB == null))
                     return (peerA == null) && (peerB == null);
@@ -61,7 +60,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (peerA.RemoteSocketAddress.MapToIPv6().ToString() == peerB.RemoteSocketAddress.MapToIPv6().ToString()) && (peerA.RemoteSocketPort == peerB.RemoteSocketPort);
             }
 
-            public int GetHashCode(INetworkPeer peer)
+            public int GetHashCode(NetworkPeer peer)
             {
                 if (peer == null)
                     return 0;
@@ -72,14 +71,14 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public NetworkPeerCollection()
         {
-            this.networkPeers = new ConcurrentHashSet<INetworkPeer>(new NetworkPeerComparer());
+            this.networkPeers = new ConcurrentDictionary<NetworkPeer, NetworkPeer>(new NetworkPeerComparer());
         }
 
-        public bool Add(INetworkPeer peer)
+        public bool Add(NetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
 
-            if (this.networkPeers.Add(peer))
+            if (this.networkPeers.TryAdd(peer, peer))
             {
                 this.OnPeerAdded(peer);
                 return true;
@@ -88,11 +87,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             return false;
         }
 
-        public bool Remove(INetworkPeer peer, string reason)
+        public bool Remove(NetworkPeer peer, string reason)
         {
-            if (this.networkPeers.TryRemove(peer))
+            NetworkPeer old;
+            if (this.networkPeers.TryRemove(peer, out old))
             {
-                this.OnPeerRemoved(peer);
+                this.OnPeerRemoved(old);
                 peer.Dispose(reason);
                 return true;
             }
@@ -100,35 +100,35 @@ namespace Stratis.Bitcoin.P2P.Peer
             return false;
         }
 
-        private void OnPeerAdded(INetworkPeer peer)
+        private void OnPeerAdded(NetworkPeer peer)
         {
             this.Added?.Invoke(this, new NetworkPeerEventArgs(peer, true));
         }
 
-        public void OnPeerRemoved(INetworkPeer peer)
+        public void OnPeerRemoved(NetworkPeer peer)
         {
             this.Removed?.Invoke(this, new NetworkPeerEventArgs(peer, false));
         }
 
-        public INetworkPeer FindLocal()
+        public NetworkPeer FindLocal()
         {
             return this.FindByIp(IPAddress.Loopback);
         }
 
-        public INetworkPeer FindByIp(IPAddress ip)
+        public NetworkPeer FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
-            return this.networkPeers.Where(n => Match(ip, null, n)).FirstOrDefault();
+            return this.networkPeers.Where(n => Match(ip, null, n.Key)).Select(s => s.Key).FirstOrDefault();
         }
 
-        public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
+        public NetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
             IPAddress ip = endpoint.Address.EnsureIPv6();
             int port = endpoint.Port;
-            return this.networkPeers.FirstOrDefault(n => Match(ip, port, n));
+            return this.networkPeers.Select(n => n.Key).FirstOrDefault(n => Match(ip, port, n));
         }
 
-        private static bool Match(IPAddress ip, int? port, INetworkPeer peer)
+        private static bool Match(IPAddress ip, int? port, NetworkPeer peer)
         {
             if (port.HasValue)
             {
@@ -142,9 +142,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public IEnumerator<INetworkPeer> GetEnumerator()
+        public IEnumerator<NetworkPeer> GetEnumerator()
         {
-            return this.networkPeers.GetEnumerator();
+            return this.networkPeers.Select(n => n.Key).AsEnumerable().GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -154,8 +154,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public void DisconnectAll(string reason, CancellationToken cancellation = default(CancellationToken))
         {
-            foreach (INetworkPeer peer in this.networkPeers)
-                peer.Dispose(reason);
+            foreach (KeyValuePair<NetworkPeer, NetworkPeer> peer in this.networkPeers)
+                peer.Key.Dispose(reason);
         }
 
         public void Clear()

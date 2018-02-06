@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
-    /// Subscribes to state change events from <see cref="INetworkPeer"/> and relays connection and handshake attempts to
+    /// Subscribes to state change events from <see cref="NetworkPeer"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState previousState)
+        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {

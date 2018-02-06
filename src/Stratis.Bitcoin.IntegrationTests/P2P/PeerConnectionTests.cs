@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 CoreNode coreNode = builder.CreateStratisPowNode();
                 builder.StartAll();
 
-                using (INetworkPeer networkPeer = coreNode.CreateNetworkPeerClient())
+                using (NetworkPeer networkPeer = coreNode.CreateNetworkPeerClient())
                 {
                     // Add the network peers to the connection manager's
                     // add node collection.

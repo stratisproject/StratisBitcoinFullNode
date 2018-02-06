@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         /// <param name="peer">Peer to be added.</param>
-        void AddPeer(INetworkPeer peer);
+        void AddPeer(NetworkPeer peer);
 
         /// <summary>
         /// Removes a given peer from the <see cref="ConnectedPeers"/>.
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         /// <param name="peer">Peer to be removed.</param>
         /// <param name="reason">Human readable reason for removing the peer.</param>
-        void RemovePeer(INetworkPeer peer, string reason);
+        void RemovePeer(NetworkPeer peer, string reason);
 
         /// <summary>
         /// Starts an asynchronous loop that connects to peers in one second intervals.
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddPeer(INetworkPeer peer)
+        public void AddPeer(NetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.P2P
         public abstract Task OnConnectAsync();
 
         /// <inheritdoc/>
-        public void RemovePeer(INetworkPeer peer, string reason)
+        public void RemovePeer(NetworkPeer peer, string reason)
         {
             this.ConnectedPeers.Remove(peer, reason);
 
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.P2P
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.Endpoint);
 
-            INetworkPeer peer = null;
+            NetworkPeer peer = null;
 
             try
             {
