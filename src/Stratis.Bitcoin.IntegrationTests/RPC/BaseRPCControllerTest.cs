@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                .UseConsensus()
+                .UsePowConsensus()
                 .UseBlockStore()
                 .UseMempool()
                 .AddRPC()
