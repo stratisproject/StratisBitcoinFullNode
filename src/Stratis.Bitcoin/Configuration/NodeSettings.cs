@@ -73,6 +73,15 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
+            // Find out if we need to run on testnet or regtest from the config file.
+            if (this.ConfigurationFile != null)
+            {
+                AssertConfigFileExists(this.ConfigurationFile);
+                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
+                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+            }
+
             //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
             if (this.LoadArgs.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
                 this.Testnet = true;
@@ -169,26 +178,6 @@ namespace Stratis.Bitcoin.Configuration
 
             // Get the arguments set previously
             var args = this.LoadArgs;
-
-            // Find out if we need to run on testnet or regtest from the config file.
-            if (this.ConfigurationFile != null)
-            {
-                AssertConfigFileExists(this.ConfigurationFile);
-                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
-                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
-            }
-
-            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
-                this.Testnet = true;
-
-            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
-                this.RegTest = true;
-
-            if (this.Testnet && this.RegTest)
-                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
             this.Network = this.GetNetwork();
 
