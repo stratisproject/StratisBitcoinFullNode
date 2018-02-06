@@ -73,6 +73,17 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
+            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
+            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
+                this.Testnet = true;
+
+            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
+            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
+                this.RegTest = true;
+
+            if (this.Testnet && this.RegTest)
+                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
+
             // Load configuration from .ctor?
             if (loadConfiguration)
                 this.LoadConfiguration();
