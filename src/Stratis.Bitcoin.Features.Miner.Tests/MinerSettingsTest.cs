@@ -20,8 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(callback);
 
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.LoadArguments(new string[] {
+            var nodeSettings = new NodeSettings(args:new string[] {
                 "-mine=true",
                 "-stake=true",
                 "-walletname=mytestwallet",
@@ -50,8 +49,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(callback);
 
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.LoadArguments(new string[] {
+            var nodeSettings = new NodeSettings(args:new string[] {
                 "-mine=false",
                 "-stake=true",
                 "-walletname=mytestwallet",
@@ -80,8 +78,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(callback);
 
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.LoadArguments(new string[] {
+            var nodeSettings = new NodeSettings(args:new string[] {
                 "-mine=true",
                 "-stake=false",
                 "-walletname=mytestwallet",

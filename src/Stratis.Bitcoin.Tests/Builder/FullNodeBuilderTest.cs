@@ -102,9 +102,8 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[] { });
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
+            var dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
+            var nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dataDir}" });
             nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
@@ -134,8 +133,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildConfiguresFullNodeUsingConfiguration()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            var dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}" });
+            nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             this.fullNodeBuilder.ConfigureServices(e =>
             {
@@ -180,8 +180,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildTwiceThrowsException()
         {
-            var nodeSettings = new NodeSettings();
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            var dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}" });
+            nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             Assert.Throws<InvalidOperationException>(() =>
             {
