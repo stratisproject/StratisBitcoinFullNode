@@ -7,6 +7,8 @@ namespace Stratis.SmartContracts.ContractValidation
 {
     public class GetHashCodeValidator : IMethodDefinitionValidator
     {
+        public static readonly string ErrorType = "Known Non-Deterministic Method";
+
         public static readonly string GetHashCodeString = "System.Int32 System.Object::GetHashCode()";
 
         public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
@@ -16,7 +18,10 @@ namespace Stratis.SmartContracts.ContractValidation
                 return new List<SmartContractValidationError>
                 {
                     new SmartContractValidationError(
-                        $"Use of {method.FullName} is not deterministic [known non-deterministic method call]")
+                        method.Name,
+                        method.FullName,
+                        ErrorType,
+                        $"Use of {method.FullName} is not deterministic [{ErrorType}]")
                 };
             }
 

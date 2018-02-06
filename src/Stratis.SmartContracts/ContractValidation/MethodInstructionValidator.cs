@@ -57,14 +57,24 @@ namespace Stratis.SmartContracts.ContractValidation
 
             if (RedLightOpCodes.Contains(instruction.OpCode))
             {
-                errors.Add(new SmartContractValidationError($"Float used within {method.FullName}"));
+                errors.Add(new SmartContractValidationError(
+                    method.Name,
+                    method.FullName,
+                    "Float usage",
+                    $"Float used within {method.FullName}"
+                ));
             }
 
             if (instruction.Operand is FieldReference fieldReference)
             {
                 if (RedLightFields.Contains(fieldReference.FullName))
                 {
-                    errors.Add(new SmartContractValidationError($"{fieldReference.FullName} in {method.FullName} is not deterministic."));
+                    errors.Add(new SmartContractValidationError(
+                        method.Name,
+                        method.FullName,
+                        $"Use of {fieldReference.FullName}",
+                        $"{fieldReference.FullName} in {method.FullName} is not deterministic."
+                    ));
                 }
             }
 

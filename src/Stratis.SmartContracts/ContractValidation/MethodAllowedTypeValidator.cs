@@ -6,6 +6,8 @@ namespace Stratis.SmartContracts.ContractValidation
 {
     public class MethodAllowedTypeValidator : IMethodDefinitionValidator
     {
+        public static string ErrorType = "Known Non-Deterministic Method";
+
         private static readonly HashSet<string> RedLightTypes = new HashSet<string>
         {
             "System.Threading",
@@ -20,7 +22,10 @@ namespace Stratis.SmartContracts.ContractValidation
                 return new List<SmartContractValidationError>
                 {
                     new SmartContractValidationError(
-                        $"Use of {method.DeclaringType.FullName} is non-deterministic [known non-deterministic method call]")
+                        method.Name,
+                        method.FullName,
+                        ErrorType,
+                        $"Use of {method.DeclaringType.FullName} is non-deterministic [{ErrorType}]")
                 };
             }
 
