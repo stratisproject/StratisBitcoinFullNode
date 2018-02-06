@@ -63,11 +63,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <returns>Context object representing the test chain.</returns>
         public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = new NodeSettings(network).LoadArguments(new string[] { $"-datadir={dataDir}" });
-            if (dataDir != null)
-            {
-                nodeSettings.DataDir = dataDir;
-            }
+            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={dataDir}" });
 
             var loggerFactory = new ExtendedLoggerFactory();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;

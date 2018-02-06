@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             this.connectionManager = new Mock<IConnectionManager>();
             this.connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
-            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
+            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
             this.connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
         }
 
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     null,
                     chain,
                     this.chainState.Object,
-                    new StoreSettings(new NodeSettings().LoadArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
+                    new StoreSettings(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
                     this.initialBlockDownloadState,

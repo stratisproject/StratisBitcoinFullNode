@@ -44,7 +44,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
-        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
+        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
+            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
         {
             this.Agent = agent;
             this.Network = innerNetwork;
@@ -55,10 +56,55 @@ namespace Stratis.Bitcoin.Configuration
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+
+            // Load arguments or configuration from .ctor?
+            this.LoadArgs = args ?? new string[] { };
+
+            // By default, we look for a file named '<network>.conf' in the network's data directory,
+            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
+            this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+
+            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
+            if (this.DataDir != null && this.ConfigurationFile != null)
+            {
+                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
+                if (isRelativePath)
+                    this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
+            }
+
+            // Find out if we need to run on testnet or regtest from the config file.
+            if (this.ConfigurationFile != null)
+            {
+                AssertConfigFileExists(this.ConfigurationFile);
+                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
+                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+            }
+
+            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
+            if (this.LoadArgs.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
+                this.Testnet = true;
+
+            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
+            if (this.LoadArgs.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
+                this.RegTest = true;
+
+            if (this.Testnet && this.RegTest)
+                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
+
+            this.Network = this.GetNetwork();
+
+            // Load configuration from .ctor?
+            if (loadConfiguration)
+                this.LoadConfiguration();
         }
 
         /// <summary>Factory to create instance logger.</summary>
         public ILoggerFactory LoggerFactory { get; }
+
+        /// <summary>Arguments to load.</summary>
+        public string[] LoadArgs { get; private set;  }
 
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
@@ -118,69 +164,37 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
-            NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
-            nodeSettings.LoadArguments(new string[0]);
-            return nodeSettings;
+            return new NodeSettings(network, protocolVersion, args:new string[0]);
         }
 
         /// <summary>
-        /// Initializes configuration from command line arguments.
-        /// <para>This includes loading configuration from file.</para>
+        /// Loads the configuration file.
         /// </summary>
-        /// <param name="args">Application command line arguments.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args)
+        public NodeSettings LoadConfiguration()
         {
-            // By default, we look for a file named '<network>.conf' in the network's data directory,
-            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            var dataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+            // Configuration already loaded?
+            if (this.ConfigReader != null)
+                return this;
 
-            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
-            if (dataDir != null && this.ConfigurationFile != null)
-            {
-                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
-                if (isRelativePath)
-                    this.ConfigurationFile = Path.Combine(dataDir, this.ConfigurationFile);
-            }
+            // Get the arguments set previously
+            var args = this.LoadArgs;
 
-            // Find out if we need to run on testnet or regtest from the config file.
-            if (this.ConfigurationFile != null)
-            {
-                AssertConfigFileExists(this.ConfigurationFile);
-                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
-                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
-            }
-
-            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
-                this.Testnet = true;
-
-            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
-                this.RegTest = true;
-
-            if (this.Testnet && this.RegTest)
-                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
-
-            this.Network = this.GetNetwork();
-            
             // Setting the data directory.
-            if (dataDir == null)
+            if (this.DataDir == null)
             {
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
             }
             else
             {
                 // Create the data directories if they don't exist.
-                string directoryPath = Path.Combine(dataDir, this.Network.RootFolderName, this.Network.Name);
+                string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
                 Directory.CreateDirectory(directoryPath);
                 this.DataDir = directoryPath;
                 this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
             }
-            
+
             // If no configuration file path is passed in the args, load the default file.
             if (this.ConfigurationFile == null)
             {
