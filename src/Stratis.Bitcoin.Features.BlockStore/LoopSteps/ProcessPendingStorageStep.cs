@@ -54,9 +54,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             }
             
             // In case of IBD do not save every single block- persist them in batches.
-            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold && !disposeMode && 
-                this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
-                return StepResult.Continue;
+            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold &&
+                !disposeMode && this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
+            {
+                return StepResult.Stop;
+            }
 
             while (!context.CancellationToken.IsCancellationRequested)
             {
