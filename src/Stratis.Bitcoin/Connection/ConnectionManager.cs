@@ -165,14 +165,14 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
             this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
+
+            this.ConnectionSettings.Load(this.NodeSettings);
         }
 
         /// <inheritdoc />
         public void Initialize()
         {
             this.logger.LogTrace("()");
-
-            this.ConnectionSettings.Load(this.NodeSettings);
 
             this.peerDiscovery.DiscoverPeers(this);
 
