@@ -179,7 +179,7 @@ namespace Stratis.SmartContracts.State
             return this.vinCache.Get(address.ToBytes());
         }
 
-        public void AddVin(uint160 address, StoredVin vin)
+        public void SetVin(uint160 address, StoredVin vin)
         {
             this.vinCache.Put(address.ToBytes(), vin);
         }

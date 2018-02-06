@@ -93,12 +93,14 @@ namespace Stratis.SmartContracts
                 return result;
             }
 
-            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
-            if (transfers.Any())
-            {
-                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction, this.state);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
-            }
+            // To start with, no value transfers on create.
+
+            //IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
+            //if (transfers.Any())
+            //{
+            //    CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction, this.state);
+            //    result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
+            //}
 
             this.stateTrack.SetCode(contractAddress, adjustedCodeBytes);
             this.stateTrack.Commit();
@@ -129,9 +131,26 @@ namespace Stratis.SmartContracts
             IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
             if (transfers.Any())
             {
-                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction, this.state);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
+                // need to get the current vin for contract and the tx being executed
+                List<StoredVin> vins = new List<StoredVin>
+                {
+                    new StoredVin
+                    {
+                        Hash = this.scTransaction.Hash,
+                        Nvout = this.scTransaction.Nvout,
+                        Value = this.scTransaction.Value
+                    }
+                };
+                StoredVin existingVin = this.state.GetVin(this.scTransaction.To);
+                if (existingVin != null)
+                    vins.Add(existingVin);
+                
+
+                CondensingTx condensingTx = new CondensingTx(this.scTransaction, transfers, vins, this.stateTrack);
+                result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
+
+            this.stateTrack.Commit();
 
             return result;
         }

@@ -26,6 +26,7 @@ namespace Stratis.SmartContracts.State
         #region Account Abstraction Layer
         void TransferBalance(uint160 from, uint160 to, ulong value);
         StoredVin GetVin(uint160 address);
+        void SetVin(uint160 address, StoredVin vin);
         IList<TransferInfo> GetTransfers();
         #endregion
     }

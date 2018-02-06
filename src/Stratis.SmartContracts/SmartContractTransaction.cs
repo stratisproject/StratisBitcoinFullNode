@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts
                 To = new uint160(bytes.Skip(20).Take(20).ToArray());
                 MethodName = Encoding.UTF8.GetString(bytes.Skip(40).SkipLast(1).ToArray());
             }
-
+            Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(txOut));
             Hash = transaction.GetHash();
             //From = GetSenderAddress();
         }
