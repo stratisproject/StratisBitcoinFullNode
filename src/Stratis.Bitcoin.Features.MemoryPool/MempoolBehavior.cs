@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
             // TODO: Add exception handling
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private async Task SendMempoolPayloadAsync(NetworkPeer peer, MempoolPayload message)
+        private async Task SendMempoolPayloadAsync(INetworkPeer peer, MempoolPayload message)
         {
             Guard.NotNull(peer, nameof(peer));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Command);
@@ -319,7 +319,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">The peer sending the message.</param>
         /// <param name="invPayload">The inventory payload in the message.</param>
-        private async Task ProcessInvAsync(NetworkPeer peer, InvPayload invPayload)
+        private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
         {
             Guard.NotNull(peer, nameof(peer));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="getDataPayload">The payload for the message.</param>
-        private async Task ProcessGetDataAsync(NetworkPeer peer, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
             Guard.NotNull(peer, nameof(peer));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="transactionPayload">The payload for the message.</param>
-        private async Task ProcessTxPayloadAsync(NetworkPeer peer, TxPayload transactionPayload)
+        private async Task ProcessTxPayloadAsync(INetworkPeer peer, TxPayload transactionPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
             Transaction trx = transactionPayload.Obj;
@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else if (state.MissingInputs)
             {
-                await this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx);
+                await this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx).ConfigureAwait(false);
             }
             else
             {
@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer to send transactions to.</param>
         /// <param name="trxList">List of transactions.</param>
-        private async Task SendAsTxInventoryAsync(NetworkPeer peer, IEnumerable<uint256> trxList)
+        private async Task SendAsTxInventoryAsync(INetworkPeer peer, IEnumerable<uint256> trxList)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
 
@@ -534,7 +534,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            NetworkPeer peer = this.AttachedPeer;
+            INetworkPeer peer = this.AttachedPeer;
             if (peer == null)
             {
                 this.logger.LogTrace("(-)[NO_PEER]");

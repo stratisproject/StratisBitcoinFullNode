@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Connection
             this.dropThreshold = 0.8M;
         }
 
-        private Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
