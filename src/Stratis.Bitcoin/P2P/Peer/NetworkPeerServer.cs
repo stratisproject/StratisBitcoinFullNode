@@ -35,12 +35,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Maximum number of inbound connection that the server is willing to handle simultaneously.</summary>
         public const int MaxConnectionThreshold = 125;
 
-        /// <summary>
-        /// The amount of time in seconds we should stall before checking if we can accept incoming connections again.
-        /// This happens once we have reached the maximum connection threshold.
-        /// </summary>
-        public const int MaxConnectionThresholdStallTime = 60;
-
         /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
         public IPEndPoint LocalEndpoint { get; private set; }
 
