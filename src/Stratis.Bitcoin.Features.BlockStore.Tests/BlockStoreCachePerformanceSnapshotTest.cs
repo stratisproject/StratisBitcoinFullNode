@@ -5,10 +5,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class BlockStoreCachePerformanceSnapshotTest
     {
-        public BlockStoreCachePerformanceSnapshotTest()
-        {
-        }
-
         [Fact]
         public void Constructor_InitializesCounters()
         {

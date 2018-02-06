@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            var highestBlock = this.blockRepository.HighestPersistedBlock;
+            var highestBlock = this.blockStoreLoop.HighestPersistedBlock;
 
             if (highestBlock != null)
                 benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogInformation("Stopping {0}...", this.name);
 
             this.blockStoreSignaled.Dispose();
-            this.blockStoreManager.BlockStoreLoop.ShutDown();
+            this.blockStoreManager.BlockStoreLoop.Dispose();
             this.blockRepository.Dispose();
         }
     }

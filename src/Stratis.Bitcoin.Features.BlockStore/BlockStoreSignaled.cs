@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using System.Timers;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -176,7 +175,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Before relaying, verify the block is still in the best chain else discard it.
         /// </para>
         /// <para>
-        /// TODO: consider moving the relay logic to the <see cref="LoopSteps.ProcessPendingStorageStep"/>.
+        /// TODO: consider moving the relay logic to the <see cref="PendingStorageProcessor"/>.
         /// </para>
         /// </remarks>
         private async Task SendBatchAsync(List<ChainedBlock> batch)

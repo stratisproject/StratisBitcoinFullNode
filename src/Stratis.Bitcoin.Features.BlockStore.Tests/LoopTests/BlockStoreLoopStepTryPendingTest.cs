@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
@@ -41,8 +40,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -54,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// <list>
         /// <item>1: Pending storage count has reached <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/>.</item>
         /// <item>2: A break condition is found.</item>
-        /// <item>3: <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> has been reached. </item>
+        /// <item>3: <see cref="BlockStoreLoop.TargetPendingInsertSize"/> has been reached. </item>
         /// </list>
         /// </summary>
         [Fact]
@@ -86,8 +85,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -99,7 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// <list>
         /// <item>1: Pending storage count has reached <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/>.</item>
         /// <item>2: A break condition is found.</item>
-        /// <item>3: <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> has been reached. </item>
+        /// <item>3: <see cref="BlockStoreLoop.TargetPendingInsertSize"/> has been reached. </item>
         /// </list>
         /// </summary>
         [Fact]
@@ -131,8 +130,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[2499].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[2499].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -171,8 +170,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), true).GetAwaiter().GetResult();
+                var processPendingStorageStep = new PendingStorageProcessor(fluent.Loop, this.loggerFactory);
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, true).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);

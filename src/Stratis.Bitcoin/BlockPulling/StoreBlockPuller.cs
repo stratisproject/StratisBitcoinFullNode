@@ -1,15 +1,21 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
     /// Puller that downloads blocks from peers.
     /// </summary>
-    public class StoreBlockPuller : BlockPuller
+    public class StoreBlockPuller : BlockPuller, IDisposable
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        private readonly AsyncQueue<DownloadedBlock> downloadedBlocks;
 
         /// <summary>
         /// Initializes a new instance of the object having a chain of block headers and a list of available nodes.
@@ -21,6 +27,8 @@ namespace Stratis.Bitcoin.BlockPulling
             : base(chain, nodes.ConnectedPeers, nodes.NodeSettings.ProtocolVersion, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.downloadedBlocks = new AsyncQueue<DownloadedBlock>();
         }
 
         /// <summary>
@@ -35,25 +43,26 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Tries to retrieve a specific downloaded block from the list of downloaded blocks.
-        /// </summary>
-        /// <param name="chainedBlock">Header of the block to retrieve.</param>
-        /// <param name="block">If the function succeeds, the downloaded block is returned in this parameter.</param>
-        /// <returns>true if the function succeeds, false otherwise.</returns>
-        public bool TryGetBlock(ChainedBlock chainedBlock, out DownloadedBlock block)
+        /// <summary>Decreases quality score of the peer that is supposed to provide specified block.</summary>
+        public void Stall(ChainedBlock chainedBlock)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
-
-            if (this.TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
-            {
-                this.logger.LogTrace("(-):true");
-                return true;
-            }
-
             this.OnStalling(chainedBlock);
-            this.logger.LogTrace("(-):false");
-            return false;
+        }
+
+        public async Task<DownloadedBlock> GetNextDownloadedBlockAsync(CancellationToken cancellation)
+        {
+            return await this.downloadedBlocks.DequeueAsync(cancellation).ConfigureAwait(false);
+        }
+
+        public override void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
+        {
+            this.downloadedBlocks.Enqueue(downloadedBlock);
+            base.BlockPushed(blockHash, downloadedBlock, cancellationToken);
+        }
+
+        public void Dispose()
+        {
+            this.downloadedBlocks.Dispose();
         }
     }
 }

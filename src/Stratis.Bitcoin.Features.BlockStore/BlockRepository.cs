@@ -78,9 +78,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
 
         bool TxIndex { get; }
-
-        /// <summary>Represents the last block stored to disk.</summary>
-        ChainedBlock HighestPersistedBlock { get; }
     }
 
     public class BlockRepository : IBlockRepository
@@ -105,10 +102,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
-
-        /// <inheritdoc />
-        public ChainedBlock HighestPersistedBlock { get; internal set; }
-
+        
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
         {
