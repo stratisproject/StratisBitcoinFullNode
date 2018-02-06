@@ -93,6 +93,8 @@ namespace Stratis.Bitcoin.Configuration
             if (this.Testnet && this.RegTest)
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
+            this.Network = this.GetNetwork();
+
             // Load configuration from .ctor?
             if (loadConfiguration)
                 this.LoadConfiguration();
@@ -178,8 +180,6 @@ namespace Stratis.Bitcoin.Configuration
 
             // Get the arguments set previously
             var args = this.LoadArgs;
-
-            this.Network = this.GetNetwork();
 
             // Setting the data directory.
             if (this.DataDir == null)
