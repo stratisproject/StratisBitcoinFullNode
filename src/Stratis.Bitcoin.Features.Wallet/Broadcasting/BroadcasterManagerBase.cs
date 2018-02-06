@@ -68,13 +68,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// </summary>
         /// <param name="transaction">Transaction that will be propagated.</param>
         /// <param name="peers">Peers to whom we will propagate the transaction.</param>
-        protected async Task PropagateTransactionToPeersAsync(Transaction transaction, List<NetworkPeer> peers)
+        protected async Task PropagateTransactionToPeersAsync(Transaction transaction, List<INetworkPeer> peers)
         {
             this.AddOrUpdate(transaction, State.ToBroadcast);
 
             var invPayload = new InvPayload(transaction);
 
-            foreach (NetworkPeer peer in peers)
+            foreach (INetworkPeer peer in peers)
             {
                 try
                 {

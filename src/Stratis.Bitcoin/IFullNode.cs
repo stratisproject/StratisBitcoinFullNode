@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.AspNetCore.Hosting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Utilities;
 
@@ -23,6 +24,9 @@ namespace Stratis.Bitcoin
 
         /// <summary>Software version of the full node.</summary>
         Version Version { get; }
+
+        /// <summary>ASP.NET Core host for RPC server.</summary>
+        IWebHost RPCHost { get; set; }
 
         /// <summary>
         /// Starts the full node and all its features.

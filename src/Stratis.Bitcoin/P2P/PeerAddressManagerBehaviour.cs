@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>
     /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
-    /// Subscribes to state change events from <see cref="NetworkPeer"/> and relays connection and handshake attempts to
+    /// Subscribes to state change events from <see cref="INetworkPeer"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             try
             {
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     if (message.Message.Payload is GetAddrPayload)
                     {
-                        var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.EndPoint).ToArray();
+                        var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.Endpoint).ToArray();
                         var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
                     }
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.P2P
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
                 {
                     if (message.Message.Payload is AddrPayload addr)
-                        this.peerAddressManager.AddPeers(addr.Addresses, peer.RemoteSocketAddress);
+                        this.peerAddressManager.AddPeers(addr.Addresses.Select(a => a.Endpoint).ToArray(), peer.RemoteSocketAddress);
                 }
             }
             catch (OperationCanceledException)
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        private Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState previousState)
+        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {

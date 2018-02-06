@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using NBitcoin.Protocol;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
@@ -29,10 +28,10 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         internal const int AttemptResetThresholdHours = 12;
 
-        /// <summary>EndPoint of this peer.</summary>
+        /// <summary>Endpoint of this peer.</summary>
         [JsonProperty(PropertyName = "endpoint")]
         [JsonConverter(typeof(IPEndPointConverter))]
-        public IPEndPoint EndPoint { get; set; }
+        public IPEndPoint Endpoint { get; set; }
 
         /// <summary>Used to construct the <see cref="NetworkAddress"/> after deserializing this peer.</summary>
         [JsonProperty(PropertyName = "addressTime", NullValueHandling = NullValueHandling.Ignore)]
@@ -213,13 +212,13 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Creates a new peer address instance.
         /// </summary>
-        /// <param name="address">The network address of the peer.</param>
-        public static PeerAddress Create(NetworkAddress address)
+        /// <param name="endPoint">The end point of the peer.</param>
+        public static PeerAddress Create(IPEndPoint endPoint)
         {
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
-                EndPoint = address.Endpoint,
+                Endpoint = endPoint,
                 loopback = IPAddress.Loopback.ToString()
             };
         }
@@ -227,11 +226,11 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Creates a new peer address instance and sets the loopback address (source).
         /// </summary>
-        /// <param name="address">The network address of the peer.</param>
+        /// <param name="endPoint">The end point of the peer.</param>
         /// <param name="loopback">The loopback (source) of the peer.</param>
-        public static PeerAddress Create(NetworkAddress address, IPAddress loopback)
+        public static PeerAddress Create(IPEndPoint endPoint, IPAddress loopback)
         {
-            var peer = Create(address);
+            var peer = Create(endPoint);
             peer.loopback = loopback.ToString();
             return peer;
         }

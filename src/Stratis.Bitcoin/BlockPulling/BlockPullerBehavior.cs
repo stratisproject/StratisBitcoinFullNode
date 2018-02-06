@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="peer">Peer that sent us the message.</param>
         /// <param name="message">Received message.</param>
-        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer attachedNode = this.AttachedPeer;
+            INetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer attachedNode = this.AttachedPeer;
+            INetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_PEER]:false");

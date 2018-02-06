@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="peer">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

@@ -40,10 +40,10 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void DetachCore()
         {
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
-        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
             // Check the type of message received.
             // We're only interested in Inventory and Transaction messages.
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
-        private async Task ProcessInvAsync(NetworkPeer node, InvPayload invPayload)
+        private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
         {
             var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
 
@@ -106,9 +106,9 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
 
             // requests the new transactions
-            if (node.IsConnected)
+            if (peer.IsConnected)
             {
-                await node.SendMessageAsync(new GetDataPayload(newTxs.ToArray())).ConfigureAwait(false);
+                await peer.SendMessageAsync(new GetDataPayload(newTxs.ToArray())).ConfigureAwait(false);
             }
         }
 

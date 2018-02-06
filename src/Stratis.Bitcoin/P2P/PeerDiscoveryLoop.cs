@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.P2P
         private Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<IPEndPoint>();
-            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.EndPoint));
+            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.Endpoint));
 
             if (peersToDiscover.Count == 0)
             {
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.P2P
 
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
-                    NetworkPeer networkPeer = null;
+                    INetworkPeer networkPeer = null;
 
                     try
                     {

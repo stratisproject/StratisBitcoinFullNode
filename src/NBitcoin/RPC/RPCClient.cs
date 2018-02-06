@@ -74,7 +74,7 @@ namespace NBitcoin.RPC
 
         ------------------ Utility functions
         util               createmultisig
-        util               validateaddress
+        util               validateaddress              Yes
         util               verifymessage
         util               estimatefee                  Yes
 
@@ -125,7 +125,7 @@ namespace NBitcoin.RPC
         wallet             walletpassphrasechange
         wallet             walletpassphrase            yes
     */
-    public partial class RPCClient : INBitcoinBlockRepository
+    public partial class RPCClient : INBitcoinBlockRepository, IRPCClient
     {
         private string authentication;
         private readonly Uri address;
@@ -1181,6 +1181,17 @@ namespace NBitcoin.RPC
 #endregion
 
 #region Utility functions
+        /// <summary>
+        /// Returns information about a base58 or bech32 Bitcoin address
+        /// </summary>
+        /// <param name="address">a Bitcoin Address</param>
+        /// <returns>{ IsValid }</returns>
+        public ValidatedAddress ValidateAddress(BitcoinAddress address)
+        {
+            RPCResponse res = SendCommand(RPCOperations.validateaddress, address.ToString());
+            return JsonConvert.DeserializeObject<ValidatedAddress>(res.Result.ToString());
+       }
+
         /// <summary>
         /// Get the estimated fee per kb for being confirmed in nblock
         /// </summary>
