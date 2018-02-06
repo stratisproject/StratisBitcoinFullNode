@@ -236,7 +236,7 @@ namespace NBitcoin
             BlockHeader dummy = new BlockHeader();
             dummy.HashPrevBlock = this.HashBlock;
             dummy.BlockTime = DateTimeOffset.UtcNow;
-            return GetNextWorkRequired(dummy, consensus);
+            return this.GetNextWorkRequired(dummy, consensus);
         }
 
         /// <summary>

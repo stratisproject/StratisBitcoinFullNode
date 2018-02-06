@@ -15,27 +15,60 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         }
 
         [Fact]
-        public async Task BlockReceived_CheckHeaderBits_ValidationFailAsync()
+        public async Task CheckHeaderBits_ValidationFailAsync()
+        {
+            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
+            
+            var context = new RuleContext(new BlockValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
+            context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
+            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
+            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
+
+            // increment the bits.
+            context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetNextWorkRequired(Network.RegTest.Consensus);
+            context.BlockValidationContext.Block.Header.Bits += 1;
+
+            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Equal(ConsensusErrors.BadDiffBits, error.ConsensusError);
+        }
+
+        [Fact]
+        public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
         {
             var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
 
-            var context = new RuleContext(new BlockValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = new Block(new BlockHeader { HashPrevBlock = testContext.Chain.Tip.HashBlock, Bits = 100 });
+            var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
+            context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
             context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
+            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
 
             // increment the bits.
-            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
             context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetNextWorkRequired(Network.RegTest.Consensus);
+            context.BlockValidationContext.Block.Header.BlockTime = context.BestBlock.Header.BlockTime.AddSeconds(-1);
 
-            try
-            {
-                await rule.RunAsync(context);
-            }
-            catch (ConsensusErrorException cee)
-            {
-                Assert.Equal(ConsensusErrors.BadDiffBits, cee.ConsensusError);
-            }
+            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Equal(ConsensusErrors.TimeTooOld, error.ConsensusError);
+        }
+
+        [Fact]
+        public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
+        {
+            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
+
+            var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
+            context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
+            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
+            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
+
+            // increment the bits.
+            context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetNextWorkRequired(Network.RegTest.Consensus);
+            context.BlockValidationContext.Block.Header.BlockTime = context.Time.AddHours(3);
+
+            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Equal(ConsensusErrors.TimeTooNew, error.ConsensusError);
         }
     }
 }
