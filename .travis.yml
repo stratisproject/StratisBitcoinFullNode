@@ -24,6 +24,9 @@ cache:
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ulimit -n 1024; fi
 
+notifications:
+  email: false
+  
 script:
   - chmod +x build.sh
   - ./build.sh
