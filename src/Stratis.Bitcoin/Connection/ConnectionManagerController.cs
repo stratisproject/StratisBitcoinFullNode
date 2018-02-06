@@ -44,46 +44,46 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// RPC implementation of "getpeerinfo".
+        /// RPC implementation of getpeerinfo
         /// </summary>
         /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
-        /// <returns>List of connected peer nodes.</returns>
+        /// <returns>List of connected peer nodes</returns>
         [ActionName("getpeerinfo")]
         [ActionDescription("Gets peer information from the connection manager.")]
         public List<PeerNodeModel> GetPeerInfo()
         {
             List<PeerNodeModel> peerList = new List<PeerNodeModel>();
 
-            List<INetworkPeer> peers = this.ConnectionManager.ConnectedPeers.ToList();
-            foreach (INetworkPeer peer in peers)
+            List<NetworkPeer> nodes = this.ConnectionManager.ConnectedPeers.ToList();
+            foreach (NetworkPeer node in nodes)
             {
-                if ((peer != null) && (peer.RemoteSocketAddress != null))
+                if ((node != null) && (node.RemoteSocketAddress != null))
                 {
                     PeerNodeModel peerNode = new PeerNodeModel
                     {
-                        Id = peers.IndexOf(peer),
-                        Address = peer.RemoteSocketEndpoint.ToString()
+                        Id = nodes.IndexOf(node),
+                        Address = node.RemoteSocketEndpoint.ToString()
                     };
 
-                    if (peer.MyVersion != null)
+                    if (node.MyVersion != null)
                     {
-                        peerNode.LocalAddress = peer.MyVersion.AddressReceiver?.ToString();
-                        peerNode.Services = ((ulong)peer.MyVersion.Services).ToString("X");
-                        peerNode.Version = (uint)peer.MyVersion.Version;
-                        peerNode.SubVersion = peer.MyVersion.UserAgent;
-                        peerNode.StartingHeight = peer.MyVersion.StartHeight;
+                        peerNode.LocalAddress = node.MyVersion.AddressReceiver?.ToString();
+                        peerNode.Services = ((ulong)node.MyVersion.Services).ToString("X");
+                        peerNode.Version = (uint)node.MyVersion.Version;
+                        peerNode.SubVersion = node.MyVersion.UserAgent;
+                        peerNode.StartingHeight = node.MyVersion.StartHeight;
                     }
 
-                    ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                    ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
                     if (connectionManagerBehavior != null)
                     {
                         peerNode.Inbound = connectionManagerBehavior.Inbound;
                         peerNode.IsWhiteListed = connectionManagerBehavior.Whitelisted;
                     }
 
-                    if (peer.TimeOffset != null)
+                    if (node.TimeOffset != null)
                     {
-                        peerNode.TimeOffset = peer.TimeOffset.Value.Seconds;
+                        peerNode.TimeOffset = node.TimeOffset.Value.Seconds;
                     }
 
                     peerList.Add(peerNode);

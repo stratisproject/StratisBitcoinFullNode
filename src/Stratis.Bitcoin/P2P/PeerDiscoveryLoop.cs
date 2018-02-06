@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.P2P
 
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
-                    INetworkPeer networkPeer = null;
+                    NetworkPeer networkPeer = null;
 
                     try
                     {

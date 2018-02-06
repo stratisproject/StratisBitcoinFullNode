@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-        protected async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        protected async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Broadcasting
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        protected async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
+        protected async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
             {
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Broadcasting
             }
         }
 
-        protected async Task ProcessGetDataPayloadAsync(INetworkPeer peer, GetDataPayload getDataPayload)
+        protected async Task ProcessGetDataPayloadAsync(NetworkPeer peer, GetDataPayload getDataPayload)
         {
             // If node asks for tx we want to broadcast.
             foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))

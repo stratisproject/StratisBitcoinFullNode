@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Base
         /// If the peer is behind/equal to our best height an empty array is sent back.
         /// </para>
         /// </remarks>
-        private async Task ProcessGetHeadersAsync(INetworkPeer peer, GetHeadersPayload getHeadersPayload)
+        private async Task ProcessGetHeadersAsync(NetworkPeer peer, GetHeadersPayload getHeadersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Base
         /// of our best chain's tip, we update our view of the best chain to that tip.
         /// </para>
         /// </remarks>
-        private async Task ProcessHeadersAsync(INetworkPeer peer, HeadersPayload headersPayload)
+        private async Task ProcessHeadersAsync(NetworkPeer peer, HeadersPayload headersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(headersPayload), headersPayload);
 
@@ -427,7 +427,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
+        private async Task OnStateChangedAsync(NetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            INetworkPeer peer = this.AttachedPeer;
+            NetworkPeer peer = this.AttachedPeer;
             if (peer != null)
             {
                 if ((peer.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)

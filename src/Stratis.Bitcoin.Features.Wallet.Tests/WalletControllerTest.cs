@@ -1357,7 +1357,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             var connectionManagerMock = new Mock<IConnectionManager>();
-            var peers = new List<INetworkPeer>();
+            var peers = new List<NetworkPeer>();
             peers.Add(null);
             connectionManagerMock.Setup(c => c.ConnectedPeers).Returns(new TestReadOnlyNetworkPeerCollection(peers));
 
@@ -1783,38 +1783,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public event EventHandler<NetworkPeerEventArgs> Added;
         public event EventHandler<NetworkPeerEventArgs> Removed;
 
-        private List<INetworkPeer> networkPeers;
+        private List<NetworkPeer> networkPeers;
 
         public TestReadOnlyNetworkPeerCollection()
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.networkPeers = new List<INetworkPeer>();            
+            this.networkPeers = new List<NetworkPeer>();            
         }
 
-        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers)
+        public TestReadOnlyNetworkPeerCollection(List<NetworkPeer> peers)
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.networkPeers = peers;
         }
 
-        public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
+        public NetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
             return null;
         }
 
-        public INetworkPeer FindByIp(IPAddress ip)
+        public NetworkPeer FindByIp(IPAddress ip)
         {
             return null;
         }
 
-        public INetworkPeer FindLocal()
+        public NetworkPeer FindLocal()
         {
             return null;
         }
 
-        public IEnumerator<INetworkPeer> GetEnumerator()
+        public IEnumerator<NetworkPeer> GetEnumerator()
         {
             return this.networkPeers.GetEnumerator();
         }
