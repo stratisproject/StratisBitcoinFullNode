@@ -74,11 +74,11 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
+            if (this.LoadArgs.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
                 this.Testnet = true;
 
             //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
-            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
+            if (this.LoadArgs.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
                 this.RegTest = true;
 
             if (this.Testnet && this.RegTest)
