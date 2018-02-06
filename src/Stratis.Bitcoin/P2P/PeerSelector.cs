@@ -67,6 +67,9 @@ namespace Stratis.Bitcoin.P2P
 
     public sealed class PeerSelector : IPeerSelector
     {
+        /// <summary>The amount of hours we should wait before we try and discover from a peer again.</summary>
+        private const int DiscoveryThresholdHours = 24;
+
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
