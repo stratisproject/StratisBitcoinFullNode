@@ -329,13 +329,25 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             Transaction tx2 = new Transaction();
             tx2.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx2.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction.ToBytes())));
+
+            ulong fundsToSend = 5000000000L - 10000;
+
+            tx2.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.ToBytes())));
 
             uint256 hashTx2 = tx2.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx2));
             var pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            // There is 1 input to the condensing transaction: the previous callcontract transaction
+            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs);
+            var hashOfContractCallTx = pblocktemplate2.Block.Transactions[1].GetHash();
+            Assert.Equal(hashOfContractCallTx, pblocktemplate2.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            // First txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[0].Value);
+            // Second txout should be the change to the contract, with a value of the input - 100
+            Assert.Equal(fundsToSend - 100, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[1].Value);
 
             context.mempool.Clear();
 
@@ -351,14 +363,24 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             Transaction tx3 = new Transaction();
             tx3.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx3.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction2.ToBytes())));
+            tx3.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction2.ToBytes())));
 
             uint256 hashTx3 = tx3.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx3));
             var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 send from contract
-            //Assert.Equal(100, pblocktemplate3.Block.Transactions[2].TotalOut);
-            //Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+            Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
+            Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
+            Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count);
+            var hashOfPrevCondensingTx = pblocktemplate2.Block.Transactions[2].GetHash();
+            var hashOfContractCallTx3 = pblocktemplate3.Block.Transactions[1].GetHash();
+            Assert.Equal(hashOfPrevCondensingTx, pblocktemplate3.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            Assert.Equal(hashOfContractCallTx3, pblocktemplate3.Block.Transactions[2].Inputs[1].PrevOut.Hash);
+            // First txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[0].Value);
+            // Second txout should be the change to the contract, with a value of the value given twice, - 200 (100 for each transfer)
+            Assert.Equal(fundsToSend*2 - 200, (ulong)pblocktemplate3.Block.Transactions[2].Outputs[1].Value);
         }
 
 

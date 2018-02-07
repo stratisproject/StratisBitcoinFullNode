@@ -132,18 +132,19 @@ namespace Stratis.SmartContracts
             if (transfers.Any())
             {
                 // need to get the current vin for contract and the tx being executed
-                List<StoredVin> vins = new List<StoredVin>
+                List<StoredVin> vins = new List<StoredVin>();
+                StoredVin existingVin = this.state.GetVin(this.scTransaction.To);
+                if (existingVin != null)
+                    vins.Add(existingVin);
+                if (this.scTransaction.Value > 0)
                 {
-                    new StoredVin
+                    vins.Add(new StoredVin
                     {
                         Hash = this.scTransaction.Hash,
                         Nvout = this.scTransaction.Nvout,
                         Value = this.scTransaction.Value
-                    }
-                };
-                StoredVin existingVin = this.state.GetVin(this.scTransaction.To);
-                if (existingVin != null)
-                    vins.Add(existingVin);
+                    });
+                }
                 
 
                 CondensingTx condensingTx = new CondensingTx(this.scTransaction, transfers, vins, this.stateTrack);
