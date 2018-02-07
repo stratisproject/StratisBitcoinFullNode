@@ -74,6 +74,7 @@ namespace Stratis.SmartContracts.ContractValidation
         {
             var validators = new List<IMethodDefinitionValidator>
             {
+                new ReferencedMethodReturnTypeValidator(),
                 new MethodFlagValidator(),
                 new MethodAllowedTypeValidator(),
                 new GetHashCodeValidator(),
