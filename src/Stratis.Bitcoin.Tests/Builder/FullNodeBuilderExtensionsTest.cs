@@ -43,9 +43,10 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseDefaultNodeSettingsConfiguresNodeBuilderWithDefaultSettings()
         {
-            var nodeSettings = new NodeSettings(args: new string[] { "-testnet" });
+            var nodeSettings = new NodeSettings(loadConfiguration:false);
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
+            nodeSettings.LoadConfiguration();
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
