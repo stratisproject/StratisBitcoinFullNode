@@ -488,5 +488,94 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
         }
+
+        [Fact]
+        public async Task TestNoTransferTestAsync()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+
+            Transaction tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
+
+            var contractTransaction = new SmartContractTransaction
+            {
+                VmVersion = 1,
+                GasLimit = 500,
+                GasPrice = 1,
+                ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"),
+                OpCodeType = OpcodeType.OP_CREATECONTRACT
+            };
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.ToBytes())));
+
+            uint256 hashTx = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
+            Assert.NotNull(context.state.GetCode(newContractAddress));
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            context.mempool.Clear();
+
+            var transferTransaction = new SmartContractTransaction
+            {
+                VmVersion = 1,
+                GasLimit = 500,
+                GasPrice = 1,
+                To = newContractAddress,
+                OpCodeType = OpcodeType.OP_CALLCONTRACT,
+                MethodName = "Test2"
+            };
+
+            tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
+
+            ulong fundsToSend = 5000000000L - 10000;
+
+            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.ToBytes())));
+
+            uint256 hashTx2 = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            BlockTemplate pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
+            Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            // There is 1 input to the condensing transaction: the previous callcontract transaction
+            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs);
+            var hashOfContractCallTx = pblocktemplate2.Block.Transactions[1].GetHash();
+            Assert.Equal(hashOfContractCallTx, pblocktemplate2.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            // First txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[0].Value);
+            // Second txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[1].Value);
+            // Third txout should be the change to the contract, with a value of the input - 200
+            Assert.Equal(fundsToSend - 200, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[2].Value);
+
+            context.mempool.Clear();
+
+            transferTransaction = new SmartContractTransaction
+            {
+                VmVersion = 1,
+                GasLimit = 500,
+                GasPrice = 1,
+                To = newContractAddress,
+                OpCodeType = OpcodeType.OP_CALLCONTRACT,
+                MethodName = "DoNothing"
+            };
+
+            tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            tx.AddOutput(new TxOut(new Money(0), new Script(transferTransaction.ToBytes())));
+
+            uint256 hashTx3 = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx3, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            // In this case we are sending 0, and doing no transfers, so we don't need a condensing transaction
+            Assert.Equal(2, pblocktemplate3.Block.Transactions.Count);
+        }
     }
 }

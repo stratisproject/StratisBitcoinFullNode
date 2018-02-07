@@ -27,8 +27,9 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         {
             SetupBalances();
 
-            // create inputs from stored vins
             Transaction tx = new Transaction();
+
+            // create inputs from stored vins - Possibly 1 from previous vin and possibly 1 if this transaction has value
             ulong vinTotal = 0;
             foreach(StoredVin vin in this.unspents)
             {
@@ -37,40 +38,13 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
                 vinTotal += vin.Value;
             }
 
-            ulong sendTotal = 0;
-
-            foreach(KeyValuePair<uint160, ulong> b in this.txBalances)
+            foreach(TxOut txOut in GetOutputs())
             {
-                //create txout from each balance
-                Script script;
-
-                AccountState a = this.state.GetAccountState(b.Key);
-                if (a != null)
-                {
-                    SmartContractTransaction newScTransaction = new SmartContractTransaction
-                    {
-                        To = b.Key,
-                        OpCodeType = OpcodeType.OP_CALLCONTRACT,
-                        MethodName = ""
-                    };
-                    script = new Script(newScTransaction.ToBytes());
-                }
-                else
-                {
-                    script = new Script(
-                            OpcodeType.OP_DUP,
-                            OpcodeType.OP_HASH160,
-                            Op.GetPushOp(b.Key.ToBytes()),
-                            OpcodeType.OP_EQUALVERIFY,
-                            OpcodeType.OP_CHECKSIG
-                        );
-                }
-                tx.AddOutput(new TxOut(new Money(b.Value), script));
-                sendTotal += b.Value;
+                tx.Outputs.Add(txOut);
             }
 
-            // create 'change' transaction for contract
-            ulong changeValue = vinTotal - sendTotal;
+            // create 'change' txOut for contract
+            ulong changeValue = vinTotal - tx.TotalOut;
             SmartContractTransaction newContractScTransaction = new SmartContractTransaction
             {
                 To = this.scTransaction.To,
@@ -87,16 +61,62 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
                 Value = changeValue
             };
 
+            //Update db to reflect new unspent for contract.
             this.state.SetUnspent(this.scTransaction.To, newContractVin);
 
             return tx;
         }
 
-        public void SetupBalances()
+        private IList<TxOut> GetOutputs()
         {
-            foreach(var transfer in this.transfers)
+            List<TxOut> txOuts = new List<TxOut>();
+
+            foreach (KeyValuePair<uint160, ulong> b in this.txBalances)
             {
-                // This can only come from the contract.
+                Script script = GetTxOutScriptForAddress(b.Key);
+                txOuts.Add(new TxOut(new Money(b.Value), script));
+            }
+            return txOuts;
+        }
+
+        /// <summary>
+        /// Gets the script used to 'send' an address funds, depending on whether it's a contract or non-contract.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        private Script GetTxOutScriptForAddress(uint160 address)
+        {
+            AccountState a = this.state.GetAccountState(address);
+            if (a != null)
+            {
+                // This is meant to be a 'callcontract' with 0 for all parameters - and it should never be executed itself. It exists inside the execution of another contract.
+                SmartContractTransaction newScTransaction = new SmartContractTransaction
+                {
+                    To = address,
+                    OpCodeType = OpcodeType.OP_CALLCONTRACT,
+                    MethodName = ""
+                };
+                return new Script(newScTransaction.ToBytes());
+            }
+
+            return new Script(
+                        OpcodeType.OP_DUP,
+                        OpcodeType.OP_HASH160,
+                        Op.GetPushOp(address.ToBytes()),
+                        OpcodeType.OP_EQUALVERIFY,
+                        OpcodeType.OP_CHECKSIG
+                    ); 
+        }
+
+
+        /// <summary>
+        /// Note: As of right now, transfers are only coming from the contract. Haven't yet started sending funds all over. 
+        /// Sets up balances to be sent via the outputs of the tx.
+        /// </summary>
+        private void SetupBalances()
+        {
+            foreach(TransferInfo transfer in this.transfers)
+            {
                 if (this.txBalances.ContainsKey(transfer.To))
                     this.txBalances[transfer.To] += transfer.Value;
                 else
