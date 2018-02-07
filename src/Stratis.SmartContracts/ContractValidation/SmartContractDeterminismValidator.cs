@@ -51,7 +51,10 @@ namespace Stratis.SmartContracts.ContractValidation
         private static readonly IEnumerable<IMethodDefinitionValidator> UserDefinedMethodValidators = new List<IMethodDefinitionValidator>
         {
             new ReferencedMethodReturnTypeValidator(),
-            new MethodFlagValidator(),
+            new PInvokeImplFlagValidator(),
+            new UnmanagedFlagValidator(),
+            new InternalFlagValidator(),
+            new NativeMethodFlagValidator(),
             new MethodAllowedTypeValidator(),
             new GetHashCodeValidator(),
             new MethodInstructionValidator()
@@ -59,7 +62,10 @@ namespace Stratis.SmartContracts.ContractValidation
 
         private static readonly IEnumerable<IMethodDefinitionValidator> NonUserMethodValidators = new List<IMethodDefinitionValidator>
         {
-            new MethodFlagValidator(),
+            new PInvokeImplFlagValidator(),
+            new UnmanagedFlagValidator(),
+            new InternalFlagValidator(),
+            new NativeMethodFlagValidator(),
             new MethodAllowedTypeValidator(),
             new GetHashCodeValidator(),
             new MethodInstructionValidator()
