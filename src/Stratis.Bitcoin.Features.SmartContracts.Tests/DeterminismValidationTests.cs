@@ -87,6 +87,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.Valid);
         }
 
+        [Fact]
+        public void ValidateAnonymousClassesDisallowed()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new
+            {
+                Test = ""Stratis""
+            };").Replace(ReplaceReferencesString, "");
+
+            var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
+            Assert.False(result.Valid);
+        }
+
         #endregion
 
         #region AppDomain
