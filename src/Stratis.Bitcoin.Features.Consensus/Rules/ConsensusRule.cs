@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -10,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
     /// <summary>
-    /// An abstract rule for allowing to write consensus rules.
+    /// An abstract rule for implementing consensus rules.
     /// </summary>
     public abstract class ConsensusRule
     {
@@ -43,23 +42,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// </summary>
     public class ConsensusRuleDescriptor
     {
-        private readonly ValidationRule validationRule;
+        /// <summary>
+        /// A special validation attribute that will be used by the engine to determine if validation
+        /// whether this rules is a validation rule.
+        /// </summary>
+        private readonly ValidationRuleAttribute validationRuleAttribute;
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
         public ConsensusRuleDescriptor(ConsensusRule rule)
         {
             this.Rule = rule;
             this.Attributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 
-            this.validationRule = this.Attributes.OfType<ValidationRule>().FirstOrDefault();
+            this.validationRuleAttribute = this.Attributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
         }
 
-        public bool CanSkipValidation => this.validationRule?.CanSkipValidation ?? true;
+        /// <summary>Rules that are strictly validation can be skipped unless the <see cref="ValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
+        public bool CanSkipValidation => this.validationRuleAttribute?.CanSkipValidation ?? true;
 
+        /// <summary>The rule represented by this descriptor.</summary>
         public ConsensusRule Rule { get; }
 
+        /// <summary>The collection of <see cref="RuleAttribute"/> that are attached to this rule.</summary>
         public List<RuleAttribute> Attributes { get; }
     }
 
+    /// <summary>
+    /// An attribute that can be attached to a <see cref="ConsensusRule"/>.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public abstract class RuleAttribute : Attribute
     {
@@ -73,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// State in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.
     /// This will allow to ability to run validation checks on blocks (during mining for example) without change the underline store.
     /// </remarks>
-    public class ValidationRule : RuleAttribute
+    public class ValidationRuleAttribute : RuleAttribute
     {
         /// <summary>A flag that specifies the rule can be skipped when the <see cref="RuleContext.SkipValidation"/> is set.</summary>
         public bool CanSkipValidation { get; set; }
@@ -82,7 +94,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// <summary>
     /// Whether the rule is manipulating the consensus state, making changes to the store.
     /// </summary>
-    public class ExecutionRule : RuleAttribute
+    public class ExecutionRuleAttribute : RuleAttribute
+    {
+    }
+
+    /// <summary>
+    /// Whether the rule is manipulating the consensus state, making changes to the store.
+    /// </summary>
+    public class MempoolRuleAttribute : RuleAttribute
     {
     }
 

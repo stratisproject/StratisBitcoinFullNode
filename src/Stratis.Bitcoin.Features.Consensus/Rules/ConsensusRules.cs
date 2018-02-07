@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             {
                 var rule = consensusRule.Value;
 
-                if (rule.Attributes.Count == 0 || rule.Attributes.OfType<ValidationRule>().Any())
+                if (rule.Attributes.Count == 0 || rule.Attributes.OfType<ValidationRuleAttribute>().Any())
                 {
                     await rule.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
