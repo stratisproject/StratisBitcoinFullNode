@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -452,8 +451,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
                 }
 
-                // Check the block header is correct.
-                this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
 
                 if (!context.SkipValidation)
