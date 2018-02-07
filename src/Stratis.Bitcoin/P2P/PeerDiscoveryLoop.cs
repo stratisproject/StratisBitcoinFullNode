@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// See <see cref="DiscoverPeers"/>
         /// </summary>
-        private Task DiscoverPeersAsync()
+        private async Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<IPEndPoint>();
             peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.Endpoint));
@@ -120,17 +120,12 @@ namespace Stratis.Bitcoin.P2P
 
                 peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
                 if (peersToDiscover.Count == 0)
-                    return Task.CompletedTask;
+                    return;
             }
-
-            Parallel.ForEach(peersToDiscover, new ParallelOptions()
+            
+            await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
-                MaxDegreeOfParallelism = 2,
-                CancellationToken = this.nodeLifetime.ApplicationStopping,
-            },
-            async endPoint =>
-            {
-                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
+                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
                     this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
 
@@ -163,9 +158,7 @@ namespace Stratis.Bitcoin.P2P
                         networkPeer?.Dispose("Discovery job done");
                     }
                 }
-            });
-
-            return Task.CompletedTask;
+            }).ConfigureAwait(false);
         }
 
         /// <summary>
