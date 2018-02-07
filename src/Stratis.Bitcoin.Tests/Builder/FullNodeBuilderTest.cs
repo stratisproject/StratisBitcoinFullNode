@@ -119,12 +119,6 @@ namespace Stratis.Bitcoin.Tests.Builder
                 e.AddFeature<DummyFeature>();
             });
 
-            this.fullNodeBuilder.ConfigureServiceProvider(e =>
-            {
-                var settings = e.GetService<NodeSettings>();
-                settings.Agent = "abc";
-            });
-
             var result = this.fullNodeBuilder.Build();
 
             Assert.NotNull(result);
@@ -148,12 +142,6 @@ namespace Stratis.Bitcoin.Tests.Builder
             this.fullNodeBuilder.ConfigureFeature(e =>
             {
                 e.AddFeature<DummyFeature>();
-            });
-
-            this.fullNodeBuilder.ConfigureServiceProvider(e =>
-            {
-                var settings = e.GetService<NodeSettings>();
-                settings.Agent = "abc";
             });
 
             var result = this.fullNodeBuilder.Build();
