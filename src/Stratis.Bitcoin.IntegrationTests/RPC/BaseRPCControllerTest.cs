@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <returns>Interface to the newly built node.</returns>
         public IFullNode BuildServicedNode(string dir)
         {
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
+            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseConsensus()
