@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Utilities
     public static class ParallelAsync
     {
         /// <summary>
-        /// Executes a foreach operation on an IEnumerable in which iterations run in parallel.
+        /// Executes a foreach operation on an IEnumerable in which iterations run asynchronously.
         /// </summary>
         /// <typeparam name="TSource">Item type.</typeparam>
         /// <param name="collection">Enumerated collection.</param>
