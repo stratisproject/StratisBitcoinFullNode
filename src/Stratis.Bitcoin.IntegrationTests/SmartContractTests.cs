@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 
                 DBreezeEngine engine = new DBreezeEngine("C:/data");
-                DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+                DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState1");
                 byteStore.Empty();
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
                 byte[] root = null;

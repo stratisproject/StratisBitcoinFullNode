@@ -87,7 +87,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
                 Value = changeValue
             };
 
-            this.state.SetVin(this.scTransaction.To, newContractVin);
+            this.state.SetUnspent(this.scTransaction.To, newContractVin);
 
             return tx;
         }

@@ -132,7 +132,7 @@ namespace Stratis.SmartContracts
             if (transfers.Any() || this.scTransaction.Value > 0)
             {
                 List<StoredVin> vins = new List<StoredVin>();
-                StoredVin existingVin = this.state.GetVin(this.scTransaction.To);
+                StoredVin existingVin = this.state.GetUnspent(this.scTransaction.To);
                 if (existingVin != null)
                     vins.Add(existingVin);
                 if (this.scTransaction.Value > 0)

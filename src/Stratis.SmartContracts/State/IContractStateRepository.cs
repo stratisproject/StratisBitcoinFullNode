@@ -21,12 +21,13 @@ namespace Stratis.SmartContracts.State
         void Rollback();
         void SyncToRoot(byte[] root);
         byte[] GetRoot();
-        IContractStateRepository GetSnapshotTo(byte[] stateRoot, byte[] utxoRoot = null);
+        IContractStateRepository GetSnapshotTo(byte[] stateRoot);
 
         #region Account Abstraction Layer
         void TransferBalance(uint160 from, uint160 to, ulong value);
-        StoredVin GetVin(uint160 address);
-        void SetVin(uint160 address, StoredVin vin);
+        StoredVin GetUnspent(uint160 address);
+        void SetUnspent(uint160 address, StoredVin vin);
+        byte[] GetUnspentHash(uint160 address);
         IList<TransferInfo> GetTransfers();
         #endregion
     }

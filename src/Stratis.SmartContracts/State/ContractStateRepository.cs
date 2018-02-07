@@ -19,11 +19,6 @@ namespace Stratis.SmartContracts.State
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         protected List<TransferInfo> transfers;
 
-
-        //protected ISource<byte[], byte[]> dbUTXO; //KV store containing all values 
-        //protected Dictionary<uint160, StoredVin> cacheUTXO;
-        //protected ITrie<byte[]> stateUTXO;
-
         protected ContractStateRepository() { }
 
         public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
@@ -121,9 +116,9 @@ namespace Stratis.SmartContracts.State
             return ret;
         }
 
-        public virtual IContractStateRepository GetSnapshotTo(byte[] stateRoot, byte[] utxoRoot = null)
+        public virtual IContractStateRepository GetSnapshotTo(byte[] stateRoot)
         {
-            return this.parent.GetSnapshotTo(stateRoot, utxoRoot);
+            return this.parent.GetSnapshotTo(stateRoot);
         }
 
         public virtual void Commit()
@@ -174,13 +169,28 @@ namespace Stratis.SmartContracts.State
             return this.transfers;
         }
 
-        public StoredVin GetVin(uint160 address)
+        public byte[] GetUnspentHash(uint160 addr)
         {
-            return this.vinCache.Get(address.ToBytes());
+            AccountState accountState = GetAccountState(addr);
+            if (accountState == null || accountState.UnspentHash == null)
+                return new byte[0]; // TODO: REPLACE THIS BYTE0 with something
+
+            return accountState.UnspentHash;
         }
 
-        public void SetVin(uint160 address, StoredVin vin)
+        public StoredVin GetUnspent(uint160 address)
         {
+            byte[] unspentHash = GetUnspentHash(address);
+            return this.vinCache.Get(unspentHash);
+        }
+
+        public void SetUnspent(uint160 address, StoredVin vin)
+        {
+            byte[] vinHash = HashHelper.Keccak256(vin.ToBytes());
+            this.vinCache.Put(vinHash, vin);
+            AccountState accountState = GetOrCreateAccountState(address);
+            accountState.UnspentHash = vinHash;
+            this.accountStateCache.Put(address.ToBytes(), accountState);
             this.vinCache.Put(address.ToBytes(), vin);
         }
 
