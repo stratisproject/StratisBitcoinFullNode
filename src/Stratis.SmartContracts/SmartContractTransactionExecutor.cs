@@ -93,14 +93,7 @@ namespace Stratis.SmartContracts
                 return result;
             }
 
-            // To start with, no value transfers on create.
-
-            //IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
-            //if (transfers.Any())
-            //{
-            //    CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction, this.state);
-            //    result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
-            //}
+            // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
             this.stateTrack.SetCode(contractAddress, adjustedCodeBytes);
             this.stateTrack.Commit();
@@ -128,10 +121,16 @@ namespace Stratis.SmartContracts
                 ContractTypeName = decomp.ContractType.Name
             });
 
-            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
-            if (transfers.Any())
+            if (result.Revert)
             {
-                // need to get the current vin for contract and the tx being executed
+                this.stateTrack.Rollback();
+                return result;
+            }
+
+            // We need to append a condensing transaction to the block here if funds are moved.
+            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
+            if (transfers.Any() || this.scTransaction.Value > 0)
+            {
                 List<StoredVin> vins = new List<StoredVin>();
                 StoredVin existingVin = this.state.GetVin(this.scTransaction.To);
                 if (existingVin != null)
@@ -145,8 +144,6 @@ namespace Stratis.SmartContracts
                         Value = this.scTransaction.Value
                     });
                 }
-                
-
                 CondensingTx condensingTx = new CondensingTx(this.scTransaction, transfers, vins, this.stateTrack);
                 result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
