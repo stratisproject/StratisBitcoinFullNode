@@ -48,6 +48,23 @@ namespace Stratis.SmartContracts.ContractValidation
             typeof(CompiledSmartContract).FullName
         };
 
+        private static readonly IEnumerable<IMethodDefinitionValidator> UserDefinedMethodValidators = new List<IMethodDefinitionValidator>
+        {
+            new ReferencedMethodReturnTypeValidator(),
+            new MethodFlagValidator(),
+            new MethodAllowedTypeValidator(),
+            new GetHashCodeValidator(),
+            new MethodInstructionValidator()
+        };
+
+        private static readonly IEnumerable<IMethodDefinitionValidator> NonUserMethodValidators = new List<IMethodDefinitionValidator>
+        {
+            new MethodFlagValidator(),
+            new MethodAllowedTypeValidator(),
+            new GetHashCodeValidator(),
+            new MethodInstructionValidator()
+        };
+
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<SmartContractValidationError>();
@@ -72,16 +89,7 @@ namespace Stratis.SmartContracts.ContractValidation
 
         private static IEnumerable<SmartContractValidationError> ValidateUserDefinedMethod(MethodDefinition method)
         {
-            var validators = new List<IMethodDefinitionValidator>
-            {
-                new ReferencedMethodReturnTypeValidator(),
-                new MethodFlagValidator(),
-                new MethodAllowedTypeValidator(),
-                new GetHashCodeValidator(),
-                new MethodInstructionValidator()
-            };
-
-            return ValidateWith(validators, method);
+            return ValidateWith(UserDefinedMethodValidators, method);
         }
 
         private static void GetMethods(MethodDefinition methodDefinition, IDictionary<string, MethodDefinition> visitedMethods)
@@ -113,15 +121,7 @@ namespace Stratis.SmartContracts.ContractValidation
 
         private static IEnumerable<SmartContractValidationError> ValidateNonUserMethod(MethodDefinition method)
         {
-            var validators = new List<IMethodDefinitionValidator>
-            {
-                new MethodFlagValidator(),
-                new MethodAllowedTypeValidator(),
-                new GetHashCodeValidator(),
-                new MethodInstructionValidator()
-            };
-
-            return ValidateWith(validators, method);
+            return ValidateWith(NonUserMethodValidators, method);
         }
 
         private static IEnumerable<SmartContractValidationError> ValidateWith(IEnumerable<IMethodDefinitionValidator> validators, MethodDefinition method)
