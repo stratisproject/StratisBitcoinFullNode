@@ -73,27 +73,34 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            // Find out if we need to run on testnet or regtest from the config file.
-            if (this.ConfigurationFile != null)
+            // If the network is not known then derive it from the command line arguments
+            if (this.Network == null)
             {
-                AssertConfigFileExists(this.ConfigurationFile);
-                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
-                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+                var regTest = false;
+                var testNet = false;
+
+                // Find out if we need to run on testnet or regtest from the config file.
+                if (this.ConfigurationFile != null)
+                {
+                    AssertConfigFileExists(this.ConfigurationFile);
+                    var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+                    testNet = configTemp.GetOrDefault<bool>("testnet", false);
+                    regTest = configTemp.GetOrDefault<bool>("regtest", false);
+                }
+
+                // Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
+                if (this.LoadArgs.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
+                    testNet = true;
+
+                // Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
+                if (this.LoadArgs.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
+                    regTest = true;
+
+                if (testNet && regTest)
+                    throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
+
+                this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
             }
-
-            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
-            if (this.LoadArgs.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
-                this.Testnet = true;
-
-            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
-            if (this.LoadArgs.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
-                this.RegTest = true;
-
-            if (this.Testnet && this.RegTest)
-                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
-
-            this.Network = this.GetNetwork();
 
             // Load configuration from .ctor?
             if (loadConfiguration)
@@ -117,12 +124,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Path to the data directory.</summary>
         public string DataDir { get; set; }
-
-        /// <summary><c>true</c> if the node should run on testnet.</summary>
-        public bool Testnet { get; set; }
-
-        /// <summary><c>true</c> if the node should run in regtest mode.</summary>
-        public bool RegTest { get; set; }
 
         /// <summary>Path to the configuration file.</summary>
         public string ConfigurationFile { get; set; }
@@ -218,7 +219,7 @@ namespace Stratis.Bitcoin.Configuration
             this.Logger.LogDebug("Data directory set to '{0}'.", this.DataDir);
             this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
 
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
             this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
@@ -308,20 +309,6 @@ namespace Stratis.Bitcoin.Configuration
                 File.WriteAllText(configFilePath, builder.ToString());
             }
             return configFilePath;
-        }
-
-        /// <summary>
-        /// Obtains the network to run on using the current settings.
-        /// </summary>
-        /// <returns>Specification of the network.</returns>
-        public Network GetNetwork()
-        {
-            if (this.Network != null)
-                return this.Network;
-
-            return this.Testnet ? Network.TestNet :
-                this.RegTest ? Network.RegTest :
-                Network.Main;
         }
 
         /// <summary>
