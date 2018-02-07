@@ -72,5 +72,25 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
+
+
+        [Fact]
+        public async void ForEachAsync_CanBeCancelled_Async()
+        {
+            var tokenSource = new CancellationTokenSource();
+
+            int itemsProcessed = 0;
+
+            await this.testCollection.ForEachAsync(1, tokenSource.Token, async (item, cancellation) =>
+            {
+                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
+                itemsProcessed++;
+
+                if (itemsProcessed == 3)
+                    tokenSource.Cancel();
+            }).ConfigureAwait(false);
+            
+            Assert.Equal(3, itemsProcessed);
+        }
     }
 }

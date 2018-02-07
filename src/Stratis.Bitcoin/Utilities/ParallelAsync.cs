@@ -33,7 +33,8 @@ namespace Stratis.Bitcoin.Utilities
                         unfinished.Remove(toRemove);
                 }
 
-                unfinished.Add(action(item, cancellationToken));
+                if (!cancellationToken.IsCancellationRequested)
+                    unfinished.Add(action(item, cancellationToken));
             }
 
             await Task.WhenAll(unfinished).ConfigureAwait(false);
