@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="maxDegreeOfParallelism">The maximum amount of items that can be processed simultaneously.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="action">Action that is used for processing each item in the collection.</param>
-        public static async Task ForEachAsync<TSource>(this IEnumerable<TSource> collection, int maxDegreeOfParallelism, CancellationToken cancellationToken, Func<TSource, Task> action)
+        public static async Task ForEachAsync<TSource>(this IEnumerable<TSource> collection, int maxDegreeOfParallelism, CancellationToken cancellationToken, Func<TSource, CancellationToken, Task> action)
         {
             var unfinished = new List<Task>();
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Utilities
                         unfinished.Remove(toRemove);
                 }
 
-                unfinished.Add(action(item));
+                unfinished.Add(action(item, cancellationToken));
             }
 
             await Task.WhenAll(unfinished).ConfigureAwait(false);

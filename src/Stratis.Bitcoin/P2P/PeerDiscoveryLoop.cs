@@ -123,9 +123,9 @@ namespace Stratis.Bitcoin.P2P
                     return;
             }
             
-            await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async endPoint =>
+            await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
-                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
+                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
                     this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
 

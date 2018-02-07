@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Stopwatch watch = Stopwatch.StartNew();
 
-            await this.testCollection.ForEachAsync(2, CancellationToken.None, async item =>
+            await this.testCollection.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
             {
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
                 sum += item;
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Stopwatch watch = Stopwatch.StartNew();
 
-            await this.testCollection.ForEachAsync(this.testCollection.Count, CancellationToken.None, async item =>
+            await this.testCollection.ForEachAsync(this.testCollection.Count, CancellationToken.None, async (item, cancellation) =>
             {
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
                 sum += item;
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var emptyList = new List<int>();
 
-            await emptyList.ForEachAsync(2, CancellationToken.None, async item =>
+            await emptyList.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
             {
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
