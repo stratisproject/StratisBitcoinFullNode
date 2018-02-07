@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
 
-                        if (fullNodeBuilder.NodeSettings.Testnet)
+                        if (fullNodeBuilder.Network.IsTest())
                         {
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;

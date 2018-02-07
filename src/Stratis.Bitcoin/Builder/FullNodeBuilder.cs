@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Builder
             : this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
         {
             this.NodeSettings = nodeSettings ?? NodeSettings.Default();
-            this.Network = this.NodeSettings.GetNetwork();
+            this.Network = this.NodeSettings.Network;
 
             this.ConfigureServices(service =>
             {

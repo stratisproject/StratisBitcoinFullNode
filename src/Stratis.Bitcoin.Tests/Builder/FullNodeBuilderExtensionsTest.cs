@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(NodeSettings.Default().ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
             Assert.Equal(NodeSettings.Default().DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
-            Assert.Equal(NodeSettings.Default().GetNetwork(), this.fullNodeBuilder.Network);
+            Assert.Equal(NodeSettings.Default().Network, this.fullNodeBuilder.Network);
             Assert.Single(this.serviceCollectionDelegates);
         }
 
@@ -46,7 +46,6 @@ namespace Stratis.Bitcoin.Tests.Builder
             var nodeSettings = NodeSettings.Default();
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
-            nodeSettings.Testnet = true;
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
@@ -61,7 +60,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsUsingTestNetConfiguresNodeBuilderWithTestnetSettings()
         {
-            NodeSettings nodeSettings = new NodeSettings(args:new string[] { "-testnet" });
+            NodeSettings nodeSettings = NodeSettings.Default(Network.TestNet);
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
 
@@ -78,7 +77,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsUsingRegTestNetConfiguresNodeBuilderWithRegTestNet()
         {
-            NodeSettings nodeSettings = new NodeSettings(args:new string[] { "-regtest" });
+            NodeSettings nodeSettings = NodeSettings.Default(Network.RegTest);
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
 
