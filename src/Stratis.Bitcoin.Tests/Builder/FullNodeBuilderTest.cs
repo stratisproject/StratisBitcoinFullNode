@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             this.fullNodeBuilder.ConfigureServiceProvider(e =>
             {
                 var settings = e.GetService<NodeSettings>();
-                settings.Testnet = true;
+                settings.Agent = "abc";
             });
 
             var result = this.fullNodeBuilder.Build();
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             {
                 e.AddSingleton(nodeSettings);
                 e.AddSingleton(nodeSettings.LoggerFactory);
-                e.AddSingleton(nodeSettings.GetNetwork());
+                e.AddSingleton(nodeSettings.Network);
                 e.AddSingleton<FullNode>();
             });
 
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             this.fullNodeBuilder.ConfigureServiceProvider(e =>
             {
                 var settings = e.GetService<NodeSettings>();
-                settings.Testnet = true;
+                settings.Agent = "abc";
             });
 
             var result = this.fullNodeBuilder.Build();
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 this.fullNodeBuilder.ConfigureServices(e =>
                 {
                     e.AddSingleton<NodeSettings>();
-                    e.AddSingleton<Network>(NodeSettings.Default().GetNetwork());
+                    e.AddSingleton<Network>(NodeSettings.Default().Network);
                 });
 
                 this.fullNodeBuilder.Build();
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 {
                     e.AddSingleton(nodeSettings);
                     e.AddSingleton(nodeSettings.LoggerFactory);
-                    e.AddSingleton(nodeSettings.GetNetwork());
+                    e.AddSingleton(nodeSettings.Network);
                     e.AddSingleton<FullNode>();
                 });
 
