@@ -15,8 +15,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         public ParallelAsyncTest()
         {
-            this.testCollection = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8 };
-            this.itemProcessingDelayMs = 200;
+            this.testCollection = new List<int>();
+            for (int i=0; i < 100; ++i)
+                this.testCollection.Add(i);
+
+            this.itemProcessingDelayMs = 50;
 
             this.testCollectionSum = 0;
 
@@ -29,11 +32,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             int sum = 0;
 
-            var delayTask = new Task(async () => { await Task.Delay(this.testCollection.Count * this.itemProcessingDelayMs / 2).ConfigureAwait(false); });
+            var delayTask = new Task(async () => { await Task.Delay(this.testCollection.Count * this.itemProcessingDelayMs).ConfigureAwait(false); });
 
             await this.testCollection.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
             {
-                sum += item;
+                Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
@@ -50,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             
             await this.testCollection.ForEachAsync(this.testCollection.Count, CancellationToken.None, async (item, cancellation) =>
             {
-                sum += item;
+                Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
@@ -79,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await this.testCollection.ForEachAsync(1, tokenSource.Token, async (item, cancellation) =>
             {
-                itemsProcessed++;
+                Interlocked.Increment(ref itemsProcessed);
 
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
 
