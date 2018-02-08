@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using NBitcoin;
@@ -41,6 +42,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     [Payload("version")]
     public class VersionPayload : Payload, IBitcoinSerializable
     {
+        private const int MaxSubversionLength = 256;
+
         private static string userAgent;
 
         private uint version;
@@ -163,6 +166,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
             set
             {
+                if (value.Length > MaxSubversionLength)
+                    value = value.Substring(0, MaxSubversionLength); 
+
                 this.user_agent = new VarString(Encoders.ASCII.DecodeData(value));
             }
         }

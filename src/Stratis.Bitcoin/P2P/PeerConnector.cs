@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.P2P
 
             this.ConnectedPeers.Add(peer);
 
-            if (this.ConnectedPeers.Count >= this.BurstModeTargetConnections)
+            if (this.asyncLoop != null && this.ConnectedPeers.Count >= this.BurstModeTargetConnections)
                 this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
         }
 
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.P2P
         {
             this.ConnectedPeers.Remove(peer, reason);
 
-            if (this.ConnectedPeers.Count < this.BurstModeTargetConnections)
+            if (this.asyncLoop != null && this.ConnectedPeers.Count < this.BurstModeTargetConnections)
                 this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
         }
 

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Builder
         {
             var nodeBuilder = builder as FullNodeBuilder;
             nodeBuilder.NodeSettings = nodeSettings;
-            nodeBuilder.Network = nodeSettings.GetNetwork();
+            nodeBuilder.Network = nodeSettings.Network;
 
             builder.ConfigureServices(service =>
             {

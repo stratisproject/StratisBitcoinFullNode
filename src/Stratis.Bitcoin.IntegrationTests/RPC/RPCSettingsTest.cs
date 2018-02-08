@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Block.BlockSignature = false;
                 var dir = CreateTestDir(this);
 
-                NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
+                NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" });
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)

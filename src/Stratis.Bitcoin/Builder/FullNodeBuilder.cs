@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Builder
             : this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
         {
             this.NodeSettings = nodeSettings ?? NodeSettings.Default();
-            this.Network = this.NodeSettings.GetNetwork();
+            this.Network = this.NodeSettings.Network;
 
             this.ConfigureServices(service =>
             {
@@ -156,6 +156,8 @@ namespace Stratis.Bitcoin.Builder
             if (this.fullNodeBuilt)
                 throw new InvalidOperationException("full node already built");
             this.fullNodeBuilt = true;
+
+            this.NodeSettings?.LoadConfiguration();
 
             this.Services = this.BuildServices();
 
