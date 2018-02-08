@@ -104,7 +104,7 @@ namespace NBitcoin.Policy
     public class FeeTooLowPolicyError : TransactionPolicyError
     {
         public FeeTooLowPolicyError(Money fees, Money min)
-            : base("Fee too low, actual is " + fees.ToString() + ", policy minimum is " + min.ToString())
+            : base($"Fee of {fees} is too low. The policy minimum is {min}.")
         {
             _ExpectedMinFee = min;
             _Fee = fees;

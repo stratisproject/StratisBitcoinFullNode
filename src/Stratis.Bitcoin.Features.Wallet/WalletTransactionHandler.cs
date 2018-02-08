@@ -62,9 +62,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (!context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
             {
-                this.logger.LogError($"Build transaction failed: {string.Join(" - ", errors.Select(s => s.ToString()))}");
-
-                throw new WalletException("Could not build a transaction, please make sure you entered the correct data.");
+                string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
+                this.logger.LogError($"Build transaction failed: {errorsMessage}");
+                throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
             }
 
             return context.Transaction;
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new WalletException("No amount specified.");
 
             if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
-                throw new NotImplementedException("Subtracting the fee from the recipient is not supported yet.");
+                throw new NotImplementedException("Substracting the fee from the recipient is not supported yet.");
 
             foreach (var recipient in context.Recipients)
                 context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
