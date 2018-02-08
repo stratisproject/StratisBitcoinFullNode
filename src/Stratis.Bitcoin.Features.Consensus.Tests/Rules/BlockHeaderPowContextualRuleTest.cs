@@ -17,10 +17,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public async Task CheckHeaderBits_ValidationFailAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
-            
-            var context = new RuleContext(new BlockValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
+
+            RuleContext context = new RuleContext(new BlockValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
             context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
             context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
@@ -36,10 +36,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
+            RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
             context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
             context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
@@ -55,10 +55,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
+            RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
             context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
             context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());

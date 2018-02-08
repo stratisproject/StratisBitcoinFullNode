@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// Factory for creating the test chain.
     /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
     /// </summary>
-    internal class TestRulesContextFactory
+    internal static class TestRulesContextFactory
     {
         /// <summary>
         /// Creates test chain with a consensus loop.

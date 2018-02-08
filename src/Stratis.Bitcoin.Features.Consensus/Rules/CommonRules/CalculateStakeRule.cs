@@ -5,7 +5,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Checks if <see cref="Block"/> has a valid PoS header.
+    /// Checks if <see cref="Block"/> has a valid PoS header and calculate the next block difficulty.
     /// </summary>
     [ValidationRule(CanSkipValidation = false)]
     public class CalculateStakeRule : PosConsensusRule
