@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private Money refundSender = 0;
         private List<TxOut> refundOutputs = new List<TxOut>();
-        
+
         private readonly IContractStateRepository stateRoot;
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
@@ -29,11 +28,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
-            Network network, 
-            MempoolSchedulerLock mempoolLock, 
-            ITxMempool mempool, 
-            IDateTimeProvider dateTimeProvider, 
-            ChainedBlock chainTip, 
+            Network network,
+            MempoolSchedulerLock mempoolLock,
+            ITxMempool mempool,
+            IDateTimeProvider dateTimeProvider,
+            ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             IContractStateRepository stateRoot,
             SmartContractDecompiler decompiler,
@@ -85,28 +84,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             return this.pblocktemplate;
         }
 
-        protected override void AddToBlock(TxMempoolEntry iter)
+        protected override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
             // get contract txout - there is only allowed to be 1 per transaction 
-            TxOut contractTxOut = iter.Transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            TxOut contractTxOut = mempoolEntry.Transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
 
             // boring transaction, handle normally
             if (contractTxOut == null)
             {
-                base.AddToBlock(iter);
+                base.AddToBlock(mempoolEntry);
                 return;
             }
 
-            SmartContractTransaction scTransaction = new SmartContractTransaction(contractTxOut, iter.Transaction);
-            AddContractCallToBlock(iter, scTransaction);
+            SmartContractCarrier scTransaction = SmartContractCarrier.Deserialize(mempoolEntry.Transaction.GetHash(), contractTxOut.ScriptPubKey, contractTxOut.Value);
+            AddContractCallToBlock(mempoolEntry, scTransaction);
         }
 
-        private void AddContractCallToBlock(TxMempoolEntry iter, SmartContractTransaction scTransaction)
+        private void AddContractCallToBlock(TxMempoolEntry iter, SmartContractCarrier scTransaction)
         {
             IContractStateRepository track = this.stateRoot.StartTracking();
             ulong height = Convert.ToUInt64(this.height);// TODO: Optimise so this conversion isn't happening every time.
             ulong difficulty = 0; // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty);
+            var exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty);
 
             ulong gasToSpend = scTransaction.TotalGas;
             SmartContractExecutionResult result = exec.Execute();
@@ -135,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.inBlock.Add(iter);
 
             // Add internal transactions made during execution
-            foreach(Transaction transaction in result.InternalTransactions)
+            foreach (Transaction transaction in result.InternalTransactions)
             {
                 this.pblock.AddTransaction(transaction);
                 if (this.needSizeAccounting)
@@ -151,7 +150,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 Op.GetPushOp(scTransaction.From.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
-            ); 
+            );
             this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
     }

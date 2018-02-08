@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
-using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
@@ -19,15 +18,15 @@ namespace Stratis.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
-        private readonly SmartContractTransaction scTransaction;
+        private readonly SmartContractCarrier scTransaction;
         private readonly ulong blockNum;
         private readonly ulong difficulty;
 
-        public SmartContractTransactionExecutor(IContractStateRepository state, 
+        public SmartContractTransactionExecutor(IContractStateRepository state,
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
             SmartContractGasInjector smartContractGasInjector,
-            SmartContractTransaction scTransaction,
+            SmartContractCarrier scTransaction,
             ulong blockNum,
             ulong difficulty)
         {
@@ -51,7 +50,7 @@ namespace Stratis.SmartContracts
         {
             uint160 contractAddress = this.scTransaction.GetNewContractAddress(); // TODO: GET ACTUAL NUM
             this.state.CreateAccount(0);
-            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(this.scTransaction.ContractCode);
+            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(this.scTransaction.ContractExecutionCode);
             SmartContractValidationResult validationResult = this.validator.ValidateContract(decomp);
 
             if (!validationResult.Valid)
@@ -73,10 +72,10 @@ namespace Stratis.SmartContracts
                 BlockNumber = blockNum,
                 Difficulty = difficulty,
                 CallerAddress = 100, // TODO: FIX THIS
-                CallValue = this.scTransaction.Value,
+                CallValue = this.scTransaction.TxOutValue,
                 GasLimit = this.scTransaction.GasLimit,
                 GasPrice = this.scTransaction.GasPrice,
-                Parameters = this.scTransaction.Parameters ?? new object[0],
+                Parameters = this.scTransaction.MethodParameters ?? new object[0],
                 CoinbaseAddress = 0, //TODO: FIX THIS
                 ContractAddress = contractAddress,
                 ContractMethod = initMethod?.Name, // probably better ways of doing this
@@ -113,10 +112,10 @@ namespace Stratis.SmartContracts
                 BlockNumber = Convert.ToUInt64(this.blockNum),
                 Difficulty = Convert.ToUInt64(this.difficulty),
                 CallerAddress = 0, // TODO: FIX THIS
-                CallValue = this.scTransaction.Value,
+                CallValue = this.scTransaction.TxOutValue,
                 GasLimit = this.scTransaction.GasLimit,
                 GasPrice = this.scTransaction.GasPrice,
-                Parameters = this.scTransaction.Parameters ?? new object[0],
+                Parameters = this.scTransaction.MethodParameters ?? new object[0],
                 CoinbaseAddress = 0, //TODO: FIX THIS
                 ContractAddress = this.scTransaction.To,
                 ContractMethod = this.scTransaction.MethodName,

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -261,27 +260,23 @@ namespace Stratis.Bitcoin.IntegrationTests
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
 
-            var contractTransaction = new SmartContractTransaction
-            {
-                VmVersion = 1,
-                GasLimit = 500,
-                GasPrice = 1,
-                ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"),
-                OpCodeType = OpcodeType.OP_CREATECONTRACT
-            };
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.ToBytes())));
+            var smartContractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"), 1, 500);
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrier.Serialize())));
 
             // This tx has a low fee: 1000 satoshis
             uint256 hashParentTx = tx.GetHash();
             context.mempool.AddUnchecked(hashParentTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-            uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
+
+            var blockTemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(blockTemplate.Block.Header);
+
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = blockTemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx.GetHash(), tx.Outputs[0].ScriptPubKey, tx.Outputs[0].Value).GetNewContractAddress();
             var ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             Assert.Equal(ownerFromStorage, new uint160(100).ToBytes());
             Assert.NotNull(context.state.GetCode(newContractAddress));
-            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+            Assert.True(blockTemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
 
         [Fact]
@@ -295,40 +290,25 @@ namespace Stratis.Bitcoin.IntegrationTests
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
 
-            var contractTransaction = new SmartContractTransaction
-            {
-                VmVersion = 1,
-                GasLimit = 500,
-                GasPrice = 1,
-                ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"),
-                OpCodeType = OpcodeType.OP_CREATECONTRACT
-            };
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.ToBytes())));
+            var contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.Serialize())));
 
             uint256 hashTx = tx.GetHash();
             context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-            uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx.GetHash(), tx.Outputs[0].ScriptPubKey, tx.Outputs[0].Value).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
 
-            var transferTransaction = new SmartContractTransaction
-            {
-                VmVersion = 1,
-                GasLimit = 500,
-                GasPrice = 1,
-                To = newContractAddress,
-                OpCodeType = OpcodeType.OP_CALLCONTRACT,
-                MethodName = "Test"
-            };
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", string.Empty, 1, 500);
 
             Transaction tx2 = new Transaction();
             tx2.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx2.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction.ToBytes())));
+            tx2.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction.Serialize())));
 
             uint256 hashTx2 = tx2.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx2));
@@ -338,19 +318,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            var transferTransaction2 = new SmartContractTransaction
-            {
-                VmVersion = 1,
-                GasLimit = 500,
-                GasPrice = 1,
-                To = newContractAddress,
-                OpCodeType = OpcodeType.OP_CALLCONTRACT,
-                MethodName = "Test"
-            };
+            var transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress, "Test", string.Empty, 1, 500);
 
             Transaction tx3 = new Transaction();
             tx3.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx3.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction2.ToBytes())));
+            tx3.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(transferTransaction2.Serialize())));
 
             uint256 hashTx3 = tx3.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx3));

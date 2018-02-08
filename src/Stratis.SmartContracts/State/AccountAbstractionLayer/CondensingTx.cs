@@ -7,11 +7,11 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
     public class CondensingTx
     {
         private IList<TransferInfo> transfers;
-        private SmartContractTransaction transaction;
+        private SmartContractCarrier transaction;
         private Dictionary<uint160, Tuple<ulong, ulong>> plusMinusInfo;
         private Dictionary<uint160, ulong> balances;
 
-        public CondensingTx(IList<TransferInfo> transfers, SmartContractTransaction transaction)
+        public CondensingTx(IList<TransferInfo> transfers, SmartContractCarrier transaction)
         {
             this.transfers = transfers;
             this.transaction = transaction;
@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         private TxIn CreateInput(TransferInfo transfer)
         {
             // for now we use the hash and nvout from the transaction but in the future this will have to be changed to get it from somewhere real
-            OutPoint outpoint = new OutPoint(this.transaction.Hash, this.transaction.Nvout);
+            OutPoint outpoint = new OutPoint(this.transaction.TransactionHash, this.transaction.Nvout);
             return new TxIn(outpoint, new Script(OpcodeType.OP_SPEND));
         }
 

@@ -1,8 +1,6 @@
-﻿using Stratis.SmartContracts.State;
-using System;
+﻿using System;
 using System.Reflection;
-using System.Linq;
-using Stratis.SmartContracts.ContractValidation;
+using Stratis.SmartContracts.State;
 
 namespace Stratis.SmartContracts.Backend
 {

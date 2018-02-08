@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Mono.Cecil;
-using Mono.Cecil.Rocks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
@@ -14,7 +11,6 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -177,9 +173,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
             IContractStateRepository track = this.stateRoot.StartTracking();
-            var scTransaction = new SmartContractTransaction(contractTxOut, transaction);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty);
-            SmartContractExecutionResult result = exec.Execute();
+
+            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction.GetHash(), contractTxOut.ScriptPubKey, contractTxOut.Value);
+            var smartContractExecutor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty);
+
+            SmartContractExecutionResult result = smartContractExecutor.Execute();
             track.Commit();
         }
     }
