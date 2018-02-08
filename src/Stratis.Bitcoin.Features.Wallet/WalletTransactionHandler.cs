@@ -333,8 +333,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddFee(TransactionBuildContext context)
         {
-            var feeRate = context.OverrideFeeRate ?? this.walletFeePolicy.GetFeeRate(context.FeeType.ToConfirmations());
-            var fee = context.TransactionBuilder.EstimateFees(feeRate);
+            Money fee;
+
+            // If the fee hasn't been set manually, calculate it based on the fee type that was chosen.
+            if (context.TransactionFee == null)
+            {
+                FeeRate feeRate = context.OverrideFeeRate ?? this.walletFeePolicy.GetFeeRate(context.FeeType.ToConfirmations());
+                fee = context.TransactionBuilder.EstimateFees(feeRate);
+            }
+            else
+            {
+                fee = context.TransactionFee;
+            }
+
             context.TransactionBuilder.SendFees(fee);
             context.TransactionFee = fee;
         }
