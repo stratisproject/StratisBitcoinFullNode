@@ -79,8 +79,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await this.testCollection.ForEachAsync(1, tokenSource.Token, async (item, cancellation) =>
             {
-                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
                 itemsProcessed++;
+
+                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
 
                 if (itemsProcessed == 3)
                     tokenSource.Cancel();
