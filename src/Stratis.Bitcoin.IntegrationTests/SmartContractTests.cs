@@ -164,7 +164,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     UseCheckpoints = this.useCheckpoints
                 };
 
-
                 DBreezeEngine engine = new DBreezeEngine("C:/data");
                 DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState1");
                 byteStore.Empty();
@@ -178,7 +177,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                             new SmartContractDeterminismValidator()
                         });
                 this.gasInjector = new SmartContractGasInjector();
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, this.decompiler, this.validator, this.gasInjector);
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, this.decompiler, this.validator, this.gasInjector);
+
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
 
                 var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
@@ -252,6 +252,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Tests creation of a simple token contract
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task TestTokenContractCreateAsync()
         {
@@ -285,6 +289,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
 
+        /// <summary>
+        /// Test that contracts correctly send funds to one person
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task TestTransfersAsync()
         {
@@ -385,6 +393,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.mempool.Clear();
         }
 
+        /// <summary>
+        /// Test that contract correctly send funds to 2 people inside one contract call
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task TestMultipleTransfersAsync()
         {
@@ -489,6 +501,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.mempool.Clear();
         }
 
+        /// <summary>
+        /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task TestNoTransferTestAsync()
         {

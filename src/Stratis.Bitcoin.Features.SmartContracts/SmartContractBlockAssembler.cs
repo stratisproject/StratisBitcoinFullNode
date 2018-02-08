@@ -15,6 +15,7 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -105,7 +106,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             SmartContractTransaction scTransaction = new SmartContractTransaction(contractTxOut, iter.Transaction);
-            scTransaction.Sender = GetSenderAddress(iter.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+            scTransaction.Sender = GetSenderUtil.GetSender(iter.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             AddContractCallToBlock(iter, scTransaction);
         }
 
@@ -162,43 +163,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ); 
             this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
-
-        private uint160 GetSenderAddress(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
-        {
-            Script script = null;
-            bool scriptFilled = false;
-
-            if (blockTxs != null & blockTxs.Count > 0)
-            {
-                foreach(Transaction btx in blockTxs)
-                {
-                    if (btx.GetHash() == tx.Inputs[0].PrevOut.Hash)
-                    {
-                        script = btx.Outputs[tx.Inputs[0].PrevOut.N].ScriptPubKey;
-                        scriptFilled = true;
-                        break;
-                    }
-                }
-            }
-            if (!scriptFilled && coinView != null)
-            {
-                FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { tx.Inputs[0].PrevOut.Hash }).Result;
-                script = fetchCoinResult.UnspentOutputs.FirstOrDefault().Outputs[0].ScriptPubKey;
-                scriptFilled = true;
-            }
-
-            if (new PayToPubkeyTemplate().CheckScriptPubKey(script))
-            {
-                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
-            }
-
-            if (new PayToPubkeyHashTemplate().CheckScriptPubKey(script))
-            {
-                throw new NotImplementedException();
-            }
-
-            throw new NotImplementedException();   
-        }
-
     }
 }

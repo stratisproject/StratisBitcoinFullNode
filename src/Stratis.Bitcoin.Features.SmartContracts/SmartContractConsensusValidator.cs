@@ -9,12 +9,15 @@ using Mono.Cecil.Rocks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -22,13 +25,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
         private readonly IContractStateRepository stateRoot;
-        SmartContractDecompiler decompiler;
-        SmartContractValidator validator;
-        SmartContractGasInjector gasInjector;
+        private readonly CoinView coinView;
+        private readonly SmartContractDecompiler decompiler;
+        private readonly SmartContractValidator validator;
+        private readonly SmartContractGasInjector gasInjector;
+        private List<Transaction> blockTxsProcessed;
 
         public SmartContractConsensusValidator(
+            CoinView coinView,
             Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
@@ -39,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractGasInjector gasInjector)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
+            this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stateRoot = stateRoot;
             this.decompiler = decompiler;
@@ -49,10 +55,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
         public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
-            
-
             this.logger.LogTrace("()");
-
+            this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.BlockValidationContext.Block;
             ChainedBlock index = context.BlockValidationContext.ChainedBlock;
             DeploymentFlags flags = context.Flags;
@@ -148,6 +152,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 }
 
                 this.UpdateCoinView(context, tx);
+                this.blockTxsProcessed.Add(tx);
             }
 
             if (!context.SkipValidation)
@@ -181,9 +186,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IContractStateRepository track = this.stateRoot.StartTracking();
             var scTransaction = new SmartContractTransaction(contractTxOut, transaction);
 
-            // TODO: Set sender and coinbase here
+            scTransaction.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+            Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
+            uint160 coinbaseAddress = new uint160(coinbaseScriptPubKey.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
 
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty, 0); // TODO: Put coinbase in here
+            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty, coinbaseAddress); // TODO: Put coinbase in here
             SmartContractExecutionResult result = exec.Execute();
             track.Commit();
         }
