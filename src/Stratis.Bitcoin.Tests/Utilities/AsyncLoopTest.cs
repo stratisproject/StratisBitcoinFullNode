@@ -118,13 +118,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
             {
                 iterations++;
 
-                if (iterations == 3)
-                    asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(100);
+                if (iterations == 2)
+                    asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(200);
 
                 return Task.CompletedTask;
             });
 
-            Task loopRun = asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(300)).RunningTask;
+            Task loopRun = asyncLoop.Run(new CancellationTokenSource(5000).Token, TimeSpan.FromMilliseconds(1000)).RunningTask;
             
             await loopRun;
 
