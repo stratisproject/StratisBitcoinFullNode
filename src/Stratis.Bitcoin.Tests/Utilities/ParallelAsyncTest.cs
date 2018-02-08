@@ -29,17 +29,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             int sum = 0;
 
-            Stopwatch watch = Stopwatch.StartNew();
+            var delayTask = new Task(async () => { await Task.Delay(this.testCollection.Count * this.itemProcessingDelayMs / 2).ConfigureAwait(false); });
 
             await this.testCollection.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
             {
-                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
                 sum += item;
+                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
-            watch.Stop();
-
-            Assert.True(watch.Elapsed.TotalMilliseconds < this.testCollection.Count * this.itemProcessingDelayMs);
+            Assert.False(delayTask.IsCompleted);
             Assert.Equal(this.testCollectionSum, sum);
         }
 
@@ -47,18 +45,17 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public async void ForEachAsync_TestDegreeOfParallelism2_Async()
         {
             int sum = 0;
-
-            Stopwatch watch = Stopwatch.StartNew();
-
+            
+            var delayTask = new Task(async () => { await Task.Delay(this.testCollection.Count * this.itemProcessingDelayMs).ConfigureAwait(false); });
+            
             await this.testCollection.ForEachAsync(this.testCollection.Count, CancellationToken.None, async (item, cancellation) =>
             {
-                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
                 sum += item;
+                await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
-            watch.Stop();
-
-            Assert.True(watch.Elapsed.TotalMilliseconds < this.itemProcessingDelayMs * 2);
+            // We expect ForEachAsync task to be finished well before the delay task.
+            Assert.False(delayTask.IsCompleted);
             Assert.Equal(this.testCollectionSum, sum);
         }
 
@@ -72,8 +69,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
-
-
+        
         [Fact]
         public async void ForEachAsync_CanBeCancelled_Async()
         {
