@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
             NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-assumevalid={validHexBlock.ToString()}" });
-            ConsensusSettings settings = new ConsensusSettings(nodeSettings, loggerFactory);
+            ConsensusSettings settings = new ConsensusSettings(nodeSettings, loggerFactory).LoadFromConfig();
             Assert.Equal(validHexBlock, settings.BlockAssumedValid);
         }
 
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
             NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { "-assumevalid=0" });
-            ConsensusSettings settings = new ConsensusSettings(nodeSettings, loggerFactory);
+            ConsensusSettings settings = new ConsensusSettings(nodeSettings, loggerFactory).LoadFromConfig();
             Assert.Null(settings.BlockAssumedValid);
         }
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LoggerFactory loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
             NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { "-assumevalid=xxx" });
-            Assert.Throws<ConfigurationException>(() => new ConsensusSettings(nodeSettings, loggerFactory));
+            Assert.Throws<ConfigurationException>(() => new ConsensusSettings(nodeSettings, loggerFactory).LoadFromConfig());
         }
 
         [Fact]
@@ -43,19 +43,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LoggerFactory loggerFactory = new LoggerFactory();
 
             Network network = Network.StratisMain;
-            ConsensusSettings settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory);
+            ConsensusSettings settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory).LoadFromConfig();
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
             network = Network.StratisTest;
-            settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory);
+            settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory).LoadFromConfig();
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
             network = Network.Main;
-            settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory);
+            settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory).LoadFromConfig();
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
             network = Network.TestNet;
-            settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory);
+            settings = new ConsensusSettings(NodeSettings.Default(network), loggerFactory).LoadFromConfig();
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
         }
     }

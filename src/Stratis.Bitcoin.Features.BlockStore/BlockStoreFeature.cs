@@ -83,8 +83,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeSettings = nodeSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
-            storeSettings.Load(nodeSettings);
             this.storeSettings = storeSettings;
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.storeSettings.Load(this.nodeSettings);
         }
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()

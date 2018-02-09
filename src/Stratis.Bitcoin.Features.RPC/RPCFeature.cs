@@ -27,8 +27,13 @@ namespace Stratis.Bitcoin.Features.RPC
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            rpcSettings.Load(nodeSettings);
             this.rpcSettings = rpcSettings;
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.rpcSettings.Load(this.fullNode.NodeService<NodeSettings>());
         }
 
         public override void Initialize()

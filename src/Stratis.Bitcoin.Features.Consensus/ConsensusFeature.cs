@@ -45,6 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly StakeChainStore stakeChain;
 
         private readonly IRuleRegistration ruleRegistration;
+        private readonly ConsensusSettings consensusSettings;
         private readonly IConsensusRules consensusRules;
 
         /// <summary>Instance logger.</summary>
@@ -70,6 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusStats consensusStats,
             IRuleRegistration ruleRegistration,
             IConsensusRules consensusRules,
+            ConsensusSettings consensusSettings,
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
@@ -85,6 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
             this.ruleRegistration = ruleRegistration;
+            this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
             this.chainState.MaxReorgLength = network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
@@ -100,6 +103,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                                      " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                                      this.chainState.ConsensusTip.HashBlock);
             }
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.consensusSettings.LoadFromConfig();
         }
 
         /// <inheritdoc />
