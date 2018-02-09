@@ -42,8 +42,10 @@ namespace NBitcoin
         private uint nonce;
         public uint Nonce { get { return this.nonce; } set { this.nonce = value; } }
 
+        // Added by naughty smart contracts team
         private uint256 hashStateRoot;
         public uint256 HashStateRoot { get { return this.hashStateRoot; } set { this.hashStateRoot = value; } }
+        // End added by naughty smart contracts team
 
         private uint256 hashMerkleRoot;
         public uint256 HashMerkleRoot { get { return this.hashMerkleRoot; } set { this.hashMerkleRoot = value; } }
@@ -89,7 +91,9 @@ namespace NBitcoin
             this.version = CurrentVersion;
             this.hashPrevBlock = 0;
             this.hashMerkleRoot = 0;
+            // Added by naughty smart contracts team
             this.hashStateRoot = 0;
+            // End added by naughty smart contracts team
             this.time = 0;
             this.bits = 0;
             this.nonce = 0;
@@ -97,6 +101,11 @@ namespace NBitcoin
 
         #region IBitcoinSerializable Members
 
+        /// <summary>
+        /// The below is just so this passes the current tests! The ReadWriteNoState is used to get the hash, so that genesis blocks etc. pass.
+        /// Unsure how to approach this on the mainnet - transitioning from no state root to state root.
+        /// </summary>
+        /// <param name="stream"></param>
         public virtual void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.version);
@@ -148,7 +157,9 @@ namespace NBitcoin
             {
                 using (HashStream hs = new HashStream())
                 {
+                    // Changed by naughty smart contracts team
                     this.ReadWriteNoState(new BitcoinStream(hs, true));
+                    // End changed by naughty smart contracts team
                     hash = hs.GetHash();
                 }
             }
