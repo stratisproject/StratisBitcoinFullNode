@@ -13,6 +13,8 @@ namespace Stratis.Bitcoin.P2P.Protocol
 {
     public class Message : IBitcoinSerializable
     {
+        private readonly PayloadProvider payloadProvider;
+
         /// <summary>Size of the "command" part of the message in bytes.</summary>
         public const int CommandSize = 12;
 
@@ -26,7 +28,13 @@ namespace Stratis.Bitcoin.P2P.Protocol
         public uint MessageSize { get; set; }
 
         private uint magic;
+
         public uint Magic { get { return this.magic; } set { this.magic = value; } }
+
+        public Message(PayloadProvider payloadProvider)
+        {
+            this.payloadProvider = payloadProvider;
+        }
 
         private byte[] command = new byte[CommandSize];
         public string Command
@@ -118,7 +126,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                 BitcoinStream payloadStream = new BitcoinStream(payloadBytes);
                 payloadStream.CopyParameters(stream);
 
-                Type payloadType = PayloadAttribute.GetCommandType(this.Command);
+                Type payloadType = this.payloadProvider.GetCommandType(this.Command);
                 bool unknown = payloadType == typeof(UnknowPayload);
                 if (unknown)
                     NodeServerTrace.Trace.TraceEvent(TraceEventType.Warning, 0, "Unknown command received : " + this.Command);
@@ -156,34 +164,34 @@ namespace Stratis.Bitcoin.P2P.Protocol
             return string.Format("{0}: {1}", this.Command, this.Payload);
         }
 
-        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken)
+        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, PayloadProvider payloadProvider)
         {
             PerformanceCounter counter;
-            return ReadNext(socket, network, version, cancellationToken, out counter);
+            return ReadNext(socket, network, version, cancellationToken, payloadProvider, out counter);
         }
 
-        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, out PerformanceCounter counter)
+        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, PayloadProvider payloadProvider, out PerformanceCounter counter)
         {
-            return ReadNext(socket, network, version, cancellationToken, null, out counter);
+            return ReadNext(socket, network, version, cancellationToken, null, payloadProvider, out counter);
         }
-        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, byte[] buffer, out PerformanceCounter counter)
+        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, byte[] buffer, PayloadProvider payloadProvider, out PerformanceCounter counter)
         {
             var stream = new NetworkStream(socket, false);
-            return ReadNext(stream, network, version, cancellationToken, buffer, out counter);
+            return ReadNext(stream, network, version, cancellationToken, buffer, payloadProvider, out counter);
         }
 
-        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken)
+        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, PayloadProvider payloadProvider)
         {
             PerformanceCounter counter;
-            return ReadNext(stream, network, version, cancellationToken, out counter);
+            return ReadNext(stream, network, version, cancellationToken, payloadProvider, out counter);
         }
 
-        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, out PerformanceCounter counter)
+        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, PayloadProvider payloadProvider, out PerformanceCounter counter)
         {
-            return ReadNext(stream, network, version, cancellationToken, null, out counter);
+            return ReadNext(stream, network, version, cancellationToken, null, payloadProvider, out counter);
         }
 
-        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, byte[] buffer, out PerformanceCounter counter)
+        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, byte[] buffer, PayloadProvider payloadProvider, out PerformanceCounter counter)
         {
             BitcoinStream bitStream = new BitcoinStream(stream, false)
             {
@@ -194,7 +202,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             if (!network.ReadMagic(stream, cancellationToken, true))
                 throw new FormatException("Magic incorrect, the message comes from another network");
 
-            Message message = new Message();
+            Message message = new Message(payloadProvider);
             message.buffer = buffer;
             using (message.SkipMagicScope(true))
             {

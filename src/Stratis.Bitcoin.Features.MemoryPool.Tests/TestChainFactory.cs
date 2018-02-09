@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(), dateTimeProvider, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
-            NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory);
+            NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads());
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory);
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);

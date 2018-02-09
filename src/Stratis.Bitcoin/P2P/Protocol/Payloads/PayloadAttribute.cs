@@ -5,19 +5,72 @@ using System.Reflection;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
+    /// <summary>
+    /// An attribute that enables mapping between command names and P2P netowrk types.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public class PayloadAttribute : Attribute
     {
-        private static Dictionary<string, Type> nameToType;
-        private static Dictionary<Type, string> typeToName;
+        /// <summary>
+        /// The command name.
+        /// </summary>
         public string Name { get; set; }
 
-        static PayloadAttribute()
+        /// <summary>
+        /// Initialize a new instance of the object.
+        /// </summary>
+        /// <param name="commandName"></param>
+        public PayloadAttribute(string commandName)
         {
-            nameToType = new Dictionary<string, Type>();
-            typeToName = new Dictionary<Type, string>();
+            this.Name = commandName;
+        }
+    }
 
-            foreach (var pair in GetLoadableTypes(typeof(PayloadAttribute).GetTypeInfo().Assembly)
+    /// <summary>
+    /// A provider that maps <see cref="PayloadAttribute"/> types with <see cref="Message.Command"/>.
+    /// This is used by the P2P code to map and deserialize messages that are received from the tcp network to a concrete type.
+    /// </summary>
+    public class PayloadProvider
+    {
+        /// <summary>
+        /// A mapping between the type and the command name.
+        /// </summary>
+        private readonly Dictionary<string, Type> nameToType;
+
+        /// <summary>
+        /// A mapping between the type and the command name.
+        /// </summary>
+        private readonly Dictionary<Type, string> typeToName;
+
+        /// <summary>
+        /// Initialize a new instance of the object.
+        /// </summary>
+        public PayloadProvider()
+        {
+            this.nameToType = new Dictionary<string, Type>();
+            this.typeToName = new Dictionary<Type, string>();
+        }
+
+        /// <summary>
+        /// Disvoer all payloads from the provided assembly, if no assembly is provided defaults to <see cref="PayloadAttribute"/>.
+        /// </summary>
+        /// <param name="assembly">the assembly to discover from or <see cref="PayloadAttribute"/> if <c>null</c>.</param>
+        public PayloadProvider DiscoverPayloads(Assembly assembly = null)
+        {
+            assembly = assembly ?? typeof(PayloadAttribute).GetTypeInfo().Assembly;
+
+            IEnumerable<TypeInfo> types = null;
+                
+            try
+            {
+                types = assembly.DefinedTypes;
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                types = e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
+            }
+
+            foreach (var pair in types
                 .Where(t => t.Namespace == typeof(PayloadAttribute).Namespace)
                 .Where(t => t.IsDefined(typeof(PayloadAttribute), true))
                 .Select(t =>
@@ -27,49 +80,24 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                         Type = t
                     }))
             {
-                nameToType.Add(pair.Attr.Name, pair.Type.AsType());
-                typeToName.Add(pair.Type.AsType(), pair.Attr.Name);
+                this.nameToType.Add(pair.Attr.Name, pair.Type.AsType());
+                this.typeToName.Add(pair.Type.AsType(), pair.Attr.Name);
             }
+
+            return this;
         }
 
-        public PayloadAttribute(string commandName)
+        public Type GetCommandType(string commandName)
         {
-            this.Name = commandName;
-        }
-
-        private static IEnumerable<TypeInfo> GetLoadableTypes(Assembly assembly)
-        {
-            try
-            {
-                return assembly.DefinedTypes;
-            }
-            catch (ReflectionTypeLoadException e)
-            {
-                return e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
-            }
-        }
-
-        public static string GetCommandName<T>()
-        {
-            return GetCommandName(typeof(T));
-        }
-
-        public static Type GetCommandType(string commandName)
-        {
-            Type result;
-            if (!nameToType.TryGetValue(commandName, out result))
+            if (!this.nameToType.TryGetValue(commandName, out Type result))
                 return typeof(UnknowPayload);
 
             return result;
         }
 
-        internal static string GetCommandName(Type type)
+        public bool IsPayloadRegistered(Type type)
         {
-            string result;
-            if (!typeToName.TryGetValue(type, out result))
-                throw new ArgumentException(type.FullName + " is not a payload");
-
-            return result;
+            return this.typeToName.TryGetValue(type, out string result);
         }
     }
 }

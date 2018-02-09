@@ -7,16 +7,18 @@ namespace Stratis.Bitcoin.P2P.Protocol
 {
     public class IncomingMessage
     {
+        private readonly PayloadProvider payloadProvider;
         public Message Message { get; set; }
         public long Length { get; set; }
 
-        public IncomingMessage()
+        public IncomingMessage(PayloadProvider payloadProvider)
         {
+            this.payloadProvider = payloadProvider;
         }
 
         public IncomingMessage(Payload payload, Network network)
         {
-            this.Message = new Message();
+            this.Message = new Message(this.payloadProvider);
             this.Message.Magic = network.Magic;
             this.Message.Payload = payload;
         }

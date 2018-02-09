@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            this.networkPeerFactory = new NetworkPeerFactory(network, DateTimeProvider.Default, loggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads());
         }
 
         /// <summary>Get stratis full node if possible.</summary>
