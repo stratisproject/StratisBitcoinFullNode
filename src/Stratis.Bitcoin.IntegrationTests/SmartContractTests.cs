@@ -321,6 +321,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             uint160 newContractAddress = new SmartContractTransaction(tx.Outputs.FirstOrDefault(), tx).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
+            var test = context.state.GetUnspent(newContractAddress);
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
@@ -345,6 +346,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashTx2 = tx.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             BlockTemplate pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate2.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -376,6 +379,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashTx3 = tx.GetHash();
             context.mempool.AddUnchecked(hashTx3, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate3.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate3.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
             Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -449,6 +454,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashTx2 = tx.GetHash();
             context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             BlockTemplate pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate2.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -482,6 +489,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashTx3 = tx.GetHash();
             context.mempool.AddUnchecked(hashTx3, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate3.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate3.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+
             Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
             Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -502,7 +512,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds
+        /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds.
+        /// TODO: Add consensusvalidator calls
         /// </summary>
         /// <returns></returns>
         [Fact]

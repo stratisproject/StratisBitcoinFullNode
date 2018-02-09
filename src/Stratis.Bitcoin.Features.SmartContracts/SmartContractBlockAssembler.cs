@@ -90,7 +90,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.UpdateHeaders();
             this.TestBlockValidity();
 
+            this.stateRoot.Commit();
+
             return this.pblocktemplate;
+        }
+
+        protected override void UpdateHeaders()
+        {
+            base.UpdateHeaders();
+            this.pblock.Header.HashStateRoot = new uint256(this.stateRoot.GetRoot());
         }
 
         protected override void AddToBlock(TxMempoolEntry iter)
