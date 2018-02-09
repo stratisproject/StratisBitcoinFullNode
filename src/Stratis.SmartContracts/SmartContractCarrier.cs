@@ -43,7 +43,13 @@ namespace Stratis.SmartContracts
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
         public object[] MethodParameters
         {
-            get { return this.methodParameters.Split('|'); }
+            get
+            {
+                if (string.IsNullOrEmpty(this.methodParameters))
+                    return new object[] { };
+
+                return this.methodParameters.Split('|');
+            }
         }
 
         /// <summary>Specifies the smart contract operation to be done.</summary>
@@ -97,6 +103,16 @@ namespace Stratis.SmartContracts
             return carrier;
         }
 
+        public static SmartContractCarrier CreateContract(uint vmVersion, byte[] contractExecutionCode, string methodParameters, ulong gasPrice, ulong gasLimit)
+        {
+            // TODO: Add null/valid checks for 
+            // methodParameters
+
+            var carrier = CreateContract(vmVersion, contractExecutionCode, gasPrice, gasLimit);
+            carrier.methodParameters = methodParameters;
+            return carrier;
+        }
+
         public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, string methodParameters, ulong gasPrice, ulong gasLimit)
         {
             // TODO: Add null/valid checks for 
@@ -133,12 +149,12 @@ namespace Stratis.SmartContracts
             {
                 smartContractCarrier.To = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 smartContractCarrier.MethodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                smartContractCarrier.methodParameters = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
             }
 
             if (smartContractCarrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
                 smartContractCarrier.ContractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
+            smartContractCarrier.methodParameters = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.GasPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.GasLimit = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.TransactionHash = transactionHash;
@@ -154,16 +170,16 @@ namespace Stratis.SmartContracts
             takeLength = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(intLength).ToArray(), 0);
             byteCursor += intLength;
 
+            if (takeLength == 0)
+                return default(T);
+
             object result = null;
+
+            if (typeof(T) == typeof(bool))
+                result = BitConverter.ToBoolean(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
 
             if (typeof(T) == typeof(byte[]))
                 result = smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray();
-
-            if (typeof(T) == typeof(ulong))
-                result = BitConverter.ToUInt64(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(uint160))
-                result = new uint160(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
 
             if (typeof(T) == typeof(short))
                 result = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
@@ -173,6 +189,12 @@ namespace Stratis.SmartContracts
 
             if (typeof(T) == typeof(uint))
                 result = BitConverter.ToUInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
+
+            if (typeof(T) == typeof(uint160))
+                result = new uint160(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
+
+            if (typeof(T) == typeof(ulong))
+                result = BitConverter.ToUInt64(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
 
             byteCursor += takeLength;
 
@@ -192,11 +214,15 @@ namespace Stratis.SmartContracts
             {
                 bytes.AddRange(PrefixLength(this.To.ToBytes()));
                 bytes.AddRange(PrefixLength(Encoding.UTF8.GetBytes(this.MethodName)));
-                bytes.AddRange(PrefixLength(Encoding.UTF8.GetBytes(this.methodParameters)));
             }
 
             if (this.OpCodeType == OpcodeType.OP_CREATECONTRACT)
                 bytes.AddRange(PrefixLength(this.ContractExecutionCode));
+
+            if (!string.IsNullOrEmpty(this.methodParameters))
+                bytes.AddRange(PrefixLength(Encoding.UTF8.GetBytes(this.methodParameters)));
+            else
+                bytes.AddRange(BitConverter.GetBytes(0));
 
             bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasPrice)));
             bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasLimit)));
@@ -229,5 +255,19 @@ namespace Stratis.SmartContracts
         //    return 100;
         //    throw new NotImplementedException(); // TODO: Full node dev?
         //}
+    }
+
+    public enum SmartContractCarrierDataType
+    {
+        Bool,
+        Byte,
+        Char,
+        ByteArray,
+        SByte,
+        Short,
+        String,
+        UInt,
+        UInt160,
+        ULong
     }
 }
