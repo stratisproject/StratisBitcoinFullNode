@@ -52,95 +52,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 this.logger.LogTrace("(-)[NOT_FOUND]:{0}", StepResult.Next);
                 return StepResult.Next;
             }
-
-            if (disposeMode)
+            
+            // In case of IBD do not save every single block- persist them in batches.
+            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold &&
+                !disposeMode && this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
             {
-                StepResult lres = await this.ProcessWhenDisposingAsync(context);
-                this.logger.LogTrace("(-)[DISPOSE]:{0}", lres);
-                return lres;
+                return StepResult.Stop;
             }
 
-            if (this.BlockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
-            {
-                StepResult lres = await this.ProcessWhenInIBDAsync(context);
-                this.logger.LogTrace("(-)[IBD]:{0}", lres);
-                return lres;
-            }
-
-            StepResult res = await this.ProcessWhenNotInIBDAsync(context);
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
-        /// <summary>
-        /// When the node disposes, process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
-        /// its empty
-        /// </summary>
-        private async Task<StepResult> ProcessWhenDisposingAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
-
-            while (this.BlockStoreLoop.PendingStorage.Count > 0)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
-                if (result == StepResult.Stop)
-                    break;
-            }
-
-            if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync(context);
-
-            this.logger.LogTrace("(-):{0}", StepResult.Stop);
-            return StepResult.Stop;
-        }
-
-        /// <summary>
-        /// When the node is in IBD wait for <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
-        /// a stop condition is found, the blocks will be pushed to the repository in batches of size <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/>.
-        /// </summary>
-        private async Task<StepResult> ProcessWhenInIBDAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(context.NextChainedBlock), context.NextChainedBlock, nameof(this.BlockStoreLoop.PendingStorage), nameof(this.BlockStoreLoop.PendingStorage.Count), this.BlockStoreLoop.PendingStorage.Count);
-
-            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
-                return StepResult.Continue;
-
-            while (context.CancellationToken.IsCancellationRequested == false)
+            while (!context.CancellationToken.IsCancellationRequested)
             {
                 StepResult result = this.PrepareNextBlockFromPendingStorage(context);
                 if (result == StepResult.Stop)
                     break;
 
                 if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
-                    await this.PushBlocksToRepositoryAsync(context);
+                    await this.PushBlocksToRepositoryAsync(context).ConfigureAwait(false);
             }
 
             if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync(context);
+                await this.PushBlocksToRepositoryAsync(context).ConfigureAwait(false);
 
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
-            return StepResult.Continue;
-        }
-
-        /// <summary>
-        /// When the node is NOT in IBD, process and push the blocks in <see cref="BlockStoreLoop.PendingStorage"/> immediately
-        /// to the block repository without checking batch size.
-        /// </summary>
-        private async Task<StepResult> ProcessWhenNotInIBDAsync(ProcessPendingStorageContext context)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
-
-            while (context.CancellationToken.IsCancellationRequested == false)
-            {
-                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
-                if (result == StepResult.Stop)
-                    break;
-            }
-
-            if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepositoryAsync(context);
-
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
         }
 

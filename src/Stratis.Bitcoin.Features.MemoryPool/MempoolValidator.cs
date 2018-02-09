@@ -543,6 +543,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (context.Transaction.IsCoinBase)
                 context.State.Fail(MempoolErrors.Coinbase).Throw();
 
+            // Coinstake is only valid in a block, not as a loose transaction
+            // TODO: mempool needs to have seprate checks for POW/POS as part of the change to rules.
+            if (context.Transaction.IsCoinStake)
+                context.State.Fail(MempoolErrors.Coinstake).Throw();
+
             // TODO: Implement Witness Code
             // Bitcoin Ref: https://github.com/bitcoin/bitcoin/blob/ea729d55b4dbd17a53ced474a8457d4759cfb5a5/src/validation.cpp#L463-L467
             //// Reject transactions with witness before segregated witness activates (override with -prematurewitness)

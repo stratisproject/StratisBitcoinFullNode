@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
@@ -42,7 +41,7 @@ namespace Stratis.Bitcoin.P2P
             // Add the endpoints from the -connect arg to the address manager
             foreach (var ipEndpoint in this.ConnectionSettings.Connect)
             {
-                this.peerAddressManager.AddPeer(new NetworkAddress(ipEndpoint.MapToIpv6()), IPAddress.Loopback);
+                this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
             }
         }
 
@@ -69,7 +68,7 @@ namespace Stratis.Bitcoin.P2P
                     return;
 
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.EndPoint))
+                if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
                     await ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }

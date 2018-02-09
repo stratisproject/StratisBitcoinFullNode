@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -108,12 +108,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }
 
-        private async void AttachedNode_MessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -121,16 +121,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
             }
-            catch (OperationCanceledException opx)
+            catch (OperationCanceledException)
             {
-                if (!opx.CancellationToken.IsCancellationRequested)
-                    if (peer.IsConnected)
-                    {
-                        this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
-                        throw;
-                    }
-
-                // do nothing
+                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
+                return;
             }
             catch (Exception ex)
             {
@@ -141,7 +135,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private async Task ProcessMessageAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -171,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     break;
 
                 case SendCmpctPayload sendCmpctPayload:
-                    await this.ProcessSendCmpctPayload(peer, sendCmpctPayload).ConfigureAwait(false);
+                    await this.ProcessSendCmpctPayloadAsync(peer, sendCmpctPayload).ConfigureAwait(false);
                     break;
 
                 case SendHeadersPayload sendHeadersPayload:
@@ -187,7 +181,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="peer">Peer that sent the message.</param>
         /// <param name="getBlocksPayload">Payload of "getblocks" message to process.</param>
-        private async Task ProcessGetBlocksAsync(NetworkPeer peer, GetBlocksPayload getBlocksPayload)
+        private async Task ProcessGetBlocksAsync(INetworkPeer peer, GetBlocksPayload getBlocksPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
 
@@ -299,13 +293,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private Task ProcessSendCmpctPayload(NetworkPeer peer, SendCmpctPayload sendCmpct)
+        private Task ProcessSendCmpctPayloadAsync(INetworkPeer peer, SendCmpctPayload sendCmpct)
         {
             // TODO: announce using compact blocks
             return Task.CompletedTask;
         }
 
-        private async Task ProcessGetDataAsync(NetworkPeer peer, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
 
@@ -347,7 +341,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private async Task SendAsBlockInventoryAsync(NetworkPeer peer, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventoryAsync(INetworkPeer peer, IEnumerable<uint256> blocks)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
@@ -377,7 +371,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            NetworkPeer peer = this.AttachedPeer;
+            INetworkPeer peer = this.AttachedPeer;
             if (peer == null)
             {
                 this.logger.LogTrace("(-)[NO_PEER]");
@@ -393,91 +387,99 @@ namespace Stratis.Bitcoin.Features.BlockStore
             var headers = new List<BlockHeader>();
             var inventoryBlockToSend = new List<uint256>();
 
-            var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
-            ChainedBlock bestIndex = null;
-            if (!revertToInv)
+            try
             {
-                bool foundStartingHeader = false;
-                // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
-
-                foreach (ChainedBlock chainedBlock in blocksToAnnounce)
+                var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
+                ChainedBlock bestIndex = null;
+                if (!revertToInv)
                 {
-                    bestIndex = chainedBlock;
+                    bool foundStartingHeader = false;
+                    // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
 
-                    if (!foundStartingHeader)
+                    foreach (ChainedBlock chainedBlock in blocksToAnnounce)
                     {
-                        this.logger.LogTrace("Checking is the peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock);
+                        bestIndex = chainedBlock;
 
-                        // Peer doesn't have a block at the height of our block and with the same hash?
-                        if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock) != null)
+                        if (!foundStartingHeader)
                         {
-                            this.logger.LogTrace("Peer '{0}' already has header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
-                            continue;
+                            this.logger.LogTrace("Checking is the peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock);
+
+                            // Peer doesn't have a block at the height of our block and with the same hash?
+                            if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock) != null)
+                            {
+                                this.logger.LogTrace("Peer '{0}' already has header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
+                                continue;
+                            }
+
+                            // Peer doesn't have a block at the height of our block.Previous and with the same hash?
+                            if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock.Previous) == null)
+                            {
+                                // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
+                                this.logger.LogTrace("Neither the header nor its previous header found for peer '{0}', reverting to 'inv'.", peer.RemoteSocketEndpoint);
+                                revertToInv = true;
+                                break;
+                            }
+
+                            this.logger.LogTrace("Peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
+                            foundStartingHeader = true;
                         }
 
-                        // Peer doesn't have a block at the height of our block.Previous and with the same hash?
-                        if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedBlock.Previous) == null)
-                        {
-                            // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
-                            this.logger.LogTrace("Neither the header nor its previous header found for peer '{0}', reverting to 'inv'.", peer.RemoteSocketEndpoint);
-                            revertToInv = true;
-                            break;
-                        }
-
-                        this.logger.LogTrace("Peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedBlock.Previous);
-                        foundStartingHeader = true;
+                        // If we reached here then it means that we've found starting header.
+                        headers.Add(chainedBlock.Header);
                     }
-
-                    // If we reached here then it means that we've found starting header.
-                    headers.Add(chainedBlock.Header);
                 }
-            }
 
-            if (!revertToInv && headers.Any())
-            {
-                if ((headers.Count == 1) && this.preferHeaderAndIDs)
+                if (!revertToInv && headers.Any())
                 {
-                    // TODO:
+                    if ((headers.Count == 1) && this.preferHeaderAndIDs)
+                    {
+                        // TODO:
+                    }
+                    else if (this.PreferHeaders)
+                    {
+                        if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
+                        else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
+
+                        chainBehavior.SetPendingTip(bestIndex);
+                        await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
+                        this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
+                        return;
+                    }
+                    else
+                    {
+                        revertToInv = true;
+                    }
                 }
-                else if (this.PreferHeaders)
-                {
-                    if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
-                    else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
-                    chainBehavior.SetPendingTip(bestIndex);
-                    await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
-                    this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
+                if (revertToInv)
+                {
+                    // If falling back to using an inv, just try to inv the tip.
+                    // The last entry in 'blocksToAnnounce' was our tip at some point in the past.
+
+                    if (blocksToAnnounce.Any())
+                    {
+                        ChainedBlock chainedBlock = blocksToAnnounce.Last();
+                        if (chainedBlock != null)
+                        {
+                            if ((chainBehavior.PendingTip == null) || (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null))
+                            {
+                                inventoryBlockToSend.Add(chainedBlock.HashBlock);
+                                this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedBlock.HashBlock, peer.RemoteSocketEndpoint);
+                            }
+                        }
+                    }
+                }
+
+                if (inventoryBlockToSend.Any())
+                {
+                    await this.SendAsBlockInventoryAsync(peer, inventoryBlockToSend).ConfigureAwait(false);
+                    this.logger.LogTrace("(-)[SEND_INVENTORY]");
                     return;
                 }
-                else
-                {
-                    revertToInv = true;
-                }
             }
-
-            if (revertToInv)
+            catch (OperationCanceledException)
             {
-                // If falling back to using an inv, just try to inv the tip.
-                // The last entry in 'blocksToAnnounce' was our tip at some point in the past.
-
-                if (blocksToAnnounce.Any())
-                {
-                    ChainedBlock chainedBlock = blocksToAnnounce.Last();
-                    if (chainedBlock != null)
-                    {
-                        if ((chainBehavior.PendingTip == null) || (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null))
-                        {
-                            inventoryBlockToSend.Add(chainedBlock.HashBlock);
-                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedBlock.HashBlock, peer.RemoteSocketEndpoint);
-                        }
-                    }
-                }
-            }
-
-            if (inventoryBlockToSend.Any())
-            {
-                await this.SendAsBlockInventoryAsync(peer, inventoryBlockToSend).ConfigureAwait(false);
-                this.logger.LogTrace("(-)[SEND_INVENTORY]");
+                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                 return;
             }
 

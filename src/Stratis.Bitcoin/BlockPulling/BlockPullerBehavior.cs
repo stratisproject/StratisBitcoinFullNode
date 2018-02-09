@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -101,25 +103,25 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Event handler that is called when the attached node receives a network message.
+        /// Event handler that is called when a message is received from the attached peer.
         /// <para>
         /// This handler modifies internal state when an information about a block is received.
         /// </para>
         /// </summary>
-        /// <param name="node">Node that received the message.</param>
+        /// <param name="peer">Peer that sent us the message.</param>
         /// <param name="message">Received message.</param>
-        private void Node_MessageReceived(NetworkPeer node, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            message.Message.IfPayloadIs<BlockPayload>((block) =>
+            if (message.Message.Payload is BlockPayload block)
             {
                 // There are two pullers for each peer connection and each is having its own puller behavior.
                 // Both these behaviors get notification from the node when it receives a message,
                 // even if the origin of the message was from the other puller behavior.
                 // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash(node.Network.NetworkOptions);
+                uint256 blockHash = block.Obj.Header.GetHash(peer.Network.NetworkOptions);
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
                     this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
@@ -132,29 +134,29 @@ namespace Stratis.Bitcoin.BlockPulling
                     {
                         Block = block.Obj,
                         Length = (int)message.Length,
-                        Peer = node.RemoteSocketEndpoint
+                        Peer = peer.RemoteSocketEndpoint
                     };
 
                     if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
                         this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
 
                     // This peer is now available for more work.
-                    this.AssignPendingVector();
+                    await this.AssignPendingVectorAsync().ConfigureAwait(false);
                 }
-            });
+            }
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
         /// If there are any more blocks the node wants to download, this method assigns and starts
-        /// a new download task for a specific peer node that this behavior represents.
+        /// a new download task for a specific peer that this behavior represents.
         /// </summary>
-        internal void AssignPendingVector()
+        private async Task AssignPendingVectorAsync()
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer attachedNode = this.AttachedPeer;
+            INetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
@@ -164,7 +166,14 @@ namespace Stratis.Bitcoin.BlockPulling
             uint256 block = null;
             if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
             {
-                attachedNode.SendMessageVoidAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+                try
+                {
+                    var getDataPayload = new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block));
+                    await attachedNode.SendMessageAsync(getDataPayload).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
             }
 
             this.logger.LogTrace("(-)");
@@ -174,24 +183,34 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Sends a message to the connected peer requesting specific data.
         /// </summary>
         /// <param name="getDataPayload">Specification of the data to download - <see cref="GetDataPayload"/>.</param>
+        /// <returns><c>true</c> if the message was successfully sent to the peer, <c>false</c> if the peer got disconnected.</returns>
         /// <remarks>Caller is responsible to add the puller to the map if necessary.</remarks>
-        internal void StartDownload(GetDataPayload getDataPayload)
+        internal async Task<bool> StartDownloadAsync(GetDataPayload getDataPayload)
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer attachedNode = this.AttachedPeer;
+            INetworkPeer attachedNode = this.AttachedPeer;
             if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
-                this.logger.LogTrace("(-)[ATTACHED_NODE]");
-                return;
+                this.logger.LogTrace("(-)[ATTACHED_PEER]:false");
+                return false;
             }
 
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
-            attachedNode.SendMessageVoidAsync(getDataPayload);
+            try
+            {
+                await attachedNode.SendMessageAsync(getDataPayload).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("(-)[CANCELLED]:false");
+                return false;
+            }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):true");
+            return true;
         }
 
         /// <summary>
@@ -201,9 +220,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived += this.Node_MessageReceived;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.ChainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
-            this.AssignPendingVector();
+            this.AssignPendingVectorAsync().GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
@@ -216,7 +235,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedPeer.MessageReceived -= this.Node_MessageReceived;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");

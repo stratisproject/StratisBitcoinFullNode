@@ -409,9 +409,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 {
                     // If this node was assigned at least one download task, start the task.
                     if (getDataPayload.Inventory.Count > 0)
-                        peerBehavior.StartDownload(getDataPayload);
+                        peerDisconnected = !peerBehavior.StartDownloadAsync(getDataPayload).GetAwaiter().GetResult();
                 }
-                else
+
+                if (peerDisconnected)
                 {
                     // Return blocks that were supposed to be assigned to the disconnected peer back to the pending list.
                     lock (this.lockObject)

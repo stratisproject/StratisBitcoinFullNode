@@ -10,11 +10,24 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Xunit;
+using System;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class WalletTests
+    public class WalletTests : IDisposable
     {
+        private bool initialBlockSignature;
+        public WalletTests()
+        {
+            this.initialBlockSignature = Block.BlockSignature;
+            Block.BlockSignature = false;
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = this.initialBlockSignature;
+        }
+
         [Fact]
         public void WalletCanReceiveAndSendCorrectly()
         {
@@ -85,8 +98,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create())
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode();
-                this.InitializeTestWallet(stratisNodeSync);
                 builder.StartAll();
+
+                // Move a wallet file to the right folder and restart the wallet manager to take it into account.
+                this.InitializeTestWallet(stratisNodeSync.FullNode.DataFolder.WalletPath);
+                var walletManager = stratisNodeSync.FullNode.NodeService<IWalletManager>() as WalletManager;
+                walletManager.Start();
+
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
                 Assert.Equal(10, rpc.GetBlockCount());
@@ -309,6 +327,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 stratisSender.GenerateStratisWithMiner(5);
 
+                TestHelper.TriggerSync(stratisReceiver);
+                TestHelper.TriggerSync(stratisSender);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
             }
@@ -454,10 +474,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>
         /// Copies the test wallet into data folder for node if it isnt' already present.
         /// </summary>
-        /// <param name="node">Core node for the test.</param>
-        private void InitializeTestWallet(CoreNode node)
+        /// <param name="path">The path of the folder to move the wallet to.</param>
+        private void InitializeTestWallet(string path)
         {
-            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);
         }

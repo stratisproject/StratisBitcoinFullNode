@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> triggers waits until the on-enqueue callback (and the consumer task) 
+        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> waits until the on-enqueue callback (and the consumer task) 
         /// are finished before returning to the caller.
         /// </summary>
         [Fact]
@@ -413,5 +413,39 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.ThrowsAsync< InvalidOperationException>(async () => await asyncQueue.DequeueAsync());
         }
 
+        /// <summary>
+        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> can be called from a callback.
+        /// </summary>
+        [Fact]
+        public async void AsyncQueue_CanDisposeFromCallback_Async()
+        {
+            bool firstRun = true;
+            bool shouldBeFalse = false;
+            var asyncQueue = new AsyncQueue<IDisposable>((item, cancellation) =>
+            {
+                if (firstRun)
+                {
+                    item.Dispose();
+                    firstRun = false;
+                }
+                else
+                {
+                    // This should not happen.
+                    shouldBeFalse = true;
+                }
+                return Task.CompletedTask;
+            });
+
+            asyncQueue.Enqueue(asyncQueue);
+
+            // We wait until the queue callback calling consumer is finished.
+            asyncQueue.ConsumerTask.Wait();
+            
+            // Now enqueuing another item should not invoke the callback because the queue should be disposed.
+            asyncQueue.Enqueue(asyncQueue);
+
+            await Task.Delay(500);
+            Assert.False(shouldBeFalse);
+        }
     }
 }

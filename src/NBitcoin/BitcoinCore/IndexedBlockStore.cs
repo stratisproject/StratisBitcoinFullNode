@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
 namespace NBitcoin.BitcoinCore
@@ -27,15 +26,7 @@ namespace NBitcoin.BitcoinCore
 
         public BlockHeader GetHeader(uint256 hash)
         {
-            try
-            {
-                return GetHeaderAsync(hash).Result;
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; //Can't happen
-            }
+            return GetHeaderAsync(hash).GetAwaiter().GetResult();
         }
 
         public async Task<BlockHeader> GetHeaderAsync(uint256 hash)
@@ -51,15 +42,7 @@ namespace NBitcoin.BitcoinCore
 
         public Block Get(uint256 id)
         {
-            try
-            {
-                return GetAsync(id).Result;
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return null; //Can't happen
-            }
+            return GetAsync(id).GetAwaiter().GetResult();
         }
         public Task<Block> GetAsync(uint256 id)
         {

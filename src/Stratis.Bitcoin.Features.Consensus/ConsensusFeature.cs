@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
@@ -173,8 +174,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
-                    services.AddSingleton<IConsensusRules, ConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, CoreConsensusRules>();
+                    services.AddSingleton<IConsensusRules, PowConsensusRules>();
+                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
                 });
             });
 
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
 
-                        if (fullNodeBuilder.NodeSettings.Testnet)
+                        if (fullNodeBuilder.Network.IsTest())
                         {
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;
@@ -209,24 +210,27 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<IConsensusLoop, ConsensusLoop>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
-                        services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                        services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>().AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
-                        services.AddSingleton<IConsensusRules, ConsensusRules>();
-                        services.AddSingleton<IRuleRegistration, CoreConsensusRules>();
+                        services.AddSingleton<IConsensusRules, PosConsensusRules>();
+                        services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });
             });
 
             return fullNodeBuilder;
         }
 
-        public class CoreConsensusRules : IRuleRegistration
+        public class PowConsensusRulesRegistration : IRuleRegistration
         {
             public IEnumerable<ConsensusRule> GetRules()
             {
                 yield return new BlockHeaderRule();
+
+                // rules that are inside the method CheckBlockHeader
+                yield return new CalculateWorkRule();
 
                 // rules that are inside the method ContextualCheckBlockHeader
                 yield return new CheckpointsRule();
@@ -245,5 +249,33 @@ namespace Stratis.Bitcoin.Features.Consensus
                 yield return new CheckSigOpsRule();
             }
         }
+
+        public class PosConsensusRulesRegistration : IRuleRegistration
+        {
+            public IEnumerable<ConsensusRule> GetRules()
+            {
+                yield return new BlockHeaderRule();
+
+                // rules that are inside the method CheckBlockHeader
+                yield return new CalculateStakeRule();
+
+                // rules that are inside the method ContextualCheckBlockHeader
+                yield return new CheckpointsRule();
+                yield return new AssumeValidRule();
+
+                // rules that are inside the method ContextualCheckBlock
+                yield return new Bip113ActivationRule();
+                yield return new Bip34ActivationRule();
+                yield return new WitnessCommitmentsRule();
+                yield return new BlockSizeRule();
+
+                // rules that are inside the method CheckBlock
+                yield return new BlockMerkleRootRule();
+                yield return new EnsureCoinbaseRule();
+                yield return new CheckTransactionRule();
+                yield return new CheckSigOpsRule();
+            }
+        }
+
     }
 }

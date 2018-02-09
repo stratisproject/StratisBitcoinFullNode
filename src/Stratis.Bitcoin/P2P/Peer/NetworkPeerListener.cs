@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly AsyncQueue<IncomingMessage> asyncQueue;
 
         /// <summary>Connected network peer that we receive messages from.</summary>
-        private readonly NetworkPeer peer;
+        private readonly INetworkPeer peer;
 
         /// <summary>Registration to the message producer of the connected peer.</summary>
         private readonly MessageProducerRegistration<IncomingMessage> messageProducerRegistration;
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Initializes the instance of the object and subscribes to the peer's message producer.
         /// </summary>
         /// <param name="peer">Connected network peer that we receive messages from.</param>
-        public NetworkPeerListener(NetworkPeer peer)
+        public NetworkPeerListener(INetworkPeer peer)
         {
             this.asyncQueue = new AsyncQueue<IncomingMessage>();
             this.messageProducerRegistration = peer.MessageProducer.AddMessageListener(this);
@@ -45,10 +45,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <typeparam name="TPayload">Type of payload to wait for.</typeparam>
         /// <param name="cancellationToken">Cancellation token to abort the waiting operation.</param>
         /// <returns>Payload of the specific type received from the peer.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the peer is not connected when the method is called, or when <see cref="Dispose"/> 
+        /// has been called while we are waiting for the message.</exception>
         public async Task<TPayload> ReceivePayloadAsync<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
         {
             if (!this.peer.IsConnected)
-                throw new InvalidOperationException("The peer is not in a connected state");
+                throw new OperationCanceledException("The peer is not in a connected state");
 
             using (CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.peer.Connection.CancellationSource.Token))
             {

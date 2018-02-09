@@ -20,10 +20,24 @@ namespace Stratis.Bitcoin.Utilities
     public class AsyncQueue<T> : IDisposable
     {
         /// <summary>
+        /// Execution context holding information about the current status of the execution
+        /// in order to recognize if <see cref="Dispose"/> was called within the callback method.
+        /// </summary>
+        private class AsyncContext
+        {
+            /// <summary>
+            /// Set to <c>true</c> if <see cref="Dispose"/> was called from within the callback routine,
+            /// set to <c>false</c> otherwise.
+            /// </summary>
+            public bool DisposeRequested { get; set; }
+        }
+
+        /// <summary>
         /// Represents a callback method to be executed when a new item is added to the queue.
         /// </summary>
         /// <param name="item">Newly added item.</param>
         /// <param name="cancellationToken">Cancellation token that the callback method should use for its async operations to avoid blocking the queue during shutdown.</param>
+        /// <remarks>It is allowed to call <see cref="Dispose"/> from the callback method.</remarks>
         public delegate Task OnEnqueueAsync(T item, CancellationToken cancellationToken);
 
         /// <summary>Lock object to protect access to <see cref="items"/>.</summary>
@@ -40,7 +54,8 @@ namespace Stratis.Bitcoin.Utilities
         private readonly OnEnqueueAsync onEnqueueAsync;
 
         /// <summary>Consumer of the items in the queue which responsibility is to execute the user defined callback.</summary>
-        private readonly Task consumerTask;
+        /// <remarks>Internal for test purposes.</remarks>
+        internal readonly Task ConsumerTask;
 
         /// <summary>Cancellation that is triggered when the component is disposed.</summary>
         private readonly CancellationTokenSource cancellationTokenSource;
@@ -55,6 +70,15 @@ namespace Stratis.Bitcoin.Utilities
         private readonly bool callbackMode;
 
         /// <summary>
+        /// Async context to allow to recognize whether <see cref="Dispose"/> was called from within the callback routine.
+        /// <para>
+        /// Is not <c>null</c> if the queue is operating in callback mode and the current async execution context is the one that executes the callbacks,
+        /// set to <c>null</c> otherwise.
+        /// </para>
+        /// </summary>
+        private readonly AsyncLocal<AsyncContext> asyncContext;
+
+        /// <summary>
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
         /// </summary>
         /// <param name="onEnqueueAsync">Callback routine to be called when a new item is added to the queue, or <c>null</c> to operate in blocking dequeue mode.</param>
@@ -66,7 +90,8 @@ namespace Stratis.Bitcoin.Utilities
             this.signal = new AsyncManualResetEvent();
             this.onEnqueueAsync = onEnqueueAsync;
             this.cancellationTokenSource = new CancellationTokenSource();
-            this.consumerTask = this.callbackMode ? this.ConsumerAsync() : null;
+            this.asyncContext = new AsyncLocal<AsyncContext>();
+            this.ConsumerTask = this.callbackMode ? this.ConsumerAsync() : null;
         }
 
         /// <summary>
@@ -91,8 +116,12 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         private async Task ConsumerAsync()
         {
+            // Set the context, so that Dispose called from callback will recognize it.
+            this.asyncContext.Value = new AsyncContext();
+
+            bool callDispose = false;
             CancellationToken cancellationToken = this.cancellationTokenSource.Token;
-            while (!cancellationToken.IsCancellationRequested)
+            while (!callDispose && !cancellationToken.IsCancellationRequested)
             {
                 try
                 {
@@ -104,6 +133,12 @@ namespace Stratis.Bitcoin.Utilities
                     while (this.TryDequeue(out item) && !cancellationToken.IsCancellationRequested)
                     {
                         await this.onEnqueueAsync(item, cancellationToken).ConfigureAwait(false);
+
+                        if (this.asyncContext.Value.DisposeRequested)
+                        {
+                            callDispose = true;
+                            break;
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -111,6 +146,8 @@ namespace Stratis.Bitcoin.Utilities
                     break;
                 }
             }
+
+            if (callDispose) this.DisposeInternal(true);
         }
 
         /// <summary>
@@ -124,7 +161,7 @@ namespace Stratis.Bitcoin.Utilities
         public async Task<T> DequeueAsync(CancellationToken cancellation = default(CancellationToken))
         {
             if (this.callbackMode)
-                throw new InvalidOperationException($"{nameof(DequeueAsync)} called on queue in callback mode.");
+                throw new InvalidOperationException($"{nameof(this.DequeueAsync)} called on queue in callback mode.");
 
             // Increment the counter so that the queue's cancellation source is not disposed when we are using it.
             Interlocked.Increment(ref this.unfinishedDequeueCount);
@@ -140,7 +177,7 @@ namespace Stratis.Bitcoin.Utilities
                     return item;
 
                 // If the queue is empty, we need to wait until there is an item available.
-                using (var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.cancellationTokenSource.Token))
+                using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.cancellationTokenSource.Token))
                 {
                     while (true)
                     {
@@ -186,12 +223,29 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc/>
         public void Dispose()
         {
+            if (this.asyncContext.Value != null)
+            {
+                // We can't dispose now as we would end up in deadlock because we are called from within the callback.
+                // We just mark that dispose was requested and process with the dispose once we return from the callback.
+                this.asyncContext.Value.DisposeRequested = true;
+                return;
+            }
+
+            this.DisposeInternal(false);
+        }
+
+        /// <summary>
+        /// Frees resources used by the queue and only returns until all unfinished tasks of the objects are finished.
+        /// </summary>
+        /// <param name="calledFromConsumerTask"><c>true</c> if this method is called from <see cref="ConsumerTask"/>, <c>false</c> otherwise.</param>
+        private void DisposeInternal(bool calledFromConsumerTask)
+        {
             // We do not need synchronization over this, if it is going to be missed
             // we just wait a little longer.
             this.disposed = true;
 
             this.cancellationTokenSource.Cancel();
-            this.consumerTask?.Wait();
+            if (!calledFromConsumerTask) this.ConsumerTask?.Wait();
 
             if (!this.callbackMode)
             {

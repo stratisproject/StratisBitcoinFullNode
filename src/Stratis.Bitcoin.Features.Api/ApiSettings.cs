@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Timers;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -9,8 +10,29 @@ namespace Stratis.Bitcoin.Features.Api
     /// </summary>
     public class ApiSettings
     {
+        /// <summary>The default port used by the API when the node runs on the bitcoin network.</summary>
+        public const int DefaultBitcoinApiPort = 37220;
+
+        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
+        public const int DefaultStratisApiPort = 37221;
+
+        /// <summary>The default port used by the API when the node runs on the bitcoin testnet network.</summary>
+        public const int TestBitcoinApiPort = 38220;
+
+        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
+        public const int TestStratisApiPort = 38221;
+
+        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
+        public const string DefaultApiHost = "http://localhost";
+
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
+
+        /// <summary>URI to node's API interface.</summary>
+        public int ApiPort { get; set; }
+
+        /// <summary>URI to node's API interface.</summary>
+        public Timer KeepaliveTimer { get; private set; }
 
         /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
         private Action<ApiSettings> callback;
@@ -33,9 +55,45 @@ namespace Stratis.Bitcoin.Features.Api
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            var port = nodeSettings.Network.IsBitcoin() ? 37220 : 37221;
+            var apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
+            Uri apiUri = new Uri(apiHost);
 
-            this.ApiUri = config.GetOrDefault("apiuri", new Uri($"http://localhost:{port}"));
+            // Find out which port should be used for the API.
+            int port;
+            if (nodeSettings.Network.IsBitcoin())
+            {
+                port = nodeSettings.Network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
+            }
+            else
+            {
+                port = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
+            }
+
+            var apiPort = config.GetOrDefault("apiport", port);
+            
+            // If no port is set in the API URI.
+            if (apiUri.IsDefaultPort)
+            {
+                this.ApiUri = new Uri($"{apiHost}:{apiPort}");
+                this.ApiPort = apiPort;
+            }
+            // If a port is set in the -apiuri, it takes precedence over the default port or the port passed in -apiport.
+            else
+            {
+                this.ApiUri = apiUri;
+                this.ApiPort = apiUri.Port;
+            }
+
+            // Set the keepalive interval (set in seconds).
+            var keepAlive = config.GetOrDefault("keepalive", 0);
+            if (keepAlive > 0)
+            {
+                this.KeepaliveTimer = new Timer
+                {
+                    AutoReset = false,
+                    Interval = keepAlive * 1000
+                };
+            }
 
             this.callback?.Invoke(this);
         }

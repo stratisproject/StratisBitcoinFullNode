@@ -96,7 +96,6 @@ namespace Stratis.Bitcoin.P2P
 
             this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
 
-            this.logger.LogInformation("Starting peer discovery...");
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.DiscoverPeersAsync), async token =>
             {
                 if (this.peerAddressManager.Peers.Count < this.peersToFind)
@@ -109,10 +108,10 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// See <see cref="DiscoverPeers"/>
         /// </summary>
-        private Task DiscoverPeersAsync()
+        private async Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<IPEndPoint>();
-            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.EndPoint));
+            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.Endpoint));
 
             if (peersToDiscover.Count == 0)
             {
@@ -121,21 +120,18 @@ namespace Stratis.Bitcoin.P2P
 
                 peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
                 if (peersToDiscover.Count == 0)
-                    return Task.CompletedTask;
+                    return;
             }
-
-            Parallel.ForEach(peersToDiscover, new ParallelOptions()
+            
+            await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
-                MaxDegreeOfParallelism = 2,
-                CancellationToken = this.nodeLifetime.ApplicationStopping,
-            },
-            async endPoint =>
-            {
-                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
+                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
+                    this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
+
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
-                    NetworkPeer networkPeer = null;
+                    INetworkPeer networkPeer = null;
 
                     try
                     {
@@ -150,6 +146,8 @@ namespace Stratis.Bitcoin.P2P
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
                         await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
+                        this.peerAddressManager.PeerDiscoveredFrom(endPoint, DateTimeProvider.Default.GetUtcNow());
+
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }
                     catch
@@ -160,9 +158,7 @@ namespace Stratis.Bitcoin.P2P
                         networkPeer?.Dispose("Discovery job done");
                     }
                 }
-            });
-
-            return Task.CompletedTask;
+            }).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -8,6 +8,8 @@ namespace NBitcoin
     public class NetworkBuilder
     {
         internal string Name;
+        internal string RootFolderName;
+        internal string DefaultConfigFilename;
         internal Dictionary<Base58Type, byte[]> Base58Prefixes;
         internal Dictionary<Bech32Type, Bech32Encoder> Bech32Prefixes;
         internal List<string> Aliases;
@@ -34,6 +36,28 @@ namespace NBitcoin
         public NetworkBuilder SetName(string name)
         {
             this.Name = name;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the name of the folder containing the different blockchains.
+        /// </summary>
+        /// <param name="rootFolderName">The name of the folder.</param>
+        /// <returns>A <see cref="NetworkBuilder"/>.</returns>
+        public NetworkBuilder SetRootFolderName(string rootFolderName)
+        {
+            this.RootFolderName = rootFolderName;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the default name used for the network configuration file.
+        /// </summary>
+        /// <param name="defaultConfigFilename">The name of the file.</param>
+        /// <returns>A <see cref="NetworkBuilder"/>.</returns>
+        public NetworkBuilder SetDefaultConfigFilename(string defaultConfigFilename)
+        {
+            this.DefaultConfigFilename = defaultConfigFilename;
             return this;
         }
 

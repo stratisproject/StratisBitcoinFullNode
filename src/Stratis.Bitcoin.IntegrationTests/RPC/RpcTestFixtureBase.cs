@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public RPCClient RpcClient { get; protected set; }
 
         /// <summary>The network peer client for the test fixture.</summary>
-        public NetworkPeer NetworkPeerClient { get; protected set; }
+        public INetworkPeer NetworkPeerClient { get; protected set; }
 
         /// <summary>
         /// Constructs the test fixture by calling initialize which should initialize the properties of the fixture.
@@ -49,10 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <summary>
         /// Copies the test wallet into data folder for node if it isnt' already present.
         /// </summary>
-        /// <param name="node">Core node for the test.</param>
-        protected void InitializeTestWallet(CoreNode node)
+        /// <param name="path">The path of the folder to move the wallet to.</param>
+        protected void InitializeTestWallet(string path)
         {
-            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);
         }

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
@@ -60,7 +61,7 @@ namespace Stratis.Bitcoin.Connection
                 }
             }
 
-            this.AttachedPeer.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
             this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<ConnectionManagerBehavior>();
 
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="peer">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private void AttachedNode_MessageReceived(NetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -85,6 +86,7 @@ namespace Stratis.Bitcoin.Connection
             }
 
             this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -92,7 +94,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }

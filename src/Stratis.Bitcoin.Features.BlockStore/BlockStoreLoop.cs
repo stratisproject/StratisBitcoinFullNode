@@ -65,6 +65,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
+        /// <summary>Cached consensus tip.</summary>
+        /// <remarks>
+        /// Cached tip is needed in order to avoid race condition in the <see cref="DownloadAndStoreBlocksAsync"/>.
+        /// <para>
+        /// This condition happens when the actual ConsensusTip is updated but the block wasn't provided by signaler yet.
+        /// </para>
+        /// <para>
+        /// TODO: remove this quick fix later and solve the race condition by replacing the async loop with trigger-based invoking of <see cref="DownloadAndStoreBlocksAsync"/>.
+        /// </para>
+        /// </remarks>
+        private ChainedBlock CachedConsensusTip;
+
         public virtual string StoreName
         {
             get { return "BlockStore"; }
@@ -170,6 +182,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory, this.dateTimeProvider));
 
+            this.CachedConsensusTip = this.ChainState.ConsensusTip;
+
             this.StartLoop();
 
             this.logger.LogTrace("(-)");
@@ -188,7 +202,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
 
             if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
+            {
                 this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
+                this.CachedConsensusTip = blockPair.ChainedBlock;
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -251,7 +268,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
+                if (this.StoreTip.Height >= this.CachedConsensusTip?.Height)
                     break;
 
                 var nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);

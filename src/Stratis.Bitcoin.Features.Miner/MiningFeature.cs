@@ -134,6 +134,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public override void Dispose()
         {
             this.powLoop?.Dispose();
+            this.posMinting?.StopStake();
             this.posLoop?.Dispose();
             this.posLoop = null;
         }

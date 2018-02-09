@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -249,6 +248,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.Puller.Dispose();
             this.asyncLoop.Dispose();
+            this.consensusLock.Dispose();
         }
 
         /// <summary>
@@ -351,13 +351,16 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 await this.consensusRules.ExecuteAsync(blockValidationContext);
 
-                try
+                if (blockValidationContext.Error == null)
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
-                }
-                catch (ConsensusErrorException ex)
-                {
-                    blockValidationContext.Error = ex.ConsensusError;
+                    try
+                    {
+                        await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
+                    }
+                    catch (ConsensusErrorException ex)
+                    {
+                        blockValidationContext.Error = ex.ConsensusError;
+                    }
                 }
 
                 if (blockValidationContext.Error != null)
@@ -448,8 +451,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
                 }
 
-                // Check the block header is correct.
-                this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
 
                 if (!context.SkipValidation)

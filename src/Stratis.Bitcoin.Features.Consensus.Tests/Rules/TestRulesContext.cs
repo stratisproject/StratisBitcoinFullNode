@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             string dataDir = Path.Combine("TestData", pathName);
             Directory.CreateDirectory(dataDir);
 
-            testRulesContext.NodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" });
+            testRulesContext.NodeSettings = new NodeSettings(network, args:new[] { $"-datadir={dataDir}" });
 
             if (dataDir != null)
             {
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.Chain = new ConcurrentChain(network);
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new ConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());
+            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             return testRulesContext;
         }
