@@ -116,8 +116,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 // Is this an IPv4 embedded address? If it is, make sure an 'A' record is added to the DNS master file, rather than an 'AAAA' record.
                 if (whitelistEntry.Endpoint.Address.IsIPv4MappedToIPv6)
                 {
-                    IPAddress ipv4Adress = whitelistEntry.Endpoint.Address.MapToIPv4();
-                    IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, ipv4Adress);
+                    IPAddress ipv4Address = whitelistEntry.Endpoint.Address.MapToIPv4();
+                    IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, ipv4Address);
                     masterFile.Add(resourceRecord);
                 }
                 else
