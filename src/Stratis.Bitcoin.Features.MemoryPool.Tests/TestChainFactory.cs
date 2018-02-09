@@ -63,11 +63,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <returns>Context object representing the test chain.</returns>
         public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = new NodeSettings(network.Name, network).LoadArguments(new string[] { $"-datadir={dataDir}" });
-            if (dataDir != null)
-            {
-                nodeSettings.DataDir = dataDir;
-            }
+            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={dataDir}" });
 
             var loggerFactory = new ExtendedLoggerFactory();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
@@ -79,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
             NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory);
 
-            var peerAddressManager = new PeerAddressManager(nodeSettings.DataFolder, loggerFactory);
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory);
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);
@@ -88,7 +84,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, nodeSettings);
             NodeDeployments deployments = new NodeDeployments(network, chain);
-            ConsensusRules consensusRules = new ConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.CoreConsensusRules());
+            ConsensusRules consensusRules = new PowConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
             ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensus.StartAsync();
 

@@ -115,8 +115,14 @@ namespace Stratis.Bitcoin.Base
             {
                 this.logger.LogTrace("()");
 
-                if (this.AutoSync)
-                    await this.TrySyncAsync().ConfigureAwait(false);
+                try
+                {
+                    if (this.AutoSync)
+                        await this.TrySyncAsync().ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
 
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
@@ -128,18 +134,8 @@ namespace Stratis.Bitcoin.Base
                 this.AttachedPeer.MyVersion.StartHeight = highPoW?.Height ?? 0;
             }
 
-            this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
-
-            // TODO: Previously, this has been implemented using filters, which guaranteed
-            // that ChainHeadersBehavior will be first to be notified about the message.
-            // This is no longer EXPLICITLY guaranteed with event approach,
-            // and the order of notifications only depends on the order of component
-            // subscription. When we refactor the events, we should make sure ChainHeadersBehavior
-            // is first to go again.
-            //
-            // To guarantee that priority for ChainHeadersBehavior until events are refactored
-            // we use special MessageReceivedPriority now instead of normal MessageReceived event.
-            this.AttachedPeer.MessageReceivedPriority += this.AttachedPeer_MessageReceived;
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
 
             this.logger.LogTrace("(-)");
         }
@@ -148,15 +144,10 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceivedPriority -= this.AttachedPeer_MessageReceived;
-            this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
 
             this.logger.LogTrace("(-)");
-        }
-
-        private void AttachedPeer_MessageReceived(NetworkPeer peer, IncomingMessage message)
-        {
-            this.MessageReceivedAsync(peer, message).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -164,23 +155,29 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
-        private async Task MessageReceivedAsync(NetworkPeer peer, IncomingMessage message)
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            switch (message.Message.Payload)
+            try
             {
-                case InvPayload inv:
-                    await this.ProcessInvAsync(inv).ConfigureAwait(false);
-                    break;
+                switch (message.Message.Payload)
+                {
+                    case InvPayload inv:
+                        await this.ProcessInvAsync(inv).ConfigureAwait(false);
+                        break;
 
-                case GetHeadersPayload getHeaders:
-                    await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
-                    break;
+                    case GetHeadersPayload getHeaders:
+                        await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
+                        break;
 
-                case HeadersPayload headers:
-                    await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
-                    break;
+                    case HeadersPayload headers:
+                        await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                        break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
             }
 
             this.logger.LogTrace("(-)");
@@ -222,7 +219,7 @@ namespace Stratis.Bitcoin.Base
         /// If the peer is behind/equal to our best height an empty array is sent back.
         /// </para>
         /// </remarks>
-        private async Task ProcessGetHeadersAsync(NetworkPeer peer, GetHeadersPayload getHeadersPayload)
+        private async Task ProcessGetHeadersAsync(INetworkPeer peer, GetHeadersPayload getHeadersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
@@ -293,7 +290,7 @@ namespace Stratis.Bitcoin.Base
         /// of our best chain's tip, we update our view of the best chain to that tip.
         /// </para>
         /// </remarks>
-        private async Task ProcessHeadersAsync(NetworkPeer peer, HeadersPayload headersPayload)
+        private async Task ProcessHeadersAsync(INetworkPeer peer, HeadersPayload headersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(headersPayload), headersPayload);
 
@@ -430,11 +427,17 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            this.TrySyncAsync().GetAwaiter().GetResult();
+            try
+            {
+                await this.TrySyncAsync().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -446,7 +449,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            NetworkPeer peer = this.AttachedPeer;
+            INetworkPeer peer = this.AttachedPeer;
             if (peer != null)
             {
                 if ((peer.State == NetworkPeerState.HandShaked) && this.CanSync && !this.InvalidHeaderReceived)

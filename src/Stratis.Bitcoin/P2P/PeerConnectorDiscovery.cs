@@ -60,8 +60,6 @@ namespace Stratis.Bitcoin.P2P
 
         public override async Task OnConnectAsync()
         {
-            this.logger.LogTrace("()");
-
             int peerSelectionFailed = 0;
 
             PeerAddress peer = null;
@@ -73,49 +71,48 @@ namespace Stratis.Bitcoin.P2P
                     peerSelectionFailed = 0;
                     peer = null;
 
-                    this.logger.LogTrace("Peer selection failed, maximum amount of failed attempts reached.");
+                    this.logger.LogTrace("Peer selection failed, maximum amount of selection attempts reached.");
                     break;
                 }
 
                 peer = this.peerAddressManager.PeerSelector.SelectPeer();
                 if (peer == null)
                 {
-                    this.logger.LogTrace("Peer selection failed, peer is null.");
                     peerSelectionFailed++;
                     continue;
                 }
 
-                if (!peer.EndPoint.Address.IsValid())
+                if (!peer.Endpoint.Address.IsValid())
                 {
-                    this.logger.LogTrace("Peer selection failed, peer endpoint is not valid '{0}'.", peer.EndPoint);
+                    this.logger.LogTrace("Peer selection failed, peer endpoint is not valid '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
 
                 // If the peer is already connected just continue.
-                if (this.IsPeerConnected(peer.EndPoint))
+                if (this.IsPeerConnected(peer.Endpoint))
                 {
-                    this.logger.LogTrace("Peer selection failed, peer is already connected '{0}'.", peer.EndPoint);
+                    this.logger.LogTrace("Peer selection failed, peer is already connected '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
 
                 // If the peer exists in the -addnode collection don't
                 // try and connect to it.
-                var peerExistsInAddNode = this.ConnectionSettings.AddNode.Any(p => p.MapToIpv6().Match(peer.EndPoint));
+                var peerExistsInAddNode = this.ConnectionSettings.AddNode.Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInAddNode)
                 {
-                    this.logger.LogTrace("Peer selection failed, peer exists in -addnode args '{0}'.", peer.EndPoint);
+                    this.logger.LogTrace("Peer selection failed, peer exists in -addnode args '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
 
                 // If the peer exists in the -connect collection don't
                 // try and connect to it.
-                var peerExistsInConnectNode = this.ConnectionSettings.Connect.Any(p => p.MapToIpv6().Match(peer.EndPoint));
+                var peerExistsInConnectNode = this.ConnectionSettings.Connect.Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInConnectNode)
                 {
-                    this.logger.LogTrace("Peer selection failed, peer exists in -connect args '{0}'.", peer.EndPoint);
+                    this.logger.LogTrace("Peer selection failed, peer exists in -connect args '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -123,12 +120,15 @@ namespace Stratis.Bitcoin.P2P
                 break;
             }
 
-            this.logger.LogTrace("Peer selected: '{0}'", peer?.EndPoint);
-
-            if (peer != null)
+            //If the peer selector returns nothing, we wait 2 seconds to
+            //effectively override the connector's burst mode.
+            if (peer == null)
+            {
+                this.logger.LogTrace("Peer selection failed, executing selection delay...");
+                await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+            }
+            else
                 await ConnectAsync(peer).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

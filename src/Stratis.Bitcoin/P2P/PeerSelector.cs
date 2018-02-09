@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -30,10 +31,48 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         /// <param name="peerCount">The amount of peers to return.</param>
         IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount);
+
+        /// <summary>
+        /// Return peers which've had connection attempts but none successful. 
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds and that has had more than 10 failed attempts.
+        /// </para>
+        /// </summary>
+        IEnumerable<PeerAddress> Attempted();
+
+        /// <summary>
+        /// Return peers which've had successful connection attempts.
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds.
+        /// </para>
+        /// </summary>
+        IEnumerable<PeerAddress> Connected();
+
+        /// <summary>
+        /// Return peers which've never had connection attempts. 
+        /// </summary>
+        IEnumerable<PeerAddress> Fresh();
+
+        /// <summary>
+        /// Return peers where a successful connection and handshake was achieved.
+        /// <para>
+        /// The result filters out peers which satisfies the above condition within the 
+        /// last 60 seconds.
+        /// </para>
+        /// </summary>
+        IEnumerable<PeerAddress> Handshaked();
     }
 
     public sealed class PeerSelector : IPeerSelector
     {
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>The amount of hours we should wait before we try and discover from a peer again.</summary>
+        private const int DiscoveryThresholdHours = 24;
+
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -52,8 +91,9 @@ namespace Stratis.Bitcoin.P2P
         /// Constructor for the peer selector.
         /// </summary>
         /// <param name="peerAddresses">The collection of peer address as managed by the peer address manager.</param>
-        public PeerSelector(ILoggerFactory loggerFactory, ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses)
+        public PeerSelector(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses)
         {
+            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddresses = peerAddresses;
@@ -67,11 +107,11 @@ namespace Stratis.Bitcoin.P2P
 
             PeerAddress peerAddress = null;
 
-            var peers = this.SelectPreferredPeers();
+            var peers = this.SelectPreferredPeers().ToList();
             if (peers.Any())
             {
                 peerAddress = Random(peers);
-                this.logger.LogTrace("(-):'{0}'", peerAddress.EndPoint);
+                this.logger.LogTrace("(-):'{0}'", peerAddress.Endpoint);
             }
             else
                 this.logger.LogTrace("(-)[NO_PEER]");
@@ -84,30 +124,28 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private IEnumerable<PeerAddress> SelectPreferredPeers()
         {
-            this.logger.LogTrace("()");
-
             // First check to see if there are handshaked peers. If so,
             // give them a 50% chance to be picked over all the other peers.
-            var handshaked = this.peerAddresses.Handshaked();
+            var handshaked = this.Handshaked().ToList();
             if (handshaked.Any())
             {
                 int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
-                    this.logger.LogTrace("(-)[RETURN_HANDSHAKED]");
+                    this.logger.LogTrace("[RETURN_HANDSHAKED]");
                     return handshaked;
                 }
             }
 
             // If there are peers that have recently connected, give them
             // a 50% chance to be picked over fresh and/or attempted peers.
-            var connected = this.peerAddresses.Connected();
+            var connected = this.Connected().ToList();
             if (connected.Any())
             {
                 int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
-                    this.logger.LogTrace("(-)[RETURN_CONNECTED]");
+                    this.logger.LogTrace("[RETURN_CONNECTED]");
                     return connected;
                 }
             }
@@ -116,13 +154,13 @@ namespace Stratis.Bitcoin.P2P
             // was successful, we will select from fresh or attempted.
             //
             // If both sets exist, pick 50/50 between the two.
-            var attempted = this.peerAddresses.Attempted();
-            var fresh = this.peerAddresses.Fresh();
+            var attempted = this.Attempted().ToList();
+            var fresh = this.Fresh().ToList();
             if (attempted.Any() && fresh.Any())
             {
                 if (this.random.Next(2) == 0)
                 {
-                    this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
+                    this.logger.LogTrace("[RETURN_ATTEMPTED]");
                     return attempted;
                 }
                 else
@@ -135,29 +173,31 @@ namespace Stratis.Bitcoin.P2P
             // If there are only fresh peers, return them.
             if (fresh.Any() && !attempted.Any())
             {
-                this.logger.LogTrace("(-)[RETURN_ONLY_FRESH_EXIST]");
+                this.logger.LogTrace("[RETURN_FRESH_HC_FAILED]");
                 return fresh;
             }
 
             // If there are only attempted peers, return them.
             if (!fresh.Any() && attempted.Any())
             {
-                this.logger.LogTrace("(-)[RETURN_ONLY_ATTEMPTED_EXIST]");
+                this.logger.LogTrace("[RETURN_ATTEMPTED_HC_FAILED]");
                 return attempted;
             }
 
             // If all the selection criteria failed to return a set of peers,
             // then let the caller try again.
-            this.logger.LogTrace("(-)[RETURN_NO_PEERS]");
+            else
+                this.logger.LogTrace("[RETURN_NO_PEERS]");
+
             return new PeerAddress[] { };
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
-            // Randomly order the list of peers and return the amount asked for.
-            var allPeers = this.peerAddresses.OrderBy(p => this.random.Next());
-            return allPeers.Select(p => p.Value).Take(1000);
+            var discoverable = this.peerAddresses.Values.Where(p => p.LastDiscoveredFrom < this.dateTimeProvider.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours));
+            var allPeers = discoverable.OrderBy(p => this.random.Next()).Take(1000).ToList();
+            return allPeers;
         }
 
         /// <inheritdoc/>
@@ -165,16 +205,16 @@ namespace Stratis.Bitcoin.P2P
         {
             // If there are no peers return an empty list.
             if (!this.peerAddresses.Any())
-                return Enumerable.Empty<PeerAddress>();
+                return this.peerAddresses.Values;
 
             // If there's one peer then just return the list.
             if (this.peerAddresses.Count == 1)
-                return this.peerAddresses.Select(pa => pa.Value);
+                return this.peerAddresses.Values;
 
             var peersToReturn = new List<PeerAddress>();
 
-            var connectedAndHandshaked = this.peerAddresses.Connected().Concat(this.peerAddresses.Handshaked()).OrderBy(p => this.random.Next());
-            var freshAndAttempted = this.peerAddresses.Attempted().Concat(this.peerAddresses.Fresh()).OrderBy(p => this.random.Next());
+            var connectedAndHandshaked = this.Connected().Concat(this.Handshaked()).OrderBy(p => this.random.Next()).ToList();
+            var freshAndAttempted = this.Attempted().Concat(this.Fresh()).OrderBy(p => this.random.Next()).ToList();
 
             //If there are connected and/or handshaked peers in the address list,
             //we need to split the list 50 / 50 between them and
@@ -216,63 +256,32 @@ namespace Stratis.Bitcoin.P2P
             var randomPeer = peers.ElementAt(randomPeerIndex);
             return randomPeer;
         }
-    }
 
-    public static class PeerSelectorExtensions
-    {
-        /// <summary>
-        /// Return peers which've had connection attempts but none successful. 
-        /// <para>
-        /// The result filters out peers which satisfies the above condition within the 
-        /// last 60 seconds and that has had more than 10 failed attempts.
-        /// </para>
-        /// </summary>
-        public static IEnumerable<PeerAddress> Attempted(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> Attempted()
         {
-            var result = peers.Skip(0).Where(p =>
-                                p.Value.Attempted &&
-                                p.Value.ConnectionAttempts <= 10 &&
-                                p.Value.LastConnectionAttempt < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
-            return result;
+            return this.peerAddresses.Values.Where(p =>
+                                p.Attempted &&
+                                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
+                                p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours));
         }
 
-        /// <summary>
-        /// Return peers which've had successful connection attempts.
-        /// <para>
-        /// The result filters out peers which satisfies the above condition within the 
-        /// last 60 seconds.
-        /// </para>
-        /// </summary>
-        public static IEnumerable<PeerAddress> Connected(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> Connected()
         {
-            var result = peers.Skip(0).Where(p =>
-                                p.Value.Connected &&
-                                p.Value.LastConnectionSuccess < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
-            return result;
+            return this.peerAddresses.Values.Where(p => p.Connected && p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60));
         }
 
-        /// <summary>
-        /// Return peers which've never had connection attempts. 
-        /// </summary>
-        public static IEnumerable<PeerAddress> Fresh(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> Fresh()
         {
-            var result = peers.Skip(0).Where(p => p.Value.Fresh).Select(p => p.Value);
-            return result;
+            return this.peerAddresses.Values.Where(p => p.Fresh);
         }
 
-        /// <summary>
-        /// Return peers where a successful connection and handshake was achieved.
-        /// <para>
-        /// The result filters out peers which satisfies the above condition within the 
-        /// last 60 seconds.
-        /// </para>
-        /// </summary>
-        public static IEnumerable<PeerAddress> Handshaked(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> Handshaked()
         {
-            var result = peers.Skip(0).Where(p =>
-                                p.Value.Handshaked &&
-                                p.Value.LastConnectionHandshake < DateTime.UtcNow.AddSeconds(-60)).Select(p => p.Value);
-            return result;
+            return this.peerAddresses.Values.Where(p => p.Handshaked && p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60));
         }
     }
 }

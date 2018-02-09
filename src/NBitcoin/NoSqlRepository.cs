@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
 namespace NBitcoin
@@ -22,14 +21,7 @@ namespace NBitcoin
 
         public void Put(string key, IBitcoinSerializable obj)
         {
-            try
-            {
-                PutAsync(key, obj).Wait();
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-            }
+            PutAsync(key, obj).GetAwaiter().GetResult();
         }
 
         public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
@@ -44,15 +36,7 @@ namespace NBitcoin
 
         public T Get<T>(string key) where T : IBitcoinSerializable, new()
         {
-            try
-            {
-                return GetAsync<T>(key).Result;
-            }
-            catch(AggregateException aex)
-            {
-                ExceptionDispatchInfo.Capture(aex.InnerException).Throw();
-                return default(T);
-            }
+            return GetAsync<T>(key).GetAwaiter().GetResult();
         }
 
         public virtual Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)

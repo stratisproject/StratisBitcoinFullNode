@@ -85,12 +85,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
             {
-                await this.DoTask(token);
+                this.iterationCount++;
+                await Task.CompletedTask;
             });
 
             await asyncLoop.Run(new CancellationTokenSource(900).Token, TimeSpan.FromMilliseconds(330)).RunningTask;
 
-            Assert.Equal(3, this.iterationCount);
+            Assert.True(this.iterationCount > 1);
         }
 
         [Fact]
@@ -101,9 +102,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await this.DoTask(token);
             });
 
-            await asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(330), TimeSpan.FromMilliseconds(400)).RunningTask;
+            await asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(300), TimeSpan.FromMilliseconds(100)).RunningTask;
 
-            Assert.Equal(2, this.iterationCount);
+            Assert.True(this.iterationCount > 1);
         }
 
         [Fact]
@@ -111,22 +112,23 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             int iterations = 0;
 
-            IAsyncLoop asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
+            IAsyncLoop asyncLoop = null;
+
+            asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, token =>
             {
                 iterations++;
+
+                if (iterations == 3)
+                    asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(100);
+
+                return Task.CompletedTask;
             });
 
             Task loopRun = asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(300)).RunningTask;
-
-            await Task.Delay(500);
-            asyncLoop.RepeatEvery = TimeSpan.FromMilliseconds(100);
-
-            // At this point there were 2 iterations, 600 ms passed.
-
+            
             await loopRun;
 
-            // Should be 6 but in some slow environments occasionally can be 5.
-            Assert.True(iterations >= 5);
+            Assert.True(iterations >= 6);
         }
 
         private Task DoExceptionalTask(CancellationToken token)

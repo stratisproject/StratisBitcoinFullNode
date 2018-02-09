@@ -3,12 +3,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
     /// <inheritdoc />
-    public class ConsensusRules : IConsensusRules
+    public abstract class ConsensusRules : IConsensusRules
     {
         /// <summary>A factory to creates logger instances for each rule.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+        protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
         {
             this.Network = network;
             this.DateTimeProvider = dateTimeProvider;
@@ -132,6 +133,45 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                     await rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Consensus rules that represent a Proof-Of-Work blockchain.
+    /// </summary>
+    public class PowConsensusRules : ConsensusRules
+    {
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Consensus rules that represent a Proof-Of-Stake blockchain.
+    /// </summary>
+    /// <remarks>
+    /// A Proof-Of-Stake blockchain as implemented in this code base represents a hybrid POS/POW consensus model.
+    /// </remarks>
+    public class PosConsensusRules : ConsensusRules
+    {
+        /// <summary>Database of stake related data for the current blockchain.</summary>
+        public StakeChain StakeChain { get; }
+
+        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
+        public IStakeValidator StakeValidator { get; }
+
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, StakeChain stakeChain, IStakeValidator stakeValidator) 
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        {
+            this.StakeChain = stakeChain;
+            this.StakeValidator = stakeValidator;
         }
     }
 }

@@ -60,15 +60,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public virtual void CheckBlockHeader(RuleContext context)
-        {
-            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
-                ConsensusErrors.HighHash.Throw();
-
-            context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
-        }
-
-        /// <inheritdoc />
         public virtual void ContextualCheckBlock(RuleContext context)
         {
             this.logger.LogTrace("()");

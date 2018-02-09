@@ -195,6 +195,25 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
+        public override void CheckTransaction(Transaction transaction)
+        {
+            this.logger.LogTrace("()");
+
+            base.CheckTransaction(transaction);
+
+            foreach (TxOut txout in transaction.Outputs)
+            {
+                if (txout.IsEmpty && !transaction.IsCoinBase && !transaction.IsCoinStake)
+                {
+                    this.logger.LogTrace("(-)[USER_TXOUT_EMPTY]");
+                    ConsensusErrors.BadTransactionEmptyOutput.Throw();
+                }
+            }
+
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <inheritdoc />
         protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.logger.LogTrace("()");
@@ -412,27 +431,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             bool verifyRes = new PubKey(data).Verify(block.GetHash(this.ConsensusParams.NetworkOptions), new ECDSASignature(block.BlockSignatur.Signature));
             this.logger.LogTrace("(-):{0}", verifyRes);
             return verifyRes;
-        }
-
-        /// <inheritdoc />
-        public override void CheckBlockHeader(RuleContext context)
-        {
-            this.logger.LogTrace("()");
-            context.SetStake();
-
-            if (context.Stake.BlockStake.IsProofOfWork())
-            {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
-                {
-                    this.logger.LogTrace("(-)[HIGH_HASH]");
-                    ConsensusErrors.HighHash.Throw();
-                }
-            }
-
-            context.NextWorkRequired = this.StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
-                context.Stake.BlockStake.IsProofOfStake());
-
-            this.logger.LogTrace("(-)[OK]");
         }
 
         /// <summary>

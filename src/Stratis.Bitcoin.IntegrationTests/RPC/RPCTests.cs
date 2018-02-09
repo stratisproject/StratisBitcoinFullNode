@@ -1,9 +1,10 @@
 using System;
 using System.Net;
 using NBitcoin;
-using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
@@ -19,13 +20,15 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             this.Builder = NodeBuilder.Create();
             this.Node = this.Builder.CreateStratisPowNode();
-            this.InitializeTestWallet(this.Node);
             this.Builder.StartAll();
-
             this.RpcClient = this.Node.CreateRPCClient();
-
             this.NetworkPeerClient = this.Node.CreateNetworkPeerClient();
             this.NetworkPeerClient.VersionHandshakeAsync().GetAwaiter().GetResult();
+
+            // Move a wallet file to the right folder and restart the wallet manager to take it into account.
+            this.InitializeTestWallet(this.Node.FullNode.DataFolder.WalletPath);
+            var walletManager = this.Node.FullNode.NodeService<IWalletManager>() as WalletManager; ;
+            walletManager.Start();
         }
     }
 
@@ -48,8 +51,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Empty(connectionManager.ConnectionSettings.AddNode);
 
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var networkAddress = new NetworkAddress(ipAddress, 80);
-            this.rpcTestFixture.RpcClient.AddNode(networkAddress.Endpoint);
+            var endpoint = new IPEndPoint(ipAddress, 80);
+            this.rpcTestFixture.RpcClient.AddNode(endpoint);
 
             Assert.Single(connectionManager.ConnectionSettings.AddNode);
         }

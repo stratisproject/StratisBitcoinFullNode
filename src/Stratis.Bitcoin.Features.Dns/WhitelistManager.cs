@@ -100,12 +100,12 @@ namespace Stratis.Bitcoin.Features.Dns
 
             DateTimeOffset activePeerLimit = this.dateTimeProvider.GetTimeOffset().AddSeconds(-this.dnsPeerBlacklistThresholdInSeconds);
             
-            var whitelist = this.peerAddressManager.Peers.Where(p => p.Value.LastConnectionHandshake > activePeerLimit).Select(p => p.Value);
+            var whitelist = this.peerAddressManager.Peers.Where(p => p.Value.LastSeen > activePeerLimit).Select(p => p.Value);
             
             if (!this.fullNodeMode)
             {
                 // Exclude the current external ip address from DNS as its not a full node.
-                whitelist = whitelist.Where(p => !p.EndPoint.Match(this.externalEndpoint));
+                whitelist = whitelist.Where(p => !p.Endpoint.Match(this.externalEndpoint));
             }
 
             IMasterFile masterFile = new DnsSeedMasterFile();
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 Domain domain = new Domain(this.dnsHostName);
 
-                IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.EndPoint.Address);
+                IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.Endpoint.Address);
                 masterFile.Add(resourceRecord);
             }
 

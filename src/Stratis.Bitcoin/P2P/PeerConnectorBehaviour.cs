@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.P2P.Peer;
+﻿using System.Threading.Tasks;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.P2P
@@ -17,20 +18,22 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         protected override void AttachCore()
         {
-            this.AttachedPeer.StateChanged += this.AttachedPeer_StateChanged;
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
         }
 
         /// <inheritdoc/>
         protected override void DetachCore()
         {
-            this.AttachedPeer.StateChanged -= this.AttachedPeer_StateChanged;
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
         }
 
         /// <inheritdoc/>
-        private void AttachedPeer_StateChanged(NetworkPeer peer, NetworkPeerState oldState)
+        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Disconnecting) || (peer.State == NetworkPeerState.Offline))
                 this.peerConnector.RemovePeer(peer, "Peer disconnected");
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc/>

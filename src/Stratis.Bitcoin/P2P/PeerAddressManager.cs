@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -27,7 +26,7 @@ namespace Stratis.Bitcoin.P2P
         /// Only routable IP addresses will be added. See <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>.
         /// </para>
         /// </summary>
-        void AddPeer(NetworkAddress networkAddress, IPAddress source);
+        void AddPeer(IPEndPoint endPoint, IPAddress source);
 
         /// <summary>
         /// Add a set of peers to the <see cref="Peers"/> dictionary.
@@ -35,7 +34,7 @@ namespace Stratis.Bitcoin.P2P
         /// Only routable IP addresses will be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
         /// </para>
         /// </summary>
-        void AddPeers(NetworkAddress[] networkAddress, IPAddress source);
+        void AddPeers(IPEndPoint[] endPoints, IPAddress source);
 
         /// <summary> Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);
@@ -52,16 +51,21 @@ namespace Stratis.Bitcoin.P2P
         /// Increments <see cref="PeerAddress.ConnectionAttempts"/> of the peer as well as the <see cref="PeerAddress.LastConnectionSuccess"/>
         /// </para>
         /// </summary>
-        void PeerAttempted(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
+        void PeerAttempted(IPEndPoint endpoint, DateTime peerAttemptedAt);
 
         /// <summary>
         /// A peer was successfully connected to.
         /// <para>
-        /// Resets the <see cref="PeerAddress.ConnectionAttempts"/> and <see cref="PeerAddress.LastConnectionAttempt"/> of the peer.
+        /// Resets the <see cref="PeerAddress.ConnectionAttempts"/> and <see cref="PeerAddress.LastAttempt"/> of the peer.
         /// Sets the peer's <see cref="PeerAddress.LastConnectionSuccess"/> to now.
         /// </para>
         /// </summary>
         void PeerConnected(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
+
+        /// <summary>
+        /// Sets the last time the peer was asked for addresses via discovery.
+        /// </summary>
+        void PeerDiscoveredFrom(IPEndPoint endpoint, DateTime peerDiscoveredFrom);
 
         /// <summary>
         /// A version handshake between two peers was successful.
@@ -70,6 +74,11 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
+
+        /// <summary>
+        /// Sets the last time the peer was seen.
+        /// </summary>
+        void PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt);
 
         /// <summary>Peer selector instance, used to select peers to connect to.</summary>
         IPeerSelector PeerSelector { get; }
@@ -83,6 +92,9 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerAddressManager : IPeerAddressManager
     {
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -102,13 +114,14 @@ namespace Stratis.Bitcoin.P2P
         public IPeerSelector PeerSelector { get; private set; }
 
         /// <summary>Constructor used by dependency injection.</summary>
-        public PeerAddressManager(DataFolder peerFilePath, ILoggerFactory loggerFactory)
+        public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory)
         {
+            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             this.PeerFilePath = peerFilePath;
-            this.PeerSelector = new PeerSelector(this.loggerFactory, this.Peers);
+            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.Peers);
         }
 
         /// <inheritdoc />
@@ -118,7 +131,7 @@ namespace Stratis.Bitcoin.P2P
             var peers = fileStorage.LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
-                this.Peers.TryAdd(peer.EndPoint, peer);
+                this.Peers.TryAdd(peer.Endpoint, peer);
             });
         }
 
@@ -133,30 +146,40 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddPeer(NetworkAddress networkAddress, IPAddress source)
+        public void AddPeer(IPEndPoint endPoint, IPAddress source)
         {
-            if (networkAddress.Endpoint.Address.IsRoutable(true) == false)
+            if (!endPoint.Address.IsRoutable(true))
                 return;
 
-            var peerToAdd = PeerAddress.Create(networkAddress, source);
-            this.Peers.TryAdd(peerToAdd.EndPoint, peerToAdd);
+            var peerToAdd = PeerAddress.Create(endPoint, source);
+            this.Peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
 
         /// <inheritdoc/>
-        public void AddPeers(NetworkAddress[] networkAddresses, IPAddress source)
+        public void AddPeers(IPEndPoint[] endPoints, IPAddress source)
         {
-            foreach (var networkAddress in networkAddresses)
+            foreach (var endPoint in endPoints)
             {
-                this.AddPeer(networkAddress, source);
+                this.AddPeer(endPoint, source);
             }
         }
 
         /// <inheritdoc/>
-        public void PeerAttempted(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt)
+        public void PeerAttempted(IPEndPoint endpoint, DateTime peerAttemptedAt)
         {
             var peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
+
+            //Reset the attempted count if:
+            //1: The last attempt was more than the threshold time ago.
+            //2: More than the threshold attempts was made.
+            if (peer.Attempted &&
+                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttemptResetThresholdHours) &&
+                peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)
+            {
+                peer.ResetAttempts();
+            }
 
             peer.SetAttempted(peerAttemptedAt);
         }
@@ -172,6 +195,16 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        public void PeerDiscoveredFrom(IPEndPoint endpoint, DateTime peerDiscoveredFrom)
+        {
+            var peer = this.FindPeer(endpoint);
+            if (peer == null)
+                return;
+
+            peer.SetDiscoveredFrom(peerDiscoveredFrom);
+        }
+
+        /// <inheritdoc/>
         public void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerHandshakedAt)
         {
             var peer = this.FindPeer(endpoint);
@@ -179,6 +212,16 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             peer.SetHandshaked(peerHandshakedAt);
+        }
+
+        /// <inheritdoc/>
+        public void PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt)
+        {
+            var peer = this.FindPeer(endpoint);
+            if (peer == null)
+                return;
+
+            peer.SetLastSeen(peerSeenAt);
         }
 
         /// <inheritdoc/>
