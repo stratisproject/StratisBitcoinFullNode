@@ -140,6 +140,12 @@ namespace Stratis.Bitcoin
             }
         }
 
+        /// <summary>Creates new instance of the <see cref="FullNode"/>.</summary>
+        public FullNode()
+        {
+            this.State = FullNodeState.Created;
+        }
+
         /// <summary>
         /// Initializes DI services that the node needs.
         /// </summary>
@@ -147,6 +153,8 @@ namespace Stratis.Bitcoin
         /// <returns>Full node itself to allow fluent code.</returns>
         public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
         {
+            this.State = FullNodeState.Initializing;
+
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             this.Services = serviceProvider;
@@ -169,12 +177,15 @@ namespace Stratis.Bitcoin
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
+            this.State = FullNodeState.Initialized;
             return this;
         }
 
         /// <inheritdoc />
         public void Start()
         {
+            this.State = FullNodeState.Starting;
+
             if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
 
@@ -203,6 +214,8 @@ namespace Stratis.Bitcoin
             this.nodeLifetime.NotifyStarted();
 
             this.StartPeriodicLog();
+
+            this.State = FullNodeState.Started;
         }
 
         /// <summary>

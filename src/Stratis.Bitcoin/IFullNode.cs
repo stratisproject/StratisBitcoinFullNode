@@ -55,6 +55,11 @@ namespace Stratis.Bitcoin
 
     public enum FullNodeState
     {
+        Created,
+        Initializing,
+        Initialized,
+        Starting,
+        Started,
         Disposing,
         Disposed
     }
