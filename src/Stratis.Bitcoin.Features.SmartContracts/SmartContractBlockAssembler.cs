@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -14,6 +15,7 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -26,6 +28,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
+        private readonly CoinView coinView;
+        private uint160 coinbaseAddress;
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -39,12 +43,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
             SmartContractGasInjector gasInjector,
+            CoinView coinView,
             AssemblerOptions options = null) : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
             this.stateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
+            this.coinView = coinView;
         }
 
         // Copied from PowBlockAssembler, got rid of comments 
@@ -52,6 +58,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
             this.scriptPubKeyIn = scriptPubKeyIn;
+
+            this.coinbaseAddress = new uint160(this.scriptPubKeyIn.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false); // TODO: This ugly af
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
@@ -82,7 +90,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.UpdateHeaders();
             this.TestBlockValidity();
 
+            this.stateRoot.Commit();
+
             return this.pblocktemplate;
+        }
+
+        protected override void UpdateHeaders()
+        {
+            base.UpdateHeaders();
+            this.pblock.Header.HashStateRoot = new uint256(this.stateRoot.GetRoot());
         }
 
         protected override void AddToBlock(TxMempoolEntry iter)
@@ -98,6 +114,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             SmartContractTransaction scTransaction = new SmartContractTransaction(contractTxOut, iter.Transaction);
+            scTransaction.Sender = GetSenderUtil.GetSender(iter.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             AddContractCallToBlock(iter, scTransaction);
         }
 
@@ -106,7 +123,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IContractStateRepository track = this.stateRoot.StartTracking();
             ulong height = Convert.ToUInt64(this.height);// TODO: Optimise so this conversion isn't happening every time.
             ulong difficulty = 0; // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty);
+            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty, this.coinbaseAddress);
 
             ulong gasToSpend = scTransaction.TotalGas;
             SmartContractExecutionResult result = exec.Execute();
@@ -148,7 +165,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script senderScript = new Script(
                 OpcodeType.OP_DUP,
                 OpcodeType.OP_HASH160,
-                Op.GetPushOp(scTransaction.From.ToBytes()),
+                Op.GetPushOp(scTransaction.Sender.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
             ); 

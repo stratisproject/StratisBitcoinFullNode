@@ -14,26 +14,26 @@ namespace Stratis.SmartContracts.State
     {
         protected ContractStateRepository parent;
         public ISource<byte[], AccountState> accountStateCache;
+        public ISource<byte[], StoredVin> vinCache; 
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
-
         protected List<TransferInfo> transfers;
-        protected Dictionary<uint160, Vin> cacheUTXO;
 
         protected ContractStateRepository() { }
 
         public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                      MultiCache<ICachedSource<byte[], byte[]>> storageCache)
+                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
         {
-            Init(accountStateCache, codeCache, storageCache);
+            Init(accountStateCache, codeCache, storageCache, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                    MultiCache<ICachedSource<byte[], byte[]>> storageCache)
+                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
             this.storageCache = storageCache;
+            this.vinCache = vinCache;
             this.transfers = new List<TransferInfo>();
         }
 
@@ -106,18 +106,19 @@ namespace Stratis.SmartContracts.State
 
         public IContractStateRepository StartTracking()
         {
-            ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache,
-                    WriteCache<AccountState>.CacheType.SIMPLE);
+            ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
+            ISource<byte[], StoredVin> trackVinCache = new WriteCache<StoredVin>(this.vinCache, WriteCache<StoredVin>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache< byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
-            ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache);
+
+            ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache);
             ret.parent = this;
             return ret;
         }
 
-        public virtual IContractStateRepository GetSnapshotTo(byte[] root)
+        public virtual IContractStateRepository GetSnapshotTo(byte[] stateRoot)
         {
-            return this.parent.GetSnapshotTo(root);
+            return this.parent.GetSnapshotTo(stateRoot);
         }
 
         public virtual void Commit()
@@ -127,6 +128,7 @@ namespace Stratis.SmartContracts.State
                 this.storageCache.Flush();
                 this.codeCache.Flush();
                 this.accountStateCache.Flush();
+                this.vinCache.Flush();
             }
         }
 
@@ -165,6 +167,31 @@ namespace Stratis.SmartContracts.State
         public IList<TransferInfo> GetTransfers()
         {
             return this.transfers;
+        }
+
+        public byte[] GetUnspentHash(uint160 addr)
+        {
+            AccountState accountState = GetAccountState(addr);
+            if (accountState == null || accountState.UnspentHash == null)
+                return new byte[0]; // TODO: REPLACE THIS BYTE0 with something
+
+            return accountState.UnspentHash;
+        }
+
+        public StoredVin GetUnspent(uint160 address)
+        {
+            byte[] unspentHash = GetUnspentHash(address);
+            return this.vinCache.Get(unspentHash);
+        }
+
+        public void SetUnspent(uint160 address, StoredVin vin)
+        {
+            byte[] vinHash = HashHelper.Keccak256(vin.ToBytes());
+            this.vinCache.Put(vinHash, vin);
+            AccountState accountState = GetOrCreateAccountState(address);
+            accountState.UnspentHash = vinHash;
+            this.accountStateCache.Put(address.ToBytes(), accountState);
+            this.vinCache.Put(address.ToBytes(), vin);
         }
 
         #endregion

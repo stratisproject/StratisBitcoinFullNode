@@ -8,4 +8,15 @@ public class TransferTest : CompiledSmartContract
     {
         Transfer(new Address(123), 100);
     }
+
+    public void Test2()
+    {
+        Transfer(new Address(123), 100);
+        Transfer(new Address(124), 100);
+    }
+
+    public bool DoNothing()
+    {
+        return true;
+    }
 }

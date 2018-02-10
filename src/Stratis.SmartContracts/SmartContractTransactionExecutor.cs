@@ -22,6 +22,7 @@ namespace Stratis.SmartContracts
         private readonly SmartContractTransaction scTransaction;
         private readonly ulong blockNum;
         private readonly ulong difficulty;
+        private readonly uint160 coinbaseAddress;
 
         public SmartContractTransactionExecutor(IContractStateRepository state, 
             SmartContractDecompiler smartContractDecompiler,
@@ -29,7 +30,8 @@ namespace Stratis.SmartContracts
             SmartContractGasInjector smartContractGasInjector,
             SmartContractTransaction scTransaction,
             ulong blockNum,
-            ulong difficulty)
+            ulong difficulty,
+            uint160 coinbaseAddress)
         {
             this.state = state;
             this.stateTrack = state.StartTracking();
@@ -39,6 +41,7 @@ namespace Stratis.SmartContracts
             this.scTransaction = scTransaction;
             this.blockNum = blockNum;
             this.difficulty = difficulty;
+            this.coinbaseAddress = coinbaseAddress;
         }
 
         public SmartContractExecutionResult Execute()
@@ -72,12 +75,12 @@ namespace Stratis.SmartContracts
             {
                 BlockNumber = blockNum,
                 Difficulty = difficulty,
-                CallerAddress = 100, // TODO: FIX THIS
+                CallerAddress = this.scTransaction.Sender,
                 CallValue = this.scTransaction.Value,
                 GasLimit = this.scTransaction.GasLimit,
                 GasPrice = this.scTransaction.GasPrice,
                 Parameters = this.scTransaction.Parameters ?? new object[0],
-                CoinbaseAddress = 0, //TODO: FIX THIS
+                CoinbaseAddress = this.coinbaseAddress,
                 ContractAddress = contractAddress,
                 ContractMethod = initMethod?.Name, // probably better ways of doing this
                 ContractTypeName = decomp.ContractType.Name // probably better ways of doing this
@@ -90,12 +93,7 @@ namespace Stratis.SmartContracts
                 return result;
             }
 
-            IList<TransferInfo> transfers = this.state.GetTransfers();
-            if (transfers.Any())
-            {
-                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
-            }
+            // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
             this.stateTrack.SetCode(contractAddress, adjustedCodeBytes);
             this.stateTrack.Commit();
@@ -107,28 +105,50 @@ namespace Stratis.SmartContracts
             byte[] contractCode = this.state.GetCode(this.scTransaction.To);
             SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.stateTrack);
             SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, new SmartContractExecutionContext
             {
                 BlockNumber = Convert.ToUInt64(this.blockNum),
                 Difficulty = Convert.ToUInt64(this.difficulty),
-                CallerAddress = 0, // TODO: FIX THIS
+                CallerAddress = this.scTransaction.Sender,
                 CallValue = this.scTransaction.Value,
                 GasLimit = this.scTransaction.GasLimit,
                 GasPrice = this.scTransaction.GasPrice,
                 Parameters = this.scTransaction.Parameters ?? new object[0],
-                CoinbaseAddress = 0, //TODO: FIX THIS
+                CoinbaseAddress = this.coinbaseAddress,
                 ContractAddress = this.scTransaction.To,
                 ContractMethod = this.scTransaction.MethodName,
                 ContractTypeName = decomp.ContractType.Name
             });
 
-            IList<TransferInfo> transfers = this.state.GetTransfers();
-            if (transfers.Any())
+            if (result.Revert)
             {
-                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
+                this.stateTrack.Rollback();
+                return result;
             }
+
+            // We need to append a condensing transaction to the block here if funds are moved.
+            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
+            if (transfers.Any() || this.scTransaction.Value > 0)
+            {
+                List<StoredVin> vins = new List<StoredVin>();
+                StoredVin existingVin = this.state.GetUnspent(this.scTransaction.To);
+                if (existingVin != null)
+                    vins.Add(existingVin);
+                if (this.scTransaction.Value > 0)
+                {
+                    vins.Add(new StoredVin
+                    {
+                        Hash = this.scTransaction.Hash,
+                        Nvout = this.scTransaction.Nvout,
+                        Value = this.scTransaction.Value
+                    });
+                }
+                CondensingTx condensingTx = new CondensingTx(this.scTransaction, transfers, vins, this.stateTrack);
+                result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+            }
+
+            this.stateTrack.Commit();
 
             return result;
         }

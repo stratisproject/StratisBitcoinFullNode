@@ -9,12 +9,15 @@ using Mono.Cecil.Rocks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -22,13 +25,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+        private IContractStateRepository stateRoot;
+        private readonly CoinView coinView;
+        private readonly SmartContractDecompiler decompiler;
+        private readonly SmartContractValidator validator;
+        private readonly SmartContractGasInjector gasInjector;
+        private List<Transaction> blockTxsProcessed;
+        private Transaction lastProcessed;
 
-        private readonly IContractStateRepository stateRoot;
-        SmartContractDecompiler decompiler;
-        SmartContractValidator validator;
-        SmartContractGasInjector gasInjector;
 
         public SmartContractConsensusValidator(
+            CoinView coinView,
             Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
@@ -39,18 +46,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractGasInjector gasInjector)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
+            this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
+            this.lastProcessed = null;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
         public override void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
-
+            this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.BlockValidationContext.Block;
             ChainedBlock index = context.BlockValidationContext.ChainedBlock;
             DeploymentFlags flags = context.Flags;
@@ -58,6 +67,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
+
+            // Start state from previous block's root
+            this.stateRoot = this.stateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
 
             if (!context.SkipValidation)
             {
@@ -146,6 +158,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 }
 
                 this.UpdateCoinView(context, tx);
+                this.blockTxsProcessed.Add(tx);
             }
 
             if (!context.SkipValidation)
@@ -161,6 +174,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
+            this.stateRoot.Commit();
+
             this.logger.LogTrace("(-)");
         }
 
@@ -168,19 +183,41 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateCoinView(context, transaction);
 
-            TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            if (this.lastProcessed != null)
+            {
+                // ensure that transactions generated are equal
+                if (this.lastProcessed.GetHash() != transaction.GetHash())
+                    throw new Exception("Not matching");
+                this.lastProcessed = null;
+                return;
+            }
 
+            TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            // boring transaction, return
             if (contractTxOut == null)
                 return;
+
+            // if it's a condensing transaction, need to ensure it's identical 
 
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
             IContractStateRepository track = this.stateRoot.StartTracking();
             var scTransaction = new SmartContractTransaction(contractTxOut, transaction);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty);
+
+            scTransaction.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+            Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
+            uint160 coinbaseAddress = new uint160(coinbaseScriptPubKey.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
+
+            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty, coinbaseAddress); // TODO: Put coinbase in here
             SmartContractExecutionResult result = exec.Execute();
+
+            if (result.InternalTransactions.Any())
+                this.lastProcessed = result.InternalTransactions.FirstOrDefault();
+
             track.Commit();
         }
+
+
     }
 }
