@@ -42,9 +42,9 @@ namespace Stratis.SmartContracts.ContractValidation
 
             var errors = new List<SmartContractValidationError>();
 
-            foreach (var instruction in method.Body.Instructions)
+            foreach (Instruction instruction in method.Body.Instructions)
             {
-                var instructionValidationResult = ValidateInstruction(method, instruction);
+                IEnumerable<SmartContractValidationError> instructionValidationResult = ValidateInstruction(method, instruction);
                 errors.AddRange(instructionValidationResult);
             }
 

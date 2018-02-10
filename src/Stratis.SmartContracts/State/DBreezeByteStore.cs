@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                var test = t.SelectDictionary<byte[], byte[]>(this.table);
+                Dictionary<byte[], byte[]> test = t.SelectDictionary<byte[], byte[]>(this.table);
 
                 Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.table, key);
 

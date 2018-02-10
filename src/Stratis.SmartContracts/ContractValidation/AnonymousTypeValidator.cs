@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.ContractValidation
 
         public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
         {
-            foreach (var instruction in method.Body.Instructions)
+            foreach (Mono.Cecil.Cil.Instruction instruction in method.Body.Instructions)
             {
                 if (instruction.Operand is FieldReference fieldReference)
                 {

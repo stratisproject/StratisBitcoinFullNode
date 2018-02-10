@@ -74,19 +74,19 @@ namespace Stratis.SmartContracts.ContractValidation
 
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var errors = new List<SmartContractValidationError>();
+            List<SmartContractValidationError> errors = new List<SmartContractValidationError>();
 
-            var userDefinedMethods = decompilation.ContractType.Methods.Where(method => method.Body != null);
-            var allMethods = new Dictionary<string, MethodDefinition>();
+            IEnumerable<MethodDefinition> userDefinedMethods = decompilation.ContractType.Methods.Where(method => method.Body != null);
+            Dictionary<string,MethodDefinition> allMethods = new Dictionary<string, MethodDefinition>();
 
             // Build a dict of all referenced methods
-            foreach (var method in userDefinedMethods)
+            foreach (MethodDefinition method in userDefinedMethods)
             {
                 GetMethods(method, allMethods);
                 errors.AddRange(ValidateUserDefinedMethod(method));
             }
 
-            foreach (var method in allMethods)
+            foreach (KeyValuePair<string, MethodDefinition> method in allMethods)
             {
                 errors.AddRange(ValidateNonUserMethod(method.Value));
             }
@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts.ContractValidation
             if (methodDefinition.Body == null)
                 return;
 
-            var referencedMethods = methodDefinition.Body.Instructions
+            IEnumerable<MethodReference> referencedMethods = methodDefinition.Body.Instructions
                 .Select(instr => instr.Operand)
                 .OfType<MethodReference>()
                 .Where(referencedMethod =>
@@ -112,9 +112,9 @@ namespace Stratis.SmartContracts.ContractValidation
                         || GreenLightTypes.Contains(methodDefinition.DeclaringType.FullName))
                 );
             
-            foreach (var method in referencedMethods)
+            foreach (MethodReference method in referencedMethods)
             {
-                var newMethod = method.Resolve();
+                MethodDefinition newMethod = method.Resolve();
 
                 if (visitedMethods.ContainsKey(newMethod.FullName))
                 {
@@ -135,9 +135,9 @@ namespace Stratis.SmartContracts.ContractValidation
         {
             var errors = new List<SmartContractValidationError>();
 
-            foreach (var validator in validators)
+            foreach (IMethodDefinitionValidator validator in validators)
             {
-                var validationResult = validator.Validate(method);
+                IEnumerable<SmartContractValidationError> validationResult = validator.Validate(method);
                 errors.AddRange(validationResult);
             }
 
