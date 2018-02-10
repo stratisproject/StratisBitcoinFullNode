@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.Util
 
         public static byte[] GetAssemblyBytesFromSource(string source)
         {
-            var syntaxTree = CSharpSyntaxTree.ParseText(source);
+            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
 
             CSharpCompilation compilation = CSharpCompilation.Create(
                 "smartContract",
@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Util
             using (var dllStream = new MemoryStream())
             using (var pdbStream = new MemoryStream())
             {
-                var emitResult = compilation.Emit(dllStream, pdbStream);
+                Microsoft.CodeAnalysis.Emit.EmitResult emitResult = compilation.Emit(dllStream, pdbStream);
                 if (!emitResult.Success)
                     throw new Exception("Compilation didn't work yo!");
 
@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.Util
         private static IList<MetadataReference> GetReferences()
         {
             var dd = typeof(Enumerable).Assembly.Location;
-            var coreDir = Directory.GetParent(dd);
+            DirectoryInfo coreDir = Directory.GetParent(dd);
 
             List<MetadataReference> references = new List<MetadataReference>
             {
@@ -51,8 +51,8 @@ namespace Stratis.SmartContracts.Util
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
             };
 
-            var referencedAssemblies = Assembly.GetEntryAssembly().GetReferencedAssemblies();
-            foreach (var referencedAssembly in referencedAssemblies)
+            AssemblyName[] referencedAssemblies = Assembly.GetEntryAssembly().GetReferencedAssemblies();
+            foreach (AssemblyName referencedAssembly in referencedAssemblies)
             {
                 var loadedAssembly = Assembly.Load(referencedAssembly);
 

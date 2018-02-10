@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
             tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrierSerialized)));
 
-            var deserialized = SmartContractCarrier.Deserialize(tx.GetHash(), tx.Outputs[0].ScriptPubKey, tx.Outputs[0].Value);
+            var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
             tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrierSerialized)));
 
-            var deserialized = SmartContractCarrier.Deserialize(tx.GetHash(), tx.Outputs[0].ScriptPubKey, tx.Outputs[0].Value);
+            var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
             tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrier.Serialize())));
 
-            var deserialized = SmartContractCarrier.Deserialize(tx.GetHash(), tx.Outputs[0].ScriptPubKey, tx.Outputs[0].Value);
+            var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.To, deserialized.To);
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
             tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrier.Serialize())));
 
-            var deserialized = SmartContractCarrier.Deserialize(tx.GetHash(), tx.Outputs[0].ScriptPubKey, tx.Outputs[0].Value);
+            var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
 
             Assert.NotNull(deserialized.MethodParameters[0]);
             Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);

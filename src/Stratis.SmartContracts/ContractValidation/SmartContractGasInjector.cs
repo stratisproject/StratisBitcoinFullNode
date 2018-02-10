@@ -9,7 +9,7 @@ namespace Stratis.SmartContracts.ContractValidation
     {
         private const string GasMethod = "System.Void Stratis.SmartContracts.CompiledSmartContract::SpendGas(System.UInt32)";
 
-        private static readonly HashSet<OpCode> _branchingOps = new HashSet<OpCode>
+        private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {
             OpCodes.Beq,
             OpCodes.Beq_S,
@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.ContractValidation
             OpCodes.Br_S
         };
 
-        private static readonly HashSet<OpCode> _callingOps = new HashSet<OpCode>
+        private static readonly HashSet<OpCode> CallingOps = new HashSet<OpCode>
         {
             OpCodes.Call,
             OpCodes.Calli,
@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.ContractValidation
         private void InjectSpendGasMethod(MethodDefinition methodDefinition, MethodReference gasMethod)
         {
             int position = 0;
-            List<Instruction> branches = methodDefinition.Body.Instructions.Where(x => _branchingOps.Contains(x.OpCode)).ToList();
+            List<Instruction> branches = methodDefinition.Body.Instructions.Where(x => BranchingOps.Contains(x.OpCode)).ToList();
             List<Instruction> branchTos = branches.Select(x => (Instruction)x.Operand).ToList();
 
             Instruction currentSegmentStart = methodDefinition.Body.Instructions.FirstOrDefault();
@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.ContractValidation
 
             while (position < methodDefinition.Body.Instructions.Count)
             {
-                var instruction = methodDefinition.Body.Instructions[position];
+                Instruction instruction = methodDefinition.Body.Instructions[position];
 
                 // is the end of a segment. Include the current instruction in the count.
                 if (branches.Contains(instruction))
@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.ContractValidation
                     position++;
                 }
                 // is a call to another method
-                else if (_callingOps.Contains(instruction.OpCode))
+                else if (CallingOps.Contains(instruction.OpCode))
                 {
                     var methodToCall = (MethodReference) instruction.Operand;
                     // If it's a method inside this contract then the gas will be injected no worries.
@@ -113,17 +113,17 @@ namespace Stratis.SmartContracts.ContractValidation
             if (!gasToSpendForSegment.ContainsKey(currentSegmentStart))
                 gasToSpendForSegment.Add(currentSegmentStart, currentSegmentCount);
 
-            foreach (var instruction in gasToSpendForSegment.Keys)
+            foreach (Instruction instruction in gasToSpendForSegment.Keys)
             {
                 AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, instruction, gasToSpendForSegment[instruction]);
             }
 
-            var il = methodDefinition.Body.GetILProcessor();
-            foreach (var instruction in branches)
+            ILProcessor il = methodDefinition.Body.GetILProcessor();
+            foreach (Instruction instruction in branches)
             {
                 var oldReference = (Instruction)instruction.Operand;
-                var newReference = oldReference.Previous.Previous.Previous; // 3 were inserted
-                var newInstruction = il.Create(instruction.OpCode, newReference);
+                Instruction newReference = oldReference.Previous.Previous.Previous; // 3 were inserted
+                Instruction newInstruction = il.Create(instruction.OpCode, newReference);
                 il.Replace(instruction, newInstruction);
             }
         }
@@ -131,10 +131,10 @@ namespace Stratis.SmartContracts.ContractValidation
 
         private void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, MethodReference gasMethod, Instruction instruction, int opcodeCount)
         {
-            var il = methodDefinition.Body.GetILProcessor();
-            var ldarg0 = il.Create(OpCodes.Ldarg_0);
-            var gasInstruction = il.Create(OpCodes.Call, gasMethod);
-            var pushInstruction = il.Create(OpCodes.Ldc_I4, opcodeCount);
+            ILProcessor il = methodDefinition.Body.GetILProcessor();
+            Instruction ldarg0 = il.Create(OpCodes.Ldarg_0);
+            Instruction gasInstruction = il.Create(OpCodes.Call, gasMethod);
+            Instruction pushInstruction = il.Create(OpCodes.Ldc_I4, opcodeCount);
             il.InsertBefore(instruction, ldarg0);
             il.InsertBefore(instruction, pushInstruction);
             il.InsertBefore(instruction, gasInstruction);

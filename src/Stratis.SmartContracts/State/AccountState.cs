@@ -17,6 +17,11 @@ namespace Stratis.SmartContracts.State
         /// </summary>
         public byte[] StateRoot { get; set; }
 
+        /// <summary>
+        /// 32 byte hash of the unspent output currently being used by this contract.
+        /// </summary>
+        public byte[] UnspentHash { get; set; }
+
         public AccountState(){}
 
         #region Serialization
@@ -27,12 +32,16 @@ namespace Stratis.SmartContracts.State
             RLPCollection innerList = (RLPCollection)list[0];
             this.CodeHash = innerList[0].RLPData;
             this.StateRoot = innerList[1].RLPData;
+            this.UnspentHash = innerList[2].RLPData;
         }
 
         public byte[] ToBytes()
         {
-
-            return RLP.EncodeList(RLP.EncodeElement(this.CodeHash ?? new byte[0]), RLP.EncodeElement(this.StateRoot ?? new byte[0]));
+            return RLP.EncodeList(
+                RLP.EncodeElement(this.CodeHash ?? new byte[0]),
+                RLP.EncodeElement(this.StateRoot ?? new byte[0]),
+                RLP.EncodeElement(this.UnspentHash ?? new byte[0])
+                );
         }
 
         #endregion

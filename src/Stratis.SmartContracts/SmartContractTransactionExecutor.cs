@@ -18,9 +18,10 @@ namespace Stratis.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
-        private readonly SmartContractCarrier scTransaction;
+        private readonly SmartContractCarrier smartContractCarrier;
         private readonly ulong blockNum;
         private readonly ulong difficulty;
+        private readonly uint160 coinbaseAddress;
 
         public SmartContractTransactionExecutor(IContractStateRepository state,
             SmartContractDecompiler smartContractDecompiler,
@@ -28,29 +29,31 @@ namespace Stratis.SmartContracts
             SmartContractGasInjector smartContractGasInjector,
             SmartContractCarrier scTransaction,
             ulong blockNum,
-            ulong difficulty)
+            ulong difficulty,
+            uint160 coinbaseAddress)
         {
             this.state = state;
             this.stateTrack = state.StartTracking();
             this.decompiler = smartContractDecompiler;
             this.validator = smartContractValidator;
             this.gasInjector = smartContractGasInjector;
-            this.scTransaction = scTransaction;
+            this.smartContractCarrier = scTransaction;
             this.blockNum = blockNum;
             this.difficulty = difficulty;
+            this.coinbaseAddress = coinbaseAddress;
         }
 
         public SmartContractExecutionResult Execute()
         {
             // ASSERT OPCODETYPE == CREATE || CALL
-            return (this.scTransaction.OpCodeType == OpcodeType.OP_CREATECONTRACT) ? ExecuteCreate() : ExecuteCall();
+            return (this.smartContractCarrier.OpCodeType == OpcodeType.OP_CREATECONTRACT) ? ExecuteCreate() : ExecuteCall();
         }
 
         private SmartContractExecutionResult ExecuteCreate()
         {
-            uint160 contractAddress = this.scTransaction.GetNewContractAddress(); // TODO: GET ACTUAL NUM
+            uint160 contractAddress = this.smartContractCarrier.GetNewContractAddress(); // TODO: GET ACTUAL NUM
             this.state.CreateAccount(0);
-            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(this.scTransaction.ContractExecutionCode);
+            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(this.smartContractCarrier.ContractExecutionCode);
             SmartContractValidationResult validationResult = this.validator.ValidateContract(decomp);
 
             if (!validationResult.Valid)
@@ -69,14 +72,14 @@ namespace Stratis.SmartContracts
 
             SmartContractExecutionResult result = vm.ExecuteMethod(adjustedCodeMem.ToArray(), new SmartContractExecutionContext
             {
-                BlockNumber = blockNum,
-                Difficulty = difficulty,
-                CallerAddress = 100, // TODO: FIX THIS
-                CallValue = this.scTransaction.TxOutValue,
-                GasLimit = this.scTransaction.GasLimit,
-                GasPrice = this.scTransaction.GasPrice,
-                Parameters = this.scTransaction.MethodParameters ?? new object[0],
-                CoinbaseAddress = 0, //TODO: FIX THIS
+                BlockNumber = this.blockNum,
+                Difficulty = this.difficulty,
+                CallerAddress = this.smartContractCarrier.Sender,
+                CallValue = this.smartContractCarrier.TxOutValue,
+                GasLimit = this.smartContractCarrier.GasLimit,
+                GasPrice = this.smartContractCarrier.GasPrice,
+                Parameters = this.smartContractCarrier.MethodParameters ?? new object[0],
+                CoinbaseAddress = this.coinbaseAddress,
                 ContractAddress = contractAddress,
                 ContractMethod = initMethod?.Name, // probably better ways of doing this
                 ContractTypeName = decomp.ContractType.Name // probably better ways of doing this
@@ -89,12 +92,7 @@ namespace Stratis.SmartContracts
                 return result;
             }
 
-            IList<TransferInfo> transfers = this.state.GetTransfers();
-            if (transfers.Any())
-            {
-                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
-            }
+            // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
             this.stateTrack.SetCode(contractAddress, adjustedCodeBytes);
             this.stateTrack.Commit();
@@ -103,31 +101,53 @@ namespace Stratis.SmartContracts
 
         private SmartContractExecutionResult ExecuteCall()
         {
-            byte[] contractCode = this.state.GetCode(this.scTransaction.To);
+            byte[] contractCode = this.state.GetCode(this.smartContractCarrier.To);
             SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.state);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.stateTrack);
             SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, new SmartContractExecutionContext
             {
                 BlockNumber = Convert.ToUInt64(this.blockNum),
                 Difficulty = Convert.ToUInt64(this.difficulty),
-                CallerAddress = 0, // TODO: FIX THIS
-                CallValue = this.scTransaction.TxOutValue,
-                GasLimit = this.scTransaction.GasLimit,
-                GasPrice = this.scTransaction.GasPrice,
-                Parameters = this.scTransaction.MethodParameters ?? new object[0],
-                CoinbaseAddress = 0, //TODO: FIX THIS
-                ContractAddress = this.scTransaction.To,
-                ContractMethod = this.scTransaction.MethodName,
+                CallerAddress = this.smartContractCarrier.Sender,
+                CallValue = this.smartContractCarrier.TxOutValue,
+                GasLimit = this.smartContractCarrier.GasLimit,
+                GasPrice = this.smartContractCarrier.GasPrice,
+                Parameters = this.smartContractCarrier.MethodParameters ?? new object[0],
+                CoinbaseAddress = this.coinbaseAddress,
+                ContractAddress = this.smartContractCarrier.To,
+                ContractMethod = this.smartContractCarrier.MethodName,
                 ContractTypeName = decomp.ContractType.Name
             });
 
-            IList<TransferInfo> transfers = this.state.GetTransfers();
-            if (transfers.Any())
+            if (result.Revert)
             {
-                CondensingTx condensingTx = new CondensingTx(transfers, this.scTransaction);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTx());
+                this.stateTrack.Rollback();
+                return result;
             }
+
+            // We need to append a condensing transaction to the block here if funds are moved.
+            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
+            if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
+            {
+                List<StoredVin> vins = new List<StoredVin>();
+                StoredVin existingVin = this.state.GetUnspent(this.smartContractCarrier.To);
+                if (existingVin != null)
+                    vins.Add(existingVin);
+                if (this.smartContractCarrier.TxOutValue > 0)
+                {
+                    vins.Add(new StoredVin
+                    {
+                        Hash = this.smartContractCarrier.TransactionHash,
+                        Nvout = this.smartContractCarrier.Nvout,
+                        Value = this.smartContractCarrier.TxOutValue
+                    });
+                }
+                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, vins, this.stateTrack);
+                result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+            }
+
+            this.stateTrack.Commit();
 
             return result;
         }

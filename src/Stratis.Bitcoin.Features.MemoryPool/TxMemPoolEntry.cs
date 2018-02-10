@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
@@ -209,7 +210,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The transaction size.</returns>
         public long GetTxSize()
         {
-            return (long)this.Transaction.GetVirtualSize();
+            return this.Transaction.GetVirtualSize();
         }
 
         /// <summary>
@@ -219,6 +220,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public long DynamicMemoryUsage()
         {
             return this.nUsageSize;
+        }
+
+        /// <summary>
+        /// Return the <see cref="TxOut"/> of the transaction that contains smart contract.
+        /// <para>
+        /// There is only allowed to be 1 per transaction .
+        /// </para>
+        /// </summary>
+        public TxOut TryGetSmartContractTxOut()
+        {
+            TxOut smartContractTxOut = this.Transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            return smartContractTxOut;
         }
 
         /// <summary>

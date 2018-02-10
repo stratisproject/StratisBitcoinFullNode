@@ -47,13 +47,18 @@ namespace Stratis.SmartContracts
             {
                 if (string.IsNullOrEmpty(this.methodParameters))
                     return new object[] { };
-
                 return this.methodParameters.Split('|');
             }
         }
 
+        /// <summary>TODO : Add description.</summary>
+        public uint Nvout { get; set; }
+
         /// <summary>Specifies the smart contract operation to be done.</summary>
         public readonly OpcodeType OpCodeType;
+
+        /// <summary>The initiator of the the smart contract.</summary>
+        public uint160 Sender { get; set; }
 
         /// <summary>The transaction hash that this smart contract references.</summary>
         public uint256 TransactionHash { get; private set; }
@@ -66,6 +71,7 @@ namespace Stratis.SmartContracts
         /// </summary>
         public readonly uint VmVersion;
 
+        /// <summary>TODO : Add description.</summary>
         public ulong TotalGas
         {
             get
@@ -75,9 +81,6 @@ namespace Stratis.SmartContracts
         }
 
         public uint160 To { get; set; }
-        public uint160 From { get; set; }
-
-        public uint Nvout { get; set; }
 
         private SmartContractCarrier(uint vmVersion, OpcodeType opCodeType)
         {
@@ -108,7 +111,7 @@ namespace Stratis.SmartContracts
             // TODO: Add null/valid checks for 
             // methodParameters
 
-            var carrier = CreateContract(vmVersion, contractExecutionCode, gasPrice, gasLimit);
+            SmartContractCarrier carrier = CreateContract(vmVersion, contractExecutionCode, gasPrice, gasLimit);
             carrier.methodParameters = methodParameters;
             return carrier;
         }
@@ -132,11 +135,11 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Serializes the smart contract execution code and other related information.
+        /// Deserializes the smart contract execution code and other related information.
         /// </summary>
-        public static SmartContractCarrier Deserialize(uint256 transactionHash, Script smartContractScript, Money txOutValue)
+        public static SmartContractCarrier Deserialize(Transaction transaction, TxOut smartContractTxOut)
         {
-            byte[] smartContractBytes = smartContractScript.ToBytes();
+            byte[] smartContractBytes = smartContractTxOut.ScriptPubKey.ToBytes();
 
             var byteCursor = 0;
             var takeLength = 0;
@@ -155,12 +158,11 @@ namespace Stratis.SmartContracts
                 smartContractCarrier.ContractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
             smartContractCarrier.methodParameters = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
             smartContractCarrier.GasPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.GasLimit = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            smartContractCarrier.TransactionHash = transactionHash;
-            smartContractCarrier.TxOutValue = txOutValue;
-
-            //smartContractCarrier.From = GetSenderAddress();
+            smartContractCarrier.TransactionHash = transaction.GetHash();
+            smartContractCarrier.TxOutValue = smartContractTxOut.Value;
 
             return smartContractCarrier;
         }
@@ -242,19 +244,12 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Could put this on the 'Transaction' object in NBitcoin if allowed
+        /// TODO: Could put this on the 'Transaction' object in NBitcoin if allowed
         /// </summary>
-        /// <returns></returns>
         public uint160 GetNewContractAddress()
         {
             return new uint160(HashHelper.Keccak256(this.TransactionHash.ToBytes()).Take(20).ToArray());
         }
-
-        //public uint160 GetSenderAddress()
-        //{
-        //    return 100;
-        //    throw new NotImplementedException(); // TODO: Full node dev?
-        //}
     }
 
     public enum SmartContractCarrierDataType
