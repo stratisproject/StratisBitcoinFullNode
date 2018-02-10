@@ -28,6 +28,9 @@ namespace Stratis.Bitcoin
         /// <summary>ASP.NET Core host for RPC server.</summary>
         IWebHost RPCHost { get; set; }
 
+        /// <summary>Provides current state of the node.</summary>
+        FullNodeState State { get; }
+
         /// <summary>
         /// Starts the full node and all its features.
         /// </summary>
@@ -48,5 +51,11 @@ namespace Stratis.Bitcoin
         /// <param name="failWithError">Set to false to return null instead of throwing an error</param>
         /// <returns></returns>
         T NodeFeature<T>(bool failWithError = false);
+    }
+
+    public enum FullNodeState
+    {
+        Disposing,
+        Disposed
     }
 }

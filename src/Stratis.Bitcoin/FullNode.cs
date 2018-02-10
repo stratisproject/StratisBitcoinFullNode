@@ -32,12 +32,6 @@ namespace Stratis.Bitcoin
         /// <summary>Component responsible for starting and stopping all the node's features.</summary>
         private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
-        /// <summary>Indicates whether the node's instance has been disposed or is currently being disposed.</summary>
-        public bool IsDisposed { get; private set; }
-
-        /// <summary>Indicates whether the node's instance disposal has been finished.</summary>
-        public bool HasExited { get; private set; }
-
         /// <summary>Node command line and configuration file settings.</summary>
         public NodeSettings Settings { get; private set; }
 
@@ -55,6 +49,9 @@ namespace Stratis.Bitcoin
 
         /// <summary>ASP.NET Core host for RPC server.</summary>
         public IWebHost RPCHost { get; set; }
+
+        /// <inheritdoc />
+        public FullNodeState State { get; private set; }
 
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
@@ -178,7 +175,7 @@ namespace Stratis.Bitcoin
         /// <inheritdoc />
         public void Start()
         {
-            if (this.IsDisposed)
+            if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
 
             if (this.Resources != null)
@@ -247,10 +244,10 @@ namespace Stratis.Bitcoin
         /// <inheritdoc />
         public void Dispose()
         {
-            if (this.IsDisposed)
+            if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 return;
 
-            this.IsDisposed = true;
+            this.State = FullNodeState.Disposing;
 
             this.logger.LogInformation("Closing node pending...");
 
@@ -269,7 +266,7 @@ namespace Stratis.Bitcoin
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
 
-            this.HasExited = true;
+            this.State = FullNodeState.Disposed;
         }
     }
 }

@@ -29,14 +29,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private Process process;
 
-        public bool HasExited
+        public bool IsDisposed
         {
             get { return this.process == null && this.process.HasExited; }
         }
 
         public void Kill()
         {
-            if (!this.HasExited)
+            if (!this.IsDisposed)
             {
                 this.process.Kill();
                 this.process.WaitForExit();
@@ -59,17 +59,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.callback = callback;
         }
 
-        public bool HasExited
+        public bool IsDisposed
         {
-            get { return this.FullNode.HasExited; }
+            get { return this.FullNode.State == FullNodeState.Disposed; }
         }
 
         public void Kill()
         {
-            if (this.FullNode != null)
-            {
-                this.FullNode.Dispose();
-            }
+            this.FullNode?.Dispose();
         }
 
         public void Start(string dataDir)
@@ -147,17 +144,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.callback = callback;
         }
 
-        public bool HasExited
+        public bool IsDisposed
         {
-            get { return this.FullNode.HasExited; }
+            get { return this.FullNode.State == FullNodeState.Disposed; }
         }
 
         public void Kill()
         {
-            if (this.FullNode != null)
-            {
-                this.FullNode.Dispose();
-            }
+            this.FullNode?.Dispose();
         }
 
         public void Start(string dataDir)
