@@ -13,7 +13,6 @@ namespace Stratis.SmartContracts.ContractValidation
         {
             // TODO: Ensure that AppContext.BaseDirectory is robust here
             var resolver = new DefaultAssemblyResolver();
-            resolver.AddSearchDirectory(AppContext.BaseDirectory);
             var result = new SmartContractDecompilation();
             result.ModuleDefinition = ModuleDefinition.ReadModule(new MemoryStream(bytes), new ReaderParameters { AssemblyResolver = resolver });
             result.ContractType = result.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
