@@ -37,6 +37,13 @@ namespace Stratis.Bitcoin
         void Start();
 
         /// <summary>
+        /// Initializes DI services that the node needs.
+        /// </summary>
+        /// <param name="serviceProvider">Provider of DI services.</param>
+        /// <returns>Full node itself to allow fluent code.</returns>
+        IFullNode Initialize(IFullNodeServiceProvider serviceProvider);
+
+        /// <summary>
         /// Find a service of a particular type
         /// </summary>
         /// <typeparam name="T">Class of type</typeparam>
@@ -53,14 +60,22 @@ namespace Stratis.Bitcoin
         T NodeFeature<T>(bool failWithError = false);
     }
 
+    /// <summary>Represents <see cref="IFullNode"/> state.</summary>
     public enum FullNodeState
     {
+        /// <summary>Assigned when <see cref="IFullNode"/> instance is created.</summary>
         Created,
+        /// <summary>Assigned when <see cref="IFullNode.Initialize"/> is called.</summary>
         Initializing,
+        /// <summary>Assigned when <see cref="IFullNode.Initialize"/> finished executing.</summary>
         Initialized,
+        /// <summary>Assigned when <see cref="IFullNode.Start"/> is called.</summary>
         Starting,
+        /// <summary>Assigned when <see cref="IFullNode.Start"/> finished executing.</summary>
         Started,
+        /// <summary>Assigned when <see cref="IFullNode.Dispose"/> is called.</summary>
         Disposing,
+        /// <summary>Assigned when <see cref="IFullNode.Dispose"/> finished executing.</summary>
         Disposed
     }
 }

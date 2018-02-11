@@ -146,12 +146,8 @@ namespace Stratis.Bitcoin
             this.State = FullNodeState.Created;
         }
 
-        /// <summary>
-        /// Initializes DI services that the node needs.
-        /// </summary>
-        /// <param name="serviceProvider">Provider of DI services.</param>
-        /// <returns>Full node itself to allow fluent code.</returns>
-        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        /// <inheritdoc />
+        public IFullNode Initialize(IFullNodeServiceProvider serviceProvider)
         {
             this.State = FullNodeState.Initializing;
 
