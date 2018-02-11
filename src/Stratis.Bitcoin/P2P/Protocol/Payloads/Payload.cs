@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             get
             {
-                return this.GetType().CustomAttributes.OfType<PayloadAttribute>().First().Name;
+                return this.GetType().GetCustomAttribute<PayloadAttribute>().Name;
             }
         }
 

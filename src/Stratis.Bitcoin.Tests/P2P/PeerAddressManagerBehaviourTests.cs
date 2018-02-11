@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
-            var message = new IncomingMessage(new PingPayload(), this.network);
+            var message = new IncomingMessage(new PingPayload(), this.network, new PayloadProvider().DiscoverPayloads());
 
             //Trigger the event handler
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, message).GetAwaiter().GetResult();
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
-            var message = new IncomingMessage(new PongPayload(), this.network);
+            var message = new IncomingMessage(new PongPayload(), this.network, new PayloadProvider().DiscoverPayloads());
 
             //Trigger the event handler
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, message).GetAwaiter().GetResult();

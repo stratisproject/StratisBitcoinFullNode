@@ -16,8 +16,9 @@ namespace Stratis.Bitcoin.P2P.Protocol
             this.payloadProvider = payloadProvider;
         }
 
-        public IncomingMessage(Payload payload, Network network)
+        public IncomingMessage(Payload payload, Network network, PayloadProvider payloadProvider)
         {
+            this.payloadProvider = payloadProvider;
             this.Message = new Message(this.payloadProvider);
             this.Message.Magic = network.Magic;
             this.Message.Payload = payload;
