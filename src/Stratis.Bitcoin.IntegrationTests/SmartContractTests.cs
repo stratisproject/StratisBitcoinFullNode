@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", string.Empty, 1, 500);
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", 1, 500);
 
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            var transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress, "Test", string.Empty, 1, 500);
+            var transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress, "Test", 1, 500);
 
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", string.Empty, 1, 500);
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
 
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", string.Empty, 1, 500);
+            transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
 
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
@@ -492,7 +492,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", string.Empty, 1, 500);
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
 
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
@@ -520,7 +520,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "DoNothing", string.Empty, 1, 500); ;
+            transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "DoNothing", 1, 500); ;
 
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));

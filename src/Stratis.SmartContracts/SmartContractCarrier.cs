@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using NBitcoin;
 using Stratis.SmartContracts.Hashing;
 
@@ -41,13 +42,14 @@ namespace Stratis.SmartContracts
 
         private string methodParameters;
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
-        public object[] MethodParameters
+        public string[] MethodParameters
         {
             get
             {
                 if (string.IsNullOrEmpty(this.methodParameters))
-                    return new object[] { };
-                return this.methodParameters.Split('|');
+                    return null;
+
+                return Regex.Split(this.methodParameters, @"(?<!(?<!\\)*\\)\|").Select(parameter => parameter.Replace(@"\|", "|")).ToArray();
             }
         }
 
@@ -106,32 +108,42 @@ namespace Stratis.SmartContracts
             return carrier;
         }
 
-        public static SmartContractCarrier CreateContract(uint vmVersion, byte[] contractExecutionCode, string methodParameters, ulong gasPrice, ulong gasLimit)
-        {
-            // TODO: Add null/valid checks for 
-            // methodParameters
-
-            SmartContractCarrier carrier = CreateContract(vmVersion, contractExecutionCode, gasPrice, gasLimit);
-            carrier.methodParameters = methodParameters;
-            return carrier;
-        }
-
-        public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, string methodParameters, ulong gasPrice, ulong gasLimit)
+        public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, ulong gasPrice, ulong gasLimit)
         {
             // TODO: Add null/valid checks for 
             // to
             // methodName
-            // methodParameters
             // gasPrice
             // gasLimit
 
             var carrier = new SmartContractCarrier(vmVersion, OpcodeType.OP_CALLCONTRACT);
             carrier.To = to;
             carrier.MethodName = methodName;
-            carrier.methodParameters = methodParameters;
             carrier.GasPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
+        }
+
+        /// <summary>
+        /// Create this carrier with method parameters.
+        /// </summary>
+        /// <param name="methodParameters">A string array representation of the method parameters.</param>
+        public SmartContractCarrier WithParameters(string[] methodParameters)
+        {
+            //TODO: SmartContractCarrierException?
+            if (this.OpCodeType == OpcodeType.OP_CALLCONTRACT && string.IsNullOrEmpty(this.MethodName))
+                throw new Exception(nameof(this.MethodName) + " must be supplied before specifying method parameters.");
+
+            // TODO: SmartContractCarrierException?
+            if (methodParameters == null)
+                throw new Exception(nameof(methodParameters) + " cannot be null.");
+
+            if (methodParameters.Length == 0)
+                return this;
+
+            this.methodParameters = string.Join('|', methodParameters.Select(parameter => parameter.Replace("|", @"\|")));
+
+            return this;
         }
 
         /// <summary>

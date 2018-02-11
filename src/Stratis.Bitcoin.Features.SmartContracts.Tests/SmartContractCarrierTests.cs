@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class SmartContractCarrierTests
     {
         [Fact]
-        public void SmartContract_CanSerialize_OP_CREATECONTRACT_WithNoMethodParameters()
+        public void SmartContract_CanSerialize_OP_CREATECONTRACT_WithoutMethodParameters()
         {
             byte[] contractExecutionCode = Encoding.UTF8.GetBytes(
                 @"
@@ -59,13 +59,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
 
-            string[] methodParameters = new string[]
+            string[] testMethodParameters = new string[]
             {
                 string.Format("{0}#{1}", SmartContractCarrierDataType.Short, 12),
                 string.Format("{0}#{1}", SmartContractCarrierDataType.Bool, true),
+                string.Format("{0}#{1}", SmartContractCarrierDataType.String, "te|st"),
             };
 
-            var smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, string.Join('|', methodParameters), 1, 500000);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, 500000).WithParameters(testMethodParameters);
             byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
 
             var tx = new Transaction();
@@ -76,24 +77,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
+
             Assert.NotNull(deserialized.MethodParameters[0]);
-            Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);
+            Assert.Equal(testMethodParameters[0], deserialized.MethodParameters[0]);
             Assert.NotNull(deserialized.MethodParameters[1]);
-            Assert.Equal(smartContractCarrier.MethodParameters[1], deserialized.MethodParameters[1]);
+            Assert.Equal(testMethodParameters[1], deserialized.MethodParameters[1]);
+            Assert.NotNull(deserialized.MethodParameters[2]);
+            Assert.Equal(testMethodParameters[2], deserialized.MethodParameters[2]);
+
             Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
         }
 
         [Fact]
-        public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithBasicDataTypes()
+        public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {
-            string[] methodParameters = new string[]
-            {
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Bool, true),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.String,"test"),
-            };
-
-            var smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", string.Join('|', methodParameters), 1, 500000);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
@@ -104,19 +103,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.To, deserialized.To);
             Assert.Equal(smartContractCarrier.MethodName, deserialized.MethodName);
-
-            Assert.NotNull(deserialized.MethodParameters[0]);
-            Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);
-
-            Assert.NotNull(deserialized.MethodParameters[1]);
-            Assert.Equal(smartContractCarrier.MethodParameters[1], deserialized.MethodParameters[1]);
-
+            Assert.Null(deserialized.MethodParameters);
             Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
         }
 
         [Fact]
-        public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithAllDataTypes()
+        public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithMethodParameters()
         {
             string[] methodParameters = new string[]
             {
@@ -132,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", SmartContractCarrierDataType.ULong, 29)
             };
 
-            var smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", string.Join('|', methodParameters), 1, 500000);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000).WithParameters(methodParameters);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));

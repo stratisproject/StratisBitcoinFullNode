@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 
             // create 'change' txOut for contract
             ulong changeValue = vinTotal - tx.TotalOut;
-            var newSmartContractCarrier = SmartContractCarrier.CallContract(1, this.smartContractCarrier.To, string.Empty, string.Empty, 0, 0);
+            var newSmartContractCarrier = SmartContractCarrier.CallContract(1, this.smartContractCarrier.To, string.Empty, 0, 0);
 
             var contractScript = new Script(newSmartContractCarrier.Serialize());
             tx.AddOutput(new TxOut(new Money(changeValue), contractScript));
@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             if (a != null)
             {
                 // This is meant to be a 'callcontract' with 0 for all parameters - and it should never be executed itself. It exists inside the execution of another contract.
-                var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, string.Empty, 0, 0);
+                var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, 0, 0);
                 return new Script(newSmartContractCarrier.Serialize());
             }
 
