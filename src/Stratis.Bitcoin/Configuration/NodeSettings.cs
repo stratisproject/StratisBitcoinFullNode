@@ -361,11 +361,11 @@ namespace Stratis.Bitcoin.Configuration
         /// Checks whether to show a help and possibly shows the help.
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
-        /// <param name="mainNet">Main network description to extract port values from.</param>
+        /// <param name="network">The network to extract values from.</param>
         /// <returns><c>true</c> if the help was displayed, <c>false</c> otherwise.</returns>
-        public static bool PrintHelp(string[] args, Network mainNet)
+        public static bool PrintHelp(string[] args, Network network)
         {
-            Guard.NotNull(mainNet, nameof(mainNet));
+            Guard.NotNull(network, nameof(network));
 
             if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
             {
