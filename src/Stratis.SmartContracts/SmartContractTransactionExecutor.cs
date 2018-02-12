@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
-using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
@@ -19,16 +18,16 @@ namespace Stratis.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
-        private readonly SmartContractTransaction scTransaction;
+        private readonly SmartContractCarrier smartContractCarrier;
         private readonly ulong blockNum;
         private readonly ulong difficulty;
         private readonly uint160 coinbaseAddress;
 
-        public SmartContractTransactionExecutor(IContractStateRepository state, 
+        public SmartContractTransactionExecutor(IContractStateRepository state,
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
             SmartContractGasInjector smartContractGasInjector,
-            SmartContractTransaction scTransaction,
+            SmartContractCarrier scTransaction,
             ulong blockNum,
             ulong difficulty,
             uint160 coinbaseAddress)
@@ -38,7 +37,7 @@ namespace Stratis.SmartContracts
             this.decompiler = smartContractDecompiler;
             this.validator = smartContractValidator;
             this.gasInjector = smartContractGasInjector;
-            this.scTransaction = scTransaction;
+            this.smartContractCarrier = scTransaction;
             this.blockNum = blockNum;
             this.difficulty = difficulty;
             this.coinbaseAddress = coinbaseAddress;
@@ -47,14 +46,14 @@ namespace Stratis.SmartContracts
         public SmartContractExecutionResult Execute()
         {
             // ASSERT OPCODETYPE == CREATE || CALL
-            return (this.scTransaction.OpCodeType == OpcodeType.OP_CREATECONTRACT) ? ExecuteCreate() : ExecuteCall();
+            return (this.smartContractCarrier.OpCodeType == OpcodeType.OP_CREATECONTRACT) ? ExecuteCreate() : ExecuteCall();
         }
 
         private SmartContractExecutionResult ExecuteCreate()
         {
-            uint160 contractAddress = this.scTransaction.GetNewContractAddress(); // TODO: GET ACTUAL NUM
+            uint160 contractAddress = this.smartContractCarrier.GetNewContractAddress(); // TODO: GET ACTUAL NUM
             this.state.CreateAccount(0);
-            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(this.scTransaction.ContractCode);
+            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(this.smartContractCarrier.ContractExecutionCode);
             SmartContractValidationResult validationResult = this.validator.ValidateContract(decomp);
 
             if (!validationResult.Valid)
@@ -73,13 +72,13 @@ namespace Stratis.SmartContracts
 
             SmartContractExecutionResult result = vm.ExecuteMethod(adjustedCodeMem.ToArray(), new SmartContractExecutionContext
             {
-                BlockNumber = blockNum,
-                Difficulty = difficulty,
-                CallerAddress = this.scTransaction.Sender,
-                CallValue = this.scTransaction.Value,
-                GasLimit = this.scTransaction.GasLimit,
-                GasPrice = this.scTransaction.GasPrice,
-                Parameters = this.scTransaction.Parameters ?? new object[0],
+                BlockNumber = this.blockNum,
+                Difficulty = this.difficulty,
+                CallerAddress = this.smartContractCarrier.Sender,
+                CallValue = this.smartContractCarrier.TxOutValue,
+                GasLimit = this.smartContractCarrier.GasLimit,
+                GasPrice = this.smartContractCarrier.GasPrice,
+                Parameters = this.smartContractCarrier.MethodParameters ?? new object[0],
                 CoinbaseAddress = this.coinbaseAddress,
                 ContractAddress = contractAddress,
                 ContractMethod = initMethod?.Name, // probably better ways of doing this
@@ -102,7 +101,7 @@ namespace Stratis.SmartContracts
 
         private SmartContractExecutionResult ExecuteCall()
         {
-            byte[] contractCode = this.state.GetCode(this.scTransaction.To);
+            byte[] contractCode = this.state.GetCode(this.smartContractCarrier.To);
             SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.stateTrack);
@@ -110,14 +109,14 @@ namespace Stratis.SmartContracts
             {
                 BlockNumber = Convert.ToUInt64(this.blockNum),
                 Difficulty = Convert.ToUInt64(this.difficulty),
-                CallerAddress = this.scTransaction.Sender,
-                CallValue = this.scTransaction.Value,
-                GasLimit = this.scTransaction.GasLimit,
-                GasPrice = this.scTransaction.GasPrice,
-                Parameters = this.scTransaction.Parameters ?? new object[0],
+                CallerAddress = this.smartContractCarrier.Sender,
+                CallValue = this.smartContractCarrier.TxOutValue,
+                GasLimit = this.smartContractCarrier.GasLimit,
+                GasPrice = this.smartContractCarrier.GasPrice,
+                Parameters = this.smartContractCarrier.MethodParameters ?? new object[0],
                 CoinbaseAddress = this.coinbaseAddress,
-                ContractAddress = this.scTransaction.To,
-                ContractMethod = this.scTransaction.MethodName,
+                ContractAddress = this.smartContractCarrier.To,
+                ContractMethod = this.smartContractCarrier.MethodName,
                 ContractTypeName = decomp.ContractType.Name
             });
 
@@ -129,22 +128,22 @@ namespace Stratis.SmartContracts
 
             // We need to append a condensing transaction to the block here if funds are moved.
             IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
-            if (transfers.Any() || this.scTransaction.Value > 0)
+            if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
                 List<StoredVin> vins = new List<StoredVin>();
-                StoredVin existingVin = this.state.GetUnspent(this.scTransaction.To);
+                StoredVin existingVin = this.state.GetUnspent(this.smartContractCarrier.To);
                 if (existingVin != null)
                     vins.Add(existingVin);
-                if (this.scTransaction.Value > 0)
+                if (this.smartContractCarrier.TxOutValue > 0)
                 {
                     vins.Add(new StoredVin
                     {
-                        Hash = this.scTransaction.Hash,
-                        Nvout = this.scTransaction.Nvout,
-                        Value = this.scTransaction.Value
+                        Hash = this.smartContractCarrier.TransactionHash,
+                        Nvout = this.smartContractCarrier.Nvout,
+                        Value = this.smartContractCarrier.TxOutValue
                     });
                 }
-                CondensingTx condensingTx = new CondensingTx(this.scTransaction, transfers, vins, this.stateTrack);
+                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, vins, this.stateTrack);
                 result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
 

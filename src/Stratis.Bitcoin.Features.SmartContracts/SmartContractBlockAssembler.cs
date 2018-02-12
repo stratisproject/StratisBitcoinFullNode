@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -23,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private Money refundSender = 0;
         private List<TxOut> refundOutputs = new List<TxOut>();
-        
+
         private readonly IContractStateRepository stateRoot;
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
@@ -33,11 +32,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
-            Network network, 
-            MempoolSchedulerLock mempoolLock, 
-            ITxMempool mempool, 
-            IDateTimeProvider dateTimeProvider, 
-            ChainedBlock chainTip, 
+            Network network,
+            MempoolSchedulerLock mempoolLock,
+            ITxMempool mempool,
+            IDateTimeProvider dateTimeProvider,
+            ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             IContractStateRepository stateRoot,
             SmartContractDecompiler decompiler,
@@ -101,39 +100,40 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.pblock.Header.HashStateRoot = new uint256(this.stateRoot.GetRoot());
         }
 
-        protected override void AddToBlock(TxMempoolEntry iter)
+        protected override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            // get contract txout - there is only allowed to be 1 per transaction 
-            TxOut contractTxOut = iter.Transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-
-            // boring transaction, handle normally
-            if (contractTxOut == null)
+            //Determine whether or not this mempool entry contains smart code execution code.
+            TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
+            if (smartContractTxOut == null)
             {
-                base.AddToBlock(iter);
-                return;
+                //If no smart contract exists then process as per normal.
+                base.AddToBlock(mempoolEntry);
             }
+            else
+            {
+                //Else extract and deserialize the smart contract code from the TxOut's ScriptPubKey.
+                SmartContractCarrier smartContractCarrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
+                smartContractCarrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
-            SmartContractTransaction scTransaction = new SmartContractTransaction(contractTxOut, iter.Transaction);
-            scTransaction.Sender = GetSenderUtil.GetSender(iter.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
-            AddContractCallToBlock(iter, scTransaction);
+                AddContractCallToBlock(mempoolEntry, smartContractCarrier);
+            }
         }
 
-        private void AddContractCallToBlock(TxMempoolEntry iter, SmartContractTransaction scTransaction)
+        private void AddContractCallToBlock(TxMempoolEntry iter, SmartContractCarrier scTransaction)
         {
             IContractStateRepository track = this.stateRoot.StartTracking();
             ulong height = Convert.ToUInt64(this.height);// TODO: Optimise so this conversion isn't happening every time.
             ulong difficulty = 0; // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty, this.coinbaseAddress);
 
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty, this.coinbaseAddress);
             ulong gasToSpend = scTransaction.TotalGas;
-            SmartContractExecutionResult result = exec.Execute();
+            SmartContractExecutionResult result = executor.Execute();
 
             //Update state
             if (result.Revert)
                 track.Rollback();
             else
                 track.Commit();
-
 
             ulong toRefund = gasToSpend - result.GasUsed * scTransaction.GasPrice;
             ulong txFeeAndGas = iter.Fee - toRefund;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.inBlock.Add(iter);
 
             // Add internal transactions made during execution
-            foreach(Transaction transaction in result.InternalTransactions)
+            foreach (Transaction transaction in result.InternalTransactions)
             {
                 this.pblock.AddTransaction(transaction);
                 if (this.needSizeAccounting)
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 Op.GetPushOp(scTransaction.Sender.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
-            ); 
+            );
             this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
     }

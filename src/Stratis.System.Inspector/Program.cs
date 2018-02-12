@@ -50,13 +50,14 @@ namespace Stratis.System.Inspector
                     Console.WriteLine($"Type {type.FullName} contains {type.Methods.Count} methods");
 
                     foreach (var method in type.Methods)
-                    {                        
+                    {
                         Console.WriteLine($"Inspecting method {method.FullName}");
                         var inspectionResults = Inspect(method);
                         var returnType = method.ReturnType;
 
                         allResults.AddRange(inspectionResults.Select(r =>
-                        new {
+                        new
+                        {
                             r.MethodName,
                             r.MethodFullName,
                             ReturnType = returnType.FullName,

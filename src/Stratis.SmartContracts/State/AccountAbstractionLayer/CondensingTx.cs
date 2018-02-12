@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.State.AccountAbstractionLayer
@@ -12,15 +10,15 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
     /// </summary>
     public class CondensingTx
     {
-        private SmartContractTransaction scTransaction;
+        private SmartContractCarrier smartContractCarrier;
         private IList<TransferInfo> transfers;
         private IList<StoredVin> unspents;
         private IContractStateRepository state;
         private Dictionary<uint160, ulong> txBalances;
 
-        public CondensingTx(SmartContractTransaction scTransaction, IList<TransferInfo> transfers, IList<StoredVin> unspents, IContractStateRepository state)
+        public CondensingTx(SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IList<StoredVin> unspents, IContractStateRepository state)
         {
-            this.scTransaction = scTransaction;
+            this.smartContractCarrier = smartContractCarrier;
             this.transfers = transfers;
             this.unspents = unspents;
             this.state = state;
@@ -35,27 +33,23 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 
             // create inputs from stored vins - Possibly 1 from previous vin and possibly 1 if this transaction has value
             ulong vinTotal = 0;
-            foreach(StoredVin vin in this.unspents)
+            foreach (StoredVin vin in this.unspents)
             {
                 OutPoint outpoint = new OutPoint(vin.Hash, vin.Nvout);
                 tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
                 vinTotal += vin.Value;
             }
 
-            foreach(TxOut txOut in GetOutputs())
+            foreach (TxOut txOut in GetOutputs())
             {
                 tx.Outputs.Add(txOut);
             }
 
             // create 'change' txOut for contract
             ulong changeValue = vinTotal - tx.TotalOut;
-            SmartContractTransaction newContractScTransaction = new SmartContractTransaction
-            {
-                To = this.scTransaction.To,
-                OpCodeType = OpcodeType.OP_CALLCONTRACT,
-                MethodName = ""
-            };
-            Script contractScript = new Script(newContractScTransaction.ToBytes());
+            var newSmartContractCarrier = SmartContractCarrier.CallContract(1, this.smartContractCarrier.To, string.Empty, 0, 0);
+
+            var contractScript = new Script(newSmartContractCarrier.Serialize());
             tx.AddOutput(new TxOut(new Money(changeValue), contractScript));
 
             StoredVin newContractVin = new StoredVin
@@ -66,7 +60,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             };
 
             //Update db to reflect new unspent for contract.
-            this.state.SetUnspent(this.scTransaction.To, newContractVin);
+            this.state.SetUnspent(this.smartContractCarrier.To, newContractVin);
 
             return tx;
         }
@@ -94,13 +88,8 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             if (a != null)
             {
                 // This is meant to be a 'callcontract' with 0 for all parameters - and it should never be executed itself. It exists inside the execution of another contract.
-                SmartContractTransaction newScTransaction = new SmartContractTransaction
-                {
-                    To = address,
-                    OpCodeType = OpcodeType.OP_CALLCONTRACT,
-                    MethodName = ""
-                };
-                return new Script(newScTransaction.ToBytes());
+                var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, 0, 0);
+                return new Script(newSmartContractCarrier.Serialize());
             }
 
             return new Script(
@@ -109,7 +98,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
                         Op.GetPushOp(address.ToBytes()),
                         OpcodeType.OP_EQUALVERIFY,
                         OpcodeType.OP_CHECKSIG
-                    ); 
+                    );
         }
 
 
@@ -119,7 +108,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         /// </summary>
         private void SetupBalances()
         {
-            foreach(TransferInfo transfer in this.transfers)
+            foreach (TransferInfo transfer in this.transfers)
             {
                 if (this.txBalances.ContainsKey(transfer.To))
                     this.txBalances[transfer.To] += transfer.Value;
@@ -127,6 +116,5 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
                     this.txBalances[transfer.To] = transfer.Value;
             }
         }
-
     }
 }
