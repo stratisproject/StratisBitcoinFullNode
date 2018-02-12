@@ -33,12 +33,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class PayloadProvider
     {
         /// <summary>
-        /// A mapping between the type and the command name.
+        /// A mapping between the payload type and the command name.
         /// </summary>
         private readonly Dictionary<string, Type> nameToType;
 
         /// <summary>
-        /// A mapping between the type and the command name.
+        /// A mapping between the command name and the payload type.
         /// </summary>
         private readonly Dictionary<Type, string> typeToName;
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         /// <summary>
-        /// Disvoer all payloads from the provided assembly, if no assembly is provided defaults to <see cref="PayloadAttribute"/>.
+        /// Discover all payloads from the provided assembly, if no assembly is provided defaults to <see cref="PayloadAttribute"/>.
         /// </summary>
         /// <param name="assembly">the assembly to discover from or <see cref="PayloadAttribute"/> if <c>null</c>.</param>
         public PayloadProvider DiscoverPayloads(Assembly assembly = null)

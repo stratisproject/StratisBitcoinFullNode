@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        /// <summary>A provider of network payload messages.</summary>
         private readonly PayloadProvider payloadProvider;
 
         /// <summary>Instance logger.</summary>
@@ -178,7 +179,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.peer.Counter.AddRead(message.MessageSize);
 
-                    var incomingMessage = new IncomingMessage(this.payloadProvider)
+                    var incomingMessage = new IncomingMessage()
                     {
                         Message = message,
                         Length = message.MessageSize,
@@ -605,7 +606,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             byte[] rawMessage = await this.ReadMessageAsync(protocolVersion, cancellation).ConfigureAwait(false);
             using (var memoryStream = new MemoryStream(rawMessage))
             {
-                message = Message.ReadNext(memoryStream, this.network, protocolVersion, cancellation, null, out PerformanceCounter counter);
+                message = Message.ReadNext(memoryStream, this.network, protocolVersion, cancellation, this.payloadProvider, out PerformanceCounter counter);
                 message.MessageSize = (uint)rawMessage.Length;
             }
 

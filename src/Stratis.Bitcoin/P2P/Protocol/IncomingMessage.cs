@@ -1,36 +1,14 @@
-﻿using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
-
-namespace Stratis.Bitcoin.P2P.Protocol
+﻿namespace Stratis.Bitcoin.P2P.Protocol
 {
+    /// <summary>
+    /// A type takes context information about a <see cref="Message"/>.
+    /// </summary>
     public class IncomingMessage
     {
-        private readonly PayloadProvider payloadProvider;
+        /// <summary>A network payload messages.</summary>
         public Message Message { get; set; }
+
+        /// <summary>The total length of the payload.</summary>
         public long Length { get; set; }
-
-        public IncomingMessage(PayloadProvider payloadProvider)
-        {
-            this.payloadProvider = payloadProvider;
-        }
-
-        public IncomingMessage(Payload payload, Network network, PayloadProvider payloadProvider)
-        {
-            this.payloadProvider = payloadProvider;
-            this.Message = new Message(this.payloadProvider);
-            this.Message.Magic = network.Magic;
-            this.Message.Payload = payload;
-        }
-
-        internal T AssertPayload<T>() where T : Payload
-        {
-            if (this.Message.Payload is T)
-                return (T)(this.Message.Payload);
-
-            var ex = new ProtocolException("Expected message " + typeof(T).Name + " but got " + this.Message.Payload.GetType().Name);
-            throw ex;
-        }
     }
 }

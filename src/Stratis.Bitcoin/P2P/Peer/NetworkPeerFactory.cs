@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <summary>A provider of netwrok payload messages.</summary>
+        /// <summary>A provider of network payload messages.</summary>
         private readonly PayloadProvider payloadProvider;
 
         /// <summary>Instance logger.</summary>
