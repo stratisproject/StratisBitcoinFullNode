@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Mono.Cecil;
-using Mono.Cecil.Rocks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -203,21 +198,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
             IContractStateRepository track = this.stateRoot.StartTracking();
-            var scTransaction = new SmartContractTransaction(contractTxOut, transaction);
+            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, transaction.Outputs[0]);
 
-            scTransaction.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+            smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = new uint160(coinbaseScriptPubKey.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
 
-            SmartContractTransactionExecutor exec = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, blockNum, difficulty, coinbaseAddress); // TODO: Put coinbase in here
-            SmartContractExecutionResult result = exec.Execute();
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress); // TODO: Put coinbase in here
+            SmartContractExecutionResult result = executor.Execute();
 
             if (result.InternalTransactions.Any())
                 this.lastProcessed = result.InternalTransactions.FirstOrDefault();
 
             track.Commit();
         }
-
-
     }
 }

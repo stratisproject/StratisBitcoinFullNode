@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text;
+using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.Util;
-using NBitcoin;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -34,19 +32,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ulong difficulty = 0;
             ulong gasLimit = 500000;
             ulong gasPrice = 1;
-            
+
             // Note that this is skipping validation and when on-chain, 
             byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTest.cs");
             SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode);
             this.gasInjector.AddGasCalculationToContract(decomp.ContractType, decomp.BaseType);
-            MemoryStream mem = new MemoryStream();
-            decomp.ModuleDefinition.Write(mem);
-            byte[] adjustedContractCode = mem.ToArray();
-            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
+
+            byte[] adjustedContractCode;
+            using (var ms = new MemoryStream())
+            {
+                decomp.ModuleDefinition.Write(ms);
+                adjustedContractCode = ms.ToArray();
+            }
+
+            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(repository);
-            SmartContractExecutionContext context = new SmartContractExecutionContext
+
+            var context = new SmartContractExecutionContext
             {
                 BlockNumber = blockNum,
                 CallerAddress = callerAddress,
@@ -58,8 +60,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Difficulty = difficulty,
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
-                Parameters = new object[] {}
+                Parameters = new object[] { }
             };
+
+            var vm = new ReflectionVirtualMachine(repository);
             SmartContractExecutionResult result = vm.ExecuteMethod(adjustedContractCode, context);
             track.Commit();
 
