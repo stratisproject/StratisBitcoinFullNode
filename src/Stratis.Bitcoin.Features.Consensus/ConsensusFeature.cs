@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
-        public static IFullNodeBuilder UseConsensus(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UsePowConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return fullNodeBuilder;
         }
 
-        public static IFullNodeBuilder UseStratisConsensus(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UsePosConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
@@ -227,26 +227,30 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             public IEnumerable<ConsensusRule> GetRules()
             {
-                yield return new BlockHeaderRule();
+                return new List<ConsensusRule>
+                {
+                    new BlockHeaderRule(),
 
-                // rules that are inside the method CheckBlockHeader
-                yield return new CalculateWorkRule();
+                    // rules that are inside the method CheckBlockHeader
+                    new CalculateWorkRule(),
 
-                // rules that are inside the method ContextualCheckBlockHeader
-                yield return new CheckpointsRule();
-                yield return new AssumeValidRule();
+                    // rules that are inside the method ContextualCheckBlockHeader
+                    new CheckpointsRule(),
+                    new AssumeValidRule(),
+                    new BlockHeaderPowContextualRule(),
 
-                // rules that are inside the method ContextualCheckBlock
-                yield return new Bip113ActivationRule();
-                yield return new Bip34ActivationRule();
-                yield return new WitnessCommitmentsRule();
-                yield return new BlockSizeRule();
+                    // rules that are inside the method ContextualCheckBlock
+                    new Bip113ActivationRule(),
+                    new Bip34ActivationRule(),
+                    new WitnessCommitmentsRule(),
+                    new BlockSizeRule(),
 
-                // rules that are inside the method CheckBlock
-                yield return new BlockMerkleRootRule();
-                yield return new EnsureCoinbaseRule();
-                yield return new CheckTransactionRule();
-                yield return new CheckSigOpsRule();
+                    // rules that are inside the method CheckBlock
+                    new BlockMerkleRootRule(),
+                    new EnsureCoinbaseRule(),
+                    new CheckTransactionRule(),
+                    new CheckSigOpsRule()
+                };
             }
         }
 
@@ -254,28 +258,32 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             public IEnumerable<ConsensusRule> GetRules()
             {
-                yield return new BlockHeaderRule();
+                return new List<ConsensusRule>
+                {
+                    new BlockHeaderRule(),
 
-                // rules that are inside the method CheckBlockHeader
-                yield return new CalculateStakeRule();
+                    // rules that are inside the method CheckBlockHeader
+                    new CalculateStakeRule(),
 
-                // rules that are inside the method ContextualCheckBlockHeader
-                yield return new CheckpointsRule();
-                yield return new AssumeValidRule();
+                    // rules that are inside the method ContextualCheckBlockHeader
+                    new CheckpointsRule(),
+                    new AssumeValidRule(),
+                    new BlockHeaderPowContextualRule(),
+                    new BlockHeaderPosContextualRule(),
 
-                // rules that are inside the method ContextualCheckBlock
-                yield return new Bip113ActivationRule();
-                yield return new Bip34ActivationRule();
-                yield return new WitnessCommitmentsRule();
-                yield return new BlockSizeRule();
+                    // rules that are inside the method ContextualCheckBlock
+                    new Bip113ActivationRule(),
+                    new Bip34ActivationRule(),
+                    new WitnessCommitmentsRule(),
+                    new BlockSizeRule(),
 
-                // rules that are inside the method CheckBlock
-                yield return new BlockMerkleRootRule();
-                yield return new EnsureCoinbaseRule();
-                yield return new CheckTransactionRule();
-                yield return new CheckSigOpsRule();
+                    // rules that are inside the method CheckBlock
+                    new BlockMerkleRootRule(),
+                    new EnsureCoinbaseRule(),
+                    new CheckTransactionRule(),
+                    new CheckSigOpsRule()
+                };
             }
         }
-
     }
 }

@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Assume valid will allow to skip validation on blocks that are assumed to be valid.
     /// </summary>
+    [ValidationRule(CanSkipValidation = false)]
     public class AssumeValidRule : ConsensusRule
     {
         /// <inheritdoc />

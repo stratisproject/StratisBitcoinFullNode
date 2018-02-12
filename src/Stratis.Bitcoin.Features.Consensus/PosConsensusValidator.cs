@@ -286,63 +286,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
-        /// <inheritdoc />
-        public override void ContextualCheckBlockHeader(RuleContext context)
-        {
-            this.logger.LogTrace("()");
-            base.ContextualCheckBlockHeader(context);
-
-            ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
-            this.logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedBlock.Height, chainedBlock.Header.Time, chainedBlock.Previous.Header.Time, chainedBlock.Header.Version);
-
-            if (chainedBlock.Header.Version < 7)
-            {
-                this.logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.BadVersion.Throw();
-            }
-
-            if (context.Stake.BlockStake.IsProofOfWork() && (chainedBlock.Height > this.ConsensusParams.LastPOWBlock))
-            {
-                this.logger.LogTrace("(-)[POW_TOO_HIGH]");
-                ConsensusErrors.ProofOfWorkTooHeigh.Throw();
-            }
-
-            // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
-            {
-                this.logger.LogTrace("(-)[TIME_TOO_NEW]");
-                ConsensusErrors.TimeTooNew.Throw();
-            }
-
-            // Check coinstake timestamp.
-            if (context.Stake.BlockStake.IsProofOfStake()
-                && !this.CheckCoinStakeTimestamp(chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
-            {
-                this.logger.LogTrace("(-)[BAD_TIME]");
-                ConsensusErrors.StakeTimeViolation.Throw();
-            }
-
-            // Check timestamp against prev.
-            if (chainedBlock.Header.Time <= chainedBlock.Previous.Header.Time)
-            {
-                this.logger.LogTrace("(-)[TIME_TOO_EARLY]");
-                ConsensusErrors.BlockTimestampTooEarly.Throw();
-            }
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <summary>
-        /// Checks whether the coinstake timestamp meets protocol.
-        /// </summary>
-        /// <param name="blockTime">The block time.</param>
-        /// <param name="transactionTime">Transaction UNIX timestamp.</param>
-        /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
-        private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
-        {
-            return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
-        }
-
         /// <summary>
         /// Checks whether the future drift should be reduced after provided timestamp.
         /// </summary>
