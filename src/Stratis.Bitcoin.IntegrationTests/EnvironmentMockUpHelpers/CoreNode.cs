@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 catch
                 {
                 }
-                if (this.runner.HasExited)
+                if (this.runner.IsDisposed)
                     break;
             }
         }
