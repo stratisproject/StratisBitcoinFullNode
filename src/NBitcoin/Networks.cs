@@ -26,6 +26,9 @@ namespace NBitcoin
             Block.BlockSignature = saveSig;
         }
 
+        /// <summary> Default value for Maximum tip age in seconds to consider node in initial block download. </summary>
+        public const int DefaultMaxTipAge = 24 * 60 * 60;
+
         /// <summary> The name of the root folder containing the different Bitcoin blockchains (Main, TestNet, RegTest). </summary>
         public const string BitcoinRootFolderName = "bitcoin";
 
@@ -137,6 +140,8 @@ namespace NBitcoin
                 addr.Endpoint = Utils.ParseIpEndpoint(pnSeed[i], network.DefaultPort);
                 network.fixedSeeds.Add(addr);
             }
+
+            network.MaxTipAge = DefaultMaxTipAge;
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
             network.MinRelayTxFee = 1000;
@@ -213,6 +218,7 @@ namespace NBitcoin
             network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
+            network.MaxTipAge = DefaultMaxTipAge;
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
             network.MinRelayTxFee = 1000;
@@ -277,6 +283,7 @@ namespace NBitcoin
             network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
+            network.MaxTipAge = DefaultMaxTipAge;
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
             network.MinRelayTxFee = 1000;
@@ -352,6 +359,7 @@ namespace NBitcoin
                 .SetPort(16178)
                 .SetRPCPort(16174)
                 .SetTxFees(10000, 60000, 10000)
+                .SetMaxTipAge(DefaultMaxTipAge)
 
                 .AddDNSSeeds(new[]
                 {
@@ -434,6 +442,7 @@ namespace NBitcoin
                 .SetGenesis(genesis)
                 .SetPort(26178)
                 .SetRPCPort(26174)
+                .SetMaxTipAge(DefaultMaxTipAge)
                 .SetTxFees(10000, 60000, 10000)
                 .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
                 .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
@@ -497,6 +506,7 @@ namespace NBitcoin
                 .SetGenesis(genesis)
                 .SetPort(18444)
                 .SetRPCPort(18442)
+                .SetMaxTipAge(DefaultMaxTipAge)
                 .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
                 .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
                 .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })

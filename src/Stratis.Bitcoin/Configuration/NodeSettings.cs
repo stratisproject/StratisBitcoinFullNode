@@ -35,9 +35,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
 
-        /// <summary>Default value for Maximum tip age in seconds to consider node in initial block download.</summary>
-        public const int DefaultMaxTipAge = 24 * 60 * 60;
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -220,7 +217,7 @@ namespace Stratis.Bitcoin.Configuration
             this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
 
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
-            this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
+            this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
             this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
@@ -384,7 +381,7 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-testnet                  Use the testnet chain.");
                 builder.AppendLine($"-regtest                  Use the regtestnet chain.");
                 builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {defaults.RequireStandard}.");
-                builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {DefaultMaxTipAge}.");
+                builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
                 builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
                 builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
                 builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
