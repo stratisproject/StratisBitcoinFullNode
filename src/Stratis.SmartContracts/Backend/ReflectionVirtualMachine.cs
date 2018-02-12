@@ -6,15 +6,16 @@ using Stratis.SmartContracts.ContractValidation;
 
 namespace Stratis.SmartContracts.Backend
 {
+    /// <summary>
+    /// Used to instantiate smart contracts using reflection and then execute certain methods and their parameters.
+    /// </summary>
     internal class ReflectionVirtualMachine : ISmartContractVirtualMachine
     {
-        private const string InitMethod = "Init";
-
         public IContractStateRepository StateDb { get; private set; }
 
         public ReflectionVirtualMachine(IContractStateRepository stateDb)
         {
-            StateDb = stateDb;
+            this.StateDb = stateDb;
         }
 
         public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, SmartContractExecutionContext context)
@@ -22,7 +23,7 @@ namespace Stratis.SmartContracts.Backend
             SetStaticValues(context);
             Assembly assembly = Assembly.Load(contractCode);
             Type type = assembly.GetType(context.ContractTypeName);
-            CompiledSmartContract contract = (CompiledSmartContract)Activator.CreateInstance(type);
+            SmartContract contract = (SmartContract)Activator.CreateInstance(type);
             object result = null;
             if (context.ContractMethod != null)
             {

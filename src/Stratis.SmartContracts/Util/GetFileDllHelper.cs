@@ -10,14 +10,27 @@ using System.Text;
 
 namespace Stratis.SmartContracts.Util
 {
+    /// <summary>
+    /// Helpful methods to handle compilation of .cs files.
+    /// </summary>
     internal static class GetFileDllHelper
     {
+        /// <summary>
+        /// Get the compiled bytecode for the specified file.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
         public static byte[] GetAssemblyBytesFromFile(string filename)
         {
             string source = File.ReadAllText(filename);
             return GetAssemblyBytesFromSource(source);
         }
 
+        /// <summary>
+        /// Get the compiled bytecode for the specified C# source code.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
         public static byte[] GetAssemblyBytesFromSource(string source)
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
@@ -39,7 +52,10 @@ namespace Stratis.SmartContracts.Util
             }
         }
 
-        // So heinous but gets all references needed for compilation. 
+        /// <summary>
+        /// Gets all references needed for compilation. Ideally should use the same list as the contract validator.
+        /// </summary>
+        /// <returns></returns>
         private static IList<MetadataReference> GetReferences()
         {
             var dd = typeof(Enumerable).Assembly.Location;
@@ -59,11 +75,8 @@ namespace Stratis.SmartContracts.Util
                 references.Add(MetadataReference.CreateFromFile(loadedAssembly.Location));
             }
             references.Add(MetadataReference.CreateFromFile(typeof(Address).Assembly.Location));
-            references.Add(MetadataReference.CreateFromFile(typeof(CompiledSmartContract).Assembly.Location));
+            references.Add(MetadataReference.CreateFromFile(typeof(SmartContract).Assembly.Location));
             references.Add(MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location));
-            references.Add(MetadataReference.CreateFromFile(typeof(Dictionary<object, object>).Assembly.Location));
-            references.Add(MetadataReference.CreateFromFile(typeof(Uri).Assembly.Location));
-            references.Add(MetadataReference.CreateFromFile(typeof(HttpClient).Assembly.Location));
             return references;
         }
     }

@@ -16,7 +16,7 @@ namespace Stratis.SmartContracts.ContractValidation
         /// </summary>
         private static readonly HashSet<Assembly> AllowedAssemblies = new HashSet<Assembly>
         {
-            typeof(CompiledSmartContract).Assembly,
+            typeof(SmartContract).Assembly,
             typeof(object).Assembly,
             typeof(Enumerable).Assembly,
             typeof(List<object>).Assembly
@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.ContractValidation
                 this.errors.Add(new SmartContractValidationError("Only the compilation of a single class is allowed. Includes inner types."));
 
             // TODO: Again, can check be more robust?
-            if (typeof(CompiledSmartContract).FullName != nonModuleTypes.FirstOrDefault().BaseType.FullName)
+            if (typeof(SmartContract).FullName != nonModuleTypes.FirstOrDefault().BaseType.FullName)
                 this.errors.Add(new SmartContractValidationError("Contract must implement the CompiledSmartContract class."));
         }
 

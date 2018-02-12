@@ -7,6 +7,12 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts
 {
+    /// <summary>
+    /// This will be used by smart contract devs to manage lists of data. 
+    /// They shouldn't use standard dictionaries, lists or arrays because they are not stored in the KV store,
+    /// and so are completely deserialized or serialized every time. Very inefficient. 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class SmartContractList<T> : IEnumerable<T>
     {
         private readonly uint baseNumber;
@@ -38,14 +44,14 @@ namespace Stratis.SmartContracts
 
         public void Add(T item)
         {
-            var keyBytes = HashHelper.Keccak256(GetKeyBytes(Count));
+            byte[] keyBytes = HashHelper.Keccak256(GetKeyBytes(this.Count));
             PersistentState.SetObject(keyBytes, item);
-            Count = Count + 1;
+            this.Count = this.Count + 1;
         }
 
         public T Get(uint index)
         {
-            var keyBytes = HashHelper.Keccak256(GetKeyBytes(index));
+            byte[] keyBytes = HashHelper.Keccak256(GetKeyBytes(index));
             return PersistentState.GetObject<T>(keyBytes);
         }
 
@@ -56,12 +62,12 @@ namespace Stratis.SmartContracts
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new SmartContractListEnum<T>(this.baseNumber, Count);
+            return new SmartContractListEnum<T>(this.baseNumber, this.Count);
         }
 
         private byte[] GetKeyBytes(uint key)
         {
-            return BaseNumberBytes.Concat(new uint256(key).ToBytes()).ToArray();
+            return this.BaseNumberBytes.Concat(new uint256(key).ToBytes()).ToArray();
         }
     }
 
@@ -83,12 +89,12 @@ namespace Stratis.SmartContracts
         {
             get
             {
-                var keyBytes = HashHelper.Keccak256(GetKeyBytes(Convert.ToUInt32(this.position)));
+                byte[] keyBytes = HashHelper.Keccak256(GetKeyBytes(Convert.ToUInt32(this.position)));
                 return PersistentState.GetObject<T>(keyBytes);
             }
         }
 
-        object IEnumerator.Current => Current;
+        object IEnumerator.Current => this.Current;
 
         public SmartContractListEnum(uint baseNumber, uint length)
         {

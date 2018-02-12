@@ -6,8 +6,11 @@ using Stratis.SmartContracts.Hashing;
 
 namespace Stratis.SmartContracts.State
 {
-    // TODO: All of this is taken from EthereumJ. Should clean up a ton before pushing out.
-    // Also note that heaps of Asserts were taken out
+    /// <summary>
+    /// Adapted from EthereumJ. Magic data structure where entire state
+    /// can be represented by a 32-byte root. 
+    /// Read more here: https://github.com/ethereum/wiki/wiki/Patricia-Tree
+    /// </summary>
     public class PatriciaTrie : ITrie<byte[]>
     {
         public enum NodeType
@@ -36,7 +39,7 @@ namespace Stratis.SmartContracts.State
                 get
                 {
                     Parse();
-                    return children.Length == 17 ? NodeType.BranchNode : (children[1] is Node ? NodeType.KVNodeNode : NodeType.KVNodeValue);
+                    return this.children.Length == 17 ? NodeType.BranchNode : (this.children[1] is Node ? NodeType.KVNodeNode : NodeType.KVNodeValue);
                 }
             }
 
@@ -49,7 +52,7 @@ namespace Stratis.SmartContracts.State
             }
 
             // new KVNode with key and (value or node)
-            public Node(TrieKey key, Object valueOrNode, PatriciaTrie trie) : this(new Object[] { key, valueOrNode}, trie)
+            public Node(TrieKey key, object valueOrNode, PatriciaTrie trie) : this(new object[] { key, valueOrNode}, trie)
             {
                 this.Dirty = true;
             }
@@ -83,9 +86,9 @@ namespace Stratis.SmartContracts.State
 
             public bool ResolveCheck()
             {
-                if (rlp != null || parsedRlp != null || Hash == null) return true;
-                rlp = trie.GetHash(Hash);
-                return rlp != null;
+                if (this.rlp != null || this.parsedRlp != null || this.Hash == null) return true;
+                this.rlp = this.trie.GetHash(this.Hash);
+                return this.rlp != null;
             }
 
             private void Resolve()
@@ -101,13 +104,13 @@ namespace Stratis.SmartContracts.State
 
             private byte[] Encode(int depth, bool forceHash)
             {
-                if (!Dirty)
+                if (!this.Dirty)
                 {
-                    return Hash != null ? RLP.EncodeElement(Hash) : rlp;
+                    return this.Hash != null ? RLP.EncodeElement(this.Hash) : this.rlp;
                 }
                 else
                 {
-                    NodeType type =  NodeType;
+                    NodeType type = this.NodeType;
                     byte[] ret;
                     if (type == NodeType.BranchNode)
                     {
@@ -131,66 +134,66 @@ namespace Stratis.SmartContracts.State
                         ret = RLP.EncodeList(RLP.EncodeElement(KvNodeGetKey().ToPacked()),
                                         RLP.EncodeElement(value == null ? HashHelper.EmptyByteArray : value));
                     }
-                    if (Hash != null)
+                    if (this.Hash != null)
                     {
-                        trie.DeleteHash(Hash);
+                        this.trie.DeleteHash(this.Hash);
                     }
-                    Dirty = false;
+                    this.Dirty = false;
                     if (ret.Length < 32 && !forceHash)
                     {
-                        rlp = ret;
+                        this.rlp = ret;
                         return ret;
                     }
                     else
                     {
-                        Hash = HashHelper.Keccak256(ret);
-                        trie.AddHash(Hash, ret);
-                        return RLP.EncodeElement(Hash);
+                        this.Hash = HashHelper.Keccak256(ret);
+                        this.trie.AddHash(this.Hash, ret);
+                        return RLP.EncodeElement(this.Hash);
                     }
                 }
             }
 
             private void Parse()
             {
-                if (children != null) return;
+                if (this.children != null) return;
                 Resolve();
 
-                RLPLList list = parsedRlp == null ? RLPLList.DecodeLazyList(rlp) : parsedRlp;
+                RLPLList list = this.parsedRlp == null ? RLPLList.DecodeLazyList(this.rlp) : this.parsedRlp;
 
                 if (list.Size() == 2)
                 {
-                    children = new object[2];
+                    this.children = new object[2];
                     TrieKey key = TrieKey.FromPacked(list.GetBytes(0));
-                    children[0] = key;
+                    this.children[0] = key;
                     if (key.IsTerminal)
                     {
-                        children[1] = list.GetBytes(1);
+                        this.children[1] = list.GetBytes(1);
                     }
                     else
                     {
-                        children[1] = list.IsList(1) ? new Node(list.GetList(1), this.trie) : new Node(list.GetBytes(1), this.trie);
+                        this.children[1] = list.IsList(1) ? new Node(list.GetList(1), this.trie) : new Node(list.GetBytes(1), this.trie);
                     }
                 }
                 else
                 {
-                    children = new object[17];
-                    parsedRlp = list;
+                    this.children = new object[17];
+                    this.parsedRlp = list;
                 }
             }
 
             public Node BranchNodeGetChild(int hex)
             {
                 Parse();
-                Object n = children[hex];
-                if (n == null && parsedRlp != null)
+                object n = this.children[hex];
+                if (n == null && this.parsedRlp != null)
                 {
-                    if (parsedRlp.IsList(hex))
+                    if (this.parsedRlp.IsList(hex))
                     {
-                        n = new Node(parsedRlp.GetList(hex), this.trie);
+                        n = new Node(this.parsedRlp.GetList(hex), this.trie);
                     }
                     else
                     {
-                        byte[] bytes = parsedRlp.GetBytes(hex);
+                        byte[] bytes = this.parsedRlp.GetBytes(hex);
                         if (bytes.Length == 0)
                         {
                             n = NullNode;
@@ -200,7 +203,7 @@ namespace Stratis.SmartContracts.State
                             n = new Node(bytes, this.trie);
                         }
                     }
-                    children[hex] = n;
+                    this.children[hex] = n;
                 }
                 return n == NullNode ? null : (Node)n;
             }
@@ -208,18 +211,18 @@ namespace Stratis.SmartContracts.State
             public Node BranchNodeSetChild(int hex, Node node)
             {
                 Parse();
-                children[hex] = node == null ? NullNode : node;
-                Dirty = true;
+                this.children[hex] = node == null ? NullNode : node;
+                this.Dirty = true;
                 return this;
             }
 
             public byte[] BranchNodeGetValue()
             {
                 Parse();
-                Object n = children[16];
-                if (n == null && parsedRlp != null)
+                object n = this.children[16];
+                if (n == null && this.parsedRlp != null)
                 {
-                    byte[] bytes = parsedRlp.GetBytes(16);
+                    byte[] bytes = this.parsedRlp.GetBytes(16);
                     if (bytes.Length == 0)
                     {
                         n = NullNode;
@@ -228,7 +231,7 @@ namespace Stratis.SmartContracts.State
                     {
                         n = bytes;
                     }
-                    children[16] = n;
+                    this.children[16] = n;
                 }
                 return n == NullNode ? null : (byte[])n;
             }
@@ -236,8 +239,8 @@ namespace Stratis.SmartContracts.State
             public Node BranchNodeSetValue(byte[] val)
             {
                 Parse();
-                children[16] = val == null ? NullNode : val;
-                Dirty = true;
+                this.children[16] = val == null ? NullNode : val;
+                this.Dirty = true;
                 return this;
             }
 
@@ -273,54 +276,54 @@ namespace Stratis.SmartContracts.State
             public TrieKey KvNodeGetKey()
             {
                 Parse();
-                return (TrieKey)children[0];
+                return (TrieKey)this.children[0];
             }
 
             public Node KvNodeGetChildNode()
             {
                 Parse();
-                return (Node)children[1];
+                return (Node)this.children[1];
             }
 
             public byte[] KvNodeGetValue()
             {
                 Parse();
-                return (byte[])children[1];
+                return (byte[])this.children[1];
             }
 
             public Node KvNodeSetValue(byte[] value)
             {
                 Parse();
-                children[1] = value;
-                Dirty = true;
+                this.children[1] = value;
+                this.Dirty = true;
                 return this;
             }
 
             public object KvNodeGetValueOrNode()
             {
                 Parse();
-                return children[1];
+                return this.children[1];
             }
 
             public Node KvNodeSetValueOrNode(object valueOrNode)
             {
                 Parse();
-                children[1] = valueOrNode;
-                Dirty = true;
+                this.children[1] = valueOrNode;
+                this.Dirty = true;
                 return this;
             }
                
             public void Dispose()
             {
-                if (Hash != null)
+                if (this.Hash != null)
                 {
-                    trie.DeleteHash(Hash);
+                    this.trie.DeleteHash(this.Hash);
                 }
             }
 
             public Node Invalidate()
             {
-                Dirty = true;
+                this.Dirty = true;
                 return this;
             }
         }
@@ -364,15 +367,15 @@ namespace Stratis.SmartContracts.State
 
         private byte[] GetHash(byte[] hash)
         {
-            return cache.Get(hash);
+            return this.cache.Get(hash);
         }
         private void AddHash(byte[] hash, byte[] ret)
         {
-            cache.Put(hash, ret);
+            this.cache.Put(hash, ret);
         }
         private void DeleteHash(byte[] hash)
         {
-            cache.Delete(hash);
+            this.cache.Delete(hash);
         }
 
         public byte[] Get(byte[] key)
@@ -416,22 +419,22 @@ namespace Stratis.SmartContracts.State
         public void Put(byte[] key, byte[] value)
         {
             TrieKey k = TrieKey.FromNormal(key);
-            if (root == null)
+            if (this.root == null)
             {
                 if (value != null && value.Length > 0)
                 {
-                    root = new Node(k, value, this);
+                    this.root = new Node(k, value, this);
                 }
             }
             else
             {
                 if (value == null || value.Length == 0)
                 {
-                    root = Delete(root, k);
+                    this.root = Delete(this.root, k);
                 }
                 else
                 {
-                    root = Insert(root, k, value);
+                    this.root = Insert(this.root, k, value);
                 }
             }
         }
@@ -499,9 +502,9 @@ namespace Stratis.SmartContracts.State
         public void Delete(byte[] key)
         {
             TrieKey k = TrieKey.FromNormal(key);
-            if (root != null)
+            if (this.root != null)
             {
-                root = Delete(root, k);
+                this.root = Delete(this.root, k);
             }
         }
 
@@ -596,12 +599,12 @@ namespace Stratis.SmartContracts.State
 
         public bool Flush()
         {
-            if (root != null && root.Dirty)
+            if (this.root != null && this.root.Dirty)
             {
                 // persist all dirty nodes to underlying Source
                 Encode();
                 // release all Trie Node instances for GC
-                root = new Node(root.Hash, this);
+                this.root = new Node(this.root.Hash, this);
                 return true;
             }
             else
@@ -613,13 +616,13 @@ namespace Stratis.SmartContracts.State
         public byte[] GetRootHash()
         {
             Encode();
-            return root != null ? root.Hash : HashHelper.EmptyTrieHash;
+            return this.root != null ? this.root.Hash : HashHelper.EmptyTrieHash;
         }
 
         private void Encode()
         {
-            if (root != null)
-                root.Encode();
+            if (this.root != null)
+                this.root.Encode();
         }
     }
 }

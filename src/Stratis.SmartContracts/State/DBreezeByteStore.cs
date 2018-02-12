@@ -7,6 +7,9 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// A basic Key/Value store in DBreeze.
+    /// </summary>
     public class DBreezeByteStore : ISource<byte[], byte[]>
     {
         private DBreezeEngine engine;

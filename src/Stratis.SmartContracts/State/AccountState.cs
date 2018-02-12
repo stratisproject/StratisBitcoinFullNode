@@ -4,6 +4,9 @@ using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// A contract's state.
+    /// </summary>
     public class AccountState
     {
         /// <summary>

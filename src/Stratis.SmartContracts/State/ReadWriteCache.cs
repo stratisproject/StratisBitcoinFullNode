@@ -4,9 +4,12 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// </summary>
+    /// <typeparam name="Value"></typeparam>
     public class ReadWriteCache<Value> : SourceChainBox<byte[], Value, byte[], Value>, ICachedSource<byte[], Value>
     {
-
         protected ReadCache<Value> readCache;
         protected WriteCache<Value> writeCache;
 

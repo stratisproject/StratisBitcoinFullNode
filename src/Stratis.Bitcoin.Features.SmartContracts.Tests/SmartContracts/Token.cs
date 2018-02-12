@@ -2,7 +2,7 @@
 using Stratis.SmartContracts;
 using System.Linq;
 
-public class Token : CompiledSmartContract
+public class Token : SmartContract
 {
 
     public Address Owner

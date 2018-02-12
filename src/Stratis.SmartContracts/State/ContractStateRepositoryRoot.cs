@@ -6,7 +6,22 @@ using Stratis.SmartContracts.State.AccountAbstractionLayer;
 namespace Stratis.SmartContracts.State
 {
     /// <summary>
-    /// Really magic class. Any time you commit(), you can get the root and use that to load the state at that particular time. 
+    /// Really magic class. Has an underlying KV store injected into the constructor. Everything is stored in this KV store but in a series of tries
+    /// that allow us to retrieve a 32-byte root that represents the current state. This 32-byte root can be used to rollback state as well.
+    /// 
+    /// What's happening here:
+    /// -A basic underlying byte[]/byte[] K/V store is injected in the constructor. In live daemon this will be a DbreezeByteStore.
+    /// -A complex caching structure is built up. Any changes through the IContractStateRepository API are pushed into the cache (e.g. SetCode, SetStorageValue).
+    /// -Commit() will push all of the data inside the cache into the underlying K/V store, via a patricia trie.
+    /// -The current state can now be represented by the 'root' retrieved from GetRoot()
+    /// -Now if we ever need to load the current state, we can do GetSnapShotTo(root)
+    /// 
+    /// The ideal pattern:
+    /// -Get a new repository object via StartTracking()
+    /// -Make all changes to this repository
+    /// -If all successful, do commit() and changes will be pushed to the root.
+    /// -If unsuccessful, just rollback() the particular changes that didn't work.
+    /// 
     /// </summary>
     public class ContractStateRepositoryRoot : ContractStateRepository
     {

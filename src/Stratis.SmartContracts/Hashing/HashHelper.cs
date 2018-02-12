@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Stratis.SmartContracts.Hashing
 {
+    /// <summary>
+    /// Utilities to aid with hashing of data.
+    /// </summary>
     public static class HashHelper
     {
         public static readonly byte[] EmptyByteArray = new byte[0];

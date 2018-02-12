@@ -6,7 +6,7 @@ using NBitcoin;
 namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// Information about the current state of the blockchain that can be accessed in the virtual machine.
+    /// Information about the current state of the blockchain that is passed into the virtual machine.
     /// </summary>
     internal class SmartContractExecutionContext
     {
@@ -21,7 +21,6 @@ namespace Stratis.SmartContracts
         public ulong Difficulty { get; set; }
         public ulong GasLimit { get; set; }
 
-        // Experiments - these are brand new
         public string ContractTypeName { get; set; }
         public string ContractMethod { get; set; }
         public object[] Parameters { get; set; }
