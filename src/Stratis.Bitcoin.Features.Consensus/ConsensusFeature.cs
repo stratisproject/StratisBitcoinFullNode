@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(),
-                    new HeightInCoinbaseActivationRule(),
+                    new CoinbaseHeighActivationRule(),
                     new WitnessCommitmentsRule(),
                     new BlockSizeRule(),
 
@@ -289,9 +289,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(),
-                    new HeightInCoinbaseActivationRule(), 
+                    new CoinbaseHeighActivationRule(), 
                     new WitnessCommitmentsRule(),
                     new BlockSizeRule(),
+
+                    new PosBlockContextRule(), // TODO: this rule needs to be implemented
 
                     // rules that are inside the method CheckBlock
                     new BlockMerkleRootRule(),

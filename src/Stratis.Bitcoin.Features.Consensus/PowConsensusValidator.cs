@@ -60,11 +60,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public virtual void ContextualCheckBlock(RuleContext context)
-        {
-        }
-
-        /// <inheritdoc />
         public virtual void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
         {
             this.logger.LogTrace("()");
