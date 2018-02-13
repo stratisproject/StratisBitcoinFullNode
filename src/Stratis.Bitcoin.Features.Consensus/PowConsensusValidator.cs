@@ -84,18 +84,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            // Enforce rule that the coinbase starts with serialized block height.
-            if (deploymentFlags.EnforceBIP34)
-            {
-                var expect = new Script(Op.GetPushOp(height));
-                Script actual = block.Transactions[0].Inputs[0].ScriptSig;
-                if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
-                {
-                    this.logger.LogTrace("(-)[BAD_COINBASE_HEIGHT]");
-                    ConsensusErrors.BadCoinbaseHeight.Throw();
-                }
-            }
-
             // Validation for witness commitments.
             // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the
             //   coinbase (where 0x0000....0000 is used instead).

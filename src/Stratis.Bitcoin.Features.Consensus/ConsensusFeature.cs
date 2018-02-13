@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that are inside the method ContextualCheckBlock
                     new Bip113ActivationRule(),
-                    new Bip34ActivationRule(),
+                    new HeightInCoinbaseActivationRule(),
                     new WitnessCommitmentsRule(),
                     new BlockSizeRule(),
 
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that are inside the method ContextualCheckBlock
                     new Bip113ActivationRule(),
-                    new Bip34ActivationRule(),
+                    new HeightInCoinbaseActivationRule(), 
                     new WitnessCommitmentsRule(),
                     new BlockSizeRule(),
 
