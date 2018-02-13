@@ -43,10 +43,10 @@ namespace Stratis.SmartContracts.Util
 
             if (new PayToPubkeyHashTemplate().CheckScriptPubKey(script))
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("This should definitely be implemented. Just need to work out how to extract pubkeyhash from this.");
             }
 
-            throw new NotImplementedException();
+            throw new NotImplementedException("Unsure if there are other ways of retrieving the 'Sender' field?");
         }
     }
 }

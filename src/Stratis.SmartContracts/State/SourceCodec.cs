@@ -4,6 +4,13 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ. Used to transform one datatype into another on the way in or out of a source.
+    /// </summary>
+    /// <typeparam name="Key"></typeparam>
+    /// <typeparam name="Value"></typeparam>
+    /// <typeparam name="SourceKey"></typeparam>
+    /// <typeparam name="SourceValue"></typeparam>
     public class SourceCodec<Key, Value, SourceKey, SourceValue> : AbstractChainedSource<Key, Value, SourceKey, SourceValue>
     {
         protected ISerializer<Key, SourceKey> keySerializer;

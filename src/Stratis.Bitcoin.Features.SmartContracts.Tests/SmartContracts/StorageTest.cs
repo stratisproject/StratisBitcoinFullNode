@@ -2,7 +2,7 @@
 using Stratis.SmartContracts;
 using System.Linq;
 
-public class StorageTest : CompiledSmartContract
+public class StorageTest : SmartContract
 {
     [SmartContractInit]
     public void Init()

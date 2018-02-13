@@ -4,6 +4,11 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// </summary>
+    /// <typeparam name="Key"></typeparam>
+    /// <typeparam name="Value"></typeparam>
     public abstract class AbstractCachedSource<Key, Value> : AbstractChainedSource<Key, Value, Key, Value>, ICachedSource<Key, Value>
     {
         private object aLock = new object();

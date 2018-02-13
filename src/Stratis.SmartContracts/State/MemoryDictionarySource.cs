@@ -5,6 +5,9 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Acts as a very basic in-memory database. Used for testing.
+    /// </summary>
     public class MemoryDictionarySource : ISource<byte[], byte[]>
     {
         public Dictionary<byte[], byte[]> Db { get; private set; }

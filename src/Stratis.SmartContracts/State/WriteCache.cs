@@ -4,9 +4,10 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
-
-    // I already know there's going to be issues here with retrieving keys. Just need to go through and be consistent
-
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// </summary>
+    /// <typeparam name="Value"></typeparam>
     public class WriteCache<Value> : AbstractCachedSource<byte[], Value>
     {
         public enum CacheType
@@ -14,8 +15,6 @@ namespace Stratis.SmartContracts.State
             SIMPLE,
             COUNTING
         }
-
-        // TODO: Make this whole 'value' setup much cleaner. This ugly af
 
         public abstract class CacheEntry<V> : IEntry<V>
         {

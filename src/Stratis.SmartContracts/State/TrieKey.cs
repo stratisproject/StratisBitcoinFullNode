@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// Used as the key for every entry in the PatriciaTrie class.
+    /// </summary>
     public class TrieKey
     {
         public const int ODD_OFFSET_FLAG = 0x1;
@@ -71,10 +75,10 @@ namespace Stratis.SmartContracts.State
 
         public byte[] ToPacked()
         {
-            int flags = ((off & 1) != 0 ? ODD_OFFSET_FLAG : 0) | (terminal ? TERMINATOR_FLAG : 0);
-            byte[] ret = new byte[Length / 2 + 1];
+            int flags = ((this.off & 1) != 0 ? ODD_OFFSET_FLAG : 0) | (this.terminal ? TERMINATOR_FLAG : 0);
+            byte[] ret = new byte[this.Length / 2 + 1];
             int toCopy = (flags & ODD_OFFSET_FLAG) != 0 ? ret.Length : ret.Length - 1;
-            Array.Copy(key, key.Length - toCopy, ret, ret.Length - toCopy, toCopy); // absolutely no idea if this is right
+            Array.Copy(this.key, this.key.Length - toCopy, ret, ret.Length - toCopy, toCopy); // absolutely no idea if this is right
             ret[0] &= 0x0F;
             ret[0] |= (byte) (flags << 4);
             return ret;
@@ -82,28 +86,28 @@ namespace Stratis.SmartContracts.State
 
         public int GetHex(int idx)
         {
-            int adjustedIndex = (off + idx) >> 1;
-            byte b = key[(off + idx) >> 1];
-            return (((off + idx) & 1) == 0 ? (b >> 4) : b) & 0xF;
+            int adjustedIndex = (this.off + idx) >> 1;
+            byte b = this.key[(this.off + idx) >> 1];
+            return (((this.off + idx) & 1) == 0 ? (b >> 4) : b) & 0xF;
         }
 
         public TrieKey Shift(int hexCnt)
         {
-            return new TrieKey(this.key, this.off + hexCnt, terminal);
+            return new TrieKey(this.key, this.off + hexCnt, this.terminal);
         }
 
         private void SetHex(int idx, int hex)
         {
-            int byteIdx = (off + idx) >> 1;
-            if (((off + idx) & 1) == 0)
+            int byteIdx = (this.off + idx) >> 1;
+            if (((this.off + idx) & 1) == 0)
             {
                 this.key[byteIdx] &= 0x0F;
                 this.key[byteIdx] |= (byte) (hex << 4);
             }
             else
             {
-                key[byteIdx] &= 0xF0;
-                key[byteIdx] |= (byte) hex;
+                this.key[byteIdx] &= 0xF0;
+                this.key[byteIdx] |= (byte) hex;
             }
         }
 
@@ -113,19 +117,19 @@ namespace Stratis.SmartContracts.State
             int kLen = k.Length;
             if (len < kLen) return null;
 
-            if ((off & 1) == (k.off & 1))
+            if ((this.off & 1) == (k.off & 1))
             {
                 // optimization to compare whole keys bytes
-                if ((off & 1) == 1)
+                if ((this.off & 1) == 1)
                 {
                     if (GetHex(0) != k.GetHex(0)) return null;
                 }
-                int idx1 = (off + 1) >> 1;
+                int idx1 = (this.off + 1) >> 1;
                 int idx2 = (k.off + 1) >> 1;
                 int l = kLen >> 1;
                 for (int i = 0; i < l; i++, idx1++, idx2++)
                 {
-                    if (key[idx1] != k.key[idx2]) return null;
+                    if (this.key[idx1] != k.key[idx2]) return null;
                 }
             }
             else

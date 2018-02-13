@@ -5,7 +5,7 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts
 {
-    public abstract class CompiledSmartContract
+    public abstract class SmartContract
     {
         protected Address Address { get; private set; }
 
@@ -13,31 +13,46 @@ namespace Stratis.SmartContracts
             get
             {
                 throw new NotImplementedException();
-                //return PersistentState.StateDb.GetBalance(Address.ToUint160());
             }
         }
 
         public ulong GasUsed { get; private set; }
 
-        public CompiledSmartContract()
+        public SmartContract()
         {
             System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            Address = Message.ContractAddress; // Note that this will get called before the derived constructor so Address will be set.
+            this.Address = Message.ContractAddress; // Note that this will get called before the derived constructor so Address will be set.
         }
 
+        /// <summary>
+        /// Expends the given amount of gas. If this takes the spent gas over the entered limit, throw an OutOfGasException
+        /// </summary>
+        /// <param name="spend"></param>
         public void SpendGas(uint spend)
         {
-            if (GasUsed +  spend > Message.GasLimit)
+            if (this.GasUsed +  spend > Message.GasLimit)
                 throw new OutOfGasException("Went over gas limit of " + Message.GasLimit);
 
-            GasUsed += spend;
+            this.GasUsed += spend;
         }
 
+        /// <summary>
+        /// Work in progress. Will be used to send transactions to other addresses or contracts.
+        /// </summary>
+        /// <param name="addressTo"></param>
+        /// <param name="amount"></param>
         protected void Transfer(Address addressTo, ulong amount)
         {
             PersistentState.StateDb.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
         }
 
+        /// <summary>
+        /// Work in progress. Will be used to send transactions to other addresses or contracts.
+        /// </summary>
+        /// <param name="addressTo"></param>
+        /// <param name="amount"></param>
+        /// <param name="transactionDetails"></param>
+        /// <returns></returns>
         protected object Call(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
         {
             throw new NotImplementedException();
@@ -63,7 +78,7 @@ namespace Stratis.SmartContracts
                 Assembly assembly = Assembly.Load(contractCode);
                 Type type = assembly.GetType(transactionDetails.ContractTypeName);
 
-                var contractObject = (CompiledSmartContract)Activator.CreateInstance(type);
+                var contractObject = (SmartContract)Activator.CreateInstance(type);
 
                 var methodToInvoke = type.GetMethod(transactionDetails.ContractMethodName);
                 var result = methodToInvoke.Invoke(contractObject, transactionDetails.Parameters);

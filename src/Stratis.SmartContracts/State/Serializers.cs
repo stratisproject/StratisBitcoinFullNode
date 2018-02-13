@@ -3,6 +3,11 @@ using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// When we store contract data and their UTXO balances, we are serializing those data types to bytes and storing them
+    /// in a byte[]/byte[] K/V store.
+    /// This class provides access to serializers used during this process.
+    /// </summary>
     public static class Serializers
     {
         public static AccountStateSerializer AccountSerializer { get; } = new AccountStateSerializer();

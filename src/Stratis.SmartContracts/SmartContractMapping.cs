@@ -4,7 +4,8 @@ using System.Linq;
 namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// TODO: Give the user a warning about using this or the array in any non-storage locations.
+    /// Should be used by smart contract devs for storing dictionary-like data structures.
+    /// Stores and loads to KV store so is much more efficient than using a Dictionary.
     /// </summary>
     /// <typeparam name="K"></typeparam>
     /// <typeparam name="V"></typeparam>

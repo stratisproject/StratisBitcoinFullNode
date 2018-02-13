@@ -2,7 +2,7 @@
 using Stratis.SmartContracts;
 using System.Linq;
 
-public class TransferTest : CompiledSmartContract
+public class TransferTest : SmartContract
 {
     public void Test()
     {
