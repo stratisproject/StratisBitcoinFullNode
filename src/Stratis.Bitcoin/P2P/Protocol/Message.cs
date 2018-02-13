@@ -36,6 +36,10 @@ namespace Stratis.Bitcoin.P2P.Protocol
             this.payloadProvider = payloadProvider;
         }
 
+        public Message()
+        {
+        }
+
         private byte[] command = new byte[CommandSize];
         public string Command
         {

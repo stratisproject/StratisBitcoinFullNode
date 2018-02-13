@@ -1,10 +1,9 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
-    public abstract class Payload : IBitcoinSerializable
+    public class Payload : IBitcoinSerializable
     {
         public virtual string Command
         {
