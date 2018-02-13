@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -45,7 +46,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly StakeChainStore stakeChain;
 
         private readonly IRuleRegistration ruleRegistration;
+
+        private readonly NodeSettings nodeSettings;
+
         private readonly ConsensusSettings consensusSettings;
+
         private readonly IConsensusRules consensusRules;
 
         /// <summary>Instance logger.</summary>
@@ -71,6 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusStats consensusStats,
             IRuleRegistration ruleRegistration,
             IConsensusRules consensusRules,
+            NodeSettings nodeSettings,
             ConsensusSettings consensusSettings,
             StakeChainStore stakeChain = null)
         {
@@ -87,6 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
             this.ruleRegistration = ruleRegistration;
+            this.nodeSettings = nodeSettings;
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
@@ -108,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void LoadConfiguration()
         {
-            this.consensusSettings.LoadFromConfig();
+            this.consensusSettings.Load(nodeSettings);
         }
 
         /// <inheritdoc />

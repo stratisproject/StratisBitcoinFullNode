@@ -62,12 +62,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 testRulesContext.NodeSettings.DataDir = dataDir;
             }
 
-            testRulesContext.LoggerFactory = new ExtendedLoggerFactory();
+            testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings, testRulesContext.LoggerFactory);
+            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
