@@ -5,7 +5,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Context checks on a POS block.
     /// </summary>
-    [ValidationRule(CanSkipValidation = false)]
     public class PosBlockContextRule : PosConsensusRule
     {
         /// <inheritdoc />
