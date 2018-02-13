@@ -31,8 +31,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public async void ForEachAsync_TestDegreeOfParallelism_Async()
         {
             int sum = 0;
-
-            var delayTask = new Task(async () => { await Task.Delay(this.testCollection.Count * this.itemProcessingDelayMs).ConfigureAwait(false); });
+            
+            Stopwatch watch = Stopwatch.StartNew();
 
             await this.testCollection.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
             {
@@ -40,7 +40,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
-            Assert.False(delayTask.IsCompleted);
+            watch.Stop();
+            Assert.True(watch.Elapsed.TotalMilliseconds < this.testCollection.Count * this.itemProcessingDelayMs);
             Assert.Equal(this.testCollectionSum, sum);
         }
 
@@ -48,17 +49,17 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public async void ForEachAsync_TestDegreeOfParallelism2_Async()
         {
             int sum = 0;
-            
-            var delayTask = new Task(async () => { await Task.Delay(this.testCollection.Count * this.itemProcessingDelayMs).ConfigureAwait(false); });
-            
+
+            Stopwatch watch = Stopwatch.StartNew();
+
             await this.testCollection.ForEachAsync(this.testCollection.Count, CancellationToken.None, async (item, cancellation) =>
             {
                 Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
-
-            // We expect ForEachAsync task to be finished well before the delay task.
-            Assert.False(delayTask.IsCompleted);
+            
+            watch.Stop();
+            Assert.True(watch.Elapsed.TotalMilliseconds < this.testCollection.Count * this.itemProcessingDelayMs);
             Assert.Equal(this.testCollectionSum, sum);
         }
 
