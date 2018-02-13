@@ -67,23 +67,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
             DeploymentFlags deploymentFlags = context.Flags;
 
-            int height = context.BestBlock == null ? 0 : context.BestBlock.Height + 1;
-
-            // Start enforcing BIP113 (Median Time Past) using versionbits logic.
-            DateTimeOffset lockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
-                context.BestBlock.MedianTimePast :
-                block.Header.BlockTime;
-
-            // Check that all transactions are finalized.
-            foreach (Transaction transaction in block.Transactions)
-            {
-                if (!transaction.IsFinal(lockTimeCutoff, height))
-                {
-                    this.logger.LogTrace("(-)[TX_NON_FINAL]");
-                    ConsensusErrors.BadTransactionNonFinal.Throw();
-                }
-            }
-
             // Validation for witness commitments.
             // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the
             //   coinbase (where 0x0000....0000 is used instead).

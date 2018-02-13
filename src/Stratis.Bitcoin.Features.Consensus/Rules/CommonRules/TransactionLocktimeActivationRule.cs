@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
     /// </remarks>
-    public class Bip113ActivationRule : ConsensusRule
+    public class TransactionLocktimeActivationRule : ConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
