@@ -9,7 +9,7 @@ namespace Stratis.SmartContracts
 {
     public class PersistentState
     {
-        internal static IContractStateRepository StateDb { get; private set; }
+        internal IContractStateRepository StateDb { get; private set; }
 
         private uint _counter;
         private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();

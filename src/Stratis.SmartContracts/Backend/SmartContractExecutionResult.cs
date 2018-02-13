@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Backend
         /// If there is an exception during execution, it will be stored here.
         /// TODO: Should this just be an exception?
         /// </summary>
-        public SmartContractRuntimeException RuntimeException { get; set; }
+        public Exception Exception { get; set; }
 
         /// <summary>
         /// Whether the state changes made during execution should be reverted. If an exception occurred, then should be true.
@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts.Backend
         public void Merge(SmartContractExecutionResult another)
         {
             throw new NotImplementedException();
-            if (another.RuntimeException == null && !another.Revert)
+            if (another.Exception == null && !another.Revert)
             {
                 this.FutureRefund += another.FutureRefund;
                 this.InternalTransactions.AddRange(another.InternalTransactions);
