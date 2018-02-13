@@ -39,6 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
             Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
+
+            Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec);
         }
 
         [Fact]
