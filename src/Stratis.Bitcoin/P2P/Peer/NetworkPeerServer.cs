@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
 
             this.logger.LogTrace("(-)");
