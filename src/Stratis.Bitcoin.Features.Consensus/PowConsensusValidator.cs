@@ -62,23 +62,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public virtual void ContextualCheckBlock(RuleContext context)
         {
-            this.logger.LogTrace("()");
-
-            Block block = context.BlockValidationContext.Block;
-
-            // After the coinbase witness nonce and commitment are verified,
-            // we can check if the block weight passes (before we've checked the
-            // coinbase witness, it would be possible for the weight to be too
-            // large by filling up the coinbase witness, which doesn't change
-            // the block hash, so we couldn't mark the block as permanently
-            // failed).
-            if (this.GetBlockWeight(block) > this.ConsensusOptions.MaxBlockWeight)
-            {
-                this.logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
-                ConsensusErrors.BadBlockWeight.Throw();
-            }
-
-            this.logger.LogTrace("(-)[OK]");
         }
 
         /// <inheritdoc />
@@ -429,14 +412,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             // because we receive the wrong transactions for it.
             // Note that witness malleability is checked in ContextualCheckBlock, so no
             // checks that use witness data may be performed here.
-
-            // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.ConsensusOptions.MaxBlockBaseSize) ||
-                (this.GetSize(block, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness) > this.ConsensusOptions.MaxBlockBaseSize))
-            {
-                this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
-                ConsensusErrors.BadBlockLength.Throw();
-            }
 
             // First transaction must be coinbase, the rest must not be
             if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)
