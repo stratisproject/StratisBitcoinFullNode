@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -45,6 +46,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly StakeChainStore stakeChain;
 
         private readonly IRuleRegistration ruleRegistration;
+
+        private readonly NodeSettings nodeSettings;
+
+        private readonly ConsensusSettings consensusSettings;
+
         private readonly IConsensusRules consensusRules;
 
         /// <summary>Instance logger.</summary>
@@ -70,6 +76,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusStats consensusStats,
             IRuleRegistration ruleRegistration,
             IConsensusRules consensusRules,
+            NodeSettings nodeSettings,
+            ConsensusSettings consensusSettings,
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
@@ -85,6 +93,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
             this.ruleRegistration = ruleRegistration;
+            this.nodeSettings = nodeSettings;
+            this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
             this.chainState.MaxReorgLength = network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
@@ -100,6 +110,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                                      " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                                      this.chainState.ConsensusTip.HashBlock);
             }
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.consensusSettings.Load(nodeSettings);
         }
 
         /// <inheritdoc />

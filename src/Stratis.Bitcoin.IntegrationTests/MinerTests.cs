@@ -142,11 +142,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                NodeSettings nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory)
-                {
-                    UseCheckpoints = this.useCheckpoints
-                };
+                NodeSettings nodeSettings = new NodeSettings(args:new string[] { "-checkpoints" });
+                var consensusSettings = new ConsensusSettings().Load(nodeSettings);
 
                 PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);

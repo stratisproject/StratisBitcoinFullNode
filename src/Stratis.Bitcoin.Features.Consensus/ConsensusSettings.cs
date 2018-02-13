@@ -10,12 +10,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public class ConsensusSettings
     {
-        /// <summary>Full node settings.</summary>
-        private readonly NodeSettings nodeSettings;
-
-        /// <summary>Current logger.</summary>
-        private readonly ILogger logger;
-
         /// <summary>Whether use of checkpoints is enabled or not.</summary>
         public bool UseCheckpoints { get; set; }
 
@@ -28,23 +22,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Constructs a new consensus settings object.
         /// </summary>
-        /// <param name="nodeSettings">Full node settings.</param>
-        /// <param name="loggerFactory">Logger factory.</param>
-        public ConsensusSettings(NodeSettings nodeSettings, ILoggerFactory loggerFactory)
+        public ConsensusSettings()
         {
-            this.nodeSettings = nodeSettings;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
-            this.LoadFromConfig();
         }
 
         /// <summary>
         /// Load the consensus settings from the config settings.
         /// </summary>
+        /// <param name="nodeSettings">The node's settings.</param>
         /// <returns>These consensus config settings.</returns>
-        private ConsensusSettings LoadFromConfig()
+        public ConsensusSettings Load(NodeSettings nodeSettings)
         {
-            TextFileConfiguration config = this.nodeSettings.ConfigReader;
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
+
+            TextFileConfiguration config = nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
 
             if (config.GetAll("assumevalid").Any(i => i.Equals("0"))) // 0 means validate all blocks.
@@ -53,11 +44,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             else
             {
-                this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", this.nodeSettings.Network.Consensus.DefaultAssumeValid);
+                this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid);
             }
 
-            this.logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
-            this.logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
+            logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
+            logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
 
             return this;
         }

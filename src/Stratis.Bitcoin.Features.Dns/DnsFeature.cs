@@ -43,6 +43,11 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>
+        /// Defines the node settings for the node.
+        /// </summary>
+        private readonly NodeSettings nodeSettings;
+
+        /// <summary>
         /// Defines the DNS settings for the node.
         /// </summary>
         private readonly DnsSettings dnsSettings;
@@ -96,8 +101,15 @@ namespace Stratis.Bitcoin.Features.Dns
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
-            this.dnsSettings = DnsSettings.Load(nodeSettings, dnsSettings);
+            this.nodeSettings = nodeSettings;
+            this.dnsSettings = dnsSettings;
             this.dataFolders = dataFolders;
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.dnsSettings.Load(this.nodeSettings);
         }
 
         /// <summary>
