@@ -41,9 +41,17 @@ namespace Stratis.SmartContracts
         /// </summary>
         /// <param name="addressTo"></param>
         /// <param name="amount"></param>
-        protected void Transfer(Address addressTo, ulong amount)
+        protected void Transfer(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
         {
-            PersistentState.StateDb.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
+            // Discern whether is a contract or human.
+            byte[] contractCode = new byte[0];
+            // If human, just do transfer and return.
+            if (contractCode == null || contractCode.Length == 0)
+            {
+                // Is not a contract, so just record the transfer and return
+                PersistentState.StateDb.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
+                return;
+            }
         }
 
         /// <summary>
