@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <inheritdoc />
         public override void LoadConfiguration()
         {
-            DnsSettings.Load(this.nodeSettings, this.dnsSettings);
+            this.dnsSettings.Load(this.nodeSettings);
         }
 
         /// <summary>
