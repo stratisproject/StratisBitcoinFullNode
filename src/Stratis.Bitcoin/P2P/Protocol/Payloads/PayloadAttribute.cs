@@ -33,12 +33,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class PayloadProvider
     {
         /// <summary>
-        /// A mapping between the payload type and the command name.
+        /// A mapping between the command name and the payload type.
         /// </summary>
         private readonly Dictionary<string, Type> nameToType;
 
         /// <summary>
-        /// A mapping between the command name and the payload type.
+        /// A mapping between the payload type and the command name.
         /// </summary>
         private readonly Dictionary<Type, string> typeToName;
 
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         /// <summary>
         /// Discover all payloads from the provided assembly, if no assembly is provided defaults to <see cref="PayloadAttribute"/>.
         /// </summary>
-        /// <param name="assembly">the assembly to discover from or <see cref="PayloadAttribute"/> if <c>null</c>.</param>
+        /// <param name="assembly">The assembly to discover from or <see cref="PayloadAttribute"/> if <c>null</c>.</param>
         public PayloadProvider DiscoverPayloads(Assembly assembly = null)
         {
             assembly = assembly ?? typeof(PayloadAttribute).GetTypeInfo().Assembly;
@@ -87,6 +87,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             return this;
         }
 
+        /// <summary>
+        /// Get the <see cref="Payload"/> type associated with the command name.
+        /// </summary>
+        /// <param name="commandName">The command name.</param>
+        /// <returns>The type of payload the command is associated with.</returns>
         public Type GetCommandType(string commandName)
         {
             if (!this.nameToType.TryGetValue(commandName, out Type result))
@@ -95,9 +100,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             return result;
         }
 
+        /// <summary>
+        /// Check that a <see cref="Payload"/> type is allowed to be used in the P2P code.
+        /// </summary>
+        /// <param name="type">A type that represents a <see cref="Payload"/></param>
+        /// <returns>True if the type is registered as a usable payload.</returns>
         public bool IsPayloadRegistered(Type type)
         {
-            return this.typeToName.TryGetValue(type, out string result);
+            return this.typeToName.ContainsKey(type);
         }
     }
 }

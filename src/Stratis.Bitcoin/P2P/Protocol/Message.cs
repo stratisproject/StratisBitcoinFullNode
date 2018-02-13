@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             int length = 0;
             uint checksum = 0;
             bool hasChecksum = false;
-            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(stream.ProtocolVersion, out length) : null;
+            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(out length) : null;
             length = payloadBytes == null ? 0 : length;
             stream.ReadWrite(ref length);
 
@@ -139,13 +139,19 @@ namespace Stratis.Bitcoin.P2P.Protocol
             }
         }
 
-        // FIXME: protocolVersion is not used. Is this a defect?
-        private byte[] GetPayloadBytes(ProtocolVersion protocolVersion, out int length)
+        /// <summary>
+        /// Read the payload in to byte array.
+        /// </summary>
+        /// <param name="length">The length of the payload.</param>
+        /// <returns>The payload in bytes.</returns>
+        private byte[] GetPayloadBytes(out int length)
         {
-            MemoryStream ms =  new MemoryStream();
-            this.Payload.ReadWrite(new BitcoinStream(ms, true));
-            length = (int)ms.Position;
-            return ms.ToArray();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                this.Payload.ReadWrite(new BitcoinStream(ms, true));
+                length = (int) ms.Position;
+                return ms.ToArray();
+            }
         }
 
         internal static bool VerifyChecksum(uint256 checksum, byte[] payload, int length)

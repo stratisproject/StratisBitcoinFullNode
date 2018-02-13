@@ -5,7 +5,7 @@
     /// </summary>
     public class IncomingMessage
     {
-        /// <summary>A network payload messages.</summary>
+        /// <summary>A network payload message.</summary>
         public Message Message { get; set; }
 
         /// <summary>The total length of the payload.</summary>

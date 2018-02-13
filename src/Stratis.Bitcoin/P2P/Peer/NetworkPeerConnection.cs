@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="processMessageAsync">Callback to be called when a new message arrives from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        /// <param name="payloadProvider">A provider of netwrok payload messages.</param>
+        /// <param name="payloadProvider">A provider of network payload messages.</param>
         public NetworkPeerConnection(Network network, INetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider)
         {
             this.loggerFactory = loggerFactory;
