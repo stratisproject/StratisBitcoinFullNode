@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.ContractValidation
 
             // TODO: Again, can check be more robust?
             if (typeof(SmartContract).FullName != nonModuleTypes.FirstOrDefault().BaseType.FullName)
-                this.errors.Add(new SmartContractValidationError("Contract must implement the CompiledSmartContract class."));
+                this.errors.Add(new SmartContractValidationError("Contract must implement the SmartContract class."));
         }
 
 

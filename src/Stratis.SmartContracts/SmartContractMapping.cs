@@ -13,6 +13,7 @@ namespace Stratis.SmartContracts
     {
         private readonly uint baseNumber;
         private readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
+        private PersistentState PersistentState;
 
         private byte[] BaseNumberBytes
         {
@@ -22,8 +23,9 @@ namespace Stratis.SmartContracts
             }
         }
 
-        internal SmartContractMapping(uint baseNum)
+        internal SmartContractMapping(PersistentState persistentState, uint baseNum)
         {
+            this.PersistentState = persistentState;
             this.baseNumber = baseNum;
         }
 

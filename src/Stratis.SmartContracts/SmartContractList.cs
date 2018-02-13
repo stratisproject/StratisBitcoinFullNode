@@ -16,6 +16,7 @@ namespace Stratis.SmartContracts
     public class SmartContractList<T> : IEnumerable<T>
     {
         private readonly uint baseNumber;
+        private PersistentState PersistentState;
 
         private byte[] BaseNumberBytes
         {
@@ -37,8 +38,9 @@ namespace Stratis.SmartContracts
             }
         }
 
-        internal SmartContractList(uint baseNumber)
+        internal SmartContractList(PersistentState persistentState, uint baseNumber)
         {
+            this.PersistentState = persistentState;
             this.baseNumber = baseNumber;
         }
 
@@ -62,7 +64,7 @@ namespace Stratis.SmartContracts
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new SmartContractListEnum<T>(this.baseNumber, this.Count);
+            return new SmartContractListEnum<T>(this.PersistentState, this.baseNumber, this.Count);
         }
 
         private byte[] GetKeyBytes(uint key)
@@ -76,6 +78,7 @@ namespace Stratis.SmartContracts
         private readonly uint baseNumber;
         private readonly uint length;
         private int position = -1;
+        private PersistentState PersistentState;
 
         private byte[] BaseNumberBytes
         {
@@ -96,8 +99,9 @@ namespace Stratis.SmartContracts
 
         object IEnumerator.Current => this.Current;
 
-        public SmartContractListEnum(uint baseNumber, uint length)
+        public SmartContractListEnum(PersistentState persistentState, uint baseNumber, uint length)
         {
+            this.PersistentState = persistentState;
             this.baseNumber = baseNumber;
             this.length = length;
         }

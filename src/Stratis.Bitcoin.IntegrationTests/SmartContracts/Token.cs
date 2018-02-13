@@ -4,6 +4,11 @@ using System.Linq;
 
 public class Token : SmartContract
 {
+    public Token(SmartContractState state) 
+        : base(state)
+    {
+        Balances = PersistentState.GetMapping<Address, ulong>();
+    }
 
     public Address Owner
     {
@@ -17,7 +22,7 @@ public class Token : SmartContract
         }
     }
 
-    public SmartContractMapping<Address, ulong> Balances { get; set; } = PersistentState.GetMapping<Address, ulong>();
+    public SmartContractMapping<Address, ulong> Balances { get; }
 
     [SmartContractInit]
     public void Init()

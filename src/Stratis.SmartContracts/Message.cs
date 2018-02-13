@@ -4,21 +4,17 @@ using System.Text;
 
 namespace Stratis.SmartContracts
 {
-    /// <summary>
-    /// This static class is used inside smart contracts. Developers can access each field.
-    /// This may be non-static and injected via constructor in the future.
-    /// </summary>
-    public static class Message
+    public class Message
     {
-        internal static Address ContractAddress { get; private set; }
+        internal Address ContractAddress { get; }
 
-        public static Address Sender { get; private set; }
+        public Address Sender { get; }
 
-        public static ulong GasLimit { get; private set; }
+        public ulong GasLimit { get;  }
 
-        public static ulong Value { get; private set; }
+        public ulong Value { get; }
 
-        internal static void Set(Address contractAddress, Address sender, ulong value, ulong gasLimit)
+        public Message(Address contractAddress, Address sender, ulong value, ulong gasLimit)
         {
             ContractAddress = contractAddress;
             Sender = sender;

@@ -4,6 +4,11 @@ using System.Linq;
 
 public class StorageTest : SmartContract
 {
+    public StorageTest(SmartContractState state) 
+        : base(state)
+    {
+    }
+
     [SmartContractInit]
     public void Init()
     {

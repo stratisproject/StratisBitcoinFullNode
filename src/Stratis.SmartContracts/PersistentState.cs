@@ -7,29 +7,32 @@ using DBreeze;
 
 namespace Stratis.SmartContracts
 {
-    public static class PersistentState
+    public class PersistentState
     {
         internal static IContractStateRepository StateDb { get; private set; }
 
-        private static uint160 contractAddress;
-        private static uint counter;
-        private static PersistentStateSerializer serializer = new PersistentStateSerializer();
+        private uint _counter;
+        private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
 
-        internal static void SetDbAndAddress(IContractStateRepository stateDb, uint160 contractAddress)
+        /// <summary>
+        /// Instantiate a new PersistentState instance. Each PersistentState object represents
+        /// a slice of state for a particular contract address.
+        /// </summary>
+        /// <param name="stateDb"></param>
+        /// <param name="contractAddress"></param>
+        public PersistentState(IContractStateRepository stateDb, uint160 contractAddress)
         {
             StateDb = stateDb;
-            PersistentState.contractAddress = contractAddress;
+            ContractAddress = contractAddress;
+            this._counter = 0;
         }
 
-        internal static void SetAddress(uint160 contractAddress)
-        {
-            PersistentState.contractAddress = contractAddress;
-        }
+        public uint160 ContractAddress { get; }
 
-        public static T GetObject<T>(object key)
+        public T GetObject<T>(object key)
         {
             byte[] keyBytes = serializer.Serialize(key);
-            byte[] bytes = StateDb.GetStorageValue(contractAddress, keyBytes);
+            byte[] bytes = StateDb.GetStorageValue(this.ContractAddress, keyBytes);
 
             if (bytes == null)
                 return default(T);
@@ -37,26 +40,21 @@ namespace Stratis.SmartContracts
             return serializer.Deserialize<T>(bytes);
         }
 
-        public static void SetObject<T>(object key, T obj)
+        public void SetObject<T>(object key, T obj)
         {
             byte[] keyBytes = serializer.Serialize(key);
-            StateDb.SetStorageValue(contractAddress, keyBytes, serializer.Serialize(obj));
+            StateDb.SetStorageValue(this.ContractAddress, keyBytes, serializer.Serialize(obj));
         }
 
-        public static SmartContractMapping<K,V> GetMapping<K, V>()
+        public SmartContractMapping<K,V> GetMapping<K, V>()
         {
-            return new SmartContractMapping<K, V>(PersistentState.counter++);
+            return new SmartContractMapping<K, V>(this, this._counter++);
         }
 
-        public static SmartContractList<T> GetList<T>()
+        public SmartContractList<T> GetList<T>()
         {
-            return new SmartContractList<T>(PersistentState.counter++);
-        }
-
-        internal static void ResetCounter()
-        {
-            PersistentState.counter = 0;
-        }
+            return new SmartContractList<T>(this, this._counter++);
+        }        
     }
 
     /// <summary>

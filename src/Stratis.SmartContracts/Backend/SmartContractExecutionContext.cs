@@ -10,19 +10,23 @@ namespace Stratis.SmartContracts
     /// </summary>
     internal class SmartContractExecutionContext
     {
-        public uint160 ContractAddress { get; set; }
-        public uint160 CallerAddress { get; set; }
-        public uint160 CoinbaseAddress { get; set; }
+        internal SmartContractExecutionContext(
+            Block block, 
+            Message message, 
+            ulong gasPrice,
+            object[] parameters)
+        {
+            Block = block;
+            Message = message;
+            GasPrice = gasPrice;
+            Parameters = parameters;
+        }
+        public ulong GasPrice { get; }
 
-        public ulong CallValue { get; set; }
-        public ulong GasPrice { get; set; }
+        public object[] Parameters { get; }
 
-        public ulong BlockNumber { get; set; }
-        public ulong Difficulty { get; set; }
-        public ulong GasLimit { get; set; }
+        public Message Message { get; }
 
-        public string ContractTypeName { get; set; }
-        public string ContractMethod { get; set; }
-        public object[] Parameters { get; set; }
+        public Block Block { get; }
     }
 }

@@ -21,6 +21,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                                             public class Test : SmartContract
                                             {
+                                                public Test(SmartContractState state)
+                                                    : base(state) {}
+
                                                 public void TestMethod()
                                                 {
                                                     [CodeToExecute]
@@ -347,6 +350,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 public class Token : SmartContract
                 {
+                    public Token(SmartContractState state): base(state) 
+                    {
+                        Balances = PersistentState.GetMapping<Address, ulong>();
+                    }
 
                     public Address Owner
                     {
@@ -360,7 +367,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }
 
-                    public SmartContractMapping<Address, ulong> Balances { get; set; } = PersistentState.GetMapping<Address, ulong>();
+                    public SmartContractMapping<Address, ulong> Balances { get; set; }
 
                     [SmartContractInit]
                     public void Init()
