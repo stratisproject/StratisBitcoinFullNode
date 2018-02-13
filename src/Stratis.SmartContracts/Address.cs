@@ -20,6 +20,8 @@ namespace Stratis.SmartContracts
 
         public Address(ulong numeric) : this( (uint160) numeric) { }
 
+        public static readonly Address Zero = new Address(0);
+
         internal Address(uint160 numeric)
         {
             this.numeric = numeric;

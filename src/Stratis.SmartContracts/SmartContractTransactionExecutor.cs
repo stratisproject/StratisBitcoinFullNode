@@ -66,24 +66,28 @@ namespace Stratis.SmartContracts
             MemoryStream adjustedCodeMem = new MemoryStream();
             decomp.ModuleDefinition.Write(adjustedCodeMem);
             byte[] adjustedCodeBytes = adjustedCodeMem.ToArray();
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.stateTrack);
+
+            var persistentState = new PersistentState(this.stateTrack, contractAddress);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
 
             MethodDefinition initMethod = decomp.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
 
-            SmartContractExecutionResult result = vm.ExecuteMethod(adjustedCodeMem.ToArray(), new SmartContractExecutionContext
-            {
-                BlockNumber = this.blockNum,
-                Difficulty = this.difficulty,
-                CallerAddress = this.smartContractCarrier.Sender,
-                CallValue = this.smartContractCarrier.TxOutValue,
-                GasLimit = this.smartContractCarrier.GasLimit,
-                GasPrice = this.smartContractCarrier.GasPrice,
-                Parameters = this.smartContractCarrier.MethodParameters ?? new object[0],
-                CoinbaseAddress = this.coinbaseAddress,
-                ContractAddress = contractAddress,
-                ContractMethod = initMethod?.Name, // probably better ways of doing this
-                ContractTypeName = decomp.ContractType.Name // probably better ways of doing this
-            });
+            SmartContractExecutionResult result = vm.ExecuteMethod(
+                adjustedCodeMem.ToArray(), 
+                decomp.ContractType.Name,
+                initMethod?.Name, 
+                new SmartContractExecutionContext
+                (
+                    new Block(this.blockNum, this.coinbaseAddress, this.difficulty),
+                    new Message(
+                        new Address(contractAddress), 
+                        new Address(this.smartContractCarrier.Sender), 
+                        this.smartContractCarrier.TxOutValue, 
+                        this.smartContractCarrier.GasLimit
+                        ),  
+                    this.smartContractCarrier.GasPrice,
+                    this.smartContractCarrier.MethodParameters ?? new object[0]
+                ));
             // do something with gas
 
             if (result.Revert)
@@ -104,21 +108,27 @@ namespace Stratis.SmartContracts
             byte[] contractCode = this.state.GetCode(this.smartContractCarrier.To);
             SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(this.stateTrack);
-            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, new SmartContractExecutionContext
-            {
-                BlockNumber = Convert.ToUInt64(this.blockNum),
-                Difficulty = Convert.ToUInt64(this.difficulty),
-                CallerAddress = this.smartContractCarrier.Sender,
-                CallValue = this.smartContractCarrier.TxOutValue,
-                GasLimit = this.smartContractCarrier.GasLimit,
-                GasPrice = this.smartContractCarrier.GasPrice,
-                Parameters = this.smartContractCarrier.MethodParameters ?? new object[0],
-                CoinbaseAddress = this.coinbaseAddress,
-                ContractAddress = this.smartContractCarrier.To,
-                ContractMethod = this.smartContractCarrier.MethodName,
-                ContractTypeName = decomp.ContractType.Name
-            });
+            var contractAddress = this.smartContractCarrier.To;
+
+            var persistentState = new PersistentState(this.stateTrack, contractAddress);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
+
+            SmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode, 
+                decomp.ContractType.Name,
+                this.smartContractCarrier.MethodName,
+                new SmartContractExecutionContext
+                (
+                    new Block(Convert.ToUInt64(this.blockNum), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
+                    new Message(
+                        new Address(contractAddress),
+                        new Address(this.smartContractCarrier.Sender),
+                        this.smartContractCarrier.TxOutValue,
+                        this.smartContractCarrier.GasLimit
+                    ),                                        
+                    this.smartContractCarrier.GasPrice,
+                    this.smartContractCarrier.MethodParameters ?? new object[0]                    
+                ));
 
             if (result.Revert)
             {

@@ -48,23 +48,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
 
-            var context = new SmartContractExecutionContext
-            {
-                BlockNumber = blockNum,
-                CallerAddress = callerAddress,
-                CallValue = callValue,
-                CoinbaseAddress = coinbaseAddress,
-                ContractAddress = contractAddress,
-                ContractMethod = "StoreData",
-                ContractTypeName = "StorageTest",
-                Difficulty = difficulty,
-                GasLimit = gasLimit,
-                GasPrice = gasPrice,
-                Parameters = new object[] { }
-            };
+            //@TODO Inject PersistentState or use factory method
+            var persistentState = new PersistentState(repository, contractAddress);
+            var vm = new ReflectionVirtualMachine(persistentState);
 
-            var vm = new ReflectionVirtualMachine(repository);
-            SmartContractExecutionResult result = vm.ExecuteMethod(adjustedContractCode, context);
+            SmartContractExecutionContext context = new SmartContractExecutionContext(
+                new Stratis.SmartContracts.Block(blockNum, coinbaseAddress, difficulty),
+                new Message(
+                    new Address(contractAddress),
+                    new Address(callerAddress), 
+                    callValue,
+                    gasLimit
+                    ), 
+                gasPrice,
+                new object[] {}
+            );
+            
+            SmartContractExecutionResult result = vm.ExecuteMethod(adjustedContractCode, "StorageTest", "StoreData", context);
             track.Commit();
 
             Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), track.GetStorageValue(contractAddress, Encoding.UTF8.GetBytes("TestKey")));

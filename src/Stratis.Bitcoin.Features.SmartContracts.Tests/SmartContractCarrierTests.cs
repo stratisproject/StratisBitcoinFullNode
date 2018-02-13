@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 using Stratis.SmartContracts;
                 [References]
 
-                public class Test : CompiledSmartContract
+                public class Test : SmartContract
                 { 
                     public void TestMethod()
                     {
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 using Stratis.SmartContracts;
                 [References]
 
-                public class Test : CompiledSmartContract
+                public class Test : SmartContract
                 { 
                     public void TestMethod(int orders, bool canOrder)
                     {
