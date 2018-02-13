@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.extendedLoggerFactory.AddConsoleWithFilters();
 
             this.network = Network.Main;
-            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.extendedLoggerFactory);
+            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.extendedLoggerFactory, new PayloadProvider().DiscoverPayloads());
         }
 
         [Fact]
@@ -51,10 +51,15 @@ namespace Stratis.Bitcoin.Tests.P2P
             var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
-            var message = new IncomingMessage(new PingPayload(), this.network);
+            var incomingMessage = new IncomingMessage();
+            incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
+            {
+                Magic = this.network.Magic,
+                Payload = new PingPayload(),
+            };
 
             //Trigger the event handler
-            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, message).GetAwaiter().GetResult();
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
 
             var peer = addressManager.FindPeer(endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);
@@ -83,10 +88,15 @@ namespace Stratis.Bitcoin.Tests.P2P
             var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
-            var message = new IncomingMessage(new PongPayload(), this.network);
+            var incomingMessage = new IncomingMessage();
+            incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
+            {
+                Magic = this.network.Magic,
+                Payload = new PingPayload(),
+            };
 
             //Trigger the event handler
-            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, message).GetAwaiter().GetResult();
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
 
             var peer = addressManager.FindPeer(endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);
