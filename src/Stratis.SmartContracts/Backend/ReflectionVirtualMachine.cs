@@ -8,25 +8,29 @@ namespace Stratis.SmartContracts.Backend
     {
         private const string InitMethod = "Init";
 
-        public IContractStateRepository StateDb { get; private set; }
+        public IContractStateRepository StateDb { get; }
 
         public ReflectionVirtualMachine(IContractStateRepository stateDb)
         {
-            StateDb = stateDb;
+            this.StateDb = stateDb;
         }
 
         public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, SmartContractExecutionContext context)
         {
             SetStaticValues(context);
-            Assembly assembly = Assembly.Load(contractCode);
+
+            var assembly = Assembly.Load(contractCode);
             Type type = assembly.GetType(context.ContractTypeName);
-            CompiledSmartContract contract = (CompiledSmartContract)Activator.CreateInstance(type);
+
+            var contract = (CompiledSmartContract)Activator.CreateInstance(type);
+
             object result = null;
             if (context.ContractMethod != null)
             {
                 MethodInfo methodToInvoke = type.GetMethod(context.ContractMethod);
                 result = methodToInvoke.Invoke(contract, context.Parameters);
             }
+
             return new SmartContractExecutionResult
             {
                 GasUsed = contract.GasUsed,

@@ -1,9 +1,7 @@
-﻿using Stratis.SmartContracts.State;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Text;
 using NBitcoin;
-using DBreeze;
+using Stratis.SmartContracts.State;
 
 namespace Stratis.SmartContracts
 {
@@ -43,7 +41,7 @@ namespace Stratis.SmartContracts
             StateDb.SetStorageValue(contractAddress, keyBytes, serializer.Serialize(obj));
         }
 
-        public static SmartContractMapping<K,V> GetMapping<K, V>()
+        public static SmartContractMapping<K, V> GetMapping<K, V>()
         {
             return new SmartContractMapping<K, V>(PersistentState.counter++);
         }
@@ -84,8 +82,11 @@ namespace Stratis.SmartContracts
             if (o is bool)
                 return (BitConverter.GetBytes((bool)o));
 
+            if (o is int)
+                return BitConverter.GetBytes((int)o);
+
             if (o is string)
-                return Encoding.UTF8.GetBytes((string) o);
+                return Encoding.UTF8.GetBytes((string)o);
 
             return Encoding.UTF8.GetBytes(NetJSON.NetJSON.Serialize(o));
         }
@@ -96,7 +97,7 @@ namespace Stratis.SmartContracts
                 return default(T);
 
             if (typeof(T) == typeof(byte[]))
-                return (T) (object) stream;
+                return (T)(object)stream;
 
             if (typeof(T) == typeof(byte))
                 return (T)(object)stream[0];
@@ -105,10 +106,10 @@ namespace Stratis.SmartContracts
                 return (T)(object)Convert.ToChar(stream[0]);
 
             if (typeof(T) == typeof(Address))
-                return (T) (object) new Address(new uint160(stream));
+                return (T)(object)new Address(new uint160(stream));
 
             if (typeof(T) == typeof(bool))
-                return (T) (object) (Convert.ToBoolean(stream[0]));
+                return (T)(object)(Convert.ToBoolean(stream[0]));
 
             if (typeof(T) == typeof(string))
                 return (T)(object)(Encoding.UTF8.GetString(stream));

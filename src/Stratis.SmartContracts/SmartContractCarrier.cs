@@ -18,6 +18,7 @@ namespace Stratis.SmartContracts
     /// <item>If applicable <see cref="To"/></item>
     /// <item>If applicable <see cref="MethodName"/></item>
     /// <item>If applicable <see cref="ContractExecutionCode"/></item>
+    /// <item>If applicable <see cref="MethodParameters"/></item>
     /// <item><see cref="GasPrice"/></item>
     /// <item><see cref="GasLimit"/></item>
     /// </list>
@@ -53,7 +54,7 @@ namespace Stratis.SmartContracts
             }
         }
 
-        /// <summary>TODO : Add description.</summary>
+        /// <summary>The index of the <see cref="TxOut"/> where the smart contract exists.</summary>
         public uint Nvout { get; set; }
 
         /// <summary>Specifies the smart contract operation to be done.</summary>
@@ -65,7 +66,7 @@ namespace Stratis.SmartContracts
         /// <summary>The transaction hash that this smart contract references.</summary>
         public uint256 TransactionHash { get; private set; }
 
-        /// <summary>Teh value of transaction's output.</summary>
+        /// <summary>The value of the transaction's output (should be one UTXO).</summary>
         public ulong TxOutValue { get; private set; }
 
         /// <summary>
@@ -216,7 +217,7 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Serializes the smart contract execution code and other related information.
+        /// Serialize the smart contract execution code and other related information.
         /// </summary>
         public byte[] Serialize()
         {

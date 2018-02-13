@@ -1,6 +1,4 @@
-﻿using System;
-using Stratis.SmartContracts;
-using System.Linq;
+﻿using Stratis.SmartContracts;
 
 public class StorageTest : CompiledSmartContract
 {
@@ -8,10 +6,10 @@ public class StorageTest : CompiledSmartContract
     public void Init()
     {
     }
-    
+
     public void StoreData()
     {
-        PersistentState.SetObject<string>("TestKey", "TestValue");
+        PersistentState.SetObject("TestKey", "TestValue");
     }
 
     public void GasTest()

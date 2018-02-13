@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using Mono.Cecil;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
@@ -36,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private readonly ContractStateRepositoryRoot _repository =
             new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            
+
         // TODO: Right now the gas injector is only taking into account the instructions
         // in the user-defined methods. Calls to System methods aren't increasing the instructions.
         // Need to work this out somehow. Averages?
@@ -46,33 +43,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TestGasInjector()
         {
-            var originalAssemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(TestSource);
+            byte[] originalAssemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(TestSource);
 
             var resolver = new DefaultAssemblyResolver();
             resolver.AddSearchDirectory(AppContext.BaseDirectory);
             ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
-            var contractType = moduleDefinition.GetType(ContractName);
-            var baseType = contractType.BaseType.Resolve();
-            var testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
-            var constructorMethod = contractType.Methods.FirstOrDefault(x => x.Name.Contains("ctor"));
+            TypeDefinition contractType = moduleDefinition.GetType(ContractName);
+            TypeDefinition baseType = contractType.BaseType.Resolve();
+            MethodDefinition testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
+            MethodDefinition constructorMethod = contractType.Methods.FirstOrDefault(x => x.Name.Contains("ctor"));
             int aimGasAmount = testMethod.Body.Instructions.Count + constructorMethod.Body.Instructions.Count;
 
-            _spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+            this._spendGasInjector.AddGasCalculationToContract(contractType, baseType);
 
-            var mem = new MemoryStream();
-            moduleDefinition.Write(mem);
-            var injectedAssemblyBytes = mem.ToArray();
-
-            var vm = new ReflectionVirtualMachine(_repository);
-            var result = vm.ExecuteMethod(injectedAssemblyBytes, new SmartContractExecutionContext
+            using (var mem = new MemoryStream())
             {
-                ContractTypeName = ContractName,
-                ContractMethod = MethodName,
-                GasLimit = 500000,
-                Parameters = new object[] { 1 }
-            });
+                moduleDefinition.Write(mem);
+                byte[] injectedAssemblyBytes = mem.ToArray();
 
-            Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUsed));
+                var vm = new ReflectionVirtualMachine(this._repository);
+                var carrier = SmartContractCarrier.CreateContract(1, originalAssemblyBytes, 0, 500000);
+                var context = new SmartContractExecutionContext(carrier, 0, new NBitcoin.uint160(1), ContractName, 1);
+                SmartContractExecutionResult result = vm.ExecuteMethod(injectedAssemblyBytes, context);
+                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUsed));
+            }
         }
     }
 }

@@ -255,7 +255,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>
         /// Tests creation of a simple token contract
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task TestTokenContractCreateAsync()
         {
@@ -464,16 +463,15 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds.
         /// TODO: Add consensusvalidator calls
         /// </summary>
-        /// <returns></returns>
         [Fact]
         public async Task TestNoTransferTestAsync()
         {
-            TestContext context = new TestContext();
+            var context = new TestContext();
             await context.InitializeAsync();
 
-            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+            var entry = new TestMemPoolEntryHelper();
 
-            Transaction tx = new Transaction();
+            var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
 
             var contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);

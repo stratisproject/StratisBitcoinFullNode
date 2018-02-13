@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using System;
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -10,10 +10,10 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class ReflectionVirtualMachineTests
+    public sealed class ReflectionVirtualMachineTests
     {
-        private SmartContractDecompiler decompiler;
-        private SmartContractGasInjector gasInjector;
+        private readonly SmartContractDecompiler decompiler;
+        private readonly SmartContractGasInjector gasInjector;
 
         public ReflectionVirtualMachineTests()
         {
@@ -22,53 +22,77 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void ContractRunTest()
+        public void VM_Execute_Contract_WithoutParameters()
         {
-            ulong blockNum = 1;
-            uint160 callerAddress = new uint160(1);
-            ulong callValue = 0;
-            uint160 coinbaseAddress = new uint160(2);
-            uint160 contractAddress = new uint160(3);
-            ulong difficulty = 0;
-            ulong gasLimit = 500000;
-            ulong gasPrice = 1;
+            //Get the contract execution code------------------------
+            byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTest.cs");
+            //-------------------------------------------------------
 
-            // Note that this is skipping validation and when on-chain, 
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTest.cs");
-            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode);
-            this.gasInjector.AddGasCalculationToContract(decomp.ContractType, decomp.BaseType);
+            //Call smart contract and add to transaction-------------
+            SmartContractCarrier call = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, 500000);
+            byte[] serializedCall = call.Serialize();
+            var transactionCall = new Transaction();
+            transactionCall.AddInput(new TxIn());
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(serializedCall));
+            //-------------------------------------------------------
 
-            byte[] adjustedContractCode;
-            using (var ms = new MemoryStream())
-            {
-                decomp.ModuleDefinition.Write(ms);
-                adjustedContractCode = ms.ToArray();
-            }
+            //Deserialize the contract from the transaction----------
+            //and get the module definition
+            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
+            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
+            //-------------------------------------------------------
+
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
 
-            var context = new SmartContractExecutionContext
-            {
-                BlockNumber = blockNum,
-                CallerAddress = callerAddress,
-                CallValue = callValue,
-                CoinbaseAddress = coinbaseAddress,
-                ContractAddress = contractAddress,
-                ContractMethod = "StoreData",
-                ContractTypeName = "StorageTest",
-                Difficulty = difficulty,
-                GasLimit = gasLimit,
-                GasPrice = gasPrice,
-                Parameters = new object[] { }
-            };
+            var context = new SmartContractExecutionContext(deserializedCall, 1, new uint160(2), decompilation.ContractType.Name, 0);
 
             var vm = new ReflectionVirtualMachine(repository);
-            SmartContractExecutionResult result = vm.ExecuteMethod(adjustedContractCode, context);
+            SmartContractExecutionResult result = vm.ExecuteMethod(contractExecutionCode, context);
             track.Commit();
 
-            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), track.GetStorageValue(contractAddress, Encoding.UTF8.GetBytes("TestKey")));
-            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(contractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), track.GetStorageValue(context.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(context.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+        }
+
+        [Fact]
+        public void VM_Execute_Contract_WithParameters()
+        {
+            //Get the contract execution code------------------------
+            byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTestWithParameters.cs");
+            //-------------------------------------------------------
+
+            //Call smart contract and add to transaction-------------
+            string[] methodParameters = new string[] { "int#5" };
+
+            SmartContractCarrier call = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, 500000).WithParameters(methodParameters);
+            byte[] serializedCall = call.Serialize();
+            var transactionCall = new Transaction();
+            transactionCall.AddInput(new TxIn());
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(serializedCall));
+            //-------------------------------------------------------
+
+            //Deserialize the contract from the transaction----------
+            //and get the module definition
+            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
+            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
+            //-------------------------------------------------------
+
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+
+            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractStateRepository track = repository.StartTracking();
+
+            var context = new SmartContractExecutionContext(deserializedCall, 1, new uint160(2), decompilation.ContractType.Name, 0);
+
+            var vm = new ReflectionVirtualMachine(repository);
+            SmartContractExecutionResult result = vm.ExecuteMethod(contractExecutionCode, context);
+            track.Commit();
+
+            Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.ContractAddress, Encoding.UTF8.GetBytes("orders")), 0));
+            Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.ContractAddress, Encoding.UTF8.GetBytes("orders")), 0));
         }
     }
 }
