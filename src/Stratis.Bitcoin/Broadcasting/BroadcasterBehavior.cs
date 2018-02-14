@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -25,8 +24,9 @@ namespace Stratis.Bitcoin.Broadcasting
             this.logger = logger;
             this.broadcasterManager = broadcasterManager;
 
-            this.SubscribeToPayload<InvPayload>(this.ProcessInvPayloadAsync);
-            this.SubscribeToPayload<GetDataPayload>(this.ProcessGetDataPayloadAsync);
+            //TODO: Fix the exception handling of the async event.
+            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessInvPayloadAsync));
+            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetDataPayloadAsync));
         }
 
         public BroadcasterBehavior(
@@ -41,58 +41,34 @@ namespace Stratis.Bitcoin.Broadcasting
         {
             return new BroadcasterBehavior(this.broadcasterManager, this.logger);
         }
-
-        ///TODO: Fix the exception handling of the async event.
+        
         private async Task ProcessInvPayloadAsync(InvPayload invPayload, INetworkPeer peer)
         {
-            try
+            // if node has tx we broadcasted
+            foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                // if node has tx we broadcasted
-                foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
+                var txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
+                if (txEntry != null)
                 {
-                    var txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
-                    if (txEntry != null)
-                    {
-                        this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Propagated);
-                    }
+                    this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Propagated);
                 }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.ToString());
-                throw;
             }
         }
 
-        ///TODO: Fix the exception handling of the async event.
         private async Task ProcessGetDataPayloadAsync(GetDataPayload getDataPayload, INetworkPeer peer)
         {
-            try
+            // If node asks for tx we want to broadcast.
+            foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                // If node asks for tx we want to broadcast.
-                foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
+                TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
+                if ((txEntry != null) && (txEntry.State != State.CantBroadcast))
                 {
-                    TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
-                    if ((txEntry != null) && (txEntry.State != State.CantBroadcast))
+                    await peer.SendMessageAsync(new TxPayload(txEntry.Transaction)).ConfigureAwait(false);
+                    if (txEntry.State == State.ToBroadcast)
                     {
-                        await peer.SendMessageAsync(new TxPayload(txEntry.Transaction)).ConfigureAwait(false);
-                        if (txEntry.State == State.ToBroadcast)
-                        {
-                            this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
-                        }
+                        this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.ToString());
-                throw;
             }
         }
     }
