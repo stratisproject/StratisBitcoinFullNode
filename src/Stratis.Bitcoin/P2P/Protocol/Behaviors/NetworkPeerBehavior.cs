@@ -112,11 +112,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             }
             catch (Exception ex)
             {
-                logger.LogError("Exception occurred: {0}", ex.ToString());
+                logger.LogError("(-) Exception occurred: {0}", ex.ToString());
                 throw;
             }
 
-            logger.LogTrace("()");
+            logger.LogTrace("(-)");
         }
 
         protected void AssertNotAttached()

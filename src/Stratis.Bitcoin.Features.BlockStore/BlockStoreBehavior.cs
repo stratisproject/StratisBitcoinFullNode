@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (!this.CanRespondToGetBlocksPayload)
             {
-                this.logger.LogTrace("Can't respond to 'getblocks'.");
+                this.logger.LogTrace("(-) Can't respond to 'getblocks'.");
                 return;
             }
 
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (!this.CanRespondToGetDataPayload)
             {
-                this.logger.LogTrace("Can't respond to 'getdata'.");
+                this.logger.LogTrace("(-) Can't respond to 'getdata'.");
                 return;
             }
 
