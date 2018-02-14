@@ -20,13 +20,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
     {
         public INetworkPeer AttachedPeer { get; private set; }
 
-        protected abstract void AttachCore();
-
-        protected abstract void DetachCore();
-
         public abstract object Clone();
 
-        public delegate Task OnPayloadReceived<T>(T payload);
+        public delegate Task OnPayloadReceived<T>(T payload, INetworkPeer peer);
 
         protected Dictionary<Type, OnPayloadReceived<object>> subscriptions;
 
@@ -70,15 +66,23 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             Type payloadType = message.Message.Payload.GetType();
 
             foreach (var subscription in this.subscriptions.Where(x => x.Key == payloadType))
-                await subscription.Value(message.Message.Payload).ConfigureAwait(false);
+                await subscription.Value(message.Message.Payload, peer).ConfigureAwait(false);
         }
 
         protected void SubscribeToPayload<T>(OnPayloadReceived<T> callback) where T : Payload
         {
-            this.subscriptions.Add(typeof(T), payload => callback(payload as T));
+            this.subscriptions.Add(typeof(T), (payload, peer) => callback(payload as T, peer));
         }
 
         protected virtual async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
+        {
+        }
+
+        protected virtual void AttachCore()
+        {
+        }
+
+        protected virtual void DetachCore()
         {
         }
 
@@ -102,6 +106,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
                 this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+                this.subscriptions.Clear();
 
                 this.DetachCore();
                 foreach (IDisposable dispo in this.disposables)
