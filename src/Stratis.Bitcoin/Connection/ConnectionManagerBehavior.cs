@@ -49,16 +49,7 @@ namespace Stratis.Bitcoin.Connection
             };
         }
 
-        protected override void AttachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
+        protected override async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
@@ -80,15 +71,6 @@ namespace Stratis.Bitcoin.Connection
             catch (OperationCanceledException)
             {
             }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
 
             this.logger.LogTrace("(-)");
         }
