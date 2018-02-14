@@ -94,6 +94,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.inventoryTxToSend = new Dictionary<uint256, uint256>();
             this.filterInventoryKnown = new Dictionary<uint256, uint256>();
+
+            // TODO: this should probably be on the mempool scheduler and wrapped in a try/catch
+            // async void methods are considered fire and forget and not catch exceptions (typical for event handlers)
+            // Exceptions will bubble to the execution context, we don't want that!
+            this.SubscribeToPayload<TxPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessTxPayloadAsync));
+            this.SubscribeToPayload<MempoolPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.SendMempoolPayloadAsync));
+            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetDataAsync));
+            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessInvAsync));
         }
 
         /// <summary>
@@ -149,112 +157,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        protected override void AttachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
         public override object Clone()
         {
             return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.logger);
         }
-
-        /// <summary>
-        /// Handler for processing incoming message from the peer.
-        /// </summary>
-        /// <param name="peer">Peer sending the message.</param>
-        /// <param name="message">Incoming message.</param>
-        /// <remarks>
-        /// TODO: Fix the exception handling of the async event.
-        /// </remarks>
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-            // TODO: Add exception handling
-            // TODO: this should probably be on the mempool scheduler and wrapped in a try/catch
-            // async void methods are considered fire and forget and not catch exceptions (typical for event handlers)
-            // Exceptions will bubble to the execution context, we don't want that!
-
-            try
-            {
-                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
-                return;
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError("Exception occurred: {0}", ex.ToString());
-                throw;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Handler for processing peer messages.
-        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
-        /// </summary>
-        /// <param name="peer">Peer sending the message.</param>
-        /// <param name="message">Incoming message.</param>
-        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            try
-            {
-                switch (message.Message.Payload)
-                {
-                    case TxPayload txPayload:
-                        await this.ProcessTxPayloadAsync(peer, txPayload).ConfigureAwait(false);
-                        break;
-
-                    case MempoolPayload mempoolPayload:
-                        await this.SendMempoolPayloadAsync(peer, mempoolPayload).ConfigureAwait(false);
-                        break;
-
-                    case GetDataPayload getDataPayload:
-                        await this.ProcessGetDataAsync(peer, getDataPayload).ConfigureAwait(false);
-                        break;
-
-                    case InvPayload invPayload:
-                        await this.ProcessInvAsync(peer, invPayload).ConfigureAwait(false);
-                        break;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
-                return;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
+        
         /// <summary>
         /// Send the memory pool payload to the attached peer.
         /// Gets the transaction info from the memory pool and sends to the attached peer.
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private async Task SendMempoolPayloadAsync(INetworkPeer peer, MempoolPayload message)
+        private async Task SendMempoolPayloadAsync(MempoolPayload message, INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Command);
@@ -319,7 +233,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">The peer sending the message.</param>
         /// <param name="invPayload">The inventory payload in the message.</param>
-        private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
+        private async Task ProcessInvAsync(InvPayload invPayload, INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
@@ -389,7 +303,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="getDataPayload">The payload for the message.</param>
-        private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataAsync(GetDataPayload getDataPayload, INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
@@ -424,7 +338,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="peer">Peer sending the message.</param>
         /// <param name="transactionPayload">The payload for the message.</param>
-        private async Task ProcessTxPayloadAsync(INetworkPeer peer, TxPayload transactionPayload)
+        private async Task ProcessTxPayloadAsync(TxPayload transactionPayload, INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
             Transaction trx = transactionPayload.Obj;
