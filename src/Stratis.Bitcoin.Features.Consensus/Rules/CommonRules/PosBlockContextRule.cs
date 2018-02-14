@@ -8,7 +8,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PosBlockContextRule : PosConsensusRule
     {
         /// <inheritdoc />
-        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
             // TODO: fix this validation code
