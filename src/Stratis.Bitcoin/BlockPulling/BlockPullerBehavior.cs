@@ -94,6 +94,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.QualityScore = BlockPulling.QualityScore.MaxScore / 3;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
             this.loggerFactory = loggerFactory;
+
+            this.SubscribeToPayload<BlockPayload>(this.ProcessBlockPayloadAsync);
         }
 
         /// <inheritdoc />
@@ -109,45 +111,43 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </para>
         /// </summary>
         /// <param name="peer">Peer that sent us the message.</param>
-        /// <param name="message">Received message.</param>
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        /// <param name="block">Received block payload.</param>
+        /// <param name="lenght">Payload size in bytes.</param>
+        private async Task ProcessBlockPayloadAsync(BlockPayload block, INetworkPeer peer, long lenght)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(block), block);
 
-            if (message.Message.Payload is BlockPayload block)
+            // There are two pullers for each peer connection and each is having its own puller behavior.
+            // Both these behaviors get notification from the node when it receives a message,
+            // even if the origin of the message was from the other puller behavior.
+            // Therefore we first make a quick check whether this puller behavior was the one
+            // who should deal with this block.
+            uint256 blockHash = block.Obj.Header.GetHash(peer.Network.NetworkOptions);
+            if (this.puller.CheckBlockTaskAssignment(this, blockHash))
             {
-                // There are two pullers for each peer connection and each is having its own puller behavior.
-                // Both these behaviors get notification from the node when it receives a message,
-                // even if the origin of the message was from the other puller behavior.
-                // Therefore we first make a quick check whether this puller behavior was the one
-                // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash(peer.Network.NetworkOptions);
-                if (this.puller.CheckBlockTaskAssignment(this, blockHash))
+                this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, lenght);
+
+                block.Obj.Header.CacheHashes();
+                foreach (Transaction tx in block.Obj.Transactions)
+                    tx.CacheHashes();
+
+                DownloadedBlock downloadedBlock = new DownloadedBlock
                 {
-                    this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
+                    Block = block.Obj,
+                    Length = (int)lenght,
+                    Peer = peer.RemoteSocketEndpoint
+                };
 
-                    block.Obj.Header.CacheHashes();
-                    foreach (Transaction tx in block.Obj.Transactions)
-                        tx.CacheHashes();
+                if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
+                    this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
 
-                    DownloadedBlock downloadedBlock = new DownloadedBlock
-                    {
-                        Block = block.Obj,
-                        Length = (int)message.Length,
-                        Peer = peer.RemoteSocketEndpoint
-                    };
-
-                    if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
-                        this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
-
-                    // This peer is now available for more work.
-                    await this.AssignPendingVectorAsync().ConfigureAwait(false);
-                }
+                // This peer is now available for more work.
+                await this.AssignPendingVectorAsync().ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
         }
-
+        
         /// <summary>
         /// If there are any more blocks the node wants to download, this method assigns and starts
         /// a new download task for a specific peer that this behavior represents.
@@ -219,8 +219,7 @@ namespace Stratis.Bitcoin.BlockPulling
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            
             this.ChainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
             this.AssignPendingVectorAsync().GetAwaiter().GetResult();
 
@@ -235,7 +234,6 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             this.cancellationToken.Cancel();
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.ReleaseAll(true);
 
             this.logger.LogTrace("(-)");
