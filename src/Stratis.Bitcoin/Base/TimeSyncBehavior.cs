@@ -320,25 +320,27 @@ namespace Stratis.Bitcoin.Base
 
                     if (timeOffsetWrong)
                     {
-                        this.logger.LogCritical("\n"
-                            + "============================== W A R N I N G ! ==============================\n"
-                            + "Your system time is very different than the time of other network nodes.\n"
-                            + "To prevent problems, adjust your system time, or check -synctime command line argument.\n"
-                            + "Your time difference to the network median time is {0} seconds.\n"
-                            + "=============================================================================\n",
+                        this.logger.LogCritical(Environment.NewLine
+                            + "============================== W A R N I N G ! ==============================" + Environment.NewLine
+                            + "Your system time is very different from the time of other network nodes." + Environment.NewLine
+                            + "It differs from the network median time by {0} seconds." + Environment.NewLine
+                            + "To prevent problems, adjust your system time or check the -synctime command line argument," + Environment.NewLine
+                            + "and restart the node." + Environment.NewLine
+                            + "=============================================================================" + Environment.NewLine,
                               timeOffsetSeconds);
                     }
                 }
                 else
                 {
-                    this.logger.LogCritical("\n"
-                        + "============================== W A R N I N G ! ==============================\n"
-                        + "Your system time is VERY different than the time of other network nodes.\n"
-                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds.\n"
-                        + "The time syncing feature has been as it is no longer considered safe.\n"
-                        + "It is likely that you will now reject new blocks or be unable to mine new block.\n"
-                        + "You need to adjust your system time or check -synctime command line argument.\n"
-                        + "=============================================================================\n",
+                    this.logger.LogCritical(Environment.NewLine
+                        + "============================== W A R N I N G ! ==============================" + Environment.NewLine
+                        + "Your system time is very different from the time of other network nodes." + Environment.NewLine
+                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds." + Environment.NewLine
+                        + "The time syncing feature has been switched off as it is no longer considered safe." + Environment.NewLine
+                        + "It is likely that you will now reject new blocks or be unable to mine new blocks." + Environment.NewLine
+                        + "You need to adjust your system time or check the -synctime command line argument," + Environment.NewLine
+                        + "and restart the node." + Environment.NewLine
+                        + "=============================================================================" + Environment.NewLine,
                           MaxTimeOffsetSeconds);
                 }
 
