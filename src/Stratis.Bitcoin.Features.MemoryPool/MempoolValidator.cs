@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -536,6 +537,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void PreMempoolChecks(MempoolValidationContext context)
         {
+            // TODO: fix this to use dedicated mempool rules.
+            new CheckTransactionRule().CheckTransaction(this.ConsensusOptions, context.Transaction);
+
             // state filled in by CheckTransaction
             this.consensusValidator.CheckTransaction(context.Transaction);
 

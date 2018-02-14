@@ -416,88 +416,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
+
         public virtual void CheckTransaction(Transaction transaction)
         {
-            this.logger.LogTrace("()");
-
-            // Basic checks that don't depend on any context.
-            if (transaction.Inputs.Count == 0)
-            {
-                this.logger.LogTrace("(-)[TX_NO_INPUT]");
-                ConsensusErrors.BadTransactionNoInput.Throw();
-            }
-
-            if (transaction.Outputs.Count == 0)
-            {
-                this.logger.LogTrace("(-)[TX_NO_OUTPUT]");
-                ConsensusErrors.BadTransactionNoOutput.Throw();
-            }
-
-            // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(transaction, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
-            {
-                this.logger.LogTrace("(-)[TX_OVERSIZE]");
-                ConsensusErrors.BadTransactionOversize.Throw();
-            }
-
-            // Check for negative or overflow output values
-            long valueOut = 0;
-            foreach (TxOut txout in transaction.Outputs)
-            {
-                if (txout.Value.Satoshi < 0)
-                {
-                    this.logger.LogTrace("(-)[TX_OUTPUT_NEGATIVE]");
-                    ConsensusErrors.BadTransactionNegativeOutput.Throw();
-                }
-
-                if (txout.Value.Satoshi > this.ConsensusOptions.MaxMoney)
-                {
-                    this.logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
-                    ConsensusErrors.BadTransactionTooLargeOutput.Throw();
-                }
-
-                valueOut += txout.Value;
-                if (!this.MoneyRange(valueOut))
-                {
-                    this.logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
-                    ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
-                }
-            }
-
-            // Check for duplicate inputs.
-            var inOutPoints = new HashSet<OutPoint>();
-            foreach (TxIn txin in transaction.Inputs)
-            {
-                if (inOutPoints.Contains(txin.PrevOut))
-                {
-                    this.logger.LogTrace("(-)[TX_DUP_INPUTS]");
-                    ConsensusErrors.BadTransactionDuplicateInputs.Throw();
-                }
-
-                inOutPoints.Add(txin.PrevOut);
-            }
-
-            if (transaction.IsCoinBase)
-            {
-                if ((transaction.Inputs[0].ScriptSig.Length < 2) || (transaction.Inputs[0].ScriptSig.Length > 100))
-                {
-                    this.logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
-                    ConsensusErrors.BadCoinbaseSize.Throw();
-                }
-            }
-            else
-            {
-                foreach (TxIn txin in transaction.Inputs)
-                {
-                    if (txin.PrevOut.IsNull)
-                    {
-                        this.logger.LogTrace("(-)[TX_NULL_PREVOUT]");
-                        ConsensusErrors.BadTransactionNullPrevout.Throw();
-                    }
-                }
-            }
-
-            this.logger.LogTrace("(-)[OK]");
         }
 
         /// <summary>
