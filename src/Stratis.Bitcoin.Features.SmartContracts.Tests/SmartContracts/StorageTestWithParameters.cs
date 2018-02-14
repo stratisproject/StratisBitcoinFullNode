@@ -1,7 +1,12 @@
 ﻿using Stratis.SmartContracts;
 
-public sealed class StorageTestWithParameters : CompiledSmartContract
+public sealed class StorageTestWithParameters : SmartContract
 {
+    public StorageTestWithParameters(SmartContractState state)
+        : base(state)
+    {
+    }
+
     [SmartContractInit]
     public void Init()
     {
@@ -9,6 +14,6 @@ public sealed class StorageTestWithParameters : CompiledSmartContract
 
     public void StoreData(int orders)
     {
-        PersistentState.SetObject("orders", orders);
+        this.PersistentState.SetObject("orders", orders);
     }
 }

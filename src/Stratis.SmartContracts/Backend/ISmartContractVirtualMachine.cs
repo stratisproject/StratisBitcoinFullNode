@@ -6,8 +6,7 @@ namespace Stratis.SmartContracts.Backend
 {
     internal interface ISmartContractVirtualMachine
     {
-        SmartContractExecutionResult ExecuteMethod(byte[] contractCode, SmartContractExecutionContext context);
-        //SmartContractExecutionResult CreateContract(byte[] contractCode, SmartContractExecutionContext executionContext);
-        //SmartContractExecutionResult LoadContractAndRun(byte[] contractCode, SmartContractExecutionContext executionContext);
+        SmartContractExecutionResult ExecuteMethod(byte[] contractCode, string contractTypeName, string methodName,
+            SmartContractExecutionContext context);
     }
 }

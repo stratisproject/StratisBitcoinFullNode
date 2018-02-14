@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.ContractValidation
 {
     public class SmartContractGasInjector
     {
-        private const string GasMethod = "System.Void Stratis.SmartContracts.CompiledSmartContract::SpendGas(System.UInt32)";
+        private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(System.UInt32)";
 
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {
@@ -46,7 +46,8 @@ namespace Stratis.SmartContracts.ContractValidation
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
             MethodReference gasMethodReference = contractType.Module.Import(gasMethod);
 
-            foreach (MethodDefinition method in contractType.Methods)
+            // @TODO - Ignore constructors for now...
+            foreach (MethodDefinition method in contractType.Methods.Where(m => !m.IsConstructor))
             {
                 InjectSpendGasMethod(method, gasMethodReference);
             }
@@ -128,15 +129,20 @@ namespace Stratis.SmartContracts.ContractValidation
             }
         }
 
-
-        private void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, MethodReference gasMethod, Instruction instruction, int opcodeCount)
+        private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, MethodReference gasMethod, Instruction instruction, int opcodeCount)
         {
             ILProcessor il = methodDefinition.Body.GetILProcessor();
             Instruction ldarg0 = il.Create(OpCodes.Ldarg_0);
             Instruction gasInstruction = il.Create(OpCodes.Call, gasMethod);
             Instruction pushInstruction = il.Create(OpCodes.Ldc_I4, opcodeCount);
+
+            // Ref: https://stackoverflow.com/questions/16346155/cil-opcode-ldarg-0-is-used-even-though-there-are-no-arguments
             il.InsertBefore(instruction, ldarg0);
+
+            // Add the instruction for pushing the opcode count onto the stack
             il.InsertBefore(instruction, pushInstruction);
+
+            // Add the gas method call instruction
             il.InsertBefore(instruction, gasInstruction);
         }
     }

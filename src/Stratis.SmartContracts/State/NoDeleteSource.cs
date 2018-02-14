@@ -4,9 +4,14 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// Should be used in cases where you don't want to get rid of previous states. I.e. all contract storage changes.
+    /// </summary>
+    /// <typeparam name="Key"></typeparam>
+    /// <typeparam name="Value"></typeparam>
     public class NoDeleteSource<Key, Value> : AbstractChainedSource<Key, Value, Key, Value>
     {
-
         public NoDeleteSource(ISource<Key, Value> src) : base(src)
         {
             SetFlushSource(true);

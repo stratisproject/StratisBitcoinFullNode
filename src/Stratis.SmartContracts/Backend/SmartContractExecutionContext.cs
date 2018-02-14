@@ -1,56 +1,40 @@
-﻿using System.Collections.Generic;
-using NBitcoin;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// Information about the current state of the blockchain that can be accessed in the virtual machine.
+    /// Information about the current state of the blockchain that is passed into the virtual machine.
     /// </summary>
     internal class SmartContractExecutionContext
     {
-        public uint160 ContractAddress { get; set; }
-        public uint160 CallerAddress { get; set; }
-        public uint160 CoinbaseAddress { get; set; }
+        /// <summary>
+        /// TODO: Add documentation.
+        /// </summary>
+        internal readonly Block Block;
 
-        public ulong CallValue { get; set; }
-        public ulong GasPrice { get; set; }
+        /// <summary>
+        /// TODO: Add documentation.
+        /// </summary>
+        internal readonly ulong GasPrice;
 
-        public ulong BlockNumber { get; set; }
-        public ulong Difficulty { get; set; }
-        public ulong GasLimit { get; set; }
+        /// <summary>
+        /// These are the method parameters to be injected into the method call by the <see cref="SmartContractTransactionExecutor"/>.
+        /// </summary>
+        internal object[] Parameters { get; private set; }
 
-        public string ContractTypeName { get; set; }
-        public string ContractMethod { get; set; }
-        public object[] Parameters { get; private set; }
+        /// <summary>
+        /// TODO: Add documentation.
+        /// </summary>
+        internal readonly Message Message;
 
-        public SmartContractExecutionContext(SmartContractCarrier smartContractCarrier, ulong blockNumber, uint160 coinbaseAddress, string contractTypeName, ulong difficulty)
+        internal SmartContractExecutionContext(Block block, Message message, ulong gasPrice, object[] methodParameters = null)
         {
-            this.BlockNumber = blockNumber;
-            this.CallerAddress = smartContractCarrier.Sender;
-            this.CallValue = smartContractCarrier.TxOutValue;
-            this.CoinbaseAddress = coinbaseAddress;
-            this.ContractAddress = smartContractCarrier.To;
-            this.ContractMethod = smartContractCarrier.MethodName;
-            this.ContractTypeName = contractTypeName;
-            this.Difficulty = difficulty;
-            this.GasLimit = smartContractCarrier.GasLimit;
-            this.GasPrice = smartContractCarrier.GasPrice;
+            //TODO: Add some null checks here
 
-            if (smartContractCarrier.MethodParameters != null && smartContractCarrier.MethodParameters.Length > 0)
-                ProcessMethodParamters(smartContractCarrier.MethodParameters);
-        }
+            this.Block = block;
+            this.Message = message;
+            this.GasPrice = gasPrice;
 
-        private void ProcessMethodParamters(string[] methodParameters)
-        {
-            var processedParameters = new List<object>();
-            foreach (var parameter in methodParameters)
-            {
-                string[] parameterSignature = parameter.Split('#');
-                if (parameterSignature[0] == "int")
-                    processedParameters.Add(int.Parse(parameterSignature[1]));
-            }
-
-            this.Parameters = processedParameters.ToArray();
+            if (methodParameters != null && methodParameters.Length > 0)
+                this.Parameters = methodParameters;
         }
     }
 }

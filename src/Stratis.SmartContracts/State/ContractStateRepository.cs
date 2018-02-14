@@ -10,6 +10,9 @@ using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Handles all of the state for smart contracts. Includes smart contract code, storage, and UTXO balances.
+    /// </summary>
     public class ContractStateRepository : IContractStateRepository
     {
         protected ContractStateRepository parent;

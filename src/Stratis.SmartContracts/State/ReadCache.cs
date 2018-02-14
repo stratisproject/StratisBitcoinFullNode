@@ -4,10 +4,13 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// </summary>
+    /// <typeparam name="Value"></typeparam>
     public class ReadCache<Value> : AbstractCachedSource<byte[], Value>
     {
         private Dictionary<byte[], Value> cache;
-        private bool byteKeyMap;
 
         public ReadCache(ISource<byte[], Value> src) : base(src)
         {
@@ -19,11 +22,6 @@ namespace Stratis.SmartContracts.State
             this.cache = cache;
             return this;
         }
-
-        //public ReadCache<Value> withMaxCapacity(int maxCapacity)
-        //{
-        //    throw new NotImplementedException(); // Shouldn't need surely.
-        //}
 
         public override void Put(byte[] key, Value val)
         {

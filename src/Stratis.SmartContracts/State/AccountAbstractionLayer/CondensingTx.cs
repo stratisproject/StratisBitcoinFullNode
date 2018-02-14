@@ -4,6 +4,10 @@ using NBitcoin;
 
 namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 {
+    /// <summary>
+    /// When a contract sends or receives funds, we need to rearrange the UTXOs addressed to it and to others so everyone ends up with the correct balances.
+    /// The condensing transaction aids this process.
+    /// </summary>
     public class CondensingTx
     {
         private SmartContractCarrier smartContractCarrier;

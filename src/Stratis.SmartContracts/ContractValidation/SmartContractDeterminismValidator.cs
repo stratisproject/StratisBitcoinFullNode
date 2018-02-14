@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.ContractValidation
             "Stratis.SmartContracts.SmartContractDictionary`2",
             "Stratis.SmartContracts.SmartContractMapping`2",
             typeof(PersistentState).FullName,
-            typeof(CompiledSmartContract).FullName
+            typeof(SmartContract).FullName
         };
 
         private static readonly IEnumerable<IMethodDefinitionValidator> UserDefinedMethodValidators = new List<IMethodDefinitionValidator>

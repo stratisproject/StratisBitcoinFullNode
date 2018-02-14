@@ -5,29 +5,31 @@ using Stratis.SmartContracts.State;
 
 namespace Stratis.SmartContracts
 {
-    public static class PersistentState
+    public class PersistentState
     {
         internal static IContractStateRepository StateDb { get; private set; }
 
-        private static uint160 contractAddress;
-        private static uint counter;
-        private static PersistentStateSerializer serializer = new PersistentStateSerializer();
+        private uint counter;
+        public uint160 ContractAddress { get; }
+        private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
 
-        internal static void SetDbAndAddress(IContractStateRepository stateDb, uint160 contractAddress)
+        /// <summary>
+        /// Instantiate a new PersistentState instance. Each PersistentState object represents
+        /// a slice of state for a particular contract address.
+        /// </summary>
+        /// <param name="stateDb"></param>
+        /// <param name="contractAddress"></param>
+        public PersistentState(IContractStateRepository stateDb, uint160 contractAddress)
         {
             StateDb = stateDb;
-            PersistentState.contractAddress = contractAddress;
+            this.ContractAddress = contractAddress;
+            this.counter = 0;
         }
 
-        internal static void SetAddress(uint160 contractAddress)
-        {
-            PersistentState.contractAddress = contractAddress;
-        }
-
-        public static T GetObject<T>(object key)
+        public T GetObject<T>(object key)
         {
             byte[] keyBytes = serializer.Serialize(key);
-            byte[] bytes = StateDb.GetStorageValue(contractAddress, keyBytes);
+            byte[] bytes = StateDb.GetStorageValue(this.ContractAddress, keyBytes);
 
             if (bytes == null)
                 return default(T);
@@ -35,25 +37,20 @@ namespace Stratis.SmartContracts
             return serializer.Deserialize<T>(bytes);
         }
 
-        public static void SetObject<T>(object key, T obj)
+        public void SetObject<T>(object key, T obj)
         {
             byte[] keyBytes = serializer.Serialize(key);
-            StateDb.SetStorageValue(contractAddress, keyBytes, serializer.Serialize(obj));
+            StateDb.SetStorageValue(this.ContractAddress, keyBytes, serializer.Serialize(obj));
         }
 
-        public static SmartContractMapping<K, V> GetMapping<K, V>()
+        public SmartContractMapping<K, V> GetMapping<K, V>()
         {
-            return new SmartContractMapping<K, V>(PersistentState.counter++);
+            return new SmartContractMapping<K, V>(this, this.counter++);
         }
 
-        public static SmartContractList<T> GetList<T>()
+        public SmartContractList<T> GetList<T>()
         {
-            return new SmartContractList<T>(PersistentState.counter++);
-        }
-
-        internal static void ResetCounter()
-        {
-            PersistentState.counter = 0;
+            return new SmartContractList<T>(this, this.counter++);
         }
     }
 
@@ -64,7 +61,6 @@ namespace Stratis.SmartContracts
     /// </summary>
     public class PersistentStateSerializer
     {
-        // TODO: Fill in all so that JSON isn't put in
         public byte[] Serialize(object o)
         {
             if (o is byte[])
@@ -85,10 +81,22 @@ namespace Stratis.SmartContracts
             if (o is int)
                 return BitConverter.GetBytes((int)o);
 
+            if (o is long)
+                return BitConverter.GetBytes((long)o);
+
+            if (o is uint)
+                return BitConverter.GetBytes((uint)o);
+
+            if (o is ulong)
+                return BitConverter.GetBytes((ulong)o);
+
+            if (o is sbyte)
+                return BitConverter.GetBytes((sbyte)o);
+
             if (o is string)
                 return Encoding.UTF8.GetBytes((string)o);
 
-            return Encoding.UTF8.GetBytes(NetJSON.NetJSON.Serialize(o));
+            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
         public T Deserialize<T>(byte[] stream)
@@ -111,10 +119,25 @@ namespace Stratis.SmartContracts
             if (typeof(T) == typeof(bool))
                 return (T)(object)(Convert.ToBoolean(stream[0]));
 
+            if (typeof(T) == typeof(int))
+                return (T)(object)(BitConverter.ToInt32(stream, 0));
+
+            if (typeof(T) == typeof(long))
+                return (T)(object)(BitConverter.ToInt64(stream, 0));
+
+            if (typeof(T) == typeof(sbyte))
+                return (T)(object)(Convert.ToSByte(stream[0]));
+
             if (typeof(T) == typeof(string))
                 return (T)(object)(Encoding.UTF8.GetString(stream));
 
-            return NetJSON.NetJSON.Deserialize<T>(Encoding.UTF8.GetString(stream));
+            if (typeof(T) == typeof(uint))
+                return (T)(object)(BitConverter.ToUInt32(stream, 0));
+
+            if (typeof(T) == typeof(ulong))
+                return (T)(object)(BitConverter.ToUInt64(stream, 0));
+
+            throw new Exception(string.Format("{0} is not supported.", typeof(T).Name));
         }
     }
 }

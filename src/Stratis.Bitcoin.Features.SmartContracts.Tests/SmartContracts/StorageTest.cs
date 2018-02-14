@@ -1,7 +1,12 @@
 ﻿using Stratis.SmartContracts;
 
-public class StorageTest : CompiledSmartContract
+public class StorageTest : SmartContract
 {
+    public StorageTest(SmartContractState state)
+        : base(state)
+    {
+    }
+
     [SmartContractInit]
     public void Init()
     {
@@ -9,7 +14,7 @@ public class StorageTest : CompiledSmartContract
 
     public void StoreData()
     {
-        PersistentState.SetObject("TestKey", "TestValue");
+        this.PersistentState.SetObject("TestKey", "TestValue");
     }
 
     public void GasTest()

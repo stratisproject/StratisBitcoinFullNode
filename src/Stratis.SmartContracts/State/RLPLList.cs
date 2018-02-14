@@ -3,6 +3,9 @@ using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ. Used to store data inside of the PatriciaTrie.
+    /// </summary>
     public class RLPLList
     {
         /**
@@ -55,8 +58,8 @@ namespace Stratis.SmartContracts.State
 
         public byte[] GetEncoded()
         {
-            byte[][] encoded = new byte[cnt][];
-            for (int i = 0; i<cnt; i++) {
+            byte[][] encoded = new byte[this.cnt][];
+            for (int i = 0; i< this.cnt; i++) {
                 encoded[i] = RLP.EncodeElement(GetBytes(i));
             }
             return RLP.EncodeList(encoded);
@@ -65,33 +68,33 @@ namespace Stratis.SmartContracts.State
 
         public void Add(int off, int len, bool isList)
         {
-            offsets[cnt] = off;
-            lens[cnt] = isList ? (-1 - len) : len;
-            cnt++;
+            this.offsets[this.cnt] = off;
+            this.lens[this.cnt] = isList ? (-1 - len) : len;
+            this.cnt++;
         }
 
         public byte[] GetBytes(int idx)
         {
-            int len = lens[idx];
+            int len = this.lens[idx];
             len = len < 0 ? (-len - 1) : len;
             byte[] ret = new byte[len];
-            Array.Copy(rlp, offsets[idx], ret, 0, len);
+            Array.Copy(this.rlp, this.offsets[idx], ret, 0, len);
             return ret;
         }
 
         public RLPLList GetList(int idx)
         {
-            return DecodeLazyList(rlp, offsets[idx], -lens[idx] - 1);
+            return DecodeLazyList(this.rlp, this.offsets[idx], -this.lens[idx] - 1);
         }
 
         public bool IsList(int idx)
         {
-            return lens[idx] < 0;
+            return this.lens[idx] < 0;
         }
 
         public int Size()
         {
-            return cnt;
+            return this.cnt;
         }
 
         public static RLPLList DecodeLazyList(byte[] data)

@@ -43,16 +43,7 @@ namespace Stratis.SmartContracts
 
         private string methodParameters;
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
-        public string[] MethodParameters
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(this.methodParameters))
-                    return null;
-
-                return Regex.Split(this.methodParameters, @"(?<!(?<!\\)*\\)\|").Select(parameter => parameter.Replace(@"\|", "|")).ToArray();
-            }
-        }
+        public object[] MethodParameters { get; private set; }
 
         /// <summary>The index of the <see cref="TxOut"/> where the smart contract exists.</summary>
         public uint Nvout { get; set; }
@@ -83,6 +74,7 @@ namespace Stratis.SmartContracts
             }
         }
 
+        /// <summary>This is the new contract's address.</summary>
         public uint160 To { get; set; }
 
         private SmartContractCarrier(uint vmVersion, OpcodeType opCodeType)
@@ -143,7 +135,7 @@ namespace Stratis.SmartContracts
                 return this;
 
             this.methodParameters = string.Join('|', methodParameters.Select(parameter => parameter.Replace("|", @"\|")));
-
+            this.MethodParameters = ConstructMethodParameters(this.methodParameters);
             return this;
         }
 
@@ -171,6 +163,10 @@ namespace Stratis.SmartContracts
                 smartContractCarrier.ContractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
             smartContractCarrier.methodParameters = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+
+            if (!string.IsNullOrEmpty(smartContractCarrier.methodParameters))
+                smartContractCarrier.MethodParameters = ConstructMethodParameters(smartContractCarrier.methodParameters);
+
             smartContractCarrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
             smartContractCarrier.GasPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.GasLimit = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
@@ -214,6 +210,55 @@ namespace Stratis.SmartContracts
             byteCursor += takeLength;
 
             return (T)result;
+        }
+
+        /// <summary>
+        /// Parses the method parameters, passed in as a string[] and reconstructs it as object[].
+        /// </summary>
+        private static object[] ConstructMethodParameters(string methodParameters)
+        {
+            string[] splitParameters = Regex.Split(methodParameters, @"(?<!(?<!\\)*\\)\|").Select(parameter => parameter.Replace(@"\|", "|")).ToArray();
+
+            var processedParameters = new List<object>();
+            foreach (var parameter in splitParameters)
+            {
+                string[] parameterSignature = parameter.Split('#');
+
+                if (parameterSignature[0] == "1")
+                    processedParameters.Add(bool.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "2")
+                    processedParameters.Add(Convert.ToByte(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "3")
+                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "4")
+                    processedParameters.Add(char.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "5")
+                    processedParameters.Add(Convert.ToSByte(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "6")
+                    processedParameters.Add(int.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "7")
+                    processedParameters.Add(parameterSignature[1]);
+
+                else if (parameterSignature[0] == "8")
+                    processedParameters.Add(uint.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "9")
+                    processedParameters.Add(new uint160(ulong.Parse(parameterSignature[1])));
+
+                else if (parameterSignature[0] == "10")
+                    processedParameters.Add(ulong.Parse(parameterSignature[1]));
+
+                else
+                    throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
+            }
+
+            return processedParameters.ToArray();
         }
 
         /// <summary>
@@ -267,10 +312,10 @@ namespace Stratis.SmartContracts
 
     public enum SmartContractCarrierDataType
     {
-        Bool,
+        Bool = 1,
         Byte,
-        Char,
         ByteArray,
+        Char,
         SByte,
         Short,
         String,

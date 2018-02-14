@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Stratis.SmartContracts.State
 {
+    /// <summary>
+    /// Adapted from EthereumJ.
+    /// </summary>
+    /// <typeparam name="E"></typeparam>
     public interface IMemSizeEstimator<E>
     {
         long EstimateSize(E e);

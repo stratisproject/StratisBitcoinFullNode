@@ -4,7 +4,8 @@ using System.Linq;
 namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// TODO: Give the user a warning about using this or the array in any non-storage locations.
+    /// Should be used by smart contract devs for storing dictionary-like data structures.
+    /// Stores and loads to KV store so is much more efficient than using a Dictionary.
     /// </summary>
     /// <typeparam name="K"></typeparam>
     /// <typeparam name="V"></typeparam>
@@ -12,6 +13,7 @@ namespace Stratis.SmartContracts
     {
         private readonly uint baseNumber;
         private readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
+        private PersistentState PersistentState;
 
         private byte[] BaseNumberBytes
         {
@@ -21,8 +23,9 @@ namespace Stratis.SmartContracts
             }
         }
 
-        internal SmartContractMapping(uint baseNum)
+        internal SmartContractMapping(PersistentState persistentState, uint baseNum)
         {
+            this.PersistentState = persistentState;
             this.baseNumber = baseNum;
         }
 

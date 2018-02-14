@@ -4,30 +4,34 @@ using Stratis.SmartContracts.State;
 
 namespace Stratis.SmartContracts.Backend
 {
+    /// <summary>
+    /// Used to instantiate smart contracts using reflection and then execute certain methods and their parameters.
+    /// </summary>
     internal class ReflectionVirtualMachine : ISmartContractVirtualMachine
     {
+        private readonly PersistentState _persistentState;
         private const string InitMethod = "Init";
 
-        public IContractStateRepository StateDb { get; }
-
-        public ReflectionVirtualMachine(IContractStateRepository stateDb)
+        public ReflectionVirtualMachine(PersistentState persistentState)
         {
-            this.StateDb = stateDb;
+            this._persistentState = persistentState;
         }
 
-        public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, SmartContractExecutionContext context)
-        {
-            SetStaticValues(context);
+        public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, string contractTypeName, string contractMethodName,
+            SmartContractExecutionContext context)
+        {            
+            Assembly assembly = Assembly.Load(contractCode);
+            Type type = assembly.GetType(contractTypeName);
 
-            var assembly = Assembly.Load(contractCode);
-            Type type = assembly.GetType(context.ContractTypeName);
+            // @TODO - SmartContractState is basically the same thing as SmartContractExecutionContext so merge them eventually
+            var state = new SmartContractState(context.Block, context.Message, this._persistentState);
 
-            var contract = (CompiledSmartContract)Activator.CreateInstance(type);
+            SmartContract contract = (SmartContract)Activator.CreateInstance(type, state);
 
             object result = null;
-            if (context.ContractMethod != null)
+            if (contractMethodName != null)
             {
-                MethodInfo methodToInvoke = type.GetMethod(context.ContractMethod);
+                MethodInfo methodToInvoke = type.GetMethod(contractMethodName);
                 result = methodToInvoke.Invoke(contract, context.Parameters);
             }
 
@@ -36,14 +40,6 @@ namespace Stratis.SmartContracts.Backend
                 GasUsed = contract.GasUsed,
                 Return = result
             };
-        }
-
-        private void SetStaticValues(SmartContractExecutionContext context)
-        {
-            Block.Set(context.BlockNumber, context.CoinbaseAddress, context.Difficulty);
-            Message.Set(new Address(context.ContractAddress), new Address(context.CallerAddress), context.CallValue, context.GasLimit);
-            PersistentState.ResetCounter();
-            PersistentState.SetDbAndAddress(this.StateDb, context.ContractAddress);
-        }
+        }        
     }
 }

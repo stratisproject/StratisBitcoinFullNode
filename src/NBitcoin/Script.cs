@@ -570,16 +570,12 @@ namespace NBitcoin
             }
         }
 
-        // TODO: Tidy up - It seems I haven't quite added to opcode correctly
+        // TODO: Is this allowed?
         public bool IsSmartContractExec
         {
             get
             {
-                var lastOp = ToBytes().LastOrDefault();
-                if (lastOp == 0)
-                    return false;
-
-                return (lastOp == (byte)OpcodeType.OP_CALLCONTRACT || lastOp == (byte)OpcodeType.OP_CREATECONTRACT);
+                return ToOps().Any(x => x.Code == OpcodeType.OP_CALLCONTRACT || x.Code == OpcodeType.OP_CREATECONTRACT);
             }
         }
 

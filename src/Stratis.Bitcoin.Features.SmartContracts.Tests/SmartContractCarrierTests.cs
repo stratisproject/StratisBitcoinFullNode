@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 using Stratis.SmartContracts;
                 [References]
 
-                public class Test : CompiledSmartContract
+                public class Test : SmartContract
                 { 
                     public void TestMethod()
                     {
@@ -39,6 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
             Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
+
+            Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec);
         }
 
         [Fact]
@@ -50,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 using Stratis.SmartContracts;
                 [References]
 
-                public class Test : CompiledSmartContract
+                public class Test : SmartContract
                 { 
                     public void TestMethod(int orders, bool canOrder)
                     {
@@ -61,9 +63,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Short, 12),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Bool, true),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.String, "te|st"),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 12),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te|st"),
             };
 
             SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, 500000).WithParameters(testMethodParameters);
@@ -79,11 +81,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
 
             Assert.NotNull(deserialized.MethodParameters[0]);
-            Assert.Equal(testMethodParameters[0], deserialized.MethodParameters[0]);
+            Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);
             Assert.NotNull(deserialized.MethodParameters[1]);
-            Assert.Equal(testMethodParameters[1], deserialized.MethodParameters[1]);
+            Assert.Equal(smartContractCarrier.MethodParameters[1], deserialized.MethodParameters[1]);
             Assert.NotNull(deserialized.MethodParameters[2]);
-            Assert.Equal(testMethodParameters[2], deserialized.MethodParameters[2]);
+            Assert.Equal(smartContractCarrier.MethodParameters[2], deserialized.MethodParameters[2]);
 
             Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
@@ -99,6 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrier.Serialize())));
 
             var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
+
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.To, deserialized.To);
@@ -113,16 +116,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             string[] methodParameters = new string[]
             {
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Bool, true),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Byte, (byte)1),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.ByteArray, BitConverter.ToString(Encoding.UTF8.GetBytes("test"))),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Char, 's'),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.SByte, -45),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.Short, 7),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.String, "test"),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.UInt, 36),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.UInt160, 234),
-                string.Format("{0}#{1}", SmartContractCarrierDataType.ULong, 29)
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Byte, (byte)1),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ByteArray, BitConverter.ToString(Encoding.UTF8.GetBytes("test"))),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Char, 's'),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.SByte, -45),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 7),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "test"),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt, 36),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt160, 23),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, 29)
             };
 
             SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000).WithParameters(methodParameters);

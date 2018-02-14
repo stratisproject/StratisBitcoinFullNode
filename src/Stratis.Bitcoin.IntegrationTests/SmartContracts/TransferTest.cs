@@ -2,8 +2,13 @@
 using Stratis.SmartContracts;
 using System.Linq;
 
-public class TransferTest : CompiledSmartContract
+public class TransferTest : SmartContract
 {
+    public TransferTest(SmartContractState state) 
+        : base(state)
+    {
+    }
+
     public void Test()
     {
         Transfer(new Address(123), 100);
