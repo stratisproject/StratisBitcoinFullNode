@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -46,6 +47,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>POW mining loop.</summary>
         private IAsyncLoop powLoop;
 
+        /// <summary>State of time synchronization feature that stores collected data samples.</summary>
+        private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
+
         /// <summary>
         /// Initializes the instance of the object.
         /// </summary>
@@ -53,6 +57,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="minerSettings">Settings relevant to mining or staking.</param>
         /// <param name="nodeSettings">The node's configuration settings.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="powMining">POW miner.</param>
         /// <param name="posMinting">POS staker.</param>
         /// <param name="walletManager">Manager providing operations on wallets.</param>
@@ -61,6 +66,7 @@ namespace Stratis.Bitcoin.Features.Miner
             MinerSettings minerSettings,
             NodeSettings nodeSettings,
             ILoggerFactory loggerFactory,
+            ITimeSyncBehaviorState timeSyncBehaviorState,
             IPowMining powMining,
             IPosMinting posMinting = null,
             IWalletManager walletManager = null)
@@ -69,6 +75,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.minerSettings = minerSettings;
             this.minerSettings.Load(nodeSettings);
             this.powMining = powMining;
+            this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.posMinting = posMinting;
             this.walletManager = walletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -81,6 +88,15 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="walletPassword">The password of the wallet.</param>
         public void StartStaking(string walletName, string walletPassword)
         {
+            // Prevent mining if the system time is not in sync with that of other members on the network.
+            if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync())
+            {
+                var errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
+                                    + "Please adjust your system time and restart the node.";
+                this.logger.LogError(errorMessage);
+                throw new ConfigurationException(errorMessage);
+            }
+
             if (!string.IsNullOrEmpty(walletName) && !string.IsNullOrEmpty(walletPassword))
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
@@ -93,7 +109,9 @@ namespace Stratis.Bitcoin.Features.Miner
             }
             else
             {
-                this.logger.LogWarning("Staking not started, wallet name or password were not provided.");
+                var errorMessage = "Staking not started, wallet name or password were not provided.";
+                this.logger.LogError(errorMessage);
+                throw new ConfigurationException(errorMessage);
             }
         }
 
