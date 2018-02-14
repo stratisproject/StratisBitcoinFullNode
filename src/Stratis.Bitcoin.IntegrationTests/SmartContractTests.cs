@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.ContractValidation;
@@ -159,10 +160,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 loggerFactory.AddConsoleWithFilters();
 
                 var nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(nodeSettings, loggerFactory)
-                {
-                    UseCheckpoints = this.useCheckpoints
-                };
+                var consensusSettings = new ConsensusSettings().Load(nodeSettings);
+                consensusSettings.UseCheckpoints = this.useCheckpoints;
 
                 DBreezeEngine engine = new DBreezeEngine("C:/data");
                 DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState1");
@@ -176,10 +175,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
                         });
+
                 this.gasInjector = new SmartContractGasInjector();
                 SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.state, this.decompiler, this.validator, this.gasInjector);
 
-                NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory);
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory);
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
