@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -531,6 +532,70 @@ namespace Stratis.Bitcoin.IntegrationTests
             var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
             // In this case we are sending 0, and doing no transfers, so we don't need a condensing transaction
             Assert.Equal(2, pblocktemplate3.Block.Transactions.Count);
+        }
+
+        /// <summary>
+        /// Should deploy 2 contracts, and then send funds from one to the other and end up with correct balances for all.
+        /// </summary>
+        [Fact]
+        public async Task TestContractTransfersAsync()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+
+            Transaction tx = new Transaction();
+            tx.Time = 0;
+            tx.LockTime = new LockTime(0);
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            var contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/InterContract1.cs"), 1, 500);
+            tx.AddOutput(new TxOut(new Money(0), new Script(contractTransaction.Serialize())));
+
+            uint256 hashTx = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+
+            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate.Block.Header);
+
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            string newContractAddressString = newContractAddress.ToString(); // this is hardcoded into the second contract.
+
+            Assert.NotNull(context.state.GetCode(newContractAddress));
+
+            context.mempool.Clear();
+            var contractTransaction2 = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/InterContract2.cs"), 1, 500);
+            tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            tx.AddOutput(new TxOut(new Money(0), new Script(contractTransaction2.Serialize())));
+
+            hashTx = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+
+            pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate.Block.Header);
+
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            Assert.NotNull(context.state.GetCode(newContractAddress2));
+            context.mempool.Clear();
+
+
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", 1, 500);
+
+            tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            ulong fundsToSend = 1000;
+            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.Serialize())));
+
+            uint256 hashTx2 = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.state.GetStorageValue(newContractAddress, new PersistentStateSerializer().Serialize(0)));
+            Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
         }
     }
 }

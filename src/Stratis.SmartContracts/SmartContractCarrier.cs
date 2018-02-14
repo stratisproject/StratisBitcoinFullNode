@@ -255,12 +255,25 @@ namespace Stratis.SmartContracts
             return prefixedBytes.ToArray();
         }
 
+
+        //TODO: I'm doing something naughty here just to temporarily allow me to test calling different contracts
+        private static int totalCounter = 0;
+        private static Dictionary<uint256, uint160> addressPerHash = new Dictionary<uint256, uint160>();
+
         /// <summary>
         /// TODO: Could put this on the 'Transaction' object in NBitcoin if allowed
         /// </summary>
         public uint160 GetNewContractAddress()
         {
-            return new uint160(HashHelper.Keccak256(this.TransactionHash.ToBytes()).Take(20).ToArray());
+            if (addressPerHash.ContainsKey(this.TransactionHash))
+                return addressPerHash[this.TransactionHash];
+
+            uint160 newAddress = new uint160(HashHelper.Keccak256(BitConverter.GetBytes(totalCounter)).Take(20).ToArray());
+            addressPerHash[this.TransactionHash] = newAddress;
+            totalCounter++;
+            return newAddress;
+            // TODO: Put below line back in.
+            //return new uint160(HashHelper.Keccak256(this.TransactionHash.ToBytes()).Take(20).ToArray());
         }
     }
 
