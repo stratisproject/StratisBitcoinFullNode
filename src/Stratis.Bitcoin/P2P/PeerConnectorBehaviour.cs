@@ -16,19 +16,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        protected override void AttachCore()
-        {
-            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
-        }
-
-        /// <inheritdoc/>
-        protected override void DetachCore()
-        {
-            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
-        }
-
-        /// <inheritdoc/>
-        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
+        protected  override Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Disconnecting) || (peer.State == NetworkPeerState.Offline))
                 this.peerConnector.RemovePeer(peer, "Peer disconnected");
