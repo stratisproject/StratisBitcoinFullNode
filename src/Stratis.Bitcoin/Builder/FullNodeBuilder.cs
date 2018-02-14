@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Builder
 
             this.Services = this.BuildServices();
 
-            if (this.NodeSettings.PrintHelpAndExit)
+            if (this.NodeSettings?.PrintHelpAndExit ?? false)
             {
                 foreach (var featureRegistration in this.Features.FeatureRegistrations)
                 {
