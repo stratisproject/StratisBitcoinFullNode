@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -136,52 +135,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             base.CheckBlock(context);
 
-            Block block = context.BlockValidationContext.Block;
-
-            // Check timestamp.
-            if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
-            {
-                // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.FutureDrift(0)).UtcDateTime;
-                this.logger.LogTrace("(-)[TIME_TOO_FAR]");
-                ConsensusErrors.BlockTimestampTooFar.Throw();
-            }
-
-            if (BlockStake.IsProofOfStake(block))
-            {
-                // Coinbase output should be empty if proof-of-stake block.
-                if ((block.Transactions[0].Outputs.Count != 1) || !block.Transactions[0].Outputs[0].IsEmpty)
-                {
-                    this.logger.LogTrace("(-)[COINBASE_NOT_EMPTY]");
-                    ConsensusErrors.BadStakeBlock.Throw();
-                }
-
-                // Second transaction must be coinstake, the rest must not be.
-                if (!block.Transactions[1].IsCoinStake)
-                {
-                    this.logger.LogTrace("(-)[NO_COINSTAKE]");
-                    ConsensusErrors.BadStakeBlock.Throw();
-                }
-
-                if (block.Transactions.Skip(2).Any(t => t.IsCoinStake))
-                {
-                    this.logger.LogTrace("(-)[MULTIPLE_COINSTAKE]");
-                    ConsensusErrors.BadMultipleCoinstake.Throw();
-                }
-            }
-
-            // Check transactions.
-            foreach (Transaction transaction in block.Transactions)
-            {
-                // Check transaction timestamp.
-                if (block.Header.Time < transaction.Time)
-                {
-                    this.logger.LogTrace("Block contains transaction with timestamp {0}, which is greater than block's timestamp {1}.", transaction.Time, block.Header.Time);
-                    this.logger.LogTrace("(-)[TX_TIME_MISMATCH]");
-                    ConsensusErrors.BlockTimeBeforeTrx.Throw();
-                }
-            }
-
             this.logger.LogTrace("(-)[OK]");
         }
 
@@ -218,30 +171,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Checks whether the future drift should be reduced after provided timestamp.
-        /// </summary>
-        /// <param name="time">UNIX timestamp.</param>
-        /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
-        private bool IsDriftReduced(long time)
-        {
-            return time > DriftingBugFixTimestamp;
-        }
-
-        /// <summary>
-        /// Applies future drift to provided timestamp.
-        /// </summary>
-        /// <remarks>
-        /// Future drift is maximal allowed block's timestamp difference over adjusted time.
-        /// If this difference is greater block won't be accepted.
-        /// </remarks>
-        /// <param name="time">UNIX timestamp.</param>
-        /// <returns>Timestamp with maximum future drift applied.</returns>
-        private long FutureDrift(long time)
-        {
-            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
 
         /// <summary>

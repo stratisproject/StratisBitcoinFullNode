@@ -301,6 +301,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new CheckPowTransactionRule(),
                     new CheckPosTransactionRule(),
                     new CheckSigOpsRule(),
+                    new PosFutureDriftRule(),
+                    new PosCoinstakeRule(),
                     new PosBlockSignatureRule()
                 };
             }
