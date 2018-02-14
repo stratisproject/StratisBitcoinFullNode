@@ -171,7 +171,8 @@ namespace Stratis.Bitcoin.Builder
                     printHelp?.Invoke(null, new object[] { this.NodeSettings.Network });
                 }
 
-                throw new NodeBuilderException("User requested to print help and exit");
+                // Signal node not built
+                return null;
             }
 
             var fullNodeServiceProvider = this.Services.BuildServiceProvider();

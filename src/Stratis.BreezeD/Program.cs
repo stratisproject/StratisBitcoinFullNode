@@ -55,7 +55,8 @@ namespace Stratis.BreezeD
                 IFullNode node = fullNodeBuilder.Build();
 
                 // Start Full Node - this will also start the API.
-                await node.RunAsync();
+                if (node != null)
+                    await node.RunAsync();
             }
             catch (Exception ex)
             {
