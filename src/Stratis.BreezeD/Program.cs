@@ -34,9 +34,6 @@ namespace Stratis.BreezeD
 
                 if (isStratis)
                 {
-                    if (NodeSettings.PrintHelp(args, Network.StratisMain))
-                        return;
-
                     Network network = isTestNet ? Network.StratisTest : Network.StratisMain;
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
