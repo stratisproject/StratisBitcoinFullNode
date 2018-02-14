@@ -43,7 +43,7 @@ namespace Stratis.StratisDnsD
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
                 NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
-                DnsSettings dnsSettings = DnsSettings.Load(nodeSettings);
+                DnsSettings dnsSettings = new DnsSettings().Load(nodeSettings);
 
                 // Verify that the DNS host, nameserver and mailbox arguments are set.
                 if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
@@ -57,7 +57,7 @@ namespace Stratis.StratisDnsD
                     // Build the Dns full node.
                     IFullNode node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
-                        .UseStratisConsensus()
+                        .UsePosConsensus()
                         .UseBlockStore()
                         .UseMempool()
                         .UseWallet()
@@ -75,7 +75,7 @@ namespace Stratis.StratisDnsD
                     // Build the Dns node.
                     IFullNode node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
-                        .UseStratisConsensus()
+                        .UsePosConsensus()
                         .UseApi()
                         .AddRPC()
                         .UseDns()

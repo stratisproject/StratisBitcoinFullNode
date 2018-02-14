@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.P2P
                 await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
             }
             else
-                await ConnectAsync(peer).ConfigureAwait(false);
+                await this.ConnectAsync(peer).ConfigureAwait(false);
         }
     }
 }

@@ -77,12 +77,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.ConnectionSettings = new ConnectionManagerSettings();
             testChainContext.ConnectionSettings.Load(testChainContext.NodeSettings);
 
-            testChainContext.LoggerFactory = new ExtendedLoggerFactory();
-            testChainContext.LoggerFactory.AddConsoleWithFilters();
+            testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings(testChainContext.NodeSettings, testChainContext.LoggerFactory);
+            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
 
             PowConsensusValidator consensusValidator = new PowConsensusValidator(network, testChainContext.Checkpoints, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);

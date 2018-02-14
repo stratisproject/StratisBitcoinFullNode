@@ -29,14 +29,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private Process process;
 
-        public bool HasExited
+        public bool IsDisposed
         {
             get { return this.process == null && this.process.HasExited; }
         }
 
         public void Kill()
         {
-            if (!this.HasExited)
+            if (!this.IsDisposed)
             {
                 this.process.Kill();
                 this.process.WaitForExit();
@@ -59,17 +59,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.callback = callback;
         }
 
-        public bool HasExited
+        public bool IsDisposed
         {
-            get { return this.FullNode.HasExited; }
+            get { return this.FullNode.State == FullNodeState.Disposed; }
         }
 
         public void Kill()
         {
-            if (this.FullNode != null)
-            {
-                this.FullNode.Dispose();
-            }
+            this.FullNode?.Dispose();
         }
 
         public void Start(string dataDir)
@@ -98,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 node = (FullNode)new FullNodeBuilder()
                     .UseNodeSettings(args)
-                    .UseStratisConsensus()
+                    .UsePosConsensus()
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()
@@ -125,7 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" }, loadConfiguration:false);
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                .UseStratisConsensus()
+                .UsePosConsensus()
                 .UseBlockStore()
                 .UseMempool()
                 .UseWallet()
@@ -147,17 +144,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.callback = callback;
         }
 
-        public bool HasExited
+        public bool IsDisposed
         {
-            get { return this.FullNode.HasExited; }
+            get { return this.FullNode.State == FullNodeState.Disposed; }
         }
 
         public void Kill()
         {
-            if (this.FullNode != null)
-            {
-                this.FullNode.Dispose();
-            }
+            this.FullNode?.Dispose();
         }
 
         public void Start(string dataDir)
@@ -186,7 +180,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 node = (FullNode)new FullNodeBuilder()
                     .UseNodeSettings(args)
-                    .UseConsensus()
+                    .UsePowConsensus()
                     .UseBlockStore()
                     .UseMempool()
                     .AddMining()

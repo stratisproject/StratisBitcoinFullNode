@@ -50,10 +50,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
-            LoggerFactory loggerFactory = new LoggerFactory();
-            ConsensusSettings consensusSettings = new ConsensusSettings(NodeSettings.Default(), loggerFactory);
+            NodeSettings nodeSettings = NodeSettings.Default();
+            ConsensusSettings consensusSettings = new ConsensusSettings().Load(nodeSettings);
             Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, loggerFactory);
+            var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, nodeSettings.LoggerFactory);
 
             return consensusValidator.ComputeMerkleRoot(leaves, out mutated);
         }

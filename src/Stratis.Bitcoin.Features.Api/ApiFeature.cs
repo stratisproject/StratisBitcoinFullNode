@@ -40,9 +40,14 @@ namespace Stratis.Bitcoin.Features.Api
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
             this.apiFeatureOptions = apiFeatureOptions;
-            apiSettings.Load(fullNode.Settings);
             this.apiSettings = apiSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.apiSettings.Load(this.fullNode.Settings);
         }
 
         public override void Initialize()

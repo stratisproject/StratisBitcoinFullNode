@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.P2P
                         clonedParameters.TemplateBehaviors.Clear();
                         clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-                        networkPeer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(this.network, endPoint, clonedParameters).ConfigureAwait(false);
+                        networkPeer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(endPoint, clonedParameters).ConfigureAwait(false);
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
                         await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
