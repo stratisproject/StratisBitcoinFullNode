@@ -24,6 +24,9 @@ namespace Stratis.Bitcoin.Broadcasting
         {
             this.logger = logger;
             this.broadcasterManager = broadcasterManager;
+
+            this.SubscribeToPayload<InvPayload>(this.ProcessInvPayloadAsync);
+            this.SubscribeToPayload<GetDataPayload>(this.ProcessGetDataPayloadAsync);
         }
 
         public BroadcasterBehavior(
@@ -31,8 +34,6 @@ namespace Stratis.Bitcoin.Broadcasting
             ILoggerFactory loggerFactory)
             : this(broadcasterManager, loggerFactory.CreateLogger(typeof(BroadcasterBehavior).FullName))
         {
-            this.SubscribeToPayload<InvPayload>(this.ProcessInvPayloadAsync);
-            this.SubscribeToPayload<GetDataPayload>(this.ProcessGetDataPayloadAsync);
         }
 
         /// <inheritdoc />
