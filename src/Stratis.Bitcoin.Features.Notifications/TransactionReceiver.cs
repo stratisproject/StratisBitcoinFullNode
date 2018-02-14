@@ -31,54 +31,12 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.transactionNotification = transactionNotification;
             this.notifiedTransactions = notifiedTransactions;
             this.logger = logger;
+
+            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessInvAsync));
+            this.SubscribeToPayload<TxPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessTxPayload));
         }
 
-        protected override void AttachCore()
-        {
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-        }
-
-        protected override void DetachCore()
-        {
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-        }
-
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            try
-            {
-                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.ToString());
-
-                // while in dev catch any unhandled exceptions
-                Debugger.Break();
-                throw;
-            }
-        }
-
-        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            // Check the type of message received.
-            // We're only interested in Inventory and Transaction messages.
-            switch (message.Message.Payload)
-            {
-                case InvPayload invPayload:
-                    await this.ProcessInvAsync(peer, invPayload).ConfigureAwait(false);
-                    break;
-
-                case TxPayload txPayload:
-                    this.ProcessTxPayload(txPayload);
-                    break;
-            }
-        }
-
-        private void ProcessTxPayload(TxPayload txPayload)
+        private async Task ProcessTxPayload(TxPayload txPayload, INetworkPeer peer)
         {
             var transaction = txPayload.Obj;
             var trxHash = transaction.GetHash();
@@ -93,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
-        private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
+        private async Task ProcessInvAsync(InvPayload invPayload, INetworkPeer peer)
         {
             var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
 
