@@ -21,6 +21,7 @@ namespace NBitcoin
         internal List<NetworkAddress> FixedSeeds;
         internal Block Genesis;
         internal long MinTxFee;
+        internal int MaxTipAge;
         internal long FallbackFee;
         internal long MinRelayTxFee;
 
@@ -69,6 +70,17 @@ namespace NBitcoin
             return this;
         }
 
+        /// <summary>
+        /// Sets the maximum tip age in seconds to consider node in initial block download.
+        /// </summary>
+        /// <param name="maxTipAge">Maximum tip age in seconds to consider node in initial block download.</param>
+        /// <returns>A <see cref="NetworkBuilder"/>.</returns>
+        public NetworkBuilder SetMaxTipAge(int maxTipAge)
+        {
+            this.MaxTipAge = maxTipAge;
+            return this;
+        }
+
         public void CopyFrom(Network network)
         {
             if(network == null)
@@ -88,7 +100,8 @@ namespace NBitcoin
                 .SetMagic(this.Magic)
                 .SetPort(network.DefaultPort)
                 .SetRPCPort(network.RPCPort)
-                .SetTxFees(network.MinTxFee, network.FallbackFee, network.MinRelayTxFee);
+                .SetTxFees(network.MinTxFee, network.FallbackFee, network.MinRelayTxFee)
+                .SetMaxTipAge(network.MaxTipAge);
         }
 
         public NetworkBuilder AddAlias(string alias)

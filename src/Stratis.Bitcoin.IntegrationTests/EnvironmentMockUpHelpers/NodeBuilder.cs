@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public interface INodeRunner
     {
-        bool HasExited { get; }
+        bool IsDisposed { get; }
 
         void Kill();
 

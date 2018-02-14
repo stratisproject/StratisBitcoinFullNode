@@ -15,8 +15,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         public ParallelAsyncTest()
         {
-            this.testCollection = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8 };
-            this.itemProcessingDelayMs = 200;
+            this.testCollection = new List<int>();
+            for (int i=0; i < 100; ++i)
+                this.testCollection.Add(i);
+
+            this.itemProcessingDelayMs = 50;
 
             this.testCollectionSum = 0;
 
@@ -28,17 +31,16 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public async void ForEachAsync_TestDegreeOfParallelism_Async()
         {
             int sum = 0;
-
+            
             Stopwatch watch = Stopwatch.StartNew();
 
             await this.testCollection.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
             {
+                Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
-                sum += item;
             }).ConfigureAwait(false);
 
             watch.Stop();
-
             Assert.True(watch.Elapsed.TotalMilliseconds < this.testCollection.Count * this.itemProcessingDelayMs);
             Assert.Equal(this.testCollectionSum, sum);
         }
@@ -52,13 +54,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await this.testCollection.ForEachAsync(this.testCollection.Count, CancellationToken.None, async (item, cancellation) =>
             {
+                Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
-                sum += item;
             }).ConfigureAwait(false);
-
+            
             watch.Stop();
-
-            Assert.True(watch.Elapsed.TotalMilliseconds < this.itemProcessingDelayMs * 2);
+            Assert.True(watch.Elapsed.TotalMilliseconds < this.testCollection.Count * this.itemProcessingDelayMs);
             Assert.Equal(this.testCollectionSum, sum);
         }
 
@@ -72,8 +73,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
-
-
+        
         [Fact]
         public async void ForEachAsync_CanBeCancelled_Async()
         {
@@ -83,8 +83,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await this.testCollection.ForEachAsync(1, tokenSource.Token, async (item, cancellation) =>
             {
+                Interlocked.Increment(ref itemsProcessed);
+
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
-                itemsProcessed++;
 
                 if (itemsProcessed == 3)
                     tokenSource.Cancel();

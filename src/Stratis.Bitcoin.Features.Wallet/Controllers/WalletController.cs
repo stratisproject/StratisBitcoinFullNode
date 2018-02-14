@@ -599,10 +599,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password)
                 {
-                    FeeType = FeeParser.Parse(request.FeeType),
+                    TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
                     Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
                 };
+
+                if (!string.IsNullOrEmpty(request.FeeType))
+                {
+                    context.FeeType = FeeParser.Parse(request.FeeType);
+                }
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 

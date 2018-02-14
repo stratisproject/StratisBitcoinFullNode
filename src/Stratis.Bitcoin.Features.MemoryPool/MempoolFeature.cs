@@ -44,6 +44,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings for the memory pool component.</summary>
         private readonly MempoolSettings mempoolSettings;
 
+        /// <summary>Settings for the node.</summary>
+        private readonly NodeSettings nodeSettings;
+
         /// <summary>
         /// Constructs a memory pool feature.
         /// </summary>
@@ -72,7 +75,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager = mempoolManager;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mempoolSettings = mempoolSettings;
-            this.mempoolSettings.Load(nodeSettings);
+            this.nodeSettings = nodeSettings;
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.mempoolSettings.Load(this.nodeSettings);
         }
 
         public void AddFeatureStats(StringBuilder benchLogs)

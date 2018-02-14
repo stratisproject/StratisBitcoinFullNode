@@ -32,12 +32,6 @@ namespace Stratis.Bitcoin
         /// <summary>Component responsible for starting and stopping all the node's features.</summary>
         private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
-        /// <summary>Indicates whether the node's instance has been disposed or is currently being disposed.</summary>
-        public bool IsDisposed { get; private set; }
-
-        /// <summary>Indicates whether the node's instance disposal has been finished.</summary>
-        public bool HasExited { get; private set; }
-
         /// <summary>Node command line and configuration file settings.</summary>
         public NodeSettings Settings { get; private set; }
 
@@ -55,6 +49,9 @@ namespace Stratis.Bitcoin
 
         /// <summary>ASP.NET Core host for RPC server.</summary>
         public IWebHost RPCHost { get; set; }
+
+        /// <inheritdoc />
+        public FullNodeState State { get; private set; }
 
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
@@ -143,13 +140,17 @@ namespace Stratis.Bitcoin
             }
         }
 
-        /// <summary>
-        /// Initializes DI services that the node needs.
-        /// </summary>
-        /// <param name="serviceProvider">Provider of DI services.</param>
-        /// <returns>Full node itself to allow fluent code.</returns>
-        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        /// <summary>Creates new instance of the <see cref="FullNode"/>.</summary>
+        public FullNode()
         {
+            this.State = FullNodeState.Created;
+        }
+
+        /// <inheritdoc />
+        public IFullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        {
+            this.State = FullNodeState.Initializing;
+
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             this.Services = serviceProvider;
@@ -172,13 +173,16 @@ namespace Stratis.Bitcoin
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
+            this.State = FullNodeState.Initialized;
             return this;
         }
 
         /// <inheritdoc />
         public void Start()
         {
-            if (this.IsDisposed)
+            this.State = FullNodeState.Starting;
+
+            if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
 
             if (this.Resources != null)
@@ -206,6 +210,8 @@ namespace Stratis.Bitcoin
             this.nodeLifetime.NotifyStarted();
 
             this.StartPeriodicLog();
+
+            this.State = FullNodeState.Started;
         }
 
         /// <summary>
@@ -247,10 +253,10 @@ namespace Stratis.Bitcoin
         /// <inheritdoc />
         public void Dispose()
         {
-            if (this.IsDisposed)
+            if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 return;
 
-            this.IsDisposed = true;
+            this.State = FullNodeState.Disposing;
 
             this.logger.LogInformation("Closing node pending...");
 
@@ -269,7 +275,7 @@ namespace Stratis.Bitcoin
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
 
-            this.HasExited = true;
+            this.State = FullNodeState.Disposed;
         }
     }
 }
