@@ -34,8 +34,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
         public virtual void CheckTransaction(PowConsensusOptions options, Transaction tx)
         {
-            this.Logger.LogTrace("()");
-
             // Basic checks that don't depend on any context.
             if (tx.Inputs.Count == 0)
             {

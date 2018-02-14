@@ -129,16 +129,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void CheckBlock(RuleContext context)
-        {
-            this.logger.LogTrace("()");
-
-            base.CheckBlock(context);
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <inheritdoc />
         protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.logger.LogTrace("()");

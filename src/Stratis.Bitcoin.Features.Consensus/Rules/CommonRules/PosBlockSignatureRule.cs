@@ -35,8 +35,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
         private bool CheckBlockSignature(Block block)
         {
-            this.Logger.LogTrace("()");
-
             if (BlockStake.IsProofOfWork(block))
             {
                 bool res = block.BlockSignatur.IsEmpty();

@@ -378,14 +378,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             return sigOps;
         }
 
-        /// <inheritdoc />
-        public virtual void CheckBlock(RuleContext context)
-        {
-            this.logger.LogTrace("()");
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
         /// <summary>
         /// Calculates legacy transaction signature operation cost.
         /// </summary>
