@@ -84,14 +84,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated);
 
         /// <summary>
-        /// Context-dependent validity checks.
-        /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>
-        /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
-        void ContextualCheckBlock(RuleContext context);
-
-        /// <summary>
         /// Validates the UTXO set is correctly spent.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>

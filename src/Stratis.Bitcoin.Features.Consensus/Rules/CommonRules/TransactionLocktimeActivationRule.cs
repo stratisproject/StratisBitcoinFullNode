@@ -12,7 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
     /// </remarks>
-    public class Bip113ActivationRule : ConsensusRule
+    /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>
+    public class TransactionLocktimeActivationRule : ConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)

@@ -10,8 +10,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki
-    /// </remarks>
-    public class Bip34Rule : ConsensusRule
+    /// </remarks>    
+    /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
+    public class CoinbaseHeighRule : ConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// With Bitcoin the BIP34 was activated at block 227,835 using the deployment flags, 
     /// this rule allows a chain to have BIP34 activated as a deployment rule.
     /// </summary>
-    public class Bip34ActivationRule : Bip34Rule
+    public class CoinbaseHeighActivationRule : CoinbaseHeighRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
