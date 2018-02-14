@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Base
         /// does not deliver this message for inbound peers to node behaviors.
         /// </para>
         /// </remarks>
-        private Task ProcessVerAckPayloadAsync(VerAckPayload payload, INetworkPeer peer)
+        private async Task ProcessVerAckPayloadAsync(VerAckPayload payload, INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(payload), payload);
 
@@ -428,7 +428,6 @@ namespace Stratis.Bitcoin.Base
             else this.logger.LogTrace("Message received from unknown node's address.");
             
             this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
         }
         
         /// <inheritdoc />
