@@ -22,7 +22,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public abstract object Clone();
 
-        public delegate Task OnPayloadReceived<T>(T payload, INetworkPeer peer);
+        public delegate Task OnPayloadReceived<T>(T payload, INetworkPeer peer, long lenght);
+        public delegate Task OnPayloadReceivedCompact<T>(T payload, INetworkPeer peer);
 
         protected Dictionary<Type, OnPayloadReceived<object>> subscriptions;
 
@@ -66,12 +67,17 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             Type payloadType = message.Message.Payload.GetType();
 
             foreach (var subscription in this.subscriptions.Where(x => x.Key == payloadType))
-                await subscription.Value(message.Message.Payload, peer).ConfigureAwait(false);
+                await subscription.Value(message.Message.Payload, peer, message.Length).ConfigureAwait(false);
+        }
+
+        protected void SubscribeToPayload<T>(OnPayloadReceivedCompact<T> callback) where T : Payload
+        {
+            this.subscriptions.Add(typeof(T), (payload, peer, lenght) => callback(payload as T, peer));
         }
 
         protected void SubscribeToPayload<T>(OnPayloadReceived<T> callback) where T : Payload
         {
-            this.subscriptions.Add(typeof(T), (payload, peer) => callback(payload as T, peer));
+            this.subscriptions.Add(typeof(T), (payload, peer, lenght) => callback(payload as T, peer, lenght));
         }
 
         protected virtual async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
