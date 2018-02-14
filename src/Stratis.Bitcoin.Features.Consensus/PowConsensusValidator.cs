@@ -391,22 +391,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Note that witness malleability is checked in ContextualCheckBlock, so no
             // checks that use witness data may be performed here.
 
-            // First transaction must be coinbase, the rest must not be
-            if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)
-            {
-                this.logger.LogTrace("(-)[NO_COINBASE]");
-                ConsensusErrors.BadCoinbaseMissing.Throw();
-            }
-
-            for (int i = 1; i < block.Transactions.Count; i++)
-            {
-                if (block.Transactions[i].IsCoinBase)
-                {
-                    this.logger.LogTrace("(-)[MULTIPLE_COINBASE]");
-                    ConsensusErrors.BadMultipleCoinbase.Throw();
-                }
-            }
-
             // Check transactions
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(tx);
