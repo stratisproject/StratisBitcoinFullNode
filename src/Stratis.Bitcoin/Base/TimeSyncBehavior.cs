@@ -27,6 +27,12 @@ namespace Stratis.Bitcoin.Base
         /// <c>false</c> if the sample comes from a peer that our node connected to.</param>
         /// <returns><c>true</c> if the sample was added to the mix, <c>false</c> otherwise.</returns>
         bool AddTimeData(IPAddress peerAddress, TimeSpan offsetSample, bool isInboundConnection);
+
+        /// <summary>
+        /// Gets a value indicating whether the system time is not in sync and needs adjustment.
+        /// </summary>
+        /// <returns><true/> if the system time is not in sync and needs adjustment, <c>false</c> otherwise.</returns>
+        bool IsSystemTimeOutOfSync();
     }
 
     /// <summary>
@@ -167,6 +173,9 @@ namespace Stratis.Bitcoin.Base
         /// otherwise the node may not perform correctly on the network.</summary>
         private IAsyncLoop warningLoop;
 
+        /// <summary> A value indicating whether the system time is not in sync and needs adjustment. </summary>
+        private bool isSystemTimeOutOfSync;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -233,6 +242,7 @@ namespace Stratis.Bitcoin.Base
                         {
                             startWarningLoopNow = true;
                             this.WarningLoopStarted = true;
+                            this.isSystemTimeOutOfSync = true;
                         }
 
                         res = true;
@@ -247,6 +257,12 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
+        }
+
+        /// <inheritdoc/>
+        public bool IsSystemTimeOutOfSync()
+        {
+            return this.isSystemTimeOutOfSync;
         }
 
         /// <summary>
