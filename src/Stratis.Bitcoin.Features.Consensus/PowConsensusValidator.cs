@@ -383,18 +383,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            Block block = context.BlockValidationContext.Block;
-
-            // All potential-corruption validation must be done before we do any
-            // transaction validation, as otherwise we may mark the header as invalid
-            // because we receive the wrong transactions for it.
-            // Note that witness malleability is checked in ContextualCheckBlock, so no
-            // checks that use witness data may be performed here.
-
-            // Check transactions
-            foreach (Transaction tx in block.Transactions)
-                this.CheckTransaction(tx);
-
             this.logger.LogTrace("(-)[OK]");
         }
 
@@ -413,12 +401,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 sigOps += txout.ScriptPubKey.GetSigOpCount(false);
 
             return sigOps;
-        }
-
-        /// <inheritdoc />
-
-        public virtual void CheckTransaction(Transaction transaction)
-        {
         }
 
         /// <summary>

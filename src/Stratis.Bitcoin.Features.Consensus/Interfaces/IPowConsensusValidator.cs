@@ -61,21 +61,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight);
 
         /// <summary>
-        /// Checks if transaction is valid.
-        /// </summary>
-        /// <param name="transaction">Transaction.</param>
-        /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNoOutput">Thrown if transaction has no outputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionOversize">Thrown if transaction size is greater than maximum allowed size of a block.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNegativeOutput">Thrown if at least one transaction output has negative value.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionTooLargeOutput">Thrown if at least one transaction output value is greater than maximum allowed one.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionTooLargeTotalOutput">Thrown if sum of all transaction outputs is greater than maximum allowed one.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
-        /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
-        void CheckTransaction(Transaction transaction);
-
-        /// <summary>
         /// Computes merkle root.
         /// </summary>
         /// <remarks>This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.</remarks>

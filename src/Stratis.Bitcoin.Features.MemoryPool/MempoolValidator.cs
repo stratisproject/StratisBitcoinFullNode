@@ -538,10 +538,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private void PreMempoolChecks(MempoolValidationContext context)
         {
             // TODO: fix this to use dedicated mempool rules.
-            new CheckTransactionRule().CheckTransaction(this.ConsensusOptions, context.Transaction);
-
-            // state filled in by CheckTransaction
-            this.consensusValidator.CheckTransaction(context.Transaction);
+            new CheckPowTransactionRule().CheckTransaction(this.ConsensusOptions, context.Transaction);
+            if(this.chain.Network.NetworkOptions.IsProofOfStake)
+                new CheckPosTransactionRule().CheckTransaction(context.Transaction);
 
             // Coinbase is only valid in a block, not as a loose transaction
             if (context.Transaction.IsCoinBase)
