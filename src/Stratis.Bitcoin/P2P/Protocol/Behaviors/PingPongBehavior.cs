@@ -74,13 +74,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 this.pingInterval = value;
             }
         }
-
-        /// <summary>
-        /// Set to <c>true</c> if the attached peer callbacks have been registered and they should be unregistered,
-        /// <c>false</c> if the callbacks are not registered.
-        /// </summary>
-        private bool callbacksRegistered;
-
+        
         public PingPongBehavior()
         {
             this.Mode = PingPongMode.Both;
@@ -93,20 +87,51 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             if ((this.AttachedPeer.PeerVersion != null) && !this.PingVersion()) // If not handshaked, still attach (the callback will also check version).
                 return;
 
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
-            this.callbacksRegistered = true;
-
-            this.RegisterDisposable(new Timer(Ping, null, 0, (int)this.PingInterval.TotalMilliseconds));
+            this.SubscribeToPayload<PingPayload>(this.ProcessPingPayloadAsync);
+            this.SubscribeToPayload<PongPayload>(this.ProcessPongPayloadAsync);
+            
+            this.RegisterDisposable(new Timer(this.Ping, null, 0, (int)this.PingInterval.TotalMilliseconds));
         }
 
+        private async Task ProcessPingPayloadAsync(PingPayload payload, INetworkPeer networkPeer)
+        {
+            if (!this.PingVersion())
+                return;
+
+            if (this.Mode.HasFlag(PingPongMode.RespondPong))
+            {
+                try
+                {
+                    await networkPeer.SendMessageAsync(new PongPayload()
+                    {
+                        Nonce = payload.Nonce
+                    }).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            }
+        }
+
+        private async Task ProcessPongPayloadAsync(PongPayload payload, INetworkPeer networkPeer)
+        {
+            if (!this.PingVersion())
+                return;
+
+            if (this.Mode.HasFlag(PingPongMode.SendPing) && (this.currentPing != null) && (this.currentPing.Nonce == payload.Nonce))
+            {
+                this.Latency = DateTimeOffset.UtcNow - this.dateSent;
+                this.ClearCurrentPing();
+            }
+        }
+        
         private bool PingVersion()
         {
             INetworkPeer peer = this.AttachedPeer;
             return (peer != null) && (peer.Version > NBitcoin.Protocol.ProtocolVersion.BIP0031_VERSION);
         }
 
-        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
+        protected override Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             if (peer.State == NetworkPeerState.HandShaked)
                 this.Ping(null);
@@ -163,35 +188,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public TimeSpan Latency { get; private set; }
 
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            if (!this.PingVersion())
-                return;
-
-            if ((message.Message.Payload is PingPayload ping) && this.Mode.HasFlag(PingPongMode.RespondPong))
-            {
-                try
-                {
-                    await peer.SendMessageAsync(new PongPayload()
-                    {
-                        Nonce = ping.Nonce
-                    }).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                }
-            }
-
-            if ((message.Message.Payload is PongPayload pong)
-                && this.Mode.HasFlag(PingPongMode.SendPing)
-                && (this.currentPing != null)
-                && (this.currentPing.Nonce == pong.Nonce))
-            {
-                this.Latency = DateTimeOffset.UtcNow - this.dateSent;
-                this.ClearCurrentPing();
-            }
-        }
-
         private void ClearCurrentPing()
         {
             lock (this.cs)
@@ -209,11 +205,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         protected override void DetachCore()
         {
-            if (this.callbacksRegistered)
-            {
-                this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-                this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
-            }
             this.ClearCurrentPing();
         }
 
