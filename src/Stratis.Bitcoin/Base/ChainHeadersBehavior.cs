@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="invPayload">Payload of "inv" message to process.</param>
-        private async Task ProcessInvAsync(InvPayload invPayload, INetworkPeer peer)
+        private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(invPayload), invPayload);
 
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Base
         /// If the peer is behind/equal to our best height an empty array is sent back.
         /// </para>
         /// </remarks>
-        private async Task ProcessGetHeadersAsync(GetHeadersPayload getHeadersPayload, INetworkPeer peer)
+        private async Task ProcessGetHeadersAsync(INetworkPeer peer, GetHeadersPayload getHeadersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Base
         /// of our best chain's tip, we update our view of the best chain to that tip.
         /// </para>
         /// </remarks>
-        private async Task ProcessHeadersAsync(HeadersPayload headersPayload, INetworkPeer peer)
+        private async Task ProcessHeadersAsync(INetworkPeer peer, HeadersPayload headersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(headersPayload), headersPayload);
 

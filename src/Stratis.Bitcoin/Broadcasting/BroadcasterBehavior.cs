@@ -25,8 +25,8 @@ namespace Stratis.Bitcoin.Broadcasting
             this.broadcasterManager = broadcasterManager;
 
             //TODO: Fix the exception handling of the async event.
-            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessInvPayloadAsync));
-            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetDataPayloadAsync));
+            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessInvPayloadAsync));
+            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessGetDataPayloadAsync));
         }
 
         public BroadcasterBehavior(
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Broadcasting
             return new BroadcasterBehavior(this.broadcasterManager, this.logger);
         }
         
-        private async Task ProcessInvPayloadAsync(InvPayload invPayload, INetworkPeer peer)
+        private async Task ProcessInvPayloadAsync(INetworkPeer peer, InvPayload invPayload)
         {
             // if node has tx we broadcasted
             foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Broadcasting
             }
         }
 
-        private async Task ProcessGetDataPayloadAsync(GetDataPayload getDataPayload, INetworkPeer peer)
+        private async Task ProcessGetDataPayloadAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
             // If node asks for tx we want to broadcast.
             foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))

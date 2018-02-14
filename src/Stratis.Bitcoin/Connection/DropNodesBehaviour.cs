@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Connection
             this.SubscribeToPayload<VersionPayload>(this.ProcessVersionPayloadAsync);
         }
 
-        private Task ProcessVersionPayloadAsync(VersionPayload payload, INetworkPeer peer)
+        private Task ProcessVersionPayloadAsync(INetworkPeer peer, VersionPayload payload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(payload), payload);
 

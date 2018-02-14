@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Base
         /// does not deliver this message for inbound peers to node behaviors.
         /// </para>
         /// </remarks>
-        private async Task ProcessVerAckPayloadAsync(VerAckPayload payload, INetworkPeer peer)
+        private async Task ProcessVerAckPayloadAsync(INetworkPeer peer, VerAckPayload payload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(payload), payload);
 

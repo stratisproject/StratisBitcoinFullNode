@@ -94,9 +94,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.PreferHeaders = false;
             this.preferHeaderAndIDs = false;
 
-            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetDataPayloadAsync));
-            this.SubscribeToPayload<GetBlocksPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetBlocksAsync));
-            this.SubscribeToPayload<SendCmpctPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessSendCmpctPayloadAsync));
+            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessGetDataPayloadAsync));
+            this.SubscribeToPayload<GetBlocksPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessGetBlocksAsync));
+            this.SubscribeToPayload<SendCmpctPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessSendCmpctPayloadAsync));
             this.SubscribeToPayload<SendHeadersPayload>(async (payload, peer) => { this.PreferHeaders = true; });
         }
         
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="peer">Peer that sent the message.</param>
         /// <param name="getBlocksPayload">Payload of "getblocks" message to process.</param>
-        private async Task ProcessGetBlocksAsync(GetBlocksPayload getBlocksPayload, INetworkPeer peer)
+        private async Task ProcessGetBlocksAsync(INetworkPeer peer, GetBlocksPayload getBlocksPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
 
@@ -226,13 +226,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private Task ProcessSendCmpctPayloadAsync(SendCmpctPayload sendCmpct, INetworkPeer peer)
+        private Task ProcessSendCmpctPayloadAsync(INetworkPeer peer, SendCmpctPayload sendCmpct)
         {
             // TODO: announce using compact blocks
             return Task.CompletedTask;
         }
 
-        private async Task ProcessGetDataPayloadAsync(GetDataPayload getDataPayload, INetworkPeer peer)
+        private async Task ProcessGetDataPayloadAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
 

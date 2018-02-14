@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="peer">Peer that sent us the message.</param>
         /// <param name="block">Received block payload.</param>
         /// <param name="lenght">Payload size in bytes.</param>
-        private async Task ProcessBlockPayloadAsync(BlockPayload block, INetworkPeer peer, long lenght)
+        private async Task ProcessBlockPayloadAsync(INetworkPeer peer, BlockPayload block, long lenght)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(block), block);
 

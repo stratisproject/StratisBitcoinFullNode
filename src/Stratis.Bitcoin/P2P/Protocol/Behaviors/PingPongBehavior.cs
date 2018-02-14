@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.RegisterDisposable(new Timer(this.Ping, null, 0, (int)this.PingInterval.TotalMilliseconds));
         }
 
-        private async Task ProcessPingPayloadAsync(PingPayload payload, INetworkPeer networkPeer)
+        private async Task ProcessPingPayloadAsync(INetworkPeer networkPeer, PingPayload payload)
         {
             if (!this.PingVersion())
                 return;
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             }
         }
 
-        private async Task ProcessPongPayloadAsync(PongPayload payload, INetworkPeer networkPeer)
+        private async Task ProcessPongPayloadAsync(INetworkPeer networkPeer, PongPayload payload)
         {
             if (!this.PingVersion())
                 return;

@@ -47,12 +47,12 @@ namespace Stratis.Bitcoin.P2P
             this.PeersToDiscover = 1000;
 
             this.SubscribeToPayload<GetAddrPayload>(this.ProcessGetAddrPayloadAsync);
-            this.SubscribeToPayload<PingPayload>((payload, peer) => this.ProcessPingOrPongAsync(peer));
-            this.SubscribeToPayload<PongPayload>((payload, peer) => this.ProcessPingOrPongAsync(peer));
+            this.SubscribeToPayload<PingPayload>((peer, payload) => this.ProcessPingOrPongAsync(peer));
+            this.SubscribeToPayload<PongPayload>((peer, payload) => this.ProcessPingOrPongAsync(peer));
             this.SubscribeToPayload<AddrPayload>(this.ProcessAddrPayloadAsync);
         }
 
-        private async Task ProcessGetAddrPayloadAsync(GetAddrPayload payload, INetworkPeer peer)
+        private async Task ProcessGetAddrPayloadAsync(INetworkPeer peer, GetAddrPayload payload)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.P2P
                 this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
         }
 
-        private async Task ProcessAddrPayloadAsync(AddrPayload payload, INetworkPeer peer)
+        private async Task ProcessAddrPayloadAsync(INetworkPeer peer, AddrPayload payload)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
                 this.peerAddressManager.AddPeers(payload.Addresses.Select(a => a.Endpoint).ToArray(), peer.RemoteSocketAddress);

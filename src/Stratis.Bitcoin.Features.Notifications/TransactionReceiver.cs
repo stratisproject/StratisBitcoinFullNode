@@ -32,11 +32,11 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions = notifiedTransactions;
             this.logger = logger;
 
-            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessInvAsync));
-            this.SubscribeToPayload<TxPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessTxPayload));
+            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessInvAsync));
+            this.SubscribeToPayload<TxPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessTxPayload));
         }
 
-        private async Task ProcessTxPayload(TxPayload txPayload, INetworkPeer peer)
+        private async Task ProcessTxPayload(INetworkPeer peer, TxPayload txPayload)
         {
             var transaction = txPayload.Obj;
             var trxHash = transaction.GetHash();
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
-        private async Task ProcessInvAsync(InvPayload invPayload, INetworkPeer peer)
+        private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
         {
             var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
 

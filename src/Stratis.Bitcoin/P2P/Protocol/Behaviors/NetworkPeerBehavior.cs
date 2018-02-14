@@ -23,8 +23,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public abstract object Clone();
 
-        public delegate Task OnPayloadReceived<T>(T payload, INetworkPeer peer, long lenght);
-        public delegate Task OnPayloadReceivedCompact<T>(T payload, INetworkPeer peer);
+        public delegate Task OnPayloadReceived<T>(INetworkPeer peer, T payload, long lenght);
+        public delegate Task OnPayloadReceivedCompact<T>(INetworkPeer peer, T payload);
 
         protected Dictionary<Type, OnPayloadReceived<object>> subscriptions;
 
@@ -68,17 +68,17 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             Type payloadType = message.Message.Payload.GetType();
 
             foreach (var subscription in this.subscriptions.Where(x => x.Key == payloadType))
-                await subscription.Value(message.Message.Payload, peer, message.Length).ConfigureAwait(false);
+                await subscription.Value(peer, message.Message.Payload, message.Length).ConfigureAwait(false);
         }
 
         protected void SubscribeToPayload<T>(OnPayloadReceivedCompact<T> callback) where T : Payload
         {
-            this.subscriptions.Add(typeof(T), (payload, peer, lenght) => callback(payload as T, peer));
+            this.subscriptions.Add(typeof(T), (peer, payload, lenght) => callback(peer, payload as T));
         }
 
         protected void SubscribeToPayload<T>(OnPayloadReceived<T> callback) where T : Payload
         {
-            this.subscriptions.Add(typeof(T), (payload, peer, lenght) => callback(payload as T, peer, lenght));
+            this.subscriptions.Add(typeof(T), (peer, payload, lenght) => callback(peer, payload as T, lenght));
         }
 
         protected virtual async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
             try
             {
-                await callback(payload, peer).ConfigureAwait(false);
+                await callback(peer, payload).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
