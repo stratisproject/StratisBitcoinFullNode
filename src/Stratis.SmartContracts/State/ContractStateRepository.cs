@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.State
         public ISource<byte[], StoredVin> vinCache; 
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
-        protected List<TransferInfo> transfers;
+        public List<TransferInfo> Transfers { get; private set; }
 
         protected ContractStateRepository() { }
 
@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.State
             this.codeCache = codeCache;
             this.storageCache = storageCache;
             this.vinCache = vinCache;
-            this.transfers = new List<TransferInfo>();
+            this.Transfers = new List<TransferInfo>();
         }
 
         public AccountState CreateAccount(uint160 addr)
@@ -159,7 +159,7 @@ namespace Stratis.SmartContracts.State
 
         public void TransferBalance(uint160 from, uint160 to, ulong value)
         {
-            this.transfers.Add(new TransferInfo
+            this.Transfers.Add(new TransferInfo
             {
                 From = from,
                 To = to,
@@ -167,16 +167,33 @@ namespace Stratis.SmartContracts.State
             });
         }
 
-        public IList<TransferInfo> GetTransfers()
+        /// <summary>
+        /// Balance = UTXO the contract currently owns, + all the funds it has received, - all the funds it has sent
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public ulong GetCurrentBalance(uint160 address)
         {
-            return this.transfers;
+            StoredVin unspent = GetUnspent(address);
+            ulong ret = unspent != null ? unspent.Value : 0;
+            foreach(TransferInfo transfer in this.Transfers.Where(x => x.To == address))
+            {
+                ret += transfer.Value;
+            }
+
+            foreach (TransferInfo transfer in this.Transfers.Where(x => x.From == address))
+            {
+                ret -= transfer.Value;
+            }
+
+            return ret;
         }
 
         public byte[] GetUnspentHash(uint160 addr)
         {
             AccountState accountState = GetAccountState(addr);
             if (accountState == null || accountState.UnspentHash == null)
-                return new byte[0]; // TODO: REPLACE THIS BYTE0 with something
+                return new byte[0]; // TODO: REPLACE THIS BYTE0 with a more meaningful byte array?
 
             return accountState.UnspentHash;
         }

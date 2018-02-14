@@ -13,7 +13,13 @@ namespace Stratis.SmartContracts
     {
         protected Address Address => Message.ContractAddress;
 
-        protected ulong Balance { get; private set; }
+        protected ulong Balance
+        {
+            get
+            {
+                return this.stateRepository.GetCurrentBalance(this.Address.ToUint160());
+            }
+        }
 
         public Block Block { get; }
 
@@ -37,7 +43,7 @@ namespace Stratis.SmartContracts
             this.stateRepository = state.StateRepository;
             StoredVin existingUtxo = state.StateRepository.GetUnspent(this.Address.ToUint160());
             ulong balanceBeforeCall = existingUtxo != null ? existingUtxo.Value : 0;
-            this.Balance = balanceBeforeCall + this.Message.Value;
+            //this.Balance = balanceBeforeCall + this.Message.Value;
         }
 
         /// <summary>
@@ -71,7 +77,6 @@ namespace Stratis.SmartContracts
             {
                 // Is not a contract, so just record the transfer and return
                 this.stateRepository.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
-                this.Balance -= amount;
                 return new TransferResult();
             }
 

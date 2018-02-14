@@ -111,8 +111,10 @@ namespace Stratis.SmartContracts
             var contractAddress = this.smartContractCarrier.To;
 
             var persistentState = new PersistentState(this.stateTrack, contractAddress);
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
 
+            this.stateTrack.TransferBalance(this.smartContractCarrier.Sender, this.smartContractCarrier.To, this.smartContractCarrier.TxOutValue);
+
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode, 
                 decomp.ContractType.Name,
@@ -137,7 +139,7 @@ namespace Stratis.SmartContracts
             }
 
             // We need to append a condensing transaction to the block here if funds are moved.
-            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
+            IList<TransferInfo> transfers = this.stateTrack.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
                 List<StoredVin> vins = new List<StoredVin>();

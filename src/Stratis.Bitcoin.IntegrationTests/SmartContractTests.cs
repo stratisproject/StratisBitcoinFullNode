@@ -583,7 +583,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 
             var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", 1, 500);
-
             tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
             ulong fundsToSend = 1000;
@@ -596,6 +595,33 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.state.GetStorageValue(newContractAddress, new PersistentStateSerializer().Serialize(0)));
             Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
+            Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
+            // Input should be from the call that was just made.
+            Assert.Equal(pblocktemplate.Block.Transactions[1].GetHash(), pblocktemplate.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            // First txout should be the transfer to the second contract, with a value of 100
+            Assert.Equal(100, pblocktemplate.Block.Transactions[2].Outputs[0].Value);
+            // Second txout should be the change back to the contract, with a value of 900
+            Assert.Equal(900, pblocktemplate.Block.Transactions[2].Outputs[1].Value);
+
+            var transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", 1, 500);
+            tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
+            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction2.Serialize())));
+            
+            uint256 hashTx3 = tx.GetHash();
+            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.state.GetStorageValue(newContractAddress, new PersistentStateSerializer().Serialize(0)));
+            Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
+            Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
+            // Input should be from the call that was just made.
+            Assert.Equal(pblocktemplate.Block.Transactions[1].GetHash(), pblocktemplate.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            // First txout should be the transfer to the second contract, with a value of 100
+            Assert.Equal(100, pblocktemplate.Block.Transactions[2].Outputs[0].Value);
+            // Second txout should be the change back to the contract, with a value of 900
+            Assert.Equal(900, pblocktemplate.Block.Transactions[2].Outputs[1].Value);
         }
     }
 }

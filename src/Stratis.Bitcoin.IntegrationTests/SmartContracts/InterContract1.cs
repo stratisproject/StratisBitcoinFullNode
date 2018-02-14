@@ -1,4 +1,5 @@
-﻿using Stratis.SmartContracts;
+﻿using System;
+using Stratis.SmartContracts;
 
 public class InterContract1 : SmartContract
 {
@@ -7,6 +8,6 @@ public class InterContract1 : SmartContract
     public int ReturnInt()
     {
         PersistentState.SetObject(0, "testString");
-        return 5;
+        return Convert.ToInt32(Balance);
     }
 }
