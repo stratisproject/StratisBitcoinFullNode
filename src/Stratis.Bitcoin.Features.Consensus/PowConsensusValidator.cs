@@ -395,16 +395,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(tx);
 
-            long sigOps = 0;
-            foreach (Transaction tx in block.Transactions)
-                sigOps += this.GetLegacySignatureOperationsCount(tx);
-
-            if ((sigOps * this.ConsensusOptions.WitnessScaleFactor) > this.ConsensusOptions.MaxBlockSigopsCost)
-            {
-                this.logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
-                ConsensusErrors.BadBlockSigOps.Throw();
-            }
-
             this.logger.LogTrace("(-)[OK]");
         }
 
