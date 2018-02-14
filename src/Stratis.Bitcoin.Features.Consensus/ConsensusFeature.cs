@@ -256,9 +256,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new BlockHeaderPowContextualRule(),
 
                     // rules that are inside the method ContextualCheckBlock
-                    new TransactionLocktimeActivationRule(),
-                    new CoinbaseHeighActivationRule(),
-                    new WitnessCommitmentsRule(),
+                    new TransactionLocktimeActivationRule(), // implements BIP113
+                    new CoinbaseHeighActivationRule(), // implements BIP34
+                    new WitnessCommitmentsRule(), // BIP141, BIP144
                     new BlockSizeRule(),
 
                     // rules that are inside the method CheckBlock
@@ -288,9 +288,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new BlockHeaderPosContextualRule(),
 
                     // rules that are inside the method ContextualCheckBlock
-                    new TransactionLocktimeActivationRule(),
-                    new CoinbaseHeighActivationRule(), 
-                    new WitnessCommitmentsRule(),
+                    new TransactionLocktimeActivationRule(), // implements BIP113
+                    new CoinbaseHeighActivationRule(), // implements BIP34
+                    new WitnessCommitmentsRule(), // BIP141, BIP144 
                     new BlockSizeRule(),
 
                     new PosBlockContextRule(), // TODO: this rule needs to be implemented
