@@ -7,30 +7,29 @@ using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <summary>
+    /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
+    /// of transactions in a block without affecting the merkle root of a block,
+    /// while still invalidating it.
+    /// </summary>
     public class BlockMerkleRootRule : ConsensusRule
     {        
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
-            if (context.CheckMerkleRoot)
+            Block block = context.BlockValidationContext.Block;
+
+            uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
+            if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
             {
-                Block block = context.BlockValidationContext.Block;
+                this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+                ConsensusErrors.BadMerkleRoot.Throw();
+            }
 
-                uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
-                if (block.Header.HashMerkleRoot != hashMerkleRoot2)
-                {
-                    this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
-                    ConsensusErrors.BadMerkleRoot.Throw();
-                }
-
-                // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
-                // of transactions in a block without affecting the merkle root of a block,
-                // while still invalidating it.
-                if (mutated)
-                {
-                    this.Logger.LogTrace("(-)[BAD_TX_DUP]");
-                    ConsensusErrors.BadTransactionDuplicate.Throw();
-                }
+            if (mutated)
+            {
+                this.Logger.LogTrace("(-)[BAD_TX_DUP]");
+                ConsensusErrors.BadTransactionDuplicate.Throw();
             }
 
             return Task.CompletedTask;

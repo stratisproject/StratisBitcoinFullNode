@@ -385,23 +385,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             Block block = context.BlockValidationContext.Block;
 
-            bool mutated;
-            uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, out mutated);
-            if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
-            {
-                this.logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
-                ConsensusErrors.BadMerkleRoot.Throw();
-            }
-
-            // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
-            // of transactions in a block without affecting the merkle root of a block,
-            // while still invalidating it.
-            if (mutated)
-            {
-                this.logger.LogTrace("(-)[BAD_TX_DUP]");
-                ConsensusErrors.BadTransactionDuplicate.Throw();
-            }
-
             // All potential-corruption validation must be done before we do any
             // transaction validation, as otherwise we may mark the header as invalid
             // because we receive the wrong transactions for it.
