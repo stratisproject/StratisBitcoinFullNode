@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -90,6 +91,32 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         protected virtual void DetachCore()
         {
+        }
+
+        /// <summary>
+        /// Makes a wrapper around <see cref="OnPayloadReceivedCompact"/> callback that ignores <see cref="OperationCanceledException"/> exception but throws others. 
+        /// </summary>
+        /// <remarks>If any exception occurs it will be logged.</remarks>
+        protected async Task ProcessPayloadAndHandleErrors<T>(T payload, INetworkPeer peer, ILogger logger, OnPayloadReceivedCompact<T> callback) where T : Payload
+        {
+            logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(payload), payload);
+
+            try
+            {
+                await callback(payload, peer).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogTrace("(-)[CANCELED_EXCEPTION]");
+                return;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Exception occurred: {0}", ex.ToString());
+                throw;
+            }
+
+            logger.LogTrace("()");
         }
 
         protected void AssertNotAttached()

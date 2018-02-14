@@ -93,97 +93,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.PreferHeaders = false;
             this.preferHeaderAndIDs = false;
+
+            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetDataPayloadAsync));
+            this.SubscribeToPayload<GetBlocksPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessGetBlocksAsync));
+            this.SubscribeToPayload<SendCmpctPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(payload, peer, this.logger, this.ProcessSendCmpctPayloadAsync));
+            this.SubscribeToPayload<SendHeadersPayload>(async (payload, peer) => { this.PreferHeaders = true; });
         }
-
-        protected override void AttachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            try
-            {
-                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
-                return;
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError("Exception occurred: {0}", ex.ToString());
-                throw;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            switch (message.Message.Payload)
-            {
-                case GetDataPayload getDataPayload:
-                    if (!this.CanRespondToGetDataPayload)
-                    {
-                        this.logger.LogTrace("Can't respond to 'getdata'.");
-                        break;
-                    }
-
-                    await this.ProcessGetDataAsync(peer, getDataPayload).ConfigureAwait(false);
-                    break;
-
-                case GetBlocksPayload getBlocksPayload:
-                    // TODO: this is not used in core anymore consider deleting it
-                    // However, this is required for StratisX to be able to sync from us.
-
-                    if (!this.CanRespondToGetBlocksPayload)
-                    {
-                        this.logger.LogTrace("Can't respond to 'getblocks'.");
-                        break;
-                    }
-
-                    await this.ProcessGetBlocksAsync(peer, getBlocksPayload).ConfigureAwait(false);
-                    break;
-
-                case SendCmpctPayload sendCmpctPayload:
-                    await this.ProcessSendCmpctPayloadAsync(peer, sendCmpctPayload).ConfigureAwait(false);
-                    break;
-
-                case SendHeadersPayload sendHeadersPayload:
-                    this.PreferHeaders = true;
-                    break;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
+        
         /// <summary>
         /// Processes "getblocks" message received from the peer.
         /// </summary>
         /// <param name="peer">Peer that sent the message.</param>
         /// <param name="getBlocksPayload">Payload of "getblocks" message to process.</param>
-        private async Task ProcessGetBlocksAsync(INetworkPeer peer, GetBlocksPayload getBlocksPayload)
+        private async Task ProcessGetBlocksAsync(GetBlocksPayload getBlocksPayload, INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
+
+            // TODO: this is not used in core anymore consider deleting it
+            // However, this is required for StratisX to be able to sync from us.
+
+            if (!this.CanRespondToGetBlocksPayload)
+            {
+                this.logger.LogTrace("Can't respond to 'getblocks'.");
+                return;
+            }
 
             // We only want to work with blocks that are in the store, 
             // so we first get information about the store's tip.
@@ -293,15 +226,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private Task ProcessSendCmpctPayloadAsync(INetworkPeer peer, SendCmpctPayload sendCmpct)
+        private Task ProcessSendCmpctPayloadAsync(SendCmpctPayload sendCmpct, INetworkPeer peer)
         {
             // TODO: announce using compact blocks
             return Task.CompletedTask;
         }
 
-        private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataPayloadAsync(GetDataPayload getDataPayload, INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
+
+            if (!this.CanRespondToGetDataPayload)
+            {
+                this.logger.LogTrace("Can't respond to 'getdata'.");
+                return;
+            }
 
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
