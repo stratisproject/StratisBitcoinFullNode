@@ -142,14 +142,19 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IPAddress activeIpAddressFour = IPAddress.Parse("::ffff:192.168.0.4");
             var activeEndpointFour = new IPEndPoint(activeIpAddressFour, 80);
 
+            IPAddress activeIpAddressFive = IPAddress.Parse("2607:f8b0:4009:80e::200e");
+            var activeEndpointFive = new IPEndPoint(activeIpAddressFive, 80);
+
             var testDataSet = new List<Tuple<IPEndPoint, DateTimeOffset>>()
             {
-                new Tuple<IPEndPoint, DateTimeOffset> (activeEndpointOne,  dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(10)),
+                new Tuple<IPEndPoint, DateTimeOffset>(activeEndpointOne,  dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(10)),
                 new Tuple<IPEndPoint, DateTimeOffset>(activeEndpointTwo, dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(20)),
                 new Tuple<IPEndPoint, DateTimeOffset>(activeEndpointThree, dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(30)),
-                new Tuple<IPEndPoint, DateTimeOffset>(activeEndpointFour, dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(40))
+                new Tuple<IPEndPoint, DateTimeOffset>(activeEndpointFour, dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(40)),
+                new Tuple<IPEndPoint, DateTimeOffset>(activeEndpointFive, dateTimeProvider.GetTimeOffset().AddSeconds(-inactiveTimePeriod).AddSeconds(50))
             };
 
+            // PeerAddressManager does not support IPv4 addresses that are not represented as embedded IPv4 addresses in an IPv6 address.
             IPeerAddressManager peerAddressManager = this.CreateTestPeerAddressManager(testDataSet);
 
             IMasterFile spiedMasterFile = null;
@@ -176,16 +181,32 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             spiedMasterFile.Should().NotBeNull();
 
-            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.AAAA);
-            IList<IResourceRecord> resourceRecords = spiedMasterFile.Get(question);
-            resourceRecords.Should().NotBeNullOrEmpty();
+            // Check for A records (IPv4 embedded in IPv6 and IPv4 addresses).
+            Question question4 = new Question(new Domain(dnsSettings.DnsHostName), RecordType.A);
+            IList<IResourceRecord> resourceRecordsIpv4 = spiedMasterFile.Get(question4);
+            resourceRecordsIpv4.Should().NotBeNullOrEmpty();
 
-            IList<IPAddressResourceRecord> ipAddressResourceRecords = resourceRecords.OfType<IPAddressResourceRecord>().ToList();
-            ipAddressResourceRecords.Should().HaveSameCount(testDataSet);
+            IList<IPAddressResourceRecord> ipAddressResourceRecords4 = resourceRecordsIpv4.OfType<IPAddressResourceRecord>().ToList();
+            ipAddressResourceRecords4.Should().HaveCount(4);
+
+            // Check for AAAA records (IPv6 addresses).
+            Question question6 = new Question(new Domain(dnsSettings.DnsHostName), RecordType.AAAA);
+            IList<IResourceRecord> resourceRecordsIpv6 = spiedMasterFile.Get(question6);
+            resourceRecordsIpv6.Should().NotBeNullOrEmpty();
+
+            IList<IPAddressResourceRecord> ipAddressResourceRecords6 = resourceRecordsIpv6.OfType<IPAddressResourceRecord>().ToList();
+            ipAddressResourceRecords6.Should().HaveCount(1);
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in testDataSet)
             {
-                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address)).Should().NotBeNull();
+                if (testData.Item1.Address.IsIPv4MappedToIPv6)
+                {
+                    ipAddressResourceRecords4.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address.MapToIPv4())).Should().NotBeNull();
+                }
+                else
+                {
+                    ipAddressResourceRecords6.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address)).Should().NotBeNull();
+                }
             }
         }
 
@@ -265,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             spiedMasterFile.Should().NotBeNull();
 
-            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.AAAA);
+            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.A);
             IList<IResourceRecord> resourceRecords = spiedMasterFile.Get(question);
             resourceRecords.Should().NotBeNullOrEmpty();
 
@@ -274,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in activeTestDataSet)
             {
-                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address)).Should().NotBeNull();
+                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address.MapToIPv4())).Should().NotBeNull();
             }
 
             // External IP.
@@ -353,7 +374,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             spiedMasterFile.Should().NotBeNull();
 
-            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.AAAA);
+            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.A);
             IList<IResourceRecord> resourceRecords = spiedMasterFile.Get(question);
             resourceRecords.Should().NotBeNullOrEmpty();
 
@@ -362,7 +383,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in activeTestDataSet)
             {
-                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address)).Should().NotBeNull();
+                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address.MapToIPv4())).Should().NotBeNull();
             }
         }
 
@@ -445,7 +466,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             // Assert.
             spiedMasterFile.Should().NotBeNull();
 
-            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.AAAA);
+            Question question = new Question(new Domain(dnsSettings.DnsHostName), RecordType.A);
             IList<IResourceRecord> resourceRecords = spiedMasterFile.Get(question);
             resourceRecords.Should().NotBeNullOrEmpty();
 
@@ -454,12 +475,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in activeTestDataSet)
             {
-                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address)).Should().NotBeNull("the ip address is active and should be in DNS");
+                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address.MapToIPv4())).Should().NotBeNull("the ip address is active and should be in DNS");
             }
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in inactiveTestDataSet)
             {
-                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address)).Should().BeNull("the ip address is inactive and should not be returned from DNS");
+                ipAddressResourceRecords.SingleOrDefault(i => i.IPAddress.Equals(testData.Item1.Address.MapToIPv4())).Should().BeNull("the ip address is inactive and should not be returned from DNS");
             }
         }
 

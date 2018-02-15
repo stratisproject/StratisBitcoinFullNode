@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Reflection;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -8,7 +9,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             get
             {
-                return PayloadAttribute.GetCommandName(this.GetType());
+                return this.GetType().GetCustomAttribute<PayloadAttribute>().Name;
             }
         }
 

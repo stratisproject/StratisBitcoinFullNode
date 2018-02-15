@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Features.Wallet.Validations;
+using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -123,7 +124,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "An amount is required.")]
         public string Amount { get; set; }
 
-        [Required(ErrorMessage = "A fee type is required. It can be 'low', 'medium' or 'high'.")]
         public string FeeType { get; set; }
 
         public bool AllowUnconfirmed { get; set; }
@@ -133,6 +133,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
     public class BuildTransactionRequest : TxFeeEstimateRequest
     {
+        [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
+        public string FeeAmount { get; set; }
+
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
     }

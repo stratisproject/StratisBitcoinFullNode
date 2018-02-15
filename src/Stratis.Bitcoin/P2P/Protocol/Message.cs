@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Sockets;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -13,6 +12,9 @@ namespace Stratis.Bitcoin.P2P.Protocol
 {
     public class Message : IBitcoinSerializable
     {
+        /// <summary>A provider of network payload messages.</summary>
+        private readonly PayloadProvider payloadProvider;
+
         /// <summary>Size of the "command" part of the message in bytes.</summary>
         public const int CommandSize = 12;
 
@@ -26,7 +28,17 @@ namespace Stratis.Bitcoin.P2P.Protocol
         public uint MessageSize { get; set; }
 
         private uint magic;
+
         public uint Magic { get { return this.magic; } set { this.magic = value; } }
+
+        public Message(PayloadProvider payloadProvider)
+        {
+            this.payloadProvider = payloadProvider;
+        }
+
+        public Message()
+        {
+        }
 
         private byte[] command = new byte[CommandSize];
         public string Command
@@ -41,7 +53,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
             }
         }
 
-        internal byte[] buffer;
         private Payload payloadObject;
         public Payload Payload
         {
@@ -79,7 +90,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             int length = 0;
             uint checksum = 0;
             bool hasChecksum = false;
-            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(stream.ProtocolVersion, out length) : null;
+            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(out length) : null;
             length = payloadBytes == null ? 0 : length;
             stream.ReadWrite(ref length);
 
@@ -102,7 +113,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                 if (length > 0x02000000)
                     throw new FormatException("Message payload too big ( > 0x02000000 bytes)");
 
-                payloadBytes = (this.buffer == null) || (this.buffer.Length < length) ? new byte[length] : this.buffer;
+                payloadBytes = new byte[length];
                 stream.ReadWrite(ref payloadBytes, 0, length);
 
                 if (hasChecksum)
@@ -118,7 +129,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                 BitcoinStream payloadStream = new BitcoinStream(payloadBytes);
                 payloadStream.CopyParameters(stream);
 
-                Type payloadType = PayloadAttribute.GetCommandType(this.Command);
+                Type payloadType = this.payloadProvider.GetCommandType(this.Command);
                 bool unknown = payloadType == typeof(UnknowPayload);
                 if (unknown)
                     NodeServerTrace.Trace.TraceEvent(TraceEventType.Warning, 0, "Unknown command received : " + this.Command);
@@ -132,18 +143,19 @@ namespace Stratis.Bitcoin.P2P.Protocol
             }
         }
 
-        // FIXME: protocolVersion is not used. Is this a defect?
-        private byte[] GetPayloadBytes(ProtocolVersion protocolVersion, out int length)
+        /// <summary>
+        /// Read the payload in to byte array.
+        /// </summary>
+        /// <param name="length">The length of the payload.</param>
+        /// <returns>The payload in bytes.</returns>
+        private byte[] GetPayloadBytes(out int length)
         {
-            MemoryStream ms = this.buffer == null ? new MemoryStream() : new MemoryStream(this.buffer);
-            this.Payload.ReadWrite(new BitcoinStream(ms, true));
-            length = (int)ms.Position;
-            return this.buffer ?? GetBuffer(ms);
-        }
-
-        private static byte[] GetBuffer(MemoryStream ms)
-        {
-            return ms.ToArray();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                this.Payload.ReadWrite(new BitcoinStream(ms, true));
+                length = (int) ms.Position;
+                return ms.ToArray();
+            }
         }
 
         internal static bool VerifyChecksum(uint256 checksum, byte[] payload, int length)
@@ -156,34 +168,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             return string.Format("{0}: {1}", this.Command, this.Payload);
         }
 
-        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken)
-        {
-            PerformanceCounter counter;
-            return ReadNext(socket, network, version, cancellationToken, out counter);
-        }
-
-        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, out PerformanceCounter counter)
-        {
-            return ReadNext(socket, network, version, cancellationToken, null, out counter);
-        }
-        public static Message ReadNext(Socket socket, Network network, ProtocolVersion version, CancellationToken cancellationToken, byte[] buffer, out PerformanceCounter counter)
-        {
-            var stream = new NetworkStream(socket, false);
-            return ReadNext(stream, network, version, cancellationToken, buffer, out counter);
-        }
-
-        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken)
-        {
-            PerformanceCounter counter;
-            return ReadNext(stream, network, version, cancellationToken, out counter);
-        }
-
-        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, out PerformanceCounter counter)
-        {
-            return ReadNext(stream, network, version, cancellationToken, null, out counter);
-        }
-
-        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, byte[] buffer, out PerformanceCounter counter)
+        public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, PayloadProvider payloadProvider, out PerformanceCounter counter)
         {
             BitcoinStream bitStream = new BitcoinStream(stream, false)
             {
@@ -194,8 +179,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             if (!network.ReadMagic(stream, cancellationToken, true))
                 throw new FormatException("Magic incorrect, the message comes from another network");
 
-            Message message = new Message();
-            message.buffer = buffer;
+            Message message = new Message(payloadProvider);
             using (message.SkipMagicScope(true))
             {
                 message.Magic = network.Magic;
