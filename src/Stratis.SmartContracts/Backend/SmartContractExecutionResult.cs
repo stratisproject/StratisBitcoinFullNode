@@ -1,8 +1,7 @@
-﻿using Stratis.SmartContracts.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
+using Stratis.SmartContracts.Exceptions;
 
 namespace Stratis.SmartContracts.Backend
 {

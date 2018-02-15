@@ -73,18 +73,18 @@ namespace Stratis.SmartContracts
             MethodDefinition initMethod = decomp.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
 
             SmartContractExecutionResult result = vm.ExecuteMethod(
-                adjustedCodeMem.ToArray(), 
+                adjustedCodeMem.ToArray(),
                 decomp.ContractType.Name,
-                initMethod?.Name, 
+                initMethod?.Name,
                 new SmartContractExecutionContext
                 (
                     new Block(this.blockNum, this.coinbaseAddress, this.difficulty),
                     new Message(
-                        new Address(contractAddress), 
-                        new Address(this.smartContractCarrier.Sender), 
-                        this.smartContractCarrier.TxOutValue, 
+                        new Address(contractAddress),
+                        new Address(this.smartContractCarrier.Sender),
+                        this.smartContractCarrier.TxOutValue,
                         this.smartContractCarrier.GasLimit
-                        ),  
+                        ),
                     this.smartContractCarrier.GasPrice,
                     this.smartContractCarrier.MethodParameters ?? new object[0]
                 ));
@@ -108,13 +108,13 @@ namespace Stratis.SmartContracts
             byte[] contractCode = this.state.GetCode(this.smartContractCarrier.To);
             SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
-            var contractAddress = this.smartContractCarrier.To;
+            uint160 contractAddress = this.smartContractCarrier.To;
 
             var persistentState = new PersistentState(this.stateTrack, contractAddress);
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
 
             SmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode, 
+                contractCode,
                 decomp.ContractType.Name,
                 this.smartContractCarrier.MethodName,
                 new SmartContractExecutionContext
@@ -125,9 +125,9 @@ namespace Stratis.SmartContracts
                         new Address(this.smartContractCarrier.Sender),
                         this.smartContractCarrier.TxOutValue,
                         this.smartContractCarrier.GasLimit
-                    ),                                        
+                    ),
                     this.smartContractCarrier.GasPrice,
-                    this.smartContractCarrier.MethodParameters ?? new object[0]                    
+                    this.smartContractCarrier.MethodParameters ?? new object[0]
                 ));
 
             if (result.Revert)

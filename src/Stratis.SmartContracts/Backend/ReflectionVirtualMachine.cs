@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Exceptions;
 
 namespace Stratis.SmartContracts.Backend
 {
@@ -9,36 +9,47 @@ namespace Stratis.SmartContracts.Backend
     /// </summary>
     internal class ReflectionVirtualMachine : ISmartContractVirtualMachine
     {
-        private readonly PersistentState _persistentState;
+        private readonly PersistentState persistentState;
         private const string InitMethod = "Init";
 
         public ReflectionVirtualMachine(PersistentState persistentState)
         {
-            this._persistentState = persistentState;
+            this.persistentState = persistentState;
         }
 
-        public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, string contractTypeName, string contractMethodName,
-            SmartContractExecutionContext context)
-        {            
-            Assembly assembly = Assembly.Load(contractCode);
+        public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, string contractTypeName, string contractMethodName, SmartContractExecutionContext context)
+        {
+            var assembly = Assembly.Load(contractCode);
             Type type = assembly.GetType(contractTypeName);
 
-            // @TODO - SmartContractState is basically the same thing as SmartContractExecutionContext so merge them eventually
-            var state = new SmartContractState(context.Block, context.Message, this._persistentState);
+            var state = new SmartContractState(context.Block, context.Message, this.persistentState);
+            var contract = (SmartContract)Activator.CreateInstance(type, state);
 
-            SmartContract contract = (SmartContract)Activator.CreateInstance(type, state);
+            var executionResult = new SmartContractExecutionResult();
+            if (contractMethodName == null)
+                return executionResult;
 
-            object result = null;
-            if (contractMethodName != null)
+            try
             {
                 MethodInfo methodToInvoke = type.GetMethod(contractMethodName);
-                result = methodToInvoke.Invoke(contract, context.Parameters);
+                executionResult.Return = methodToInvoke.Invoke(contract, context.Parameters);
             }
-            return new SmartContractExecutionResult
+            catch (TargetInvocationException targetException)
             {
-                GasUsed = contract.GasUsed,
-                Return = result
-            };
-        }        
+                if (targetException.InnerException is SmartContractRefundGasException refundGasException)
+                    executionResult.RuntimeException = refundGasException;
+            }
+            catch (Exception)
+            {
+                //TODO: Implement unhandled exception
+                throw;
+            }
+            finally
+            {
+                executionResult.GasUsed = contract.GasUsed;
+            }
+
+            return executionResult;
+        }
     }
 }
