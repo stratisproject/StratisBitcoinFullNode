@@ -21,6 +21,7 @@ namespace Stratis.SmartContracts.State
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         public List<TransferInfo> Transfers { get; private set; }
+        public SmartContractCarrier CurrentTx { get; set; }
 
         protected ContractStateRepository() { }
 
@@ -116,6 +117,8 @@ namespace Stratis.SmartContracts.State
 
             ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache);
             ret.parent = this;
+            ret.Transfers = new List<TransferInfo>(this.Transfers);
+            ret.CurrentTx = this.CurrentTx;
             return ret;
         }
 
@@ -126,6 +129,9 @@ namespace Stratis.SmartContracts.State
 
         public virtual void Commit()
         {
+            if (this.parent != null)
+                this.parent.Transfers.AddRange(this.Transfers.Where(x => !this.parent.Transfers.Contains(x)));
+
             ContractStateRepository parentSync = this.parent == null ? this : this.parent;
             lock(parentSync) {
                 this.storageCache.Flush();
@@ -168,14 +174,23 @@ namespace Stratis.SmartContracts.State
         }
 
         /// <summary>
-        /// Balance = UTXO the contract currently owns, + all the funds it has received, - all the funds it has sent
+        /// Gets the balance for a contract.
+        /// Balance = UTXO the contract currently owns, + all the funds it has received, - all the funds it has sent.
+        /// 
+        /// Note that because the initial transaction will always be coming from a human we don't need to minus if from.
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
         public ulong GetCurrentBalance(uint160 address)
         {
+            ulong ret = 0;
+            if (this.CurrentTx.To == address)
+                ret += this.CurrentTx.TxOutValue;
+
             StoredVin unspent = GetUnspent(address);
-            ulong ret = unspent != null ? unspent.Value : 0;
+            if (unspent != null)
+                ret += unspent.Value;
+
             foreach(TransferInfo transfer in this.Transfers.Where(x => x.To == address))
             {
                 ret += transfer.Value;

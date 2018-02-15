@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.State
         #region Account Abstraction Layer
 
         List<TransferInfo> Transfers { get; }
-
+        SmartContractCarrier CurrentTx { get; set; }
         void TransferBalance(uint160 from, uint160 to, ulong value);
         StoredVin GetUnspent(uint160 address);
         void SetUnspent(uint160 address, StoredVin vin);

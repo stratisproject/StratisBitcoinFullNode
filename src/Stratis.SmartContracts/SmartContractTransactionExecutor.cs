@@ -112,7 +112,7 @@ namespace Stratis.SmartContracts
 
             var persistentState = new PersistentState(this.stateTrack, contractAddress);
 
-            this.stateTrack.TransferBalance(this.smartContractCarrier.Sender, this.smartContractCarrier.To, this.smartContractCarrier.TxOutValue);
+            this.stateTrack.CurrentTx = this.smartContractCarrier;
 
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(
@@ -142,23 +142,10 @@ namespace Stratis.SmartContracts
             IList<TransferInfo> transfers = this.stateTrack.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
-                List<StoredVin> vins = new List<StoredVin>();
-                StoredVin existingVin = this.state.GetUnspent(this.smartContractCarrier.To);
-                if (existingVin != null)
-                    vins.Add(existingVin);
-                if (this.smartContractCarrier.TxOutValue > 0)
-                {
-                    vins.Add(new StoredVin
-                    {
-                        Hash = this.smartContractCarrier.TransactionHash,
-                        Nvout = this.smartContractCarrier.Nvout,
-                        Value = this.smartContractCarrier.TxOutValue
-                    });
-                }
-                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, vins, this.stateTrack);
+                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.stateTrack);
                 result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
-
+            this.stateTrack.Transfers.Clear();
             this.stateTrack.Commit();
 
             return result;
