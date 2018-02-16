@@ -1,9 +1,7 @@
-﻿using Stratis.SmartContracts.State;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Text;
 using NBitcoin;
-using DBreeze;
+using Stratis.SmartContracts.State;
 
 namespace Stratis.SmartContracts
 {
@@ -11,7 +9,8 @@ namespace Stratis.SmartContracts
     {
         internal IContractStateRepository StateDb { get; private set; }
 
-        private uint _counter;
+        private uint counter;
+        public uint160 ContractAddress { get; }
         private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
 
         /// <summary>
@@ -23,11 +22,9 @@ namespace Stratis.SmartContracts
         public PersistentState(IContractStateRepository stateDb, uint160 contractAddress)
         {
             StateDb = stateDb;
-            ContractAddress = contractAddress;
-            this._counter = 0;
+            this.ContractAddress = contractAddress;
+            this.counter = 0;
         }
-
-        public uint160 ContractAddress { get; }
 
         public T GetObject<T>(object key)
         {
@@ -46,15 +43,15 @@ namespace Stratis.SmartContracts
             StateDb.SetStorageValue(this.ContractAddress, keyBytes, serializer.Serialize(obj));
         }
 
-        public SmartContractMapping<K,V> GetMapping<K, V>()
+        public SmartContractMapping<K, V> GetMapping<K, V>()
         {
-            return new SmartContractMapping<K, V>(this, this._counter++);
+            return new SmartContractMapping<K, V>(this, this.counter++);
         }
 
         public SmartContractList<T> GetList<T>()
         {
-            return new SmartContractList<T>(this, this._counter++);
-        }        
+            return new SmartContractList<T>(this, this.counter++);
+        }
     }
 
     /// <summary>
@@ -64,7 +61,6 @@ namespace Stratis.SmartContracts
     /// </summary>
     public class PersistentStateSerializer
     {
-        // TODO: Fill in all so that JSON isn't put in
         public byte[] Serialize(object o)
         {
             if (o is byte[])
@@ -82,10 +78,25 @@ namespace Stratis.SmartContracts
             if (o is bool)
                 return (BitConverter.GetBytes((bool)o));
 
-            if (o is string)
-                return Encoding.UTF8.GetBytes((string) o);
+            if (o is int)
+                return BitConverter.GetBytes((int)o);
 
-            return Encoding.UTF8.GetBytes(NetJSON.NetJSON.Serialize(o));
+            if (o is long)
+                return BitConverter.GetBytes((long)o);
+
+            if (o is uint)
+                return BitConverter.GetBytes((uint)o);
+
+            if (o is ulong)
+                return BitConverter.GetBytes((ulong)o);
+
+            if (o is sbyte)
+                return BitConverter.GetBytes((sbyte)o);
+
+            if (o is string)
+                return Encoding.UTF8.GetBytes((string)o);
+
+            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
         public T Deserialize<T>(byte[] stream)
@@ -94,7 +105,7 @@ namespace Stratis.SmartContracts
                 return default(T);
 
             if (typeof(T) == typeof(byte[]))
-                return (T) (object) stream;
+                return (T)(object)stream;
 
             if (typeof(T) == typeof(byte))
                 return (T)(object)stream[0];
@@ -103,15 +114,30 @@ namespace Stratis.SmartContracts
                 return (T)(object)Convert.ToChar(stream[0]);
 
             if (typeof(T) == typeof(Address))
-                return (T) (object) new Address(new uint160(stream));
+                return (T)(object)new Address(new uint160(stream));
 
             if (typeof(T) == typeof(bool))
-                return (T) (object) (Convert.ToBoolean(stream[0]));
+                return (T)(object)(Convert.ToBoolean(stream[0]));
+
+            if (typeof(T) == typeof(int))
+                return (T)(object)(BitConverter.ToInt32(stream, 0));
+
+            if (typeof(T) == typeof(long))
+                return (T)(object)(BitConverter.ToInt64(stream, 0));
+
+            if (typeof(T) == typeof(sbyte))
+                return (T)(object)(Convert.ToSByte(stream[0]));
 
             if (typeof(T) == typeof(string))
                 return (T)(object)(Encoding.UTF8.GetString(stream));
 
-            return NetJSON.NetJSON.Deserialize<T>(Encoding.UTF8.GetString(stream));
+            if (typeof(T) == typeof(uint))
+                return (T)(object)(BitConverter.ToUInt32(stream, 0));
+
+            if (typeof(T) == typeof(ulong))
+                return (T)(object)(BitConverter.ToUInt64(stream, 0));
+
+            throw new Exception(string.Format("{0} is not supported.", typeof(T).Name));
         }
     }
 }

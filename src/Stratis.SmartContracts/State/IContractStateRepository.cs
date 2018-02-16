@@ -24,7 +24,6 @@ namespace Stratis.SmartContracts.State
         IContractStateRepository GetSnapshotTo(byte[] stateRoot);
 
         #region Account Abstraction Layer
-
         List<TransferInfo> Transfers { get; }
         SmartContractCarrier CurrentTx { get; set; }
         void TransferBalance(uint160 from, uint160 to, ulong value);
