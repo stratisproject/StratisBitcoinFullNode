@@ -17,7 +17,7 @@ namespace Stratis.SmartContracts.State
     {
         protected ContractStateRepository parent;
         public ISource<byte[], AccountState> accountStateCache;
-        public ISource<byte[], StoredVin> vinCache; 
+        public ISource<byte[], ContractUnspentOutput> vinCache; 
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         public List<TransferInfo> Transfers { get; private set; }
@@ -26,13 +26,13 @@ namespace Stratis.SmartContracts.State
         protected ContractStateRepository() { }
 
         public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
+                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             Init(accountStateCache, codeCache, storageCache, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
+                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
@@ -111,7 +111,7 @@ namespace Stratis.SmartContracts.State
         public IContractStateRepository StartTracking()
         {
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
-            ISource<byte[], StoredVin> trackVinCache = new WriteCache<StoredVin>(this.vinCache, WriteCache<StoredVin>.CacheType.SIMPLE);
+            ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache< byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
 
@@ -187,7 +187,7 @@ namespace Stratis.SmartContracts.State
             if (this.CurrentTx.To == address)
                 ret += this.CurrentTx.TxOutValue;
 
-            StoredVin unspent = GetUnspent(address);
+            ContractUnspentOutput unspent = GetUnspent(address);
             if (unspent != null)
                 ret += unspent.Value;
 
@@ -213,13 +213,13 @@ namespace Stratis.SmartContracts.State
             return accountState.UnspentHash;
         }
 
-        public StoredVin GetUnspent(uint160 address)
+        public ContractUnspentOutput GetUnspent(uint160 address)
         {
             byte[] unspentHash = GetUnspentHash(address);
             return this.vinCache.Get(unspentHash);
         }
 
-        public void SetUnspent(uint160 address, StoredVin vin)
+        public void SetUnspent(uint160 address, ContractUnspentOutput vin)
         {
             byte[] vinHash = HashHelper.Keccak256(vin.ToBytes());
             this.vinCache.Put(vinHash, vin);

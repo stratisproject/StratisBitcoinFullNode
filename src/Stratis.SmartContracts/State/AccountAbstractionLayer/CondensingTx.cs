@@ -11,11 +11,34 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
     /// </summary>
     public class CondensingTx
     {
+        /// <summary>
+        /// The smart contract transaction that initiated this whole execution.
+        /// </summary>
         private SmartContractCarrier smartContractCarrier;
+
+        /// <summary>
+        /// All of the transfers that happened internally inside of the contract execution.
+        /// </summary>
         private IList<TransferInfo> transfers;
-        private IList<StoredVin> unspents;
+
+        /// <summary>
+        /// The current unspents for each contract. Only ever one per contract.
+        /// </summary>
+        private IList<ContractUnspentOutput> unspents;
+
+        /// <summary>
+        /// Reference to the current smart contract state.
+        /// </summary>
         private IContractStateRepository state;
+
+        /// <summary>
+        /// New balances for each address involved through all transfers made.
+        /// </summary>
         private Dictionary<uint160, ulong> txBalances;
+
+        /// <summary>
+        /// The index of each address's new balance output.
+        /// </summary>
         private Dictionary<uint160, uint> nVouts;
 
         public CondensingTx(SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository state)
@@ -23,27 +46,35 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             this.smartContractCarrier = smartContractCarrier;
             this.transfers = transfers;
             this.state = state;
-            this.unspents = new List<StoredVin>();
+            this.unspents = new List<ContractUnspentOutput>();
             this.txBalances = new Dictionary<uint160, ulong>();
             this.nVouts = new Dictionary<uint160, uint>();
         }
 
+        /// <summary>
+        /// Builds the transaction that updates everyone's balances, which is to be appended to the block.
+        /// </summary>
+        /// <returns></returns>
         public Transaction CreateCondensingTransaction()
         {
             SetupBalances();
+            Transaction tx = BuildTransaction();
+            UpdateStateUnspents(tx);
+            return tx;
+        }
 
-
-
-
+        /// <summary>
+        /// Builds the transaction to be appended to the block.
+        /// </summary>
+        /// <returns></returns>
+        private Transaction BuildTransaction()
+        {
             Transaction tx = new Transaction();
 
-            // create inputs from stored vins - Possibly 1 from previous vin and possibly 1 if this transaction has value
-            ulong vinTotal = 0;
-            foreach (StoredVin vin in this.unspents)
+            foreach (ContractUnspentOutput vin in this.unspents)
             {
                 OutPoint outpoint = new OutPoint(vin.Hash, vin.Nvout);
                 tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
-                vinTotal += vin.Value;
             }
 
             foreach (TxOut txOut in GetOutputs())
@@ -51,24 +82,34 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
                 tx.Outputs.Add(txOut);
             }
 
-            //Update db
-            foreach(KeyValuePair<uint160, ulong> kvp in this.txBalances)
+            return tx;
+        }
+
+
+        /// <summary>
+        /// Update the database to reflect the new UTXOs assigned to each contract.
+        /// </summary>
+        private void UpdateStateUnspents(Transaction tx)
+        {
+            foreach (KeyValuePair<uint160, ulong> kvp in this.txBalances)
             {
                 if (this.state.GetAccountState(kvp.Key) != null)
                 {
-                    StoredVin newContractVin = new StoredVin
+                    ContractUnspentOutput newContractVin = new ContractUnspentOutput
                     {
                         Hash = tx.GetHash(),
-                        Nvout =  this.nVouts[kvp.Key],
+                        Nvout = this.nVouts[kvp.Key],
                         Value = kvp.Value
                     };
                     this.state.SetUnspent(kvp.Key, newContractVin);
                 }
             }
-
-            return tx;
         }
 
+        /// <summary>
+        /// Get the outputs for the condensing transaction
+        /// </summary>
+        /// <returns></returns>
         private IList<TxOut> GetOutputs()
         {
             List<TxOut> txOuts = new List<TxOut>();
@@ -111,7 +152,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             // Add the value of the initial transaction.
             if (this.smartContractCarrier.TxOutValue > 0)
             {
-                this.unspents.Add(new StoredVin
+                this.unspents.Add(new ContractUnspentOutput
                 {
                     Hash = this.smartContractCarrier.TransactionHash,
                     Nvout = this.smartContractCarrier.Nvout,
@@ -131,7 +172,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 
             foreach (uint160 unique in uniqueAddresses)
             {
-                StoredVin unspent = this.state.GetUnspent(unique);
+                ContractUnspentOutput unspent = this.state.GetUnspent(unique);
                 if (unspent != null && unspent.Value > 0)
                 {
                     this.unspents.Add(unspent);

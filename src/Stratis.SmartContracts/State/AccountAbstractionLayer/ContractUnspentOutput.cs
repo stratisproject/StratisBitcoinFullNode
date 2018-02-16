@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
     /// Each contract's balance is stored in one of these. 
     /// It is a reference to an unspent output.
     /// </summary>
-    public class StoredVin
+    public class ContractUnspentOutput
     {
         /// <summary>
         /// Hash of the transaction that sent this contract funds.
@@ -31,9 +31,9 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         /// </summary>
         public byte Alive { get; set; }
 
-        public StoredVin() { }
+        public ContractUnspentOutput() { }
 
-        public StoredVin(byte[] bytes)
+        public ContractUnspentOutput(byte[] bytes)
         {
             RLPCollection list = RLP.Decode(bytes);
             RLPCollection innerList = (RLPCollection)list[0];

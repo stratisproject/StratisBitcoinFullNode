@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts
             Block = state.Block;
             PersistentState = state.PersistentState;
             this.stateRepository = state.StateRepository;
-            StoredVin existingUtxo = state.StateRepository.GetUnspent(this.Address.ToUint160());
+            ContractUnspentOutput existingUtxo = state.StateRepository.GetUnspent(this.Address.ToUint160());
             ulong balanceBeforeCall = existingUtxo != null ? existingUtxo.Value : 0;
             //this.Balance = balanceBeforeCall + this.Message.Value;
         }
@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Work in progress. Will be used to send transactions to other addresses or contracts.
+        /// Sends funds to an address. If the address is a contract and parameters are given, it will execute a method on the contract with the given parameters.
         /// </summary>
         /// <param name="addressTo"></param>
         /// <param name="amount"></param>
