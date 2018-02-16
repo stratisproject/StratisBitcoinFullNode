@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Stratis.SmartContracts.Exceptions
 {
-    public class OutOfGasException : SmartContractRuntimeException
+    public class OutOfGasException : SmartContractException
     {
         public OutOfGasException() { }
 

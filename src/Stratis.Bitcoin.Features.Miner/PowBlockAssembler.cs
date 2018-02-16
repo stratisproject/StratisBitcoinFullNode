@@ -30,9 +30,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
         public bool IsProofOfStake = false;
-    }
-
-;
+    };
 
     public class BlockTemplate
     {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using Stratis.SmartContracts.Exceptions;
 
 namespace Stratis.SmartContracts.Backend
 {
@@ -36,17 +35,11 @@ namespace Stratis.SmartContracts.Backend
             }
             catch (TargetInvocationException targetException)
             {
-                if (targetException.InnerException is SmartContractRefundGasException refundGasException)
-                    executionResult.RuntimeException = refundGasException;
-            }
-            catch (Exception)
-            {
-                //TODO: Implement unhandled exception
-                throw;
+                executionResult.Exception = targetException.InnerException;
             }
             finally
             {
-                executionResult.GasUsed = contract.GasUsed;
+                executionResult.GasUnitsUsed = contract.GasUsed;
             }
 
             return executionResult;

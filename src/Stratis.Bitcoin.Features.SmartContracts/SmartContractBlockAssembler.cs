@@ -43,7 +43,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractValidator validator,
             SmartContractGasInjector gasInjector,
             CoinView coinView,
-            AssemblerOptions options = null) : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
+            AssemblerOptions options = null)
+            : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
             this.stateRoot = stateRoot;
             this.decompiler = decompiler;
@@ -119,14 +120,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
-        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier smartContractCarrier)
+        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
         {
             IContractStateRepository track = this.stateRoot.StartTracking();
             ulong height = Convert.ToUInt64(this.height);// TODO: Optimise so this conversion isn't happening every time.
             ulong difficulty = 0; // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, height, difficulty, this.coinbaseAddress);
-            ulong gasToSpend = smartContractCarrier.TotalGas;
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
             SmartContractExecutionResult result = executor.Execute();
 
             //Update state
@@ -135,7 +135,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else
                 track.Commit();
 
-            ulong toRefund = gasToSpend - result.GasUsed * smartContractCarrier.GasPrice;
+            // ********************************************
+            // Contract execution failed with an exception.
+            // ********************************************
+            if (result.Exception != null)
+                new SmartContractExceptionHandler(this.coinbase).Process(carrier, result);
+
+
+            // ********************************************
+            // Contract execution completed successfully.
+            // ********************************************
+            ulong toRefund = carrier.GasCostBudget - result.GasUnitsUsed * carrier.GasUnitPrice;
             ulong txFeeAndGas = mempoolEntry.Fee - toRefund;
 
             // Add original transaction and fees to block
@@ -162,13 +172,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Setup refunds
             this.refundSender += toRefund;
-            Script senderScript = new Script(
+
+            var senderScript = new Script(
                 OpcodeType.OP_DUP,
                 OpcodeType.OP_HASH160,
-                Op.GetPushOp(smartContractCarrier.Sender.ToBytes()),
+                Op.GetPushOp(carrier.Sender.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
             );
+
             this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
     }

@@ -1,8 +1,6 @@
-﻿using Mono.Cecil;
-using Stratis.SmartContracts.Exceptions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis;
+using Mono.Cecil;
 
 namespace Stratis.SmartContracts.ContractValidation
 {
@@ -77,7 +75,7 @@ namespace Stratis.SmartContracts.ContractValidation
             List<SmartContractValidationError> errors = new List<SmartContractValidationError>();
 
             IEnumerable<MethodDefinition> userDefinedMethods = decompilation.ContractType.Methods.Where(method => method.Body != null);
-            Dictionary<string,MethodDefinition> allMethods = new Dictionary<string, MethodDefinition>();
+            Dictionary<string, MethodDefinition> allMethods = new Dictionary<string, MethodDefinition>();
 
             // Build a dict of all referenced methods
             foreach (MethodDefinition method in userDefinedMethods)
@@ -111,7 +109,7 @@ namespace Stratis.SmartContracts.ContractValidation
                     !(GreenLightMethods.Contains(methodDefinition.FullName)
                         || GreenLightTypes.Contains(methodDefinition.DeclaringType.FullName))
                 );
-            
+
             foreach (MethodReference method in referencedMethods)
             {
                 MethodDefinition newMethod = method.Resolve();

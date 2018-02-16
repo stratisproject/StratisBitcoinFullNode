@@ -1,8 +1,7 @@
-﻿using Mono.Cecil;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Mono.Cecil;
 
 namespace Stratis.SmartContracts.ContractValidation
 {
@@ -33,7 +32,7 @@ namespace Stratis.SmartContracts.ContractValidation
         public void ValidateLimitedAssemblyReferences(ModuleDefinition moduleDefinition)
         {
             // TODO: This check needs to be more robust -> What other way can we use?
-            foreach(AssemblyNameReference assemblyReference in moduleDefinition.AssemblyReferences)
+            foreach (AssemblyNameReference assemblyReference in moduleDefinition.AssemblyReferences)
             {
                 if (!AllowedAssemblies.Any(x => x.FullName == assemblyReference.FullName))
                     this.errors.Add(new SmartContractValidationError("Assembly " + assemblyReference.FullName + " is not allowed."));

@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using Stratis.SmartContracts.Exceptions;
 
 namespace Stratis.SmartContracts.Backend
 {
     /// <summary>
     /// Carries the output of a smart contract execution.
     /// </summary>
-    internal class SmartContractExecutionResult
+    public class SmartContractExecutionResult
     {
         /// <summary>
-        /// The gas used through execution of the smart contract.
+        /// The amount of gas units used through execution of the smart contract.
         /// </summary>
-        public ulong GasUsed { get; set; }
+        public ulong GasUnitsUsed { get; set; }
 
         /// <summary>
         /// If an object is returned from the method called, it will be stored here.
@@ -22,9 +21,8 @@ namespace Stratis.SmartContracts.Backend
 
         /// <summary>
         /// If there is an exception during execution, it will be stored here.
-        /// TODO: Should this just be an exception?
         /// </summary>
-        public SmartContractRuntimeException RuntimeException { get; set; }
+        public Exception Exception { get; set; }
 
         /// <summary>
         /// Whether the state changes made during execution should be reverted. If an exception occurred, then should be true.
@@ -58,7 +56,7 @@ namespace Stratis.SmartContracts.Backend
         public void Merge(SmartContractExecutionResult another)
         {
             throw new NotImplementedException();
-            if (another.RuntimeException == null && !another.Revert)
+            if (another.Exception == null && !another.Revert)
             {
                 this.FutureRefund += another.FutureRefund;
                 this.InternalTransactions.AddRange(another.InternalTransactions);

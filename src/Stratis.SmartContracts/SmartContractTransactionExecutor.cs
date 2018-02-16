@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts
                             this.smartContractCarrier.TxOutValue,
                             this.smartContractCarrier.GasLimit
                             ),
-                        this.smartContractCarrier.GasPrice,
+                        this.smartContractCarrier.GasUnitPrice,
                         this.smartContractCarrier.MethodParameters
                     );
 
@@ -124,7 +124,7 @@ namespace Stratis.SmartContracts
                           this.smartContractCarrier.TxOutValue,
                           this.smartContractCarrier.GasLimit
                       ),
-                      this.smartContractCarrier.GasPrice,
+                      this.smartContractCarrier.GasUnitPrice,
                       this.smartContractCarrier.MethodParameters
                   );
 

@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var executionContext = new SmartContractExecutionContext(new Block(0, 0, 0), new Message(Address.Zero, Address.Zero, 0, 500000), 1, new object[] { 1 });
 
                 SmartContractExecutionResult result = vm.ExecuteMethod(injectedAssemblyBytes, ContractName, MethodName, executionContext);
-                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUsed));
+                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUnitsUsed));
             }
         }
     }

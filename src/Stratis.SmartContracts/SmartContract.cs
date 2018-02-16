@@ -1,20 +1,19 @@
-﻿using Stratis.SmartContracts.Exceptions;
-using System;
-using System.Reflection;
-using Stratis.SmartContracts;
-using Block = NBitcoin.Block;
+﻿using System;
+using System.Globalization;
+using Stratis.SmartContracts.Exceptions;
 
 namespace Stratis.SmartContracts
 {
     public class SmartContract
     {
-        protected Address Address => Message.ContractAddress;
+        protected Address Address => this.Message.ContractAddress;
 
         public Block Block { get; }
 
         public Message Message { get; }
 
-        protected ulong Balance {
+        protected ulong Balance
+        {
             get
             {
                 throw new NotImplementedException();
@@ -27,10 +26,11 @@ namespace Stratis.SmartContracts
 
         public SmartContract(SmartContractState state)
         {
-            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            Message = state.Message;
-            Block = state.Block;
-            PersistentState = state.PersistentState;
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+
+            this.Message = state.Message;
+            this.Block = state.Block;
+            this.PersistentState = state.PersistentState;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts
         /// <param name="spend"></param>
         public void SpendGas(uint spend)
         {
-            if (this.GasUsed +  spend > this.Message.GasLimit)
+            if (this.GasUsed + spend > this.Message.GasLimit)
                 throw new OutOfGasException("Went over gas limit of " + this.Message.GasLimit);
 
             this.GasUsed += spend;
