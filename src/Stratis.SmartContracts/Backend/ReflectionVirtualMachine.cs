@@ -34,6 +34,7 @@ namespace Stratis.SmartContracts.Backend
                 MethodInfo methodToInvoke = type.GetMethod(contractMethodName);
                 result = methodToInvoke.Invoke(contract, context.Parameters);
             }
+
             return new SmartContractExecutionResult
             {
                 GasUsed = contract.GasUsed,

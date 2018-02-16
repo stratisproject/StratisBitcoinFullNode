@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using Mono.Cecil;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Backend;
@@ -34,11 +31,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const string ContractName = "Test";
         private const string MethodName = "TestMethod";
 
-        private readonly SmartContractGasInjector _spendGasInjector = new SmartContractGasInjector();
+        private readonly SmartContractGasInjector spendGasInjector = new SmartContractGasInjector();
 
-        private readonly ContractStateRepositoryRoot _repository =
-            new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            
+        private readonly ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+
         // TODO: Right now the gas injector is only taking into account the instructions
         // in the user-defined methods. Calls to System methods aren't increasing the instructions.
         // Need to work this out somehow. Averages?
@@ -48,33 +44,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TestGasInjector()
         {
-            var originalAssemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(TestSource);
+            byte[] originalAssemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(TestSource);
 
             var resolver = new DefaultAssemblyResolver();
             resolver.AddSearchDirectory(AppContext.BaseDirectory);
             ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
-            var contractType = moduleDefinition.GetType(ContractName);
-            var baseType = contractType.BaseType.Resolve();
-            var testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
-            var constructorMethod = contractType.Methods.FirstOrDefault(x => x.Name.Contains("ctor"));
+            TypeDefinition contractType = moduleDefinition.GetType(ContractName);
+            TypeDefinition baseType = contractType.BaseType.Resolve();
+            MethodDefinition testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
+            MethodDefinition constructorMethod = contractType.Methods.FirstOrDefault(x => x.Name.Contains("ctor"));
             int aimGasAmount = testMethod.Body.Instructions.Count; // + constructorMethod.Body.Instructions.Count; // Have to figure out ctor gas metering
 
-            _spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+            this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
 
-            var mem = new MemoryStream();
-            moduleDefinition.Write(mem);
-            var injectedAssemblyBytes = mem.ToArray();
+            using (var mem = new MemoryStream())
+            {
+                moduleDefinition.Write(mem);
+                byte[] injectedAssemblyBytes = mem.ToArray();
 
-            var persistentState = new PersistentState(this._repository, Address.Zero.ToUint160());
-            var vm = new ReflectionVirtualMachine(persistentState);
-            var result = vm.ExecuteMethod(injectedAssemblyBytes, ContractName, MethodName, new SmartContractExecutionContext(
-                new Block(0, 0, 0),
-                new Message(Address.Zero, Address.Zero, 0, 500000),
-                1,
-                new object[] { 1 }                
-            ));
+                var persistentState = new PersistentState(this.repository, Address.Zero.ToUint160());
+                var vm = new ReflectionVirtualMachine(persistentState);
 
-            Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUsed));
+                var executionContext = new SmartContractExecutionContext(new Block(0, 0, 0), new Message(Address.Zero, Address.Zero, 0, 500000), 1, new object[] { 1 });
+
+                SmartContractExecutionResult result = vm.ExecuteMethod(injectedAssemblyBytes, ContractName, MethodName, executionContext);
+                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUsed));
+            }
         }
     }
 }

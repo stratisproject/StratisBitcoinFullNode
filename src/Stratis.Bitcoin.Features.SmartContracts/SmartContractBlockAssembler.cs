@@ -102,11 +102,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         protected override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            //Determine whether or not this mempool entry contains smart code execution code.
+            //Determine whether or not this mempool entry contains smart contract execution code.
             TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
-                //If no smart contract exists then process as per normal.
+                //If no smart contract exists then add to block as per normal.
                 base.AddToBlock(mempoolEntry);
             }
             else
@@ -119,14 +119,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
-        private void AddContractCallToBlock(TxMempoolEntry iter, SmartContractCarrier scTransaction)
+        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier smartContractCarrier)
         {
             IContractStateRepository track = this.stateRoot.StartTracking();
             ulong height = Convert.ToUInt64(this.height);// TODO: Optimise so this conversion isn't happening every time.
             ulong difficulty = 0; // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, scTransaction, height, difficulty, this.coinbaseAddress);
-            ulong gasToSpend = scTransaction.TotalGas;
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, height, difficulty, this.coinbaseAddress);
+            ulong gasToSpend = smartContractCarrier.TotalGas;
             SmartContractExecutionResult result = executor.Execute();
 
             //Update state
@@ -135,21 +135,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else
                 track.Commit();
 
-            ulong toRefund = gasToSpend - result.GasUsed * scTransaction.GasPrice;
-            ulong txFeeAndGas = iter.Fee - toRefund;
+            ulong toRefund = gasToSpend - result.GasUsed * smartContractCarrier.GasPrice;
+            ulong txFeeAndGas = mempoolEntry.Fee - toRefund;
 
             // Add original transaction and fees to block
-            this.pblock.AddTransaction(iter.Transaction);
+            this.pblock.AddTransaction(mempoolEntry.Transaction);
             this.pblocktemplate.VTxFees.Add(txFeeAndGas);
-            this.pblocktemplate.TxSigOpsCost.Add(iter.SigOpCost);
+            this.pblocktemplate.TxSigOpsCost.Add(mempoolEntry.SigOpCost);
             if (this.needSizeAccounting)
-                this.blockSize += iter.Transaction.GetSerializedSize();
+                this.blockSize += mempoolEntry.Transaction.GetSerializedSize();
 
-            this.blockWeight += iter.TxWeight;
+            this.blockWeight += mempoolEntry.TxWeight;
             this.blockTx++;
-            this.blockSigOpsCost += iter.SigOpCost;
+            this.blockSigOpsCost += mempoolEntry.SigOpCost;
             this.fees += txFeeAndGas;
-            this.inBlock.Add(iter);
+            this.inBlock.Add(mempoolEntry);
 
             // Add internal transactions made during execution
             foreach (Transaction transaction in result.InternalTransactions)
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script senderScript = new Script(
                 OpcodeType.OP_DUP,
                 OpcodeType.OP_HASH160,
-                Op.GetPushOp(scTransaction.Sender.ToBytes()),
+                Op.GetPushOp(smartContractCarrier.Sender.ToBytes()),
                 OpcodeType.OP_EQUALVERIFY,
                 OpcodeType.OP_CHECKSIG
             );
