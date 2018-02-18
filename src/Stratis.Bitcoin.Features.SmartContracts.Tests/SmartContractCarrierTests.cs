@@ -124,8 +124,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 7),
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "test"),
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt, 36),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt160, 23),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, 29)
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt160, new uint160(new byte[20]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, 29),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639"))
             };
 
             SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000).WithParameters(methodParameters);
@@ -165,6 +166,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(deserialized.MethodParameters[9]);
             Assert.Equal(smartContractCarrier.MethodParameters[9], deserialized.MethodParameters[9]);
+
+            Assert.NotNull(deserialized.MethodParameters[10]);
+            Assert.Equal(smartContractCarrier.MethodParameters[10], deserialized.MethodParameters[10]);
         }
     }
 }
