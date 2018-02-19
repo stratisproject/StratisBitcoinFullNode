@@ -564,10 +564,49 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public void AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalse()
+        public async void AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalseAsync()
         {
             // TODO: Execute failure cases for CheckAncestors
             // - conflicting spend transaction
+
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalseAsync));
+            Directory.CreateDirectory(dataDir);
+
+            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            TransactionBuilder txBuilder = new TransactionBuilder();
+
+            //Create Coin from first txn on chain
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(miner.PubKey));
+
+            //Send 10 to Bob and return the rest as change to miner
+            Transaction originalTx = txBuilder
+               .AddCoins(coin)
+               .AddKeys(miner)
+               .Send(bob, "10.00")
+               .SendFees("0.001")
+               .SetChange(miner)
+               .BuildTransaction(true);
+            MempoolValidationState state = new MempoolValidationState(false);
+
+            //Mempool should accept it, there's nothing wrong
+            Assert.True(await validator.AcceptToMemoryPool(state, originalTx), $"Transaction: {nameof(originalTx)} failed mempool validation.");
+
+            //Create second transaction spending the same coin
+            Transaction conflictingTx = txBuilder
+               .AddCoins(coin)
+               .AddKeys(miner)
+               .Send(bob, "10.00")
+               .SendFees("0.001")
+               .SetChange(miner)
+               .BuildTransaction(true);
+
+            //Mempool should reject the second transaction
+            Assert.False(await validator.AcceptToMemoryPool(state, conflictingTx), $"Transaction: {nameof(conflictingTx)} should have failed mempool validation.");
+
+            Directory.Delete(dataDir, true);
         }
 
         [Fact]
