@@ -108,14 +108,23 @@ namespace Stratis.SmartContracts
         private SmartContractExecutionResult ExecuteCall()
         {
             byte[] contractCode = this.state.GetCode(this.smartContractCarrier.To);
-            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
+            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
+
+            // YO! VERY IMPORTANT! 
+
+            // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
 
             uint160 contractAddress = this.smartContractCarrier.To;
 
             var persistentState = new PersistentState(this.stateTrack, contractAddress);
-            var vm = new ReflectionVirtualMachine(persistentState);
+            this.stateTrack.CurrentTx = this.smartContractCarrier;
 
-            var executionContext = new SmartContractExecutionContext
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
+            SmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode, 
+                decomp.ContractType.Name,
+                this.smartContractCarrier.MethodName,
+                new SmartContractExecutionContext
                 (
                       new Block(Convert.ToUInt64(this.blockNum), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
                       new Message(
@@ -126,9 +135,7 @@ namespace Stratis.SmartContracts
                       ),
                       this.smartContractCarrier.GasPrice,
                       this.smartContractCarrier.MethodParameters
-                  );
-
-            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, decompilation.ContractType.Name, this.smartContractCarrier.MethodName, executionContext);
+                  ));
 
             if (result.Revert)
             {
@@ -137,29 +144,13 @@ namespace Stratis.SmartContracts
             }
 
             // We need to append a condensing transaction to the block here if funds are moved.
-            IList<TransferInfo> transfers = this.stateTrack.GetTransfers();
+            IList<TransferInfo> transfers = this.stateTrack.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
-                var vins = new List<StoredVin>();
-                StoredVin existingVin = this.state.GetUnspent(this.smartContractCarrier.To);
-
-                if (existingVin != null)
-                    vins.Add(existingVin);
-
-                if (this.smartContractCarrier.TxOutValue > 0)
-                {
-                    vins.Add(new StoredVin
-                    {
-                        Hash = this.smartContractCarrier.TransactionHash,
-                        Nvout = this.smartContractCarrier.Nvout,
-                        Value = this.smartContractCarrier.TxOutValue
-                    });
-                }
-
-                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, vins, this.stateTrack);
+                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.stateTrack);
                 result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
-
+            this.stateTrack.Transfers.Clear();
             this.stateTrack.Commit();
 
             return result;

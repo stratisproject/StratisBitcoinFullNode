@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -261,23 +262,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             TestContext context = new TestContext();
             await context.InitializeAsync();
 
-            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
-
-            Transaction tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
-            var smartContractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"), 1, 500);
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrier.Serialize())));
-
-            // This tx has a low fee: 1000 satoshis
-            uint256 hashParentTx = tx.GetHash();
-            context.mempool.AddUnchecked(hashParentTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-
-            var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate.Block.Header);
-
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"), 1, 500);
+            Transaction tx = AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - 10000);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
-            var ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
+            byte[] ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             Assert.Equal(ownerFromStorage, context.coinbaseAddress.ToBytes());
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
@@ -293,80 +282,39 @@ namespace Stratis.Bitcoin.IntegrationTests
             TestContext context = new TestContext();
             await context.InitializeAsync();
 
-            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
-
-            Transaction tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
-            var contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.Serialize())));
-
-            uint256 hashTx = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
-            var test = context.state.GetUnspent(newContractAddress);
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
 
-            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", 1, 500);
-
-            tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
             ulong fundsToSend = 5000000000L - 10000;
-
-            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.Serialize())));
-
-            uint256 hashTx2 = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            BlockTemplate pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate2.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", 1, 500);
+            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
-
-            // There is 1 input to the condensing transaction: the previous callcontract transaction
-            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs);
-            var hashOfContractCallTx = pblocktemplate2.Block.Transactions[1].GetHash();
+            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs); // There is 1 input to the condensing transaction: the previous callcontract transaction
+            uint256 hashOfContractCallTx = pblocktemplate2.Block.Transactions[1].GetHash();
             Assert.Equal(hashOfContractCallTx, pblocktemplate2.Block.Transactions[2].Inputs[0].PrevOut.Hash);
-            // First txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[0].Value);
-            // Second txout should be the change to the contract, with a value of the input - 100
-            Assert.Equal(fundsToSend - 100, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[1].Value);
+            Assert.Equal(fundsToSend - 100, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[0].Value); // First txout should be the change to the contract, with a value of the input - 100
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[1].Value); // Second txout should be the transfer to a new person, with a value of 100
 
             context.mempool.Clear();
 
-            var transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress, "Test", 1, 500);
-
-            tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.Serialize())));
-
-            uint256 hashTx3 = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx3, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate3.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate3.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            SmartContractCarrier transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress, "Test", 1, 500);
+            BlockTemplate pblocktemplate3 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction2, context.txFirst[2].GetHash(), fundsToSend);
             Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
             Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
-
-            // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
-            Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count);
-            var hashOfPrevCondensingTx = pblocktemplate2.Block.Transactions[2].GetHash();
-            var hashOfContractCallTx3 = pblocktemplate3.Block.Transactions[1].GetHash();
-            Assert.Equal(hashOfPrevCondensingTx, pblocktemplate3.Block.Transactions[2].Inputs[0].PrevOut.Hash);
-            Assert.Equal(hashOfContractCallTx3, pblocktemplate3.Block.Transactions[2].Inputs[1].PrevOut.Hash);
-            // First txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[0].Value);
-            // Second txout should be the change to the contract, with a value of the value given twice, - 200 (100 for each transfer)
-            Assert.Equal(fundsToSend * 2 - 200, (ulong)pblocktemplate3.Block.Transactions[2].Outputs[1].Value);
-
-            context.mempool.Clear();
+            Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count); // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
+            uint256 hashOfPrevCondensingTx = pblocktemplate2.Block.Transactions[2].GetHash();
+            uint256 hashOfContractCallTx3 = pblocktemplate3.Block.Transactions[1].GetHash();
+            Assert.Equal(hashOfPrevCondensingTx, pblocktemplate3.Block.Transactions[2].Inputs[1].PrevOut.Hash);
+            Assert.Equal(hashOfContractCallTx3, pblocktemplate3.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            Assert.Equal(fundsToSend * 2 - 200, (ulong)pblocktemplate3.Block.Transactions[2].Outputs[0].Value); // First txout should be the change to the contract, with a value of the value given twice, - 200 (100 for each transfer)
+            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[1].Value); // Second txout should be the transfer to a new person, with a value of 100
         }
 
         /// <summary>
@@ -379,84 +327,41 @@ namespace Stratis.Bitcoin.IntegrationTests
             TestContext context = new TestContext();
             await context.InitializeAsync();
 
-            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
-
-            Transaction tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
             var contractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractCarrier.Serialize())));
-
-            uint256 hashTx = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            Transaction tx = AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 0);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
 
-            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
-
-            tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
             ulong fundsToSend = 5000000000L - 10000;
-
-            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.Serialize())));
-
-            uint256 hashTx2 = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            BlockTemplate pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate2.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate2.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
+            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
-
-            // There is 1 input to the condensing transaction: the previous callcontract transaction
-            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs);
+            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs); // There is 1 input to the condensing transaction: the previous callcontract transaction
             var hashOfContractCallTx = pblocktemplate2.Block.Transactions[1].GetHash();
             Assert.Equal(hashOfContractCallTx, pblocktemplate2.Block.Transactions[2].Inputs[0].PrevOut.Hash);
-            // First txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[0].Value);
-            // Second txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[1].Value);
-            // Third txout should be the change to the contract, with a value of the input - 200
-            Assert.Equal(fundsToSend - 200, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[2].Value);
+            Assert.Equal(fundsToSend - 200, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[0].Value); // First txout should be the change to the contract, with a value of the input - 200
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[1].Value); // Second txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[2].Value); // Third txout should be the transfer to a new person, with a value of 100
 
             context.mempool.Clear();
 
             transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
-
-            tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.Serialize())));
-
-            uint256 hashTx3 = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx3, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate3.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate3.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
-
+            BlockTemplate pblocktemplate3 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend);
             Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
             Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
-
-            // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
-            Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count);
+            Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count); // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
             var hashOfPrevCondensingTx = pblocktemplate2.Block.Transactions[2].GetHash();
             var hashOfContractCallTx3 = pblocktemplate3.Block.Transactions[1].GetHash();
-            Assert.Equal(hashOfPrevCondensingTx, pblocktemplate3.Block.Transactions[2].Inputs[0].PrevOut.Hash);
-            Assert.Equal(hashOfContractCallTx3, pblocktemplate3.Block.Transactions[2].Inputs[1].PrevOut.Hash);
-            // First txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[0].Value);
-            // Second txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[1].Value);
-            // Second txout should be the change to the contract, with a value of the value given twice, - 400 (100 for each transfer)
-            Assert.Equal(fundsToSend * 2 - 400, (ulong)pblocktemplate3.Block.Transactions[2].Outputs[2].Value);
-
-            context.mempool.Clear();
+            Assert.Equal(hashOfPrevCondensingTx, pblocktemplate3.Block.Transactions[2].Inputs[1].PrevOut.Hash);
+            Assert.Equal(hashOfContractCallTx3, pblocktemplate3.Block.Transactions[2].Inputs[0].PrevOut.Hash);
+            Assert.Equal(fundsToSend * 2 - 400, (ulong)pblocktemplate3.Block.Transactions[2].Outputs[0].Value); // First txout should be the change to the contract, with a value of the value given twice, - 400 (100 for each transfer)
+            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[1].Value); // Second txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[2].Value); // Third txout should be the transfer to a new person, with a value of 100
         }
 
         /// <summary>
@@ -469,66 +374,106 @@ namespace Stratis.Bitcoin.IntegrationTests
             var context = new TestContext();
             await context.InitializeAsync();
 
-            var entry = new TestMemPoolEntryHelper();
-
-            var tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
-            var contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(contractTransaction.Serialize())));
-
-            uint256 hashTx = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-
-            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            context.chain.SetTip(pblocktemplate.Block.Header);
-
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), 1, 500);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
             context.mempool.Clear();
 
-            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
-
-            tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[1].GetHash(), 0), new Script(OpcodeType.OP_1)));
-
             ulong fundsToSend = 5000000000L - 10000;
-
-            tx.AddOutput(new TxOut(new Money(fundsToSend), new Script(transferTransaction.Serialize())));
-
-            uint256 hashTx2 = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx2, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            BlockTemplate pblocktemplate2 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", 1, 500);
+            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
-
-            // There is 1 input to the condensing transaction: the previous callcontract transaction
-            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs);
+            Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs); // There is 1 input to the condensing transaction: the previous callcontract transaction
             var hashOfContractCallTx = pblocktemplate2.Block.Transactions[1].GetHash();
             Assert.Equal(hashOfContractCallTx, pblocktemplate2.Block.Transactions[2].Inputs[0].PrevOut.Hash);
-            // First txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[0].Value);
-            // Second txout should be the transfer to a new person, with a value of 100
-            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[1].Value);
-            // Third txout should be the change to the contract, with a value of the input - 200
-            Assert.Equal(fundsToSend - 200, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[2].Value);
+            Assert.Equal(fundsToSend - 200, (ulong)pblocktemplate2.Block.Transactions[2].Outputs[0].Value); // First txout should be the change to the contract, with a value of the input - 200
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[1].Value); // Second txout should be the transfer to a new person, with a value of 100
+            Assert.Equal(100, pblocktemplate2.Block.Transactions[2].Outputs[2].Value); // Third txout should be the transfer to a new person, with a value of 100
 
             context.mempool.Clear();
 
-            transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "DoNothing", 1, 500); ;
+            transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "DoNothing", 1, 500);
+            BlockTemplate pblocktemplate3 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), 0);
+            Assert.Equal(2, pblocktemplate3.Block.Transactions.Count); // In this case we are sending 0, and doing no transfers, so we don't need a condensing transaction
+        }
 
-            tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[2].GetHash(), 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(0), new Script(transferTransaction.Serialize())));
+        /// <summary>
+        /// Should deploy 2 contracts, and then send funds from one to the other and end up with correct balances for all.
+        /// </summary>
+        [Fact]
+        public async Task TestContractTransfersAsync()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
 
-            uint256 hashTx3 = tx.GetHash();
-            context.mempool.AddUnchecked(hashTx3, entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            var pblocktemplate3 = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-            // In this case we are sending 0, and doing no transfers, so we don't need a condensing transaction
-            Assert.Equal(2, pblocktemplate3.Block.Transactions.Count);
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/InterContract1.cs"), 1, 500);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            string newContractAddressString = newContractAddress.ToString(); // this is hardcoded into the second contract.
+            Assert.NotNull(context.state.GetCode(newContractAddress));
+
+            context.mempool.Clear();
+
+            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/InterContract2.cs"), 1, 500);
+            tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0);
+            pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            Assert.NotNull(context.state.GetCode(newContractAddress2));
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 1000;
+            string[] testMethodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToString()),
+            };
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", 1, 500).WithParameters(testMethodParameters);
+            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend);
+            Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.state.GetStorageValue(newContractAddress, new PersistentStateSerializer().Serialize(0)));
+            Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
+            Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
+            Assert.Equal(pblocktemplate.Block.Transactions[1].GetHash(), pblocktemplate.Block.Transactions[2].Inputs[0].PrevOut.Hash); // Input should be from the call that was just made.
+            Assert.Equal(900, pblocktemplate.Block.Transactions[2].Outputs[0].Value); // First txout should be the change back to the contract, with a value of 900
+            Assert.Equal(100, pblocktemplate.Block.Transactions[2].Outputs[1].Value); // First txout should be the transfer to the second contract, with a value of 100
+
+            context.mempool.Clear();
+
+            SmartContractCarrier transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", 1, 500).WithParameters(testMethodParameters);
+            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction2, context.txFirst[3].GetHash(), 0);
+            Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
+            Assert.Equal(2, pblocktemplate.Block.Transactions[2].Inputs.Count);
+            Assert.Equal(800, pblocktemplate.Block.Transactions[2].Outputs[0].Value);
+            Assert.Equal(200, pblocktemplate.Block.Transactions[2].Outputs[1].Value);
+        }
+
+        private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value)
+        {
+            AddTransactionToMempool(context, smartContractCarrier, prevOutHash, value);
+            return await BuildBlockAsync(context);
+        }
+
+        private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value)
+        {
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+            Transaction tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(prevOutHash, 0), new Script(OpcodeType.OP_1)));
+            tx.AddOutput(new TxOut(new Money(value), new Script(smartContractCarrier.Serialize())));
+            context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(10000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            return tx;
+        }
+
+        private async Task<BlockTemplate> BuildBlockAsync(TestContext context)
+        {
+            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            context.chain.SetTip(pblocktemplate.Block.Header);
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            return pblocktemplate;
         }
     }
 }

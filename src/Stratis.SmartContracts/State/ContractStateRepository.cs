@@ -17,27 +17,28 @@ namespace Stratis.SmartContracts.State
     {
         protected ContractStateRepository parent;
         public ISource<byte[], AccountState> accountStateCache;
-        public ISource<byte[], StoredVin> vinCache; 
+        public ISource<byte[], ContractUnspentOutput> vinCache; 
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
-        protected List<TransferInfo> transfers;
+        public List<TransferInfo> Transfers { get; private set; }
+        public SmartContractCarrier CurrentTx { get; set; }
 
         protected ContractStateRepository() { }
 
         public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
+                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             Init(accountStateCache, codeCache, storageCache, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], StoredVin> vinCache)
+                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
             this.storageCache = storageCache;
             this.vinCache = vinCache;
-            this.transfers = new List<TransferInfo>();
+            this.Transfers = new List<TransferInfo>();
         }
 
         public AccountState CreateAccount(uint160 addr)
@@ -110,12 +111,14 @@ namespace Stratis.SmartContracts.State
         public IContractStateRepository StartTracking()
         {
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
-            ISource<byte[], StoredVin> trackVinCache = new WriteCache<StoredVin>(this.vinCache, WriteCache<StoredVin>.CacheType.SIMPLE);
+            ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache< byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
 
             ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache);
             ret.parent = this;
+            ret.Transfers = new List<TransferInfo>(this.Transfers);
+            ret.CurrentTx = this.CurrentTx;
             return ret;
         }
 
@@ -126,6 +129,9 @@ namespace Stratis.SmartContracts.State
 
         public virtual void Commit()
         {
+            if (this.parent != null)
+                this.parent.Transfers.AddRange(this.Transfers.Where(x => !this.parent.Transfers.Contains(x)));
+
             ContractStateRepository parentSync = this.parent == null ? this : this.parent;
             lock(parentSync) {
                 this.storageCache.Flush();
@@ -159,7 +165,7 @@ namespace Stratis.SmartContracts.State
 
         public void TransferBalance(uint160 from, uint160 to, ulong value)
         {
-            this.transfers.Add(new TransferInfo
+            this.Transfers.Add(new TransferInfo
             {
                 From = from,
                 To = to,
@@ -167,27 +173,53 @@ namespace Stratis.SmartContracts.State
             });
         }
 
-        public IList<TransferInfo> GetTransfers()
+        /// <summary>
+        /// Gets the balance for a contract.
+        /// Balance = UTXO the contract currently owns, + all the funds it has received, - all the funds it has sent.
+        /// 
+        /// Note that because the initial transaction will always be coming from a human we don't need to minus if from.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public ulong GetCurrentBalance(uint160 address)
         {
-            return this.transfers;
+            ulong ret = 0;
+            if (this.CurrentTx.To == address)
+                ret += this.CurrentTx.TxOutValue;
+
+            ContractUnspentOutput unspent = GetUnspent(address);
+            if (unspent != null)
+                ret += unspent.Value;
+
+            foreach(TransferInfo transfer in this.Transfers.Where(x => x.To == address))
+            {
+                ret += transfer.Value;
+            }
+
+            foreach (TransferInfo transfer in this.Transfers.Where(x => x.From == address))
+            {
+                ret -= transfer.Value;
+            }
+
+            return ret;
         }
 
         public byte[] GetUnspentHash(uint160 addr)
         {
             AccountState accountState = GetAccountState(addr);
             if (accountState == null || accountState.UnspentHash == null)
-                return new byte[0]; // TODO: REPLACE THIS BYTE0 with something
+                return new byte[0]; // TODO: REPLACE THIS BYTE0 with a more meaningful byte array?
 
             return accountState.UnspentHash;
         }
 
-        public StoredVin GetUnspent(uint160 address)
+        public ContractUnspentOutput GetUnspent(uint160 address)
         {
             byte[] unspentHash = GetUnspentHash(address);
             return this.vinCache.Get(unspentHash);
         }
 
-        public void SetUnspent(uint160 address, StoredVin vin)
+        public void SetUnspent(uint160 address, ContractUnspentOutput vin)
         {
             byte[] vinHash = HashHelper.Keccak256(vin.ToBytes());
             this.vinCache.Put(vinHash, vin);
