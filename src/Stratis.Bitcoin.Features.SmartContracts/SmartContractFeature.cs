@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using DBreeze;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Consensus;
@@ -14,9 +15,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractFeature : FullNodeFeature
     {
+        private readonly ILogger logger;
+
+        public SmartContractFeature(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
         public override void Initialize()
         {
-            throw new NotImplementedException("At this point the feature is only used to inject the new consensus validator");
+            this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
 
@@ -49,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
                         services.AddSingleton<IContractStateRepository>(repository);
                         services.AddSingleton<PowConsensusValidator, SmartContractConsensusValidator>();
-                        services.AddSingleton<PowBlockAssembler, SmartContractBlockAssembler>();
+                        services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
                     });
             });
             return fullNodeBuilder;
