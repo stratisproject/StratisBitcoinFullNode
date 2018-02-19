@@ -134,8 +134,42 @@ namespace Stratis.SmartContracts
             if (methodParameters.Length == 0)
                 return this;
 
-            this.methodParameters = string.Join('|', methodParameters.Select(parameter => parameter.Replace("|", @"\|")));
+            IEnumerable<string> processedPipes = methodParameters.Select(parameter => parameter = parameter.Replace("|", @"\|"));
+
+            IEnumerable<string> processedHashes = processedPipes.Select(parameter =>
+            {
+
+                // This delegate splits the string by the hash character.
+                // 
+                // If the split array is longer than 2 then we need to 
+                // reconstruct the parameter by escaping all hashes
+                // after the first one.
+                // 
+                // Once this is done, prepend the string with the data type,
+                // which is an integer representation of SmartContractCarrierDataType,
+                // as well as a hash, so that it can be split again upon deserialization.
+                //
+                // I.e. 3#dcg#5d# will split into 3 / dcg / 5d
+                // and then dcg / fd will be reconstructed to dcg\\#5d\\# and
+                // 3# prepended to make 3#dcg\\#5d\\#
+
+                string[] hashes = parameter.Split('#');
+                if (hashes.Length == 2)
+                    return parameter;
+
+                var reconstructed = new List<string>();
+                for (int i = 1; i < hashes.Length; i++)
+                {
+                    reconstructed.Add(hashes[i]);
+                }
+
+                var result = string.Join('#', reconstructed).Replace("#", @"\#");
+                return hashes[0].Insert(hashes[0].Length, "#" + result);
+            });
+
+            this.methodParameters = string.Join('|', processedHashes);
             this.MethodParameters = ConstructMethodParameters(this.methodParameters);
+
             return this;
         }
 
@@ -222,7 +256,7 @@ namespace Stratis.SmartContracts
             var processedParameters = new List<object>();
             foreach (var parameter in splitParameters)
             {
-                string[] parameterSignature = parameter.Split('#');
+                string[] parameterSignature = Regex.Split(parameter, @"(?<!(?<!\\)*\\)\#").Select(hashparameter => hashparameter.Replace(@"\#", "#")).ToArray();
 
                 if (parameterSignature[0] == "1")
                     processedParameters.Add(bool.Parse(parameterSignature[1]));
