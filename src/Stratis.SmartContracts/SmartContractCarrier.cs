@@ -246,10 +246,13 @@ namespace Stratis.SmartContracts
                     processedParameters.Add(uint.Parse(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "9")
-                    processedParameters.Add(new uint160(ulong.Parse(parameterSignature[1])));
+                    processedParameters.Add(new uint160(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "10")
                     processedParameters.Add(ulong.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "11")
+                    processedParameters.Add(new Address(parameterSignature[1]));
 
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
@@ -318,6 +321,7 @@ namespace Stratis.SmartContracts
         String,
         UInt,
         UInt160,
-        ULong
+        ULong,
+        Address
     }
 }
