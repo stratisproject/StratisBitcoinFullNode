@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts
 
         public Address(string address)
         {
-            throw new NotImplementedException("Need to convert the string to a numeric representation");
+            this.numeric = new uint160(address);
         }
 
         public Address(ulong numeric) : this( (uint160) numeric) { }
@@ -30,6 +30,11 @@ namespace Stratis.SmartContracts
         public uint160 ToUint160()
         {
             return this.numeric;
+        }
+
+        public override string ToString()
+        {
+            return this.numeric.ToString();
         }
 
         public static bool operator ==(Address obj1, Address obj2)
