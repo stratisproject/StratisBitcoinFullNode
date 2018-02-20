@@ -80,10 +80,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             lastBlockSize = this.blockSize;
             lastBlockWeight = this.blockWeight;
 
-            this.pblocktemplate.VTxFees[0] = -this.Fees;
-            this.coinbase.Outputs[0].Value = this.Fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
+            this.pblocktemplate.VTxFees[0] = -this.fees;
+            this.coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-            this.pblocktemplate.TotalFee = this.Fees;
+            this.pblocktemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.pblock.GetSerializedSize();
 
@@ -174,14 +174,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 ulong txFeeAndGas = txMempoolEntry.Fee - toRefund;
                 this.pblocktemplate.VTxFees.Add(txFeeAndGas);
-                this.Fees += txFeeAndGas;
+                this.fees += txFeeAndGas;
 
                 ProcessRefund(carrier, toRefund);
             }
             else
             {
                 this.pblocktemplate.VTxFees.Add(txMempoolEntry.Fee);
-                this.Fees += txMempoolEntry.Fee;
+                this.fees += txMempoolEntry.Fee;
             }
 
             return result;

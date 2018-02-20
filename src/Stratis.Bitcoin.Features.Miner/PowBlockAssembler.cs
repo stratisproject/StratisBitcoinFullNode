@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected long blockSigOpsCost;
 
-        public Money Fees;
+        public Money fees;
 
         protected TxMempool.SetEntries inBlock { get; }
 
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // These counters do not include coinbase tx.
             this.blockTx = 0;
-            this.Fees = 0;
+            this.fees = 0;
 
             this.ChainTip = chainTip;
             this.pblocktemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
@@ -285,12 +285,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.pblocktemplate.VTxFees[0] = -this.Fees;
-            this.coinbase.Outputs[0].Value = this.Fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
-            this.pblocktemplate.TotalFee = this.Fees;
+            this.pblocktemplate.VTxFees[0] = -this.fees;
+            this.coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
+            this.pblocktemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.pblock.GetSerializedSize();
-            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.pblock), this.blockTx, this.Fees, this.blockSigOpsCost);
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.pblock), this.blockTx, this.fees, this.blockSigOpsCost);
 
             this.UpdateHeaders();
 
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.blockWeight += iter.TxWeight;
             this.blockTx++;
             this.blockSigOpsCost += iter.SigOpCost;
-            this.Fees += iter.Fee;
+            this.fees += iter.Fee;
             this.inBlock.Add(iter);
 
             //bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
