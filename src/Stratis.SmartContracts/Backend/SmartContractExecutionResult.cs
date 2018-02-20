@@ -1,7 +1,5 @@
-﻿using Stratis.SmartContracts.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
@@ -10,12 +8,12 @@ namespace Stratis.SmartContracts.Backend
     /// <summary>
     /// Carries the output of a smart contract execution.
     /// </summary>
-    internal class SmartContractExecutionResult
+    public class SmartContractExecutionResult
     {
         /// <summary>
-        /// The gas used through execution of the smart contract.
+        /// The amount of gas units used through execution of the smart contract.
         /// </summary>
-        public ulong GasUsed { get; set; }
+        public ulong GasUnitsUsed { get; set; }
 
         /// <summary>
         /// If an object is returned from the method called, it will be stored here.
@@ -24,7 +22,6 @@ namespace Stratis.SmartContracts.Backend
 
         /// <summary>
         /// If there is an exception during execution, it will be stored here.
-        /// TODO: Should this just be an exception?
         /// </summary>
         public Exception Exception { get; set; }
 

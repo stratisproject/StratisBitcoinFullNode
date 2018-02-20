@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
-            Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
+            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
 
             Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec);
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.MethodParameters[5], deserialized.MethodParameters[5]);
             Assert.Equal('#', deserialized.MethodParameters[5]);
 
-            Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
+            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
         }
 
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.To, deserialized.To);
             Assert.Equal(smartContractCarrier.MethodName, deserialized.MethodName);
             Assert.Null(deserialized.MethodParameters);
-            Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
+            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
         }
 
