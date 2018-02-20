@@ -1,6 +1,7 @@
-﻿using System;
-using System.Globalization;
+﻿using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.Exceptions;
+using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts
 {
@@ -8,36 +9,44 @@ namespace Stratis.SmartContracts
     {
         protected Address Address => this.Message.ContractAddress;
 
-        public Block Block { get; }
-
-        public Message Message { get; }
-
         protected ulong Balance
         {
             get
             {
-                throw new NotImplementedException();
+                return this.stateRepository.GetCurrentBalance(this.Address.ToUint160());
             }
         }
+
+        public Block Block { get; }
+
+        public Message Message { get; }
 
         public ulong GasUsed { get; private set; }
 
         public PersistentState PersistentState { get; }
 
+        /// <summary>
+        /// Used when creating new contracts or sending funds.
+        /// </summary>
+        private readonly IContractStateRepository stateRepository;
+
         public SmartContract(SmartContractState state)
         {
-            CultureInfo.CurrentCulture = new CultureInfo("en-US");
-
+            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
             this.Message = state.Message;
             this.Block = state.Block;
             this.PersistentState = state.PersistentState;
+            this.stateRepository = state.StateRepository;
+            ContractUnspentOutput existingUtxo = state.StateRepository.GetUnspent(this.Address.ToUint160());
+            ulong balanceBeforeCall = existingUtxo != null ? existingUtxo.Value : 0;
+            //this.Balance = balanceBeforeCall + this.Message.Value;
         }
 
         /// <summary>
         /// Expends the given amount of gas. If this takes the spent gas over the entered limit, throw an OutOfGasException
         /// </summary>
         /// <param name="spend"></param>
-        public void SpendGas(uint spend)
+        public void SpendGas(ulong spend)
         {
             if (this.GasUsed + spend > this.Message.GasLimit)
                 throw new OutOfGasException("Went over gas limit of " + this.Message.GasLimit);
@@ -46,60 +55,47 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Work in progress. Will be used to send transactions to other addresses or contracts.
+        /// Sends funds to an address. If the address is a contract and parameters are given, it will execute a method on the contract with the given parameters.
         /// </summary>
         /// <param name="addressTo"></param>
         /// <param name="amount"></param>
-        protected void Transfer(Address addressTo, ulong amount)
+        protected TransferResult Transfer(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
         {
-            PersistentState.StateDb.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
-        }
+            //TODO: The act of calling this should cost a lot of gas!
 
-        /// <summary>
-        /// Work in progress. Will be used to send transactions to other addresses or contracts.
-        /// </summary>
-        /// <param name="addressTo"></param>
-        /// <param name="amount"></param>
-        /// <param name="transactionDetails"></param>
-        /// <returns></returns>
-        protected object Call(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
-        {
-            throw new NotImplementedException();
-            //var contractCode = PersistentState.StateDb.GetCode(addressTo.ToUint160());
+            if (this.Balance < amount)
+                throw new InsufficientBalanceException();
 
-            //if (Balance < amount)
-            //    throw new InsufficientBalanceException();
+            // Discern whether is a contract or ordinary address.
+            byte[] contractCode = this.stateRepository.GetCode(addressTo.ToUint160());
 
-            //// Handling balance
+            if (contractCode == null || contractCode.Length == 0)
+            {
+                // Is not a contract, so just record the transfer and return
+                this.stateRepository.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
+                return new TransferResult();
+            }
 
-            ////PersistentState.StateDb.SubtractBalance(Address.ToUint160(), amount);
-            ////PersistentState.StateDb.AddBalance(addressTo.ToUint160(), amount);
+            // It's a contract - instantiate the contract and execute.
+            IContractStateRepository track = this.stateRepository.StartTracking();
+            PersistentState newPersistentState = new PersistentState(track, addressTo.ToUint160());
+            Message newMessage = new Message(addressTo, this.Address, amount, this.Message.GasLimit - this.GasUsed);
+            SmartContractExecutionContext newContext = new SmartContractExecutionContext(this.Block, newMessage, 0, transactionDetails.Parameters);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
+            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, transactionDetails.ContractTypeName, transactionDetails.ContractMethodName, newContext);
 
-            //if (contractCode != null && contractCode.Length > 0)
-            //{
-            //    // Create the context to be injected into the block
-            //    Address currentCallerAddress = Message.Sender;
-            //    ulong currentCallValue = Message.Value;
-            //    Message.Set(addressTo, this.Address, amount, Message.GasLimit);
-            //    PersistentState.SetAddress(addressTo.ToUint160());
+            SpendGas(result.GasUnitsUsed);
 
-            //    // Initialise the assembly and contract object
-            //    Assembly assembly = Assembly.Load(contractCode);
-            //    Type type = assembly.GetType(transactionDetails.ContractTypeName);
+            if (result.Revert)
+            {
+                // contract execution unsuccessful
+                track.Rollback();
+                return new TransferResult(null, result.Exception);
+            }
 
-            //    var contractObject = (SmartContract)Activator.CreateInstance(type);
-
-            //    var methodToInvoke = type.GetMethod(transactionDetails.ContractMethodName);
-            //    var result = methodToInvoke.Invoke(contractObject, transactionDetails.Parameters);
-
-            //    // return context back to normal
-            //    Message.Set(this.Address, currentCallerAddress, currentCallValue, Message.GasLimit);
-            //    PersistentState.SetAddress(this.Address.ToUint160());
-            //    return result;
-            //}
-
-            //// Should probably cost some gas to transfer but otherwise, complete
-            //return null;
+            track.Commit();
+            this.stateRepository.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
+            return new TransferResult(result.Return, null);
         }
     }
 }

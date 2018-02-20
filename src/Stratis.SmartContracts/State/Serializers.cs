@@ -26,16 +26,16 @@ namespace Stratis.SmartContracts.State
             }
         }
 
-        public class StoredVinSerializer : ISerializer<StoredVin, byte[]>
+        public class StoredVinSerializer : ISerializer<ContractUnspentOutput, byte[]>
         {
-            public byte[] Serialize(StoredVin obj)
+            public byte[] Serialize(ContractUnspentOutput obj)
             {
                 return obj.ToBytes();
             }
 
-            public StoredVin Deserialize(byte[] stream)
+            public ContractUnspentOutput Deserialize(byte[] stream)
             {
-                return stream == null || stream.Length == 0 ? null : new StoredVin(stream);
+                return stream == null || stream.Length == 0 ? null : new ContractUnspentOutput(stream);
             }
         }
 

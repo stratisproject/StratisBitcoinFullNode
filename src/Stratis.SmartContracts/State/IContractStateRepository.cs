@@ -24,13 +24,13 @@ namespace Stratis.SmartContracts.State
         IContractStateRepository GetSnapshotTo(byte[] stateRoot);
 
         #region Account Abstraction Layer
-
+        List<TransferInfo> Transfers { get; }
+        SmartContractCarrier CurrentTx { get; set; }
         void TransferBalance(uint160 from, uint160 to, ulong value);
-        StoredVin GetUnspent(uint160 address);
-        void SetUnspent(uint160 address, StoredVin vin);
+        ContractUnspentOutput GetUnspent(uint160 address);
+        void SetUnspent(uint160 address, ContractUnspentOutput vin);
         byte[] GetUnspentHash(uint160 address);
-        IList<TransferInfo> GetTransfers();
-
+        ulong GetCurrentBalance(uint160 address);
         #endregion
     }
 }

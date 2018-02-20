@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.ContractValidation
 {
     public class SmartContractGasInjector
     {
-        private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(System.UInt32)";
+        private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(System.UInt64)";
 
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {

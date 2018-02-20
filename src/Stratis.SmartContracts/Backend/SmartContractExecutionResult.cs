@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Backend
 {

@@ -136,7 +136,7 @@ namespace Stratis.SmartContracts
             return this;
         }
 
-        /// <summary>
+        /// <summary> 
         /// Deserializes the smart contract execution code and other related information.
         /// </summary>
         public static SmartContractCarrier Deserialize(Transaction transaction, TxOut smartContractTxOut)
