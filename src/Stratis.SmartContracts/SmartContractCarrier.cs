@@ -29,14 +29,14 @@ namespace Stratis.SmartContracts
         /// <summary>The contract code that will be executed.</summary>
         public byte[] ContractExecutionCode { get; private set; }
 
+        /// <summary>The maximum amount of satoshi that can spent to execute this contract.</summary>
+        public Gas GasLimit { get; private set; }
+
         /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
         public ulong GasCostBudget
         {
             get { return this.GasUnitPrice * this.GasLimit; }
         }
-
-        /// <summary>The maximum amount of gas units the contract can spend.</summary>
-        public ulong GasLimit { get; private set; }
 
         /// <summary>The amount it costs per unit of gas to execute the contract.</summary>
         public ulong GasUnitPrice { get; private set; }
@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts
             this.OpCodeType = opCodeType;
         }
 
-        public static SmartContractCarrier CreateContract(uint vmVersion, byte[] contractExecutionCode, ulong gasPrice, ulong gasLimit)
+        public static SmartContractCarrier CreateContract(uint vmVersion, byte[] contractExecutionCode, ulong gasPrice, Gas gasLimit)
         {
             // TODO: Add null/valid checks for 
             // contractExecutionCode
@@ -98,7 +98,7 @@ namespace Stratis.SmartContracts
             return carrier;
         }
 
-        public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, ulong gasPrice, ulong gasLimit)
+        public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, ulong gasPrice, Gas gasLimit)
         {
             // TODO: Add null/valid checks for 
             // to
@@ -199,8 +199,8 @@ namespace Stratis.SmartContracts
                 smartContractCarrier.MethodParameters = ConstructMethodParameters(smartContractCarrier.methodParameters);
 
             smartContractCarrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
-            smartContractCarrier.GasUnitPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            smartContractCarrier.GasLimit = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasUnitPrice = (Gas) Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasLimit = (Gas) Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.TransactionHash = transaction.GetHash();
             smartContractCarrier.TxOutValue = smartContractTxOut.Value;
 

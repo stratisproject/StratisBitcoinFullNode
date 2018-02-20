@@ -134,7 +134,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             if (a != null)
             {
                 // This is meant to be a 'callcontract' with 0 for all parameters - and it should never be executed itself. It exists inside the execution of another contract.
-                var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, 0, 0);
+                var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, 0, Gas.None);
                 return new Script(newSmartContractCarrier.Serialize());
             }
 

@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Backend
         /// <summary>
         /// The amount of gas units used through execution of the smart contract.
         /// </summary>
-        public ulong GasUnitsUsed { get; set; }
+        public Gas GasUnitsUsed { get; set; }
 
         /// <summary>
         /// If an object is returned from the method called, it will be stored here.
