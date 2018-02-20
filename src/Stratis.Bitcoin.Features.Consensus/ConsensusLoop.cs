@@ -453,8 +453,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 if (!context.SkipValidation)
                 {
-                    this.Validator.ContextualCheckBlock(context);
-
                     // Check the block itself.
                     this.Validator.CheckBlock(context);
                 }

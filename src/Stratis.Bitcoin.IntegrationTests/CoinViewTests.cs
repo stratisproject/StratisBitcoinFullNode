@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -345,8 +346,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Network.Main.Consensus.Options = new PowConsensusOptions();
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(NodeSettings.Default());
             var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
-            //validator.CheckBlockHeader(context);
-            validator.ContextualCheckBlock(context);
+            new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
             validator.CheckBlock(context);
         }
     }
