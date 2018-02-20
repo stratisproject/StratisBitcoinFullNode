@@ -50,8 +50,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractGasInjector>();
 
                         // TODO: Get root from somewhere and get these strings from somewhere
-                        DBreezeEngine engine = new DBreezeEngine("C:/data");
-                        DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+                        //DBreezeEngine engine = new DBreezeEngine("C:/data");
+                        //DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+
+                        //  TODO: For testing, we use in-memory database for now. Real life needs to use dbreeze.
+
+                        MemoryDictionarySource byteStore = new MemoryDictionarySource();
+
                         ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
                         byte[] root = null; 
                         ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);

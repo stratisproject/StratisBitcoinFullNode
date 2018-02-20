@@ -80,6 +80,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 if (this.runner is StratisBitcoinPosRunner)
                     return ((StratisBitcoinPosRunner)this.runner).FullNode;
 
+                if (this.runner is SmartContractRunner)
+                    return ((SmartContractRunner)this.runner).FullNode;
+
                 return ((StratisBitcoinPowRunner)this.runner).FullNode;
             }
         }
