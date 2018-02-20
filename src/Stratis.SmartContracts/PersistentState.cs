@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts
 {
     public class PersistentState
     {
-        internal static IContractStateRepository StateDb { get; private set; }
+        internal IContractStateRepository StateDb { get; private set; }
 
         private uint counter;
         public uint160 ContractAddress { get; }
