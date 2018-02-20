@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts
     /// <item>If applicable <see cref="MethodName"/></item>
     /// <item>If applicable <see cref="ContractExecutionCode"/></item>
     /// <item>If applicable <see cref="MethodParameters"/></item>
-    /// <item><see cref="GasPrice"/></item>
+    /// <item><see cref="GasUnitPrice"/></item>
     /// <item><see cref="GasLimit"/></item>
     /// </list>
     /// </para>
@@ -29,11 +29,17 @@ namespace Stratis.SmartContracts
         /// <summary>The contract code that will be executed.</summary>
         public byte[] ContractExecutionCode { get; private set; }
 
-        /// <summary>The maximum amount of satoshi that can spent to execute this contract.</summary>
+        /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
+        public ulong GasCostBudget
+        {
+            get { return this.GasUnitPrice * this.GasLimit; }
+        }
+
+        /// <summary>The maximum amount of gas units the contract can spend.</summary>
         public ulong GasLimit { get; private set; }
 
-        /// <summary>What this contract costs to execute (in satoshi).</summary>
-        public ulong GasPrice { get; private set; }
+        /// <summary>The amount it costs per unit of gas to execute the contract.</summary>
+        public ulong GasUnitPrice { get; private set; }
 
         /// <summary>The size of the bytes (int) we take to determine the length of the subsequent byte array.</summary>
         private const int intLength = sizeof(int);
@@ -65,15 +71,6 @@ namespace Stratis.SmartContracts
         /// </summary>
         public readonly uint VmVersion;
 
-        /// <summary>TODO : Add description.</summary>
-        public ulong TotalGas
-        {
-            get
-            {
-                return this.GasPrice * this.GasLimit;
-            }
-        }
-
         /// <summary>This is the new contract's address.</summary>
         public uint160 To { get; set; }
 
@@ -96,7 +93,7 @@ namespace Stratis.SmartContracts
 
             var carrier = new SmartContractCarrier(vmVersion, OpcodeType.OP_CREATECONTRACT);
             carrier.ContractExecutionCode = contractExecutionCode;
-            carrier.GasPrice = gasPrice;
+            carrier.GasUnitPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
         }
@@ -112,7 +109,7 @@ namespace Stratis.SmartContracts
             var carrier = new SmartContractCarrier(vmVersion, OpcodeType.OP_CALLCONTRACT);
             carrier.To = to;
             carrier.MethodName = methodName;
-            carrier.GasPrice = gasPrice;
+            carrier.GasUnitPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
         }
@@ -139,7 +136,7 @@ namespace Stratis.SmartContracts
             return this;
         }
 
-        /// <summary>
+        /// <summary> 
         /// Deserializes the smart contract execution code and other related information.
         /// </summary>
         public static SmartContractCarrier Deserialize(Transaction transaction, TxOut smartContractTxOut)
@@ -168,7 +165,7 @@ namespace Stratis.SmartContracts
                 smartContractCarrier.MethodParameters = ConstructMethodParameters(smartContractCarrier.methodParameters);
 
             smartContractCarrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
-            smartContractCarrier.GasPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasUnitPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.GasLimit = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.TransactionHash = transaction.GetHash();
             smartContractCarrier.TxOutValue = smartContractTxOut.Value;
@@ -287,7 +284,7 @@ namespace Stratis.SmartContracts
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
-            bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasPrice)));
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasUnitPrice)));
             bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasLimit)));
 
             return bytes.ToArray();

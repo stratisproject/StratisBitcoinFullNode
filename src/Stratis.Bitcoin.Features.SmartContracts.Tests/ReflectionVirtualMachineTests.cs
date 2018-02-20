@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
-                                deserializedCall.GasPrice
+                                deserializedCall.GasUnitPrice
                             );
 
                 SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode, "StorageTest", "StoreData", context);
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
-                                deserializedCall.GasPrice,
+                                deserializedCall.GasUnitPrice,
                                 deserializedCall.MethodParameters
                             );
 

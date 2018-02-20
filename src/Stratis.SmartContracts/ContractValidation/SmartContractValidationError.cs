@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.SmartContracts.ContractValidation
+﻿namespace Stratis.SmartContracts.ContractValidation
 {
     public class SmartContractValidationError
     {
