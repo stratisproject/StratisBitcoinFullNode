@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
 
-            var smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, 500000);
+            var smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas) 500000);
             byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
 
             var tx = new Transaction();
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te|st"),
             };
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, 500000).WithParameters(testMethodParameters);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas) 500000).WithParameters(testMethodParameters);
             byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
 
             var tx = new Transaction();
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas) 500000);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639"))
             };
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000).WithParameters(methodParameters);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas) 500000).WithParameters(methodParameters);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));

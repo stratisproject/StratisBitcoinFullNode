@@ -17,11 +17,11 @@ namespace Stratis.SmartContracts
             }
         }
 
+        public Gas GasUsed { get; private set; }
+
         public Block Block { get; }
 
         public Message Message { get; }
-
-        public ulong GasUsed { get; private set; }
 
         public PersistentState PersistentState { get; }
 
@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts
         /// Expends the given amount of gas. If this takes the spent gas over the entered limit, throw an OutOfGasException
         /// </summary>
         /// <param name="spend"></param>
-        public void SpendGas(ulong spend)
+        public void SpendGas(Gas spend)
         {
             if (this.GasUsed + spend > this.Message.GasLimit)
                 throw new OutOfGasException("Went over gas limit of " + this.Message.GasLimit);
@@ -79,7 +79,7 @@ namespace Stratis.SmartContracts
             // It's a contract - instantiate the contract and execute.
             IContractStateRepository track = this.stateRepository.StartTracking();
             PersistentState newPersistentState = new PersistentState(track, addressTo.ToUint160());
-            Message newMessage = new Message(addressTo, this.Address, amount, this.Message.GasLimit - this.GasUsed);
+            Message newMessage = new Message(addressTo, this.Address, amount, (Gas) (this.Message.GasLimit - this.GasUsed));
             SmartContractExecutionContext newContext = new SmartContractExecutionContext(this.Block, newMessage, 0, transactionDetails.Parameters);
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, transactionDetails.ContractTypeName, transactionDetails.ContractMethodName, newContext);
