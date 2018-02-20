@@ -138,17 +138,18 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected readonly AssemblerOptions options;
 
-        // The constructed block template.
+        /// <summary>The constructed block template.</summary>
         protected readonly BlockTemplate pblocktemplate;
 
-        // A convenience pointer that always refers to the CBlock in pblocktemplate.
+        /// <summary>A convenience pointer that always refers to the CBlock in pblocktemplate.</summary>
         protected Block pblock;
 
-        // Configuration parameters for the block size.
+        /// <summary>Configuration parameters for the block size.</summary>
         protected bool fIncludeWitness;
 
         private uint blockMaxWeight, blockMaxSize;
 
+        /// <summary>Whether we need to account for byte usage (in addition to weight usage).</summary>
         protected bool needSizeAccounting;
 
         private FeeRate blockMinFeeRate;
@@ -168,7 +169,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected Transaction coinbase;
 
-        // Chain context for the block.
+        /// <summary>
+        /// The current height of the block being assembled.
+        /// <para>
+        /// This is set in <see cref="ComputeBlockVersion"/>
+        /// </para>
+        /// </summary>
         protected int height;
 
         protected long lockTimeCutoff;

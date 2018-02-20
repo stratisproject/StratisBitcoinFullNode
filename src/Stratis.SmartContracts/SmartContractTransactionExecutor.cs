@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
         private readonly SmartContractCarrier smartContractCarrier;
-        private readonly ulong blockNum;
+        private readonly ulong height;
         private readonly ulong difficulty;
         private readonly uint160 coinbaseAddress;
 
@@ -27,8 +27,8 @@ namespace Stratis.SmartContracts
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
             SmartContractGasInjector smartContractGasInjector,
-            SmartContractCarrier scTransaction,
-            ulong blockNum,
+            SmartContractCarrier smartContractCarrier,
+            ulong height,
             ulong difficulty,
             uint160 coinbaseAddress)
         {
@@ -37,8 +37,8 @@ namespace Stratis.SmartContracts
             this.decompiler = smartContractDecompiler;
             this.validator = smartContractValidator;
             this.gasInjector = smartContractGasInjector;
-            this.smartContractCarrier = scTransaction;
-            this.blockNum = blockNum;
+            this.smartContractCarrier = smartContractCarrier;
+            this.height = height;
             this.difficulty = difficulty;
             this.coinbaseAddress = coinbaseAddress;
         }
@@ -50,7 +50,9 @@ namespace Stratis.SmartContracts
 
         private SmartContractExecutionResult ExecuteCreate()
         {
-            uint160 contractAddress = this.smartContractCarrier.GetNewContractAddress(); // TODO: GET ACTUAL NUM
+            // TODO: Get actual address
+            uint160 contractAddress = this.smartContractCarrier.GetNewContractAddress();
+
             this.state.CreateAccount(0);
 
             SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(this.smartContractCarrier.ContractExecutionCode);
@@ -58,7 +60,7 @@ namespace Stratis.SmartContracts
 
             if (!validationResult.Valid)
             {
-                // expend all of users fee - no deployment
+                // TODO: Expend all of users fee - no deployment
                 throw new NotImplementedException();
             }
 
@@ -77,7 +79,7 @@ namespace Stratis.SmartContracts
 
                 var executionContext = new SmartContractExecutionContext
                     (
-                        new Block(this.blockNum, this.coinbaseAddress, this.difficulty),
+                        new Block(this.height, this.coinbaseAddress, this.difficulty),
                         new Message(
                             new Address(contractAddress),
                             new Address(this.smartContractCarrier.Sender),
@@ -121,12 +123,12 @@ namespace Stratis.SmartContracts
 
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode, 
+                contractCode,
                 decomp.ContractType.Name,
                 this.smartContractCarrier.MethodName,
                 new SmartContractExecutionContext
                 (
-                      new Block(Convert.ToUInt64(this.blockNum), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
+                      new Block(Convert.ToUInt64(this.height), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
                       new Message(
                           new Address(contractAddress),
                           new Address(this.smartContractCarrier.Sender),

@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private List<Transaction> blockTxsProcessed;
         private Transaction lastProcessed;
 
-
         public SmartContractConsensusValidator(
             CoinView coinView,
             Network network,

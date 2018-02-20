@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -23,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private List<TxOut> refundOutputs = new List<TxOut>();
 
-        private readonly IContractStateRepository stateRoot;
+        private IContractStateRepository stateRoot;
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
@@ -52,85 +50,50 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.gasInjector = gasInjector;
             this.coinView = coinView;
         }
-
-        // Copied from PowBlockAssembler, got rid of comments 
-        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
-        {
-            this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
-            this.scriptPubKeyIn = scriptPubKeyIn;
-
-            this.coinbaseAddress = new uint160(this.scriptPubKeyIn.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false); // TODO: This ugly af
-
-            this.CreateCoinbase();
-            this.ComputeBlockVersion();
-
-            medianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
-            this.lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
-                ? medianTimePast
-                : this.pblock.Header.Time;
-
-            this.fIncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
-
-            // add transactions from the mempool
-            int nPackagesSelected;
-            int nDescendantsUpdated;
-            this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
-
-            lastBlockTx = this.blockTx;
-            lastBlockSize = this.blockSize;
-            lastBlockWeight = this.blockWeight;
-
-            this.pblocktemplate.VTxFees[0] = -this.fees;
-            this.coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
-            this.coinbase.Outputs.AddRange(this.refundOutputs);
-            this.pblocktemplate.TotalFee = this.fees;
-
-            int nSerializeSize = this.pblock.GetSerializedSize();
-
-            this.UpdateHeaders();
-            this.TestBlockValidity();
-
-            this.stateRoot.Commit();
-
-            return this.pblocktemplate;
-        }
-
+        /// <summary>
+        /// TODO: Add documentation on the block headers for smart contract blocks differ.
+        /// </summary>
         protected override void UpdateHeaders()
         {
             base.UpdateHeaders();
+
             this.pblock.Header.HashStateRoot = new uint256(this.stateRoot.GetRoot());
         }
 
+        /// <summary>
+        /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="PowBlockAssembler"/>.
+        /// <para>
+        /// Determine whether or not the mempool entry contains smart contract execution 
+        /// code. If not, then add to the block as per normal. Else extract and deserialize 
+        /// the smart contract code from the TxOut's ScriptPubKey.
+        /// </para>
+        /// </summary>
         protected override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            //Determine whether or not this mempool entry contains smart contract execution code.
             TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
-                //If no smart contract exists then add to block as per normal.
                 base.AddToBlock(mempoolEntry);
+                return;
             }
-            else
-            {
-                //Else extract and deserialize the smart contract code from the TxOut's ScriptPubKey.
-                SmartContractCarrier smartContractCarrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
-                smartContractCarrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
-                AddContractCallToBlock(mempoolEntry, smartContractCarrier);
-            }
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
+            smartContractCarrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+
+            this.AddContractCallToBlock(mempoolEntry, smartContractCarrier);
         }
 
-        public void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
+        /// <summary>
+        /// Executes the contract and adds all relevant fees and refunds to the block.
+        /// </summary>
+        /// <remarks>
+        /// TODO: At some point we need to change height to a ulong.
+        /// </remarks> 
+        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
         {
-            IContractStateRepository track = this.stateRoot.StartTracking();
+            ulong difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
 
-            // TODO: Optimise so this conversion isn't happening every time.
-            ulong height = Convert.ToUInt64(this.height);
-
-            // TODO: Fix obviously this.consensusLoop.Chain.GetWorkRequired(this.network, this.height);
-            ulong difficulty = 0;
-
-            SmartContractExecutionResult result = ExecuteContractFeesAndRefunds(track, carrier, mempoolEntry, height, difficulty);
+            SmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height, difficulty);
 
             // Add the mempool entry transaction to the block 
             // and adjust BlockSize, BlockWeight and SigOpsCost
@@ -157,8 +120,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             //---------------------------------------------
         }
 
-        public SmartContractExecutionResult ExecuteContractFeesAndRefunds(IContractStateRepository track, SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
+        public SmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
         {
+            IContractStateRepository track = this.stateRoot.StartTracking();
+
             var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
             SmartContractExecutionResult result = executor.Execute();
 
