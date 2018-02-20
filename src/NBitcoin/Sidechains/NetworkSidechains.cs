@@ -58,7 +58,8 @@ namespace NBitcoin
 
             var builder = new NetworkBuilder()
 		        .SetName("SidechainTestNet")
-		        .SetConsensus(consensus)
+                .SetRootFolderName(SidechainIdentifier.Instance.Name)
+                .SetConsensus(consensus)
 		        .SetMagic(magic)
 		        .SetGenesis(genesis)
 		        .SetPort(networkInfo.Port)              //36178 updated for sidechains
