@@ -32,7 +32,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class SmartContractTests
+    public class SmartContractMinerTests
     {
         // This is taken from 'MinerTests.cs' and adjusted to use a different block validator.
 
