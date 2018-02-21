@@ -69,8 +69,8 @@ namespace Stratis.SmartContracts
                 byte[] contractCode = ms.ToArray();
 
                 GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
-
-                var persistentState = new PersistentState(this.stateTrack, contractAddress);
+                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateTrack, gasMeter);
+                var persistentState = new PersistentState(this.stateTrack, persistenceStrategy, contractAddress);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 MethodDefinition initMethod = decompilation.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
@@ -124,8 +124,9 @@ namespace Stratis.SmartContracts
             uint160 contractAddress = this.smartContractCarrier.To;
 
             GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateTrack, gasMeter);
 
-            var persistentState = new PersistentState(this.stateTrack, contractAddress);
+            var persistentState = new PersistentState(this.stateTrack, persistenceStrategy, contractAddress);
             this.stateTrack.CurrentTx = this.smartContractCarrier;
 
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);

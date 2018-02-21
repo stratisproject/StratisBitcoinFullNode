@@ -2,6 +2,7 @@
 using Stratis.SmartContracts.Exceptions;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.State.AccountAbstractionLayer;
+using NBitcoin;
 
 namespace Stratis.SmartContracts
 {
@@ -81,7 +82,8 @@ namespace Stratis.SmartContracts
 
             // It's a contract - instantiate the contract and execute.
             IContractStateRepository track = this.stateRepository.StartTracking();
-            PersistentState newPersistentState = new PersistentState(track, addressTo.ToUint160());
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, this.gasMeter);
+            PersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160());
             Message newMessage = new Message(addressTo, this.Address, amount, (Gas) (this.Message.GasLimit - this.GasUsed));
             SmartContractExecutionContext newContext = new SmartContractExecutionContext(this.Block, newMessage, 0, transactionDetails.Parameters);
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);

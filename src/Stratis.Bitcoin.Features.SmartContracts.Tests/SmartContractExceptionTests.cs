@@ -65,11 +65,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void VM_Throws_OutOfGasException_CanCatch()
         {
             byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowOutOfGasExceptionContract.cs");
-            var persistentState = new PersistentState(this.repository, Address.Zero.ToUint160());
-            var vm = new ReflectionVirtualMachine(persistentState);
 
             var gasLimit = (Gas) 100;
             var gasMeter = new GasMeter(gasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160()); var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, 0, 0),
@@ -91,12 +91,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void VM_Throws_RefundGasException_CanCatch()
         {
             byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowRefundGasExceptionContract.cs");
-            var persistentState = new PersistentState(this.repository, Address.Zero.ToUint160());
-            var vm = new ReflectionVirtualMachine(persistentState);
 
             var gasLimit = (Gas) 100;
             var gasMeter = new GasMeter(gasLimit);
-
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160());
+            var vm = new ReflectionVirtualMachine(persistentState);
+            
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, 0, 0),
                 new Message(Address.Zero, Address.Zero, 0, gasLimit),
@@ -119,11 +120,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void VM_Throws_SystemException_CanCatch()
         {
             byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowSystemExceptionContract.cs");
-            var persistentState = new PersistentState(this.repository, Address.Zero.ToUint160());
-            var vm = new ReflectionVirtualMachine(persistentState);
 
-            var gasLimit = (Gas)100;
+            var gasLimit = (Gas) 100;
             var gasMeter = new GasMeter(gasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160());
+            var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, 0, 0),

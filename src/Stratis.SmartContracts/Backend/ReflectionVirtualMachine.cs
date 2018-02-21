@@ -26,7 +26,11 @@ namespace Stratis.SmartContracts.Backend
             var assembly = Assembly.Load(contractCode);
             Type type = assembly.GetType(contractTypeName);
 
-            var state = new SmartContractState(context.Block, context.Message, this.persistentState, gasMeter);
+            var state = new SmartContractState(
+                context.Block, 
+                context.Message, 
+                this.persistentState, 
+                gasMeter);
             var contract = (SmartContract)Activator.CreateInstance(type, state);
 
             var executionResult = new SmartContractExecutionResult();

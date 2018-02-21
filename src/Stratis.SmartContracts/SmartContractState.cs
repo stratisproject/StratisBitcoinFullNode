@@ -8,7 +8,11 @@ namespace Stratis.SmartContracts
     /// </summary>
     public class SmartContractState
     {
-        internal SmartContractState(Block block, Message message, PersistentState persistentState, GasMeter gasMeter)
+        internal SmartContractState(
+            Block block, 
+            Message message, 
+            PersistentState persistentState, 
+            GasMeter gasMeter)
         {
             this.Block = block;
             this.Message = message;

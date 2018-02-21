@@ -55,9 +55,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 IContractStateRepository track = repository.StartTracking();
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
-
-                //@TODO Inject PersistentState or use factory method
-                var persistentState = new PersistentState(repository, deserializedCall.To);
+                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
+                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var context = new SmartContractExecutionContext(
@@ -123,9 +122,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 IContractStateRepository track = repository.StartTracking();
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
-
-                //@TODO Inject PersistentState or use factory method
-                var persistentState = new PersistentState(repository, deserializedCall.To);
+                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
+                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var context = new SmartContractExecutionContext(
