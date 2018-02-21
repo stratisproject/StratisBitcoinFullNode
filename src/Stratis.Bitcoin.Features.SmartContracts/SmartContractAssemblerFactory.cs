@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -31,9 +28,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        private readonly IStakeValidator stakeValidator;
-
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
@@ -52,7 +46,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Network network,
             MempoolSchedulerLock mempoolScheduler,
             ITxMempool mempool,
-            IStakeValidator stakeValidator,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             IContractStateRepository stateRoot,
@@ -66,7 +59,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.network = network;
             this.mempoolScheduler = mempoolScheduler;
             this.mempool = mempool;
-            this.stakeValidator = stakeValidator;
             this.dateTimeProvider = dateTimeProvider;
             this.stateRoot = stateRoot;
             this.smartContractDecompiler = smartContractDecompiler;

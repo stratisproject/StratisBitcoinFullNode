@@ -12,7 +12,6 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -513,7 +512,72 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
+            var test = this.FullNode.Services.ServiceProvider.GetService<IPowMining>();
+
             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
+        }
+
+        public Block[] GenerateSmartContractStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
+        {
+            var fullNode = (this.runner as SmartContractRunner).FullNode;
+            BitcoinSecret dest = this.MinerSecret;
+            List<Block> blocks = new List<Block>();
+            DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
+#if !NOSOCKET
+
+            for (int i = 0; i < blockCount; i++)
+            {
+                uint nonce = 0;
+                Block block = new Block();
+                block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
+                block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
+                block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
+                var coinbase = new Transaction();
+                coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
+                coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
+                block.AddTransaction(coinbase);
+                if (passedTransactions?.Any() ?? false)
+                {
+                    passedTransactions = this.Reorder(passedTransactions);
+                    block.Transactions.AddRange(passedTransactions);
+                }
+                block.UpdateMerkleRoot();
+                while (!block.CheckProofOfWork(fullNode.Network.Consensus))
+                    block.Header.Nonce = ++nonce;
+                blocks.Add(block);
+                if (broadcast)
+                {
+                    uint256 blockHash = block.GetHash();
+                    var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
+                    var oldTip = fullNode.Chain.SetTip(newChain);
+                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+
+                    //try
+                    //{
+                    //    var blockResult = new BlockResult { Block = block };
+                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
+
+                    //    // similar logic to what's in the full node code
+                    //    if (blockResult.Error == null)
+                    //    {
+                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
+                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
+                    //        //{
+                    //        //    var unused = cache.FlushAsync();
+                    //        //}
+                    //        fullNode.Signals.Blocks.Broadcast(block);
+                    //    }
+                    //}
+                    //catch (ConsensusErrorException)
+                    //{
+                    //    // set back the old tip
+                    //    fullNode.Chain.SetTip(oldTip);
+                    //}
+                }
+            }
+
+            return blocks.ToArray();
+#endif
         }
 
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)

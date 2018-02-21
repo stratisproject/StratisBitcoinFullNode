@@ -245,13 +245,13 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 node = (FullNode)new FullNodeBuilder()
                     .UseNodeSettings(args)
                     .UsePowConsensus()
-                    .AddSmartContracts()
                     .UseBlockStore()
                     .UseMempool()
                     .AddMining()
                     .UseWallet()
                     .AddRPC()
                     .MockIBD()
+                    .AddSmartContracts()
                     .Build();
             }
 

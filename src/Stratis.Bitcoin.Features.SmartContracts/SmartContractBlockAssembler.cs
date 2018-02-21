@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
             this.scriptPubKeyIn = scriptPubKeyIn;
 
-            this.coinbaseAddress = new uint160(this.scriptPubKeyIn.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false); // TODO: This ugly af
+            this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
