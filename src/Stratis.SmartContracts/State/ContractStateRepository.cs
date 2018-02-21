@@ -1,11 +1,8 @@
-﻿using DBreeze;
-using DBreeze.Utils;
-using System;
-using System.Text;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Stratis.SmartContracts.Hashing;
 using NBitcoin;
+using Stratis.SmartContracts.Hashing;
 using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.State
@@ -17,7 +14,7 @@ namespace Stratis.SmartContracts.State
     {
         protected ContractStateRepository parent;
         public ISource<byte[], AccountState> accountStateCache;
-        public ISource<byte[], ContractUnspentOutput> vinCache; 
+        public ISource<byte[], ContractUnspentOutput> vinCache;
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         public List<TransferInfo> Transfers { get; private set; }
@@ -112,7 +109,7 @@ namespace Stratis.SmartContracts.State
         {
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
             ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
-            ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache< byte[]>.CacheType.SIMPLE);
+            ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache<byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
 
             ContractStateRepository ret = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache);
@@ -133,7 +130,8 @@ namespace Stratis.SmartContracts.State
                 this.parent.Transfers.AddRange(this.Transfers.Where(x => !this.parent.Transfers.Contains(x)));
 
             ContractStateRepository parentSync = this.parent == null ? this : this.parent;
-            lock(parentSync) {
+            lock (parentSync)
+            {
                 this.storageCache.Flush();
                 this.codeCache.Flush();
                 this.accountStateCache.Flush();
@@ -191,7 +189,7 @@ namespace Stratis.SmartContracts.State
             if (unspent != null)
                 ret += unspent.Value;
 
-            foreach(TransferInfo transfer in this.Transfers.Where(x => x.To == address))
+            foreach (TransferInfo transfer in this.Transfers.Where(x => x.To == address))
             {
                 ret += transfer.Value;
             }

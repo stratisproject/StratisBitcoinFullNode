@@ -21,15 +21,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private List<TxOut> refundOutputs = new List<TxOut>();
 
-        private IContractStateRepository stateRoot;
+        private IContractStateRepository stateRepository;
 
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractGasInjector gasInjector;
         private readonly SmartContractValidator validator;
 
-        private readonly CoinView coinView;
         private uint160 coinbaseAddress;
-        private readonly ulong difficulty;
+        private readonly CoinView coinView;
+        private ulong difficulty;
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
-            IContractStateRepository stateRoot,
+            IContractStateRepository stateRepository,
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
             SmartContractGasInjector gasInjector,
@@ -47,14 +47,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
-            this.stateRoot = stateRoot;
+            this.stateRepository = stateRepository;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
             this.coinView = coinView;
-
-            this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
         }
+
+        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        {
+            this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
+
+            // TODO: This ugly af
+            this.coinbaseAddress = new uint160(scriptPubKeyIn.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
+
+            base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
+
+            this.coinbase.Outputs.AddRange(this.refundOutputs);
+
+            this.stateRepository.Commit();
+
+            return this.pblocktemplate;
+        }
+
         /// <summary>
         /// The block header for smart contract blocks is identical to the standard block,
         /// except it also has a second 32-byte root, the state root. This byte array
@@ -65,7 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateHeaders();
 
-            this.pblock.Header.HashStateRoot = new uint256(this.stateRoot.GetRoot());
+            this.pblock.Header.HashStateRoot = new uint256(this.stateRepository.GetRoot());
         }
 
         /// <summary>
@@ -128,19 +143,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public SmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
         {
-            IContractStateRepository track = this.stateRoot.StartTracking();
+            IContractStateRepository nestedStateRepository = this.stateRepository.StartTracking();
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
-            SmartContractExecutionResult result = executor.Execute();
+            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
+            SmartContractExecutionResult executionResult = executor.Execute();
 
             // Update state--------------------------------
-            if (result.Revert)
-                track.Rollback();
+            if (executionResult.Revert)
+                nestedStateRepository.Rollback();
             else
-                track.Commit();
+                nestedStateRepository.Commit();
             //---------------------------------------------
 
-            var toRefund = CalculateRefund(carrier, result);
+            var toRefund = CalculateRefund(carrier, executionResult);
             if (toRefund > 0)
             {
                 ulong txFeeAndGas = txMempoolEntry.Fee - toRefund;
@@ -155,7 +170,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.fees += txMempoolEntry.Fee;
             }
 
-            return result;
+            return executionResult;
         }
 
         /// <summary>

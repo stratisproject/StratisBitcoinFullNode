@@ -235,8 +235,7 @@ namespace Stratis.Bitcoin.Features.Miner
             uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
 
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments))
-                .OfType<BIP9Deployments>();
+            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
 
             foreach (BIP9Deployments deployment in deployments)
             {
@@ -557,7 +556,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 List<TxMempoolEntry> sortedEntries = ancestors.ToList().OrderBy(o => o, new CompareTxIterByAncestorCount()).ToList();
                 foreach (TxMempoolEntry sortedEntry in sortedEntries)
                 {
-                    this.AddToBlock(sortedEntry);
+                    AddToBlock(sortedEntry);
                     // Erase from the modified set, if present
                     mapModifiedTx.Remove(sortedEntry.TransactionHash);
                 }
