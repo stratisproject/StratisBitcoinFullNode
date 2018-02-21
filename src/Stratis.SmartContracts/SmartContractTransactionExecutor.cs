@@ -68,6 +68,8 @@ namespace Stratis.SmartContracts
 
                 byte[] contractCode = ms.ToArray();
 
+                GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+
                 var persistentState = new PersistentState(this.stateTrack, contractAddress);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
@@ -86,8 +88,12 @@ namespace Stratis.SmartContracts
                         this.smartContractCarrier.MethodParameters
                     );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(contractCode.ToArray(), decompilation.ContractType.Name, initMethod?.Name, executionContext);
-                // do something with gas
+                SmartContractExecutionResult result = vm.ExecuteMethod(
+                    contractCode.ToArray(), 
+                    decompilation.ContractType.Name, 
+                    initMethod?.Name, 
+                    executionContext,
+                    gasMeter);
 
                 if (result.Revert)
                 {
@@ -117,6 +123,8 @@ namespace Stratis.SmartContracts
 
             uint160 contractAddress = this.smartContractCarrier.To;
 
+            GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+
             var persistentState = new PersistentState(this.stateTrack, contractAddress);
             this.stateTrack.CurrentTx = this.smartContractCarrier;
 
@@ -136,7 +144,8 @@ namespace Stratis.SmartContracts
                       ),
                       this.smartContractCarrier.GasUnitPrice,
                       this.smartContractCarrier.MethodParameters
-                  ));
+                  ),
+                gasMeter);
 
             if (result.Revert)
             {

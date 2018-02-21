@@ -54,6 +54,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
                 IContractStateRepository track = repository.StartTracking();
 
+                var gasMeter = new GasMeter(deserializedCall.GasLimit);
+
                 //@TODO Inject PersistentState or use factory method
                 var persistentState = new PersistentState(repository, deserializedCall.To);
                 var vm = new ReflectionVirtualMachine(persistentState);
@@ -69,7 +71,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.GasUnitPrice
                             );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode, "StorageTest", "StoreData", context);
+                SmartContractExecutionResult result = vm.ExecuteMethod(
+                    gasAwareExecutionCode, 
+                    "StorageTest", 
+                    "StoreData", 
+                    context,
+                    gasMeter);
+
                 track.Commit();
 
                 Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), track.GetStorageValue(deserializedCall.To, Encoding.UTF8.GetBytes("TestKey")));
@@ -114,6 +122,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
                 IContractStateRepository track = repository.StartTracking();
 
+                var gasMeter = new GasMeter(deserializedCall.GasLimit);
+
                 //@TODO Inject PersistentState or use factory method
                 var persistentState = new PersistentState(repository, deserializedCall.To);
                 var vm = new ReflectionVirtualMachine(persistentState);
@@ -130,7 +140,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.MethodParameters
                             );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode, "StorageTestWithParameters", "StoreData", context);
+                SmartContractExecutionResult result = vm.ExecuteMethod(
+                    gasAwareExecutionCode, 
+                    "StorageTestWithParameters",
+                    "StoreData",
+                    context,
+                    gasMeter);
+
                 track.Commit();
 
                 Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(), Encoding.UTF8.GetBytes("orders")), 0));

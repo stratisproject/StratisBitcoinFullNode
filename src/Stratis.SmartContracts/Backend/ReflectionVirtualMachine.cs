@@ -16,12 +16,17 @@ namespace Stratis.SmartContracts.Backend
             this.persistentState = persistentState;
         }
 
-        public SmartContractExecutionResult ExecuteMethod(byte[] contractCode, string contractTypeName, string contractMethodName, SmartContractExecutionContext context)
+        public SmartContractExecutionResult ExecuteMethod(
+            byte[] contractCode, 
+            string contractTypeName, 
+            string contractMethodName, 
+            SmartContractExecutionContext context,
+            GasMeter gasMeter)
         {
             var assembly = Assembly.Load(contractCode);
             Type type = assembly.GetType(contractTypeName);
 
-            var state = new SmartContractState(context.Block, context.Message, this.persistentState);
+            var state = new SmartContractState(context.Block, context.Message, this.persistentState, gasMeter);
             var contract = (SmartContract)Activator.CreateInstance(type, state);
 
             var executionResult = new SmartContractExecutionResult();
@@ -39,7 +44,7 @@ namespace Stratis.SmartContracts.Backend
             }
             finally
             {
-                executionResult.GasUnitsUsed = contract.GasUsed;
+                executionResult.GasUnitsUsed = gasMeter.ConsumedGas;
             }
 
             return executionResult;
