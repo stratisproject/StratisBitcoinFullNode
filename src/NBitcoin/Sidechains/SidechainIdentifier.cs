@@ -26,7 +26,7 @@ public sealed class SidechainIdentifier : IDisposable
         //expects sidechainName=name
         Func<string, string> lookup =
             option => args.Where(s => s.StartsWith(option)).Select(s => s.Substring(option.Length)).FirstOrDefault();
-        string sidechainName = lookup("sidechainName=");
+        string sidechainName = lookup("-sidechainName=");
         return SidechainIdentifier.Create(sidechainName);
     }
 
