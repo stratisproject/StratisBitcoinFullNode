@@ -26,8 +26,14 @@ public sealed class SidechainIdentifier : IDisposable
         //expects sidechainName=name
         Func<string, string> lookup =
             option => args.Where(s => s.StartsWith(option)).Select(s => s.Substring(option.Length)).FirstOrDefault();
+
         string sidechainName = lookup("-sidechainName=");
-        return SidechainIdentifier.Create(sidechainName);
+        string dataDir = lookup("-datadir=");
+
+        if (sidechainName == null)
+            throw new ArgException("A -sidechainName arg must be specified.");
+
+        return dataDir == null ? SidechainIdentifier.Create(sidechainName) : SidechainIdentifier.Create(sidechainName, dataDir);
     }
 
     public static SidechainIdentifier Create(string name)
