@@ -31,7 +31,7 @@ public sealed class SidechainIdentifier : IDisposable
         string dataDir = lookup("-datadir=");
 
         if (sidechainName == null)
-            throw new ArgException("A -sidechainName arg must be specified.");
+            throw new ArgumentException("A -sidechainName arg must be specified.");
 
         return dataDir == null ? SidechainIdentifier.Create(sidechainName) : SidechainIdentifier.Create(sidechainName, dataDir);
     }
