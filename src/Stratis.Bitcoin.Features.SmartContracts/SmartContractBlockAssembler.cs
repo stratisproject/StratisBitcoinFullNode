@@ -22,11 +22,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private List<TxOut> refundOutputs = new List<TxOut>();
 
         private IContractStateRepository stateRoot;
+
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
+        private readonly SmartContractValidator validator;
+
         private readonly CoinView coinView;
         private uint160 coinbaseAddress;
+        private readonly ulong difficulty;
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -49,6 +52,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.validator = validator;
             this.gasInjector = gasInjector;
             this.coinView = coinView;
+
+            this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
         }
         /// <summary>
         /// The block header for smart contract blocks is identical to the standard block,
@@ -94,9 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </remarks> 
         private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
         {
-            ulong difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
-
-            SmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height, difficulty);
+            SmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height, this.difficulty);
 
             // Add the mempool entry transaction to the block 
             // and adjust BlockSize, BlockWeight and SigOpsCost
