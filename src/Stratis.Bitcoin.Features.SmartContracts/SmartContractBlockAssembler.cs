@@ -51,7 +51,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.coinView = coinView;
         }
         /// <summary>
-        /// TODO: Add documentation on the block headers for smart contract blocks differ.
+        /// The block header for smart contract blocks is identical to the standard block,
+        /// except it also has a second 32-byte root, the state root. This byte array
+        /// represents the current state of contract code, storage and balances, and can
+        /// be used in conjunction with getSnapshotTo at any time to recreate this state.
         /// </summary>
         protected override void UpdateHeaders()
         {
