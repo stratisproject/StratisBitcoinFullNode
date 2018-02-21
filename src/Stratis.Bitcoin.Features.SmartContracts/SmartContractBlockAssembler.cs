@@ -169,6 +169,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         /// <summary>
         /// Create the script to send the relevant funds back to the user.
+        /// TODO: Multiple refunds to same user should be consolidated to 1 TxOut to save space
         /// </summary>
         private void ProcessRefund(SmartContractCarrier carrier, ulong toRefund)
         {
