@@ -62,13 +62,11 @@ namespace Stratis.SmartContracts
                 throw new NotImplementedException();
             }
 
-            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
-
             using (var ms = new MemoryStream())
             {
                 decompilation.ModuleDefinition.Write(ms);
 
-                byte[] gasAwareExecutionCode = ms.ToArray();
+                byte[] contractCode = ms.ToArray();
 
                 var persistentState = new PersistentState(this.stateTrack, contractAddress);
                 var vm = new ReflectionVirtualMachine(persistentState);
@@ -88,7 +86,7 @@ namespace Stratis.SmartContracts
                         this.smartContractCarrier.MethodParameters
                     );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode.ToArray(), decompilation.ContractType.Name, initMethod?.Name, executionContext);
+                SmartContractExecutionResult result = vm.ExecuteMethod(contractCode.ToArray(), decompilation.ContractType.Name, initMethod?.Name, executionContext);
                 // do something with gas
 
                 if (result.Revert)
@@ -99,7 +97,7 @@ namespace Stratis.SmartContracts
 
                 // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
-                this.stateTrack.SetCode(contractAddress, gasAwareExecutionCode);
+                this.stateTrack.SetCode(contractAddress, contractCode);
                 this.stateTrack.Commit();
                 return result;
             }
@@ -108,11 +106,14 @@ namespace Stratis.SmartContracts
         private SmartContractExecutionResult ExecuteCall()
         {
             byte[] contractCode = this.state.GetCode(this.smartContractCarrier.To);
-            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
+            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
             // YO! VERY IMPORTANT! 
 
             // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
+
+            // Inject gas measurement code before executing        
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
             uint160 contractAddress = this.smartContractCarrier.To;
 
@@ -121,8 +122,8 @@ namespace Stratis.SmartContracts
 
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode, 
-                decomp.ContractType.Name,
+                contractCode,
+                decompilation.ContractType.Name,
                 this.smartContractCarrier.MethodName,
                 new SmartContractExecutionContext
                 (
