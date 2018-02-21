@@ -10,11 +10,11 @@ namespace Stratis.SmartContracts
 
         public Address Sender { get; }
 
-        public ulong GasLimit { get;  }
+        public Gas GasLimit { get;  }
 
         public ulong Value { get; }
 
-        public Message(Address contractAddress, Address sender, ulong value, ulong gasLimit)
+        public Message(Address contractAddress, Address sender, ulong value, Gas gasLimit)
         {
             ContractAddress = contractAddress;
             Sender = sender;

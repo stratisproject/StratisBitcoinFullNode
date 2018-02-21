@@ -2,6 +2,9 @@
 
 namespace Stratis.SmartContracts
 {
+    /// <summary>
+    /// TODO - SmartContractState is basically the same thing as SmartContractExecutionContext so merge them eventually
+    /// </summary>
     public class SmartContractState
     {
         internal SmartContractState(Block block, Message message, PersistentState persistentState)

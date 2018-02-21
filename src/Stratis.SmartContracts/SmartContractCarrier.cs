@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts
     /// <item>If applicable <see cref="MethodName"/></item>
     /// <item>If applicable <see cref="ContractExecutionCode"/></item>
     /// <item>If applicable <see cref="MethodParameters"/></item>
-    /// <item><see cref="GasPrice"/></item>
+    /// <item><see cref="GasUnitPrice"/></item>
     /// <item><see cref="GasLimit"/></item>
     /// </list>
     /// </para>
@@ -30,10 +30,16 @@ namespace Stratis.SmartContracts
         public byte[] ContractExecutionCode { get; private set; }
 
         /// <summary>The maximum amount of satoshi that can spent to execute this contract.</summary>
-        public ulong GasLimit { get; private set; }
+        public Gas GasLimit { get; private set; }
 
-        /// <summary>What this contract costs to execute (in satoshi).</summary>
-        public ulong GasPrice { get; private set; }
+        /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
+        public ulong GasCostBudget
+        {
+            get { return this.GasUnitPrice * this.GasLimit; }
+        }
+
+        /// <summary>The amount it costs per unit of gas to execute the contract.</summary>
+        public ulong GasUnitPrice { get; private set; }
 
         /// <summary>The size of the bytes (int) we take to determine the length of the subsequent byte array.</summary>
         private const int intLength = sizeof(int);
@@ -65,15 +71,6 @@ namespace Stratis.SmartContracts
         /// </summary>
         public readonly uint VmVersion;
 
-        /// <summary>TODO : Add description.</summary>
-        public ulong TotalGas
-        {
-            get
-            {
-                return this.GasPrice * this.GasLimit;
-            }
-        }
-
         /// <summary>This is the new contract's address.</summary>
         public uint160 To { get; set; }
 
@@ -87,7 +84,7 @@ namespace Stratis.SmartContracts
             this.OpCodeType = opCodeType;
         }
 
-        public static SmartContractCarrier CreateContract(uint vmVersion, byte[] contractExecutionCode, ulong gasPrice, ulong gasLimit)
+        public static SmartContractCarrier CreateContract(uint vmVersion, byte[] contractExecutionCode, ulong gasPrice, Gas gasLimit)
         {
             // TODO: Add null/valid checks for 
             // contractExecutionCode
@@ -96,12 +93,12 @@ namespace Stratis.SmartContracts
 
             var carrier = new SmartContractCarrier(vmVersion, OpcodeType.OP_CREATECONTRACT);
             carrier.ContractExecutionCode = contractExecutionCode;
-            carrier.GasPrice = gasPrice;
+            carrier.GasUnitPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
         }
 
-        public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, ulong gasPrice, ulong gasLimit)
+        public static SmartContractCarrier CallContract(uint vmVersion, uint160 to, string methodName, ulong gasPrice, Gas gasLimit)
         {
             // TODO: Add null/valid checks for 
             // to
@@ -112,7 +109,7 @@ namespace Stratis.SmartContracts
             var carrier = new SmartContractCarrier(vmVersion, OpcodeType.OP_CALLCONTRACT);
             carrier.To = to;
             carrier.MethodName = methodName;
-            carrier.GasPrice = gasPrice;
+            carrier.GasUnitPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
         }
@@ -134,12 +131,46 @@ namespace Stratis.SmartContracts
             if (methodParameters.Length == 0)
                 return this;
 
-            this.methodParameters = string.Join('|', methodParameters.Select(parameter => parameter.Replace("|", @"\|")));
+            IEnumerable<string> processedPipes = methodParameters.Select(parameter => parameter = parameter.Replace("|", @"\|"));
+
+            IEnumerable<string> processedHashes = processedPipes.Select(parameter =>
+            {
+
+                // This delegate splits the string by the hash character.
+                // 
+                // If the split array is longer than 2 then we need to 
+                // reconstruct the parameter by escaping all hashes
+                // after the first one.
+                // 
+                // Once this is done, prepend the string with the data type,
+                // which is an integer representation of SmartContractCarrierDataType,
+                // as well as a hash, so that it can be split again upon deserialization.
+                //
+                // I.e. 3#dcg#5d# will split into 3 / dcg / 5d
+                // and then dcg / fd will be reconstructed to dcg\\#5d\\# and
+                // 3# prepended to make 3#dcg\\#5d\\#
+
+                string[] hashes = parameter.Split('#');
+                if (hashes.Length == 2)
+                    return parameter;
+
+                var reconstructed = new List<string>();
+                for (int i = 1; i < hashes.Length; i++)
+                {
+                    reconstructed.Add(hashes[i]);
+                }
+
+                var result = string.Join('#', reconstructed).Replace("#", @"\#");
+                return hashes[0].Insert(hashes[0].Length, "#" + result);
+            });
+
+            this.methodParameters = string.Join('|', processedHashes);
             this.MethodParameters = ConstructMethodParameters(this.methodParameters);
+
             return this;
         }
 
-        /// <summary>
+        /// <summary> 
         /// Deserializes the smart contract execution code and other related information.
         /// </summary>
         public static SmartContractCarrier Deserialize(Transaction transaction, TxOut smartContractTxOut)
@@ -168,8 +199,8 @@ namespace Stratis.SmartContracts
                 smartContractCarrier.MethodParameters = ConstructMethodParameters(smartContractCarrier.methodParameters);
 
             smartContractCarrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
-            smartContractCarrier.GasPrice = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            smartContractCarrier.GasLimit = Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasUnitPrice = (Gas) Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasLimit = (Gas) Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.TransactionHash = transaction.GetHash();
             smartContractCarrier.TxOutValue = smartContractTxOut.Value;
 
@@ -222,7 +253,7 @@ namespace Stratis.SmartContracts
             var processedParameters = new List<object>();
             foreach (var parameter in splitParameters)
             {
-                string[] parameterSignature = parameter.Split('#');
+                string[] parameterSignature = Regex.Split(parameter, @"(?<!(?<!\\)*\\)\#").Select(hashparameter => hashparameter.Replace(@"\#", "#")).ToArray();
 
                 if (parameterSignature[0] == "1")
                     processedParameters.Add(bool.Parse(parameterSignature[1]));
@@ -287,7 +318,7 @@ namespace Stratis.SmartContracts
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
-            bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasPrice)));
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasUnitPrice)));
             bytes.AddRange(PrefixLength(BitConverter.GetBytes(this.GasLimit)));
 
             return bytes.ToArray();

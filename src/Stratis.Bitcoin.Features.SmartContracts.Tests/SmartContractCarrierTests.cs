@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
 
-            var smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, 500000);
+            var smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas) 500000);
             byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
 
             var tx = new Transaction();
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
-            Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
+            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
 
             Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec);
@@ -65,10 +65,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             {
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 12),
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te|st"),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te|s|t"),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te#st"),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "#4#te#st#"),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Char, '#'),
             };
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, 500000).WithParameters(testMethodParameters);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas) 500000).WithParameters(testMethodParameters);
             byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
 
             var tx = new Transaction();
@@ -79,22 +82,40 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
             Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
             Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
+            Assert.Equal(6, deserialized.MethodParameters.Length);
 
             Assert.NotNull(deserialized.MethodParameters[0]);
             Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);
+            Assert.Equal(12, deserialized.MethodParameters[0]);
+
             Assert.NotNull(deserialized.MethodParameters[1]);
             Assert.Equal(smartContractCarrier.MethodParameters[1], deserialized.MethodParameters[1]);
+            Assert.True((bool)deserialized.MethodParameters[1]);
+
             Assert.NotNull(deserialized.MethodParameters[2]);
             Assert.Equal(smartContractCarrier.MethodParameters[2], deserialized.MethodParameters[2]);
+            Assert.Equal("te|s|t", deserialized.MethodParameters[2]);
 
-            Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
+            Assert.NotNull(deserialized.MethodParameters[3]);
+            Assert.Equal(smartContractCarrier.MethodParameters[3], deserialized.MethodParameters[3]);
+            Assert.Equal("te#st", deserialized.MethodParameters[3]);
+
+            Assert.NotNull(deserialized.MethodParameters[4]);
+            Assert.Equal(smartContractCarrier.MethodParameters[4], deserialized.MethodParameters[4]);
+            Assert.Equal("#4#te#st#", deserialized.MethodParameters[4]);
+
+            Assert.NotNull(deserialized.MethodParameters[5]);
+            Assert.Equal(smartContractCarrier.MethodParameters[5], deserialized.MethodParameters[5]);
+            Assert.Equal('#', deserialized.MethodParameters[5]);
+
+            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
         }
 
         [Fact]
         public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas) 500000);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
@@ -107,7 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(smartContractCarrier.To, deserialized.To);
             Assert.Equal(smartContractCarrier.MethodName, deserialized.MethodName);
             Assert.Null(deserialized.MethodParameters);
-            Assert.Equal(smartContractCarrier.GasPrice, deserialized.GasPrice);
+            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
             Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
         }
 
@@ -129,7 +150,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639"))
             };
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, 500000).WithParameters(methodParameters);
+            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas) 500000).WithParameters(methodParameters);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
