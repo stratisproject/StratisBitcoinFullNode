@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public class MeteredPersistenceStrategyTests
     {
         [Fact]
-        public void SmartContracts_Test_NullInjectedArgsThrow()
+        public void SmartContracts_MeteredPersistenceStrategy_TestNullInjectedArgsThrow()
         {
             var sr = new Mock<IContractStateRepository>();
 
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void SmartContracts_Test_GasConsumed()
+        public void SmartContracts_MeteredPersistenceStrategy_TestGasConsumed()
         {
             byte[] testKey = new byte[] { 1 };
             byte[] testValue = new byte[] { 2 };
