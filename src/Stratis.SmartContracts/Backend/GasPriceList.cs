@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.Backend
         }
 
         /// <summary>
-        /// TODO- Add actual costs
+        /// 
         /// </summary>
         /// <param name="keyBytes"></param>
         /// <param name="valueBytes"></param>
