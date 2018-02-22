@@ -94,6 +94,7 @@ namespace Stratis.SmartContracts.ContractValidation
                 else if (CallingOps.Contains(instruction.OpCode))
                 {
                     var methodToCall = (MethodReference) instruction.Operand;
+
                     // If it's a method inside this contract then the gas will be injected no worries.
                     if (methodToCall.DeclaringType == methodDefinition.DeclaringType)
                     {
@@ -103,8 +104,10 @@ namespace Stratis.SmartContracts.ContractValidation
                     // If it's a method outside this contract then we will need to get some average in future.
                     else
                     {
+                        Gas methodCallCost = GasPriceList.MethodCallCost(methodToCall);
+
                         position++;
-                        gasTally = (Gas)(gasTally + instructionCost);
+                        gasTally = (Gas)(gasTally + instructionCost + methodCallCost);
                     }
                 }
                 // any other instruction. just increase counter.

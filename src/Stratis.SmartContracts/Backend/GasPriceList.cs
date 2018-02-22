@@ -1,4 +1,5 @@
-﻿using Mono.Cecil.Cil;
+﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Backend
 {
@@ -7,6 +8,11 @@ namespace Stratis.SmartContracts.Backend
     /// </summary>
     public static class GasPriceList
     {
+        /// <summary>
+        /// TODO - Add actual costs
+        /// </summary>
+        /// <param name="instruction"></param>
+        /// <returns></returns>
         public static Gas InstructionOperationCost(Instruction instruction)
         {
             OpCode opcode = instruction.OpCode;
@@ -22,10 +28,26 @@ namespace Stratis.SmartContracts.Backend
             return cost;
         }
 
+        /// <summary>
+        /// TODO- Add actual costs
+        /// </summary>
+        /// <param name="keyBytes"></param>
+        /// <param name="valueBytes"></param>
+        /// <returns></returns>
         public static Gas StorageOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
             Gas cost = (Gas)(ulong)(20000 * keyBytes.Length + 20000 * valueBytes.Length);
             return cost;
+        }
+
+        /// <summary>
+        /// TODO - Add actual costs
+        /// </summary>
+        /// <param name="methodToCall"></param>
+        /// <returns></returns>
+        public static Gas MethodCallCost(MethodReference methodToCall)
+        {
+            return (Gas) 0;
         }
     }
 }
