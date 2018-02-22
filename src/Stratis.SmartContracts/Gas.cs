@@ -39,5 +39,10 @@ namespace Stratis.SmartContracts
 	    {
 		    return gas.Value;
 	    }
+
+        public override string ToString()
+        {
+            return this.Value.ToString();
+        }
     }
 }
