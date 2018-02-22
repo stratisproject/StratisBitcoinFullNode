@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Backend
         /// <summary>
         /// Whether the state changes made during execution should be reverted. If an exception occurred, then should be true.
         /// </summary>
-        public bool Revert { get; set; }
+        public bool Revert => this.Exception != null;
 
         /// <summary>
         /// A list of transactions made inside the contract call. Should only be one condensing transaction for now.

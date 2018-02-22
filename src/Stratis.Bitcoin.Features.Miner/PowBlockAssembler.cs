@@ -138,17 +138,18 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected readonly AssemblerOptions options;
 
-        // The constructed block template.
+        /// <summary>The constructed block template.</summary>
         protected readonly BlockTemplate pblocktemplate;
 
-        // A convenience pointer that always refers to the CBlock in pblocktemplate.
+        /// <summary>A convenience pointer that always refers to the CBlock in pblocktemplate.</summary>
         protected Block pblock;
 
-        // Configuration parameters for the block size.
+        /// <summary>Configuration parameters for the block size.</summary>
         protected bool fIncludeWitness;
 
         private uint blockMaxWeight, blockMaxSize;
 
+        /// <summary>Whether we need to account for byte usage (in addition to weight usage).</summary>
         protected bool needSizeAccounting;
 
         private FeeRate blockMinFeeRate;
@@ -168,7 +169,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected Transaction coinbase;
 
-        // Chain context for the block.
+        /// <summary>
+        /// The current height of the block being assembled.
+        /// <para>
+        /// This is set in <see cref="ComputeBlockVersion"/>
+        /// </para>
+        /// </summary>
         protected int height;
 
         protected long lockTimeCutoff;
@@ -229,8 +235,7 @@ namespace Stratis.Bitcoin.Features.Miner
             uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
 
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments))
-                .OfType<BIP9Deployments>();
+            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
 
             foreach (BIP9Deployments deployment in deployments)
             {
@@ -551,7 +556,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 List<TxMempoolEntry> sortedEntries = ancestors.ToList().OrderBy(o => o, new CompareTxIterByAncestorCount()).ToList();
                 foreach (TxMempoolEntry sortedEntry in sortedEntries)
                 {
-                    this.AddToBlock(sortedEntry);
+                    AddToBlock(sortedEntry);
                     // Erase from the modified set, if present
                     mapModifiedTx.Remove(sortedEntry.TransactionHash);
                 }

@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.SmartContracts.State.AccountAbstractionLayer;
+﻿using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.State
 {
     /// <summary>
-    /// Really magic class. Has an underlying KV store injected into the constructor. Everything is stored in this KV store but in a series of tries
-    /// that allow us to retrieve a 32-byte root that represents the current state. This 32-byte root can be used to rollback state as well.
+    /// Really magic class. Has an underlying KV store injected into the constructor. Everything is stored in this KV store 
+    /// but in a series of tries that allow us to retrieve a 32-byte root that represents the current state. 
+    /// This 32-byte root can be used to rollback state as well.
     /// 
     /// What's happening here:
     /// -A basic underlying byte[]/byte[] K/V store is injected in the constructor. In live daemon this will be a DbreezeByteStore.
-    /// -A complex caching structure is built up. Any changes through the IContractStateRepository API are pushed into the cache (e.g. SetCode, SetStorageValue).
+    /// -A complex caching structure is built up. Any changes through the IContractStateRepository API are pushed into the cache 
+    /// (e.g. SetCode, SetStorageValue).
     /// -Commit() will push all of the data inside the cache into the underlying K/V store, via a patricia trie.
     /// -The current state can now be represented by the 'root' retrieved from GetRoot()
     /// -Now if we ever need to load the current state, we can do GetSnapShotTo(root)
@@ -29,7 +28,7 @@ namespace Stratis.SmartContracts.State
         {
             public ITrie<byte[]> trie;
 
-            public StorageCache(ITrie<byte[]> trie) : base(new SourceCodec<byte[],byte[],byte[],byte[]>(trie, new Serializers.NoSerializer<byte[]>(), new Serializers.NoSerializer<byte[]>()), WriteCache<byte[]>.CacheType.SIMPLE)
+            public StorageCache(ITrie<byte[]> trie) : base(new SourceCodec<byte[], byte[], byte[], byte[]>(trie, new Serializers.NoSerializer<byte[]>(), new Serializers.NoSerializer<byte[]>()), WriteCache<byte[]>.CacheType.SIMPLE)
             {
                 this.trie = trie;
             }
@@ -44,14 +43,14 @@ namespace Stratis.SmartContracts.State
                 this.parentRepo = parentRepo;
             }
 
-            protected override ICachedSource<byte[],byte[]> Create(byte[] key, ICachedSource<byte[], byte[]> srcCache)
+            protected override ICachedSource<byte[], byte[]> Create(byte[] key, ICachedSource<byte[], byte[]> srcCache)
             {
                 AccountState accountState = this.parentRepo.accountStateCache.Get(key);
                 PatriciaTrie storageTrie = this.parentRepo.CreateTrie(this.parentRepo.trieCache, accountState?.StateRoot);
                 return new StorageCache(storageTrie);
             }
 
-            protected override bool FlushChild(byte[] key, ICachedSource<byte[],byte[]> childCache)
+            protected override bool FlushChild(byte[] key, ICachedSource<byte[], byte[]> childCache)
             {
                 if (base.FlushChild(key, childCache))
                 {
@@ -85,9 +84,9 @@ namespace Stratis.SmartContracts.State
         private ICachedSource<byte[], byte[]> trieCache;
         private ITrie<byte[]> stateTrie;
 
-        public ContractStateRepositoryRoot(ISource<byte[],byte[]> stateDS) : this(stateDS, null) {}
+        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
 
-        public ContractStateRepositoryRoot(ISource<byte[],byte[]> stateDS, byte[] stateRoot)
+        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
