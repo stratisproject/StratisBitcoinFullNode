@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
-	/// <summary>
-	/// Value type representing an amount of Gas. Use this to avoid developer confusion with many other ulong values in NBitcoin.
-	/// </summary>
+    /// <summary>
+    /// Value type representing an amount of Gas. Use this to avoid developer confusion with many other ulong values in NBitcoin.
+    /// </summary>
     public struct Gas
     {
 	    public Gas(ulong value)

@@ -1,4 +1,5 @@
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.State;
 
@@ -15,6 +16,9 @@ namespace Stratis.SmartContracts
 
         public MeteredPersistenceStrategy(IContractStateRepository stateDb, GasMeter gasMeter)
         {
+            Guard.NotNull(stateDb, nameof(stateDb));
+            Guard.NotNull(gasMeter, nameof(gasMeter));
+
             this.stateDb = stateDb;
             this.gasMeter = gasMeter;
         }
