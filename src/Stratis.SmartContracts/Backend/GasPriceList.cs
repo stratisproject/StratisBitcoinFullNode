@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Backend
 {
@@ -7,19 +7,19 @@ namespace Stratis.SmartContracts.Backend
     /// </summary>
     public static class GasPriceList
     {
-        public static GasSpendOperation Create(string opcode, string operand)
+        public static Gas InstructionOperationCost(Instruction instruction)
         {
+            OpCode opcode = instruction.OpCode;
             Gas cost;
 
-            //@TODO Add values
-            switch (opcode.ToLowerInvariant())
+            switch (opcode.Name)
             {
                 default:
                     cost = (Gas)1;
                     break;
             }
 
-            return new GasSpendOperation(cost);
+            return cost;
         }
 
         public static Gas StorageOperationCost(byte[] keyBytes, byte[] valueBytes)

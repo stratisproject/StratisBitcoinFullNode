@@ -25,6 +25,11 @@
 		    return new Gas(value);
 	    }
 
+        public static explicit operator Gas(int value)
+        {
+            return new Gas((ulong) value);
+        }
+
 		/// <summary>
 		/// Ensures we can implicitly treat Gas as an ulong.
 		/// Gas g = new Gas(10000);
