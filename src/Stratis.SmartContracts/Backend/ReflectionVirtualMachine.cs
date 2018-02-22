@@ -37,14 +37,15 @@ namespace Stratis.SmartContracts.Backend
             if (contractMethodName == null)
                 return executionResult;
 
+            MethodInfo methodToInvoke = type.GetMethod(contractMethodName);
+
             try
             {
-                MethodInfo methodToInvoke = type.GetMethod(contractMethodName);
                 executionResult.Return = methodToInvoke.Invoke(contract, context.Parameters);
             }
             catch (TargetInvocationException targetException)
             {
-                executionResult.Exception = targetException.InnerException;
+                executionResult.Exception = targetException.InnerException ?? targetException;
             }
             finally
             {
