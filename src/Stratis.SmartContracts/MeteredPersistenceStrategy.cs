@@ -1,6 +1,6 @@
+using NBitcoin;
 using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.State;
-using NBitcoin;
 
 namespace Stratis.SmartContracts
 {
@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts
 
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
-            return this.stateDb.GetStorageValue(address, key); ;
+            return this.stateDb.GetStorageValue(address, key);
         }
 
         public void StoreBytes(uint160 address, byte[] key, byte[] value)
