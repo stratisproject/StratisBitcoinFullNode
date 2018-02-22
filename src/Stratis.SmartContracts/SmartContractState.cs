@@ -29,6 +29,6 @@ namespace Stratis.SmartContracts
 
         internal IContractStateRepository StateRepository { get;  }
 
-        public GasMeter GasMeter { get; set; }
+        public GasMeter GasMeter { get; }
     }
 }
