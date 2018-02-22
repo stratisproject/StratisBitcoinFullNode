@@ -273,11 +273,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            Gas gasLimit = (Gas) 500000;
+            Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
 
             SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"), gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - 10000, gasBudget);
+            Transaction tx = AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - gasBudget, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
             byte[] ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
@@ -296,7 +296,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            Gas gasLimit = (Gas)500000;
+            Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            ulong fundsToSend = 5000000000L - 10000;
+            ulong fundsToSend = 5000000000L - gasBudget;
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", gasPrice, gasLimit);
             BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            Gas gasLimit = (Gas)500000;
+            Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
 
             var contractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            ulong fundsToSend = 5000000000L - 10000;
+            ulong fundsToSend = 5000000000L - gasBudget;
 
             var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", gasPrice, gasLimit);
             BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            Gas gasLimit = (Gas)500000;
+            Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
@@ -409,7 +409,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.mempool.Clear();
 
-            ulong fundsToSend = 5000000000L - 10000;
+            ulong fundsToSend = 5000000000L - gasBudget;
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", gasPrice, gasLimit);
             BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
@@ -491,7 +491,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
         {
-            var entryFee = gasBudget + 10000;
+            var entryFee = gasBudget;
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(prevOutHash, 0), new Script(OpcodeType.OP_1)));

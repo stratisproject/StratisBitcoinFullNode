@@ -1,6 +1,5 @@
 ﻿using System;
 using Stratis.SmartContracts;
-using System.Linq;
 
 public class Token : SmartContract
 {
