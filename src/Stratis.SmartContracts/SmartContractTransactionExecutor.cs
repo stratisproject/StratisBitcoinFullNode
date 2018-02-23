@@ -11,17 +11,19 @@ using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts
 {
-    internal class SmartContractTransactionExecutor
+    public sealed class SmartContractTransactionExecutor
     {
-        private readonly IContractStateRepository stateRepository;
-        private readonly IContractStateRepository nestedStateRepository;
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
         private readonly SmartContractCarrier smartContractCarrier;
-        private readonly ulong height;
-        private readonly ulong difficulty;
+        private readonly SmartContractValidator validator;
+
+        private readonly IContractStateRepository stateRepository;
+        private readonly IContractStateRepository nestedStateRepository;
+
         private readonly uint160 coinbaseAddress;
+        private readonly ulong difficulty;
+        private readonly ulong height;
 
         public SmartContractTransactionExecutor(
             IContractStateRepository stateRepository,
@@ -65,15 +67,15 @@ namespace Stratis.SmartContracts
                 throw new NotImplementedException();
             }
 
-            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
-
             using (var ms = new MemoryStream())
             {
                 decompilation.ModuleDefinition.Write(ms);
 
-                byte[] gasAwareExecutionCode = ms.ToArray();
+                byte[] contractCode = ms.ToArray();
 
-                var persistentState = new PersistentState(this.nestedStateRepository, contractAddress);
+                GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
+                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 MethodDefinition initMethod = decompilation.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
@@ -91,8 +93,12 @@ namespace Stratis.SmartContracts
                         this.smartContractCarrier.MethodParameters
                     );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode.ToArray(), decompilation.ContractType.Name, initMethod?.Name, executionContext);
-                // do something with gas
+                SmartContractExecutionResult result = vm.ExecuteMethod(
+                    contractCode.ToArray(), 
+                    decompilation.ContractType.Name, 
+                    initMethod?.Name, 
+                    executionContext,
+                    gasMeter);
 
                 if (result.Revert)
                 {
@@ -102,7 +108,7 @@ namespace Stratis.SmartContracts
 
                 // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
-                this.nestedStateRepository.SetCode(contractAddress, gasAwareExecutionCode);
+                this.nestedStateRepository.SetCode(contractAddress, contractCode);
                 this.nestedStateRepository.Commit();
                 return result;
             }
@@ -111,21 +117,26 @@ namespace Stratis.SmartContracts
         private SmartContractExecutionResult ExecuteCall()
         {
             byte[] contractCode = this.stateRepository.GetCode(this.smartContractCarrier.To);
-            SmartContractDecompilation decomp = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
+            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
 
             // YO! VERY IMPORTANT! 
 
             // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
 
+            // Inject gas measurement code before executing        
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+
             uint160 contractAddress = this.smartContractCarrier.To;
 
-            var persistentState = new PersistentState(this.nestedStateRepository, contractAddress);
-            this.nestedStateRepository.CurrentTx = this.smartContractCarrier;
+            GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
 
+            var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
+            this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
-                decomp.ContractType.Name,
+                decompilation.ContractType.Name,
                 this.smartContractCarrier.MethodName,
                 new SmartContractExecutionContext
                 (
@@ -138,25 +149,50 @@ namespace Stratis.SmartContracts
                       ),
                       this.smartContractCarrier.GasUnitPrice,
                       this.smartContractCarrier.MethodParameters
-                  ));
+                  ),
+                gasMeter);
 
-            if (result.Revert)
-            {
-                this.nestedStateRepository.Rollback();
-                return result;
-            }
+            return result.Revert ? RevertExecution(result) : CommitExecution(result);
+        }
 
-            // We need to append a condensing transaction to the block here if funds are moved.
+        /// <summary>
+        /// Contract execution completed successfully, commit state.
+        /// <para>
+        /// We need to append a condensing transaction to the block if funds are moved.
+        /// </para>
+        /// </summary>
+        private SmartContractExecutionResult CommitExecution(SmartContractExecutionResult executionResult)
+        {
             IList<TransferInfo> transfers = this.nestedStateRepository.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
-                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
+                executionResult.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
+
             this.nestedStateRepository.Transfers.Clear();
             this.nestedStateRepository.Commit();
 
-            return result;
+            return executionResult;
+        }
+
+        /// <summary>
+        /// Contract execution failed, therefore we need to revert state.
+        /// <para>
+        /// If funds was send to the contract, we need to send it back to the sender.
+        /// </para>
+        /// </summary>
+        private SmartContractExecutionResult RevertExecution(SmartContractExecutionResult executionResult)
+        {
+            if (this.smartContractCarrier.TxOutValue > 0)
+            {
+                Transaction tx = new CondensingTx(this.smartContractCarrier).CreateRefundTransaction();
+                executionResult.InternalTransactions.Add(tx);
+            }
+
+            this.nestedStateRepository.Rollback();
+
+            return executionResult;
         }
     }
 }

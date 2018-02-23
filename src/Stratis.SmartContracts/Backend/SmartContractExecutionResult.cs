@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Backend
 {
@@ -28,7 +27,10 @@ namespace Stratis.SmartContracts.Backend
         /// <summary>
         /// Whether the state changes made during execution should be reverted. If an exception occurred, then should be true.
         /// </summary>
-        public bool Revert => this.Exception != null;
+        public bool Revert
+        {
+            get { return this.Exception != null; }
+        }
 
         /// <summary>
         /// A list of transactions made inside the contract call. Should only be one condensing transaction for now.

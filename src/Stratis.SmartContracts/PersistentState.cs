@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
-using NBitcoin;
 using Stratis.SmartContracts.State;
+using NBitcoin;
 
 namespace Stratis.SmartContracts
 {
@@ -12,16 +12,19 @@ namespace Stratis.SmartContracts
         private uint counter;
         public uint160 ContractAddress { get; }
         private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
+        private readonly IPersistenceStrategy persistenceStrategy;
 
         /// <summary>
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
         /// a slice of state for a particular contract address.
         /// </summary>
         /// <param name="stateDb"></param>
+        /// <param name="persistenceStrategy"></param>
         /// <param name="contractAddress"></param>
-        public PersistentState(IContractStateRepository stateDb, uint160 contractAddress)
+        public PersistentState(IContractStateRepository stateDb, IPersistenceStrategy persistenceStrategy, uint160 contractAddress)
         {
-            StateDb = stateDb;
+            this.StateDb = stateDb;
+            this.persistenceStrategy = persistenceStrategy;
             this.ContractAddress = contractAddress;
             this.counter = 0;
         }
@@ -29,7 +32,7 @@ namespace Stratis.SmartContracts
         public T GetObject<T>(object key)
         {
             byte[] keyBytes = serializer.Serialize(key);
-            byte[] bytes = StateDb.GetStorageValue(this.ContractAddress, keyBytes);
+            byte[] bytes = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
 
             if (bytes == null)
                 return default(T);
@@ -40,7 +43,7 @@ namespace Stratis.SmartContracts
         public void SetObject<T>(object key, T obj)
         {
             byte[] keyBytes = serializer.Serialize(key);
-            StateDb.SetStorageValue(this.ContractAddress, keyBytes, serializer.Serialize(obj));
+            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj));
         }
 
         public SmartContractMapping<K, V> GetMapping<K, V>()

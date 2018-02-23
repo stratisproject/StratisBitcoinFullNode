@@ -12,49 +12,76 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
     public class CondensingTx
     {
         /// <summary>
+        /// The index of each address's new balance output.
+        /// </summary>
+        private readonly Dictionary<uint160, uint> nVouts;
+
+        /// <summary>
         /// The smart contract transaction that initiated this whole execution.
         /// </summary>
-        private SmartContractCarrier smartContractCarrier;
+        private readonly SmartContractCarrier smartContractCarrier;
+
+        /// <summary>
+        /// Reference to the current smart contract state.
+        /// </summary>
+        private readonly IContractStateRepository stateRepository;
 
         /// <summary>
         /// All of the transfers that happened internally inside of the contract execution.
         /// </summary>
-        private IList<TransferInfo> transfers;
+        private readonly IList<TransferInfo> transfers;
+
+        /// <summary>
+        /// New balances for each address involved through all transfers made.
+        /// </summary>
+        private readonly Dictionary<uint160, ulong> txBalances;
 
         /// <summary>
         /// The current unspents for each contract. Only ever one per contract.
         /// </summary>
         private IList<ContractUnspentOutput> unspents;
 
-        /// <summary>
-        /// Reference to the current smart contract state.
-        /// </summary>
-        private IContractStateRepository state;
-
-        /// <summary>
-        /// New balances for each address involved through all transfers made.
-        /// </summary>
-        private Dictionary<uint160, ulong> txBalances;
-
-        /// <summary>
-        /// The index of each address's new balance output.
-        /// </summary>
-        private Dictionary<uint160, uint> nVouts;
-
-        public CondensingTx(SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository state)
+        public CondensingTx(SmartContractCarrier smartContractCarrier)
         {
             this.smartContractCarrier = smartContractCarrier;
-            this.transfers = transfers;
-            this.state = state;
-            this.unspents = new List<ContractUnspentOutput>();
-            this.txBalances = new Dictionary<uint160, ulong>();
+
             this.nVouts = new Dictionary<uint160, uint>();
+            this.txBalances = new Dictionary<uint160, ulong>();
+            this.unspents = new List<ContractUnspentOutput>();
+        }
+
+        public CondensingTx(SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository stateRepository)
+            : this(smartContractCarrier)
+        {
+            this.stateRepository = stateRepository;
+            this.transfers = transfers;
+        }
+
+        /// <summary>
+        /// Should contract execution fail, we need to send the money, that was
+        /// sent to contract, back to the contract's sender.
+        /// </summary>
+        public Transaction CreateRefundTransaction()
+        {
+            var tx = new Transaction();
+
+            //Spend the input on the contract----------------------------------
+            var outpoint = new OutPoint(this.smartContractCarrier.TransactionHash, this.smartContractCarrier.Nvout);
+            tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
+            //-----------------------------------------------------------------
+
+            //Create refund unspent TxOut--------------------------------------
+            Script script = CreateScript(this.smartContractCarrier.Sender);
+            var txOut = new TxOut(new Money(this.smartContractCarrier.TxOutValue), script);
+            tx.Outputs.Add(txOut);
+            //-----------------------------------------------------------------
+
+            return tx;
         }
 
         /// <summary>
         /// Builds the transaction that updates everyone's balances, which is to be appended to the block.
         /// </summary>
-        /// <returns></returns>
         public Transaction CreateCondensingTransaction()
         {
             SetupBalances();
@@ -66,14 +93,13 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         /// <summary>
         /// Builds the transaction to be appended to the block.
         /// </summary>
-        /// <returns></returns>
         private Transaction BuildTransaction()
         {
-            Transaction tx = new Transaction();
+            var tx = new Transaction();
 
             foreach (ContractUnspentOutput vin in this.unspents)
             {
-                OutPoint outpoint = new OutPoint(vin.Hash, vin.Nvout);
+                var outpoint = new OutPoint(vin.Hash, vin.Nvout);
                 tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
             }
 
@@ -85,7 +111,6 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             return tx;
         }
 
-
         /// <summary>
         /// Update the database to reflect the new UTXOs assigned to each contract.
         /// </summary>
@@ -93,15 +118,16 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         {
             foreach (KeyValuePair<uint160, ulong> kvp in this.txBalances)
             {
-                if (this.state.GetAccountState(kvp.Key) != null)
+                if (this.stateRepository.GetAccountState(kvp.Key) != null)
                 {
-                    ContractUnspentOutput newContractVin = new ContractUnspentOutput
+                    var newContractVin = new ContractUnspentOutput
                     {
                         Hash = tx.GetHash(),
                         Nvout = this.nVouts[kvp.Key],
                         Value = kvp.Value
                     };
-                    this.state.SetUnspent(kvp.Key, newContractVin);
+
+                    this.stateRepository.SetUnspent(kvp.Key, newContractVin);
                 }
             }
         }
@@ -109,42 +135,52 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
         /// <summary>
         /// Get the outputs for the condensing transaction
         /// </summary>
-        /// <returns></returns>
         private IList<TxOut> GetOutputs()
         {
-            List<TxOut> txOuts = new List<TxOut>();
+            var txOuts = new List<TxOut>();
+
             // Order by descending for now. Easier to test. TODO: Worth changing in long run?
-            foreach (KeyValuePair<uint160, ulong> b in this.txBalances.OrderByDescending(x=>x.Value).Where(x=> x.Value > 0))
+            foreach (KeyValuePair<uint160, ulong> b in this.txBalances.OrderByDescending(x => x.Value).Where(x => x.Value > 0))
             {
                 Script script = GetTxOutScriptForAddress(b.Key);
                 txOuts.Add(new TxOut(new Money(b.Value), script));
                 this.nVouts.Add(b.Key, Convert.ToUInt32(txOuts.Count - 1));
             }
+
             return txOuts;
         }
 
         /// <summary>
         /// Gets the script used to 'send' an address funds, depending on whether it's a contract or non-contract.
         /// </summary>
-        /// <param name="address"></param>
-        /// <returns></returns>
+        /// <param name="address">The address of the receiver.</param>
         private Script GetTxOutScriptForAddress(uint160 address)
         {
-            AccountState a = this.state.GetAccountState(address);
-            if (a != null)
+            AccountState accountState = this.stateRepository.GetAccountState(address);
+            if (accountState != null)
             {
                 // This is meant to be a 'callcontract' with 0 for all parameters - and it should never be executed itself. It exists inside the execution of another contract.
                 var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, 0, Gas.None);
                 return new Script(newSmartContractCarrier.Serialize());
             }
 
-            return new Script(
-                        OpcodeType.OP_DUP,
-                        OpcodeType.OP_HASH160,
-                        Op.GetPushOp(address.ToBytes()),
-                        OpcodeType.OP_EQUALVERIFY,
-                        OpcodeType.OP_CHECKSIG
-                    );
+            return CreateScript(address);
+        }
+
+        /// <summary>
+        /// Creates a script to send funds to a given address.
+        /// </summary>
+        /// <param name="address">The address of the receiver.</param>
+        private Script CreateScript(uint160 address)
+        {
+            var script = new Script(
+                OpcodeType.OP_DUP,
+                OpcodeType.OP_HASH160,
+                Op.GetPushOp(address.ToBytes()),
+                OpcodeType.OP_EQUALVERIFY,
+                OpcodeType.OP_CHECKSIG
+            );
+            return script;
         }
 
         private void SetupBalances()
@@ -162,9 +198,12 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             }
 
             // For each unique address, if it is a contract, get the utxo it currently holds.
-            HashSet<uint160> uniqueAddresses = new HashSet<uint160>();
-            uniqueAddresses.Add(this.smartContractCarrier.To);
-            foreach(TransferInfo transferInfo in this.transfers)
+            var uniqueAddresses = new HashSet<uint160>
+            {
+                this.smartContractCarrier.To
+            };
+
+            foreach (TransferInfo transferInfo in this.transfers)
             {
                 uniqueAddresses.Add(transferInfo.To);
                 uniqueAddresses.Add(transferInfo.From);
@@ -172,7 +211,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
 
             foreach (uint160 unique in uniqueAddresses)
             {
-                ContractUnspentOutput unspent = this.state.GetUnspent(unique);
+                ContractUnspentOutput unspent = this.stateRepository.GetUnspent(unique);
                 if (unspent != null && unspent.Value > 0)
                 {
                     this.unspents.Add(unspent);
