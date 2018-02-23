@@ -51,12 +51,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var assembler = new SmartContractBlockAssembler(consensusLoop.Object, Network.Main, new MempoolSchedulerLock(), mempool.Object, DateTimeProvider.Default, null,
                 extendedLoggerFactory, stateRoot, new SmartContractDecompiler(), new SmartContractValidator(new List<ISmartContractValidator>()), new SmartContractGasInjector(), null);
 
-            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "ThrowException", 5, (Gas) 100);
+            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "ThrowException", 5, (Gas)100);
             carrier.Sender = new uint160(2);
 
             var transaction = new Transaction();
             var txMempoolEntry = new TxMempoolEntry(transaction, 1000, DateTimeProvider.Default.GetUtcNow().Ticks, 0, 0, new Money(1000), true, 100, new LockPoints(), newOptions);
-            assembler.ExecuteContractFeesAndRefunds(stateRoot, carrier, txMempoolEntry, 0, 0);
+            assembler.ExecuteContractFeesAndRefunds(carrier, txMempoolEntry, 0, 0);
 
             Assert.Equal(550, assembler.fees);
         }
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, 0, 0),
-                new Message(Address.Zero, Address.Zero, 0, (Gas) 100),
+                new Message(Address.Zero, Address.Zero, 0, (Gas)100),
                 1,
                 new object[] { }
             );
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, 0, 0),
-                new Message(Address.Zero, Address.Zero, 0, (Gas) 100),
+                new Message(Address.Zero, Address.Zero, 0, (Gas)100),
                 1,
                 new object[] { }
             );
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, 0, 0),
-                new Message(Address.Zero, Address.Zero, 0, (Gas) 100),
+                new Message(Address.Zero, Address.Zero, 0, (Gas)100),
                 1,
                 new object[] { }
             );

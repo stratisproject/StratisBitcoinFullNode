@@ -199,8 +199,8 @@ namespace Stratis.SmartContracts
                 smartContractCarrier.MethodParameters = ConstructMethodParameters(smartContractCarrier.methodParameters);
 
             smartContractCarrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
-            smartContractCarrier.GasUnitPrice = (Gas) Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            smartContractCarrier.GasLimit = (Gas) Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasUnitPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            smartContractCarrier.GasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             smartContractCarrier.TransactionHash = transaction.GetHash();
             smartContractCarrier.TxOutValue = smartContractTxOut.Value;
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using DBreeze;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -58,7 +57,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         MemoryDictionarySource byteStore = new MemoryDictionarySource();
 
                         ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
-                        byte[] root = null; 
+                        byte[] root = null;
+
                         ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
                         services.AddSingleton<IContractStateRepository>(repository);
                         services.AddSingleton<PowConsensusValidator, SmartContractConsensusValidator>();
