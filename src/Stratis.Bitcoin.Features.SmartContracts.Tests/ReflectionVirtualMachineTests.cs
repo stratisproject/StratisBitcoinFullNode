@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 gasAwareExecutionCode = ms.ToArray();
 
                 var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-                IContractStateRepository track = repository.StartTracking();
+                IContractStateRepository stateRepository = repository.StartTracking();
 
                 //@TODO Inject PersistentState or use factory method
                 var persistentState = new PersistentState(repository, deserializedCall.To);
@@ -70,9 +70,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             );
 
                 SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode, "StorageTest", "StoreData", context);
-                track.Commit();
+                stateRepository.Commit();
 
-                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), track.GetStorageValue(deserializedCall.To, Encoding.UTF8.GetBytes("TestKey")));
+                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.To, Encoding.UTF8.GetBytes("TestKey")));
                 Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.To, Encoding.UTF8.GetBytes("TestKey")));
             }
         }
