@@ -30,6 +30,11 @@ namespace Stratis.SmartContracts
         /// </summary>
         private readonly IContractStateRepository stateRepository;
 
+        /// <summary>
+        /// Used to track the gas usage for this contract instance
+        /// </summary>
+        private readonly GasMeter gasMeter;
+
         public SmartContract(SmartContractState state)
         {
             System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
@@ -37,6 +42,7 @@ namespace Stratis.SmartContracts
             this.Block = state.Block;
             this.PersistentState = state.PersistentState;
             this.stateRepository = state.StateRepository;
+            this.gasMeter = state.GasMeter;
             ContractUnspentOutput existingUtxo = state.StateRepository.GetUnspent(this.Address.ToUint160());
             ulong balanceBeforeCall = existingUtxo != null ? existingUtxo.Value : 0;
             //this.Balance = balanceBeforeCall + this.Message.Value;
@@ -45,13 +51,10 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// Expends the given amount of gas. If this takes the spent gas over the entered limit, throw an OutOfGasException
         /// </summary>
-        /// <param name="spend"></param>
-        public void SpendGas(Gas spend)
+        /// <param name="spend">TODO: This is currently a ulong instead of a Gas because it needs to receive values from injected IL and it's difficult to create non-primitive types</param>
+        public void SpendGas(ulong spend)
         {
-            if (this.GasUsed + spend > this.Message.GasLimit)
-                throw new OutOfGasException("Went over gas limit of " + this.Message.GasLimit);
-
-            this.GasUsed += spend;
+            this.gasMeter.Spend((Gas) spend);
         }
 
         /// <summary>
@@ -78,11 +81,17 @@ namespace Stratis.SmartContracts
 
             // It's a contract - instantiate the contract and execute.
             IContractStateRepository track = this.stateRepository.StartTracking();
-            PersistentState newPersistentState = new PersistentState(track, addressTo.ToUint160());
-            Message newMessage = new Message(addressTo, this.Address, amount, (Gas)(this.Message.GasLimit - this.GasUsed));
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, this.gasMeter);
+            PersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160());
+            Message newMessage = new Message(addressTo, this.Address, amount, (Gas) (this.Message.GasLimit - this.GasUsed));
             SmartContractExecutionContext newContext = new SmartContractExecutionContext(this.Block, newMessage, 0, transactionDetails.Parameters);
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
-            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, transactionDetails.ContractTypeName, transactionDetails.ContractMethodName, newContext);
+            SmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode, 
+                transactionDetails.ContractTypeName, 
+                transactionDetails.ContractMethodName, 
+                newContext,
+                this.gasMeter);
 
             SpendGas(result.GasUnitsUsed);
 

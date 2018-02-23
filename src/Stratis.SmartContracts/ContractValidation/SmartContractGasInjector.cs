@@ -1,13 +1,14 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Stratis.SmartContracts.Backend;
 
 namespace Stratis.SmartContracts.ContractValidation
 {
     public class SmartContractGasInjector
     {
-        private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(Stratis.SmartContracts.Gas)";
+        private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(System.UInt64)";
 
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {
@@ -60,19 +61,22 @@ namespace Stratis.SmartContracts.ContractValidation
             List<Instruction> branchTos = branches.Select(x => (Instruction)x.Operand).ToList();
 
             Instruction currentSegmentStart = methodDefinition.Body.Instructions.FirstOrDefault();
-            int currentSegmentCount = 0;
+            Gas gasTally = Gas.None;
 
-            Dictionary<Instruction, int> gasToSpendForSegment = new Dictionary<Instruction, int>();
+            Dictionary<Instruction, Gas> gasToSpendForSegment = new Dictionary<Instruction, Gas>();
 
             while (position < methodDefinition.Body.Instructions.Count)
             {
                 Instruction instruction = methodDefinition.Body.Instructions[position];
 
+                Gas instructionCost = GasPriceList.InstructionOperationCost(instruction);
+
                 // is the end of a segment. Include the current instruction in the count.
                 if (branches.Contains(instruction))
                 {
-                    gasToSpendForSegment.Add(currentSegmentStart, currentSegmentCount + 1);
-                    currentSegmentCount = 0;
+                    gasTally = (Gas)(gasTally + instructionCost);
+                    gasToSpendForSegment.Add(currentSegmentStart, gasTally);
+                    gasTally = Gas.None;
                     position++;
                     if (position == methodDefinition.Body.Instructions.Count)
                         break;
@@ -81,8 +85,8 @@ namespace Stratis.SmartContracts.ContractValidation
                 // is the start of a new segment. Don't include the current instruction in count.
                 else if (branchTos.Contains(instruction) && instruction != currentSegmentStart)
                 {
-                    gasToSpendForSegment.Add(currentSegmentStart, currentSegmentCount);
-                    currentSegmentCount = 0;
+                    gasToSpendForSegment.Add(currentSegmentStart, gasTally);
+                    gasTally = Gas.None;
                     currentSegmentStart = instruction;
                     position++;
                 }
@@ -90,29 +94,32 @@ namespace Stratis.SmartContracts.ContractValidation
                 else if (CallingOps.Contains(instruction.OpCode))
                 {
                     var methodToCall = (MethodReference) instruction.Operand;
+
                     // If it's a method inside this contract then the gas will be injected no worries.
                     if (methodToCall.DeclaringType == methodDefinition.DeclaringType)
                     {
                         position++;
-                        currentSegmentCount++;
+                        gasTally = (Gas) (gasTally + instructionCost);
                     }
                     // If it's a method outside this contract then we will need to get some average in future.
                     else
                     {
+                        Gas methodCallCost = GasPriceList.MethodCallCost(methodToCall);
+
                         position++;
-                        currentSegmentCount++;
+                        gasTally = (Gas)(gasTally + instructionCost + methodCallCost);
                     }
                 }
                 // any other instruction. just increase counter.
                 else
                 {
                     position++;
-                    currentSegmentCount++;
+                    gasTally = (Gas)(gasTally + instructionCost);
                 }
             }
 
             if (!gasToSpendForSegment.ContainsKey(currentSegmentStart))
-                gasToSpendForSegment.Add(currentSegmentStart, currentSegmentCount);
+                gasToSpendForSegment.Add(currentSegmentStart, gasTally);
 
             foreach (Instruction instruction in gasToSpendForSegment.Keys)
             {
@@ -129,12 +136,12 @@ namespace Stratis.SmartContracts.ContractValidation
             }
         }
 
-        private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, MethodReference gasMethod, Instruction instruction, int opcodeCount)
+        private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, MethodReference gasMethod, Instruction instruction, Gas opcodeCount)
         {
             ILProcessor il = methodDefinition.Body.GetILProcessor();
             Instruction ldarg0 = il.Create(OpCodes.Ldarg_0);
             Instruction gasInstruction = il.Create(OpCodes.Call, gasMethod);
-            Instruction pushInstruction = il.Create(OpCodes.Ldc_I4, opcodeCount);
+            Instruction pushInstruction = il.Create(OpCodes.Ldc_I8, (long) opcodeCount.Value);
 
             // Ref: https://stackoverflow.com/questions/16346155/cil-opcode-ldarg-0-is-used-even-though-there-are-no-arguments
             il.InsertBefore(instruction, ldarg0);

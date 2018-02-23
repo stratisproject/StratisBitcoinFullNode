@@ -67,15 +67,15 @@ namespace Stratis.SmartContracts
                 throw new NotImplementedException();
             }
 
-            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
-
             using (var ms = new MemoryStream())
             {
                 decompilation.ModuleDefinition.Write(ms);
 
-                byte[] gasAwareExecutionCode = ms.ToArray();
+                byte[] contractCode = ms.ToArray();
 
-                var persistentState = new PersistentState(this.nestedStateRepository, contractAddress);
+                GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
+                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 MethodDefinition initMethod = decompilation.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
@@ -93,8 +93,12 @@ namespace Stratis.SmartContracts
                         this.smartContractCarrier.MethodParameters
                     );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(gasAwareExecutionCode.ToArray(), decompilation.ContractType.Name, initMethod?.Name, executionContext);
-                // do something with gas
+                SmartContractExecutionResult result = vm.ExecuteMethod(
+                    contractCode.ToArray(), 
+                    decompilation.ContractType.Name, 
+                    initMethod?.Name, 
+                    executionContext,
+                    gasMeter);
 
                 if (result.Revert)
                 {
@@ -104,7 +108,7 @@ namespace Stratis.SmartContracts
 
                 // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
-                this.nestedStateRepository.SetCode(contractAddress, gasAwareExecutionCode);
+                this.nestedStateRepository.SetCode(contractAddress, contractCode);
                 this.nestedStateRepository.Commit();
                 return result;
             }
@@ -119,22 +123,34 @@ namespace Stratis.SmartContracts
 
             // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
 
-            var persistentState = new PersistentState(this.nestedStateRepository, this.smartContractCarrier.To);
+            // Inject gas measurement code before executing        
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+
+            uint160 contractAddress = this.smartContractCarrier.To;
+
+            GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
+
+            var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
             this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
-
-            var vm = new ReflectionVirtualMachine(persistentState);
-            var executionContext = new SmartContractExecutionContext(
-                    new Block(Convert.ToUInt64(this.height), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
-                    new Message(
-                        new Address(this.smartContractCarrier.To),
-                        new Address(this.smartContractCarrier.Sender),
-                        this.smartContractCarrier.TxOutValue,
-                        this.smartContractCarrier.GasLimit
-                    ),
-                    this.smartContractCarrier.GasUnitPrice,
-                    this.smartContractCarrier.MethodParameters);
-
-            SmartContractExecutionResult result = vm.ExecuteMethod(contractCode, decompilation.ContractType.Name, this.smartContractCarrier.MethodName, executionContext);
+            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
+            SmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode,
+                decompilation.ContractType.Name,
+                this.smartContractCarrier.MethodName,
+                new SmartContractExecutionContext
+                (
+                      new Block(Convert.ToUInt64(this.height), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
+                      new Message(
+                          new Address(contractAddress),
+                          new Address(this.smartContractCarrier.Sender),
+                          this.smartContractCarrier.TxOutValue,
+                          this.smartContractCarrier.GasLimit
+                      ),
+                      this.smartContractCarrier.GasUnitPrice,
+                      this.smartContractCarrier.MethodParameters
+                  ),
+                gasMeter);
 
             return result.Revert ? RevertExecution(result) : CommitExecution(result);
         }
