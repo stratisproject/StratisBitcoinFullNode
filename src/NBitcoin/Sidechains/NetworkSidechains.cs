@@ -88,8 +88,59 @@ namespace NBitcoin
 
 		private static Network InitSidechainRegTest()
 		{ 
-            //not yet supported
-		    throw new NotSupportedException();
+            // TODO: move this to Networks
+            var net = Network.GetNetwork("SidechainRegTest");
+            if (net != null)
+                return net;
+
+		var networkInfo = SidechainIdentifier.Instance.InfoProvider
+			.GetSidechainInfo(SidechainIdentifier.Instance.Name).RegTest;
+
+            Block.BlockSignature = true;
+            Transaction.TimeStamp = true;
+
+            var consensus = Network.StratisTest.Consensus.Clone();
+            consensus.PowLimit = new Target(uint256.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+
+            consensus.PowAllowMinDifficultyBlocks = true;
+            consensus.PowNoRetargeting = true;
+
+            var messageStart = new byte[4];
+            messageStart[0] = 0xcd;
+            messageStart[1] = 0xf2;
+            messageStart[2] = 0xc0;
+            messageStart[3] = 0xef;
+            var magic = BitConverter.ToUInt32(messageStart, 0);
+
+            var genesis = Network.StratisMain.GetGenesis();
+            genesis.Header.Time = networkInfo.Time;
+            genesis.Header.Nonce = networkInfo.Nonce;
+            genesis.Header.Bits = consensus.PowLimit;
+            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
+
+            Assert(consensus.HashGenesisBlock == networkInfo.GenesisHash);
+
+            consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+
+            var builder = new NetworkBuilder()
+                .SetName("SidechainRegTest")
+                .SetRootFolderName(SidechainIdentifier.Instance.Name)
+                .SetDefaultConfigFilename($"{SidechainIdentifier.Instance.Name}.conf")
+                .SetConsensus(consensus)
+                .SetMagic(magic)
+                .SetGenesis(genesis)
+                .SetPort(networkInfo.Port)
+                .SetRPCPort(networkInfo.RpcPort)
+                .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
+                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { ( (byte) networkInfo.AddressPrefix)})
+                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
+                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })
+                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
+                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
+                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
+                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) });
+
+            return builder.BuildAndRegister();
         }
 
 	    internal static Block CreateSidechainGenesisBlock(uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
