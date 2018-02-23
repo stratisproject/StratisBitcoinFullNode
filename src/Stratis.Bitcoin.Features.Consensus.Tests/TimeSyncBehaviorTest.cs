@@ -265,9 +265,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
-            Assert.NotEqual(1, 0);
+            var outbound = true;
+            var inbound = false;
+            var used = true;
+
+            var dateTimeProvider = DateTimeProvider.Default;
+            var lifetime = new NodeLifetime();
+            var loggerFactory = new LoggerFactory();
+            var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+
+            for (int i = 1; i <= 10; i++)
+            {
+                state.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), inbound);
+            }
+
+            state.AddTimeData(IPAddress.Parse("1.2.3.11"), TimeSpan.FromSeconds(-20), outbound);
+
+            var adjustedTime = dateTimeProvider.GetAdjustedTime();
+            var now = dateTimeProvider.GetUtcNow();
+
+            var offset = adjustedTime - now;
+            var roundedOffset = Math.Round((decimal)offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+
+            Assert.Equal(20, roundedOffset);
         }
     }
-
-   
 }
