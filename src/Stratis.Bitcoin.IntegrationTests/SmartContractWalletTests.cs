@@ -29,6 +29,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var scReceiver = builder.CreateSmartContractNode();
 
                 builder.StartAll();
+                scSender.NotInIBD();
+                scReceiver.NotInIBD();
+
+                var mnemonic1 = scSender.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+                var mnemonic2 = scReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet");
 
             }
 
