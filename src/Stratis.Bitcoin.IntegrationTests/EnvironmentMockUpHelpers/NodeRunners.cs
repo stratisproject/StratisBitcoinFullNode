@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
 
@@ -194,6 +195,69 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
 
         public FullNode FullNode;
+    }
+
+    public class SmartContractRunner : INodeRunner
+    {
+        private Action<IFullNodeBuilder> callback;
+
+        public FullNode FullNode;
+
+        public SmartContractRunner(Action<IFullNodeBuilder> callback = null) : base()
+        {
+            this.callback = callback;
+        }
+
+        public bool IsDisposed
+        {
+            get { return this.FullNode.State == FullNodeState.Disposed; }
+        }
+
+        public void Kill()
+        {
+            this.FullNode?.Dispose();
+        }
+
+        public void Start(string dataDir)
+        {
+            NodeSettings nodeSettings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir }, loadConfiguration: false);
+
+            var node = BuildFullNode(nodeSettings, this.callback);
+
+            this.FullNode = node;
+            this.FullNode.Start();
+        }
+
+        public static FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+        {
+            FullNode node;
+
+            if (callback != null)
+            {
+                var builder = new FullNodeBuilder().UseNodeSettings(args);
+
+                callback(builder);
+
+                node = (FullNode)builder.Build();
+            }
+            else
+            {
+                node = (FullNode)new FullNodeBuilder()
+                    .UseNodeSettings(args)
+                    .UsePowConsensus()
+                    .UseBlockStore()
+                    .UseMempool()
+                    .AddMining()
+                    .UseWallet()
+                    .AddRPC()
+                    .MockIBD()
+                    .AddSmartContracts()
+                    .Build();
+            }
+
+            return node;
+        }
+
     }
 
     public static class FullNodeTestBuilderExtension

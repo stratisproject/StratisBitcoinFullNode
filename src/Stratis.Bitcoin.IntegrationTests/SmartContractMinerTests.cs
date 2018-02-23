@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     /// <summary>
     /// This is taken from 'MinerTests.cs' and adjusted to use a different block validator.
     /// </summary>
-    public class SmartContractTests
+    public class SmartContractMinerTests
     {
         private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
