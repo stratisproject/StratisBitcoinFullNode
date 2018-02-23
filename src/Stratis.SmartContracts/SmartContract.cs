@@ -2,7 +2,6 @@
 using Stratis.SmartContracts.Exceptions;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.State.AccountAbstractionLayer;
-using NBitcoin;
 
 namespace Stratis.SmartContracts
 {

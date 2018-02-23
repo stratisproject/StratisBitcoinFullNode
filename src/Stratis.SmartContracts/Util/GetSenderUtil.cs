@@ -12,6 +12,13 @@ namespace Stratis.SmartContracts.Util
     /// </summary>
     public static class GetSenderUtil
     {
+        /// <summary>
+        /// Get the 'sender' of a transaction. 
+        /// </summary>
+        /// <param name="tx"></param>
+        /// <param name="coinView"></param>
+        /// <param name="blockTxs"></param>
+        /// <returns></returns>
         public static uint160 GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
         {
             Script script = null;
@@ -29,6 +36,7 @@ namespace Stratis.SmartContracts.Util
                     }
                 }
             }
+
             if (!scriptFilled && coinView != null)
             {
                 FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { tx.Inputs[0].PrevOut.Hash }).Result;
@@ -36,17 +44,24 @@ namespace Stratis.SmartContracts.Util
                 scriptFilled = true;
             }
 
-            if (new PayToPubkeyTemplate().CheckScriptPubKey(script))
-            {
+            return GetAddressFromScript(script);
+
+        }
+
+        /// <summary>
+        /// Get the address from a P2PK or a P2PKH
+        /// </summary>
+        /// <param name="script"></param>
+        /// <returns></returns>
+        public static uint160 GetAddressFromScript(Script script)
+        {
+            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(script))
                 return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
-            }
 
-            if (new PayToPubkeyHashTemplate().CheckScriptPubKey(script))
-            {
-                throw new NotImplementedException("This should definitely be implemented. Just need to work out how to extract pubkeyhash from this.");
-            }
+            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
+                return new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes(), false);
 
-            throw new NotImplementedException("Unsure if there are other ways of retrieving the 'Sender' field?");
+            throw new Exception("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
         }
     }
 }

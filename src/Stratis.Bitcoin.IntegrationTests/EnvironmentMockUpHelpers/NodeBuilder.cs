@@ -232,6 +232,16 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return node;
         }
 
+        public CoreNode CreateSmartContractNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        {
+            string child = this.CreateNewEmptyFolder();
+            var node = new CoreNode(child, new SmartContractRunner(callback), this, Network.RegTest);
+            this.Nodes.Add(node);
+            if (start)
+                node.Start();
+            return node;
+        }
+
         public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = this.CreateNewEmptyFolder();

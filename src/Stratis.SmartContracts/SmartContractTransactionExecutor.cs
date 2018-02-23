@@ -11,17 +11,19 @@ using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts
 {
-    internal class SmartContractTransactionExecutor
+    public sealed class SmartContractTransactionExecutor
     {
-        private readonly IContractStateRepository stateRepository;
-        private readonly IContractStateRepository nestedStateRepository;
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
         private readonly SmartContractCarrier smartContractCarrier;
-        private readonly ulong height;
-        private readonly ulong difficulty;
+        private readonly SmartContractValidator validator;
+
+        private readonly IContractStateRepository stateRepository;
+        private readonly IContractStateRepository nestedStateRepository;
+
         private readonly uint160 coinbaseAddress;
+        private readonly ulong difficulty;
+        private readonly ulong height;
 
         public SmartContractTransactionExecutor(
             IContractStateRepository stateRepository,
@@ -130,7 +132,7 @@ namespace Stratis.SmartContracts
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
 
             var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
-            this.nestedStateRepository.CurrentTx = this.smartContractCarrier;
+            this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
             ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
             SmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
@@ -150,23 +152,47 @@ namespace Stratis.SmartContracts
                   ),
                 gasMeter);
 
-            if (result.Revert)
-            {
-                this.nestedStateRepository.Rollback();
-                return result;
-            }
+            return result.Revert ? RevertExecution(result) : CommitExecution(result);
+        }
 
-            // We need to append a condensing transaction to the block here if funds are moved.
+        /// <summary>
+        /// Contract execution completed successfully, commit state.
+        /// <para>
+        /// We need to append a condensing transaction to the block if funds are moved.
+        /// </para>
+        /// </summary>
+        private SmartContractExecutionResult CommitExecution(SmartContractExecutionResult executionResult)
+        {
             IList<TransferInfo> transfers = this.nestedStateRepository.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
-                CondensingTx condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
-                result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
+                executionResult.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
+
             this.nestedStateRepository.Transfers.Clear();
             this.nestedStateRepository.Commit();
 
-            return result;
+            return executionResult;
+        }
+
+        /// <summary>
+        /// Contract execution failed, therefore we need to revert state.
+        /// <para>
+        /// If funds was send to the contract, we need to send it back to the sender.
+        /// </para>
+        /// </summary>
+        private SmartContractExecutionResult RevertExecution(SmartContractExecutionResult executionResult)
+        {
+            if (this.smartContractCarrier.TxOutValue > 0)
+            {
+                Transaction tx = new CondensingTx(this.smartContractCarrier).CreateRefundTransaction();
+                executionResult.InternalTransactions.Add(tx);
+            }
+
+            this.nestedStateRepository.Rollback();
+
+            return executionResult;
         }
     }
 }
