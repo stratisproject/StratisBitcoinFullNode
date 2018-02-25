@@ -317,7 +317,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         private void AddRecipients(TransactionBuildContext context)
         {
-            if (context.Recipients.Any(a => a.Amount == Money.Zero))
+            // Adjusted to allow smart contract transactions through
+            if (context.Recipients.Any(a => a.Amount == Money.Zero && !a.ScriptPubKey.IsSmartContractExec))
                 throw new WalletException("No amount specified.");
 
             if (context.Recipients.Any(a => a.SubtractFeeFromAmount))

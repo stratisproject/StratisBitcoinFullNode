@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin;
-using Stratis.SmartContracts.Hashing;
 
 namespace Stratis.SmartContracts
 {
@@ -333,14 +332,6 @@ namespace Stratis.SmartContracts
             prefixedBytes.AddRange(BitConverter.GetBytes(toPrefix.Length));
             prefixedBytes.AddRange(toPrefix);
             return prefixedBytes.ToArray();
-        }
-
-        /// <summary>
-        /// TODO: Could put this on the 'Transaction' object in NBitcoin if allowed
-        /// </summary>
-        public uint160 GetNewContractAddress()
-        {
-            return new uint160(HashHelper.Keccak256(this.TransactionHash.ToBytes()).Take(20).ToArray());
         }
     }
 

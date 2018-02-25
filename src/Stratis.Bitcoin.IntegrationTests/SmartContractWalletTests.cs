@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.Util;
 using Xunit;
 
@@ -155,6 +156,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // broadcast to the other node
                 scSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
 
+                scSender.GenerateSmartContractStratis(1);
+
+                // wait for block repo for block sync to work
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                var scState = scSender.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
             }
         }
     }

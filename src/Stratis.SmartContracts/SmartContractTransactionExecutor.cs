@@ -53,7 +53,6 @@ namespace Stratis.SmartContracts
 
         private SmartContractExecutionResult ExecuteCreate()
         {
-            // TODO: Get actual address
             uint160 contractAddress = this.smartContractCarrier.GetNewContractAddress();
 
             this.stateRepository.CreateAccount(0);
