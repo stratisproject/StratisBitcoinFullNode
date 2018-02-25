@@ -10,4 +10,9 @@ public class InterContract1 : SmartContract
         PersistentState.SetObject(0, "testString");
         return Convert.ToInt32(Balance);
     }
+
+    public void ThrowException()
+    {
+        throw new Exception();
+    }
 }
