@@ -265,30 +265,29 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
-            var outbound = true;
-            var inbound = false;
-            var used = true;
-
             var dateTimeProvider = DateTimeProvider.Default;
-            var lifetime = new NodeLifetime();
-            var loggerFactory = new LoggerFactory();
-            var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, new NodeLifetime(), new AsyncLoopFactory(new LoggerFactory()), new LoggerFactory());
 
             for (int i = 1; i <= 10; i++)
             {
-                state.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), inbound);
+                state.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), isInboundConnection: false);
             }
 
-            state.AddTimeData(IPAddress.Parse("1.2.3.11"), TimeSpan.FromSeconds(-20), outbound);
+            state.AddTimeData(IPAddress.Parse("1.2.3.11"), TimeSpan.FromSeconds(-20), isInboundConnection: true);
 
-            var adjustedTime = dateTimeProvider.GetAdjustedTime();
-            var now = dateTimeProvider.GetUtcNow();
-
-            var offset = adjustedTime - now;
-            var roundedOffset = Math.Round((decimal)offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+            var roundedOffset = GetCurrentTimeAdjustOffsetRoundedToNearestSecond(dateTimeProvider);
 
             Assert.Equal(20, roundedOffset);
+        }
+
+        private static int GetCurrentTimeAdjustOffsetRoundedToNearestSecond(IDateTimeProvider dateTimeProvider)
+        {
+            var adjustedTime = dateTimeProvider.GetAdjustedTime();
+            var now = dateTimeProvider.GetUtcNow();
+            var offset = adjustedTime - now;
+
+            var roundedOffset = Math.Round((decimal) offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+            return (int)roundedOffset;
         }
     }
 }
