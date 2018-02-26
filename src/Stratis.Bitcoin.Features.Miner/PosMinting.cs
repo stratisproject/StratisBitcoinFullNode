@@ -261,6 +261,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Time in milliseconds between attempts to generate PoS blocks.</summary>
         private readonly int minerSleep;
 
+        /// <summary>Time in milliseconds between attempts to generate PoS blocks, when the system time is out of sync.</summary>
+        private readonly int systemTimeOutOfSyncSleep;
+
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
         protected readonly MempoolSchedulerLock mempoolLock;
 
@@ -365,6 +368,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
+            this.systemTimeOutOfSyncSleep = 7000;
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
@@ -469,7 +473,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogError("Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
                                          + "Please adjust your system time and restart the node.");
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.systemTimeOutOfSyncSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                     continue;
                 }
 
