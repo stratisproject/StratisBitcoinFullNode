@@ -154,9 +154,6 @@ namespace Stratis.Bitcoin.Base
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
         private readonly HashSet<IPAddress> outboundSampleSources;
 
-        /// <summary><c>true</c> if the warning loop has been started, <c>false</c> otherwise.</summary>
-        public bool WarningLoopStarted { get; private set; }
-
         /// <summary><c>true</c> if the time sync with peers has been switched off, <c>false</c> otherwise.</summary>
         public bool SwitchedOff { get; private set; }
 
@@ -193,9 +190,6 @@ namespace Stratis.Bitcoin.Base
             this.outboundSampleSources = new HashSet<IPAddress>();
 
             this.timeOffset = TimeSpan.Zero;
-            this.WarningLoopStarted = false;
-            this.SwitchedOff = false;
-            this.SwitchedOffLimitReached = false;
         }
 
         /// <inheritdoc />
@@ -234,11 +228,10 @@ namespace Stratis.Bitcoin.Base
 
                         // If SwitchedOffLimitReached is set, timeOffset is set to zero,
                         // so we need to check both conditions here.
-                        if (!this.WarningLoopStarted
+                        if (!this.isSystemTimeOutOfSync
                             && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
-                            this.WarningLoopStarted = true;
                             this.isSystemTimeOutOfSync = true;
                         }
 
