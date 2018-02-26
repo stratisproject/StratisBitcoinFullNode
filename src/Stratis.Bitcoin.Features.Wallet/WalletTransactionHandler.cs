@@ -188,6 +188,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             context.TransactionBuilder = new TransactionBuilder();
 
+            // Smart contract calls allow dust
+            context.TransactionBuilder.DustPrevention = false;
+
             this.AddRecipients(context);
             this.AddCoins(context);
             this.AddSecrets(context);

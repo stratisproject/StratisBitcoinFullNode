@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.Util;
@@ -140,28 +141,33 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Create a contract
                 ulong gasPrice = 1;
                 uint vmVersion = 1;
-                Gas gasLimit = (Gas)1000000;
+                Gas gasLimit = (Gas)1000;
                 var gasBudget = gasPrice * gasLimit;
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
                 Script contractCreateScript = new Script(contractCarrier.Serialize());
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference("mywallet", "account 0"),
-                        new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
+                        new[] { new Recipient { Amount = 1, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
                 {
                     MinConfirmations = 101,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
                 };
 
                 var trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
-
-                // broadcast to the other node
-                scSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
-
-                scSender.GenerateSmartContractStratis(1);
-
+                // Equivalent to what happens in 'SendTransaction' on WalletController
+                scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(trx);
+                TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
+                scSender.GenerateSmartContractStratisWithMiner(2);
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-                var scState = scSender.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
+                IContractStateRepository senderState = (IContractStateRepository) scSender.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
+                IContractStateRepository receiverState = (IContractStateRepository) scReceiver.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
+                uint160 newContractAddress = trx.GetNewContractAddress();
+                Assert.NotNull(senderState.GetCode(newContractAddress));
+                // Up to this point we're good! Just need to work out what happens in the consensus validator
+                // Then seriously, create a new network
+                // And adjust validation rules
+                Assert.NotNull(receiverState.GetCode(newContractAddress));
             }
         }
     }

@@ -512,10 +512,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
-            var test = this.FullNode.Services.ServiceProvider.GetService<IPowMining>();
-
             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
         }
+
+        public List<uint256> GenerateSmartContractStratisWithMiner(int blockCount)
+        {
+             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
+        }
+
 
         public Block[] GenerateSmartContractStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {

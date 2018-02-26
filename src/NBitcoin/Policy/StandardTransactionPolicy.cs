@@ -118,7 +118,7 @@ namespace NBitcoin.Policy
                 foreach(var txout in transaction.Outputs.AsCoins())
                 {
                     var template = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
-                    if(template == null)
+                    if(template == null && !txout.ScriptPubKey.IsSmartContractExec)
                         errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));
                 }
             }
@@ -158,7 +158,7 @@ namespace NBitcoin.Policy
                 foreach(var output in transaction.Outputs)
                 {
                     var bytes = output.ScriptPubKey.ToBytes(true);
-                    if(output.IsDust(MinRelayTxFee) && !IsOpReturn(bytes))
+                    if(output.IsDust(MinRelayTxFee) && !IsOpReturn(bytes) && !output.ScriptPubKey.IsSmartContractExec)
                         errors.Add(new DustPolicyError(output.Value, output.GetDustThreshold(MinRelayTxFee)));
                 }
             }
