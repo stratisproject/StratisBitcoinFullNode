@@ -28,11 +28,8 @@ namespace Stratis.Bitcoin.Base
         /// <returns><c>true</c> if the sample was added to the mix, <c>false</c> otherwise.</returns>
         bool AddTimeData(IPAddress peerAddress, TimeSpan offsetSample, bool isInboundConnection);
 
-        /// <summary>
-        /// Gets a value indicating whether the system time is not in sync and needs adjustment.
-        /// </summary>
-        /// <returns><true/> if the system time is not in sync and needs adjustment, <c>false</c> otherwise.</returns>
-        bool IsSystemTimeOutOfSync();
+        /// <summary> A value indicating whether the system time is not in sync and needs adjustment. </summary>
+        bool IsSystemTimeOutOfSync { get; }
     }
 
     /// <summary>
@@ -258,12 +255,9 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-
+        
         /// <inheritdoc/>
-        public bool IsSystemTimeOutOfSync()
-        {
-            return this.isSystemTimeOutOfSync;
-        }
+        public bool IsSystemTimeOutOfSync => this.isSystemTimeOutOfSync;
 
         /// <summary>
         /// Calculates a new value for <see cref="timeOffset"/> based on existing samples.

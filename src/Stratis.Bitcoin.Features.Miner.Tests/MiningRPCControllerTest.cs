@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void StartStaking_InvalidTimeSyncState_ThrowsException()
         {
             this.walletManager.Setup(w => w.GetWallet("myWallet")).Returns(this.fixture.wallet);
-            this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync()).Returns(true);
+            this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
                 .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object, this.walletManager.Object));

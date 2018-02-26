@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public void StartStaking(string walletName, string walletPassword)
         {
             // Prevent mining if the system time is not in sync with that of other members on the network.
-            if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync())
+            if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
             {
                 var errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
                                     + "Please adjust your system time and restart the node.";
