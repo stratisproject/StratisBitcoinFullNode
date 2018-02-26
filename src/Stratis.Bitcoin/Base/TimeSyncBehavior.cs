@@ -166,9 +166,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Periodically shows a console warning to inform the user that the system time needs adjustment,
         /// otherwise the node may not perform correctly on the network.</summary>
         private IAsyncLoop warningLoop;
-
-        /// <summary> A value indicating whether the system time is not in sync and needs adjustment. </summary>
-        private bool isSystemTimeOutOfSync;
+        
+        /// <inheritdoc/>
+        public bool IsSystemTimeOutOfSync { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -228,11 +228,11 @@ namespace Stratis.Bitcoin.Base
 
                         // If SwitchedOffLimitReached is set, timeOffset is set to zero,
                         // so we need to check both conditions here.
-                        if (!this.isSystemTimeOutOfSync
+                        if (!this.IsSystemTimeOutOfSync
                             && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
-                            this.isSystemTimeOutOfSync = true;
+                            this.IsSystemTimeOutOfSync = true;
                         }
 
                         res = true;
@@ -249,9 +249,6 @@ namespace Stratis.Bitcoin.Base
             return res;
         }
         
-        /// <inheritdoc/>
-        public bool IsSystemTimeOutOfSync => this.isSystemTimeOutOfSync;
-
         /// <summary>
         /// Calculates a new value for <see cref="timeOffset"/> based on existing samples.
         /// </summary>
