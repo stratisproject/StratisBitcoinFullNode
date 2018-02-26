@@ -633,7 +633,7 @@ namespace NBitcoin.Tests
         //https://en.bitcoin.it/wiki/List_of_address_prefixes
         public void CanDeduceNetworkInBase58Constructor()
         {
-            BitcoinAddress addr = new BitcoinPubKeyAddress("17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem");
+            BitcoinAddress addr = new BitcoinPubKeyAddress("17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem", Network.Main);
             Assert.Equal(addr.Network, Network.Main);
         }
 
