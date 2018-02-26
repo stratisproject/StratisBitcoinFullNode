@@ -13,6 +13,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     /// </summary>
     public class TimeSyncBehaviorTest
     {
+        private TimeSyncBehaviorState timesyncBehaviourState;
+        private IDateTimeProvider dateTimeProvider;
+        private int roundedOffset;
+
         /// <summary>
         /// Number of milliseconds that two subsequent trivial calls should executed within.
         /// <para>This is used to evaluate whether there is any time difference between adjusted time and normal time.</para>
@@ -265,29 +269,46 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
-            var dateTimeProvider = DateTimeProvider.Default;
-            var state = new TimeSyncBehaviorState(dateTimeProvider, new NodeLifetime(), new AsyncLoopFactory(new LoggerFactory()), new LoggerFactory());
-
-            for (int i = 1; i <= 10; i++)
-            {
-                state.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), isInboundConnection: false);
-            }
-
-            state.AddTimeData(IPAddress.Parse("1.2.3.11"), TimeSpan.FromSeconds(-20), isInboundConnection: true);
-
-            var roundedOffset = GetCurrentTimeAdjustOffsetRoundedToNearestSecond(dateTimeProvider);
-
-            Assert.Equal(20, roundedOffset);
+            given_an_empty_time_sync_behaviour_state();
+            given_40_inbound_samples();
+            given_1_outbound_sample();
+            when_calculating_time_adjust_offset_to_nearest_second();
+            then_adjusted_offset_should_be_the_median_of_the_first_9_inbound_and_the_10x_weighted_1_outbound();
         }
 
-        private static int GetCurrentTimeAdjustOffsetRoundedToNearestSecond(IDateTimeProvider dateTimeProvider)
+        private void when_calculating_time_adjust_offset_to_nearest_second()
         {
-            var adjustedTime = dateTimeProvider.GetAdjustedTime();
-            var now = dateTimeProvider.GetUtcNow();
+            var adjustedTime = this.dateTimeProvider.GetAdjustedTime();
+            var now = this.dateTimeProvider.GetUtcNow();
             var offset = adjustedTime - now;
 
-            var roundedOffset = Math.Round((decimal) offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
-            return (int)roundedOffset;
+            this.roundedOffset = (int)Math.Round((decimal) offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+        }
+
+        private void given_an_empty_time_sync_behaviour_state()
+        {
+            this.dateTimeProvider = DateTimeProvider.Default;
+            var state = new TimeSyncBehaviorState(this.dateTimeProvider, new NodeLifetime(),
+                new AsyncLoopFactory(new LoggerFactory()), new LoggerFactory());
+            this.timesyncBehaviourState = state;
+        }
+
+        private void then_adjusted_offset_should_be_the_median_of_the_first_9_inbound_and_the_10x_weighted_1_outbound()
+        {
+            Assert.Equal(20, this.roundedOffset);
+        }
+
+        private void given_1_outbound_sample()
+        {
+            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3.11"), TimeSpan.FromSeconds(-20), isInboundConnection: true);
+        }
+
+        private void given_40_inbound_samples()
+        {
+            for (int i = 1; i <= 10; i++)
+            {
+                this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), isInboundConnection: false);
+            }
         }
     }
 }
