@@ -7,6 +7,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
@@ -51,6 +52,12 @@ namespace Stratis.Bitcoin.Features.RPC
             if (ex is ArgumentException || ex is FormatException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
+                httpContext.Response.ContentType = "application/json";
+                await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
+            }
+            else if (ex is ConfigurationException)
+            {
+                JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, ex.Message);
                 httpContext.Response.ContentType = "application/json";
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
