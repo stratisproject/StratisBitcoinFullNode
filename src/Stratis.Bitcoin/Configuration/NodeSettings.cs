@@ -366,11 +366,9 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Checks whether to show a help and possibly shows the help.
+        /// Displays command-line help.
         /// </summary>
-        /// <param name="args">Application command line arguments.</param>
         /// <param name="network">The network to extract values from.</param>
-        /// <returns><c>true</c> if the help was displayed, <c>false</c> otherwise.</returns>
         public static void PrintHelp(Network network)
         {
             Guard.NotNull(network, nameof(network));
