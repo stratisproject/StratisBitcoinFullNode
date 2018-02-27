@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
             given_an_empty_time_sync_behaviour_state();
-            given_40_inbound_samples();
+            given_40_inbound_samples_with_offset_of(10);
             given_1_outbound_sample_with_offset_of(20);
             when_calculating_time_adjust_offset_to_nearest_second();
             then_adjusted_time_offset_should_be(20);
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndZeroOutbound_SticksWithTheSystemTime()
         {
             given_an_empty_time_sync_behaviour_state();
-            given_40_inbound_samples();
+            given_40_inbound_samples_with_offset_of(10);
             given_0_outbound_samples();
             when_calculating_time_adjust_offset_to_nearest_second();
             then_adjusted_time_offset_should_be(0);
@@ -75,11 +75,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
         }
 
-        private void given_40_inbound_samples()
+        private void given_40_inbound_samples_with_offset_of(int offset)
         {
             for (int i = 1; i <= 40; i++)
             {
-                this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), isInboundConnection: true);
+                this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(offset), isInboundConnection: true);
             }
         }
 
