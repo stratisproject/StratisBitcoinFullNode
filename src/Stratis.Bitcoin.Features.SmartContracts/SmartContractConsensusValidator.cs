@@ -62,6 +62,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
+            // Keep original state so we can update it 
+            IContractStateRepository originalState = this.stateRoot;
             // Start state from previous block's root
             this.stateRoot = this.stateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
 
@@ -169,7 +171,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             this.stateRoot.Commit();
-
+            var newRoot = this.stateRoot.GetRoot();
+            originalState.SyncToRoot(newRoot);
             this.logger.LogTrace("(-)");
         }
 

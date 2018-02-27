@@ -134,10 +134,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 105 * 50, total);
 
-                // sync both nodes
-                scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-
                 // Create a contract
                 ulong gasPrice = 1;
                 uint vmVersion = 1;
@@ -155,10 +151,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
                 // Equivalent to what happens in 'SendTransaction' on WalletController
                 scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(trx);
-                TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
                 scSender.GenerateSmartContractStratisWithMiner(2);
-                // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                // sync both nodes
+                scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
                 IContractStateRepository senderState = (IContractStateRepository) scSender.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
                 IContractStateRepository receiverState = (IContractStateRepository) scReceiver.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
