@@ -13,10 +13,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     /// </summary>
     public class TimeSyncBehaviorTest
     {
-        private TimeSyncBehaviorState timesyncBehaviourState;
-        private IDateTimeProvider dateTimeProvider;
-        private int roundedOffset;
-
         /// <summary>
         /// Number of milliseconds that two subsequent trivial calls should executed within.
         /// <para>This is used to evaluate whether there is any time difference between adjusted time and normal time.</para>
@@ -29,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// </summary>
         [Fact]
         public void AddTimeData_WithSmallSampleSet_CalculatedCorrectly()
-        {
+        { 
             // Samples to be inserted to the state.
             // Columns meanings: isInbound, isUsed, expectedTimeOffsetLessThanMs, timeOffsetSample, peerAddress
             var samples = new List<object[]>
@@ -86,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 DateTime normalTime = dateTimeProvider.GetUtcNow();
                 TimeSpan diff = adjustedTime - normalTime;
 
-                Assert.True(Math.Abs(diff.TotalMilliseconds) < expectedTimeOffsetLessThanMs + TimeEpsilonMs);
+                Assert.True(Math.Abs(diff.TotalMilliseconds) < expectedTimeOffsetLessThanMs + TimeEpsilonMs, "");
             }
         }
 
@@ -258,57 +254,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             diff = adjustedTime - normalTime;
             expectedDiffMs = allSamples.Median();
             Assert.True(Math.Abs(diff.TotalMilliseconds) < Math.Abs(expectedDiffMs) + TimeEpsilonMs);
-        }
-
-        /// <summary>
-        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
-        /// uses outbound samples as a priority over inbound as they are less likely to be malicious.
-        /// This means that even when there are many inbound connections, only the first ones are considered until there are enough outbound nodes. 
-        /// Eg only 9 inbound per 1 outbound.
-        /// </summary>
-        [Fact]
-        public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
-        {
-            given_an_empty_time_sync_behaviour_state();
-            given_40_inbound_samples();
-            given_1_outbound_sample();
-            when_calculating_time_adjust_offset_to_nearest_second();
-            then_adjusted_offset_should_be_the_median_of_the_first_9_inbound_and_the_10x_weighted_1_outbound();
-        }
-
-        private void when_calculating_time_adjust_offset_to_nearest_second()
-        {
-            var adjustedTime = this.dateTimeProvider.GetAdjustedTime();
-            var now = this.dateTimeProvider.GetUtcNow();
-            var offset = adjustedTime - now;
-
-            this.roundedOffset = (int)Math.Round((decimal) offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
-        }
-
-        private void given_an_empty_time_sync_behaviour_state()
-        {
-            this.dateTimeProvider = DateTimeProvider.Default;
-            var state = new TimeSyncBehaviorState(this.dateTimeProvider, new NodeLifetime(),
-                new AsyncLoopFactory(new LoggerFactory()), new LoggerFactory());
-            this.timesyncBehaviourState = state;
-        }
-
-        private void then_adjusted_offset_should_be_the_median_of_the_first_9_inbound_and_the_10x_weighted_1_outbound()
-        {
-            Assert.Equal(20, this.roundedOffset);
-        }
-
-        private void given_1_outbound_sample()
-        {
-            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3.11"), TimeSpan.FromSeconds(-20), isInboundConnection: true);
-        }
-
-        private void given_40_inbound_samples()
-        {
-            for (int i = 1; i <= 10; i++)
-            {
-                this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), isInboundConnection: false);
-            }
         }
     }
 }
