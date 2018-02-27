@@ -134,8 +134,8 @@ namespace Stratis.SmartContracts.State
             {
                 this.storageCache.Flush();
                 this.codeCache.Flush();
-                this.accountStateCache.Flush();
                 this.vinCache.Flush();
+                this.accountStateCache.Flush();
             }
         }
 

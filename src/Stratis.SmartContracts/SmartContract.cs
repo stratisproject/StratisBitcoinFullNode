@@ -1,7 +1,6 @@
 ﻿using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.Exceptions;
 using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts
 {
@@ -43,9 +42,6 @@ namespace Stratis.SmartContracts
             this.PersistentState = state.PersistentState;
             this.stateRepository = state.StateRepository;
             this.gasMeter = state.GasMeter;
-            ContractUnspentOutput existingUtxo = state.StateRepository.GetUnspent(this.Address.ToUint160());
-            ulong balanceBeforeCall = existingUtxo != null ? existingUtxo.Value : 0;
-            //this.Balance = balanceBeforeCall + this.Message.Value;
         }
 
         /// <summary>

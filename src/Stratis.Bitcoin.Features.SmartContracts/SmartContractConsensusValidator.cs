@@ -62,9 +62,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
-            // Keep original state so we can update it 
-            IContractStateRepository originalState = this.stateRoot;
             // Start state from previous block's root
+            var rootBytes = context.ConsensusTip.Header.HashStateRoot.ToBytes();
+            var rootAimingFor = context.BlockValidationContext.Block.Header.HashStateRoot.ToBytes();
             this.stateRoot = this.stateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
 
             if (!context.SkipValidation)
@@ -171,8 +171,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             this.stateRoot.Commit();
-            var newRoot = this.stateRoot.GetRoot();
-            originalState.SyncToRoot(newRoot);
+            var test = this.stateRoot.GetRoot();
             this.logger.LogTrace("(-)");
         }
 
@@ -200,13 +199,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
             IContractStateRepository track = this.stateRoot.StartTracking();
-            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, transaction.Outputs[0]);
+            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
 
             smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
-            uint160 coinbaseAddress = new uint160(coinbaseScriptPubKey.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
+            uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress); // TODO: Put coinbase in here
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress);
             SmartContractExecutionResult result = executor.Execute();
 
             if (result.InternalTransactions.Any())

@@ -59,6 +59,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
             this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
 
+            var currentRoot = this.stateRepository.GetRoot();
+
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
@@ -77,6 +79,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected override void UpdateHeaders()
         {
             base.UpdateHeaders();
+
+            var test = this.stateRepository.GetRoot();
 
             this.pblock.Header.HashStateRoot = new uint256(this.stateRepository.GetRoot());
         }

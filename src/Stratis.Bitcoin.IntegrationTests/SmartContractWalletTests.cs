@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 var maturity = (int)scSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
-                scSender.GenerateSmartContractStratis(maturity + 5);
+                scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
                 // wait for block repo for block sync to work
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
                 Script contractCreateScript = new Script(contractCarrier.Serialize());
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference("mywallet", "account 0"),
-                        new[] { new Recipient { Amount = 1, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
+                        new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
                 {
                     MinConfirmations = 101,
                     FeeType = FeeType.High,
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
                 // Equivalent to what happens in 'SendTransaction' on WalletController
                 scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(trx);
-                scSender.GenerateSmartContractStratisWithMiner(2);
+                scSender.GenerateSmartContractStratisWithMiner(1);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 // sync both nodes
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
@@ -163,6 +163,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Up to this point we're good! Just need to work out what happens in the consensus validator
                 // Then seriously, create a new network
                 // And adjust validation rules
+
+                var test = receiverState.GetRoot();
+                var test2 = senderState.GetRoot();
+                receiverState.SyncToRoot(senderState.GetRoot());
+
+                var receiverState2 = receiverState.GetSnapshotTo(senderState.GetRoot());
+
+                Assert.NotNull(receiverState.GetCode(newContractAddress));
                 Assert.NotNull(receiverState.GetCode(newContractAddress));
             }
         }

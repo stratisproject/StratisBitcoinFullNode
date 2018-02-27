@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts
         {
             uint160 contractAddress = this.smartContractCarrier.GetNewContractAddress();
 
-            this.stateRepository.CreateAccount(0);
+            this.stateRepository.CreateAccount(contractAddress);
 
             SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(this.smartContractCarrier.ContractExecutionCode);
             SmartContractValidationResult validationResult = this.validator.ValidateContract(decompilation);
