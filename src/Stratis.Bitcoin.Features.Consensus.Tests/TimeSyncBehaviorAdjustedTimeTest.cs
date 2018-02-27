@@ -1,4 +1,6 @@
-﻿using Stratis.Bitcoin.Base;
+﻿using System;
+using System.Net;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
