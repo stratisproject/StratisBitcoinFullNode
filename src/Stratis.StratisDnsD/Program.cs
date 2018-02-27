@@ -68,7 +68,8 @@ namespace Stratis.StratisDnsD
                         .Build();
 
                     // Run node.
-                    await node.RunAsync();
+                    if (node != null)
+                        await node.RunAsync();
                 }
                 else
                 {
@@ -82,7 +83,8 @@ namespace Stratis.StratisDnsD
                         .Build();
 
                     // Run node.
-                    await node.RunAsync();
+                    if (node != null)
+                        await node.RunAsync();
                 }
             }
             catch (Exception ex)

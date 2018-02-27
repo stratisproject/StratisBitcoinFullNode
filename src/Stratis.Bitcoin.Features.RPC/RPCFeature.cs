@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -37,6 +38,15 @@ namespace Stratis.Bitcoin.Features.RPC
         public override void LoadConfiguration()
         {
             this.rpcSettings.Load(this.nodeSettings);
+        }
+
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            RpcSettings.PrintHelp(network);
         }
 
         public override void Initialize()

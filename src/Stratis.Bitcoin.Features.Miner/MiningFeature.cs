@@ -84,6 +84,15 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            MinerSettings.PrintHelp(network);
+        }
+
+        /// <summary>
         /// Starts staking a wallet.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
