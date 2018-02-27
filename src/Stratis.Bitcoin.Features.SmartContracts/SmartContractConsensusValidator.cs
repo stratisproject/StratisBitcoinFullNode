@@ -20,7 +20,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-        private IContractStateRepository stateRoot;
+        private readonly IContractStateRepository originalStateRoot;
+        private IContractStateRepository currentStateRoot;
         private readonly CoinView coinView;
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.stateRoot = stateRoot;
+            this.originalStateRoot = stateRoot;
+            this.currentStateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
@@ -63,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
             // Start state from previous block's root
-            this.stateRoot = this.stateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
+            this.currentStateRoot = this.originalStateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
 
             if (!context.SkipValidation)
             {
@@ -168,10 +170,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            this.stateRoot.Commit();
+            this.currentStateRoot.Commit();
+            this.originalStateRoot.SyncToRoot(this.currentStateRoot.GetRoot());
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// TODO: Could be incomplete. Should handle transactions just like blockassembler (e.g. exactly the same
+        /// in terms of what happens when contracts fail,  Rollback() etc.)
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="transaction"></param>
         protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             base.UpdateCoinView(context, transaction);
@@ -195,7 +204,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
-            IContractStateRepository track = this.stateRoot.StartTracking();
+            IContractStateRepository track = this.currentStateRoot.StartTracking();
             var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
 
             smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);

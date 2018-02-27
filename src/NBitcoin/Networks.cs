@@ -265,6 +265,7 @@ namespace NBitcoin
             network.consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
 
             network.genesis = CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            network.genesis.Header.HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             network.consensus.HashGenesisBlock = network.genesis.GetHash();
             network.DefaultPort = 18444;
             network.RPCPort = 18332;

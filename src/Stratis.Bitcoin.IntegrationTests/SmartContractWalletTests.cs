@@ -157,10 +157,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
                 IContractStateRepository senderState = (IContractStateRepository) scSender.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
-                IContractStateRepository receiverState = (IContractStateRepository) scReceiver.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
+                IContractStateRepository receiverState = (IContractStateRepository)scReceiver.FullNode.NodeService<IContractStateRepository>();// Services.ServiceProvider.GetService(typeof(IContractStateRepository));
                 uint160 newContractAddress = trx.GetNewContractAddress();
                 Assert.NotNull(senderState.GetCode(newContractAddress));
-                receiverState.SyncToRoot(senderState.GetRoot());
                 Assert.NotNull(receiverState.GetCode(newContractAddress)); // Ideally we hsould fix this so we don't need to sync to the latest block
             }
         }
