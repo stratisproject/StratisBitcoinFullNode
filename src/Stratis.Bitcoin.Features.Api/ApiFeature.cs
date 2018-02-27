@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Threading.Tasks;
-using System.Timers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -70,6 +68,15 @@ namespace Stratis.Bitcoin.Features.Api
 
                 this.apiSettings.KeepaliveTimer.Start();
             }
+        }
+
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            ApiSettings.PrintHelp(network);
         }
 
         /// <inheritdoc />
