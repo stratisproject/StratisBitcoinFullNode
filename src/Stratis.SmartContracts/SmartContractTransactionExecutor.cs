@@ -66,6 +66,8 @@ namespace Stratis.SmartContracts
                 throw new NotImplementedException();
             }
 
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+
             using (var ms = new MemoryStream())
             {
                 decompilation.ModuleDefinition.Write(ms);
@@ -107,7 +109,7 @@ namespace Stratis.SmartContracts
 
                 // To start with, no value transfers on create. Can call other contracts but send 0 only.
 
-                this.nestedStateRepository.SetCode(contractAddress, contractCode);
+                this.nestedStateRepository.SetCode(contractAddress, this.smartContractCarrier.ContractExecutionCode);
                 this.nestedStateRepository.Commit();
                 return result;
             }
@@ -116,42 +118,48 @@ namespace Stratis.SmartContracts
         private SmartContractExecutionResult ExecuteCall()
         {
             byte[] contractCode = this.stateRepository.GetCode(this.smartContractCarrier.To);
-            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractCode); // This is overkill here. Just for testing atm.
+            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractCode);
 
             // YO! VERY IMPORTANT! 
 
             // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
-
-            // Inject gas measurement code before executing        
+   
             this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
-            uint160 contractAddress = this.smartContractCarrier.To;
+            using (var ms = new MemoryStream())
+            {
+                decompilation.ModuleDefinition.Write(ms);
 
-            GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
+                byte[] contractCodeWGas = ms.ToArray();
 
-            var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
-            this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
-            SmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode,
-                decompilation.ContractType.Name,
-                this.smartContractCarrier.MethodName,
-                new SmartContractExecutionContext
-                (
-                      new Block(Convert.ToUInt64(this.height), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
-                      new Message(
-                          new Address(contractAddress),
-                          new Address(this.smartContractCarrier.Sender),
-                          this.smartContractCarrier.TxOutValue,
-                          this.smartContractCarrier.GasLimit
+                uint160 contractAddress = this.smartContractCarrier.To;
+
+                GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
+                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
+
+                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
+                this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
+                ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
+                SmartContractExecutionResult result = vm.ExecuteMethod(
+                    contractCodeWGas,
+                    decompilation.ContractType.Name,
+                    this.smartContractCarrier.MethodName,
+                    new SmartContractExecutionContext
+                    (
+                          new Block(Convert.ToUInt64(this.height), this.coinbaseAddress, Convert.ToUInt64(this.difficulty)),
+                          new Message(
+                              new Address(contractAddress),
+                              new Address(this.smartContractCarrier.Sender),
+                              this.smartContractCarrier.TxOutValue,
+                              this.smartContractCarrier.GasLimit
+                          ),
+                          this.smartContractCarrier.GasUnitPrice,
+                          this.smartContractCarrier.MethodParameters
                       ),
-                      this.smartContractCarrier.GasUnitPrice,
-                      this.smartContractCarrier.MethodParameters
-                  ),
-                gasMeter);
+                    gasMeter);
 
-            return result.Revert ? RevertExecution(result) : CommitExecution(result);
+                return result.Revert ? RevertExecution(result) : CommitExecution(result);
+            }
         }
 
         /// <summary>

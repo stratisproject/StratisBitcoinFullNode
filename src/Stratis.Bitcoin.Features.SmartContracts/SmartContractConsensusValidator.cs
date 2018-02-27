@@ -63,8 +63,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
             // Start state from previous block's root
-            var rootBytes = context.ConsensusTip.Header.HashStateRoot.ToBytes();
-            var rootAimingFor = context.BlockValidationContext.Block.Header.HashStateRoot.ToBytes();
             this.stateRoot = this.stateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
 
             if (!context.SkipValidation)
@@ -171,7 +169,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             this.stateRoot.Commit();
-            var test = this.stateRoot.GetRoot();
             this.logger.LogTrace("(-)");
         }
 

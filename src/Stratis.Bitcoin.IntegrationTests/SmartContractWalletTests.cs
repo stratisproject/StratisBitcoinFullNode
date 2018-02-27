@@ -160,18 +160,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 IContractStateRepository receiverState = (IContractStateRepository) scReceiver.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
                 uint160 newContractAddress = trx.GetNewContractAddress();
                 Assert.NotNull(senderState.GetCode(newContractAddress));
-                // Up to this point we're good! Just need to work out what happens in the consensus validator
-                // Then seriously, create a new network
-                // And adjust validation rules
-
-                var test = receiverState.GetRoot();
-                var test2 = senderState.GetRoot();
                 receiverState.SyncToRoot(senderState.GetRoot());
-
-                var receiverState2 = receiverState.GetSnapshotTo(senderState.GetRoot());
-
-                Assert.NotNull(receiverState.GetCode(newContractAddress));
-                Assert.NotNull(receiverState.GetCode(newContractAddress));
+                Assert.NotNull(receiverState.GetCode(newContractAddress)); // Ideally we hsould fix this so we don't need to sync to the latest block
             }
         }
     }
