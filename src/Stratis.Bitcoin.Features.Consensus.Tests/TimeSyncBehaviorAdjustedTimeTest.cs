@@ -2,6 +2,7 @@
 using System.Net;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -12,12 +13,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     public partial class TimeSyncBehaviorAdjustedTimeTest
     {
         /// <summary>
-        /// Time data is added this this state. The combination of this and datetimeprovider are what is under test.
+        /// Time data is added this state. 
         /// </summary>
         private TimeSyncBehaviorState timesyncBehaviourState;
 
         /// <summary>
-        /// This provides the adjusted time ready for assertion. The combination of this and timesyncBehaviorState are what is under test.
+        /// This provides the adjusted time ready for assertion. 
         /// </summary>
         private IDateTimeProvider dateTimeProvider;
         
@@ -37,9 +38,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             given_an_empty_time_sync_behaviour_state();
             given_40_inbound_samples();
-            given_1_outbound_sample();
+            given_1_outbound_sample_with_offset_of(20);
             when_calculating_time_adjust_offset_to_nearest_second();
-            then_adjusted_offset_should_be_the_median_of_the_first_9_inbound_and_the_10x_weighted_1_outbound();
+            then_adjusted_time_offset_should_be(20);
         }
 
         /// <summary>
@@ -53,7 +54,47 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             given_40_inbound_samples();
             given_0_outbound_samples();
             when_calculating_time_adjust_offset_to_nearest_second();
-            then_adjusted_offset_should_be_same_as_the_system_time();
+            then_adjusted_time_offset_should_be(0);
+        }
+
+        private void given_an_empty_time_sync_behaviour_state()
+        {
+            this.dateTimeProvider = new DateTimeProvider();
+            this.timesyncBehaviourState = new TimeSyncBehaviorState(
+                this.dateTimeProvider, new NodeLifetime(),
+                new AsyncLoopFactory(new LoggerFactory()), 
+                new LoggerFactory());
+        }
+
+        private void given_1_outbound_sample_with_offset_of(int offsetSeconds)
+        {
+            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.2"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+        }
+
+        private void given_0_outbound_samples()
+        {
+        }
+
+        private void given_40_inbound_samples()
+        {
+            for (int i = 1; i <= 40; i++)
+            {
+                this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(10), isInboundConnection: true);
+            }
+        }
+
+        private void when_calculating_time_adjust_offset_to_nearest_second()
+        {
+            var adjustedTime = this.dateTimeProvider.GetAdjustedTime();
+            var now = this.dateTimeProvider.GetUtcNow();
+            var offset = adjustedTime - now;
+
+            this.roundedOffset = (int)Math.Round((decimal) offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+        }
+
+        private void then_adjusted_time_offset_should_be(int expectedOffset)
+        {
+            Assert.Equal(expectedOffset, this.roundedOffset);
         }
     }
 }
