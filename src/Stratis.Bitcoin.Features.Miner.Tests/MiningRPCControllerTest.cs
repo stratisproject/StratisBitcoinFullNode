@@ -4,6 +4,8 @@ using System.Security;
 using Moq;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC;
@@ -21,6 +23,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Mock<IFullNode> fullNode;
         private Mock<IPosMinting> posMinting;
         private Mock<IWalletManager> walletManager;
+        private Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
         private MiningRPCControllerFixture fixture;
         private Mock<IPowMining> powMining;
 
@@ -31,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.fullNode = new Mock<IFullNode>();
             this.posMinting = new Mock<IPosMinting>();
             this.walletManager = new Mock<IWalletManager>();
-
+            this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
             this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
                 .Returns(this.walletManager.Object);
 
@@ -129,13 +132,31 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
+        public void StartStaking_InvalidTimeSyncState_ThrowsException()
+        {
+            this.walletManager.Setup(w => w.GetWallet("myWallet")).Returns(this.fixture.wallet);
+            this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
+
+            this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object, this.walletManager.Object));
+
+            var exception = Assert.Throws<ConfigurationException>(() =>
+            {
+                var result = this.controller.StartStaking("myWallet", "password1");
+            });
+
+            Assert.Contains("Staking cannot start", exception.Message);
+            this.posMinting.Verify(pm => pm.Stake(It.IsAny<PosMinting.WalletSecret>()), Times.Never);
+        }
+
+        [Fact]
         public void StartStaking_ValidWalletAndPassword_StartsStaking_ReturnsTrue()
         {            
             this.walletManager.Setup(w => w.GetWallet("myWallet"))
               .Returns(this.fixture.wallet);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.powMining.Object, this.posMinting.Object, this.walletManager.Object));
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object, this.walletManager.Object));
 
             var result = this.controller.StartStaking("myWallet", "password1");
 

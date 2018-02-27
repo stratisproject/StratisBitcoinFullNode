@@ -194,6 +194,15 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            NodeSettings.PrintHelp(network);
+        }        
+
+        /// <summary>
         /// Initializes node's chain repository.
         /// Creates periodic task to persist changes to the database.
         /// </summary>

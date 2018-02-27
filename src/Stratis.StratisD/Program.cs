@@ -44,7 +44,8 @@ namespace Stratis.StratisD
                     .AddRPC()
                     .Build();
 
-                await node.RunAsync();
+                if (node != null)
+                    await node.RunAsync();
             }
             catch (Exception ex)
             {
