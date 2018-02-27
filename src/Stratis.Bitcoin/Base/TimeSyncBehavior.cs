@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peerAddress), peerAddress, nameof(offsetSample), offsetSample.TotalSeconds, nameof(isInboundConnection), isInboundConnection);
 
-            bool res = false;
+            bool success = false;
 
             bool startWarningLoopNow = false;
             lock (this.lockObject)
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Base
                             this.WarningLoopStarted = true;
                         }
 
-                        res = true;
+                        success = true;
                     }
                     else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
                 }
@@ -245,8 +245,8 @@ namespace Stratis.Bitcoin.Base
             if (startWarningLoopNow)
                 this.StartWarningLoop();
 
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
+            this.logger.LogTrace("(-):{0}", success);
+            return success;
         }
 
         /// <summary>
@@ -273,16 +273,12 @@ namespace Stratis.Bitcoin.Base
             if (unweightedSamplesCount >= MinUnweightedSamplesCount)
             {
                 this.logger.LogTrace("We have {0} unweighted samples, {1} outbound samples and {2} inbound samples.", unweightedSamplesCount, this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
-                List<double> allSamples = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
+                
+                var medianOffsetInSeconds = this.GetMedianOffsetInSecondsFromInboundAndWeightedOutbound();
 
-                List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
-                for (int i = 0; i < OutboundToInboundWeightRatio; i++)
-                    allSamples.AddRange(outboundOffsets);
-
-                double median = allSamples.Median();
-                if (Math.Abs(median) < MaxTimeOffsetSeconds)
+                if (Math.Abs(medianOffsetInSeconds) < MaxTimeOffsetSeconds)
                 {
-                    this.timeOffset = TimeSpan.FromSeconds(median);
+                    this.timeOffset = TimeSpan.FromSeconds(medianOffsetInSeconds);
                     this.dateTimeProvider.SetAdjustedTimeOffset(this.timeOffset);
                 }
                 else
@@ -295,6 +291,28 @@ namespace Stratis.Bitcoin.Base
             else this.logger.LogTrace("We have {0} unweighted samples, which is below required minimum of {1} samples.", unweightedSamplesCount, MinUnweightedSamplesCount);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.timeOffset), this.timeOffset.TotalSeconds);
+        }
+
+        /// <summary>
+        /// Gets the median offset of all the inbound samples (limited to 1 less than the OutboundToInboundWeightRatio per outbound) and the outbound samples with a weighting of the OutboundToInboundWeightRatio.
+        /// </summary>
+        /// <returns>Median offset in seconds.</returns>
+        private double GetMedianOffsetInSecondsFromInboundAndWeightedOutbound()
+        {
+            var inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
+            var outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
+
+            var allSamplesToConsider = new List<double>();
+
+            for (int i = 0; i < OutboundToInboundWeightRatio; i++)
+                allSamplesToConsider.AddRange(outboundOffsets);
+
+            var numberOfInboundSamplesToConsider = outboundOffsets.Count() * (OutboundToInboundWeightRatio - 1);
+
+            allSamplesToConsider.AddRange(inboundOffsets.Take(numberOfInboundSamplesToConsider));
+
+            double median = allSamplesToConsider.Median();
+            return median;
         }
 
         /// <summary>
