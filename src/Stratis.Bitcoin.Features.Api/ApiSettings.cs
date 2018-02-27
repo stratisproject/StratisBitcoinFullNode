@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Api
             Uri apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            var apiPort = config.GetOrDefault("apiport", DefaultPort(nodeSettings.Network));
+            var apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network));
             
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
@@ -96,33 +96,25 @@ namespace Stratis.Bitcoin.Features.Api
         /// </summary>
         /// <param name="network">The network to use.</param>
         /// <returns>The default API port.</returns>
-        private static int DefaultPort(Network network)
+        private static int GetDefaultPort(Network network)
         {
-            int port;
             if (network.IsBitcoin())
-            {
-                port = network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
-            }
-            else
-            {
-                port = network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-            }
-
-            return port;
+                return network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
+            
+            return network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
         }
 
-        /// <summary>Prints the help information on how to configure the rpc settings to the logger.</summary>
+        /// <summary>Prints the help information on how to configure the API settings to the logger.</summary>
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            var defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
             builder.AppendLine($"-apiuri=<string>          URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
-            builder.AppendLine($"-apiport=<0-65535>        Port of node's API interface. Default: {DefaultPort(network)}.");
+            builder.AppendLine($"-apiport=<0-65535>        Port of node's API interface. Default: {GetDefaultPort(network)}.");
             builder.AppendLine($"-keepalive=<seconds>      Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
 
-            defaults.Logger.LogInformation(builder.ToString());
+            NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
     }
 }
