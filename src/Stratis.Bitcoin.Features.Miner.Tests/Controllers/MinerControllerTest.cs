@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
@@ -21,12 +22,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         private Mock<IFullNode> fullNode;
         private Mock<IPosMinting> posMinting;
         private Mock<IWalletManager> walletManager;
+        private Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
 
         public MinerControllerTest()
         {
             this.fullNode = new Mock<IFullNode>();
             this.posMinting = new Mock<IPosMinting>();
             this.walletManager = new Mock<IWalletManager>();
+            this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
 
             this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, this.posMinting.Object);
         }
@@ -167,12 +170,43 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                 .Returns(this.walletManager.Object);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, null, this.posMinting.Object, this.walletManager.Object));
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object, this.walletManager.Object));
 
             var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
             Assert.IsType<OkResult>(result);
             this.posMinting.Verify(p => p.Stake(It.Is<PosMinting.WalletSecret>(s => s.WalletName == "myWallet" && s.WalletPassword == "password1")), Times.Exactly(1));
+        }
+
+        /// <summary>
+        /// Tests that if the system time is out of symc with the rest of the network, staking doesn't start.
+        /// </summary>
+        [Fact]
+        public void StartStaking_InvalidTimeSyncState_ReturnsBadRequest()
+        {
+            var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
+            this.walletManager.Setup(w => w.GetWallet("myWallet"))
+                .Returns(wallet);
+
+            this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
+                .Returns(this.walletManager.Object);
+            
+            this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
+
+            this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object, this.walletManager.Object));
+
+            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+            Assert.Contains("Staking cannot start", error.Message);
+
+            this.posMinting.Verify(pm => pm.Stake(It.IsAny<PosMinting.WalletSecret>()), Times.Never);
         }
     }
 }

@@ -27,6 +27,9 @@ namespace Stratis.Bitcoin.Base
         /// <c>false</c> if the sample comes from a peer that our node connected to.</param>
         /// <returns><c>true</c> if the sample was added to the mix, <c>false</c> otherwise.</returns>
         bool AddTimeData(IPAddress peerAddress, TimeSpan offsetSample, bool isInboundConnection);
+
+        /// <summary> A value indicating whether the system time is not in sync and needs adjustment. </summary>
+        bool IsSystemTimeOutOfSync { get; }
     }
 
     /// <summary>
@@ -151,9 +154,6 @@ namespace Stratis.Bitcoin.Base
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
         private readonly HashSet<IPAddress> outboundSampleSources;
 
-        /// <summary><c>true</c> if the warning loop has been started, <c>false</c> otherwise.</summary>
-        public bool WarningLoopStarted { get; private set; }
-
         /// <summary><c>true</c> if the time sync with peers has been switched off, <c>false</c> otherwise.</summary>
         public bool SwitchedOff { get; private set; }
 
@@ -166,6 +166,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Periodically shows a console warning to inform the user that the system time needs adjustment,
         /// otherwise the node may not perform correctly on the network.</summary>
         private IAsyncLoop warningLoop;
+        
+        /// <inheritdoc/>
+        public bool IsSystemTimeOutOfSync { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -187,9 +190,6 @@ namespace Stratis.Bitcoin.Base
             this.outboundSampleSources = new HashSet<IPAddress>();
 
             this.timeOffset = TimeSpan.Zero;
-            this.WarningLoopStarted = false;
-            this.SwitchedOff = false;
-            this.SwitchedOffLimitReached = false;
         }
 
         /// <inheritdoc />
@@ -228,11 +228,11 @@ namespace Stratis.Bitcoin.Base
 
                         // If SwitchedOffLimitReached is set, timeOffset is set to zero,
                         // so we need to check both conditions here.
-                        if (!this.WarningLoopStarted
+                        if (!this.IsSystemTimeOutOfSync
                             && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
-                            this.WarningLoopStarted = true;
+                            this.IsSystemTimeOutOfSync = true;
                         }
 
                         res = true;
@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-
+        
         /// <summary>
         /// Calculates a new value for <see cref="timeOffset"/> based on existing samples.
         /// </summary>
@@ -320,25 +320,27 @@ namespace Stratis.Bitcoin.Base
 
                     if (timeOffsetWrong)
                     {
-                        this.logger.LogCritical("\n"
-                            + "============================== W A R N I N G ! ==============================\n"
-                            + "Your system time is very different than the time of other network nodes.\n"
-                            + "To prevent problems, adjust your system time, or check -synctime command line argument.\n"
-                            + "Your time difference to the network median time is {0} seconds.\n"
-                            + "=============================================================================\n",
+                        this.logger.LogCritical(Environment.NewLine
+                            + "============================== W A R N I N G ! ==============================" + Environment.NewLine
+                            + "Your system time is very different from the time of other network nodes." + Environment.NewLine
+                            + "It differs from the network median time by {0} seconds." + Environment.NewLine
+                            + "To prevent problems, adjust your system time or check the -synctime command line argument," + Environment.NewLine
+                            + "and restart the node." + Environment.NewLine
+                            + "=============================================================================" + Environment.NewLine,
                               timeOffsetSeconds);
                     }
                 }
                 else
                 {
-                    this.logger.LogCritical("\n"
-                        + "============================== W A R N I N G ! ==============================\n"
-                        + "Your system time is VERY different than the time of other network nodes.\n"
-                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds.\n"
-                        + "The time syncing feature has been as it is no longer considered safe.\n"
-                        + "It is likely that you will now reject new blocks or be unable to mine new block.\n"
-                        + "You need to adjust your system time or check -synctime command line argument.\n"
-                        + "=============================================================================\n",
+                    this.logger.LogCritical(Environment.NewLine
+                        + "============================== W A R N I N G ! ==============================" + Environment.NewLine
+                        + "Your system time is very different from the time of other network nodes." + Environment.NewLine
+                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds." + Environment.NewLine
+                        + "The time syncing feature has been switched off as it is no longer considered safe." + Environment.NewLine
+                        + "It is likely that you will now reject new blocks or be unable to mine new blocks." + Environment.NewLine
+                        + "You need to adjust your system time or check the -synctime command line argument," + Environment.NewLine
+                        + "and restart the node." + Environment.NewLine
+                        + "=============================================================================" + Environment.NewLine,
                           MaxTimeOffsetSeconds);
                 }
 

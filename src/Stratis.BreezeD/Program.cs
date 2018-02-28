@@ -34,9 +34,6 @@ namespace Stratis.BreezeD
 
                 if (isStratis)
                 {
-                    if (NodeSettings.PrintHelp(args, Network.StratisMain))
-                        return;
-
                     Network network = isTestNet ? Network.StratisTest : Network.StratisMain;
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
@@ -58,7 +55,8 @@ namespace Stratis.BreezeD
                 IFullNode node = fullNodeBuilder.Build();
 
                 // Start Full Node - this will also start the API.
-                await node.RunAsync();
+                if (node != null)
+                    await node.RunAsync();
             }
             catch (Exception ex)
             {
