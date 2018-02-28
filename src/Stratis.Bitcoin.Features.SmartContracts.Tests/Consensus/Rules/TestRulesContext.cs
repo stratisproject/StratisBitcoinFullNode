@@ -5,12 +5,16 @@ using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Xunit.Sdk;
 
-namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
+    // Borrowed from Stratis.Bitcoin.Features.Consensus.Tests
+
+
     /// <summary>
     /// Concrete instance of the test chain.
     /// </summary>
