@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -51,6 +54,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
+        }
+
+        /// <summary>Prints the help information on how to configure the block store settings to the logger.</summary>
+        /// <param name="network">The network to use.</param>
+        public static void PrintHelp(Network network)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine($"-txindex=<0 or 1>         Enable to maintain a full transaction index.");
+            builder.AppendLine($"-reindex=<0 or 1>         Rebuild chain state and block index from block data files on disk.");
+            builder.AppendLine($"-prune=<0 or 1>           Enable pruning to reduce storage requirements by enabling deleting of old blocks.");
+
+            NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
     }
 }
