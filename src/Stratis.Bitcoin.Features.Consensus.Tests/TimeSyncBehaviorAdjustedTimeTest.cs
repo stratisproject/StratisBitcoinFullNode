@@ -23,9 +23,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private IDateTimeProvider dateTimeProvider;
         
         /// <summary>
-        /// This is the result of the operation under test. It is only rounded so that assertions are easier, a future improvement would be to not use UtcNow directly in the code, allowing it to be replaced at test time.
+        /// This is the result of the operation under test. 
         /// </summary>
-        private int roundedOffset;
+        private TimeSpan offset;
 
         /// <summary>
         /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
@@ -36,11 +36,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
-            given_an_empty_time_sync_behaviour_state();
-            given_40_inbound_samples_with_offset_of(10);
-            given_1_outbound_sample_with_offset_of(20);
-            when_calculating_time_adjust_offset_to_nearest_second();
-            then_adjusted_time_offset_should_be(20);
+            this.Given_an_empty_time_sync_behaviour_state();
+            this.Given_40_inbound_samples_with_offset_of(10);
+            this.Given_1_outbound_sample_with_offset_of(20);
+            this.When_calculating_time_adjust_offset();
+            this.Then_adjusted_time_offset_should_be(20);
         }
 
         /// <summary>
@@ -50,14 +50,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndZeroOutbound_SticksWithTheSystemTime()
         {
-            given_an_empty_time_sync_behaviour_state();
-            given_40_inbound_samples_with_offset_of(10);
-            given_0_outbound_samples();
-            when_calculating_time_adjust_offset_to_nearest_second();
-            then_adjusted_time_offset_should_be(0);
+            this.Given_an_empty_time_sync_behaviour_state();
+            this.Given_40_inbound_samples_with_offset_of(10);
+            this.When_calculating_time_adjust_offset();
+            this.Then_adjusted_time_offset_should_be(0);
         }
 
-        private void given_an_empty_time_sync_behaviour_state()
+        private void Given_an_empty_time_sync_behaviour_state()
         {
             this.dateTimeProvider = new DateTimeProvider();
             this.timesyncBehaviourState = new TimeSyncBehaviorState(
@@ -66,16 +65,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 new LoggerFactory());
         }
 
-        private void given_1_outbound_sample_with_offset_of(int offsetSeconds)
+        private void Given_1_outbound_sample_with_offset_of(int offsetSeconds)
         {
             this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.2"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
         }
 
-        private void given_0_outbound_samples()
-        {
-        }
-
-        private void given_40_inbound_samples_with_offset_of(int offset)
+        private void Given_40_inbound_samples_with_offset_of(int offset)
         {
             for (int i = 1; i <= 40; i++)
             {
@@ -83,18 +78,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             }
         }
 
-        private void when_calculating_time_adjust_offset_to_nearest_second()
+        private void When_calculating_time_adjust_offset()
         {
             var adjustedTime = this.dateTimeProvider.GetAdjustedTime();
             var now = this.dateTimeProvider.GetUtcNow();
-            var offset = adjustedTime - now;
-
-            this.roundedOffset = (int)Math.Round((decimal) offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+            this.offset = adjustedTime - now;
         }
 
-        private void then_adjusted_time_offset_should_be(int expectedOffset)
+        private void Then_adjusted_time_offset_should_be(int expectedOffset)
         {
-            Assert.Equal(expectedOffset, this.roundedOffset);
+            /// It is only rounded so that assertions are easier, a future improvement would be to not use UtcNow directly in the code but to use an indirection, allowing it to be replaced at test time.
+            var roundedOffset = (int)Math.Round((decimal) this.offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+
+            Assert.Equal(expectedOffset, roundedOffset);
         }
     }
 }
