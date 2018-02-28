@@ -103,6 +103,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        // Wallet doesn't set the genesis block correctly - need to check that out!!!
+
+
         [Fact]
         public void SendAndReceiveSmartContractTransactions()
         {

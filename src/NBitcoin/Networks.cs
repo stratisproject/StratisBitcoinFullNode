@@ -41,6 +41,9 @@ namespace NBitcoin
         /// <summary> The name of the root folder containing the different Stratis blockchains (StratisMain, StratisTest, StratisRegTest). </summary>
         public const string StratisRootFolderName = "stratis";
 
+        /// <summary> The name of the root folder containing the different smart contract blockchains. </summary>
+        public const string StratisSmartContractFolderName = "smartcontracts";
+
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
@@ -55,6 +58,10 @@ namespace NBitcoin
         public static Network StratisTest => Network.GetNetwork("StratisTest") ?? InitStratisTest();
 
         public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? InitStratisRegTest();
+
+        //public static Network SmartContractsTest => Network.GetNetwork("SmartContractsTest") ?? InitSmartContractsTest();
+
+        public static Network SmartContractsRegTest => Network.GetNetwork("SmartContractsRegTest") ?? InitSmartContractsRegTest();
 
         private static Network InitMain()
         {
@@ -265,7 +272,6 @@ namespace NBitcoin
             network.consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
 
             network.genesis = CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
-            network.genesis.Header.HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             network.consensus.HashGenesisBlock = network.genesis.GetHash();
             network.DefaultPort = 18444;
             network.RPCPort = 18332;
@@ -520,6 +526,74 @@ namespace NBitcoin
                 .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) });
 
             return builder.BuildAndRegister();
+        }
+
+        private static Network InitSmartContractsRegTest()
+        {
+            Network network = new Network
+            {
+                Name = "SmartContractRegTest",
+                RootFolderName = StratisSmartContractFolderName,
+                DefaultConfigFilename = BitcoinDefaultConfigFilename
+            };
+
+            network.consensus.SubsidyHalvingInterval = 150;
+            network.consensus.MajorityEnforceBlockUpgrade = 750;
+            network.consensus.MajorityRejectBlockOutdated = 950;
+            network.consensus.MajorityWindow = 1000;
+            network.consensus.BuriedDeployments[BuriedDeployments.BIP34] = 100000000;
+            network.consensus.BuriedDeployments[BuriedDeployments.BIP65] = 100000000;
+            network.consensus.BuriedDeployments[BuriedDeployments.BIP66] = 100000000;
+            network.consensus.BIP34Hash = new uint256();
+            network.consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            network.consensus.MinimumChainWork = uint256.Zero;
+            network.consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
+            network.consensus.PowTargetSpacing = TimeSpan.FromSeconds(10 * 60);
+            network.consensus.PowAllowMinDifficultyBlocks = true;
+            network.consensus.PowNoRetargeting = true;
+            network.consensus.RuleChangeActivationThreshold = 108;
+            network.consensus.MinerConfirmationWindow = 144;
+            NetworkOptions.SetSmartContracts(true);
+            network.consensus.NetworkOptions = NetworkOptions.TemporaryOptions;
+
+            network.magic = 0xDAB5BFFA;
+
+            network.consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
+            network.consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);
+            network.consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
+
+            network.genesis = CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            network.consensus.HashGenesisBlock = network.genesis.GetHash();
+            network.genesis.Header.HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856"); // added after we get the hash so that hash is verified correctly. TODO. Fix
+            network.DefaultPort = 18444;
+            network.RPCPort = 18332;
+
+            network.consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+
+            // Assert(network.consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+
+            network.seeds.Clear();  // Regtest mode doesn't have any DNS seeds.
+            network.base58Prefixes = Network.TestNet.base58Prefixes.ToArray();
+            network.base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
+            network.base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            network.base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
+            network.base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
+            network.base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
+            network.base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
+
+            var encoder = new Bech32Encoder("tb");
+            network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+
+            network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
+            network.MinTxFee = 1000;
+            network.FallbackFee = 20000;
+            network.MinRelayTxFee = 1000;
+
+            NetworksContainer.TryAdd("reg", network);
+            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+
+            return network;
         }
 
         private static Block CreateGenesisBlock(uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)

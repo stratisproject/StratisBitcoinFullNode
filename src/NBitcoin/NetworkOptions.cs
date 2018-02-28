@@ -18,6 +18,8 @@ namespace NBitcoin
         public const uint Witness = 0x40000000;
         public const uint All = Witness;
 
+        public bool IsSmartContracts { get; set; }
+
         /// <summary>ProofOfStake flags.</summary>
         private bool isProofOfStake = false;
 
@@ -43,12 +45,19 @@ namespace NBitcoin
 
         private uint flags = All;
 
+        private static bool isSmartContracts;
+
+        public static void SetSmartContracts(bool set)
+        {
+            isSmartContracts = set;
+        }
+
         /// <summary>TODO: To be used as placeholder until static flags have been completely removed - i.e. from the tests as well...</summary>
         public static NetworkOptions TemporaryOptions
         {
             get
             {
-                return new NetworkOptions() { IsProofOfStake = Transaction.TimeStamp };
+                return new NetworkOptions() { IsProofOfStake = Transaction.TimeStamp, IsSmartContracts = isSmartContracts };
             }
         }
 

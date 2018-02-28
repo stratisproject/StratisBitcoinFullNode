@@ -70,11 +70,14 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
+            // JORDAN LOOK FROM HERE!!!
+
             // If the network is not known then derive it from the command line arguments
             if (this.Network == null)
             {
                 var regTest = false;
                 var testNet = false;
+                var scRegTest = false;
 
                 // Find out if we need to run on testnet or regtest from the config file.
                 if (this.ConfigurationFile != null)
@@ -83,6 +86,7 @@ namespace Stratis.Bitcoin.Configuration
                     var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
                     testNet = configTemp.GetOrDefault<bool>("testnet", false);
                     regTest = configTemp.GetOrDefault<bool>("regtest", false);
+                    scRegTest = configTemp.GetOrDefault<bool>("scregtest", false);
                 }
 
                 // Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
@@ -93,10 +97,14 @@ namespace Stratis.Bitcoin.Configuration
                 if (this.LoadArgs.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
                     regTest = true;
 
-                if (testNet && regTest)
-                    throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
+                // Only if args contains -scregtest, do we set it to true, otherwise it overwrites file configuration
+                if (this.LoadArgs.Contains("-scregtest", StringComparer.CurrentCultureIgnoreCase))
+                    scRegTest = true;
 
-                this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
+                if ((testNet && regTest) || (scRegTest && testNet) || (regTest && scRegTest))
+                    throw new ConfigurationException("Invalid combination of -regtest and -testnet and -scRegTest.");
+
+                this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : scRegTest ? Network.SmartContractsRegTest : Network.Main;
             }
 
             // Load configuration from .ctor?

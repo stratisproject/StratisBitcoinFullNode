@@ -114,18 +114,20 @@ namespace NBitcoin
             stream.ReadWrite(ref this.time);
             stream.ReadWrite(ref this.bits);
             stream.ReadWrite(ref this.nonce);
-            stream.ReadWrite(ref this.hashStateRoot);
+
+            if (stream.TransactionOptions.IsSmartContracts)
+                stream.ReadWrite(ref this.hashStateRoot);
         }
 
-        public virtual void ReadWriteNoState(BitcoinStream stream)
-        {
-            stream.ReadWrite(ref this.version);
-            stream.ReadWrite(ref this.hashPrevBlock);
-            stream.ReadWrite(ref this.hashMerkleRoot);
-            stream.ReadWrite(ref this.time);
-            stream.ReadWrite(ref this.bits);
-            stream.ReadWrite(ref this.nonce);
-        }
+        //public virtual void ReadWriteNoState(BitcoinStream stream)
+        //{
+        //    stream.ReadWrite(ref this.version);
+        //    stream.ReadWrite(ref this.hashPrevBlock);
+        //    stream.ReadWrite(ref this.hashMerkleRoot);
+        //    stream.ReadWrite(ref this.time);
+        //    stream.ReadWrite(ref this.bits);
+        //    stream.ReadWrite(ref this.nonce);
+        //}
 
 
         #endregion
@@ -158,7 +160,7 @@ namespace NBitcoin
                 using (HashStream hs = new HashStream())
                 {
                     // Changed by naughty smart contracts team
-                    this.ReadWriteNoState(new BitcoinStream(hs, true));
+                    this.ReadWrite(new BitcoinStream(hs, true));
                     // End changed by naughty smart contracts team
                     hash = hs.GetHash();
                 }

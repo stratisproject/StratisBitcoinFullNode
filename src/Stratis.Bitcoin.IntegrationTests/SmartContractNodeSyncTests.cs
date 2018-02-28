@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading;
+using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
@@ -43,6 +44,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             var connector = simulator.Nodes[1];
             var networkNode1 = simulator.Nodes[2];
             var networkNode2 = simulator.Nodes[3];
+
+            var test1 = miner.FullNode.NodeService<Network>();
+            var test2 = connector.FullNode.NodeService<Network>();
+            var test3 = networkNode1.FullNode.NodeService<Network>();
+            var test4 = networkNode2.FullNode.NodeService<Network>();
 
             miner.CreateRPCClient().AddNode(connector.Endpoint, true);
             connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);

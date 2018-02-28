@@ -28,13 +28,13 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        private int[] ports;
-        private INodeRunner runner;
-        private readonly NetworkCredential creds;
+        protected int[] ports;
+        protected INodeRunner runner;
+        protected readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
-        private object lockObject = new object();
+        protected object lockObject = new object();
 
         public string Folder { get; }
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 rpc.RemoveNode(node.Endpoint);
         }
 
-        public CoreNodeState State { get; private set; }
+        public CoreNodeState State { get; protected set; }
 
         public int ProtocolPort
         {
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public async Task StartAsync()
+        public virtual async Task StartAsync()
         {
             NodeConfigParameters config = new NodeConfigParameters();
             config.Add("regtest", "1");

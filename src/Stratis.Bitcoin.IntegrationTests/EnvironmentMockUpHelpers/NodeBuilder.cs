@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public CoreNode CreateSmartContractNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = this.CreateNewEmptyFolder();
-            var node = new CoreNode(child, new SmartContractRunner(callback), this, Network.RegTest);
+            var node = new SmartContractCoreNode(child, new SmartContractRunner(callback), this, Network.SmartContractsRegTest);
             this.Nodes.Add(node);
             if (start)
                 node.Start();
