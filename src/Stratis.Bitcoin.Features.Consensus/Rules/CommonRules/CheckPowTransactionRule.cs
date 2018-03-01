@@ -5,9 +5,21 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    public class CheckTransactionRule : ConsensusRule
+    /// <summary>
+    /// Validate a PoW transaction.
+    /// </summary>
+    public class CheckPowTransactionRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNoOutput">Thrown if transaction has no outputs.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionOversize">Thrown if transaction size is greater than maximum allowed size of a block.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNegativeOutput">Thrown if at least one transaction output has negative value.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionTooLargeOutput">Thrown if at least one transaction output value is greater than maximum allowed one.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionTooLargeTotalOutput">Thrown if sum of all transaction outputs is greater than maximum allowed one.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
+        /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
@@ -22,8 +34,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
         public virtual void CheckTransaction(PowConsensusOptions options, Transaction tx)
         {
-            this.Logger.LogTrace("()");
-
             // Basic checks that don't depend on any context.
             if (tx.Inputs.Count == 0)
             {

@@ -450,13 +450,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
                 }
-
-                if (!context.SkipValidation)
-                {
-                    // Check the block itself.
-                    this.Validator.CheckBlock(context);
-                }
-                else this.logger.LogTrace("Block validator skipped for block at height {0}.", context.BlockValidationContext.ChainedBlock.Height);
             }
 
             this.logger.LogTrace("(-)[OK]");
