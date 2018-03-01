@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {    /// <summary>
-     /// Validate a Pos transaction
+     /// Validate a PoS transaction.
      /// </summary>
     public class CheckPosTransactionRule : ConsensusRule
     {

@@ -5,7 +5,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Context checks on a POS block.
+    /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
     public class PosFutureDriftRule : PosConsensusRule
     {
@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
+
             return Task.CompletedTask;
         }
 
@@ -46,6 +47,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
         private bool IsDriftReduced(long time)
         {
+            // TODO: Break this rule to only be used by the statis chain 
+            // this is a specific Stratis bug fix where the blockchain drifted 24 hour ahead as the protocol allowed that.
+            // the protocol was fixed but historical blocks are still effected.
             return time > PosConsensusValidator.DriftingBugFixTimestamp;
         }
     }

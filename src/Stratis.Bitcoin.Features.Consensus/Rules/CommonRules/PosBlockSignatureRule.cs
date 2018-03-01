@@ -8,7 +8,7 @@ using NBitcoin.Crypto;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Context checks on a POS block.
+    /// A rule that will validate the signature of a PoS block.
     /// </summary>
     public class PosBlockSignatureRule : PosConsensusRule
     {
@@ -23,7 +23,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
             }
-
 
             return Task.CompletedTask;
         }
