@@ -76,7 +76,7 @@ namespace NBitcoin.BitcoinCore
 
         public Coins(Transaction tx, int height)
         {
-            if (Transaction.TimeStamp)
+            if (tx.GetNetworkOptions().IsProofOfStake)
             {
                 this.fCoinStake = tx.IsCoinStake;
                 this.nTime = tx.Time;
@@ -189,7 +189,7 @@ namespace NBitcoin.BitcoinCore
                 // coinbase height
                 stream.ReadWriteAsVarInt(ref this.nHeight);
 
-                if (Transaction.TimeStamp)
+                if (stream.TransactionOptions.IsProofOfStake)
                 {
                     stream.ReadWrite(ref this.fCoinStake);
                     stream.ReadWrite(ref this.nTime);
@@ -244,7 +244,7 @@ namespace NBitcoin.BitcoinCore
                 //// coinbase height
                 stream.ReadWriteAsVarInt(ref this.nHeight);
 
-                if (Transaction.TimeStamp)
+                if (stream.TransactionOptions.IsProofOfStake)
                 {
                     stream.ReadWrite(ref this.fCoinStake);
                     stream.ReadWrite(ref this.nTime);

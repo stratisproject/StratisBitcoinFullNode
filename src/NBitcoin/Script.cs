@@ -639,12 +639,12 @@ namespace NBitcoin
                 }
                 else if(((uint)nHashType & 0x1f) == (uint)SigHash.Single && nIn < txTo.Outputs.Count)
                 {
-                    BitcoinStream ss = CreateHashWriter(sigversion);
+                    BitcoinStream ss = CreateHashWriter(sigversion, txTo.GetNetworkOptions());
                     ss.ReadWrite(txTo.Outputs[nIn]);
                     hashOutputs = GetHash(ss);
                 }
 
-                BitcoinStream sss = CreateHashWriter(sigversion);
+                BitcoinStream sss = CreateHashWriter(sigversion, txTo.GetNetworkOptions());
                 // Version
                 sss.ReadWrite(txTo.Version);
                 // Input prevouts/nSequence (none/all, depending on flags)
@@ -691,7 +691,7 @@ namespace NBitcoin
             var scriptCopy = new Script(scriptCode._Script);
             scriptCopy.FindAndDelete(OpcodeType.OP_CODESEPARATOR);
 
-            var txCopy = new Transaction(txTo.ToBytes());
+            var txCopy = new Transaction(txTo.ToBytes(), options:txTo.GetNetworkOptions());
 
             //Set all TxIn script to empty string
             foreach(var txin in txCopy.Inputs)
@@ -739,7 +739,7 @@ namespace NBitcoin
 
 
             //Serialize TxCopy, append 4 byte hashtypecode
-            var stream = CreateHashWriter(sigversion);
+            var stream = CreateHashWriter(sigversion, txCopy.GetNetworkOptions());
             txCopy.ReadWrite(stream);
             stream.ReadWrite((uint)nHashType);
             return GetHash(stream);
@@ -755,7 +755,7 @@ namespace NBitcoin
         internal static uint256 GetHashOutputs(Transaction txTo)
         {
             uint256 hashOutputs;
-            BitcoinStream ss = CreateHashWriter(HashVersion.Witness);
+            BitcoinStream ss = CreateHashWriter(HashVersion.Witness, txTo.GetNetworkOptions());
             foreach(var txout in txTo.Outputs)
             {
                 ss.ReadWrite(txout);
@@ -767,7 +767,7 @@ namespace NBitcoin
         internal static uint256 GetHashSequence(Transaction txTo)
         {
             uint256 hashSequence;
-            BitcoinStream ss = CreateHashWriter(HashVersion.Witness);
+            BitcoinStream ss = CreateHashWriter(HashVersion.Witness, txTo.GetNetworkOptions());
             foreach(var input in txTo.Inputs)
             {
                 ss.ReadWrite((uint)input.Sequence);
@@ -779,7 +779,7 @@ namespace NBitcoin
         internal static uint256 GetHashPrevouts(Transaction txTo)
         {
             uint256 hashPrevouts;
-            BitcoinStream ss = CreateHashWriter(HashVersion.Witness);
+            BitcoinStream ss = CreateHashWriter(HashVersion.Witness, txTo.GetNetworkOptions());
             foreach(var input in txTo.Inputs)
             {
                 ss.ReadWrite(input.PrevOut);
@@ -788,12 +788,12 @@ namespace NBitcoin
             return hashPrevouts;
         }
 
-        private static BitcoinStream CreateHashWriter(HashVersion version)
+        private static BitcoinStream CreateHashWriter(HashVersion version, NetworkOptions options)
         {
             HashStream hs = new HashStream();
             BitcoinStream stream = new BitcoinStream(hs, true);
             stream.Type = SerializationType.Hash;
-            stream.TransactionOptions = version == HashVersion.Original ? NetworkOptions.None : NetworkOptions.Witness;
+            stream.TransactionOptions = version == HashVersion.Original ? options & ~NetworkOptions.Witness : options | NetworkOptions.Witness;
             return stream;
         }
 

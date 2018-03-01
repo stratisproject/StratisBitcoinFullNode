@@ -1111,9 +1111,11 @@ namespace NBitcoin
 
     //https://en.bitcoin.it/wiki/Transactions
     //https://en.bitcoin.it/wiki/Protocol_specification
-    public class Transaction : IBitcoinSerializable
+    public class Transaction : IBitcoinSerializable, IHaveNetworkOptions
     {
         public static bool TimeStamp = false;
+
+        private NetworkOptions networkOptions;
 
         public bool RBF
         {
@@ -1156,21 +1158,32 @@ namespace NBitcoin
         LockTime nLockTime;
 
         public Transaction()
+            :this(NetworkOptions.TemporaryOptions)
         {
-            vin = new TxInList(this);
-            vout = new TxOutList(this);
         }
 
-        public Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-            : this()
+        public Transaction(NetworkOptions networkOptions)
         {
-            this.FromBytes(Encoders.Hex.DecodeData(hex), version);
+            this.networkOptions = networkOptions;
+            this.vin = new TxInList(this);
+            this.vout = new TxOutList(this);
         }
 
-        public Transaction(byte[] bytes)
+        public Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, NetworkOptions options = null)
+            : this(Encoders.Hex.DecodeData(hex), version, options)
+        {
+        }
+
+        public Transaction(byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, NetworkOptions options = null)
             : this()
         {
-            this.FromBytes(bytes);
+            this.networkOptions = options ?? NetworkOptions.TemporaryOptions;
+            this.FromBytes(bytes, version);
+        }
+
+        public NetworkOptions GetNetworkOptions()
+        {
+            return this.networkOptions;
         }
 
         public Money TotalOut
@@ -1215,16 +1228,18 @@ namespace NBitcoin
 
         public virtual void ReadWrite(BitcoinStream stream)
         {
-            var witSupported = (((uint)stream.TransactionOptions & (uint)NetworkOptions.Witness) != 0) &&
-                                stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
+            var witSupported = stream.TransactionOptions.IsWitness && stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
 
             byte flags = 0;
             if(!stream.Serializing)
             {
+                // When de-serializing a transaction the NetworkOptions must come from the stream.
+                this.networkOptions = stream.TransactionOptions.Clone();
+
                 stream.ReadWrite(ref nVersion);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (stream.TransactionOptions.IsProofOfStake)
                     stream.ReadWrite(ref this.nTime);
 
                 /* Try to read the vin. In case the dummy is there, this will be read as an empty vector. */
@@ -1278,7 +1293,7 @@ namespace NBitcoin
                 stream.ReadWrite(ref version);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (stream.TransactionOptions.IsProofOfStake)
                     stream.ReadWrite(ref this.nTime);
 
                 if (witSupported)
@@ -1327,7 +1342,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.None
+                    TransactionOptions = this.networkOptions & ~NetworkOptions.All
                 });
                 h = hs.GetHash();
             }
@@ -1376,7 +1391,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.Witness
+                    TransactionOptions = this.networkOptions | NetworkOptions.Witness
                 });
                 h = hs.GetHash();
             }
@@ -1462,8 +1477,8 @@ namespace NBitcoin
         /// <returns>Transaction size</returns>
         public int GetVirtualSize()
         {
-            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness));
-            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None));
+            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness) { IsProofOfStake = this.networkOptions.IsProofOfStake });
+            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None) { IsProofOfStake = this.networkOptions.IsProofOfStake });
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
@@ -1855,18 +1870,21 @@ namespace NBitcoin
         /// <returns>A new transaction with only the options wanted</returns>
         public Transaction WithOptions(NetworkOptions options)
         {
-            if(options == NetworkOptions.Witness && HasWitness)
+            if (options == NetworkOptions.Witness && HasWitness)
                 return this;
-            if(options == NetworkOptions.None && !HasWitness)
+            if (options == NetworkOptions.None && !HasWitness)
                 return this;
-            var instance = new Transaction();
+
+            NetworkOptions cloneOptions = (this.networkOptions & ~NetworkOptions.All) | options;
+
+            var instance = new Transaction();            
             var ms = new MemoryStream();
             var bms = new BitcoinStream(ms, true);
-            bms.TransactionOptions = options;
+            bms.TransactionOptions = cloneOptions;
             this.ReadWrite(bms);
             ms.Position = 0;
             bms = new BitcoinStream(ms, false);
-            bms.TransactionOptions = options;
+            bms.TransactionOptions = cloneOptions;
             instance.ReadWrite(bms);
             return instance;
         }

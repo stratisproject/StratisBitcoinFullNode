@@ -477,7 +477,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (this.GetSize(transaction, NetworkOptions.None) > this.ConsensusOptions.MaxBlockBaseSize)
+            if (this.GetSize(transaction, transaction.GetNetworkOptions() & ~NetworkOptions.Witness) > this.ConsensusOptions.MaxBlockBaseSize)
             {
                 this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();

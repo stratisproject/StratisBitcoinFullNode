@@ -301,7 +301,7 @@ namespace NBitcoin
             public TransactionBuildingContext(TransactionBuilder builder)
             {
                 Builder = builder;
-                Transaction = new Transaction();
+                Transaction = new Transaction(NetworkOptions.TemporaryOptions);
                 AdditionalFees = Money.Zero;
             }
             public TransactionBuilder.BuilderGroup Group
