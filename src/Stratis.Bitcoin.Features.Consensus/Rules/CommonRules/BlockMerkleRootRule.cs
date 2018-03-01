@@ -8,28 +8,38 @@ using NBitcoin.Crypto;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
+    /// This rule will validate that the calculated merkle tree matches the merkle root in the header.
+    /// </summary>
+    /// <remarks>
+    /// Transactions in a block are hashed together using SHA256 in to a merkel tree, 
+    /// the root of that tree is included in the block header.
+    /// </remarks>
+    /// <remarks>
     /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
     /// of transactions in a block without affecting the merkle root of a block,
     /// while still invalidating it.
-    /// </summary>
+    /// </remarks>
     public class BlockMerkleRootRule : ConsensusRule
     {        
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
-
-            uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
-            if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
+            if (context.CheckMerkleRoot)
             {
-                this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
-                ConsensusErrors.BadMerkleRoot.Throw();
-            }
+                Block block = context.BlockValidationContext.Block;
 
-            if (mutated)
-            {
-                this.Logger.LogTrace("(-)[BAD_TX_DUP]");
-                ConsensusErrors.BadTransactionDuplicate.Throw();
+                uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
+                if (block.Header.HashMerkleRoot != hashMerkleRoot2)
+                {
+                    this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+                    ConsensusErrors.BadMerkleRoot.Throw();
+                }
+
+                if (mutated)
+                {
+                    this.Logger.LogTrace("(-)[BAD_TX_DUP]");
+                    ConsensusErrors.BadTransactionDuplicate.Throw();
+                }
             }
 
             return Task.CompletedTask;
