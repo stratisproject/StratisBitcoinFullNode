@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             // Check that new rules are present
             Assert.Single(smartContractConsensusRules.OfType<TxOutSmartContractExecRule>());
             Assert.Single(smartContractConsensusRules.OfType<OpSpendRule>());
+            Assert.Single(smartContractConsensusRules.OfType<GasBudgetRule>());
 
             // Check that original rules are present
             foreach (var rule in baseRuleRegistration.Object.GetRules())
