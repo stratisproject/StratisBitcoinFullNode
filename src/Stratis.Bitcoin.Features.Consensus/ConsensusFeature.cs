@@ -138,6 +138,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusRules.Register(this.ruleRegistration);
         }
 
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            ConsensusSettings.PrintHelp(network);
+        }
+
         /// <inheritdoc />
         public override void Dispose()
         {
