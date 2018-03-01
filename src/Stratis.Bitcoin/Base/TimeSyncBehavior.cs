@@ -266,21 +266,19 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            // All samples are formed of one copy of each inbound sample.
-            // And N copies of each outbound sample.
             int unweightedSamplesCount = this.inboundTimestampOffsets.Count + OutboundToInboundWeightRatio * this.outboundTimestampOffsets.Count;
 
             if (unweightedSamplesCount >= MinUnweightedSamplesCount)
             {
                 this.logger.LogTrace("We have {0} unweighted samples, {1} outbound samples and {2} inbound samples.", unweightedSamplesCount, this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
                 
-                var medianOffsetInSeconds = this.GetMedianOffsetInSecondsFromInboundAndWeightedOutbound();
+                double medianOffsetInSeconds = this.GetMedianOffsetInSecondsFromInboundAndWeightedOutbound();
 
                 if (Math.Abs(medianOffsetInSeconds) < MaxTimeOffsetSeconds)
                 {
                     this.timeOffset = TimeSpan.FromSeconds(medianOffsetInSeconds);
                     this.dateTimeProvider.SetAdjustedTimeOffset(this.timeOffset);
-                }
+                } 
                 else
                 {
                     this.SwitchedOff = true;
@@ -294,25 +292,28 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// Gets the median offset of all the inbound samples (limited to 1 less than the OutboundToInboundWeightRatio per outbound) and the outbound samples with a weighting of the OutboundToInboundWeightRatio.
+        /// Gets the median offset of all the inbound samples 
+        /// limited to 1 less than the <see cref="OutboundToInboundWeightRatio"/> inbound per outbound) 
+        /// and the outbound samples with a weighting of the OutboundToInboundWeightRatio.
         /// </summary>
         /// <returns>Median offset in seconds.</returns>
         private double GetMedianOffsetInSecondsFromInboundAndWeightedOutbound()
         {
-            var inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
-            var outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
+            CircularArray<TimestampOffsetSample> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
+            CircularArray<TimestampOffsetSample> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
 
+            // All samples is formed of one copy of each inbound sample
+            // and <see cref="OutboundToInboundWeightRatio"/> copies of each outbound sample.
             var allSamplesToConsider = new List<double>();
 
             for (int i = 0; i < OutboundToInboundWeightRatio; i++)
                 allSamplesToConsider.AddRange(outboundOffsets);
 
-            var numberOfInboundSamplesToConsider = outboundOffsets.Count() * (OutboundToInboundWeightRatio - 1);
+            int numberOfInboundSamplesToConsider = outboundOffsets.Count() * (OutboundToInboundWeightRatio - 1);
 
             allSamplesToConsider.AddRange(inboundOffsets.Take(numberOfInboundSamplesToConsider));
 
-            double median = allSamplesToConsider.Median();
-            return median;
+            return allSamplesToConsider.Median();
         }
 
         /// <summary>

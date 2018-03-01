@@ -23,15 +23,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private IDateTimeProvider dateTimeProvider;
         
         /// <summary>
-        /// This is the result of the operation under test. 
+        /// This is the result of the <see cref="IDateTimeProvider.GetAdjustedTime"/>. 
         /// </summary>
-        private TimeSpan offset;
+        private TimeSpan adjustedOffsetTimespan;
 
         /// <summary>
         /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// uses outbound samples as a priority over inbound as they are less likely to be malicious.
-        /// This means that even when there are many inbound connections, only the first ones are considered until there are enough outbound nodes. 
-        /// Eg only 9 inbound per 1 outbound.
+        /// This means that even when there are many inbound connections, 
+        /// only the first (<see cref="TimeSyncBehaviorState.OutboundToInboundWeightRatio"/> -1) inbound per outbound are considered. 
+        /// Eg only 9 inbound per 1 outbound if the ratio is 10:1 inbound:outbound.
+        /// <remarks>An adjusted offset is also only considered after 40 samples, hence 40 inbound used in the test.</remarks>
         /// </summary>
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
@@ -40,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.Given_40_inbound_samples_with_offset_of(10);
             this.Given_1_outbound_sample_with_offset_of(20);
             this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_should_be(20);
+            this.Then_adjusted_time_offset_is(20);
         }
 
         /// <summary>
@@ -53,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.Given_an_empty_time_sync_behaviour_state();
             this.Given_40_inbound_samples_with_offset_of(10);
             this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_should_be(0);
+            this.Then_adjusted_time_offset_is(0);
         }
 
         private void Given_an_empty_time_sync_behaviour_state()
@@ -80,17 +82,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private void When_calculating_time_adjust_offset()
         {
-            var adjustedTime = this.dateTimeProvider.GetAdjustedTime();
-            var now = this.dateTimeProvider.GetUtcNow();
-            this.offset = adjustedTime - now;
+            this.adjustedOffsetTimespan = this.dateTimeProvider.GetAdjustedTime() - this.dateTimeProvider.GetUtcNow();
         }
 
-        private void Then_adjusted_time_offset_should_be(int expectedOffset)
+        private void Then_adjusted_time_offset_is(int expectedOffsetInSeconds)
         {
-            /// It is only rounded so that assertions are easier, a future improvement would be to not use UtcNow directly in the code but to use an indirection, allowing it to be replaced at test time.
-            var roundedOffset = (int)Math.Round((decimal) this.offset.TotalMilliseconds, MidpointRounding.AwayFromZero) / 1000;
+            int roundedOffset = (int) Math.Round((decimal) this.adjustedOffsetTimespan.TotalMilliseconds,
+                                    MidpointRounding.AwayFromZero) / 1000;
 
-            Assert.Equal(expectedOffset, roundedOffset);
+            Assert.Equal(expectedOffsetInSeconds, roundedOffset);
         }
     }
 }
