@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -290,20 +291,18 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.timeOffset), this.timeOffset.TotalSeconds);
         }
-
+         
         /// <summary>
         /// Gets the median offset of all the inbound samples 
-        /// limited to 1 less than the <see cref="OutboundToInboundWeightRatio"/> inbound per outbound) 
+        /// limited to 1 less than the <see cref="OutboundToInboundWeightRatio"/> inbound per outbound
         /// and the outbound samples with a weighting of the OutboundToInboundWeightRatio.
         /// </summary>
         /// <returns>Median offset in seconds.</returns>
         private double GetMedianOffsetInSecondsFromInboundAndWeightedOutbound()
         {
-            CircularArray<TimestampOffsetSample> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
-            CircularArray<TimestampOffsetSample> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
+            IEnumerable<double> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
+            IEnumerable<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds);
 
-            // All samples is formed of one copy of each inbound sample
-            // and <see cref="OutboundToInboundWeightRatio"/> copies of each outbound sample.
             var allSamplesToConsider = new List<double>();
 
             for (int i = 0; i < OutboundToInboundWeightRatio; i++)

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             int roundedOffset = (int) Math.Round((decimal) this.adjustedOffsetTimespan.TotalMilliseconds,
                                     MidpointRounding.AwayFromZero) / 1000;
-
+             
             Assert.Equal(expectedOffsetInSeconds, roundedOffset);
         }
     }
