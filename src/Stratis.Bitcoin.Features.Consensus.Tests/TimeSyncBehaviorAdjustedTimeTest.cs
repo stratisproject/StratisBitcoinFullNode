@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     /// <summary>
     /// Tests of <see cref="TimeSyncBehavior"/> and <see cref="TimeSyncBehaviorState"/> classes.
     /// </summary>
-    public partial class TimeSyncBehaviorAdjustedTimeTest
+    public class TimeSyncBehaviorAdjustedTimeTest
     {
         /// <summary>
         /// Time data is added this state. 

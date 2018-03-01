@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peerAddress), peerAddress, nameof(offsetSample), offsetSample.TotalSeconds, nameof(isInboundConnection), isInboundConnection);
 
-            bool success = false;
+            bool res = false;
 
             bool startWarningLoopNow = false;
             lock (this.lockObject)
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Base
                             this.IsSystemTimeOutOfSync = true;
                         }
 
-                        success = true;
+                        res = true;
                     }
                     else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
                 }
@@ -246,8 +246,8 @@ namespace Stratis.Bitcoin.Base
             if (startWarningLoopNow)
                 this.StartWarningLoop();
 
-            this.logger.LogTrace("(-):{0}", success);
-            return success;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
         
         /// <summary>
