@@ -261,6 +261,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Time in milliseconds between attempts to generate PoS blocks.</summary>
         private readonly int minerSleep;
 
+        /// <summary>Time in milliseconds between attempts to generate PoS blocks, when the system time is out of sync.</summary>
+        private readonly int systemTimeOutOfSyncSleep;
+
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
         protected readonly MempoolSchedulerLock mempoolLock;
 
@@ -303,6 +306,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Provider of IBD state.</summary>
         private IInitialBlockDownloadState initialBlockDownloadState;
 
+        /// <summary>State of time synchronization feature that stores collected data samples.</summary>
+        private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
         /// </summary>
@@ -321,6 +327,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="mempool">Memory pool of pending transactions.</param>
         /// <param name="wallet">A manager providing operations on wallets.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
+        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             IConsensusLoop consensusLoop,
@@ -338,6 +345,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ITxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
+            ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory)
         {
             this.consensusLoop = consensusLoop;
@@ -355,10 +363,12 @@ namespace Stratis.Bitcoin.Features.Miner
             this.mempool = mempool;
             this.asyncLoopFactory = asyncLoopFactory;
             this.walletManager = wallet as WalletManager;
+            this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
+            this.systemTimeOutOfSyncSleep = 7000;
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
@@ -386,7 +396,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
             {
                 this.logger.LogTrace("()");
-
+                
                 try
                 {
                     await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
@@ -458,6 +468,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
+                // Prevent mining if the system time is not in sync with that of other members on the network.
+                if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
+                {
+                    this.logger.LogError("Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
+                                         + "Please adjust your system time and restart the node.");
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.systemTimeOutOfSyncSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                    continue;
+                }
+
                 // Prevent mining if not fully synced.
                 if (this.initialBlockDownloadState.IsInitialBlockDownload() || 
                     this.consensusLoop.Tip != this.chain.Tip)

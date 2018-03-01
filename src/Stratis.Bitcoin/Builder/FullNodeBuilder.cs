@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -161,6 +162,19 @@ namespace Stratis.Bitcoin.Builder
 
             this.Services = this.BuildServices();
 
+            if (this.NodeSettings?.PrintHelpAndExit ?? false)
+            {
+                foreach (var featureRegistration in this.Features.FeatureRegistrations)
+                {
+                    MethodInfo printHelp = featureRegistration.FeatureType.GetMethod("PrintHelp", BindingFlags.Public | BindingFlags.Static);
+
+                    printHelp?.Invoke(null, new object[] { this.NodeSettings.Network });
+                }
+
+                // Signal node not built
+                return null;
+            }
+
             var fullNodeServiceProvider = this.Services.BuildServiceProvider();
             this.ConfigureServices(fullNodeServiceProvider);
 
@@ -201,7 +215,7 @@ namespace Stratis.Bitcoin.Builder
             foreach (var configureFeature in this.featuresRegistrationDelegates)
                 configureFeature(this.Features);
 
-            // configure features startup
+            // configure features startup            
             foreach (var featureRegistration in this.Features.FeatureRegistrations)
             {
                 try

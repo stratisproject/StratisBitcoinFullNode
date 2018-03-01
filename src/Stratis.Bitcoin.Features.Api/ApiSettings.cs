@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Text;
 using System.Timers;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -28,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
-        /// <summary>URI to node's API interface.</summary>
+        /// <summary>Port of node's API interface.</summary>
         public int ApiPort { get; set; }
 
         /// <summary>URI to node's API interface.</summary>
@@ -59,17 +62,7 @@ namespace Stratis.Bitcoin.Features.Api
             Uri apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            int port;
-            if (nodeSettings.Network.IsBitcoin())
-            {
-                port = nodeSettings.Network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
-            }
-            else
-            {
-                port = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-            }
-
-            var apiPort = config.GetOrDefault("apiport", port);
+            var apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network));
             
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
@@ -96,6 +89,32 @@ namespace Stratis.Bitcoin.Features.Api
             }
 
             this.callback?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Determines the default API port.
+        /// </summary>
+        /// <param name="network">The network to use.</param>
+        /// <returns>The default API port.</returns>
+        private static int GetDefaultPort(Network network)
+        {
+            if (network.IsBitcoin())
+                return network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
+            
+            return network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
+        }
+
+        /// <summary>Prints the help information on how to configure the API settings to the logger.</summary>
+        /// <param name="network">The network to use.</param>
+        public static void PrintHelp(Network network)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine($"-apiuri=<string>          URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
+            builder.AppendLine($"-apiport=<0-65535>        Port of node's API interface. Default: {GetDefaultPort(network)}.");
+            builder.AppendLine($"-keepalive=<seconds>      Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
+
+            NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
     }
 }

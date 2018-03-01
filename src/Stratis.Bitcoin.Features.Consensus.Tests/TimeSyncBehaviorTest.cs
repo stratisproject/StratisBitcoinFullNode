@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 bool used = state.AddTimeData(peerAddress, timeOffsetSample, isInbound);
                 Assert.Equal(isUsed, used);
 
-                Assert.Equal(isWarningOn, state.WarningLoopStarted);
+                Assert.Equal(isWarningOn, state.IsSystemTimeOutOfSync);
                 Assert.Equal(isSyncOff, state.SwitchedOffLimitReached);
                 Assert.Equal(isSyncOff, state.SwitchedOff);
 
