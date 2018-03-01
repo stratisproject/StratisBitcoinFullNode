@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 return;
             }
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
+            var smartContractCarrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
             smartContractCarrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
             this.AddContractCallToBlock(mempoolEntry, smartContractCarrier);

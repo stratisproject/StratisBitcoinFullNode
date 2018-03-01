@@ -30,11 +30,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Call smart contract and add to transaction-------------
-            SmartContractCarrier call = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, (Gas) 500000);
-            byte[] serializedCall = call.Serialize();
+            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, (Gas)500000);
             var transactionCall = new Transaction();
             transactionCall.AddInput(new TxIn());
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(serializedCall));
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
@@ -71,9 +70,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             );
 
                 SmartContractExecutionResult result = vm.ExecuteMethod(
-                    gasAwareExecutionCode, 
-                    "StorageTest", 
-                    "StoreData", 
+                    gasAwareExecutionCode,
+                    "StorageTest",
+                    "StoreData",
                     context,
                     gasMeter);
 
@@ -97,11 +96,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 5),
             };
 
-            SmartContractCarrier call = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, (Gas) 500000).WithParameters(methodParameters);
-            byte[] serializedCall = call.Serialize();
+            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, (Gas)500000, methodParameters);
             var transactionCall = new Transaction();
             transactionCall.AddInput(new TxIn());
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(serializedCall));
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
@@ -139,7 +137,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             );
 
                 SmartContractExecutionResult result = vm.ExecuteMethod(
-                    gasAwareExecutionCode, 
+                    gasAwareExecutionCode,
                     "StorageTestWithParameters",
                     "StoreData",
                     context,

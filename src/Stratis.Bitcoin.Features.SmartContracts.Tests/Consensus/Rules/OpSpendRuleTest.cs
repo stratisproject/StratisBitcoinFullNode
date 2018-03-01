@@ -1,17 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
@@ -26,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         [Fact]
         public async Task OpSpend_PreviousTransactionOpCall_SuccessAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
@@ -56,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         [Fact]
         public async Task OpSpend_PreviousTransactionNone_FailureAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
@@ -73,13 +65,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            var error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Task<ConsensusErrorException> error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
 
         [Fact]
         public async Task OpSpend_PreviousTransactionOther_FailureAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
@@ -117,8 +109,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            var error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Task<ConsensusErrorException> error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
-
     }
 }
