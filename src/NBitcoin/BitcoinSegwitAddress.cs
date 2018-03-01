@@ -5,7 +5,7 @@ namespace NBitcoin
 {
     public class BitcoinWitPubKeyAddress : BitcoinAddress, IBech32Data
     {
-        public BitcoinWitPubKeyAddress(string bech32, Network expectedNetwork = null)
+        public BitcoinWitPubKeyAddress(string bech32, Network expectedNetwork)
                 : base(Validate(bech32, ref expectedNetwork), expectedNetwork)
         {
             var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
@@ -16,18 +16,31 @@ namespace NBitcoin
 
         private static string Validate(string bech32, ref Network expectedNetwork)
         {
-            if (IsValid(bech32, ref expectedNetwork))
+            bool isValid = IsValid(bech32, ref expectedNetwork, out Exception exception);
+
+            if (exception != null)
+                throw exception;
+
+            if (isValid)
                 return bech32;
+            
             throw new FormatException("Invalid BitcoinWitPubKeyAddress");
         }
 
-        public static bool IsValid(string bech32, ref Network expectedNetwork)
+        public static bool IsValid(string bech32, ref Network expectedNetwork, out Exception exception)
         {
+            exception = null;
+
             if (bech32 == null)
-                throw new ArgumentNullException("bech32");
+            {
+                exception = new ArgumentNullException("bech32");
+                return false;
+            }
+
             var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
             if (encoder == null)
                 return false;
+
             try
             {
                 byte witVersion;
@@ -37,7 +50,18 @@ namespace NBitcoin
                     return true;
                 }
             }
-            catch (FormatException) { }
+            catch (Bech32FormatException bech32FormatException)
+            {
+                exception = bech32FormatException;
+                return false;
+            }
+            catch (FormatException)
+            {
+                exception = new FormatException("Invalid BitcoinWitPubKeyAddress");
+                return false;
+            }
+
+            exception = new FormatException("Invalid BitcoinWitScriptAddress");
             return false;
         }
 
@@ -97,15 +121,26 @@ namespace NBitcoin
 
         private static string Validate(string bech32, ref Network expectedNetwork)
         {
-            if (IsValid(bech32, ref expectedNetwork))
+            bool isValid = IsValid(bech32, ref expectedNetwork, out Exception exception);
+
+            if (exception != null)
+                throw exception;
+
+            if (isValid)
                 return bech32;
+
             throw new FormatException("Invalid BitcoinWitScriptAddress");
         }
 
-        public static bool IsValid(string bech32, ref Network expectedNetwork)
+        public static bool IsValid(string bech32, ref Network expectedNetwork, out Exception exception)
         {
+            exception = null;
+
             if (bech32 == null)
-                throw new ArgumentNullException("bech32");
+            {
+                exception = new ArgumentNullException("bech32");
+                return false;
+            }
 
             var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
             if (encoder == null)
@@ -119,7 +154,18 @@ namespace NBitcoin
                     return true;
                 }
             }
-            catch (FormatException) { }
+            catch (Bech32FormatException bech32FormatException)
+            {
+                exception = bech32FormatException;
+                return false;
+            }
+            catch (FormatException)
+            {
+                exception = new FormatException("Invalid BitcoinWitPubKeyAddress");
+                return false;
+            }
+
+            exception = new FormatException("Invalid BitcoinWitPubKeyAddress");
             return false;
         }
 
