@@ -93,6 +93,7 @@ namespace NBitcoin
             var clone = new NetworkOptions();
             clone.flags = this.flags;
             clone.IsProofOfStake = this.IsProofOfStake;
+            clone.IsSmartContracts = this.IsSmartContracts;
             return clone;
         }
 

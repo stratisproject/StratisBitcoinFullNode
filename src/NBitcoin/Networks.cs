@@ -528,6 +528,10 @@ namespace NBitcoin
             return builder.BuildAndRegister();
         }
 
+        /// <summary>
+        /// Took the 'InitReg' from above and adjusted it slightly (set a static flag + removed the hash check)
+        /// </summary>
+        /// <returns></returns>
         private static Network InitSmartContractsRegTest()
         {
             Network network = new Network
@@ -570,6 +574,7 @@ namespace NBitcoin
 
             network.consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
+            // TODO: Get the hash for this block and do an assert so that it starts the same on all nodes
             // Assert(network.consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
             network.seeds.Clear();  // Regtest mode doesn't have any DNS seeds.
