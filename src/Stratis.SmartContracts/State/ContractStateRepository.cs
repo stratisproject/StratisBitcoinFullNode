@@ -182,7 +182,7 @@ namespace Stratis.SmartContracts.State
         public ulong GetCurrentBalance(uint160 address)
         {
             ulong ret = 0;
-            if (this.CurrentCarrier.To == address)
+            if (this.CurrentCarrier?.To == address)
                 ret += this.CurrentCarrier.TxOutValue;
 
             ContractUnspentOutput unspent = GetUnspent(address);

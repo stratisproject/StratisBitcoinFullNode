@@ -103,9 +103,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        // Wallet doesn't set the genesis block correctly - need to check that out!!!
-
-
         [Fact]
         public void SendAndReceiveSmartContractTransactions()
         {
@@ -152,31 +149,54 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 var trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
-                // Equivalent to what happens in 'SendTransaction' on WalletController
                 scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(trx);
+                TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
                 scSender.GenerateSmartContractStratisWithMiner(1);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
-                // sync both nodes
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
                 IContractStateRepository senderState = scSender.FullNode.NodeService<IContractStateRepository>();
-                IContractStateRepository receiverState = scReceiver.FullNode.NodeService<IContractStateRepository>();// Services.ServiceProvider.GetService(typeof(IContractStateRepository));
-                uint160 newContractAddress = trx.GetNewContractAddress();
-                Assert.NotNull(senderState.GetCode(newContractAddress));
-                Assert.NotNull(receiverState.GetCode(newContractAddress));
+                IContractStateRepository receiverState = scReceiver.FullNode.NodeService<IContractStateRepository>();
+                uint160 tokenContractAddress = trx.GetNewContractAddress();
+                Assert.NotNull(senderState.GetCode(tokenContractAddress));
+                Assert.NotNull(receiverState.GetCode(tokenContractAddress));
 
+                scSender.FullNode.MempoolManager().Clear();
 
-                // Create a transfer contract and start sending between
-                //var contractCarrier = SmartContractCarrier.CallContract(vmVersion, newContractAddress, )
-                //Script contractCreateScript = new Script(contractCarrier.Serialize());
-                //var txBuildContext = new TransactionBuildContext(new WalletAccountReference("mywallet", "account 0"),
-                //        new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
-                //{
-                //    MinConfirmations = 101,
-                //    FeeType = FeeType.High,
-                //};
+                contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
+                contractCreateScript = new Script(contractCarrier.Serialize());
+                txBuildContext = new TransactionBuildContext(new WalletAccountReference("mywallet", "account 0"),
+                        new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
+                {
+                    MinConfirmations = 101,
+                    FeeType = FeeType.High,
+                };
+                trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
+                scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(trx);
+                TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
+                scSender.GenerateSmartContractStratisWithMiner(1);
+                uint160 transferContractAddress = trx.GetNewContractAddress();
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
-                //var trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
+                scSender.FullNode.MempoolManager().Clear();
+
+                contractCarrier = SmartContractCarrier.CallContract(1, transferContractAddress, "Test", gasPrice, gasLimit);
+                Script contractCallScript = new Script(contractCarrier.Serialize());
+                txBuildContext = new TransactionBuildContext(new WalletAccountReference("mywallet", "account 0"),
+                    new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), "123456")
+                {
+                    MinConfirmations = 101,
+                    FeeType = FeeType.High,
+                };
+                trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
+                scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(trx);
+                TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
+                scSender.GenerateSmartContractStratisWithMiner(1);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                var test = senderState.GetCurrentBalance(transferContractAddress);
+                Assert.Equal((ulong) 900, senderState.GetCurrentBalance(transferContractAddress));
             }
         }
     }
