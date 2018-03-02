@@ -30,7 +30,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             foreach (Transaction transaction in smartContractTransactions)
             {
-                var carrier = SmartContractCarrier.Deserialize(transaction, transaction.Outputs[0]);
+                // This should never be null as every tx in smartContractTransactions contains a SmartContractOutput
+                // So throw if null, because we really didn't expect that
+                TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+
+                var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
 
                 if (carrier.TxOutValue != 0)
                 {
