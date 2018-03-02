@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.State;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
@@ -527,7 +528,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             BitcoinSecret dest = this.MinerSecret;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
-#if !NOSOCKET
+            IContractStateRepository state = fullNode.NodeService<IContractStateRepository>();
+            #if !NOSOCKET
 
             for (int i = 0; i < blockCount; i++)
             {
@@ -546,6 +548,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     block.Transactions.AddRange(passedTransactions);
                 }
                 block.UpdateMerkleRoot();
+                block.Header.HashStateRoot = new uint256(state.GetRoot());
                 while (!block.CheckProofOfWork(fullNode.Network.Consensus))
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);

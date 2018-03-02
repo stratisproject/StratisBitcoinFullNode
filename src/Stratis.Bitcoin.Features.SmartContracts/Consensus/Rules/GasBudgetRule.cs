@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -35,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                 // The gas budget supplied
                 Money suppliedBudget = transaction.TotalOut;
                 
-                var carrier = SmartContractCarrier.Deserialize(transaction, transaction.Outputs[0]);
+                var carrier = SmartContractCarrier.Deserialize(transaction, transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec));
 
                 if (suppliedBudget < new Money(carrier.GasCostBudget))
                 {

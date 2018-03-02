@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Create a token contract
                 ulong gasPrice = 1;
-                uint vmVersion = 1;
+                int vmVersion = 1;
                 Gas gasLimit = (Gas)1000;
                 var gasBudget = gasPrice * gasLimit;
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
