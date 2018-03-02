@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -10,17 +10,17 @@ using Block = NBitcoin.Block;
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
     /// <summary>
-    /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
+    /// Validates that no satoshis were supplied in the smart contract create transaction
     /// </summary>
     [ValidationRule(CanSkipValidation = false)]
-    public class GasBudgetRule : ConsensusRule
+    public class OpCreateZeroValueRule : ConsensusRule
     {
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
 
             IEnumerable<Transaction> smartContractTransactions =
-                block.Transactions.GetSmartContractExecTransactions().ToList();
+                block.Transactions.GetSmartContractCreateTransactions().ToList();
 
             if (!smartContractTransactions.Any())
             {
@@ -30,14 +30,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             foreach (Transaction transaction in smartContractTransactions)
             {
-                // The gas budget supplied
-                Money suppliedBudget = transaction.TotalOut;
-
                 var carrier = SmartContractCarrier.Deserialize(transaction, transaction.Outputs[0]);
 
-                if (suppliedBudget < new Money(carrier.GasCostBudget))
+                if (carrier.TxOutValue != 0)
                 {
-                    // Supplied satoshis are less than the budget we said we had for the contract execution
                     this.Throw();
                 }
             }
@@ -48,8 +44,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         private void Throw()
         {
             // TODO make nicer
-            new ConsensusError("total-gas-value-greater-than-total-fee",
-                "total supplied gas value was greater than total supplied fee value").Throw();
+            new ConsensusError("op-create-had-nonzero-value",
+                "op create had nonzero value").Throw();
         }
     }
 }
