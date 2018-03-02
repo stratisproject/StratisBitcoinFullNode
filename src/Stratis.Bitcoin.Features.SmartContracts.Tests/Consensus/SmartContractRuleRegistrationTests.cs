@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Moq;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
@@ -35,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             Assert.Single(smartContractConsensusRules.OfType<GasBudgetRule>());
 
             // Check that original rules are present
-            foreach (var rule in baseRuleRegistration.Object.GetRules())
+            foreach (ConsensusRule rule in baseRuleRegistration.Object.GetRules())
             {
                 Assert.Contains(rule, smartContractConsensusRules);
             }

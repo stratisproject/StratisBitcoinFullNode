@@ -56,11 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
-            this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
-            this.scriptPubKeyIn = scriptPubKeyIn;
-
             this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
-
             this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
 
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
