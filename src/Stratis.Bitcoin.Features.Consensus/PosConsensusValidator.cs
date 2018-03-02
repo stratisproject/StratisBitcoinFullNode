@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -132,88 +129,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void CheckBlock(RuleContext context)
-        {
-            this.logger.LogTrace("()");
-
-            base.CheckBlock(context);
-
-            Block block = context.BlockValidationContext.Block;
-
-            // Check timestamp.
-            if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
-            {
-                // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.FutureDrift(0)).UtcDateTime;
-                this.logger.LogTrace("(-)[TIME_TOO_FAR]");
-                ConsensusErrors.BlockTimestampTooFar.Throw();
-            }
-
-            if (BlockStake.IsProofOfStake(block))
-            {
-                // Coinbase output should be empty if proof-of-stake block.
-                if ((block.Transactions[0].Outputs.Count != 1) || !block.Transactions[0].Outputs[0].IsEmpty)
-                {
-                    this.logger.LogTrace("(-)[COINBASE_NOT_EMPTY]");
-                    ConsensusErrors.BadStakeBlock.Throw();
-                }
-
-                // Second transaction must be coinstake, the rest must not be.
-                if (!block.Transactions[1].IsCoinStake)
-                {
-                    this.logger.LogTrace("(-)[NO_COINSTAKE]");
-                    ConsensusErrors.BadStakeBlock.Throw();
-                }
-
-                if (block.Transactions.Skip(2).Any(t => t.IsCoinStake))
-                {
-                    this.logger.LogTrace("(-)[MULTIPLE_COINSTAKE]");
-                    ConsensusErrors.BadMultipleCoinstake.Throw();
-                }
-            }
-
-            // Check proof-of-stake block signature.
-            if (!this.CheckBlockSignature(block))
-            {
-                this.logger.LogTrace("(-)[BAD_SIGNATURE]");
-                ConsensusErrors.BadBlockSignature.Throw();
-            }
-
-            // Check transactions.
-            foreach (Transaction transaction in block.Transactions)
-            {
-                // Check transaction timestamp.
-                if (block.Header.Time < transaction.Time)
-                {
-                    this.logger.LogTrace("Block contains transaction with timestamp {0}, which is greater than block's timestamp {1}.", transaction.Time, block.Header.Time);
-                    this.logger.LogTrace("(-)[TX_TIME_MISMATCH]");
-                    ConsensusErrors.BlockTimeBeforeTrx.Throw();
-                }
-            }
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <inheritdoc />
-        public override void CheckTransaction(Transaction transaction)
-        {
-            this.logger.LogTrace("()");
-
-            base.CheckTransaction(transaction);
-
-            foreach (TxOut txout in transaction.Outputs)
-            {
-                if (txout.IsEmpty && !transaction.IsCoinBase && !transaction.IsCoinStake)
-                {
-                    this.logger.LogTrace("(-)[USER_TXOUT_EMPTY]");
-                    ConsensusErrors.BadTransactionEmptyOutput.Throw();
-                }
-            }
-
-            this.logger.LogTrace("(-)[OK]");
-        }
-
-        /// <inheritdoc />
         protected override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.logger.LogTrace("()");
@@ -246,96 +161,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Checks whether the future drift should be reduced after provided timestamp.
-        /// </summary>
-        /// <param name="time">UNIX timestamp.</param>
-        /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
-        private bool IsDriftReduced(long time)
-        {
-            return time > DriftingBugFixTimestamp;
-        }
-
-        /// <summary>
-        /// Applies future drift to provided timestamp.
-        /// </summary>
-        /// <remarks>
-        /// Future drift is maximal allowed block's timestamp difference over adjusted time.
-        /// If this difference is greater block won't be accepted.
-        /// </remarks>
-        /// <param name="time">UNIX timestamp.</param>
-        /// <returns>Timestamp with maximum future drift applied.</returns>
-        private long FutureDrift(long time)
-        {
-            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
-        }
-
-        /// <summary>
-        /// Checks if block signature is valid.
-        /// </summary>
-        /// <param name="block">The block.</param>
-        /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
-        private bool CheckBlockSignature(Block block)
-        {
-            this.logger.LogTrace("()");
-
-            if (BlockStake.IsProofOfWork(block))
-            {
-                bool res = block.BlockSignatur.IsEmpty();
-                this.logger.LogTrace("(-)[POW]:{0}", res);
-                return res;
-            }
-
-            if (block.BlockSignatur.IsEmpty())
-            {
-                this.logger.LogTrace("(-)[EMPTY]:false");
-                return false;
-            }
-
-            TxOut txout = block.Transactions[1].Outputs[1];
-
-            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(txout.ScriptPubKey))
-            {
-                PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
-                bool res = pubKey.Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
-                this.logger.LogTrace("(-)[P2PK]:{0}", res);
-                return res;
-            }
-
-            // Block signing key also can be encoded in the nonspendable output.
-            // This allows to not pollute UTXO set with useless outputs e.g. in case of multisig staking.
-
-            List<Op> ops = txout.ScriptPubKey.ToOps().ToList();
-            if (!ops.Any()) // script.GetOp(pc, opcode, vchPushValue))
-            {
-                this.logger.LogTrace("(-)[NO_OPS]:false");
-                return false;
-            }
-
-            if (ops.ElementAt(0).Code != OpcodeType.OP_RETURN) // OP_RETURN)
-            {
-                this.logger.LogTrace("(-)[NO_OP_RETURN]:false");
-                return false;
-            }
-
-            if (ops.Count < 2) // script.GetOp(pc, opcode, vchPushValue)
-            {
-                this.logger.LogTrace("(-)[NO_SECOND_OP]:false");
-                return false;
-            }
-
-            byte[] data = ops.ElementAt(1).PushData;
-            if (!ScriptEvaluationContext.IsCompressedOrUncompressedPubKey(data))
-            {
-                this.logger.LogTrace("(-)[NO_PUSH_DATA]:false");
-                return false;
-            }
-
-            bool verifyRes = new PubKey(data).Verify(block.GetHash(this.ConsensusParams.NetworkOptions), new ECDSASignature(block.BlockSignatur.Signature));
-            this.logger.LogTrace("(-):{0}", verifyRes);
-            return verifyRes;
         }
 
         /// <summary>

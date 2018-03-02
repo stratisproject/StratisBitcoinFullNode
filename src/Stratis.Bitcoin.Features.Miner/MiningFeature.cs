@@ -223,7 +223,8 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-                    });
+	                    services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
+					});
             });
 
             return fullNodeBuilder;
@@ -255,7 +256,8 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-                    });
+                        services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
+					});
             });
 
             return fullNodeBuilder;
