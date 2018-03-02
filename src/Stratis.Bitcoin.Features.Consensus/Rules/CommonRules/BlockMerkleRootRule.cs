@@ -7,6 +7,18 @@ using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <summary>
+    /// This rule will validate that the calculated merkle tree matches the merkle root in the header.
+    /// </summary>
+    /// <remarks>
+    /// Transactions in a block are hashed together using SHA256 in to a merkel tree, 
+    /// the root of that tree is included in the block header.
+    /// </remarks>
+    /// <remarks>
+    /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
+    /// of transactions in a block without affecting the merkle root of a block,
+    /// while still invalidating it.
+    /// </remarks>
     public class BlockMerkleRootRule : ConsensusRule
     {        
         /// <inheritdoc />
@@ -23,9 +35,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadMerkleRoot.Throw();
                 }
 
-                // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
-                // of transactions in a block without affecting the merkle root of a block,
-                // while still invalidating it.
                 if (mutated)
                 {
                     this.Logger.LogTrace("(-)[BAD_TX_DUP]");
