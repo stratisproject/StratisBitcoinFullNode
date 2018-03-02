@@ -26,19 +26,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
 
-            var smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas) 500000);
-            byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
+            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)5000);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrierSerialized)));
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(carrier.Serialize())));
 
-            var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
-            Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
-            Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
-            Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
-            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
-            Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
+            SmartContractCarrier deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
+            Assert.Equal(1, deserialized.VmVersion);
+            Assert.Equal(OpcodeType.OP_CREATECONTRACT, deserialized.OpCodeType);
+            Assert.Equal(contractExecutionCode, deserialized.ContractExecutionCode);
+            Assert.Equal((Gas)1, deserialized.GasUnitPrice);
+            Assert.Equal((Gas)5000, deserialized.GasLimit);
 
             Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec);
         }
@@ -61,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
 
-            string[] testMethodParameters = new string[]
+            string[] methodParameters = new string[]
             {
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 12),
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
@@ -71,51 +70,45 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Char, '#'),
             };
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas) 500000).WithParameters(testMethodParameters);
-            byte[] smartContractCarrierSerialized = smartContractCarrier.Serialize();
+            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)500000, methodParameters);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrierSerialized)));
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(carrier.Serialize())));
 
             var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
-            Assert.Equal(smartContractCarrier.VmVersion, deserialized.VmVersion);
-            Assert.Equal(smartContractCarrier.OpCodeType, deserialized.OpCodeType);
-            Assert.Equal(smartContractCarrier.ContractExecutionCode, deserialized.ContractExecutionCode);
+
+            Assert.Equal(carrier.VmVersion, deserialized.VmVersion);
+            Assert.Equal(carrier.OpCodeType, deserialized.OpCodeType);
+            Assert.Equal(carrier.ContractExecutionCode, deserialized.ContractExecutionCode);
             Assert.Equal(6, deserialized.MethodParameters.Length);
 
-            Assert.NotNull(deserialized.MethodParameters[0]);
-            Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);
+            Assert.NotNull(carrier.MethodParameters[0]);
             Assert.Equal(12, deserialized.MethodParameters[0]);
 
-            Assert.NotNull(deserialized.MethodParameters[1]);
-            Assert.Equal(smartContractCarrier.MethodParameters[1], deserialized.MethodParameters[1]);
+            Assert.NotNull(carrier.MethodParameters[1]);
             Assert.True((bool)deserialized.MethodParameters[1]);
 
-            Assert.NotNull(deserialized.MethodParameters[2]);
-            Assert.Equal(smartContractCarrier.MethodParameters[2], deserialized.MethodParameters[2]);
+            Assert.NotNull(carrier.MethodParameters[2]);
             Assert.Equal("te|s|t", deserialized.MethodParameters[2]);
 
-            Assert.NotNull(deserialized.MethodParameters[3]);
-            Assert.Equal(smartContractCarrier.MethodParameters[3], deserialized.MethodParameters[3]);
+            Assert.NotNull(carrier.MethodParameters[3]);
             Assert.Equal("te#st", deserialized.MethodParameters[3]);
 
-            Assert.NotNull(deserialized.MethodParameters[4]);
-            Assert.Equal(smartContractCarrier.MethodParameters[4], deserialized.MethodParameters[4]);
+            Assert.NotNull(carrier.MethodParameters[4]);
             Assert.Equal("#4#te#st#", deserialized.MethodParameters[4]);
 
-            Assert.NotNull(deserialized.MethodParameters[5]);
-            Assert.Equal(smartContractCarrier.MethodParameters[5], deserialized.MethodParameters[5]);
-            Assert.Equal('#', deserialized.MethodParameters[5]);
+            Assert.NotNull(carrier.MethodParameters[5]);
+            Assert.Equal("#", deserialized.MethodParameters[5]);
 
-            Assert.Equal(smartContractCarrier.GasUnitPrice, deserialized.GasUnitPrice);
-            Assert.Equal(smartContractCarrier.GasLimit, deserialized.GasLimit);
+            Assert.Equal(carrier.GasUnitPrice, deserialized.GasUnitPrice);
+            Assert.Equal(carrier.GasLimit, deserialized.GasLimit);
         }
 
         [Fact]
         public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas) 500000);
+            var smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas)500000);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
@@ -150,46 +143,46 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639"))
             };
 
-            SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas) 500000).WithParameters(methodParameters);
+            var carrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas)500000, methodParameters);
 
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(smartContractCarrier.Serialize())));
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(carrier.Serialize())));
 
             var deserialized = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]);
 
             Assert.NotNull(deserialized.MethodParameters[0]);
-            Assert.Equal(smartContractCarrier.MethodParameters[0], deserialized.MethodParameters[0]);
+            Assert.Equal(carrier.MethodParameters[0], deserialized.MethodParameters[0]);
 
             Assert.NotNull(deserialized.MethodParameters[1]);
-            Assert.Equal(smartContractCarrier.MethodParameters[1], deserialized.MethodParameters[1]);
+            Assert.Equal(carrier.MethodParameters[1], deserialized.MethodParameters[1]);
 
             Assert.NotNull(deserialized.MethodParameters[2]);
-            Assert.Equal(smartContractCarrier.MethodParameters[2], deserialized.MethodParameters[2]);
+            Assert.Equal(carrier.MethodParameters[2], deserialized.MethodParameters[2]);
 
             Assert.NotNull(deserialized.MethodParameters[3]);
-            Assert.Equal(smartContractCarrier.MethodParameters[3], deserialized.MethodParameters[3]);
+            Assert.Equal(carrier.MethodParameters[3], deserialized.MethodParameters[3]);
 
             Assert.NotNull(deserialized.MethodParameters[4]);
-            Assert.Equal(smartContractCarrier.MethodParameters[4], deserialized.MethodParameters[4]);
+            Assert.Equal(carrier.MethodParameters[4], deserialized.MethodParameters[4]);
 
             Assert.NotNull(deserialized.MethodParameters[5]);
-            Assert.Equal(smartContractCarrier.MethodParameters[5], deserialized.MethodParameters[5]);
+            Assert.Equal(carrier.MethodParameters[5], deserialized.MethodParameters[5]);
 
             Assert.NotNull(deserialized.MethodParameters[6]);
-            Assert.Equal(smartContractCarrier.MethodParameters[6], deserialized.MethodParameters[6]);
+            Assert.Equal(carrier.MethodParameters[6], deserialized.MethodParameters[6]);
 
             Assert.NotNull(deserialized.MethodParameters[7]);
-            Assert.Equal(smartContractCarrier.MethodParameters[7], deserialized.MethodParameters[7]);
+            Assert.Equal(carrier.MethodParameters[7], deserialized.MethodParameters[7]);
 
             Assert.NotNull(deserialized.MethodParameters[8]);
-            Assert.Equal(smartContractCarrier.MethodParameters[8], deserialized.MethodParameters[8]);
+            Assert.Equal(carrier.MethodParameters[8], deserialized.MethodParameters[8]);
 
             Assert.NotNull(deserialized.MethodParameters[9]);
-            Assert.Equal(smartContractCarrier.MethodParameters[9], deserialized.MethodParameters[9]);
+            Assert.Equal(carrier.MethodParameters[9], deserialized.MethodParameters[9]);
 
             Assert.NotNull(deserialized.MethodParameters[10]);
-            Assert.Equal(smartContractCarrier.MethodParameters[10], deserialized.MethodParameters[10]);
+            Assert.Equal(carrier.MethodParameters[10], deserialized.MethodParameters[10]);
         }
     }
 }

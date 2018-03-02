@@ -31,11 +31,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var toAddress = new uint160(1);
 
             //Call smart contract and add to transaction-------------
-            SmartContractCarrier call = SmartContractCarrier.CallContract(1, toAddress, "ThrowException", 1, (Gas)500000);
-            byte[] serializedCall = call.Serialize();
+            var carrier = SmartContractCarrier.CallContract(1, toAddress, "ThrowException", 1, (Gas)500000);
             var transactionCall = new Transaction();
             //transactionCall.AddInput(new TxIn());
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(serializedCall));
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
             callTxOut.Value = 100;
             //-------------------------------------------------------
 

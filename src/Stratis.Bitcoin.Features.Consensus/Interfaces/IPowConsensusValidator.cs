@@ -34,18 +34,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
         uint256 BlockWitnessMerkleRoot(Block block, out bool mutated);
-
-        /// <summary>
-        /// Checks block's validity.
-        /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.BadMerkleRoot">Thrown block's merkle root is corrupted.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">Thrown if block contains duplicated transaction that don't affect merkle root.</exception>
-        /// <exception cref="ConsensusErrors.BadBlockLength">Thrown if block exceeds maximum allowed size or doesn't contain any transaction.</exception>
-        /// <exception cref="ConsensusErrors.BadCoinbaseMissing">Thrown if block's first transaction is not coinbase.</exception>
-        /// <exception cref="ConsensusErrors.BadMultipleCoinbase">Thrown if block contains more then one coinbase transactions.</exception>
-        /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if block's signature operation cost is greater than maximum allowed one.</exception>
-        void CheckBlock(RuleContext context);
     
         /// <summary>
         /// Checks that transaction's inputs are valid.
@@ -59,21 +47,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <exception cref="ConsensusErrors.BadTransactionNegativeFee">Thrown if fees sum is negative.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
         void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight);
-
-        /// <summary>
-        /// Checks if transaction is valid.
-        /// </summary>
-        /// <param name="transaction">Transaction.</param>
-        /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNoOutput">Thrown if transaction has no outputs.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionOversize">Thrown if transaction size is greater than maximum allowed size of a block.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNegativeOutput">Thrown if at least one transaction output has negative value.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionTooLargeOutput">Thrown if at least one transaction output value is greater than maximum allowed one.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionTooLargeTotalOutput">Thrown if sum of all transaction outputs is greater than maximum allowed one.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
-        /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
-        void CheckTransaction(Transaction transaction);
 
         /// <summary>
         /// Computes merkle root.

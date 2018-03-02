@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             yield return new TxOutSmartContractExecRule();
             yield return new OpSpendRule();
+            yield return new GasBudgetRule();
         }
     }
 }
