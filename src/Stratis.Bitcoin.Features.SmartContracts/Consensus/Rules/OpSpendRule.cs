@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -21,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             var opSpendTransactions = block.Transactions.Where(tx =>
                 tx.Outputs.Any(o => o.ScriptPubKey.ToOps().Any(x => x.Code == OpcodeType.OP_SPEND)));
-            
+
             foreach (var opSpendTransaction in opSpendTransactions)
             {
                 var thisIndex = block.Transactions.IndexOf(opSpendTransaction);

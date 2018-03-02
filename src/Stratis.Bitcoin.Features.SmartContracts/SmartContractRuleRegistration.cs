@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -26,6 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             yield return new TxOutSmartContractExecRule();
             yield return new OpSpendRule();
             yield return new GasBudgetRule();
+            yield return new OpCreateZeroValueRule();
         }
     }
 }
