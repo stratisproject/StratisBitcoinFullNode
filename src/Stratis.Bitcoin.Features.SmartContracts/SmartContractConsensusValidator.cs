@@ -170,6 +170,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
+            if (new uint256(this.currentStateRoot.GetRoot()) != block.Header.HashStateRoot)
+                throw new Exception("State roots aren't matching - should create new exception");
+
             this.currentStateRoot.Commit();
             this.originalStateRoot.SyncToRoot(this.currentStateRoot.GetRoot());
             this.logger.LogTrace("(-)");
@@ -189,7 +192,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 // ensure that transactions generated are equal
                 if (this.lastProcessed.GetHash() != transaction.GetHash())
-                    throw new Exception("Not matching");
+                    throw new Exception("Not matching - should create a proper exception here.");
                 this.lastProcessed = null;
                 return;
             }

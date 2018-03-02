@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 105 * 50, total);
 
-                // Create a contract
+                // Create a token contract
                 ulong gasPrice = 1;
                 uint vmVersion = 1;
                 Gas gasLimit = (Gas)1000;
@@ -159,11 +159,24 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // sync both nodes
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-                IContractStateRepository senderState = (IContractStateRepository) scSender.FullNode.Services.ServiceProvider.GetService(typeof(IContractStateRepository));
-                IContractStateRepository receiverState = (IContractStateRepository)scReceiver.FullNode.NodeService<IContractStateRepository>();// Services.ServiceProvider.GetService(typeof(IContractStateRepository));
+                IContractStateRepository senderState = scSender.FullNode.NodeService<IContractStateRepository>();
+                IContractStateRepository receiverState = scReceiver.FullNode.NodeService<IContractStateRepository>();// Services.ServiceProvider.GetService(typeof(IContractStateRepository));
                 uint160 newContractAddress = trx.GetNewContractAddress();
                 Assert.NotNull(senderState.GetCode(newContractAddress));
-                Assert.NotNull(receiverState.GetCode(newContractAddress)); // Ideally we hsould fix this so we don't need to sync to the latest block
+                Assert.NotNull(receiverState.GetCode(newContractAddress));
+
+
+                // Create a transfer contract and start sending between
+                //var contractCarrier = SmartContractCarrier.CallContract(vmVersion, newContractAddress, )
+                //Script contractCreateScript = new Script(contractCarrier.Serialize());
+                //var txBuildContext = new TransactionBuildContext(new WalletAccountReference("mywallet", "account 0"),
+                //        new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), "123456")
+                //{
+                //    MinConfirmations = 101,
+                //    FeeType = FeeType.High,
+                //};
+
+                //var trx = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
             }
         }
     }
