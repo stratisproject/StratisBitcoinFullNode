@@ -43,9 +43,15 @@ namespace Stratis.StratisDnsD
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
                 NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:false);
-                IFullNode node;
+
+                Action<DnsSettings> serviceTest = (s) =>
+                {
+                    if (string.IsNullOrWhiteSpace(s.DnsHostName) || string.IsNullOrWhiteSpace(s.DnsNameServer) || string.IsNullOrWhiteSpace(s.DnsMailBox))
+                        throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+                };
 
                 // Run as a full node with DNS or just a DNS service?
+                IFullNode node;
                 if (args.Contains("-dnsfullnode"))
                 {
                     // Build the Dns full node.
@@ -58,7 +64,7 @@ namespace Stratis.StratisDnsD
                         .AddPowPosMining()
                         .UseApi()
                         .AddRPC()
-                        .UseDns()
+                        .UseDns(serviceTest)
                         .Build();
                 }
                 else
@@ -69,22 +75,13 @@ namespace Stratis.StratisDnsD
                         .UsePosConsensus()
                         .UseApi()
                         .AddRPC()
-                        .UseDns()
+                        .UseDns(serviceTest)
                         .Build();
                 }
 
                 // Run node.
                 if (node != null)
-                {
-                    DnsSettings dnsSettings = node.NodeService<DnsSettings>();
-
-                    dnsSettings.Load(nodeSettings);
-
-                    if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
-                        throw new ArgumentException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
-
                     await node.RunAsync();
-                }
             }
             catch (Exception ex)
             {
