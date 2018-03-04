@@ -941,7 +941,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Figure out how to retrieve the destination address.
                     string destinationAddress = string.Empty;
                     ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate();
-                    switch (scriptTemplate.Type)
+                    switch (scriptTemplate?.Type)
                     {
                         // Pay to PubKey can be found in outputs of staking transactions.
                         case TxOutType.TX_PUBKEY:
@@ -957,6 +957,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         case TxOutType.TX_MULTISIG:
                         case TxOutType.TX_NULL_DATA:
                         case TxOutType.TX_SEGWIT:
+                        case null:
                             break;
                     }
                    

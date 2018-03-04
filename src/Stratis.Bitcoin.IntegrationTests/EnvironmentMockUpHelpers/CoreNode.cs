@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.State;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
@@ -28,13 +29,13 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        private int[] ports;
-        private INodeRunner runner;
-        private readonly NetworkCredential creds;
+        protected int[] ports;
+        protected INodeRunner runner;
+        protected readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
-        private object lockObject = new object();
+        protected object lockObject = new object();
 
         public string Folder { get; }
 
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 rpc.RemoveNode(node.Endpoint);
         }
 
-        public CoreNodeState State { get; private set; }
+        public CoreNodeState State { get; protected set; }
 
         public int ProtocolPort
         {
@@ -137,7 +138,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public async Task StartAsync()
+        public virtual async Task StartAsync()
         {
             NodeConfigParameters config = new NodeConfigParameters();
             config.Add("regtest", "1");
@@ -512,10 +513,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
-            var test = this.FullNode.Services.ServiceProvider.GetService<IPowMining>();
-
             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
         }
+
+        public List<uint256> GenerateSmartContractStratisWithMiner(int blockCount)
+        {
+             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
+        }
+
 
         public Block[] GenerateSmartContractStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
@@ -523,7 +528,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             BitcoinSecret dest = this.MinerSecret;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
-#if !NOSOCKET
+            IContractStateRepository state = fullNode.NodeService<IContractStateRepository>();
+            #if !NOSOCKET
 
             for (int i = 0; i < blockCount; i++)
             {
@@ -542,6 +548,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     block.Transactions.AddRange(passedTransactions);
                 }
                 block.UpdateMerkleRoot();
+                block.Header.HashStateRoot = new uint256(state.GetRoot());
                 while (!block.CheckProofOfWork(fullNode.Network.Consensus))
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);

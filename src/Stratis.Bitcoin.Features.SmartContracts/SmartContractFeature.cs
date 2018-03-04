@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.SmartContracts.ContractValidation;
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
                         services.AddSingleton<IContractStateRepository>(repository);
-                        services.AddSingleton<PowConsensusValidator, SmartContractConsensusValidator>();
+                        services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
 
                         AddSmartContractRulesToExistingRules(services);

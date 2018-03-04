@@ -113,6 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             public List<Blockinfo> blockinfo;
             public Network network;
+            //public NetworkOptions networkOptions;
             public Script scriptPubKey;
             public uint160 coinbaseAddress;
             public BlockTemplate newBlock;
@@ -151,7 +152,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                     this.blockinfo.Add(new Blockinfo { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
 
                 // Note that by default, these tests run with size accounting enabled.
-                this.network = Network.Main;
+                this.network = Network.SmartContractsRegTest;
+                //this.networkOptions = new NetworkOptions
+                //{
+                //    IsProofOfStake = false,
+                //    IsWitness = false,
+                //    IsSmartContracts = true
+                //};
                 var hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
                 this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
                 this.coinbaseAddress = new uint160(new Script(hex).Hash.ToBytes(), false);
@@ -279,7 +286,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var smartContractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - gasBudget, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress = tx.GetNewContractAddress();
             byte[] ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             Assert.Equal(ownerFromStorage, context.coinbaseAddress.ToBytes());
             Assert.NotNull(context.state.GetCode(newContractAddress));
@@ -302,7 +309,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -351,7 +358,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var contractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -403,7 +410,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -445,8 +452,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/InterContract1.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
-            string newContractAddressString = newContractAddress.ToString();
+            uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -454,7 +460,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/InterContract2.cs"), gasPrice, gasLimit);
             tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress2 = tx.GetNewContractAddress();
             Assert.NotNull(context.state.GetCode(newContractAddress2));
 
             context.mempool.Clear();
