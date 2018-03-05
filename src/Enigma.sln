@@ -5,6 +5,24 @@ VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SidechainsD", "Stratis.SidechainsD\Stratis.SidechainsD.csproj", "{48793DBE-D85B-4EA6-9BFC-55611F229AF6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sbfn", "Sbfn", "{8931252B-E101-4E5C-8181-B4FFA44DE948}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBitcoin", "..\StratisBitcoinFullNode\src\NBitcoin\NBitcoin.csproj", "{A0920A99-D6FB-4E49-91CE-CE1C453A5682}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin\Stratis.Bitcoin.csproj", "{DA531CC5-AD87-4003-A045-C03DD29AF159}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Api", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.Api\Stratis.Bitcoin.Features.Api.csproj", "{A63637DF-D9BC-4B99-B8BA-743E34F30FCA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.BlockStore", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj", "{D4DD93D1-A807-4356-A289-8C42CBAE68D0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Consensus", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj", "{30F68BC5-66EF-4EAC-82FE-D83FD87AF322}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.MemoryPool", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.MemoryPool\Stratis.Bitcoin.Features.MemoryPool.csproj", "{3051CC53-8250-4B27-A899-E57825C8ADE1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.RPC", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj", "{915F4381-97E6-4AEC-8D06-32E8065B3284}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Wallet", "..\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj", "{177A6B57-9646-4F61-9914-18A66653C06D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,11 +33,46 @@ Global
 		{48793DBE-D85B-4EA6-9BFC-55611F229AF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48793DBE-D85B-4EA6-9BFC-55611F229AF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48793DBE-D85B-4EA6-9BFC-55611F229AF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0920A99-D6FB-4E49-91CE-CE1C453A5682}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0920A99-D6FB-4E49-91CE-CE1C453A5682}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA531CC5-AD87-4003-A045-C03DD29AF159}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA531CC5-AD87-4003-A045-C03DD29AF159}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A63637DF-D9BC-4B99-B8BA-743E34F30FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A63637DF-D9BC-4B99-B8BA-743E34F30FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4DD93D1-A807-4356-A289-8C42CBAE68D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4DD93D1-A807-4356-A289-8C42CBAE68D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30F68BC5-66EF-4EAC-82FE-D83FD87AF322}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30F68BC5-66EF-4EAC-82FE-D83FD87AF322}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3051CC53-8250-4B27-A899-E57825C8ADE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3051CC53-8250-4B27-A899-E57825C8ADE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{915F4381-97E6-4AEC-8D06-32E8065B3284}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{915F4381-97E6-4AEC-8D06-32E8065B3284}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{177A6B57-9646-4F61-9914-18A66653C06D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{177A6B57-9646-4F61-9914-18A66653C06D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A0920A99-D6FB-4E49-91CE-CE1C453A5682} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{DA531CC5-AD87-4003-A045-C03DD29AF159} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{A63637DF-D9BC-4B99-B8BA-743E34F30FCA} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{D4DD93D1-A807-4356-A289-8C42CBAE68D0} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{30F68BC5-66EF-4EAC-82FE-D83FD87AF322} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{3051CC53-8250-4B27-A899-E57825C8ADE1} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{915F4381-97E6-4AEC-8D06-32E8065B3284} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+		{177A6B57-9646-4F61-9914-18A66653C06D} = {8931252B-E101-4E5C-8181-B4FFA44DE948}
+	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://stratisplatformuk.visualstudio.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Stratis.SidechainsD\\Stratis.SidechainsD.csproj
+		SccProjectName1 = Stratis.SidechainsD
+		SccLocalPath1 = Stratis.SidechainsD
 	EndGlobalSection
 EndGlobal
