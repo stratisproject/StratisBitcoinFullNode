@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2006
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains", "Stratis.Sidechains\Stratis.Sidechains.csproj", "{EFEC403A-6D02-4DA8-B25E-803B7C6B8FAC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Tests", "Stratis.Sidechains.Tests\Stratis.Sidechains.Tests.csproj", "{7251E097-100F-4618-9E1A-1E7FCD87F474}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Commands", "Stratis.Sidechains.Commands\Stratis.Sidechains.Commands.csproj", "{605675DE-6F90-40B7-B2B0-1AC6B4B2CA40}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Commands.Tests", "Stratis.Sidechains.Commands.Tests\Stratis.Sidechains.Commands.Tests.csproj", "{9A779BEA-AC31-4F17-82FB-555E247A4CD6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SidechainD", "Stratis.SidechainD\Stratis.SidechainD.csproj", "{BAC8884A-ABC0-45D7-ABA9-845C0A076A4C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFEC403A-6D02-4DA8-B25E-803B7C6B8FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFEC403A-6D02-4DA8-B25E-803B7C6B8FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFEC403A-6D02-4DA8-B25E-803B7C6B8FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFEC403A-6D02-4DA8-B25E-803B7C6B8FAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7251E097-100F-4618-9E1A-1E7FCD87F474}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7251E097-100F-4618-9E1A-1E7FCD87F474}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7251E097-100F-4618-9E1A-1E7FCD87F474}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7251E097-100F-4618-9E1A-1E7FCD87F474}.Release|Any CPU.Build.0 = Release|Any CPU
+		{605675DE-6F90-40B7-B2B0-1AC6B4B2CA40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{605675DE-6F90-40B7-B2B0-1AC6B4B2CA40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{605675DE-6F90-40B7-B2B0-1AC6B4B2CA40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{605675DE-6F90-40B7-B2B0-1AC6B4B2CA40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A779BEA-AC31-4F17-82FB-555E247A4CD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A779BEA-AC31-4F17-82FB-555E247A4CD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A779BEA-AC31-4F17-82FB-555E247A4CD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A779BEA-AC31-4F17-82FB-555E247A4CD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAC8884A-ABC0-45D7-ABA9-845C0A076A4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAC8884A-ABC0-45D7-ABA9-845C0A076A4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAC8884A-ABC0-45D7-ABA9-845C0A076A4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAC8884A-ABC0-45D7-ABA9-845C0A076A4C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1C5604BC-509E-493F-8711-8F981D4D9C11}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 5
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://stratisplatformuk.visualstudio.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Stratis.Sidechains\\Stratis.Sidechains.csproj
+		SccProjectName1 = Stratis.Sidechains
+		SccLocalPath1 = Stratis.Sidechains
+		SccProjectUniqueName2 = Stratis.Sidechains.Commands\\Stratis.Sidechains.Commands.csproj
+		SccProjectName2 = Stratis.Sidechains.Commands
+		SccLocalPath2 = Stratis.Sidechains.Commands
+		SccProjectUniqueName3 = Stratis.Sidechains.Commands.Tests\\Stratis.Sidechains.Commands.Tests.csproj
+		SccProjectName3 = Stratis.Sidechains.Commands.Tests
+		SccLocalPath3 = Stratis.Sidechains.Commands.Tests
+		SccProjectUniqueName4 = Stratis.SidechainD\\Stratis.SidechainD.csproj
+		SccProjectName4 = Stratis.SidechainD
+		SccLocalPath4 = Stratis.SidechainD
+	EndGlobalSection
+EndGlobal
