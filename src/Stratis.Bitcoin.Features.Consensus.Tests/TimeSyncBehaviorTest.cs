@@ -69,8 +69,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 DateTime adjustedTime = dateTimeProvider.GetAdjustedTime();
                 DateTime normalTime = dateTimeProvider.GetUtcNow();
                 TimeSpan diff = adjustedTime - normalTime;
-
-                Assert.True(Math.Abs(diff.TotalMilliseconds) < expectedTimeOffsetLessThanMs + TimeEpsilonMs);
+                  
+                Assert.True(Math.Abs(diff.TotalMilliseconds) < expectedTimeOffsetLessThanMs + TimeEpsilonMs, $"Failed in sample at index:{i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds:{expectedTimeOffsetLessThanMs}");
             }
         }
 
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
                 bool used = state.AddTimeData(peerAddress, timeOffsetSample, isInbound);
                 Assert.Equal(isUsed, used);
-
+                 
                 Assert.Equal(isWarningOn, state.IsSystemTimeOutOfSync);
                 Assert.Equal(isSyncOff, state.SwitchedOffLimitReached);
                 Assert.Equal(isSyncOff, state.SwitchedOff);
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             }
 
             var allSamples = new List<int>(inSamples);
-            for (int i = 0; i < TimeSyncBehaviorState.OutboundToInboundWeightRatio; i++)
+            for (int i = 0; i < TimeSyncBehaviorState.OffsetWeightSecurityConstant; i++)
                 allSamples.AddRange(outSamples);
 
             adjustedTime = dateTimeProvider.GetAdjustedTime();

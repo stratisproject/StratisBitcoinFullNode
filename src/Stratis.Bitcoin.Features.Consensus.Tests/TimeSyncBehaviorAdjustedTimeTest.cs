@@ -3,6 +3,7 @@ using System.Net;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -28,10 +29,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private TimeSpan adjustedOffsetTimespan;
 
         /// <summary>
+        /// Mocked out logger for assertion.
+        /// </summary>
+        private Mock<ILogger> logger;
+
+        /// <summary>
         /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// uses outbound samples as a priority over inbound as they are less likely to be malicious.
         /// This means that even when there are many inbound connections, 
-        /// only the first (<see cref="TimeSyncBehaviorState.OutboundToInboundWeightRatio"/> -1) inbound per outbound are considered. 
+        /// only the first (<see cref="TimeSyncBehaviorState.OffsetWeightSecurityConstant"/> -1) inbound per outbound are considered. 
         /// Eg only 9 inbound per 1 outbound if the ratio is 10:1 inbound:outbound.
         /// <remarks>An adjusted offset is also only considered after 40 samples, hence 40 inbound used in the test.</remarks>
         /// </summary>
@@ -40,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             this.Given_an_empty_time_sync_behaviour_state();
             this.Given_40_inbound_samples_with_offset_of(10);
-            this.Given_1_outbound_sample_with_offset_of(20);
+            this.Given_4_outbound_samples_with_offset_of(20);
             this.When_calculating_time_adjust_offset();
             this.Then_adjusted_time_offset_is(20);
         }
@@ -56,20 +62,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.Given_40_inbound_samples_with_offset_of(10);
             this.When_calculating_time_adjust_offset();
             this.Then_adjusted_time_offset_is(0);
+            //this.Then_logs_time_not_adjusted();
+        }
+
+        private void Then_logs_time_not_adjusted()
+        {
+            this.logger.Verify(x => x.LogTrace("", 0, 0));
         }
 
         private void Given_an_empty_time_sync_behaviour_state()
         {
             this.dateTimeProvider = new DateTimeProvider();
+            var loggerFactory = new Mock<ILoggerFactory>();
+            this.logger = new Mock<ILogger>();
+
+            loggerFactory
+                .Setup(x => x.CreateLogger(It.IsAny<string>()))
+                .Returns(this.logger.Object);
+
             this.timesyncBehaviourState = new TimeSyncBehaviorState(
                 this.dateTimeProvider, new NodeLifetime(),
-                new AsyncLoopFactory(new LoggerFactory()), 
-                new LoggerFactory());
+                new AsyncLoopFactory(loggerFactory.Object), 
+                loggerFactory.Object);
         }
 
-        private void Given_1_outbound_sample_with_offset_of(int offsetSeconds)
+        private void Given_4_outbound_samples_with_offset_of(int offsetSeconds)
         {
             this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.2"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.3"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.4"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.5"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
         }
 
         private void Given_40_inbound_samples_with_offset_of(int offset)
