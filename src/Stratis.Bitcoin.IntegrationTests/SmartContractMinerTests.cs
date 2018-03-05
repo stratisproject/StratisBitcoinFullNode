@@ -178,9 +178,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var byteStore = new DBreezeByteStore(engine, "ContractState1");
                 byteStore.Empty();
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
-                byte[] root = null;
 
-                this.state = new ContractStateRepositoryRoot(stateDB, root);
+                this.state = new ContractStateRepositoryRoot(stateDB);
                 this.decompiler = new SmartContractDecompiler();
                 this.validator = new SmartContractValidator(new List<ISmartContractValidator>
                 {

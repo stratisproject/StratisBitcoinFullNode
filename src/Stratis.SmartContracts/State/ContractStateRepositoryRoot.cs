@@ -84,9 +84,11 @@ namespace Stratis.SmartContracts.State
         private ICachedSource<byte[], byte[]> trieCache;
         private ITrie<byte[]> stateTrie;
 
+        public ContractStateRepositoryRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
+
         public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
 
-        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
+        private ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);

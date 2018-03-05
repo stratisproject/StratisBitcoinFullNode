@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 t.RemoveAllKeys(DbreezeTestDb, true);
                 t.Commit();
             }
-            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new DBreezeByteStore(engine, DbreezeTestDb));
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new DBreezeContractStateStore(engine, DbreezeTestDb));
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
             byte[] root = repository.GetRoot();
 

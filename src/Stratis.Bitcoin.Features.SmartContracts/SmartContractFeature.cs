@@ -26,6 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override void Initialize()
         {
+            // TODO: Should set up contract root correctly?
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -51,19 +52,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractValidator>(validator);
                         services.AddSingleton<SmartContractGasInjector>();
 
-                        // TODO: Get root from somewhere and get these strings from somewhere
-                        //DBreezeEngine engine = new DBreezeEngine("C:/data");
-                        //DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+                        services.AddSingleton<DBreezeContractStateStore>();
+                        services.AddSingleton<NoDeleteContractStateSource>();
+                        services.AddSingleton<IContractStateRepository, ContractStateRepositoryRoot>();
 
-                        //  TODO: For testing, we use in-memory database for now. Real life needs to use dbreeze.
-
-                        MemoryDictionarySource byteStore = new MemoryDictionarySource();
-
-                        ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
-                        byte[] root = null;
-
-                        ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
-                        services.AddSingleton<IContractStateRepository>(repository);
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
 
