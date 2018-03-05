@@ -528,6 +528,10 @@ namespace NBitcoin
             return builder.BuildAndRegister();
         }
 
+        /// <summary>
+        /// Smart contract test network - took the bitcoin test network and made some adjustments. 
+        /// </summary>
+        /// <returns></returns>
         private static Network InitSmartContractsTest()
         {
             Network network = new Network
@@ -545,10 +549,10 @@ namespace NBitcoin
             network.consensus.BuriedDeployments[BuriedDeployments.BIP65] = 581885;
             network.consensus.BuriedDeployments[BuriedDeployments.BIP66] = 330776;
             network.consensus.BIP34Hash = new uint256("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8");
-            network.consensus.PowLimit = new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            network.consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // Set extremely low difficulty for now.
             network.consensus.MinimumChainWork = new uint256("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
             network.consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
-            network.consensus.PowTargetSpacing = TimeSpan.FromSeconds(10 * 60);
+            network.consensus.PowTargetSpacing = TimeSpan.FromSeconds(10); // 10 second block time while on testnet 
             network.consensus.PowAllowMinDifficultyBlocks = true;
             network.consensus.PowNoRetargeting = false;
             network.consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
@@ -574,15 +578,13 @@ namespace NBitcoin
             network.genesis = CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             network.genesis.Header.HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             network.consensus.HashGenesisBlock = network.genesis.GetHash();
-
-            // TODO: Replace the below:
-            //Assert(network.consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+            Assert(network.consensus.HashGenesisBlock == uint256.Parse("2cdaa49c236b7a277d01eed518b39bccfdf59e027e694e4e9b30dc7e925b246e"));
 
             network.fixedSeeds.Clear();
             network.seeds.Clear();
-            network.seeds.Add(new DNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
-            network.seeds.Add(new DNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
-            network.seeds.Add(new DNSSeedData("bitcoin.schildbach.de", "testnet-seed.bitcoin.schildbach.de"));
+            //network.seeds.Add(new DNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
+            //network.seeds.Add(new DNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
+            //network.seeds.Add(new DNSSeedData("bitcoin.schildbach.de", "testnet-seed.bitcoin.schildbach.de"));
 
             network.base58Prefixes = Network.Main.base58Prefixes.ToArray();
             network.base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
@@ -655,8 +657,7 @@ namespace NBitcoin
 
             network.consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            // TODO: Get the hash for this block and do an assert so that it starts the same on all nodes
-            // Assert(network.consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+            Assert(network.consensus.HashGenesisBlock == uint256.Parse("93867319cf92c86f957a9652c1fbe7cc8cbe70c53a915ac96ee7c59cb80f94b4"));
 
             network.seeds.Clear();  // Regtest mode doesn't have any DNS seeds.
             network.base58Prefixes = Network.TestNet.base58Prefixes.ToArray();
