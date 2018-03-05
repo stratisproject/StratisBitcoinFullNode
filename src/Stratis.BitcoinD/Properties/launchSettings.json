@@ -1,8 +1,6 @@
 {
   "profiles": {
     "Stratis.BitcoinD": {
-      "commandName": "Project",
-      "commandLineArgs": "-mine=1"
     },
     "Stratis.BitcoinD Test": {
       "commandName": "Project",
