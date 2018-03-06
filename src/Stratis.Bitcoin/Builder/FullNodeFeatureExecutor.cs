@@ -54,25 +54,7 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError("An error occurred starting the application: {0}", ex);
-                throw;
-            }
-
-            try
-            {
                 this.Execute(service => service.LoadConfiguration());
-            }
-            catch (Exception ex)
-            {
-                // Suppress over-reporting (stack traces etc.) of configuration errors
-                throw;
-            }
-
-            try
-            {
                 this.Execute(service => service.Initialize());
             }
             catch (Exception ex)
