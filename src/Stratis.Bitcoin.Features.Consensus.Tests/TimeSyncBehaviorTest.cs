@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 DateTime normalTime = dateTimeProvider.GetUtcNow();
                 TimeSpan diff = adjustedTime - normalTime;
                   
-                Assert.True(Math.Abs(diff.TotalMilliseconds) < expectedTimeOffsetLessThanMs + TimeEpsilonMs, $"Failed in sample at index:{i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds:{expectedTimeOffsetLessThanMs}");
+                Assert.True(Math.Abs(diff.TotalMilliseconds) < expectedTimeOffsetLessThanMs + TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {expectedTimeOffsetLessThanMs}");
             }
         }
 
@@ -152,6 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSet_ForgetsOldSamples()
         {
+            throw new Exception("Test passing when would fail, working on correcting this");
             int inboundSamples = 300;
             int outboundSamples = 300;
 

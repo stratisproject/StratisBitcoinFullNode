@@ -62,12 +62,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.Given_40_inbound_samples_with_offset_of(10);
             this.When_calculating_time_adjust_offset();
             this.Then_adjusted_time_offset_is(0);
-            //this.Then_logs_time_not_adjusted();
-        }
-
-        private void Then_logs_time_not_adjusted()
-        {
-            this.logger.Verify(x => x.LogTrace("", 0, 0));
         }
 
         private void Given_an_empty_time_sync_behaviour_state()

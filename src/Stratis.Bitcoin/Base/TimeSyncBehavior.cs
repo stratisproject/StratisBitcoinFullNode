@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Base
         public const int MaxTimeOffsetSeconds = 25 * 60;
 
         /// <summary>
-        /// Number of unweighted samples required before <see cref="timeOffset"/> is changed.
+        /// Minimum amount of outbound samples that should be collected before time adjustment <see cref="timeOffset"/> is changed.
         /// <para>
         /// Each inbound sample counts as 1 unweighted sample.
         /// Each outbound sample counts as <see cref="OffsetWeightSecurityConstant"/> unweighted samples.
@@ -273,22 +273,22 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            if (this.outboundTimestampOffsets.Count != 0 && this.outboundTimestampOffsets.Count >= MinOutboundSampleCount)
+            if (this.outboundTimestampOffsets.Count >= MinOutboundSampleCount)
             {
                 this.logger.LogTrace("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
                 List<double> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
                 List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
 
                 double currentInboundToOutboundRatio = this.inboundTimestampOffsets.Count / (double)this.outboundTimestampOffsets.Count;
-                int numberOfOutboundCopiesToAdd = (int) (Math.Ceiling(currentInboundToOutboundRatio * OffsetWeightSecurityConstant));
+                int numberOfOutboundCopiesToAdd = (int)Math.Ceiling(currentInboundToOutboundRatio * OffsetWeightSecurityConstant);
 
-                // If there are no inbound, use one of each outbound
+                // If there are no inbound, use one of each outbound.
                 if (numberOfOutboundCopiesToAdd == 0) 
                     numberOfOutboundCopiesToAdd = 1;
 
                 var allSamples = new List<double>();
                 
-                for (int i = 0; i < numberOfOutboundCopiesToAdd ; i++)
+                for (int i = 0; i < numberOfOutboundCopiesToAdd; i++)
                     allSamples.AddRange(outboundOffsets);
 
                 allSamples.AddRange(inboundOffsets);
