@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using NBitcoin;
 using DBreeze;
+using NBitcoin;
 using Stratis.SmartContracts.State;
 using Xunit;
 
@@ -147,7 +146,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 t.RemoveAllKeys(DbreezeTestDb, true);
                 t.Commit();
             }
-            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new DBreezeContractStateStore(engine, DbreezeTestDb));
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new DBreezeByteStore(engine, DbreezeTestDb));
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
             byte[] root = repository.GetRoot();
 
