@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using DBreeze;
 using DBreeze.DataTypes;
-using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.SmartContracts.State
 {
@@ -70,5 +69,13 @@ namespace Stratis.SmartContracts.State
                 t.Commit();
             }
         }
+    }
+
+    /// <summary>
+    /// Used for dependency injection. A contract state specific implementation of the above class.
+    /// </summary>
+    public class DBreezeContractStateStore : DBreezeByteStore
+    {
+        public DBreezeContractStateStore(DataFolder dataFolder) : base(new DBreezeEngine(dataFolder.SmartContractStatePath), "state") {}
     }
 }

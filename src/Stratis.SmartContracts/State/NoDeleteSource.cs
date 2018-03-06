@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.SmartContracts.State
+﻿namespace Stratis.SmartContracts.State
 {
     /// <summary>
     /// Adapted from EthereumJ.
@@ -35,5 +31,13 @@ namespace Stratis.SmartContracts.State
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Used for dependency injection. A contract state specific implementation of the above class.
+    /// </summary>
+    public class NoDeleteContractStateSource : NoDeleteSource<byte[], byte[]>
+    {
+        public NoDeleteContractStateSource(DBreezeContractStateStore src) : base(src) {}
     }
 }

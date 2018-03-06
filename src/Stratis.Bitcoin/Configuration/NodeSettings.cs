@@ -70,8 +70,6 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            // JORDAN LOOK FROM HERE!!!
-
             // If the network is not known then derive it from the command line arguments
             if (this.Network == null)
             {
