@@ -550,7 +550,7 @@ namespace NBitcoin
             network.consensus.BuriedDeployments[BuriedDeployments.BIP66] = 330776;
             network.consensus.BIP34Hash = new uint256("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8");
             network.consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // Set extremely low difficulty for now.
-            network.consensus.MinimumChainWork = new uint256("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
+            network.consensus.MinimumChainWork = uint256.Zero;
             network.consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
             network.consensus.PowTargetSpacing = TimeSpan.FromSeconds(10); // 10 second block time while on testnet 
             network.consensus.PowAllowMinDifficultyBlocks = true;
