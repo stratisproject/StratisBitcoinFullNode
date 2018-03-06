@@ -8,8 +8,8 @@ VOLUME /root/.stratisbitcoin
 
 WORKDIR /StratisBitcoinFullNode/src/Stratis.BitcoinD
 
-COPY bitcoin.conf.docker /root/.stratisnode/bitcoin/Main/bitcoin.conf
+COPY bitcoin.conf.docker /root/.stratisnode/bitcoin/TestNet/bitcoin.conf
 
-EXPOSE 8333 8332 18333 18332 37220
+EXPOSE 8333 8332 18333 18332 38220
 
-CMD ["dotnet", "run"]
+CMD ["dotnet", "run", "-testnet"]
