@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>
         /// Minimal amount of outbound samples that should be collected before time adjustment <see cref="timeOffset"/> is changed.
         /// </summary>
-        private const int MinOutboundSampleCount = 4;
+        public const int MinOutboundSampleCount = 4;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;

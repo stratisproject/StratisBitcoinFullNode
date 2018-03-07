@@ -42,12 +42,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
                 // These samples will change adjusted time because next outbound is the 4th outbound and we are under the limits.
                 TestSample.Outbound(true,  false, false, 1280, TimeSpan.FromSeconds(-1),        new IPAddress(4)),  // 2 inbound, 4 outbound. 2/4 * 3 = 1.5 -> ceil -> 2 of each outbound   { -2126000, -2126000, -391000, -1000, -1000, 3560, 3560, 13123, 26000, 26000 } -> median is 1280ms.
-                TestSample.Inbound( true,  false, false, 3560, TimeSpan.FromSeconds(23.6),      new IPAddress(5)),      // 3 inbound, 4 outbound. 3/4 * 3 = 2.25 -> ceil -> 3 of each outbound  { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000 } -> median is 3560ms.                     
-                TestSample.Inbound( true,  false, false, 3560, TimeSpan.FromSeconds(236),       new IPAddress(6)), // 4 inbound, 4 outbound. 4/4 * 3 = 3 -> ceil -> 3 of each outbound     { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 } -> median is 3560ms.                                                       
-                TestSample.Outbound(true,  false, false, 1236, TimeSpan.FromSeconds(1.236),     new IPAddress(7)), // 4 inbound, 5 outbound. 4/5 * 3 = 2.4 -> ceil -> 3 of each outbound   { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
-                TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-1001),     new IPAddress(8)), // 5 inbound, 5 outbound. 5/5 * 3 = 3 -> ceil -> 3 of each outbound     { -2126000, -2126000, -2126000, -391000, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
-                TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-4.9236),   new IPAddress(9)), // 6 inbound, 5 outbound. 6/5 * 3 = 3.6 -> ceil -> 4 of each outbound   { -2126000, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, -1000, 1236, 1236, 1236, 1236, 3560, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
-                TestSample.Outbound(true,  false, false,  118, TimeSpan.FromSeconds(-4444.444), new IPAddress(10)), // 6 inbound, 6 outbound. 6/6 * 3 = 3 -> ceil -> 3 of each outbound     { -4444444, -4444444, -4444444, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 118ms.
+                TestSample.Inbound( true,  false, false, 3560, TimeSpan.FromSeconds(23.6),      new IPAddress(5)),  // 3 inbound, 4 outbound. 3/4 * 3 = 2.25 -> ceil -> 3 of each outbound  { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000 } -> median is 3560ms.                     
+                TestSample.Inbound( true,  false, false, 3560, TimeSpan.FromSeconds(236),       new IPAddress(6)),  // 4 inbound, 4 outbound. 4/4 * 3 = 3 -> ceil -> 3 of each outbound     { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 } -> median is 3560ms.                                                       
+                TestSample.Outbound(true,  false, false, 1236, TimeSpan.FromSeconds(1.236),     new IPAddress(7)),  // 4 inbound, 5 outbound. 4/5 * 3 = 2.4 -> ceil -> 3 of each outbound   { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
+                TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-1001),     new IPAddress(8)),  // 5 inbound, 5 outbound. 5/5 * 3 = 3 -> ceil -> 3 of each outbound     { -2126000, -2126000, -2126000, -391000, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
+                TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-4.9236),   new IPAddress(9)),  // 6 inbound, 5 outbound. 6/5 * 3 = 3.6 -> ceil -> 4 of each outbound   { -2126000, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, -1000, 1236, 1236, 1236, 1236, 3560, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
+                TestSample.Outbound(true,  false, false,  118, TimeSpan.FromSeconds(-4444.444), new IPAddress(10)), // 6 inbound, 6 outbound. 6/6 * 3 = 3 -> ceil -> 3 of each outbound    { -4444444, -4444444, -4444444, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 118ms.
             };
 
             int maliciousOffset = TimeSyncBehaviorState.MaxTimeOffsetSeconds-1;
@@ -68,11 +68,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Add a 4th malicious outbound which is 4/10 (40%) which is greater that 33.3% of outbounds. Show we are not protected -> the offset gets set to the malicious value.
             samples.Add(TestSample.Outbound(true, false, false, maliciousOffset*1000, TimeSpan.FromSeconds(maliciousOffset), new IPAddress(14))); 
 
-            var dateTimeProvider = DateTimeProvider.Default;
-            var lifetime = new NodeLifetime();
-            var loggerFactory = new LoggerFactory();
-            var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var dateTimeProvider = new DateTimeProvider();
+            TimeSyncBehaviorState state = this.CreateTimeSyncBehaviorState(dateTimeProvider);
 
             for (int i = 0; i < samples.Count; i++)
             {
@@ -128,18 +125,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 TestSample.Outbound(true,  true,  false, -offsetAbovSwitchOffLevelMs/2, TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.33.4")), 
 
                 // Now the feature should be turned off.
-                TestSample.Outbound( true,  true,  true, 0, TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),                                  IPAddress.Parse("1.2.33.5")), 
-
-                // No more samples should be accepted now.
-                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(2),                                                          IPAddress.Parse("1.2.34.4")), 
-                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(1),                                                          IPAddress.Parse("1.2.35.4")),  
+                TestSample.Outbound( true,  true,  true, 0,                             TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.33.5")), 
+                                                                                                                                              
+                // No more samples should be accepted now.                                                                                    
+                TestSample.Outbound(false, true,  true,  0,                             TimeSpan.FromSeconds(2),                              IPAddress.Parse("1.2.34.4")), 
+                TestSample.Outbound(false, true,  true,  0,                             TimeSpan.FromSeconds(1),                              IPAddress.Parse("1.2.35.4")),  
             };
 
-            var dateTimeProvider = DateTimeProvider.Default;
-            var lifetime = new NodeLifetime();
-            var loggerFactory = new LoggerFactory();
-            var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var dateTimeProvider = new DateTimeProvider();
+            TimeSyncBehaviorState state = this.CreateTimeSyncBehaviorState(dateTimeProvider);
 
             for (int i = 0; i < samples.Count; i++)
             {
@@ -160,50 +154,82 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// forgets old samples if it has reached predefined limits.
         /// </summary>
         [Fact]
-        public void AddTimeData_WithLargeSampleSet_ForgetsOldSamples()
+        public void AddTimeData_WithLargeOutboundSampleSet_ForgetsOldSamples()
         {
-            int inboundSamples = 300; //100
-            int outboundSamples = 300;
+            var dateTimeProvider = new DateTimeProvider();
+            TimeSyncBehaviorState state = this.CreateTimeSyncBehaviorState(dateTimeProvider);
 
-            var dateTimeProvider = DateTimeProvider.Default;
+            // add max outbound
+            for (int i = 0; i < TimeSyncBehaviorState.MaxOutboundSamples; i++)
+            {
+                IPAddress peerAddress = new IPAddress(i);
+                bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(400), false);
+                Assert.True(used);
+            }
+
+            TimeSpan diff =  dateTimeProvider.GetAdjustedTime() -  dateTimeProvider.GetUtcNow();
+            Assert.True(Math.Abs(diff.TotalMilliseconds - 400*1000) < TimeEpsilonMs, $"should be 400ms because of outbound preference. Actual: {diff.TotalMilliseconds}ms");
+
+            // add another batch of outbounds with a different offset
+            for (int i = TimeSyncBehaviorState.MaxOutboundSamples; i < TimeSyncBehaviorState.MaxOutboundSamples*2; i++)
+            {
+                IPAddress peerAddress = new IPAddress(i*2);
+                bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(800), false);
+                Assert.True(used, $"index: {i}");
+            }
+
+            diff =  dateTimeProvider.GetAdjustedTime() -  dateTimeProvider.GetUtcNow();
+            Assert.True(Math.Abs(diff.TotalMilliseconds - 800*1000) < TimeEpsilonMs, $"should be 800ms because of outbound preference. Actual: {diff.TotalMilliseconds}ms");
+        }
+
+        /// <summary>
+        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
+        /// forgets old samples if it has reached predefined limits.
+        /// </summary>
+        [Fact]
+        public void AddTimeData_WithLargeInboundSampleSet_ForgetsOldSamples()
+        {
+            var dateTimeProvider = new DateTimeProvider();
+            TimeSyncBehaviorState state = this.CreateTimeSyncBehaviorState(dateTimeProvider);
+
+            // add max inbound samples
+            for (int i = 0; i < TimeSyncBehaviorState.MaxInboundSamples; i++)
+            {
+                bool used = state.AddTimeData(new IPAddress(i), TimeSpan.FromSeconds(400), true);
+                Assert.True(used);
+            }
+
+            // add enough outbound samples to get an adjustment - and across an even range
+            Assert.True(state.AddTimeData( new IPAddress(1), TimeSpan.FromSeconds(-500), false));
+            Assert.True(state.AddTimeData( new IPAddress(2), TimeSpan.FromSeconds(-250), false));
+            Assert.True(state.AddTimeData( new IPAddress(3), TimeSpan.FromSeconds(250), false));
+            Assert.True(state.AddTimeData( new IPAddress(4), TimeSpan.FromSeconds(500), false));
+
+            TimeSpan diff =  dateTimeProvider.GetAdjustedTime() -  dateTimeProvider.GetUtcNow();
+            Assert.True(Math.Abs(diff.TotalMilliseconds - 250*1000) < TimeEpsilonMs, $"should be 250ms because leaning towards the inbound value of 400ms, but still in outbound. Actual: {diff.TotalMilliseconds}ms");
+
+            // add another batch of inbound with a greater offset than highest outbound
+            for (int i = TimeSyncBehaviorState.MaxInboundSamples; i < TimeSyncBehaviorState.MaxInboundSamples*2; i++)
+            {
+                Assert.True(state.AddTimeData(new IPAddress(i*2), TimeSpan.FromSeconds(-1000), true), $"index: {i}");
+            }
+
+            diff =  dateTimeProvider.GetAdjustedTime() -  dateTimeProvider.GetUtcNow();
+            Assert.True(Math.Abs(diff.TotalMilliseconds - (-250*1000)) < TimeEpsilonMs, $"should be -250ms because the new inbound replace the old and swing the median closer to the new -1000ms values, but still in outbound. Actual: {diff.TotalMilliseconds}ms");
+        }
+
+        /// <summary>
+        /// Sets up the system under test
+        /// </summary>
+        /// <param name="dateTimeProvider"></param>
+        /// <returns></returns>
+        private TimeSyncBehaviorState CreateTimeSyncBehaviorState(DateTimeProvider dateTimeProvider)
+        {
             var lifetime = new NodeLifetime();
             var loggerFactory = new LoggerFactory();
             var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
             var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
-
-            var inSamples = new List<int>();
-            for (int i = 0; i < inboundSamples; i++)
-            {
-                IPAddress peerAddress = new IPAddress(i);
-                bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(i), true);
-                Assert.True(used);
-                if (i >= inboundSamples - TimeSyncBehaviorState.MaxInboundSamples) inSamples.Add(i * 1000);
-            }
-
-            DateTime adjustedTime = dateTimeProvider.GetAdjustedTime();
-            DateTime normalTime = dateTimeProvider.GetUtcNow();
-            TimeSpan diff = adjustedTime - normalTime;
-            int expectedDiffMs = inSamples.Median();
-            Assert.True(Math.Abs(diff.TotalMilliseconds) - Math.Abs(expectedDiffMs) < TimeEpsilonMs);
-
-            var outSamples = new List<int>();
-            for (int i = 0; i < outboundSamples; i++)
-            {
-                IPAddress peerAddress = new IPAddress(i);
-                bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(-i), false);
-                Assert.True(used);
-                if (i >= outboundSamples - TimeSyncBehaviorState.MaxOutboundSamples) outSamples.Add(-i * 1000);
-            }
-
-            var allSamples = new List<int>(inSamples);
-            for (int i = 0; i < TimeSyncBehaviorState.OffsetWeightSecurityConstant; i++)
-                allSamples.AddRange(outSamples);
-
-            adjustedTime = dateTimeProvider.GetAdjustedTime();
-            normalTime = dateTimeProvider.GetUtcNow();
-            diff = adjustedTime - normalTime;
-            expectedDiffMs = allSamples.Median();
-            Assert.True(Math.Abs(diff.TotalMilliseconds) < Math.Abs(expectedDiffMs) + TimeEpsilonMs);
+            return state;
         }
     }
 
