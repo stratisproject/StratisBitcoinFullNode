@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 DateTime normalTime = dateTimeProvider.GetUtcNow();
                 TimeSpan diff = adjustedTime - normalTime;
                   
-                Assert.True(Math.Abs(diff.TotalMilliseconds - samples[i].ExpectedTimeOffsetLessThanMs) < TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {samples[i].ExpectedTimeOffsetLessThanMs}");
+                Assert.True(Math.Abs(diff.TotalMilliseconds - samples[i].ExpectedTimeOffsetMs) < TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {samples[i].ExpectedTimeOffsetMs}");
             }
         }
 
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 Assert.Equal(samples[i].ExpectedIsSyncOff, state.SwitchedOff);
 
                 TimeSpan diff = dateTimeProvider.GetAdjustedTime() - dateTimeProvider.GetUtcNow();
-                Assert.True(Math.Abs(diff.TotalMilliseconds - samples[i].ExpectedTimeOffsetLessThanMs) < TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {samples[i].ExpectedTimeOffsetLessThanMs}");
+                Assert.True(Math.Abs(diff.TotalMilliseconds - samples[i].ExpectedTimeOffsetMs) < TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {samples[i].ExpectedTimeOffsetMs}");
             } 
         }
 
@@ -212,12 +212,40 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     /// </summary>
     public class TestSample
     {
+        /// <summary>
+        /// Input isInbound flag, with false meaning outbound.
+        /// </summary>
         public bool IsInbound { get; }
+
+        /// <summary>
+        /// Expectation of whether the sample is used or not.
+        /// </summary>
         public bool ExpectedIsUsed { get; }
+        
+        
+        /// <summary>
+        /// >Expectation of whether the warning has been set to on.
+        /// </summary>
         public bool ExpectedIsWarningOn { get; }
+        
+        /// <summary>
+        /// 
+        /// </summary>
         public bool ExpectedIsSyncOff { get; }
-        public int ExpectedTimeOffsetLessThanMs { get; }
+        
+        /// <summary>
+        /// Expectation that the time offset will be set to this value.
+        /// </summary>
+        public int ExpectedTimeOffsetMs { get; }
+        
+        /// <summary>
+        /// The actual inout time offset from the sample.
+        /// </summary>
         public TimeSpan InputTimeOffset { get; }
+        
+        /// <summary>
+        /// The IP Address of the sample.
+        /// </summary>
         public IPAddress PeerIpAddress { get; }
 
         /// <summary>
@@ -227,16 +255,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <param name="expectedIsUsed">Expectation of whether the sample is used or not.</param>
         /// <param name="expectedIsWarningOn">Expectation of whether the warning has been set to on.</param>
         /// <param name="expectedIsSyncOff">Expectation of whether the sync has been set to off.</param>
-        /// <param name="expectedTimeOffsetLessThanMs">Expectation that the time offset will be less than this value.</param>
+        /// <param name="expectedTimeOffsetMs">Expectation that the time offset will be set to this value.</param>
         /// <param name="inputTimeOffset">The actual inout time offset from the sample.</param>
         /// <param name="peerIpAddress">The IP Address of the sample.</param>
-        private TestSample(bool isInbound, bool expectedIsUsed, bool expectedIsWarningOn, bool expectedIsSyncOff, int expectedTimeOffsetLessThanMs, TimeSpan inputTimeOffset, IPAddress peerIpAddress)
+        private TestSample(bool isInbound, bool expectedIsUsed, bool expectedIsWarningOn, bool expectedIsSyncOff, int expectedTimeOffsetMs, TimeSpan inputTimeOffset, IPAddress peerIpAddress)
         {
             this.IsInbound = isInbound;
             this.ExpectedIsUsed = expectedIsUsed;
             this.ExpectedIsWarningOn = expectedIsWarningOn;
             this.ExpectedIsSyncOff = expectedIsSyncOff;
-            this.ExpectedTimeOffsetLessThanMs = expectedTimeOffsetLessThanMs;
+            this.ExpectedTimeOffsetMs = expectedTimeOffsetMs;
             this.InputTimeOffset = inputTimeOffset;
             this.PeerIpAddress = peerIpAddress;
         }
