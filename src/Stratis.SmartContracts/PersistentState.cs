@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
-using Stratis.SmartContracts.State;
 using NBitcoin;
+using Stratis.SmartContracts.State;
 
 namespace Stratis.SmartContracts
 {
@@ -29,9 +29,9 @@ namespace Stratis.SmartContracts
             this.counter = 0;
         }
 
-        public T GetObject<T>(object key)
+        public T GetObject<T>(string key)
         {
-            byte[] keyBytes = serializer.Serialize(key);
+            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
             byte[] bytes = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
 
             if (bytes == null)
@@ -40,15 +40,15 @@ namespace Stratis.SmartContracts
             return serializer.Deserialize<T>(bytes);
         }
 
-        public void SetObject<T>(object key, T obj)
+        public void SetObject<T>(string key, T obj)
         {
-            byte[] keyBytes = serializer.Serialize(key);
+            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
             this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj));
         }
 
-        public SmartContractMapping<K, V> GetMapping<K, V>()
+        public SmartContractMapping<V> GetMapping<V>()
         {
-            return new SmartContractMapping<K, V>(this, this.counter++);
+            return new SmartContractMapping<V>(this, this.counter++);
         }
 
         public SmartContractList<T> GetList<T>()
