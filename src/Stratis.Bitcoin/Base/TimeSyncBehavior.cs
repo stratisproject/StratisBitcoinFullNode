@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -104,12 +105,6 @@ namespace Stratis.Bitcoin.Base
         public const int TimeOffsetWarningThresholdSeconds = 5 * 60;
 
         /// <summary>
-        /// Maximal value for <see cref="timeOffset"/>. If the newly calculated value is over this limit,
-        /// the time syncing feature will be switched off.
-        /// </summary>
-        public const int MaxTimeOffsetSeconds = 25 * 60;
-
-        /// <summary>
         /// Number of unweighted samples required before <see cref="timeOffset"/> is changed.
         /// <para>
         /// Each inbound sample counts as 1 unweighted sample.
@@ -129,6 +124,9 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
+
+        /// <summary>The network the node is running on.</summary>
+        private readonly Network network;
 
         /// <summary>Lock object to protect access to <see cref="timeOffset"/>, <see cref="inboundTimestampOffsets"/>, <see cref="outboundTimestampOffsets"/>,
         /// <see cref="inboundSampleSources"/>, <see cref="outboundSampleSources"/>.</summary>
@@ -177,12 +175,14 @@ namespace Stratis.Bitcoin.Base
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory)
+        /// <param name="network">The network the node is running on.</param>
+        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory, Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
+            this.network = network;
 
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);
             this.outboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxOutboundSamples);
@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Base
                     allSamples.AddRange(outboundOffsets);
 
                 double median = allSamples.Median();
-                if (Math.Abs(median) < MaxTimeOffsetSeconds)
+                if (Math.Abs(median) < this.network.MaxTimeOffsetSeconds)
                 {
                     this.timeOffset = TimeSpan.FromSeconds(median);
                     this.dateTimeProvider.SetAdjustedTimeOffset(this.timeOffset);
@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Base
                         + "You need to adjust your system time or check the -synctime command line argument," + Environment.NewLine
                         + "and restart the node." + Environment.NewLine
                         + "=============================================================================" + Environment.NewLine,
-                          MaxTimeOffsetSeconds);
+                        this.network.MaxTimeOffsetSeconds);
                 }
 
                 this.logger.LogTrace("(-)");
