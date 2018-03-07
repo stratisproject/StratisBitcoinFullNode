@@ -160,7 +160,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 uint160 tokenContractAddress = trx.GetNewContractAddress();
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
-
                 scSender.FullNode.MempoolManager().Clear();
 
                 contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
@@ -195,7 +194,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 scSender.GenerateSmartContractStratisWithMiner(1);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-                var test = senderState.GetCurrentBalance(transferContractAddress);
                 Assert.Equal((ulong) 900, senderState.GetCurrentBalance(transferContractAddress));
             }
         }
