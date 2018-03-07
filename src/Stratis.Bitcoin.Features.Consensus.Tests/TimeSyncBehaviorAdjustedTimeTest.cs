@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Net;
+using Microsoft.AspNetCore.JsonPatch.Internal;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
 using Moq;
 using Xunit;
 
@@ -34,6 +37,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private Mock<ILogger> logger;
 
         /// <summary>
+        /// Generates IP Addresses from a starting point
+        /// </summary>
+        private IPAddressGenerator ipAddressGenerator;
+
+        public TimeSyncBehaviorAdjustedTimeTest()
+        {
+            this.ipAddressGenerator = new IPAddressGenerator(IPAddress.Parse("1.1.1.1"));
+        }
+        /// <summary>
         /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// uses outbound samples as a priority over inbound as they are less likely to be malicious.
         /// This means that even when there are many inbound connections, 
@@ -64,6 +76,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.Then_adjusted_time_offset_is(0);
         }
 
+        [Fact]
+        public void AddTimeData_WithLargeInboundMaliciousAnd33PercentOutboundMalicious_StillProtected()
+        {
+            this.Given_an_empty_time_sync_behaviour_state();
+            this.Given_40_inbound_samples_with_offset_of(-100);
+            this.Given_1_outbound_samples_with_offset_of(-100);
+            this.Given_3_outbound_samples_with_offset_of(20);
+            this.When_calculating_time_adjust_offset();
+            this.Then_adjusted_time_offset_is(20);
+        }
+
+        [Fact]
+        public void AddTimeData_WithLargeInboundMaliciousAnd34PercentOutboundMalicious_NotProtected()
+        {
+            throw new Exception();
+        }
+
         private void Given_an_empty_time_sync_behaviour_state()
         {
             this.dateTimeProvider = new DateTimeProvider();
@@ -80,19 +109,32 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 loggerFactory.Object);
         }
 
-        private void Given_4_outbound_samples_with_offset_of(int offsetSeconds)
+        private void Given_1_outbound_samples_with_offset_of(int offsetSeconds)
         {
-            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.2"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
-            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.3"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
-            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.4"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
-            this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("2.2.2.5"), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+            this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
         }
 
-        private void Given_40_inbound_samples_with_offset_of(int offset)
+        private void Given_3_outbound_samples_with_offset_of(int offsetSeconds)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+            }
+        }
+
+        private void Given_4_outbound_samples_with_offset_of(int offsetSeconds)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+            }
+        }
+
+        private void Given_40_inbound_samples_with_offset_of(int offsetSeconds)
         {
             for (int i = 1; i <= 40; i++)
             {
-                this.timesyncBehaviourState.AddTimeData(IPAddress.Parse("1.2.3." + i), TimeSpan.FromSeconds(offset), isInboundConnection: true);
+                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: true);
             }
         }
 

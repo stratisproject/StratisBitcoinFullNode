@@ -97,8 +97,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Maximal number of samples to keep inside <see cref="outboundTimestampOffsets"/>.</summary>
         public const int MaxOutboundSamples = 200;
 
-        /// <summary>Weight of outbound timestamp offsets in relation to inbound timestamp offsets.
-        /// Weight of N means that a single outbound sample has equal weight as N inbound samples.
+        /// <summary>
         /// The value of 3 provides enough security to be protected against up to 33% of outbound samples being malicious and all inbound being malicious.
         /// </summary>
         public const int OffsetWeightSecurityConstant = 3;
@@ -114,10 +113,6 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>
         /// Minimum amount of outbound samples that should be collected before time adjustment <see cref="timeOffset"/> is changed.
-        /// <para>
-        /// Each inbound sample counts as 1 unweighted sample.
-        /// Each outbound sample counts as <see cref="OffsetWeightSecurityConstant"/> unweighted samples.
-        /// </para>
         /// </summary>
         private const int MinOutboundSampleCount = 4;
 
