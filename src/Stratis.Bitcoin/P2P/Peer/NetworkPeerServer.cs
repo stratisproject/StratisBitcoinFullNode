@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerConnectionParameters InboundNetworkPeerConnectionParameters { get; set; }
 
         /// <summary>Maximum number of inbound connection that the server is willing to handle simultaneously.</summary>
+        /// <remarks>TODO: consider making this configurable.</remarks>
         public const int MaxConnectionThreshold = 125;
 
         /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public IPEndPoint ExternalEndpoint { get; private set; }
 
         /// <summary>TCP server listener accepting inbound connections.</summary>
-        private TcpListener tcpListener;
+        private readonly TcpListener tcpListener;
         
         /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
         private readonly CancellationTokenSource serverCancel;
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Starts listening on the server's initialialized endpoint.
+        /// Starts listening on the server's initialized endpoint.
         /// </summary>
         public void Listen()
         {
@@ -131,9 +132,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                     {
                         try
                         {
-                            Task<TcpClient> acceptTask = this.tcpListener.AcceptTcpClientAsync();
-                            acceptTask.Wait(this.serverCancel.Token);
-                            return acceptTask.Result;
+                            Task<TcpClient> acceptClientTask = this.tcpListener.AcceptTcpClientAsync();
+                            acceptClientTask.Wait(this.serverCancel.Token);
+                            return acceptClientTask.Result;
                         }
                         catch (Exception exception)
                         {
@@ -153,8 +154,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         tcpClient.Close();
                         continue;
                     }
-
-
+                    
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
                     INetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters());
