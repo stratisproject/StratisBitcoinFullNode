@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     /// <summary>
     /// Tests of <see cref="TimeSyncBehavior"/> and <see cref="TimeSyncBehaviorState"/> classes.
     /// </summary>
-    public class TimeSyncBehaviorAdjustedTimeTest
+    public class TimeSyncBehaviorAdjustedTimeTest : BddSpecification
     {
         /// <summary>
         /// Time data is added this state. 
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// This provides the adjusted time ready for assertion. 
         /// </summary>
         private IDateTimeProvider dateTimeProvider;
-        
+
         /// <summary>
         /// This is the result of the <see cref="IDateTimeProvider.GetAdjustedTime"/>. 
         /// </summary>
@@ -53,11 +53,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
-            this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, 10);
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(4, 20);
-            this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_is(20);
+           Given(() => an_empty_time_sync_behaviour_state());
+           And(() => x_inbound_samples_with_offset_of_y_seconds(40, 10));
+           And(() => x_outbound_samples_with_offset_of_y_seconds(4, 20));
+           When(() => calculating_time_adjust_offset());
+           Then(() => adjusted_time_offset_is(20));
         }
 
         /// <summary>
@@ -67,10 +67,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndZeroOutbound_SticksWithTheSystemTime()
         {
-            this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, 10);
-            this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_is(0);
+            this.an_empty_time_sync_behaviour_state();
+            this.x_inbound_samples_with_offset_of_y_seconds(40, 10);
+            this.calculating_time_adjust_offset();
+            this.adjusted_time_offset_is(0);
         }
 
         /// <summary>
@@ -80,36 +80,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithNoInboundSamples_UsesOutboundMedian()
         {
-            this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(4, 10);
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(4, 20);
-            this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_is(15);
+            this.an_empty_time_sync_behaviour_state();
+            this.x_outbound_samples_with_offset_of_y_seconds(4, 10);
+            this.x_outbound_samples_with_offset_of_y_seconds(4, 20);
+            this.calculating_time_adjust_offset();
+            this.adjusted_time_offset_is(15);
         }
 
         [Fact]
         public void AddTimeData_WithLargeInboundMaliciousAnd33PercentOutboundMalicious_StillProtected()
         {
-            this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, -100);
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(3, -100);
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(9, 0);
-            this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_is(0); 
+            this.an_empty_time_sync_behaviour_state();
+            this.x_inbound_samples_with_offset_of_y_seconds(40, -100);
+            this.x_outbound_samples_with_offset_of_y_seconds(3, -100);
+            this.x_outbound_samples_with_offset_of_y_seconds(9, 0);
+            this.calculating_time_adjust_offset();
+            this.adjusted_time_offset_is(0);
         }
 
         [Fact]
         public void AddTimeData_WithLargeInboundMaliciousAnd40PercentOutboundMalicious_NOT_Protected()
         {
-            this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, -100);
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(2, -100);
-            this.Given_x_outbound_samples_with_offset_of_y_seconds(3, -1);
-            this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_is(-100);
+            this.an_empty_time_sync_behaviour_state();
+            this.x_inbound_samples_with_offset_of_y_seconds(40, -100);
+            this.x_outbound_samples_with_offset_of_y_seconds(2, -100);
+            this.x_outbound_samples_with_offset_of_y_seconds(3, -1);
+            this.calculating_time_adjust_offset();
+            this.adjusted_time_offset_is(-100);
         }
 
-        private void Given_an_empty_time_sync_behaviour_state()
+        private void an_empty_time_sync_behaviour_state()
         {
             this.dateTimeProvider = new DateTimeProvider();
             var loggerFactory = new Mock<ILoggerFactory>();
@@ -121,11 +121,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             this.timesyncBehaviourState = new TimeSyncBehaviorState(
                 this.dateTimeProvider, new NodeLifetime(),
-                new AsyncLoopFactory(loggerFactory.Object), 
+                new AsyncLoopFactory(loggerFactory.Object),
                 loggerFactory.Object);
         }
 
-        private void Given_x_outbound_samples_with_offset_of_y_seconds(int x, int y)
+        private void x_outbound_samples_with_offset_of_y_seconds(int x, int y)
         {
             for (int i = 0; i < x; i++)
             {
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             }
         }
 
-        private void Given_x_inbound_samples_with_offset_of_y_seconds(int x, int y)
+        private void x_inbound_samples_with_offset_of_y_seconds(int x, int y)
         {
             for (int i = 0; i < x; i++)
             {
@@ -141,17 +141,40 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             }
         }
 
-        private void When_calculating_time_adjust_offset()
+        private void calculating_time_adjust_offset()
         {
             this.adjustedOffsetTimespan = this.dateTimeProvider.GetAdjustedTime() - this.dateTimeProvider.GetUtcNow();
         }
 
-        private void Then_adjusted_time_offset_is(int expectedOffsetInSeconds)
+        private void adjusted_time_offset_is(int expectedOffsetInSeconds)
         {
-            int roundedOffset = (int) Math.Round((decimal) this.adjustedOffsetTimespan.TotalMilliseconds,
+            int roundedOffset = (int)Math.Round((decimal)this.adjustedOffsetTimespan.TotalMilliseconds,
                                     MidpointRounding.AwayFromZero) / 1000;
-             
+
             Assert.Equal(expectedOffsetInSeconds, roundedOffset);
+        }
+    }
+
+    public abstract class BddSpecification
+    {
+        public void Given(Action action)
+        {
+            action.Invoke();
+        }
+
+        public void When(Action action)
+        {
+            action.Invoke();
+        }
+
+        public void Then(Action action)
+        {
+            action.Invoke();
+        }
+
+        public void And(Action action)
+        {
+            action.Invoke();
         }
     }
 }
