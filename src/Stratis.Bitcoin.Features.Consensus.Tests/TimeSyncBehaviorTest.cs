@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -53,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var lifetime = new NodeLifetime();
             var loggerFactory = new LoggerFactory();
             var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, Network.Main);
 
             for (int i = 0; i < samples.Count; i++)
             {
@@ -98,15 +99,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(4),                                                                IPAddress.Parse("1.2.3.46"), },
 
                 // Add more samples.
-                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 10),                 IPAddress.Parse("1.2.3.47"), },
-                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 11),                 IPAddress.Parse("1.2.3.48"), },
-                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 12),                 IPAddress.Parse("1.2.3.49"), },
-                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 13),                 IPAddress.Parse("1.2.31.4"), },
-                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 14),                 IPAddress.Parse("1.2.32.4"), },
-                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 15),                 IPAddress.Parse("1.2.33.4"), },
+                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 10),                        IPAddress.Parse("1.2.3.47"), },
+                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 11),                        IPAddress.Parse("1.2.3.48"), },
+                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 12),                        IPAddress.Parse("1.2.3.49"), },
+                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 13),                        IPAddress.Parse("1.2.31.4"), },
+                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 14),                        IPAddress.Parse("1.2.32.4"), },
+                new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 15),                        IPAddress.Parse("1.2.33.4"), },
 
                 // Now the feature should be turned off.
-                new object[] { true,  true,  true,  true,  TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 16),                 IPAddress.Parse("1.2.33.4"), },
+                new object[] { true,  true,  true,  true,  TimeSpan.FromSeconds(-Network.BitcoinMaxTimeOffsetSeconds - 16),                        IPAddress.Parse("1.2.33.4"), },
 
                 // No more samples should be accepted now.
                 new object[] { false, false, true,  true,  TimeSpan.FromSeconds(2),                                                                IPAddress.Parse("1.2.34.4"), },
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var lifetime = new NodeLifetime();
             var loggerFactory = new LoggerFactory();
             var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, Network.Main);
 
             for (int i = 0; i < samples.Count; i++)
             {
@@ -159,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var lifetime = new NodeLifetime();
             var loggerFactory = new LoggerFactory();
             var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, Network.Main);
 
             var inSamples = new List<int>();
             for (int i = 0; i < inboundSamples; i++)
