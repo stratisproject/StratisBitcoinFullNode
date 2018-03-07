@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-4.9236),   new IPAddress(9)),  // 6 inbound, 5 outbound. 6/5 * 3 = 3.6 -> ceil -> 4 of each outbound   { -2126000, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, -1000, 1236, 1236, 1236, 1236, 3560, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 26000, 236000 }  -> median is 1236ms.
                 TestSample.Outbound(true,  false, false,  118, TimeSpan.FromSeconds(-4444.444), new IPAddress(10)), // 6 inbound, 6 outbound. 6/6 * 3 = 3 -> ceil -> 3 of each outbound    { -4444444, -4444444, -4444444, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 118ms.
             };
-
+             
             int maliciousOffset = TimeSyncBehaviorState.MaxTimeOffsetSeconds-1;
 
             // Introduce 100 malicious inbound and show we are protected from malicious inbounds
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 Assert.True(Math.Abs(diff.TotalMilliseconds - samples[i].ExpectedTimeOffsetMs) < TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {samples[i].ExpectedTimeOffsetMs}");
             }
         }
-
+         
         /// <summary>
         /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// turns on the user warnings and then switches off the time sync feature on defined threshold levels.
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             int offsetAboveWarningLevelSeconds = TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1;
             int offsetAboveWarningLevelMs = offsetAboveWarningLevelSeconds*1000;
 
-            int offsetAbovSwitchOffLevel = TimeSyncBehaviorState.MaxTimeOffsetSeconds + 1;
+            int offsetAbovSwitchOffLevel = Network.BitcoinMaxTimeOffsetSeconds + 1;
             int offsetAbovSwitchOffLevelMs = offsetAbovSwitchOffLevel * 1000;
 
             // Samples to be inserted to the state.
@@ -134,6 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var dateTimeProvider = new DateTimeProvider();
             TimeSyncBehaviorState state = this.CreateTimeSyncBehaviorState(dateTimeProvider);
+
 
             for (int i = 0; i < samples.Count; i++)
             {
@@ -217,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             diff =  dateTimeProvider.GetAdjustedTime() -  dateTimeProvider.GetUtcNow();
             Assert.True(Math.Abs(diff.TotalMilliseconds - (-250*1000)) < TimeEpsilonMs, $"should be -250ms because the new inbound replace the old and swing the median closer to the new -1000ms values, but still in outbound. Actual: {diff.TotalMilliseconds}ms");
         }
-
+         
         /// <summary>
         /// Sets up the system under test
         /// </summary>
@@ -228,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var lifetime = new NodeLifetime();
             var loggerFactory = new LoggerFactory();
             var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, Network.Main);
             return state;
         }
     }
