@@ -27,29 +27,34 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void AddTimeData_WithSmallSampleSet_CalculatedCorrectly()
         {
             // Samples to be inserted to the state.
-            // Columns meanings: isInbound, expectedIsUsed, expectedTimeOffsetLessThanMs, timeOffsetSample, peerAddress
             var samples = new List<TestSample>
             {
+                // Columns meanings: expectedIsUsed, expectedIsWarningOn, expectedIsTimeSyncOff, expectedTimeOffsetLessThanMs, timeOffsetSample, peerAddress
+
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
                 TestSample.Outbound(true,  false, false,    0, TimeSpan.FromSeconds(3.56),      IPAddress.Parse("1.2.3.4")),
                 TestSample.Inbound(true,   false, false,    0, TimeSpan.FromSeconds(13.123),    IPAddress.Parse("1.2.3.4")),
-                TestSample.Outbound(false, false, false,    0, TimeSpan.FromSeconds(7.123),     IPAddress.Parse("1.2.3.4")),
-                TestSample.Outbound(true,  false,  false,   0, TimeSpan.FromSeconds(26.0),      IPAddress.Parse("2001:0db8:85a3:1232:0000:8a2e:0370:7334")),
-                TestSample.Outbound(false, false, false,    0, TimeSpan.FromSeconds(260),       IPAddress.Parse("2001:0db8:85a3:1232:0000:8a2e:0370:7334")),
-                TestSample.Outbound(true,  false,  false,   0, TimeSpan.FromSeconds(-2126.0),   IPAddress.Parse("1.2.3.5")),                                
+                TestSample.Outbound(false, false, false,    0, TimeSpan.FromSeconds(7.123),     IPAddress.Parse("1.2.3.4")), // ip address already used.
+                TestSample.Outbound(true,  false, false,    0, TimeSpan.FromSeconds(26.0),      IPAddress.Parse("2001:0db8:85a3:1232:0000:8a2e:0370:7334")),
+                TestSample.Outbound(false, false, false,    0, TimeSpan.FromSeconds(260),       IPAddress.Parse("2001:0db8:85a3:1232:0000:8a2e:0370:7334")), // ip address already used.
+                TestSample.Outbound(true,  false, false,    0, TimeSpan.FromSeconds(-2126.0),   IPAddress.Parse("1.2.3.5")),                                
                 TestSample.Inbound( true,  false, false,    0, TimeSpan.FromSeconds(-391),      IPAddress.Parse("1.2.3.45")),                                
 
-                // These samples will change adjusted time.
-                TestSample.Outbound(true,false, false,   1280, TimeSpan.FromSeconds(-1),        IPAddress.Parse("2001:0db8:85a3:0000:0000:8a2e:0370:7334")), 
-                TestSample.Inbound( true,false, false,   3560, TimeSpan.FromSeconds(23.6),      IPAddress.Parse("::1")),                                 
-                TestSample.Inbound( true,false, false,   3560, TimeSpan.FromSeconds(236),       IPAddress.Parse("12.2.3.5")),                            
-                TestSample.Outbound(true,false,  false,  1236, TimeSpan.FromSeconds(1.236),     IPAddress.Parse("13.2.3.5")),                            
-                TestSample.Inbound( true,false,  false,  1236, TimeSpan.FromSeconds(-1000),     IPAddress.Parse("14.2.3.5")),                            
-                TestSample.Inbound( true,false,  false,  1236, TimeSpan.FromSeconds(-4.9236),   IPAddress.Parse("15.2.3.5")),                            
-                TestSample.Outbound(true,false,  false,   118, TimeSpan.FromSeconds(-4444.444), IPAddress.Parse("16.2.3.5")),                               
+                // These samples will change adjusted time because next outbound is the 4th outbound.
+               
+                TestSample.Outbound(true,  false, false, 1280, TimeSpan.FromSeconds(-1),        IPAddress.Parse("2.2.2.2")),  // 2 inbound, 4 outbound. 2/4 * 3 = 1.5 -> ceil -> 2 of each outbound   { -2126000, -2126000, -391000, -1000, -1000, 3560, 3560, 13123, 26000, 26000 } -> median is 1280ms
+                TestSample.Inbound( true,  false, false, 3560, TimeSpan.FromSeconds(23.6),      IPAddress.Parse("::1")),      // 3 inbound, 4 outbound. 3/4 * 3 = 2.25 -> ceil -> 3 of each outbound  { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000 } -> median is 3560ms                                
+                TestSample.Inbound( true,  false, false, 3560, TimeSpan.FromSeconds(236),       IPAddress.Parse("12.2.3.5")), // 4 inbound, 4 outbound. 4/4 * 3 = 3 -> ceil -> 3 of each outbound     { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 } -> median is 3560ms                                                           
+                TestSample.Outbound(true,  false, false, 1236, TimeSpan.FromSeconds(1.236),     IPAddress.Parse("13.2.3.5")), // 4 inbound, 5 outbound. 4/5 * 3 = 2.4 -> ceil -> 3 of each outbound   { -2126000, -2126000, -2126000, -391000, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 1236ms                            
+                TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-1001),     IPAddress.Parse("14.2.3.5")), // 5 inbound, 5 outbound. 5/5 * 3 = 3 -> ceil -> 3 of each outbound     { -2126000, -2126000, -2126000, -391000, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 1236ms                                                       
+                TestSample.Inbound( true,  false, false, 1236, TimeSpan.FromSeconds(-4.9236),   IPAddress.Parse("15.2.3.5")), // 6 inbound, 5 outbound. 6/5 * 3 = 3.6 -> ceil -> 4 of each outbound   { -2126000, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, -1000, 1236, 1236, 1236, 1236, 3560, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 26000, 236000 }  -> median is 1236ms                                               
+                TestSample.Outbound(true,  false, false,  118, TimeSpan.FromSeconds(-4444.444), IPAddress.Parse("16.2.3.5")), // 6 inbound, 6 outbound. 6/6 * 3 = 3 -> ceil -> 3 of each outbound     { -4444444, -4444444, -4444444, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }  -> median is 118ms                              
 
                 // add 10 inbound  16/6
             };
+
+            var x = new[]  { -4444444, -4444444, -4444444, -2126000, -2126000, -2126000, -391000, -4923.6, -1001, -1000, -1000, -1000, 1236, 1236, 1236, 3560, 3560, 3560, 13123, 23600, 26000, 26000, 26000, 236000 }.Median();
+            Assert.Equal(0, x);
 
             var dateTimeProvider = DateTimeProvider.Default;
             var lifetime = new NodeLifetime();
@@ -94,31 +99,31 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var samples = new List<TestSample>
             {
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
-                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1),      IPAddress.Parse("1.2.3.41")), 
-                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 2),      IPAddress.Parse("1.2.3.42")), 
-                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 3),      IPAddress.Parse("1.2.3.43")), 
+                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1), IPAddress.Parse("1.2.3.41")), 
+                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 2), IPAddress.Parse("1.2.3.42")), 
+                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 3), IPAddress.Parse("1.2.3.43")), 
 
                 // The next sample turns on the warning.
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 4),      IPAddress.Parse("1.2.3.44")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 4), IPAddress.Parse("1.2.3.44")), 
 
                 // It can't be turned off.
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(3),                                                                IPAddress.Parse("1.2.3.45")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(4),                                                                IPAddress.Parse("1.2.3.46")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(3),                                                           IPAddress.Parse("1.2.3.45")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(4),                                                           IPAddress.Parse("1.2.3.46")), 
 
                 // Add more samples.
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 10),                 IPAddress.Parse("1.2.3.47")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 11),                 IPAddress.Parse("1.2.3.48")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 12),                 IPAddress.Parse("1.2.3.49")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 13),                 IPAddress.Parse("1.2.31.4")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 14),                 IPAddress.Parse("1.2.32.4")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 15),                 IPAddress.Parse("1.2.33.4")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 10),            IPAddress.Parse("1.2.3.47")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 11),            IPAddress.Parse("1.2.3.48")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 12),            IPAddress.Parse("1.2.3.49")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 13),            IPAddress.Parse("1.2.31.4")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 14),            IPAddress.Parse("1.2.32.4")), 
+                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 15),            IPAddress.Parse("1.2.33.4")), 
 
                 // Now the feature should be turned off.
-                TestSample.Inbound( true,  true,  true,  0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 16),                 IPAddress.Parse("1.2.33.4")), 
+                TestSample.Inbound( true,  true,  true,  0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 16),            IPAddress.Parse("1.2.33.4")), 
 
                 // No more samples should be accepted now.
-                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(2),                                                                IPAddress.Parse("1.2.34.4")), 
-                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(1),                                                                IPAddress.Parse("1.2.35.4")),  
+                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(2),                                                           IPAddress.Parse("1.2.34.4")), 
+                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(1),                                                           IPAddress.Parse("1.2.35.4")),  
             };
 
             var dateTimeProvider = DateTimeProvider.Default;
