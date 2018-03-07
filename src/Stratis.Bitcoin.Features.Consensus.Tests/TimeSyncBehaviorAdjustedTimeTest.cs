@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Net;
-using Microsoft.AspNetCore.JsonPatch.Internal;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
 using Moq;
 using Xunit;
 
@@ -57,8 +54,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndLowSampleSetOfOutbound_GetsOverridenByOutboundSamples()
         {
             this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_40_inbound_samples_with_offset_of(10);
-            this.Given_4_outbound_samples_with_offset_of(20);
+            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, 10);
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(4, 20);
             this.When_calculating_time_adjust_offset();
             this.Then_adjusted_time_offset_is(20);
         }
@@ -71,26 +68,45 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public void AddTimeData_WithLargeSampleSetOfInboundTimeManipulatorsAndZeroOutbound_SticksWithTheSystemTime()
         {
             this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_40_inbound_samples_with_offset_of(10);
+            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, 10);
             this.When_calculating_time_adjust_offset();
             this.Then_adjusted_time_offset_is(0);
+        }
+
+        /// <summary>
+        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
+        /// uses only 1 copy of each outbounds to calculate median when there are no inbound samples.
+        /// </summary>
+        [Fact]
+        public void AddTimeData_WithNoInboundSamples_UsesOutboundMedian()
+        {
+            this.Given_an_empty_time_sync_behaviour_state();
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(4, 10);
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(4, 20);
+            this.When_calculating_time_adjust_offset();
+            this.Then_adjusted_time_offset_is(15);
         }
 
         [Fact]
         public void AddTimeData_WithLargeInboundMaliciousAnd33PercentOutboundMalicious_StillProtected()
         {
             this.Given_an_empty_time_sync_behaviour_state();
-            this.Given_40_inbound_samples_with_offset_of(-100);
-            this.Given_1_outbound_samples_with_offset_of(-100);
-            this.Given_3_outbound_samples_with_offset_of(20);
+            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, -100);
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(3, -100);
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(9, 0);
             this.When_calculating_time_adjust_offset();
-            this.Then_adjusted_time_offset_is(20);
+            this.Then_adjusted_time_offset_is(0); 
         }
 
         [Fact]
-        public void AddTimeData_WithLargeInboundMaliciousAnd34PercentOutboundMalicious_NotProtected()
+        public void AddTimeData_WithLargeInboundMaliciousAnd40PercentOutboundMalicious_NOT_Protected()
         {
-            throw new Exception();
+            this.Given_an_empty_time_sync_behaviour_state();
+            this.Given_x_inbound_samples_with_offset_of_y_seconds(40, -100);
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(2, -100);
+            this.Given_x_outbound_samples_with_offset_of_y_seconds(3, -1);
+            this.When_calculating_time_adjust_offset();
+            this.Then_adjusted_time_offset_is(-100);
         }
 
         private void Given_an_empty_time_sync_behaviour_state()
@@ -109,32 +125,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 loggerFactory.Object);
         }
 
-        private void Given_1_outbound_samples_with_offset_of(int offsetSeconds)
+        private void Given_x_outbound_samples_with_offset_of_y_seconds(int x, int y)
         {
-            this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
-        }
-
-        private void Given_3_outbound_samples_with_offset_of(int offsetSeconds)
-        {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < x; i++)
             {
-                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
+                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(y), isInboundConnection: false);
             }
         }
 
-        private void Given_4_outbound_samples_with_offset_of(int offsetSeconds)
+        private void Given_x_inbound_samples_with_offset_of_y_seconds(int x, int y)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < x; i++)
             {
-                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: false);
-            }
-        }
-
-        private void Given_40_inbound_samples_with_offset_of(int offsetSeconds)
-        {
-            for (int i = 1; i <= 40; i++)
-            {
-                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(offsetSeconds), isInboundConnection: true);
+                this.timesyncBehaviourState.AddTimeData(this.ipAddressGenerator.GetNext(), TimeSpan.FromSeconds(y), isInboundConnection: true);
             }
         }
 

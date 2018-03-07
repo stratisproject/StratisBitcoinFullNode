@@ -47,7 +47,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 }
             }
 
-            return new IPAddress(nextAddress);
+            var ipAddress = new IPAddress(nextAddress);
+            this.usedAddresses.Add(ipAddress);
+            return ipAddress;
         }
 
         /// <summary>
