@@ -97,36 +97,42 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void AddTimeData_WithSmallSampleSet_TurnsWarningOnAndSwitchesSyncOff()
         {
+            int offsetAboveWarningLevelSeconds = TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1;
+            int offsetAboveWarningLevelMs = offsetAboveWarningLevelSeconds*1000;
+
+            int offsetAbovSwitchOffLevel = TimeSyncBehaviorState.MaxTimeOffsetSeconds + 1;
+            int offsetAbovSwitchOffLevelMs = offsetAbovSwitchOffLevel * 1000;
+
             // Samples to be inserted to the state.
             // Columns meanings:  isUsed, isWarningOn, isSyncOff, timeOffsetSample, peerAddress
             var samples = new List<TestSample>
             {
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
-                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1), IPAddress.Parse("1.2.3.41")), 
-                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 2), IPAddress.Parse("1.2.3.42")), 
-                TestSample.Outbound(true,  false, false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 3), IPAddress.Parse("1.2.3.43")), 
-
-                // The next sample turns on the warning.
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 4), IPAddress.Parse("1.2.3.44")), 
-
-                // It can't be turned off.
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(3),                                                           IPAddress.Parse("1.2.3.45")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(4),                                                           IPAddress.Parse("1.2.3.46")), 
-
-                // Add more samples.
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 10),            IPAddress.Parse("1.2.3.47")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 11),            IPAddress.Parse("1.2.3.48")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 12),            IPAddress.Parse("1.2.3.49")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 13),            IPAddress.Parse("1.2.31.4")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 14),            IPAddress.Parse("1.2.32.4")), 
-                TestSample.Outbound(true,  true,  false, 0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 15),            IPAddress.Parse("1.2.33.4")), 
+                TestSample.Outbound(true,  false, false, 0,                             TimeSpan.FromSeconds(offsetAboveWarningLevelSeconds), IPAddress.Parse("1.2.3.41")), 
+                TestSample.Outbound(true,  false, false, 0,                             TimeSpan.FromSeconds(offsetAboveWarningLevelSeconds), IPAddress.Parse("1.2.3.42")), 
+                TestSample.Outbound(true,  false, false, 0,                             TimeSpan.FromSeconds(offsetAboveWarningLevelSeconds), IPAddress.Parse("1.2.3.43")), 
+                                                                                        
+                // The next sample turns on the warning.                                
+                TestSample.Outbound(true,  true,  false, offsetAboveWarningLevelMs,     TimeSpan.FromSeconds(offsetAboveWarningLevelSeconds), IPAddress.Parse("1.2.3.44")), 
+                                                                                        
+                // It can't be turned off.                                              
+                TestSample.Outbound(true,  true,  false, offsetAboveWarningLevelMs,     TimeSpan.FromSeconds(0),                              IPAddress.Parse("1.2.3.45")), 
+                TestSample.Outbound(true,  true,  false, offsetAboveWarningLevelMs,     TimeSpan.FromSeconds(0),                              IPAddress.Parse("1.2.3.46")), 
+                                                                                        
+                // Add more samples (above switch off level, trying to switch it off).  
+                TestSample.Outbound(true,  true,  false, offsetAboveWarningLevelMs,     TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.3.47")), 
+                TestSample.Outbound(true,  true,  false, offsetAboveWarningLevelMs/2,   TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.3.48")), 
+                TestSample.Outbound(true,  true,  false, 0,                             TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.3.49")), 
+                TestSample.Outbound(true,  true,  false, 0,                             TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.31.4")), 
+                TestSample.Outbound(true,  true,  false, 0,                             TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.32.4")), 
+                TestSample.Outbound(true,  true,  false, -offsetAbovSwitchOffLevelMs/2, TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),      IPAddress.Parse("1.2.33.4")), 
 
                 // Now the feature should be turned off.
-                TestSample.Inbound( true,  true,  true,  0, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 16),            IPAddress.Parse("1.2.33.4")), 
+                TestSample.Outbound( true,  true,  true, 0, TimeSpan.FromSeconds(-offsetAbovSwitchOffLevel),                                  IPAddress.Parse("1.2.33.5")), 
 
                 // No more samples should be accepted now.
-                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(2),                                                           IPAddress.Parse("1.2.34.4")), 
-                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(1),                                                           IPAddress.Parse("1.2.35.4")),  
+                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(2),                                                          IPAddress.Parse("1.2.34.4")), 
+                TestSample.Outbound(false, true,  true,  0, TimeSpan.FromSeconds(1),                                                          IPAddress.Parse("1.2.35.4")),  
             };
 
             var dateTimeProvider = DateTimeProvider.Default;
@@ -137,28 +143,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             for (int i = 0; i < samples.Count; i++)
             {
-                bool isInbound = samples[i].IsInbound;
-                bool isUsed = samples[i].ExpectedIsUsed;
-                bool isWarningOn = samples[i].ExpectedIsWarningOn;
-                bool isSyncOff = samples[i].ExpectedIsSyncOff;
-                TimeSpan timeOffsetSample = samples[i].InputTimeOffset;
-                IPAddress peerAddress = samples[i].PeerIpAddress;
+                bool used = state.AddTimeData(samples[i].PeerIpAddress, samples[i].InputTimeOffset, samples[i].IsInbound);
+                
+                Assert.Equal(samples[i].ExpectedIsUsed, used);
+                Assert.Equal(samples[i].ExpectedIsWarningOn, state.IsSystemTimeOutOfSync);
+                Assert.Equal(samples[i].ExpectedIsSyncOff, state.SwitchedOffLimitReached);
+                Assert.Equal(samples[i].ExpectedIsSyncOff, state.SwitchedOff);
 
-                bool used = state.AddTimeData(peerAddress, timeOffsetSample, isInbound);
-                Assert.Equal(isUsed, used);
-                 
-                Assert.Equal(isWarningOn, state.IsSystemTimeOutOfSync);
-                Assert.Equal(isSyncOff, state.SwitchedOffLimitReached);
-                Assert.Equal(isSyncOff, state.SwitchedOff);
-
-                if (state.SwitchedOff)
-                {
-                    DateTime adjustedTime = dateTimeProvider.GetAdjustedTime();
-                    DateTime normalTime = dateTimeProvider.GetUtcNow();
-                    TimeSpan diff = adjustedTime - normalTime;
-                    Assert.True(Math.Abs(diff.TotalMilliseconds) < TimeEpsilonMs);
-                }
-            }
+                TimeSpan diff = dateTimeProvider.GetAdjustedTime() - dateTimeProvider.GetUtcNow();
+                Assert.True(Math.Abs(diff.TotalMilliseconds - samples[i].ExpectedTimeOffsetLessThanMs) < TimeEpsilonMs, $"Failed in sample at index: {i}. Actual offset milliseconds: {diff.TotalMilliseconds}. Expected offset milliseconds: {samples[i].ExpectedTimeOffsetLessThanMs}");
+            } 
         }
 
         /// <summary>
