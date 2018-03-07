@@ -43,10 +43,14 @@ namespace Stratis.Bitcoin.Configuration
                 // Split on the FIRST "=".
                 // This will allow mime-encoded - data strings end in one or more "=" to be parsed.
                 string[] splitted = arg.Split('=');
+                string key = splitted[0];
+                if (!key.StartsWith("-"))
+                    key = "-" + key;
+
                 if (splitted.Length > 1)
-                    this.Add(splitted[0], string.Join("=", splitted.Skip(1)));
+                    this.Add(key, string.Join("=", splitted.Skip(1)));
                 else
-                    this.Add(splitted[0], "1");
+                    this.Add(key, "1");
             }
         }
 
@@ -76,7 +80,11 @@ namespace Stratis.Bitcoin.Configuration
                     throw new FormatException("Line " + lineNumber + $": \"{l}\" : No value is set");
 
                 // Add to dictionary. Trim spaces around keys and values.
-                this.Add(split[0].Trim(), string.Join("=", split.Skip(1)).Trim());
+                string key = split[0].Trim();
+                if (!key.StartsWith("-"))
+                    key = "-" + key;
+
+                this.Add(key, string.Join("=", split.Skip(1)).Trim());
             }
         }
 
@@ -116,15 +124,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Values for the specified argument.</returns>
         public string[] GetAll(string key)
         {
-            // Get the values without the - prefix.
-            if (!this.args.TryGetValue(key, out var values))
+            // Get the values with the - prefix.
+            if (!this.args.TryGetValue($"-{key}", out var values))
                 values = new List<string>();
 
-            // Get the values with the - prefix.
-            if (!this.args.TryGetValue($"-{key}", out var dashValues))
-                dashValues = new List<string>();
-
-            return values.Concat(dashValues).ToArray();
+            return values.ToArray();
         }
 
         /// <summary>
@@ -136,12 +140,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Value of the argument or a default value if no value was set.</returns>
         public T GetOrDefault<T>(string key, T defaultValue)
         {
-            if (!this.args.TryGetValue(key, out var values))
-                if (!this.args.TryGetValue($"-{key}", out values))
-                    return defaultValue;
-
-            if (values.Count != 1)
-                throw new ConfigurationException($"Duplicate value for key {key}.");
+            if (!this.args.TryGetValue($"-{key}", out var values))
+                return defaultValue;
 
             try
             {

@@ -210,10 +210,10 @@ namespace Stratis.Bitcoin.Configuration
                 this.ConfigurationFile = this.CreateDefaultConfigurationFile();
             }
 
-            var consoleConfig = new TextFileConfiguration(args);
-            var config = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            var config = new TextFileConfiguration(args);
             this.ConfigReader = config;
-            consoleConfig.MergeInto(config);
+            fileConfig.MergeInto(config);
 
             this.DataFolder = new DataFolder(this.DataDir);
             if (!Directory.Exists(this.DataFolder.CoinViewPath))
