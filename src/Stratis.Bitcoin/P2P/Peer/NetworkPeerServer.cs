@@ -223,6 +223,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     foreach (INetworkPeer peer in peers)
                     {
+                        this.logger.LogTrace("Disposing and waiting for connection ID {0}.", peer.Connection.Id);
+
                         peer.Dispose("Node shutdown");
                         peer.Connection.DisposeComplete.Task.Wait();
                     }
