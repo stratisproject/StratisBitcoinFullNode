@@ -51,6 +51,23 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
             });
         }
 
+        [Route("balance")]
+        [HttpGet]
+        public IActionResult GetBalance(string address)
+        {
+            uint160 numeric = new uint160(address);
+            ulong balance = this.stateRoot.GetCurrentBalance(numeric);
+            return Json(balance);
+        }
+
+        //[Route("build-create")]
+        //[HttpPost]
+        //public IActionResult BuildCreateSmartContractTransaction()
+        //{
+
+        //}
+
+
         //[Route("storage")]
         //[HttpGet]
         //public IActionResult GetStorage(string address, string storageValue, )
