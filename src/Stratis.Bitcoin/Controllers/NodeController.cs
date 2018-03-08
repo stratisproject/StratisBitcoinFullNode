@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Models;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -21,16 +22,20 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
 
+        /// <summary>Provider of date and time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>The settings for the node.</summary>
         private readonly NodeSettings nodeSettings;
 
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IChainState chainState, NodeSettings nodeSettings, IConnectionManager connectionManager)
+        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IChainState chainState, NodeSettings nodeSettings, IConnectionManager connectionManager)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
             this.chainState = chainState;
             this.nodeSettings = nodeSettings;
             this.connectionManager = connectionManager;
@@ -50,7 +55,8 @@ namespace Stratis.Bitcoin.Controllers
                 Agent = this.nodeSettings.Agent,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
-                DataDirectoryPath = this.nodeSettings.DataDir
+                DataDirectoryPath = this.nodeSettings.DataDir,
+                RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };
 
             // Add the list of features that are enabled.

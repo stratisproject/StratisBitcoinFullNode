@@ -41,5 +41,8 @@ namespace Stratis.Bitcoin.Models
 
         /// <summary>The path to the directory where the data is saved.</summary>
         public string DataDirectoryPath { get; set; }
+
+        /// <summary>Time this node has been running.</summary>
+        public TimeSpan RunningTime { get; set; }
     }
 }
