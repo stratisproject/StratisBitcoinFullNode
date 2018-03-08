@@ -55,22 +55,22 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Initializes instance of a network peer server.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="localEndpoint">IP address and port to listen on.</param>
-        /// <param name="externalEndpoint">IP address and port that the server is reachable from the Internet on.</param>
+        /// <param name="localEndPoint">IP address and port to listen on.</param>
+        /// <param name="externalEndPoint">IP address and port that the server is reachable from the Internet on.</param>
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
-        public NetworkPeerServer(Network network, IPEndPoint localEndpoint, IPEndPoint externalEndpoint, ProtocolVersion version, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
+        public NetworkPeerServer(Network network, IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndpoint}] ");
-            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndpoint), localEndpoint, nameof(externalEndpoint), externalEndpoint, nameof(version), version);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
-            this.LocalEndpoint = Utils.EnsureIPv6(localEndpoint);
-            this.ExternalEndpoint = Utils.EnsureIPv6(externalEndpoint);
+            this.LocalEndpoint = Utils.EnsureIPv6(localEndPoint);
+            this.ExternalEndpoint = Utils.EnsureIPv6(externalEndPoint);
 
             this.Network = network;
             this.Version = version;
