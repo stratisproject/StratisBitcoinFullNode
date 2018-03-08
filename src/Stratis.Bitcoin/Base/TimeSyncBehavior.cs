@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Periodically shows a console warning to inform the user that the system time needs adjustment,
         /// otherwise the node may not perform correctly on the network.</summary>
         private IAsyncLoop warningLoop;
-        
+
         /// <inheritdoc/>
         public bool IsSystemTimeOutOfSync { get; private set; }
 
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <summary>
         /// Calculates a new value for <see cref="timeOffset"/> based on existing samples.
         /// </summary>
@@ -265,10 +265,7 @@ namespace Stratis.Bitcoin.Base
         /// <para>
         /// When there are many more inbound samples than outbound, which could be the case
         /// in a malicious attack, the security is still maintained by using a dynamic inbound/outbound 
-        /// ratio multiplier ratio on the outbound samples 
-        /// that maintains the accepted level of security. 
-        /// For example, an <see cref="OffsetWeightSecurityConstant"/> of 3 gives us 33.3% protection.
-        /// An <see cref="OffsetWeightSecurityConstant"/> of 2 gives us 25% protection.
+        /// ratio multiplier ratio on the outbound samples that maintains the accepted level of security. 
         /// </para>
         /// <para>
         /// We require to have at least <see cref="MinOutboundSampleCount"/> outbound samples to change the value of <see cref="timeOffset"/>.
@@ -288,11 +285,11 @@ namespace Stratis.Bitcoin.Base
                 int numberOfOutboundCopiesToAdd = (int)Math.Ceiling(currentInboundToOutboundRatio * OffsetWeightSecurityConstant);
 
                 // If there are no inbound, use one of each outbound.
-                if (numberOfOutboundCopiesToAdd == 0) 
+                if (numberOfOutboundCopiesToAdd == 0)
                     numberOfOutboundCopiesToAdd = 1;
 
                 var allSamples = new List<double>();
-                
+
                 for (int i = 0; i < numberOfOutboundCopiesToAdd; i++)
                     allSamples.AddRange(outboundOffsets);
 
