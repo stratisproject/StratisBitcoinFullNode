@@ -259,12 +259,13 @@ namespace Stratis.Bitcoin.Base
         /// <remarks>
         /// The caller of this method is responsible for holding <see cref="lockObject"/>.
         /// <para>
-        /// The function takes a single copy of each inbound sample and combines them with <see cref="OffsetWeightSecurityConstant"/>
-        /// copies of outbound samples.
+        /// The function takes a single copy of each inbound sample and combines them with a dynamic number of
+        /// copies of the outbound samples in order to maintain the <see cref="OffsetWeightSecurityConstant"/>.
         /// </para>
         /// <para>
-        /// When there are many more inbound samples than unweighted outbound, which could be the case
-        /// in a malicious attack, the security is still maintained by using a dynamic inbound/outbound multiplier ratio on the outbound samples 
+        /// When there are many more inbound samples than outbound, which could be the case
+        /// in a malicious attack, the security is still maintained by using a dynamic inbound/outbound 
+        /// ratio multiplier ratio on the outbound samples 
         /// that maintains the accepted level of security. 
         /// For example, an <see cref="OffsetWeightSecurityConstant"/> of 3 gives us 33.3% protection.
         /// An <see cref="OffsetWeightSecurityConstant"/> of 2 gives us 25% protection.
