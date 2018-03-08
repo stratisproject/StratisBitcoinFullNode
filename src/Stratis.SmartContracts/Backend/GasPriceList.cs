@@ -8,6 +8,10 @@ namespace Stratis.SmartContracts.Backend
     /// </summary>
     public static class GasPriceList
     {
+        private const int StorageGasCost = 1;
+        private const int MethodCallGasCost = 0;
+        private const int InstructionGasCost = 1;
+
         /// <summary>
         /// TODO - Add actual costs
         /// </summary>
@@ -21,7 +25,7 @@ namespace Stratis.SmartContracts.Backend
             switch (opcode.Name)
             {
                 default:
-                    cost = (Gas)1;
+                    cost = (Gas) InstructionGasCost;
                     break;
             }
 
@@ -36,7 +40,7 @@ namespace Stratis.SmartContracts.Backend
         /// <returns></returns>
         public static Gas StorageOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
-            Gas cost = (Gas)(ulong)(20000 * keyBytes.Length + 20000 * valueBytes.Length);
+            Gas cost = (Gas)(ulong)(StorageGasCost * keyBytes.Length + StorageGasCost * valueBytes.Length);
             return cost;
         }
 
@@ -47,7 +51,7 @@ namespace Stratis.SmartContracts.Backend
         /// <returns></returns>
         public static Gas MethodCallCost(MethodReference methodToCall)
         {
-            return (Gas) 0;
+            return (Gas) MethodCallGasCost;
         }
     }
 }

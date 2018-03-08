@@ -28,18 +28,14 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
     {
         private readonly IContractStateRepository stateRoot;
         private readonly IConsensusLoop consensus;
-        //private readonly IWalletManager walletManager;
-        //private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
 
-        public SmartContractsController(IContractStateRepository stateRoot, IConsensusLoop consensus, IWalletManager walletManager, IWalletSyncManager walletSyncManager, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public SmartContractsController(IContractStateRepository stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
-            //this.walletManager = walletManager;
-            //this.walletSyncManager = walletSyncManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
