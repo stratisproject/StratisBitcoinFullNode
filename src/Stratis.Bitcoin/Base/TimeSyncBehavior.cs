@@ -60,10 +60,11 @@ namespace Stratis.Bitcoin.Base
     /// We also collect samples from network "version" messages and calculate time difference
     /// for every peer. We DO distinguish between inbound and outbound connections, however.
     /// We consider inbound connections as less reliable sources of information and we introduce
-    /// <see cref="OutboundToInboundWeightRatio"/> to reflect that. We keep outbound time offset
+    /// <see cref="OffsetWeightSecurityConstant"/> to reflect that. We keep outbound time offset
     /// samples separated from inbound samples. Our final offset is also a median of collected
     /// samples, but outbound samples have much greater weight in the median calculation
-    /// as per the given ratio.
+    /// as per the given weight, which is dynamically adjusted depending on the inbound outbound ratio
+    /// in order to protect us from all inbound and an accepted percentage of outbound. 
     /// </para>
     /// <para>
     /// Bitcoin's implementation only allows certain number of samples to be collected
@@ -97,21 +98,24 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Maximal number of samples to keep inside <see cref="outboundTimestampOffsets"/>.</summary>
         public const int MaxOutboundSamples = 200;
 
-        /// <summary>Ratio of weights of outbound timestamp offsets and inbound timestamp offsets.
-        /// Ratio of N means that a single outbound sample has equal weight as N inbound samples.</summary>
-        public const int OutboundToInboundWeightRatio = 10;
+        /// <summary>
+        /// The value of 3 provides enough security to be protected against up to 33.3% of outbound samples being malicious and all inbound being malicious.
+        /// </summary>
+        public const int OffsetWeightSecurityConstant = 3;
 
         /// <summary>Maximal value for <see cref="timeOffset"/> in seconds that does not trigger warnings to user.</summary>
         public const int TimeOffsetWarningThresholdSeconds = 5 * 60;
 
         /// <summary>
-        /// Number of unweighted samples required before <see cref="timeOffset"/> is changed.
-        /// <para>
-        /// Each inbound sample counts as 1 unweighted sample.
-        /// Each outbound sample counts as <see cref="OutboundToInboundWeightRatio"/> unweighted samples.
-        /// </para>
+        /// Maximal value for <see cref="timeOffset"/>. If the newly calculated value is over this limit,
+        /// the time syncing feature will be switched off.
         /// </summary>
-        private const int MinUnweightedSamplesCount = 40;
+        public const int MaxTimeOffsetSeconds = 25 * 60;
+
+        /// <summary>
+        /// Minimal amount of outbound samples that should be collected before time adjustment <see cref="timeOffset"/> is changed.
+        /// </summary>
+        public const int MinOutboundSampleCount = 4;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -164,7 +168,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Periodically shows a console warning to inform the user that the system time needs adjustment,
         /// otherwise the node may not perform correctly on the network.</summary>
         private IAsyncLoop warningLoop;
-        
+
         /// <inheritdoc/>
         public bool IsSystemTimeOutOfSync { get; private set; }
 
@@ -248,36 +252,48 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
         /// <summary>
         /// Calculates a new value for <see cref="timeOffset"/> based on existing samples.
         /// </summary>
         /// <remarks>
         /// The caller of this method is responsible for holding <see cref="lockObject"/>.
         /// <para>
-        /// The function takes a single copy of each inbound sample and combines them with <see cref="OutboundToInboundWeightRatio"/>
-        /// copies of outbound samples.
+        /// The function takes a single copy of each inbound sample and combines them with a dynamic number of
+        /// copies of the outbound samples in order to maintain the <see cref="OffsetWeightSecurityConstant"/>.
         /// </para>
         /// <para>
-        /// We require to have at least <see cref="MinUnweigtedSamplesCount"/> unweighted samples to change the value of <see cref="timeOffset"/>.
+        /// When there are many more inbound samples than outbound, which could be the case
+        /// in a malicious attack, the security is still maintained by using a dynamic inbound/outbound 
+        /// ratio multiplier ratio on the outbound samples that maintains the accepted level of security. 
+        /// </para>
+        /// <para>
+        /// We require to have at least <see cref="MinOutboundSampleCount"/> outbound samples to change the value of <see cref="timeOffset"/>.
         /// </para>
         /// </remarks>
         private void RecalculateTimeOffsetLocked()
         {
             this.logger.LogTrace("()");
 
-            // All samples are formed of one copy of each inbound sample.
-            // And N copies of each outbound sample.
-            int unweightedSamplesCount = this.inboundTimestampOffsets.Count + OutboundToInboundWeightRatio * this.outboundTimestampOffsets.Count;
-
-            if (unweightedSamplesCount >= MinUnweightedSamplesCount)
+            if (this.outboundTimestampOffsets.Count >= MinOutboundSampleCount)
             {
-                this.logger.LogTrace("We have {0} unweighted samples, {1} outbound samples and {2} inbound samples.", unweightedSamplesCount, this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
-                List<double> allSamples = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
-
+                this.logger.LogTrace("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
+                List<double> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
                 List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
-                for (int i = 0; i < OutboundToInboundWeightRatio; i++)
+
+                double currentInboundToOutboundRatio = this.inboundTimestampOffsets.Count / (double)this.outboundTimestampOffsets.Count;
+                int numberOfOutboundCopiesToAdd = (int)Math.Ceiling(currentInboundToOutboundRatio * OffsetWeightSecurityConstant);
+
+                // If there are no inbound, use one of each outbound.
+                if (numberOfOutboundCopiesToAdd == 0)
+                    numberOfOutboundCopiesToAdd = 1;
+
+                var allSamples = new List<double>();
+
+                for (int i = 0; i < numberOfOutboundCopiesToAdd; i++)
                     allSamples.AddRange(outboundOffsets);
+
+                allSamples.AddRange(inboundOffsets);
 
                 double median = allSamples.Median();
                 if (Math.Abs(median) < this.network.MaxTimeOffsetSeconds)
@@ -292,7 +308,7 @@ namespace Stratis.Bitcoin.Base
                     this.dateTimeProvider.SetAdjustedTimeOffset(TimeSpan.Zero);
                 }
             }
-            else this.logger.LogTrace("We have {0} unweighted samples, which is below required minimum of {1} samples.", unweightedSamplesCount, MinUnweightedSamplesCount);
+            else this.logger.LogTrace("We have {0} outbound samples, which is below required minimum of {1} outbound samples.", this.outboundTimestampOffsets.Count, MinOutboundSampleCount);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.timeOffset), this.timeOffset.TotalSeconds);
         }
