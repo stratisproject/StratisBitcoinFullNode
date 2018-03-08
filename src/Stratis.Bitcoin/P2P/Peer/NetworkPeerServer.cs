@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -154,12 +155,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                         tcpClient.Close();
                         continue;
                     }
-                    
+
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
                     INetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters());
 
-                    this.peersById.AddOrReplace(networkPeer.Connection.Id, networkPeer);
+                    this.peersById.TryAdd(networkPeer.Connection.Id, networkPeer);
 
                     networkPeer.StateChanged.Register(this.OnStateChangedAsync);
                 }
@@ -206,8 +207,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.serverCancel.Cancel();
 
-            this.logger.LogTrace("Stopping network peer server.");
-
             this.logger.LogTrace("Stopping TCP listener.");
             this.tcpListener.Stop();
 
@@ -216,17 +215,23 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                foreach (INetworkPeer peer in this.peersById.Values)
-                    peer.Dispose("Node shutdown");
+                if (this.peersById.Count > 0)
+                {
+                    List<INetworkPeer> peers = this.peersById.Values.ToList();
+
+                    this.logger.LogInformation("Waiting for {0} connected clients to finish.", peers.Count);
+
+                    foreach (INetworkPeer peer in peers)
+                    {
+                        peer.Dispose("Node shutdown");
+                        peer.Connection.DisposeComplete.Task.Wait();
+                    }
+                }
             }
             catch (Exception e)
             {
-                this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
-            
-            this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.peersById.Count);
-            foreach (Task<bool> disposeTask in this.peersById.Values.Select(x => x.Connection.DisposeComplete.Task))
-                disposeTask.Wait();
 
             this.peersById.Clear();
 
