@@ -1,8 +1,8 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using DBreeze;
 using NBitcoin;
 using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -16,22 +16,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly byte[] fish = Encoding.UTF8.GetBytes("fish");
         private static readonly byte[] bird = Encoding.UTF8.GetBytes("bird");
         // EthereumJ consts below
-        private static readonly byte[] cow = StringToByteArray("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
-        private static readonly byte[] horse = StringToByteArray("13978AEE95F38490E9769C39B2773ED763D9CD5F");
-        private static readonly byte[] cowCode = StringToByteArray("A1A2A3");
-        private static readonly byte[] horseCode = StringToByteArray("B1B2B3");
-        private static readonly byte[] cowKey = StringToByteArray("A1A2A3");
-        private static readonly byte[] cowValue = StringToByteArray("A4A5A6");
-        private static readonly byte[] horseKey = StringToByteArray("B1B2B3");
-        private static readonly byte[] horseValue = StringToByteArray("B4B5B6");
-        private static readonly byte[] cowKey1 = StringToByteArray("c1");
-        private static readonly byte[] cowKey2 = StringToByteArray("c2");
-        private static readonly byte[] cowVal1 = StringToByteArray("c0a1");
-        private static readonly byte[] cowVal0 = StringToByteArray("c0a0");
-        private static readonly byte[] horseKey1 = StringToByteArray("e1");
-        private static readonly byte[] horseKey2 = StringToByteArray("e2");
-        private static readonly byte[] horseVal1 = StringToByteArray("c0a1");
-        private static readonly byte[] horseVal0 = StringToByteArray("c0a0");
+        private static readonly byte[] cow = "CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826".HexToByteArray();
+        private static readonly byte[] horse = "13978AEE95F38490E9769C39B2773ED763D9CD5F".HexToByteArray();
+        private static readonly byte[] cowCode = "A1A2A3".HexToByteArray();
+        private static readonly byte[] horseCode = "B1B2B3".HexToByteArray();
+        private static readonly byte[] cowKey = "A1A2A3".HexToByteArray();
+        private static readonly byte[] cowValue = "A4A5A6".HexToByteArray();
+        private static readonly byte[] horseKey = "B1B2B3".HexToByteArray();
+        private static readonly byte[] horseValue = "B4B5B6".HexToByteArray();
+        private static readonly byte[] cowKey1 = "c1".HexToByteArray();
+        private static readonly byte[] cowKey2 = "c2".HexToByteArray();
+        private static readonly byte[] cowVal1 = "c0a1".HexToByteArray();
+        private static readonly byte[] cowVal0 = "c0a0".HexToByteArray();
+        private static readonly byte[] horseKey1 = "e1".HexToByteArray();
+        private static readonly byte[] horseKey2 = "e2".HexToByteArray();
+        private static readonly byte[] horseVal1 = "c0a1".HexToByteArray();
+        private static readonly byte[] horseVal0 = "c0a0".HexToByteArray();
 
         private static readonly uint160 testAddress = 111111;
         private const string DbreezeTestLocation = "C:/temp";
@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 cow = 100;
             uint160 horse = 2000;
 
-            byte[] cowCode = StringToByteArray("A1A2A3");
-            byte[] horseCode = StringToByteArray("B1B2B3");
+            byte[] cowCode = "A1A2A3".HexToByteArray();
+            byte[] horseCode = "B1B2B3".HexToByteArray();
 
             repository.SetCode(cow, cowCode);
             repository.SetCode(horse, horseCode);
@@ -233,15 +233,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txTrack.Commit();
             Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
         }
-
-        private static byte[] StringToByteArray(string hex)
-        {
-            int NumberChars = hex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            return bytes;
-        }
-
     }
 }
