@@ -8,12 +8,15 @@
     <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
 
-    <Version>1.0.7-alpha</Version>
+    <Version>1.0.10-alpha</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
     <StartupObject />
+
+    <!-- Force packing of a web project https://github.com/aspnet/websdk/issues/228 -->
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
