@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
+using Stratis.SmartContracts.Hashing;
 
 namespace Stratis.SmartContracts
 {
@@ -9,37 +11,28 @@ namespace Stratis.SmartContracts
     /// </summary>
     /// <typeparam name="K"></typeparam>
     /// <typeparam name="V"></typeparam>
-    public class SmartContractMapping<K, V>
+    public class SmartContractMapping<V>
     {
         private readonly uint baseNumber;
-        private readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
-        private PersistentState PersistentState;
-
-        private byte[] BaseNumberBytes
-        {
-            get
-            {
-                return BitConverter.GetBytes(this.baseNumber);
-            }
-        }
+        private readonly PersistentState persistentState;
 
         internal SmartContractMapping(PersistentState persistentState, uint baseNum)
         {
-            this.PersistentState = persistentState;
+            this.persistentState = persistentState;
             this.baseNumber = baseNum;
         }
 
-        public void Put(K key, V value)
+        public void Put(string key, V value)
         {
-            PersistentState.SetObject(GetKeyBytes(key), value);
+            this.persistentState.SetObject(GetKeyString(key), value);
         }
 
-        public V Get(K key)
+        public V Get(string key)
         {
-            return PersistentState.GetObject<V>(GetKeyBytes(key));
+            return this.persistentState.GetObject<V>(GetKeyString(key));
         }
 
-        public V this[K key]
+        public V this[string key]
         {
             get
             {
@@ -51,9 +44,17 @@ namespace Stratis.SmartContracts
             }
         }
 
-        private byte[] GetKeyBytes(K key)
+        /// <summary>
+        /// I feel like there's a better way of doing this. If someone stores a value in keccak256("{baseNum}{stringKey}"), it overwrites it!
+        /// 
+        /// Can we somehow handle mappings + lists in a way that people can't mess with them?
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        private string GetKeyString(string key)
         {
-            return this.BaseNumberBytes.Concat(this.serializer.Serialize(key)).ToArray();
+            byte[] toHash = BitConverter.GetBytes(this.baseNumber).Concat(Encoding.UTF8.GetBytes(key.ToString())).ToArray();
+            return Encoding.UTF8.GetString(HashHelper.Keccak256(toHash));
         }
     }
 }

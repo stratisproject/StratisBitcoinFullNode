@@ -6,7 +6,7 @@ public class Token : SmartContract
     public Token(SmartContractState state) 
         : base(state)
     {
-        Balances = PersistentState.GetMapping<Address, ulong>();
+        Balances = PersistentState.GetMapping<ulong>();
     }
 
     public Address Owner
@@ -21,7 +21,7 @@ public class Token : SmartContract
         }
     }
 
-    public SmartContractMapping<Address, ulong> Balances { get; }
+    public SmartContractMapping<ulong> Balances { get; }
 
     [SmartContractInit]
     public void Init()
@@ -35,17 +35,17 @@ public class Token : SmartContract
             throw new Exception("Sender of this message is not the owner. " + Owner.ToString() + " vs " + Message.Sender.ToString());
 
         amount = amount + Block.Number;
-        Balances[receiver] += amount;
+        Balances[receiver.ToString()] += amount;
         return true;
     }
 
     public bool Send(Address receiver, ulong amount)
     {
-        if (Balances.Get(Message.Sender) < amount)
+        if (Balances.Get(Message.Sender.ToString()) < amount)
             throw new Exception("Sender doesn't have high enough balance");
 
-        Balances[receiver] += amount;
-        Balances[Message.Sender] -= amount;
+        Balances[receiver.ToString()] += amount;
+        Balances[Message.Sender.ToString()] -= amount;
         return true;
     }
 
