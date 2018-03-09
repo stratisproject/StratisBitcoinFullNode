@@ -301,10 +301,9 @@ namespace Stratis.Bitcoin.Connection
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 builder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
-                    (" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LoggingConfiguration.ColumnLength + 7) +
-                    (" agent " + agent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
-                    " height=" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : 
-                        peer.PeerVersion?.StartHeight.ToString() ?? "unknown"));
+                    (" connected:" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7) +
+                    (" height:" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
+                    " agent:" + agent);
             }
 
             return builder.ToString();

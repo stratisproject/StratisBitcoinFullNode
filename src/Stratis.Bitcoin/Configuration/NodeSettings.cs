@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
-        
+
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
 
@@ -236,9 +236,14 @@ namespace Stratis.Bitcoin.Configuration
             this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
             this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
             this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
-
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
+
+            // Add a prefix set by the user to the agent. This will allow people running nodes to
+            // identify themselves if they wish. The prefix is limited to 10 characters.
+            string agentPrefix = config.GetOrDefault("agentprefix", string.Empty);
+            agentPrefix = agentPrefix.Substring(0, Math.Min(10, agentPrefix.Length));
+            this.Agent = string.IsNullOrEmpty(agentPrefix) ? this.Agent : $"{agentPrefix}-{this.Agent}"; 
 
             return this;
         }
