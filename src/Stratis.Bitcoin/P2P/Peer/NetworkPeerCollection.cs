@@ -93,7 +93,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (this.networkPeers.TryRemove(peer))
             {
                 this.OnPeerRemoved(peer);
-                peer.Dispose(reason);
+                peer.Disconnect(reason);
+                peer.Dispose();
                 return true;
             }
 
@@ -155,7 +156,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void DisconnectAll(string reason, CancellationToken cancellation = default(CancellationToken))
         {
             foreach (INetworkPeer peer in this.networkPeers)
-                peer.Dispose(reason);
+            {
+                peer.Disconnect(reason);
+                peer.Dispose();
+            }
         }
 
         public void Clear()

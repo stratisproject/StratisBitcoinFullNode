@@ -252,18 +252,21 @@ namespace Stratis.Bitcoin.P2P
                 if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
                     this.logger.LogDebug("Peer {0} connection canceled because application is stopping.", peerAddress.Endpoint);
-                    peer?.Dispose("Application stopping");
+                    peer?.Disconnect("Application stopping");
                 }
                 else
                 {
                     this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.Endpoint);
-                    peer?.Dispose("Connection timeout");
+                    peer?.Disconnect("Connection timeout");
                 }
+
+                peer?.Dispose();
             }
             catch (Exception exception)
             {
                 this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
-                peer?.Dispose("Error while connecting", exception);
+                peer?.Disconnect("Error while connecting", exception);
+                peer?.Dispose();
             }
 
             this.logger.LogTrace("(-)");
