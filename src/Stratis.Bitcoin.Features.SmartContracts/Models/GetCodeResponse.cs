@@ -1,4 +1,4 @@
-﻿namespace Stratis.Bitcoin.Features.SmartContractsApi.Models
+﻿namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
     public class GetCodeResponse
     {

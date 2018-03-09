@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
 
@@ -62,6 +63,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
+
+                        services.AddSingleton<SmartContractsController>();
 
                         AddSmartContractRulesToExistingRules(services);
                     });

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Stratis.SmartContracts;
 
-namespace Stratis.Bitcoin.Features.SmartContractsApi.Models
+namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
     public class GetStorageRequest
     {

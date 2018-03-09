@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContractsApi;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
@@ -44,7 +43,6 @@ namespace Stratis.StratisSmartContractsD
                     .UseApi()
                     .AddRPC()
                     .AddSmartContracts()
-                    .AddSmartContractsApi()
                     .Build();
 
                 await node.RunAsync();

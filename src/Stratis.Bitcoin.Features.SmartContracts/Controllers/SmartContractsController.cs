@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.SmartContractsApi.Models;
+using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -22,7 +22,7 @@ using Stratis.SmartContracts.Backend;
 using Stratis.SmartContracts.State;
 using Stratis.SmartContracts.Util;
 
-namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
+namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 {
     [Route("api/[controller]")]
     public class SmartContractsController : Controller
