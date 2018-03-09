@@ -778,7 +778,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void Dispose()
         {
             this.Disconnect("Peer disposed");
-            
+
+            this.Connection.Dispose();
+
             foreach (INetworkPeerBehavior behavior in this.Behaviors)
             {
                 try
@@ -790,8 +792,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
                 }
             }
-
-            this.Connection.Dispose();
+            
             this.MessageReceived.Dispose();
             this.StateChanged.Dispose();
         }
