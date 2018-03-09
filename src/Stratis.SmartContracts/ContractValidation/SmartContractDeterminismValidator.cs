@@ -40,8 +40,7 @@ namespace Stratis.SmartContracts.ContractValidation
             "System.Collections.Generic.List`1",
             "System.Linq.Enumerable",
             "Stratis.SmartContracts.SmartContractList`1",
-            "Stratis.SmartContracts.SmartContractDictionary`2",
-            "Stratis.SmartContracts.SmartContractMapping`2",
+            "Stratis.SmartContracts.SmartContractMapping`1",
             typeof(PersistentState).FullName,
             typeof(SmartContract).FullName
         };
