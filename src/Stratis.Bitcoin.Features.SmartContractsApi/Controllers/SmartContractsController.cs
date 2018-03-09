@@ -66,6 +66,15 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
             return Json(balance);
         }
 
+        [Route("call-method")]
+        [HttpGet]
+        public IActionResult CallMethod([FromQuery] CallMethodRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+
+
         [Route("build-create")]
         [HttpPost]
         public IActionResult BuildCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
@@ -78,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
             ulong airPrice = ulong.Parse(request.AirPrice);
             ulong airLimit = ulong.Parse(request.AirLimit);
 
-            SmartContractCarrier carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), airPrice, new Gas(airLimit));
+            SmartContractCarrier carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), airPrice, new Gas(airLimit), request.Parameters);
             ulong totalFee = airPrice * airLimit + ulong.Parse(request.FeeAmount);
             TransactionBuildContext context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
@@ -113,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
             ulong airPrice = ulong.Parse(request.AirPrice);
             ulong airLimit = ulong.Parse(request.AirLimit);
 
-            SmartContractCarrier carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit));
+            SmartContractCarrier carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit), request.Parameters);
             ulong totalFee = airPrice * airLimit + ulong.Parse(request.FeeAmount);
             TransactionBuildContext context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),

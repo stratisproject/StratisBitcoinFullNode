@@ -28,5 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Models
 
         [Required(ErrorMessage = "Air limit is required.")]
         public string AirLimit { get; set; }
+
+        public string[] Parameters { get; set; }
     }
 }
