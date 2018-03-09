@@ -29,25 +29,6 @@ namespace Stratis.Bitcoin.P2P
         NetworkPeerRequirement Requirements { get; }
 
         /// <summary>
-        /// Adds a peer to the <see cref="ConnectedPeers"/>.
-        /// <para>
-        /// This will only happen if the peer successfully handshaked with another.
-        /// </para>
-        /// </summary>
-        /// <param name="peer">Peer to be added.</param>
-        void AddPeer(INetworkPeer peer);
-
-        /// <summary>
-        /// Removes a given peer from the <see cref="ConnectedPeers"/>.
-        /// <para>
-        /// This will happen if the peer state changed to "disconnecting", "failed" or "offline".
-        /// </para>
-        /// </summary>
-        /// <param name="peer">Peer to be removed.</param>
-        /// <param name="reason">Human readable reason for removing the peer.</param>
-        void RemovePeer(INetworkPeer peer, string reason);
-
-        /// <summary>
         /// Starts an asynchronous loop that connects to peers in one second intervals.
         /// <para>
         /// If the maximum amount of connections has been reached (<see cref="MaxOutboundConnections"/>), the action gets skipped.
@@ -157,13 +138,18 @@ namespace Stratis.Bitcoin.P2P
 
             this.CurrentParameters = connectionManager.Parameters.Clone();
             this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
-            this.CurrentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
 
             this.OnInitialize();
         }
 
-        /// <inheritdoc/>
-        public void AddPeer(INetworkPeer peer)
+        /// <summary>
+        /// Adds a peer to the <see cref="ConnectedPeers"/>.
+        /// <para>
+        /// This will only happen if the peer successfully handshaked with another.
+        /// </para>
+        /// </summary>
+        /// <param name="peer">Peer to be added.</param>
+        private void AddPeer(INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
 
@@ -171,6 +157,22 @@ namespace Stratis.Bitcoin.P2P
 
             if (this.asyncLoop != null && this.ConnectedPeers.Count >= this.BurstModeTargetConnections)
                 this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
+        }
+
+        /// <summary>
+        /// Removes a given peer from the <see cref="ConnectedPeers"/>.
+        /// <para>
+        /// This will happen if the peer state changed to "disconnecting", "failed" or "offline".
+        /// </para>
+        /// </summary>
+        /// <param name="peer">Peer to be removed.</param>
+        /// <param name="reason">Human readable reason for removing the peer.</param>
+        private void RemovePeer(INetworkPeer peer, string reason)
+        {
+            this.ConnectedPeers.Remove(peer, reason);
+
+            if (this.asyncLoop != null && this.ConnectedPeers.Count < this.BurstModeTargetConnections)
+                this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
         }
 
         /// <summary>Determines whether or not a connector can be started.</summary>
@@ -184,15 +186,6 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>Connect logic specific to each concrete implementation of this class.</summary>
         public abstract Task OnConnectAsync();
-
-        /// <inheritdoc/>
-        public void RemovePeer(INetworkPeer peer, string reason)
-        {
-            this.ConnectedPeers.Remove(peer, reason);
-
-            if (this.asyncLoop != null && this.ConnectedPeers.Count < this.BurstModeTargetConnections)
-                this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
-        }
 
         /// <summary>
         /// <c>true</c> if the peer is already connected.
@@ -242,7 +235,7 @@ namespace Stratis.Bitcoin.P2P
                     timeoutTokenSource.CancelAfter(5000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters).ConfigureAwait(false);
+                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters, this.OnPeerDisconnected).ConfigureAwait(false);
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                     this.AddPeer(peer);
                 }
@@ -270,6 +263,11 @@ namespace Stratis.Bitcoin.P2P
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        private void OnPeerDisconnected(INetworkPeer peer, NetworkPeerDisconnectReason reason)
+        {
+            this.RemovePeer(peer, reason.Reason);
         }
 
         /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>

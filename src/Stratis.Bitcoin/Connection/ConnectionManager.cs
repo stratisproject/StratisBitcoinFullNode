@@ -433,7 +433,7 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters).ConfigureAwait(false);
+            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.OnPeerDisconnected).ConfigureAwait(false);
             this.AddConnectedPeer(peer);
             try
             {
@@ -449,6 +449,12 @@ namespace Stratis.Bitcoin.Connection
 
             this.logger.LogTrace("(-)");
             return peer;
+        }
+
+        private void OnPeerDisconnected(INetworkPeer peer, NetworkPeerDisconnectReason networkPeerDisconnectReason)
+        {
+            this.logger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, networkPeerDisconnectReason);
+            this.RemoveConnectedPeer(peer, networkPeerDisconnectReason.Reason);
         }
     }
 }
