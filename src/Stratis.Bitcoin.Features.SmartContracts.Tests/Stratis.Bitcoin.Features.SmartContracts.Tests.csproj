@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
     <PackageReference Include="Moq" Version="4.8.1" />
     <PackageReference Include="NetJSON" Version="1.2.2" />
   </ItemGroup>
