@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
@@ -66,14 +67,19 @@ namespace Stratis.Bitcoin.Features.SmartContractsApi.Controllers
             return Json(balance);
         }
 
-        [Route("call-method")]
+        [Route("storage")]
         [HttpGet]
-        public IActionResult CallMethod([FromQuery] CallMethodRequest request)
+        public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
-            throw new NotImplementedException();
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            uint160 numeric = new uint160(request.ContractAddress);
+            byte[] storageValue = this.stateRoot.GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
+            return Json(Encoding.UTF8.GetString(storageValue)); // TODO: Use the modular serializer Francois is working on :)
         }
-
-
 
         [Route("build-create")]
         [HttpPost]

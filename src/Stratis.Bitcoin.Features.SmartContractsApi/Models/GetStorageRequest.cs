@@ -1,0 +1,17 @@
+﻿using System.ComponentModel.DataAnnotations;
+using Stratis.SmartContracts;
+
+namespace Stratis.Bitcoin.Features.SmartContractsApi.Models
+{
+    public class GetStorageRequest
+    {
+        [Required(ErrorMessage = "A contract address is required.")]
+        public string ContractAddress { get; set; }
+
+        [Required(ErrorMessage = "A storage key is required.")]
+        public string StorageKey { get; set; }
+
+        [Required(ErrorMessage = "A data type is required.")]
+        public SmartContractCarrierDataType DataType { get; set; }
+    }
+}
