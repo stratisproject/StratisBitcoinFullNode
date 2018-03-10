@@ -265,9 +265,9 @@ namespace Stratis.Bitcoin.P2P
             this.logger.LogTrace("(-)");
         }
 
-        private void OnPeerDisconnected(INetworkPeer peer, NetworkPeerDisconnectReason reason)
+        private void OnPeerDisconnected(INetworkPeer peer)
         {
-            this.RemovePeer(peer, reason.Reason);
+            this.RemovePeer(peer, "unknown");
         }
 
         /// <summary>Disconnects all the peers in <see cref="ConnectedPeers"/>.</summary>

@@ -175,12 +175,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
-        private void OnDisconnected(INetworkPeer networkPeer, NetworkPeerDisconnectReason reason)
+        private void OnDisconnected(INetworkPeer peer)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(networkPeer), networkPeer.PeerEndPoint, nameof(networkPeer.State), networkPeer.State);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(peer), peer.PeerEndPoint, nameof(peer.State), peer.State);
 
-            this.peersById.TryRemove(networkPeer.Connection.Id, out INetworkPeer unused);
-            networkPeer.Dispose();
+            this.peersById.TryRemove(peer.Connection.Id, out INetworkPeer unused);
+            peer.Dispose();
 
             this.logger.LogTrace("(-)");
         }

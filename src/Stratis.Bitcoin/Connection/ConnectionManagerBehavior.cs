@@ -70,6 +70,12 @@ namespace Stratis.Bitcoin.Connection
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
                     await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
                 }
+
+                if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
+                {
+                    this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
+                    this.ConnectionManager.RemoveConnectedPeer(peer, "Peer offline");
+                }
             }
             catch (OperationCanceledException)
             {

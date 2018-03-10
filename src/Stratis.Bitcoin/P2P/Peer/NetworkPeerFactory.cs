@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="client">Already connected network client.</param>
         /// <param name="parameters">Parameters of the established connection, or <c>null</c> to use default parameters.</param>
-        /// <param name="onDisconnected">Callback that is invoked when peer is disconnected.</param>
+        /// <param name="onDisconnected">Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</param>
         /// <returns>New network peer that is connected via the established connection.</returns>
-        INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer, NetworkPeerDisconnectReason> onDisconnected = null);
+        INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer> onDisconnected = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
@@ -33,18 +33,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="myVersion">Version of the protocol that the node supports.</param>
         /// <param name="isRelay">Whether the remote peer should announce relayed transactions or not. See <see cref="VersionPayload.Relay"/> for more information.</param>
         /// <param name="cancellation">Cancallation token that allows to interrupt establishing of the connection.</param>
-        /// <param name="onDisconnected">Callback that is invoked when peer is disconnected.</param>
+        /// <param name="onDisconnected">Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
-        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken), Action<INetworkPeer, NetworkPeerDisconnectReason> onDisconnected = null);
+        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken), Action<INetworkPeer> onDisconnected = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
         /// </summary>
         /// <param name="peerEndPoint">Address and port of the counterparty to connect to.</param>
         /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
-        /// <param name="onDisconnected">Callback that is invoked when peer is disconnected.</param>
+        /// <param name="onDisconnected">Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
-        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer, NetworkPeerDisconnectReason> onDisconnected = null);
+        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer> onDisconnected = null);
 
         /// <summary>
         /// Creates a new network peer server.
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer, NetworkPeerDisconnectReason> onDisconnected = null)
+        public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer> onDisconnected = null)
         {
             Guard.NotNull(client, nameof(client));
 
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken), Action<INetworkPeer, NetworkPeerDisconnectReason> onDisconnected = null)
+        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken), Action<INetworkPeer> onDisconnected = null)
         {
             Guard.NotNull(endPoint, nameof(endPoint));
 
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer, NetworkPeerDisconnectReason> onDisconnected = null)
+        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null, Action<INetworkPeer> onDisconnected = null)
         {
             Guard.NotNull(peerEndPoint, nameof(peerEndPoint));
 

@@ -451,10 +451,17 @@ namespace Stratis.Bitcoin.Connection
             return peer;
         }
 
-        private void OnPeerDisconnected(INetworkPeer peer, NetworkPeerDisconnectReason networkPeerDisconnectReason)
+        /// <summary>
+        /// Called when peer disconnected.
+        /// </summary>
+        /// <param name="peer">Peer being disconnected.</param>
+        private void OnPeerDisconnected(INetworkPeer peer)
         {
-            this.logger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, networkPeerDisconnectReason);
-            this.RemoveConnectedPeer(peer, networkPeerDisconnectReason.Reason);
+            this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
+
+            this.RemoveConnectedPeer(peer, "unknown");
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
