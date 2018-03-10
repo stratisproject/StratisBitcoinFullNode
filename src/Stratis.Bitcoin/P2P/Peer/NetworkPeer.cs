@@ -182,16 +182,19 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary> 
         private int disconnected;
 
+        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary> 
+        private int disposed;
+
         /// <summary>
-        /// <c>true</c> if <see cref="onDisconnected"/> callback should be executed after <see cref="MessageReceived"/> or <see cref="StateChanged"/> callbacks are executed.
-        /// </summary> 
-        private bool disconnectedCallbackScheduled;
+        /// Set to <c>true</c> if the current async execution context is the one that executes 
+        /// the <see cref="StateChanged"/> or <see cref="MessageReceived"/> callback,<c>false</c> otherwise.
+        /// </summary>
+        private readonly AsyncLocal<bool> callbackExecutionInProgress;
 
-        /// <summary>Incremented when <see cref="MessageReceived"/> or <see cref="StateChanged"/> start execution. Decremented when execution is finished.</summary> 
-        private int callbacksInProgress;
-
-        /// <summary>Locks access to <see cref="disconnected"/>, <see cref="callbacksInProgress"/> and <see cref="disconnectedCallbackScheduled"/>.</summary>
-        private object mutex;
+        /// <summary>
+        /// Set to <c>true</c> if <see cref="onDisconnected"/> callback execution is scheduled in this async context, <c>false</c> otherwise.
+        /// </summary>
+        private readonly AsyncLocal<bool> onDisconnectedCallbackScheduled;
 
         /// <summary>Transaction options we would like.</summary>
         private NetworkOptions preferredTransactionOptions;
@@ -248,11 +251,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.PeerEndPoint = peerEndPoint;
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-
-            this.mutex = new object();
+            
             this.disconnected = 0;
-            this.disconnectedCallbackScheduled = false;
-            this.callbacksInProgress = 0;
+            this.disposed = 0;
+
+            this.callbackExecutionInProgress = new AsyncLocal<bool>() { Value = false };
+            this.onDisconnectedCallbackScheduled = new AsyncLocal<bool>() { Value = false };
 
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
@@ -407,10 +411,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                lock (this.mutex)
-                {
-                    this.callbacksInProgress++;
-                }
+                this.callbackExecutionInProgress.Value = true;
 
                 await this.StateChanged.ExecuteCallbacksAsync(this, previous).ConfigureAwait(false);
             }
@@ -421,12 +422,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                lock (this.mutex)
-                {
-                    this.callbacksInProgress--;
-                }
+                if (this.onDisconnectedCallbackScheduled.Value)
+                    this.onDisconnected(this, this.disconnectionReason);
 
-                this.ExecuteDisconnectedCallbackIfSafeAndScheduled();
+                this.callbackExecutionInProgress.Value = false;
             }
 
             this.logger.LogTrace("(-)");
@@ -463,10 +462,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                lock (this.mutex)
-                {
-                    this.callbacksInProgress++;
-                }
+                this.callbackExecutionInProgress.Value = true;
 
                 await this.MessageReceived.ExecuteCallbacksAsync(this, message).ConfigureAwait(false);
             }
@@ -478,12 +474,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                lock (this.mutex)
-                {
-                    this.callbacksInProgress--;
-                }
+                if (this.onDisconnectedCallbackScheduled.Value)
+                    this.onDisconnected(this, this.disconnectionReason);
 
-                this.ExecuteDisconnectedCallbackIfSafeAndScheduled();
+                this.callbackExecutionInProgress.Value = false;
             }
 
             this.logger.LogTrace("(-)");
@@ -763,20 +757,40 @@ namespace Stratis.Bitcoin.P2P.Peer
                     Exception = exception
                 };
             }
-
-            lock (this.mutex)
-            {
-                this.disconnectedCallbackScheduled = true;
-            }
-
-            this.ExecuteDisconnectedCallbackIfSafeAndScheduled();
+            
+            if (this.onDisconnected != null)
+                this.ExecuteDisconnectedCallbackWhenSafe();
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Executes <see cref="onDisconnected"/> callback if no callbacks are currently executing in the same async context,
+        /// schedules <see cref="onDisconnected"/> execution after the callback otherwise. 
+        /// </summary>
+        private void ExecuteDisconnectedCallbackWhenSafe()
+        {
+            if (!this.callbackExecutionInProgress.Value)
+            {
+                this.onDisconnected(this, this.disconnectionReason);
+            }
+            else
+            {
+                this.onDisconnectedCallbackScheduled.Value = true;
+            }
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
+            this.logger.LogTrace("()");
+
+            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
+            {
+                this.logger.LogTrace("(-)[DISPOSED]");
+                return;
+            }
+
             this.Disconnect("Peer disposed");
 
             this.Connection.Dispose();
@@ -795,26 +809,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             
             this.MessageReceived.Dispose();
             this.StateChanged.Dispose();
-        }
 
-        /// <summary>
-        /// Executes <see cref="onDisconnected"/> callback if <see cref="disconnectedCallbackScheduled"/> is <c>true</c> and no callbacks are currently executing.
-        /// </summary>
-        private void ExecuteDisconnectedCallbackIfSafeAndScheduled()
-        {
-            bool executeCallback = false;
-
-            lock (this.mutex)
-            {
-                if (this.callbacksInProgress == 0 && this.disconnectedCallbackScheduled)
-                {
-                    this.disconnectedCallbackScheduled = false;
-                    executeCallback = true;
-                }
-            }
-
-            if (executeCallback)
-                this.onDisconnected(this, this.disconnectionReason);
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
