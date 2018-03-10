@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private int disposed;
         
         /// <summary>
-        /// Async context to allow to recognize whether <see cref="onDisconnected"/>  callback execution is scheduled in this async context.
+        /// Async context to allow to recognize whether <see cref="onDisconnected"/> callback execution is scheduled in this async context.
         /// <para>
         /// It is not <c>null</c> if one of the following callbacks is in progress: <see cref="StateChanged"/>, <see cref="MessageReceived"/>,
         /// set to <c>null</c> otherwise.
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <inheritdoc/>
         public AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived { get; private set; }
-        
+
         /// <inheritdoc/>
         public NetworkPeerConnectionParameters ConnectionParameters { get; private set; }
 
@@ -232,6 +232,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public MessageProducer<IncomingMessage> MessageProducer { get { return this.Connection.MessageProducer; } }
 
         /// <summary>Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</summary>
+        /// <remarks>It is allowed to dispose peer from this callback.</remarks>
         private readonly Action<INetworkPeer> onDisconnected;
 
         /// <summary>
@@ -274,7 +275,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.MessageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
-
             this.onDisconnected = onDisconnected;
         }
 
@@ -790,6 +790,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             if (this.onDisconnected != null)
             {
+                // Value wasn't set in this async context, which means that we are outside of the callbacks execution and it is allowed to call `onDisconnected`.
                 if (this.onDisconnectedAsyncContext.Value == null)
                 {
                     this.onDisconnected(this);

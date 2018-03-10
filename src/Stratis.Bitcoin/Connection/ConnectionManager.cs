@@ -452,7 +452,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// Called when peer disconnected.
+        /// Called when peer is disconnected.
         /// </summary>
         /// <param name="peer">Peer being disconnected.</param>
         private void OnPeerDisconnected(INetworkPeer peer)
