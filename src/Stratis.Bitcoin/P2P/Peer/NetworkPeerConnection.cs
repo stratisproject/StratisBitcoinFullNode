@@ -74,6 +74,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Queue of incoming messages distributed to message consumers.</summary>
         public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
 
+        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary> 
         private int disposed;
 
         /// <summary>
@@ -103,7 +104,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
 
             this.writeLock = new AsyncLock();
-            this.disposed = 0;
 
             this.CancellationSource = new CancellationTokenSource();
 
@@ -150,18 +150,15 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("Receiving cancelled.");
+                this.peer.Disconnect("Receiving cancelled.");
+            }
             catch (Exception ex)
             {
-                if (ex is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Receiving cancelled.");
-                    this.peer.Disconnect("Receiving cancelled.");
-                }
-                else
-                {
-                    this.peer.Disconnect("Unexpected exception while waiting for a message", ex);
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-                }
+                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                this.peer.Disconnect("Unexpected exception while waiting for a message", ex);
             }
 
             this.logger.LogTrace("(-)");
@@ -267,7 +264,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
-                this.peer.Disconnect("Operation canceled");
+                this.peer.Disconnect("Connection to the peer has been terminated");
                 this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                 throw;
             }
@@ -497,17 +494,21 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Closes TCP connection and disposes it's stream.
+        /// </summary>
         public void Disconnect()
         {
             this.logger.LogTrace("()");
+
+            this.CancellationSource.Cancel();
 
             NetworkStream disposeStream = this.stream;
             TcpClient disposeTcpClient = this.tcpClient;
 
             this.stream = null;
             this.tcpClient = null;
-            
-            this.CancellationSource.Cancel();
+          
             disposeStream?.Dispose();
             disposeTcpClient?.Dispose();
 

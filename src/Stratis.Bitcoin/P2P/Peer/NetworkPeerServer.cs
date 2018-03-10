@@ -175,6 +175,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Callback that is invoked when peer has finished disconnecting.
+        /// </summary>
+        /// <param name="peer">Peer that was disconnected.</param>
         private void OnDisconnected(INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(peer), peer.PeerEndPoint, nameof(peer.State), peer.State);

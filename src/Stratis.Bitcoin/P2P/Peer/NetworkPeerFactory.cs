@@ -146,9 +146,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 await peer.ConnectAsync(peer.ConnectionParameters.ConnectCancellation).ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                peer.Disconnect("Connection failed", e);
                 peer.Dispose();
                 throw;
             }

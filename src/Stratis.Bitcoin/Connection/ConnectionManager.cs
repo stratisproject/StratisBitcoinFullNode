@@ -452,9 +452,9 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// Called when peer is disconnected.
+        /// Callback that is called after a peer was disconnected.
         /// </summary>
-        /// <param name="peer">Peer being disconnected.</param>
+        /// <param name="peer">Peer that was disconnected.</param>
         private void OnPeerDisconnected(INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);

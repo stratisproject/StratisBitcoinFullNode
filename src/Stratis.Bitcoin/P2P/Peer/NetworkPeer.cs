@@ -232,7 +232,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         public MessageProducer<IncomingMessage> MessageProducer { get { return this.Connection.MessageProducer; } }
 
         /// <summary>Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</summary>
-        /// <remarks>It is allowed to dispose peer from this callback.</remarks>
         private readonly Action<INetworkPeer> onDisconnected;
 
         /// <summary>
@@ -788,18 +787,27 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         private void ExecuteDisconnectedCallbackWhenSafe()
         {
+            this.logger.LogTrace("()");
+
             if (this.onDisconnected != null)
             {
                 // Value wasn't set in this async context, which means that we are outside of the callbacks execution and it is allowed to call `onDisconnected`.
                 if (this.onDisconnectedAsyncContext.Value == null)
                 {
+                    this.logger.LogTrace("Disconnection callback is being executed.");
                     this.onDisconnected(this);
                 }
                 else
                 {
+                    this.logger.LogTrace("Disconnection callback is scheduled for execution when other callbacks are finished.");
                     this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested = true;
                 }
             }
+            else
+                this.logger.LogTrace("Disconnection callback is not specified.");
+            
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
