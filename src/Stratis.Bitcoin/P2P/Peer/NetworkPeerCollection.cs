@@ -25,9 +25,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
     public interface IReadOnlyNetworkPeerCollection : IEnumerable<INetworkPeer>
     {
-        event EventHandler<NetworkPeerEventArgs> Added;
-        event EventHandler<NetworkPeerEventArgs> Removed;
-
         INetworkPeer FindByEndpoint(IPEndPoint endpoint);
         INetworkPeer FindByIp(IPAddress ip);
         INetworkPeer FindLocal();
@@ -44,10 +41,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return this.networkPeers.Count;
             }
         }
-
-        public event EventHandler<NetworkPeerEventArgs> Added;
-        public event EventHandler<NetworkPeerEventArgs> Removed;
-
+        
         /// <summary>
         /// Provides a comparer to specify how peers are compared for equality.
         /// </summary>
@@ -81,34 +75,20 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (this.networkPeers.Add(peer))
             {
-                this.OnPeerAdded(peer);
                 return true;
             }
 
             return false;
         }
 
-        public bool Remove(INetworkPeer peer, string reason)
+        public bool Remove(INetworkPeer peer)
         {
             if (this.networkPeers.TryRemove(peer))
             {
-                this.OnPeerRemoved(peer);
-                peer.Disconnect(reason);
-                peer.Dispose();
                 return true;
             }
 
             return false;
-        }
-
-        private void OnPeerAdded(INetworkPeer peer)
-        {
-            this.Added?.Invoke(this, new NetworkPeerEventArgs(peer, true));
-        }
-
-        public void OnPeerRemoved(INetworkPeer peer)
-        {
-            this.Removed?.Invoke(this, new NetworkPeerEventArgs(peer, false));
         }
 
         public INetworkPeer FindLocal()

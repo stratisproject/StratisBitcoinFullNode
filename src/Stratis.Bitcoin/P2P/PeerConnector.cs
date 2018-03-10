@@ -101,6 +101,8 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Burst time interval between making a connection attempt.</summary>
         private readonly TimeSpan burstConnectionInterval;
 
+        private readonly NetworkPeerDisposureManager peerDisposureManager;
+
         /// <summary>Parameterless constructor for dependency injection.</summary>
         protected PeerConnector(
             IAsyncLoopFactory asyncLoopFactory,
@@ -124,6 +126,7 @@ namespace Stratis.Bitcoin.P2P
             this.NodeSettings = nodeSettings;
             this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
+            this.peerDisposureManager = new NetworkPeerDisposureManager();
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
             this.defaultConnectionInterval = TimeSpans.Second;
@@ -169,7 +172,10 @@ namespace Stratis.Bitcoin.P2P
         /// <param name="reason">Human readable reason for removing the peer.</param>
         private void RemovePeer(INetworkPeer peer, string reason)
         {
-            this.ConnectedPeers.Remove(peer, reason);
+            this.ConnectedPeers.Remove(peer);
+
+            peer.Disconnect(reason);
+            this.peerDisposureManager.DisposePeer(peer);
 
             if (this.asyncLoop != null && this.ConnectedPeers.Count < this.BurstModeTargetConnections)
                 this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
@@ -252,19 +258,20 @@ namespace Stratis.Bitcoin.P2P
                     this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.Endpoint);
                     peer?.Disconnect("Connection timeout");
                 }
-
-                peer?.Dispose();
             }
             catch (Exception exception)
             {
                 this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
                 peer?.Disconnect("Error while connecting", exception);
-                peer?.Dispose();
             }
 
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Callback that is called after a peer was disconnected.
+        /// </summary>
+        /// <param name="peer">Peer that was disconnected.</param>
         private void OnPeerDisconnected(INetworkPeer peer)
         {
             this.RemovePeer(peer, "unknown");
@@ -281,6 +288,7 @@ namespace Stratis.Bitcoin.P2P
         {
             this.asyncLoop?.Dispose();
             this.Disconnect();
+            this.peerDisposureManager.Dispose();
         }
     }
 }

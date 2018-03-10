@@ -134,6 +134,8 @@ namespace Stratis.Bitcoin.Connection
 
         public List<NetworkPeerServer> Servers { get; }
 
+        private readonly NetworkPeerDisposureManager peerDisposureManager;
+
         public ConnectionManager(
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -159,6 +161,7 @@ namespace Stratis.Bitcoin.Connection
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
+            this.peerDisposureManager = new NetworkPeerDisposureManager();
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
@@ -175,7 +178,7 @@ namespace Stratis.Bitcoin.Connection
         public void Initialize()
         {
             this.logger.LogTrace("()");
-
+            
             this.peerDiscovery.DiscoverPeers(this);
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
@@ -342,6 +345,8 @@ namespace Stratis.Bitcoin.Connection
                 peer.Dispose();
             }
 
+            this.peerDisposureManager.Dispose();
+
             this.logger.LogTrace("(-)");
         }
 
@@ -359,7 +364,10 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
 
-            this.connectedPeers.Remove(peer, reason);
+            this.connectedPeers.Remove(peer);
+
+            peer.Disconnect(reason);
+            this.peerDisposureManager.DisposePeer(peer);
 
             this.logger.LogTrace("(-)");
         }

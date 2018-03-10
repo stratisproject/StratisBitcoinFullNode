@@ -49,6 +49,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>List of active peers mapped by their connection's unique identifiers.</summary>
         private readonly ConcurrentDictionary<int, INetworkPeer> peersById;
 
+        private readonly NetworkPeerDisposureManager peerDisposureManager;
+
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
 
@@ -61,12 +63,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
-        public NetworkPeerServer(Network network, IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
+        public NetworkPeerServer(Network network,
+            IPEndPoint localEndPoint,
+            IPEndPoint externalEndPoint,
+            ProtocolVersion version,
+            ILoggerFactory loggerFactory,
+            INetworkPeerFactory networkPeerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
+            this.peerDisposureManager = new NetworkPeerDisposureManager();
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
@@ -184,7 +192,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(peer), peer.PeerEndPoint, nameof(peer.State), peer.State);
 
             this.peersById.TryRemove(peer.Connection.Id, out INetworkPeer unused);
-            peer.Dispose();
+            this.peerDisposureManager.DisposePeer(peer);
 
             this.logger.LogTrace("(-)");
         }
@@ -225,6 +233,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.peersById.Clear();
+
+            this.peerDisposureManager.Dispose();
 
             this.logger.LogTrace("(-)");
         }
