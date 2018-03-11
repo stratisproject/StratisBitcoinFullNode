@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManager);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            Assert.Contains(endpointAddNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
+            Assert.Contains(endpointAddNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
 
         [Fact]
@@ -134,9 +134,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManager);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointConnectNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.Contains(endpointConnectNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
 
         [Fact]
@@ -215,9 +215,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManager);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.DoesNotContain(endpointConnectNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointDiscoveredNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointConnectNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.Contains(endpointDiscoveredNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
 
         [Fact]

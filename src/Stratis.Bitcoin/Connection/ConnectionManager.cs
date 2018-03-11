@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Connection
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
-            this.connectedPeersHelper = new ConnectedPeersHelper(this.loggerFactory, this.OnPeerDisposed);
+            this.connectedPeersHelper = new ConnectedPeersHelper(this.loggerFactory);
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Connection
         public void Initialize()
         {
             this.logger.LogTrace("()");
-            
+
             this.peerDiscovery.DiscoverPeers(this);
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Connection
             if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
             {
                 peerConnector.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
-                foreach (INetworkPeer peer in peerConnector.ConnectedPeers)
+                foreach (INetworkPeer peer in peerConnector.ConnectorPeers)
                 {
                     if (!peer.PeerVersion.Services.HasFlag(services))
                         peer.Disconnect("The peer does not support the required services requirement.");
@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Connection
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LoggingConfiguration.ColumnLength + 7) +
                     (" agent " + agent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
-                    " height=" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : 
+                    " height=" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() :
                         peer.PeerVersion?.StartHeight.ToString() ?? "unknown"));
             }
 
@@ -340,12 +340,6 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
-            foreach (INetworkPeer peer in this.connectedPeers)
-            {
-                peer.Disconnect("Connection manager shutdown");
-                peer.Dispose();
-            }
-
             this.connectedPeersHelper.Dispose();
 
             this.logger.LogTrace("(-)");
@@ -357,6 +351,15 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
 
             this.connectedPeers.Add(peer);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        internal void RemoveConnectedPeer(INetworkPeer peer, string reason)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
+
+            this.connectedPeers.Remove(peer);
 
             this.logger.LogTrace("(-)");
         }
@@ -415,7 +418,6 @@ namespace Stratis.Bitcoin.Connection
 
             INetworkPeer peer = this.connectedPeers.FindByEndpoint(ipEndpoint);
             peer?.Disconnect("Requested by user");
-            peer?.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -431,7 +433,8 @@ namespace Stratis.Bitcoin.Connection
             });
 
             INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.connectedPeersHelper.OnPeerDisconnectedHandler).ConfigureAwait(false);
-            this.AddConnectedPeer(peer);
+            this.connectedPeersHelper.AddPeer(peer);
+
             try
             {
                 this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
@@ -446,19 +449,6 @@ namespace Stratis.Bitcoin.Connection
 
             this.logger.LogTrace("(-)");
             return peer;
-        }
-
-        /// <summary>
-        /// Callback that is called before the peer is disposed.
-        /// </summary>
-        /// <param name="peer">Peer that is being disposed.</param>
-        private void OnPeerDisposed(INetworkPeer peer)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
-
-            this.connectedPeers.Remove(peer);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

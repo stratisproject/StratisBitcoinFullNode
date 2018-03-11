@@ -88,13 +88,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         MessageProducer<IncomingMessage> MessageProducer { get; }
 
         /// <summary>
-        /// Sets a new network state of the peer.
-        /// </summary>
-        /// <param name="newState">New network state to be set.</param>
-        /// <remarks>This method is not thread safe.</remarks>
-        Task SetStateAsync(NetworkPeerState newState);
-
-        /// <summary>
         /// Connects the node to an outbound peer using already initialized information about the peer and starts receiving messages in a separate task.
         /// </summary>
         /// <param name="cancellation">Cancellation that allows aborting establishing the connection with the peer.</param>

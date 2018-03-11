@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using ConcurrentCollections;
 using NBitcoin;
-using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Peer
@@ -69,26 +66,16 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.networkPeers = new ConcurrentHashSet<INetworkPeer>(new NetworkPeerComparer());
         }
 
-        public bool Add(INetworkPeer peer)
+        public void Add(INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
 
-            if (this.networkPeers.Add(peer))
-            {
-                return true;
-            }
-
-            return false;
+            this.networkPeers.Add(peer);
         }
 
-        public bool Remove(INetworkPeer peer)
+        public void Remove(INetworkPeer peer)
         {
-            if (this.networkPeers.TryRemove(peer))
-            {
-                return true;
-            }
-
-            return false;
+            this.networkPeers.TryRemove(peer);
         }
 
         public INetworkPeer FindLocal()
@@ -99,7 +86,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public INetworkPeer FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
-            return this.networkPeers.Where(n => Match(ip, null, n)).FirstOrDefault();
+            return this.networkPeers.FirstOrDefault(n => Match(ip, null, n));
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
@@ -131,20 +118,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
-        }
-
-        public void DisconnectAll(string reason, CancellationToken cancellation = default(CancellationToken))
-        {
-            foreach (INetworkPeer peer in this.networkPeers)
-            {
-                peer.Disconnect(reason);
-                peer.Dispose();
-            }
-        }
-
-        public void Clear()
-        {
-            this.networkPeers.Clear();
         }
     }
 }

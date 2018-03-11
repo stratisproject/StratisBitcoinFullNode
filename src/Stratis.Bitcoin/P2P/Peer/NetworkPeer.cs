@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerState State { get; private set; }
 
         /// <summary>Table of valid transitions between peer states.</summary>
-        private static Dictionary<NetworkPeerState, NetworkPeerState[]> stateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
+        private static readonly Dictionary<NetworkPeerState, NetworkPeerState[]> stateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
         {
             { NetworkPeerState.Created, new []{ NetworkPeerState.Connected, NetworkPeerState.Offline, NetworkPeerState.Failed} },
             { NetworkPeerState.Connected, new []{ NetworkPeerState.HandShaked, NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.preferredTransactionOptions = network.NetworkOptions;
             this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
 
-            this.State = NetworkPeerState.Created;
+            this.State = inbound ? NetworkPeerState.Connected : NetworkPeerState.Created;
             this.Inbound = inbound;
             this.PeerEndPoint = peerEndPoint;
             this.RemoteSocketEndpoint = this.PeerEndPoint;
@@ -283,9 +283,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            
-            this.disconnected = 0;
-            this.disposed = 0;
             
             this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
 
@@ -316,7 +313,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             Action<INetworkPeer> onDisconnected = null)
             : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, onDisconnected)
         {
-            TcpClient client = new TcpClient(AddressFamily.InterNetworkV6);
+            var client = new TcpClient(AddressFamily.InterNetworkV6);
             client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
             client.Client.ReceiveBufferSize = parameters.ReceiveBufferSize;
             client.Client.SendBufferSize = parameters.SendBufferSize;
@@ -356,7 +353,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("()");
 
             this.logger.LogTrace("Connected to peer '{0}'.", this.PeerEndPoint);
-            this.State = NetworkPeerState.Connected;
 
             this.InitDefaultBehaviors(this.ConnectionParameters);
             this.Connection.StartReceiveMessages();
@@ -364,8 +360,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc/>
-        public async Task SetStateAsync(NetworkPeerState newState)
+        /// <summary>
+        /// Sets a new network state of the peer.
+        /// </summary>
+        /// <param name="newState">New network state to be set.</param>
+        /// <remarks>This method is not thread safe.</remarks>
+        private async Task SetStateAsync(NetworkPeerState newState)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(newState), newState, nameof(this.State), this.State);
 
@@ -384,7 +384,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.ExecuteDisconnectedCallbackWhenSafe();
                 }
             }
-            else
+            else if (previous != newState)
             {
                 this.logger.LogDebug("Illegal transition from {0} to {1} occurred.", previous, newState);
             }
@@ -450,10 +450,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(previous), previous, nameof(this.State), this.State);
 
-            try
-            {
+            bool insideCallback = this.onDisconnectedAsyncContext.Value == null;
+            if (!insideCallback)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
+            try
+            {
                 await this.StateChanged.ExecuteCallbacksAsync(this, previous).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -463,10 +465,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
-                    this.onDisconnected(this);
-
-                this.onDisconnectedAsyncContext.Value = null;
+                if (!insideCallback)
+                {
+                    if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
+                        this.onDisconnected(this);
+                    
+                    this.onDisconnectedAsyncContext.Value = null;
+                }
             }
 
             this.logger.LogTrace("(-)");
