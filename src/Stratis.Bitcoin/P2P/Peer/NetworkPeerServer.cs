@@ -49,6 +49,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>List of active peers mapped by their connection's unique identifiers.</summary>
         private readonly ConcurrentDictionary<int, INetworkPeer> peersById;
 
+        /// <summary>Disposes peer in a separated task.</summary>
         private readonly NetworkPeerDisposureManager peerDisposureManager;
 
         /// <summary>Task accepting new clients in a loop.</summary>
@@ -74,7 +75,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
-            this.peerDisposureManager = new NetworkPeerDisposureManager();
+            this.peerDisposureManager = new NetworkPeerDisposureManager(loggerFactory);
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 

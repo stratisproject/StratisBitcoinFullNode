@@ -101,6 +101,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Burst time interval between making a connection attempt.</summary>
         private readonly TimeSpan burstConnectionInterval;
 
+        /// <summary>Disposes peer in a separated task.</summary>
         private readonly NetworkPeerDisposureManager peerDisposureManager;
 
         /// <summary>Parameterless constructor for dependency injection.</summary>
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.P2P
             this.NodeSettings = nodeSettings;
             this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
-            this.peerDisposureManager = new NetworkPeerDisposureManager();
+            this.peerDisposureManager = new NetworkPeerDisposureManager(this.loggerFactory);
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
             this.defaultConnectionInterval = TimeSpans.Second;

@@ -134,6 +134,7 @@ namespace Stratis.Bitcoin.Connection
 
         public List<NetworkPeerServer> Servers { get; }
 
+        /// <summary>Disposes peer in a separated task.</summary>
         private readonly NetworkPeerDisposureManager peerDisposureManager;
 
         public ConnectionManager(
@@ -161,7 +162,7 @@ namespace Stratis.Bitcoin.Connection
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
-            this.peerDisposureManager = new NetworkPeerDisposureManager();
+            this.peerDisposureManager = new NetworkPeerDisposureManager(this.loggerFactory);
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
