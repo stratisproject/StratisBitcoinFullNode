@@ -432,8 +432,7 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.connectedPeersHelper.OnPeerDisconnectedHandler).ConfigureAwait(false);
-            this.connectedPeersHelper.AddPeer(peer);
+            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.connectedPeersHelper).ConfigureAwait(false);
 
             try
             {

@@ -238,8 +238,7 @@ namespace Stratis.Bitcoin.P2P
                     timeoutTokenSource.CancelAfter(5000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters, this.connectedPeersHelper.OnPeerDisconnectedHandler).ConfigureAwait(false);
-                    this.connectedPeersHelper.AddPeer(peer);
+                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters, this.connectedPeersHelper).ConfigureAwait(false);
 
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                     this.AddPeer(peer);
