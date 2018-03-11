@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -18,20 +20,23 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// </summary>
     public enum NetworkPeerState : int
     {
-        /// <summary>An error occurred during a network operation.</summary>
-        Failed,
-
-        /// <summary>Shutdown has been initiated, the node went offline.</summary>
-        Offline,
-
-        /// <summary>Process of disconnecting the peer has been initiated.</summary>
-        Disconnecting,
+        /// <summary>Initial state of an outbound peer.</summary>
+        Created = 0,
 
         /// <summary>Network connection with the peer has been established.</summary>
         Connected,
 
         /// <summary>The node and the peer exchanged version information.</summary>
-        HandShaked
+        HandShaked,
+
+        /// <summary>Process of disconnecting the peer has been initiated.</summary>
+        Disconnecting,
+
+        /// <summary>Shutdown has been initiated, the node went offline.</summary>
+        Offline,
+
+        /// <summary>An error occurred during a network operation.</summary>
+        Failed
     }
 
     /// <summary>
@@ -123,6 +128,17 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <inheritdoc/>
         public NetworkPeerState State { get; private set; }
+
+        /// <summary>Table of valid transitions between peer states.</summary>
+        private static Dictionary<NetworkPeerState, NetworkPeerState[]> stateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
+        {
+            { NetworkPeerState.Created, new []{ NetworkPeerState.Connected, NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.Connected, new []{ NetworkPeerState.HandShaked, NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.HandShaked, new []{ NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.Disconnecting, new []{ NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.Offline, new NetworkPeerState[] {} },
+            { NetworkPeerState.Failed, new NetworkPeerState[] {} }
+        };
 
         /// <inheritdoc/>
         public IPEndPoint RemoteSocketEndpoint { get; private set; }
@@ -258,9 +274,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.preferredTransactionOptions = network.NetworkOptions;
             this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
 
-            this.State = NetworkPeerState.Offline;
+            this.State = NetworkPeerState.Created;
             this.Inbound = inbound;
             this.PeerEndPoint = peerEndPoint;
+            this.RemoteSocketEndpoint = this.PeerEndPoint;
+            this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
+            this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
+
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
             
@@ -335,10 +355,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
             this.logger.LogTrace("()");
 
-            this.RemoteSocketEndpoint = this.PeerEndPoint;
-            this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
-            this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
-
             this.logger.LogTrace("Connected to peer '{0}'.", this.PeerEndPoint);
             this.State = NetworkPeerState.Connected;
 
@@ -354,7 +370,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(newState), newState, nameof(this.State), this.State);
 
             NetworkPeerState previous = this.State;
-            if (previous != newState)
+
+            if (stateTransitionTable[previous].Contains(newState))
             {
                 this.State = newState;
 
@@ -366,6 +383,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.ExecuteDisconnectedCallbackWhenSafe();
                 }
+            }
+            else
+            {
+                this.logger.LogDebug("Illegal transition from {0} to {1} occurred.", previous, newState);
             }
 
             this.logger.LogTrace("(-)");
@@ -823,7 +844,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Disconnect("Peer disposed");
 
-            this.Connection.Dispose();
+            this.logger.LogTrace("Behaviors detachment started.");
 
             foreach (INetworkPeerBehavior behavior in this.Behaviors)
             {
@@ -836,7 +857,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
                 }
             }
-            
+
+            this.Connection.Dispose();
+
             this.MessageReceived.Dispose();
             this.StateChanged.Dispose();
 

@@ -113,13 +113,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             if (port.HasValue)
             {
-                return ((peer.State > NetworkPeerState.Disconnecting) && peer.RemoteSocketAddress.Equals(ip) && (peer.RemoteSocketPort == port.Value))
-                    || (peer.PeerVersion.AddressFrom.Address.Equals(ip) && (peer.PeerVersion.AddressFrom.Port == port.Value));
+                return ((peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked) && peer.RemoteSocketAddress.Equals(ip) && 
+                        (peer.RemoteSocketPort == port.Value)) || (peer.PeerVersion.AddressFrom.Address.Equals(ip) && (peer.PeerVersion.AddressFrom.Port == port.Value));
             }
             else
             {
-                return ((peer.State > NetworkPeerState.Disconnecting) && peer.RemoteSocketAddress.Equals(ip))
-                    || peer.PeerVersion.AddressFrom.Address.Equals(ip);
+                return ((peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked) && 
+                        peer.RemoteSocketAddress.Equals(ip)) || peer.PeerVersion.AddressFrom.Address.Equals(ip);
             }
         }
 

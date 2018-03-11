@@ -134,8 +134,8 @@ namespace Stratis.Bitcoin.Connection
 
         public List<NetworkPeerServer> Servers { get; }
 
-        /// <summary>Disposes peer in a separated task.</summary>
-        private readonly NetworkPeerDisposureManager peerDisposureManager;
+        /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
+        private readonly ConnectedPeersHelper connectedPeersHelper;
 
         public ConnectionManager(
             IDateTimeProvider dateTimeProvider,
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Connection
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
-            this.peerDisposureManager = new NetworkPeerDisposureManager(this.loggerFactory);
+            this.connectedPeersHelper = new ConnectedPeersHelper(this.loggerFactory, this.OnPeerDisposed);
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.Connection
                 peer.Dispose();
             }
 
-            this.peerDisposureManager.Dispose();
+            this.connectedPeersHelper.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -357,18 +357,6 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
 
             this.connectedPeers.Add(peer);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        internal void RemoveConnectedPeer(INetworkPeer peer, string reason)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
-
-            this.connectedPeers.Remove(peer);
-
-            peer.Disconnect(reason);
-            this.peerDisposureManager.DisposePeer(peer);
 
             this.logger.LogTrace("(-)");
         }
@@ -442,7 +430,7 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.OnPeerDisconnected).ConfigureAwait(false);
+            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.connectedPeersHelper.OnPeerDisconnectedHandler).ConfigureAwait(false);
             this.AddConnectedPeer(peer);
             try
             {
@@ -451,7 +439,7 @@ namespace Stratis.Bitcoin.Connection
             }
             catch (Exception e)
             {
-                this.RemoveConnectedPeer(peer, "Connection failed");
+                peer.Disconnect("Connection failed");
                 this.logger.LogTrace("(-)[ERROR]");
                 throw e;
             }
@@ -461,14 +449,14 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// Callback that is called after a peer was disconnected.
+        /// Callback that is called before the peer is disposed.
         /// </summary>
-        /// <param name="peer">Peer that was disconnected.</param>
-        private void OnPeerDisconnected(INetworkPeer peer)
+        /// <param name="peer">Peer that is being disposed.</param>
+        private void OnPeerDisposed(INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
 
-            this.RemoveConnectedPeer(peer, "unknown");
+            this.connectedPeers.Remove(peer);
 
             this.logger.LogTrace("(-)");
         }
