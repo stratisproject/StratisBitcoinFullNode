@@ -1,0 +1,23 @@
+Blockchain Generation
+Federation Key Pair Generator
+Sidechain Initializer
+ - multi-sig main
+ - milti-sig side
+ - pre mine
+ - output SciptPubKeys
+Send Fund Tran on mainchain
+Monitor mainchain for fund transactions
+Send Fund transaction into sidechain
+Send withdrawal transaction on sidechain
+Monitor sidechain for withdrawal transactions
+Send withdrawal into mainchain
+multi-sig wallet
+Federation node internode comms
+Lock mining to federation nodes
+
+web pages for orcestration
+build packages
+
+UI for Blockchain Generation
+UI for Fund Transaction
+UI for Withdrawal Transaction
