@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>POS staker.</summary>
         private readonly IPosMinting posMinting;
 
-        /// <summary>Manager providing operations on wallets.</summary>
-        private readonly IWalletManager walletManager;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -63,7 +60,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="powMining">POW miner.</param>
         /// <param name="posMinting">POS staker.</param>
-        /// <param name="walletManager">Manager providing operations on wallets.</param>
         public MiningFeature(
             Network network,
             MinerSettings minerSettings,
@@ -71,8 +67,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             IPowMining powMining,
-            IPosMinting posMinting = null,
-            IWalletManager walletManager = null)
+            IPosMinting posMinting = null)
         {
             this.network = network;
             this.minerSettings = minerSettings;
@@ -80,7 +75,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.powMining = powMining;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.posMinting = posMinting;
-            this.walletManager = walletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 

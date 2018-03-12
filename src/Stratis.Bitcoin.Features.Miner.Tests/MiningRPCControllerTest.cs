@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object, this.walletManager.Object));
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
 
             var exception = Assert.Throws<ConfigurationException>(() =>
             {
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
               .Returns(this.fixture.wallet);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object, this.walletManager.Object));
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
 
             var result = this.controller.StartStaking("myWallet", "password1");
 
