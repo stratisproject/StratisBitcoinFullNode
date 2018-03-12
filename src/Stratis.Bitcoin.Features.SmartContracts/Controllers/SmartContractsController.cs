@@ -46,8 +46,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
-            uint160 numeric = new uint160(address);
+            var numeric = new uint160(address);
             byte[] contractCode = this.stateRoot.GetCode(numeric);
+
+            // In the future, we could be more explicit about whether a contract exists (or indeed, did ever exist)
+            if (contractCode == null || !contractCode.Any())
+            {
+                return Json(new GetCodeResponse
+                {
+                    CSharp = "",
+                    Bytecode = ""
+                });
+            }
+
             ModuleDefinition modDefinition = ModuleDefinition.ReadModule(new MemoryStream(contractCode));
             CSharpDecompiler decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
             string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
@@ -62,7 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
-            uint160 numeric = new uint160(address);
+            var numeric = new uint160(address);
             ulong balance = this.stateRoot.GetCurrentBalance(numeric);
             return Json(balance);
         }
