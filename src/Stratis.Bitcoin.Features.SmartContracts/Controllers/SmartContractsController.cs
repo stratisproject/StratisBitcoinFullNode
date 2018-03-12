@@ -59,14 +59,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 });
             }
 
-            ModuleDefinition modDefinition = ModuleDefinition.ReadModule(new MemoryStream(contractCode));
-            CSharpDecompiler decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
-            string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
-            return Json(new GetCodeResponse
+            using (var memStream = new MemoryStream(contractCode))
             {
-                CSharp = cSharp,
-                Bytecode = contractCode.ToHexString()
-            });
+                var modDefinition = ModuleDefinition.ReadModule(memStream);
+                var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
+                string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
+                return Json(new GetCodeResponse
+                {
+                    CSharp = cSharp,
+                    Bytecode = contractCode.ToHexString()
+                });
+            }
         }
 
         [Route("balance")]
