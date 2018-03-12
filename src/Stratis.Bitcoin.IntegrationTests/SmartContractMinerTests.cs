@@ -281,10 +281,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             var smartContractCarrier = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - gasBudget, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
-            byte[] ownerFromStorage = context.state.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
+            uint160 newContractAddressUint160 = tx.GetNewContractAddress();
+            byte[] ownerFromStorage = context.state.GetStorageValue(newContractAddressUint160, Encoding.UTF8.GetBytes("Owner"));
             Assert.Equal(ownerFromStorage, context.coinbaseAddress.ToBytes());
-            Assert.NotNull(context.state.GetCode(newContractAddress));
+            Assert.NotNull(context.state.GetCode(newContractAddressUint160));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
 

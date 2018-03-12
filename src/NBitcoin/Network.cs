@@ -58,6 +58,7 @@ namespace NBitcoin
         STEALTH_ADDRESS,
         ASSET_ID,
         COLORED_ADDRESS,
+        CONTRACT_ADDRESS,
         MAX_BASE58_TYPES,
     };
 
@@ -794,7 +795,7 @@ namespace NBitcoin
             return true;
         }
 
-        internal byte[][] base58Prefixes = new byte[12][];
+        internal byte[][] base58Prefixes = new byte[13][];
 
         internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
 
