@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         {
             get
             {
-                return (this.peer != null) && !this.DelayAttach && (this.peer.State != NetworkPeerState.Offline) && (this.peer.State != NetworkPeerState.Failed) && (this.peer.State != NetworkPeerState.Disconnecting);
+                return (this.peer != null) && !this.DelayAttach && ((this.peer.State == NetworkPeerState.Connected) || (this.peer.State == NetworkPeerState.HandShaked));
             }
         }
 
