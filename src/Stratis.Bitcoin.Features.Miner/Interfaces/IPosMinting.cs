@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
         /// <returns>Interface to started loop, so it can be stopped during shutdown.</returns>
-        IAsyncLoop Stake(PosMinting.WalletSecret walletSecret);
+        void Stake(PosMinting.WalletSecret walletSecret);
 
         /// <summary>
         /// Stop the main POS staking loop.
