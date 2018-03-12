@@ -483,6 +483,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             
             this.Disconnect();
 
+            this.CancellationSource.Cancel();
+
             this.receiveMessageTask?.Wait();
 
             this.messageProducerRegistration.Dispose();
@@ -500,8 +502,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         public void Disconnect()
         {
             this.logger.LogTrace("()");
-
-            this.CancellationSource.Cancel();
 
             NetworkStream disposeStream = this.stream;
             TcpClient disposeTcpClient = this.tcpClient;
