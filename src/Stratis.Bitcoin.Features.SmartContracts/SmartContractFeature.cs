@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.SmartContracts.ContractValidation;
 using Stratis.SmartContracts.State;
 
@@ -18,15 +19,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public class SmartContractFeature : FullNodeFeature
     {
         private readonly ILogger logger;
+        private readonly IContractStateRepository contractStateRepository;
+        private readonly IConsensusLoop consensusLoop;
 
-        public SmartContractFeature(ILoggerFactory loggerFactory)
+        public SmartContractFeature(ILoggerFactory loggerFactory, IContractStateRepository contractStateRepository, IConsensusLoop consensusLoop)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.contractStateRepository = contractStateRepository;
+            this.consensusLoop = consensusLoop;
         }
 
         public override void Initialize()
         {
-            // TODO: Should set up contract root correctly?
+            this.contractStateRepository.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -58,6 +63,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
+
+                        services.AddSingleton<SmartContractsController>();
 
                         AddSmartContractRulesToExistingRules(services);
                     });

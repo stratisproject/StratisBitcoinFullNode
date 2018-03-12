@@ -269,6 +269,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public async Task SmartContracts_CreateTokenContract_Async()
         {
+            string example = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Token.cs").ToHexString();
+
             TestContext context = new TestContext();
             await context.InitializeAsync();
 

@@ -8,6 +8,7 @@ namespace Stratis.SmartContracts.Backend
     /// </summary>
     internal class ReflectionVirtualMachine : ISmartContractVirtualMachine
     {
+        public static int VmVersion = 1;
         private readonly PersistentState persistentState;
         private const string InitMethod = "Init";
 

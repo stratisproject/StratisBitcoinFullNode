@@ -10,7 +10,7 @@
 
     <Version>1.0.7-alpha</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    
+
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
     <StartupObject />
