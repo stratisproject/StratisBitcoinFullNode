@@ -1,0 +1,201 @@
+﻿using System.Collections.Generic;
+using NBitcoin;
+using Stratis.SmartContracts;
+using Stratis.SmartContracts.State;
+using Xunit;
+
+namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+{
+    public class SmartContractListTests
+    {
+        [Fact]
+        public void SmartContractList_ListHasCountTest()
+        {
+            var listName = "testList";
+
+            MemoryDictionarySource source = new MemoryDictionarySource();
+            ContractStateRepositoryRoot root = new ContractStateRepositoryRoot(source);
+
+            IContractStateRepository repository = root.StartTracking();
+            IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(repository);
+
+            var persistentState = new PersistentState(
+                repository,
+                persistenceStrategy,
+                uint160.One);
+
+            var list = new SmartContractList<string>(persistentState, listName);
+
+            Assert.Equal((uint)0, list.Count);
+
+            // Set a value in the list
+            list.Add("Test");
+            
+            Assert.Equal((uint) 1, list.Count);
+        }
+        
+        [Fact]
+        public void SmartContractList_ListHasValueTest()
+        {
+            var listName = "testList";
+
+            MemoryDictionarySource source = new MemoryDictionarySource();
+            ContractStateRepositoryRoot root = new ContractStateRepositoryRoot(source);
+
+            IContractStateRepository repository = root.StartTracking();
+            IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(repository);
+            var persistentState = new PersistentState(
+                repository,
+                persistenceStrategy,
+                uint160.One);
+
+            var list = new SmartContractList<string>(persistentState, listName);
+
+            Assert.Equal((uint)0, list.Count);
+
+            var testItem = "Test";
+
+            // Set a value in the list
+            list.Add(testItem);
+
+            var item1 = list.Get(0);
+
+            Assert.Equal(testItem, item1);
+        }
+
+        [Fact]
+        public void SmartContractList_ListHasMultipleValuesTest()
+        {
+            var listName = "testList";
+
+            MemoryDictionarySource source = new MemoryDictionarySource();
+            ContractStateRepositoryRoot root = new ContractStateRepositoryRoot(source);
+
+            IContractStateRepository repository = root.StartTracking();
+            IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(repository);
+            var persistentState = new PersistentState(
+                repository,
+                persistenceStrategy,
+                uint160.One);
+
+            var list = new SmartContractList<string>(persistentState, listName);
+
+            Assert.Equal((uint)0, list.Count);
+
+            var testItem = "Test";
+            var testItem2 = "Test2";
+            var testItem3 = "Test3";
+
+            // Set a value in the list
+            list.Add(testItem);
+            list.Add(testItem2);
+            list.Add(testItem3);
+
+            Assert.Equal((uint)3, list.Count);
+
+            var item1 = list.Get(0);
+            var item2 = list.Get(1);
+            var item3 = list.Get(2);
+
+            Assert.Equal(testItem, item1);
+            Assert.Equal(testItem2, item2);
+            Assert.Equal(testItem3, item3);
+        }
+
+        [Fact]
+        public void SmartContractList_CanAccessValueUsingIndexTest()
+        {
+            var listName = "testList";
+
+            MemoryDictionarySource source = new MemoryDictionarySource();
+            ContractStateRepositoryRoot root = new ContractStateRepositoryRoot(source);
+
+            IContractStateRepository repository = root.StartTracking();
+            IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(repository);
+            var persistentState = new PersistentState(
+                repository,
+                persistenceStrategy,
+                uint160.One);
+
+            var list = new SmartContractList<string>(persistentState, listName);
+
+            Assert.Equal((uint)0, list.Count);
+
+            // Set a value in the list
+            list.Add("Test");
+            list.Add("Test2");
+
+            var testItem = list.Get(0);
+            var testItem2 = list.Get(1);
+
+            var firstItemHash = StringKeyHashingStrategy.Default.Hash($"{listName}[0]");
+            var secondItemHash = StringKeyHashingStrategy.Default.Hash($"{listName}[1]");
+
+            var item = persistentState.GetObject<string>(firstItemHash);
+            var item2 = persistentState.GetObject<string>(secondItemHash);
+
+            Assert.Equal(testItem, item);
+            Assert.Equal(testItem2, item2);
+        }
+
+        [Fact]
+        public void SmartContractList_ListEnumerationTest()
+        {
+            var listName = "testList";
+
+            MemoryDictionarySource source = new MemoryDictionarySource();
+            ContractStateRepositoryRoot root = new ContractStateRepositoryRoot(source);
+
+            IContractStateRepository repository = root.StartTracking();
+            IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(repository);
+            var persistentState = new PersistentState(
+                repository,
+                persistenceStrategy,
+                uint160.One);
+
+            var list = new SmartContractList<string>(persistentState, listName);
+
+            Assert.Equal((uint)0, list.Count);
+
+            var items = new List<string>
+            {
+                "this is a test",
+                "we should try to find a way",
+                "to paramaterize our tests"
+            };
+
+            foreach (var item in items)
+            {
+                // No AddRange
+                list.Add(item);
+            }
+
+            Assert.Equal((uint)items.Count, list.Count);
+
+            for (var i = 0; i < list.Count; i++)
+            {
+                Assert.Equal(items[i], list.Get((uint)i));
+            }
+        }
+    }
+
+    public class PersistenceStrategy : IPersistenceStrategy
+    {
+        private readonly IContractStateRepository stateDb;
+
+        public PersistenceStrategy(IContractStateRepository stateDb)
+        {
+            this.stateDb = stateDb;
+        }
+
+        public byte[] FetchBytes(uint160 address, byte[] key)
+        {
+            return this.stateDb.GetStorageValue(address, key);
+        }
+
+        public void StoreBytes(uint160 address, byte[] key, byte[] value)
+        {
+            this.stateDb.SetStorageValue(address, key, value);
+        }
+    }
+}

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
-using Stratis.SmartContracts.Hashing;
 
 namespace Stratis.SmartContracts
 {
@@ -13,13 +10,20 @@ namespace Stratis.SmartContracts
     /// <typeparam name="V"></typeparam>
     public class SmartContractMapping<V>
     {
-        private readonly uint baseNumber;
+        private readonly StringKeyHashingStrategy keyHashingStrategy;
+        private readonly string name;
         private readonly PersistentState persistentState;
 
-        internal SmartContractMapping(PersistentState persistentState, uint baseNum)
+        internal SmartContractMapping(PersistentState persistentState, string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("SmartContractMapping name cannot be empty", nameof(name));
+            }
+
+            this.name = name;
             this.persistentState = persistentState;
-            this.baseNumber = baseNum;
+            this.keyHashingStrategy = StringKeyHashingStrategy.Default;
         }
 
         public void Put(string key, V value)
@@ -53,8 +57,7 @@ namespace Stratis.SmartContracts
         /// <returns></returns>
         private string GetKeyString(string key)
         {
-            byte[] toHash = BitConverter.GetBytes(this.baseNumber).Concat(Encoding.UTF8.GetBytes(key.ToString())).ToArray();
-            return Encoding.UTF8.GetString(HashHelper.Keccak256(toHash));
+            return this.keyHashingStrategy.Hash(this.name, key);
         }
     }
 }

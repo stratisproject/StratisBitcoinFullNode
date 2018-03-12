@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NBitcoin;
-using Stratis.SmartContracts.Hashing;
 
 namespace Stratis.SmartContracts
 {
@@ -16,55 +12,50 @@ namespace Stratis.SmartContracts
     /// <typeparam name="T"></typeparam>
     public class SmartContractList<T> : IEnumerable<T>
     {
+        private readonly PersistentState persistentState;
+        private readonly string name;
+        private string CountName => $"{this.name}.Count";
 
         /// <summary>
-        /// Used to differentiate between each mapping / list. Each one will have a unique baseNumber
-        /// that will allow them to all save data to a different domain - Keccak(BaseNumberBytes + Key)
-        /// </summary>
-        private readonly uint baseNumber;
-
-        private PersistentState persistentState;
-
-        private byte[] BaseNumberBytes
-        {
-            get
-            {
-                return BitConverter.GetBytes(this.baseNumber);
-            }
-        }
-
-        /// <summary>
-        /// The length of the list is stored in the hash of the baseNumber
+        /// The length of the list is stored in the hash of the List name.Count
         /// </summary>
         public uint Count
         {
             get
             {
-                string baseKey = Encoding.UTF8.GetString(HashHelper.Keccak256(this.BaseNumberBytes));
+                string baseKey = this.KeyHashingStrategy.Hash(this.CountName);
                 return this.persistentState.GetObject<uint>(baseKey);
             }
             private set
             {
-                string baseKey = Encoding.UTF8.GetString(HashHelper.Keccak256(this.BaseNumberBytes));
+                string baseKey = this.KeyHashingStrategy.Hash(this.CountName);
                 this.persistentState.SetObject(baseKey, value);
             }
         }
 
-        internal SmartContractList(PersistentState persistentState, uint baseNumber)
+        internal SmartContractList(PersistentState persistentState, string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("SmartContractList name cannot be empty", nameof(name));
+            }
+
             this.persistentState = persistentState;
-            this.baseNumber = baseNumber;
+            this.name = name;
+            this.KeyHashingStrategy = StringKeyHashingStrategy.Default;
         }
+
+        public StringKeyHashingStrategy KeyHashingStrategy { get; }
 
         public void Add(T item)
         {
-            this.persistentState.SetObject(GetKeyString(this.Count), item);
+            this.persistentState.SetObject(GetKeyString(FormatIndex(this.Count)), item);
             this.Count = this.Count + 1;
         }
 
         public T Get(uint index)
         {
-            return this.persistentState.GetObject<T>(GetKeyString(index));
+            return this.persistentState.GetObject<T>(GetKeyString(FormatIndex(index)));
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -74,7 +65,15 @@ namespace Stratis.SmartContracts
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new SmartContractListEnum<T>(this.persistentState, this.baseNumber, this.Count);
+            for (uint i = 0; i < this.Count; i++)
+            {
+                yield return Get(i);
+            }
+        }
+
+        private string FormatIndex(uint index)
+        {
+            return $"[{index}]";
         }
 
         /// <summary>
@@ -82,63 +81,11 @@ namespace Stratis.SmartContracts
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        private string GetKeyString(uint key)
+        private string GetKeyString(string key)
         {
-            byte[] toHash = BitConverter.GetBytes(this.baseNumber).Concat(Encoding.UTF8.GetBytes(key.ToString())).ToArray();
-            return Encoding.UTF8.GetString(HashHelper.Keccak256(toHash));
-        }
-
-    }
-
-    public class SmartContractListEnum<T> : IEnumerator<T>
-    {
-        private readonly uint baseNumber;
-        private readonly uint length;
-        private int position = -1;
-        private PersistentState PersistentState;
-
-        private byte[] BaseNumberBytes
-        {
-            get
-            {
-                return BitConverter.GetBytes(this.baseNumber);
-            }
-        }
-
-        public T Current
-        {
-            get
-            {
-                return PersistentState.GetObject<T>(GetKeyString((uint)this.position));
-            }
-        }
-
-        object IEnumerator.Current => this.Current;
-
-        public SmartContractListEnum(PersistentState persistentState, uint baseNumber, uint length)
-        {
-            this.PersistentState = persistentState;
-            this.baseNumber = baseNumber;
-            this.length = length;
-        }
-
-        public void Dispose() {}
-
-        public bool MoveNext()
-        {
-            this.position++;
-            return (this.position < this.length);
-        }
-
-        public void Reset()
-        {
-            this.position = -1;
-        }
-
-        private string GetKeyString(uint key)
-        {
-            byte[] toHash = BitConverter.GetBytes(this.baseNumber).Concat(Encoding.UTF8.GetBytes(key.ToString())).ToArray();
-            return Encoding.UTF8.GetString(HashHelper.Keccak256(toHash));
+            return this.KeyHashingStrategy.Hash(
+                this.name,
+                key);
         }
     }
 }

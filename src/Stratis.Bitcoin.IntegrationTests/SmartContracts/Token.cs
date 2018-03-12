@@ -6,7 +6,7 @@ public class Token : SmartContract
     public Token(SmartContractState state) 
         : base(state)
     {
-        Balances = PersistentState.GetMapping<ulong>();
+        Balances = PersistentState.GetMapping<ulong>("Balances");
     }
 
     public Address Owner

@@ -46,14 +46,14 @@ namespace Stratis.SmartContracts
             this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj));
         }
 
-        public SmartContractMapping<V> GetMapping<V>()
+        public SmartContractMapping<V> GetMapping<V>(string name)
         {
-            return new SmartContractMapping<V>(this, this.counter++);
+            return new SmartContractMapping<V>(this, name);
         }
 
-        public SmartContractList<T> GetList<T>()
+        public SmartContractList<T> GetList<T>(string name)
         {
-            return new SmartContractList<T>(this, this.counter++);
+            return new SmartContractList<T>(this, name);
         }
     }
 

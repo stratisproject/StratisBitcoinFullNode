@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 {
                     public Token(SmartContractState state): base(state) 
                     {
-                        Balances = PersistentState.GetMapping<ulong>();
+                        Balances = PersistentState.GetMapping<ulong>(""Balances"");
                     }
 
                     public Address Owner
