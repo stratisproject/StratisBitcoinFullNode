@@ -783,8 +783,8 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
-			//Get reward for newly created block
-            long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height+1);
+	        //Get reward for newly created block
+	        long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height+1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
