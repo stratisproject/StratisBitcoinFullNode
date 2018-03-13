@@ -411,28 +411,43 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.state = state;
+
+            this.SubscribeToPayload<VerAckPayload>(this.ProcessVerAckPayloadAsync);
         }
 
-        /// <inheritdoc />
-        protected override void AttachCore()
+        /// <summary>
+        /// Event handler that is called when the node receives <see cref="VerAckPayload"/> payload from the attached peer.
+        /// </summary>
+        /// <param name="peer">Peer that sent us the message.</param>
+        /// <param name="payload">Received payload.</param>
+        /// <remarks>
+        /// This handler only cares about "verack" messages, which are only sent once per node
+        /// and at the time they are sent the time offset information is parsed by underlaying logic.
+        /// <para>
+        /// Note that it is not possible to use "version" message here as <see cref="INetworkPeer"/>
+        /// does not deliver this message for inbound peers to node behaviors.
+        /// </para>
+        /// </remarks>
+        private async Task ProcessVerAckPayloadAsync(INetworkPeer peer, VerAckPayload payload)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(payload), payload);
 
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-
+            IPAddress address = peer.RemoteSocketAddress;
+            if (address != null)
+            {
+                VersionPayload version = peer.PeerVersion;
+                if (version != null)
+                {
+                    TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
+                    this.state.AddTimeData(address, timeOffset, peer.Inbound);
+                }
+                else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
+            }
+            else this.logger.LogTrace("Message received from unknown node's address.");
+            
             this.logger.LogTrace("(-)");
         }
-
-        /// <inheritdoc />
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
+        
         /// <inheritdoc />
         public override object Clone()
         {
@@ -442,43 +457,6 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogTrace("(-)");
             return res;
-        }
-
-        /// <summary>
-        /// Event handler that is called when the node receives a network message from the attached peer.
-        /// </summary>
-        /// <param name="peer">Peer that sent us the message.</param>
-        /// <param name="message">Received message.</param>
-        /// <remarks>
-        /// This handler only cares about "verack" messages, which are only sent once per node
-        /// and at the time they are sent the time offset information is parsed by underlaying logic.
-        /// <para>
-        /// Note that it is not possible to use "version" message here as <see cref="INetworkPeer"/>
-        /// does not deliver this message for inbound peers to node behaviors.
-        /// </para>
-        /// </remarks>
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            if (message.Message.Payload is VerAckPayload verack)
-            {
-                IPAddress address = peer.RemoteSocketAddress;
-                if (address != null)
-                {
-                    VersionPayload version = peer.PeerVersion;
-                    if (version != null)
-                    {
-                        TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
-                        if (timeOffset != null) this.state.AddTimeData(address, timeOffset, peer.Inbound);
-                    }
-                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
-                }
-                else this.logger.LogTrace("Message received from unknown node's address.");
-            }
-
-            this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
         }
     }
 }

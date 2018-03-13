@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -43,50 +42,27 @@ namespace Stratis.Bitcoin.Connection
             // 80% of current max connections, the last 20% will only
             // connect to nodes ahead of the current best chain.
             this.dropThreshold = 0.8M;
+
+            this.SubscribeToPayload<VersionPayload>(this.ProcessVersionPayloadAsync);
         }
 
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        private Task ProcessVersionPayloadAsync(INetworkPeer peer, VersionPayload payload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(payload), payload);
 
-            if (message.Message.Payload is VersionPayload version)
-            {
-                IPeerConnector peerConnector = null;
-                if (this.connection.ConnectionSettings.Connect.Any())
-                    peerConnector = this.connection.PeerConnectors.First(pc => pc is PeerConnectorConnectNode);
-                else
-                    peerConnector = this.connection.PeerConnectors.First(pc => pc is PeerConnectorDiscovery);
+            IPeerConnector peerConnector = this.connection.PeerConnectors.First(pc => this.connection.ConnectionSettings.Connect.Any()? 
+                pc is PeerConnectorConnectNode : pc is PeerConnectorDiscovery);
 
-                // Find how much 20% max nodes.
-                decimal thresholdCount = Math.Round(peerConnector.MaxOutboundConnections * this.dropThreshold, MidpointRounding.ToEven);
+            // Find how much 20% max nodes.
+            decimal thresholdCount = Math.Round(peerConnector.MaxOutboundConnections * this.dropThreshold, MidpointRounding.ToEven);
 
-                if (thresholdCount < this.connection.ConnectedPeers.Count())
-                    if (version.StartHeight < this.chain.Height)
-                        peer.Disconnect($"Node at height = {version.StartHeight} too far behind current height");
-            }
-
+            if (thresholdCount < this.connection.ConnectedPeers.Count() && payload.StartHeight < this.chain.Height)
+                    peer.Disconnect($"Node at height = {payload.StartHeight} too far behind current height");
+            
             this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
-
-        protected override void AttachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
-        }
-
+        
         public override object Clone()
         {
             return new DropNodesBehaviour(this.chain, this.connection, this.loggerFactory);

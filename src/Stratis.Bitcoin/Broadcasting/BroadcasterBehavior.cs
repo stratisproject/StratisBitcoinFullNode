@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -24,6 +23,10 @@ namespace Stratis.Bitcoin.Broadcasting
         {
             this.logger = logger;
             this.broadcasterManager = broadcasterManager;
+
+            //TODO: Fix the exception handling of the async event.
+            this.SubscribeToPayload<InvPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessInvPayloadAsync));
+            this.SubscribeToPayload<GetDataPayload>((payload, peer) => this.ProcessPayloadAndHandleErrors(peer, payload, this.logger, this.ProcessGetDataPayloadAsync));
         }
 
         public BroadcasterBehavior(
@@ -38,55 +41,8 @@ namespace Stratis.Bitcoin.Broadcasting
         {
             return new BroadcasterBehavior(this.broadcasterManager, this.logger);
         }
-
-        /// <summary>
-        /// Handler for processing incoming message from the peer.
-        /// </summary>
-        /// <param name="peer">Peer sending the message.</param>
-        /// <param name="message">Incoming message.</param>
-        /// <remarks>
-        /// TODO: Fix the exception handling of the async event.
-        /// </remarks>
-        protected async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            try
-            {
-                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.ToString());
-
-                // while in dev catch any unhandled exceptions
-                Debugger.Break();
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Handler for processing peer messages.
-        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
-        /// </summary>
-        /// <param name="peer">Peer sending the message.</param>
-        /// <param name="message">Incoming message.</param>
-        protected async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            switch (message.Message.Payload)
-            {
-                case GetDataPayload getDataPayload:
-                    await this.ProcessGetDataPayloadAsync(peer, getDataPayload).ConfigureAwait(false);
-                    break;
-
-                case InvPayload invPayload:
-                    this.ProcessInvPayload(invPayload);
-                    break;
-            }
-        }
-
-        private void ProcessInvPayload(InvPayload invPayload)
+        
+        private async Task ProcessInvPayloadAsync(INetworkPeer peer, InvPayload invPayload)
         {
             // if node has tx we broadcasted
             foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
@@ -99,7 +55,7 @@ namespace Stratis.Bitcoin.Broadcasting
             }
         }
 
-        protected async Task ProcessGetDataPayloadAsync(INetworkPeer peer, GetDataPayload getDataPayload)
+        private async Task ProcessGetDataPayloadAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
             // If node asks for tx we want to broadcast.
             foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
@@ -114,18 +70,6 @@ namespace Stratis.Bitcoin.Broadcasting
                     }
                 }
             }
-        }
-
-        /// <inheritdoc />
-        protected override void AttachCore()
-        {
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-        }
-
-        /// <inheritdoc />
-        protected override void DetachCore()
-        {
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
     }
 }
