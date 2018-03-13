@@ -131,6 +131,9 @@ namespace Stratis.Bitcoin.P2P
             var peers = fileStorage.LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
+                // Ensure that any address already in store is mapped.
+                peer.Endpoint = peer.Endpoint.MapToIpv6();
+
                 this.Peers.TryAdd(peer.Endpoint, peer);
             });
         }
@@ -151,6 +154,9 @@ namespace Stratis.Bitcoin.P2P
             if (!endPoint.Address.IsRoutable(true))
                 return;
 
+            // All peers must be in IPv6 or IPv4 in embedded format.
+            endPoint = endPoint.MapToIpv6();
+            
             var peerToAdd = PeerAddress.Create(endPoint, source);
             this.Peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
