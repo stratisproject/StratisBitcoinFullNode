@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Checks if <see cref="Block"/> has a valid PoS header and calculate the next block difficulty.
     /// </summary>
     [ValidationRule(CanSkipValidation = false)]
-    public class CalculateStakeRule : PosConsensusRule
+    public class CalculateStakeRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>

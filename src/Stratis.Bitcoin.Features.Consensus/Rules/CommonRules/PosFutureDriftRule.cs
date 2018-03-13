@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
-    public class PosFutureDriftRule : PosConsensusRule
+    public class PosFutureDriftRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)

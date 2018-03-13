@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Context checks on a POS block.
     /// </summary>
-    public class PosCoinstakeRule : PosConsensusRule
+    public class PosCoinstakeRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)

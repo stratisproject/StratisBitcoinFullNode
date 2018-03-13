@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
@@ -56,10 +58,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             this.Attributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 
             this.validationRuleAttribute = this.Attributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
+
+            this.CanSkipValidation = this.validationRuleAttribute?.CanSkipValidation ?? !this.Attributes.Any();
         }
 
         /// <summary>Rules that are strictly validation can be skipped unless the <see cref="ValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
-        public bool CanSkipValidation => this.validationRuleAttribute?.CanSkipValidation ?? true;
+        public bool CanSkipValidation { get; } 
 
         /// <summary>The rule represented by this descriptor.</summary>
         public ConsensusRule Rule { get; }
@@ -105,9 +109,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     }
 
     /// <summary>
-    /// Rules that provide easy access to the <see cref="PosConsensusRules"/> parent.
+    /// Rules that provide easy access to the <see cref="CoinView"/> which is the store for a PoW system.
     /// </summary>
-    public abstract class PosConsensusRule : ConsensusRule
+    public abstract class UtxoStoreConsensusRule : ConsensusRule
+    {
+        /// <summary>Allow access to the POS parent.</summary>
+        protected PowConsensusRules PowParent;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.PowParent = this.Parent as PowConsensusRules;
+
+            Guard.NotNull(this.PowParent, nameof(this.PowParent));
+        }
+    }
+
+    /// <summary>
+    /// Rules that provide easy access to the <see cref="StakeChain"/> which is the store for a PoS system.
+    /// </summary>
+    public abstract class StakeStoreConsensusRule : ConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRules PosParent;

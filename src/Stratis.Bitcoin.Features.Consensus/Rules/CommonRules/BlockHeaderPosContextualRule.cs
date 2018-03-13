@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
-    public class BlockHeaderPosContextualRule : PosConsensusRule
+    public class BlockHeaderPosContextualRule : StakeStoreConsensusRule
     {
         /// <summary>
         /// Context-dependent validity checks.
