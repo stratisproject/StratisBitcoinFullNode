@@ -27,13 +27,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
     [Route("api/[controller]")]
     public class SmartContractsController : Controller
     {
-        private readonly IContractStateRepository stateRoot;
+        private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IConsensusLoop consensus;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
 
-        public SmartContractsController(IContractStateRepository stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
