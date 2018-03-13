@@ -552,7 +552,7 @@ namespace NBitcoin
             network.consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // Set extremely low difficulty for now.
             network.consensus.MinimumChainWork = uint256.Zero;
             network.consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
-            network.consensus.PowTargetSpacing = TimeSpan.FromSeconds(20); // 20 second block time while on testnet 
+            network.consensus.PowTargetSpacing = TimeSpan.FromSeconds(4); // 20 second block time while on testnet 
             network.consensus.PowAllowMinDifficultyBlocks = true;
             network.consensus.PowNoRetargeting = false;
             network.consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
