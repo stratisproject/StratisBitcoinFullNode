@@ -5,14 +5,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.Tests;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    public class PeerBanningTest
+    public class PeerBanningTest : TestBase
     {
         public PeerBanningTest()
         {
@@ -133,6 +135,83 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             Thread.Sleep(1000);
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        [Fact]
+        public async Task PeerBanning_AddingBannedPeerToAddressManagerStoreAsync()
+        {
+            // Arrange 
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.PeerBanning_AddingBannedPeerToAddressManagerStoreAsync));
+            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataDir);
+
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            int banSeconds = context.ConnectionManager.ConnectionSettings.BanTimeSeconds;
+
+            // Act
+            context.PeerBanning.BanPeer(endpoint, banSeconds, nameof(PeerBanningTest));
+
+            // Assert
+            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            Assert.True(peer.IsBanned);
+            Assert.True(peer.BannedReason == nameof(PeerBanningTest));
+            Assert.NotNull(peer.BanUntil);
+        }
+
+        [Fact]
+        public async Task PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync()
+        {
+            // Arrange 
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync));
+            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataDir);
+
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            int banSeconds = context.ConnectionManager.ConnectionSettings.BanTimeSeconds;
+
+            // Act - Ban Peer, save store, clear current Peers, load store
+            context.PeerBanning.BanPeer(endpoint, banSeconds, nameof(PeerBanningTest));
+            context.PeerAddressManager.SavePeers();
+            context.PeerAddressManager.Peers.Clear();
+            context.PeerAddressManager.LoadPeers();
+
+            // Assert
+            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            Assert.True(peer.IsBanned);
+            Assert.True(peer.BannedReason == nameof(PeerBanningTest));
+            Assert.NotNull(peer.BanUntil);
+        }
+
+        [Fact]
+        public async Task PeerBanning_ResettingExpiredBannedPeerAsync()
+        {
+            // Arrange 
+            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.PeerBanning_ResettingExpiredBannedPeerAsync));
+            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataDir);
+
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            // Act 
+            context.PeerBanning.BanPeer(endpoint, 1, nameof(PeerBanningTest));
+            context.PeerAddressManager.SavePeers();
+
+            // wait 1 sec for ban to expire.
+            Thread.Sleep(1000);
+
+            context.PeerAddressManager.Peers.Clear();
+            context.PeerAddressManager.LoadPeers();
+
+            // Assert
+            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            Assert.False(peer.IsBanned);
+            Assert.True(peer.BannedReason == string.Empty);
+            Assert.Null(peer.BanUntil);
         }
     }
 }

@@ -133,6 +133,8 @@ namespace Stratis.Bitcoin.P2P
             {
                 this.Peers.TryAdd(peer.Endpoint, peer);
             });
+
+            ResetBannedPeers();
         }
 
         /// <inheritdoc />
@@ -237,6 +239,26 @@ namespace Stratis.Bitcoin.P2P
         public void Dispose()
         {
             this.SavePeers();
+        }
+
+        /// <summary>
+        /// When the PeerAddressManager saves peers to disk, check if any of
+        /// banned Peers have expired.  If so, then reset the Peers.
+        /// </summary>
+        private void ResetBannedPeers()
+        {
+            foreach (KeyValuePair<IPEndPoint, PeerAddress> peer in 
+                this.Peers.Where(p => p.Value.IsBanned.HasValue && p.Value.IsBanned.Value))
+            {
+                if (peer.Value.BanUntil < this.dateTimeProvider.GetUtcNow())
+                {
+                    peer.Value.IsBanned = false;
+                    peer.Value.BanUntil = null;
+                    peer.Value.BannedReason = string.Empty;
+                }
+
+                this.logger.LogTrace("({0}:'{1}' : No longer banned.)", nameof(peer.Value.Endpoint), peer.Value.Endpoint);
+            }
         }
     }
 }
