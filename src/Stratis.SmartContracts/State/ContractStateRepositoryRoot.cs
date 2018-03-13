@@ -79,6 +79,14 @@ namespace Stratis.SmartContracts.State
             }
         }
 
+        public byte[] Root
+        {
+            get
+            {
+                return GetRoot();
+            }
+        }
+
         private ISource<byte[], byte[]> stateDS;
 
         private ICachedSource<byte[], byte[]> trieCache;
@@ -111,7 +119,7 @@ namespace Stratis.SmartContracts.State
             this.trieCache.Flush();
         }
 
-        public override byte[] GetRoot()
+        private byte[] GetRoot()
         {
             this.storageCache.Flush();
             this.accountStateCache.Flush();
@@ -124,12 +132,12 @@ namespace Stratis.SmartContracts.State
             Commit();
         }
 
-        public override IContractStateRepository GetSnapshotTo(byte[] stateRoot)
+        public override ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot)
         {
             return new ContractStateRepositoryRoot(this.stateDS, stateRoot);
         }
 
-        public override void SyncToRoot(byte[] root)
+        public void SyncToRoot(byte[] root)
         {
             this.stateTrie.SetRoot(root);
         }

@@ -119,7 +119,7 @@ namespace Stratis.SmartContracts.State
             return ret;
         }
 
-        public virtual IContractStateRepository GetSnapshotTo(byte[] stateRoot)
+        public virtual ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot)
         {
             return this.parent.GetSnapshotTo(stateRoot);
         }
@@ -144,17 +144,7 @@ namespace Stratis.SmartContracts.State
             // nothing to do, will be GCed
         }
 
-        public virtual byte[] GetRoot()
-        {
-            throw new Exception("Not supported");
-        }
-
         public virtual void Flush()
-        {
-            throw new Exception("Not supported");
-        }
-
-        public virtual void SyncToRoot(byte[] root)
         {
             throw new Exception("Not supported");
         }

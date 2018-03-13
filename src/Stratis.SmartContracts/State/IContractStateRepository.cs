@@ -19,9 +19,7 @@ namespace Stratis.SmartContracts.State
         void Flush();
         void Commit();
         void Rollback();
-        void SyncToRoot(byte[] root);
-        byte[] GetRoot();
-        IContractStateRepository GetSnapshotTo(byte[] stateRoot);
+        ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot);
 
         #region Account Abstraction Layer
 
