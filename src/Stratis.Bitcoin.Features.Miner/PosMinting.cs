@@ -380,14 +380,13 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public IAsyncLoop Stake(WalletSecret walletSecret)
+        public void Stake(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
 
             if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
-                return this.stakingLoop;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
@@ -434,7 +433,6 @@ namespace Stratis.Bitcoin.Features.Miner
             startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
-            return this.stakingLoop;
         }
 
         /// <inheritdoc/>
