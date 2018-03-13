@@ -178,8 +178,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             {
                 Hex = transactionResult.ToHex(),
                 Fee = context.TransactionFee,
-                TransactionId = transactionResult.GetHash(),
-                NewContractAddress = transactionResult.GetNewContractAddress()
+                TransactionId = transactionResult.GetHash()
             };
 
             return this.Json(model);
