@@ -92,6 +92,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             uint160 numeric = new uint160(request.ContractAddress);
             byte[] storageValue = GetSyncedStateRoot().GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
+            if (SmartContractCarrierDataType.UInt == request.DataType)
+                return Json(BitConverter.ToUInt32(storageValue, 0));
             return Json(Encoding.UTF8.GetString(storageValue)); // TODO: Use the modular serializer Francois is working on :)
         }
 
@@ -154,11 +156,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             SmartContractCarrier carrier;
             if(request.Parameters != null && request.Parameters.Any())
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit));
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit), request.Parameters);
             }
             else
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit), request.Parameters);
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit));
             }
 
             ulong totalFee = airPrice * airLimit + ulong.Parse(request.FeeAmount);
