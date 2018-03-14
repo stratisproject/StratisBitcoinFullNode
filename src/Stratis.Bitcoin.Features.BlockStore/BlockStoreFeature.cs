@@ -136,6 +136,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            StoreSettings.PrintHelp(network);
+        }
+
         /// <inheritdoc />
         public override void Dispose()
         {

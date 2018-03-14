@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             DateTimeOffset activePeerLimit = this.dateTimeProvider.GetTimeOffset().AddSeconds(-this.dnsPeerBlacklistThresholdInSeconds);
             
-            var whitelist = this.peerAddressManager.Peers.Where(p => p.Value.LastSeen > activePeerLimit).Select(p => p.Value);
+            var whitelist = this.peerAddressManager.Peers.Where(p => p.LastSeen > activePeerLimit);
             
             if (!this.fullNodeMode)
             {

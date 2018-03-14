@@ -380,14 +380,13 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public IAsyncLoop Stake(WalletSecret walletSecret)
+        public void Stake(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
 
             if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
-                return this.stakingLoop;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
@@ -434,7 +433,6 @@ namespace Stratis.Bitcoin.Features.Miner
             startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
-            return this.stakingLoop;
         }
 
         /// <inheritdoc/>
@@ -667,12 +665,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     // We have to make sure that we have no future timestamps in
                     // our transactions set.
-                    foreach (Transaction transaction in block.Transactions)
+                    for (int i = block.Transactions.Count - 1; i >= 0; i--)
                     {
-                        if (transaction.Time > block.Header.Time)
+                        if (block.Transactions[i].Time > block.Header.Time)
                         {
-                            this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", transaction.Time, block.Header.Time);
-                            block.Transactions.Remove(transaction);
+                            this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
+                            block.Transactions.Remove(block.Transactions[i]);
                         }
                     }
 
@@ -783,8 +781,8 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
-
-            long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height);
+            // Get reward for newly created block.
+            long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
