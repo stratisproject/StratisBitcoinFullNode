@@ -21,6 +21,7 @@ namespace NBitcoin
         internal List<NetworkAddress> FixedSeeds;
         internal Block Genesis;
         internal long MinTxFee;
+        internal int MaxTimeOffsetSeconds;
         internal int MaxTipAge;
         internal long FallbackFee;
         internal long MinRelayTxFee;
@@ -71,6 +72,17 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Sets the maximal value allowed for the calculated time offset.
+        /// </summary>
+        /// <param name="maxTimeOffsetSeconds"> The maximal value allowed for the calculated time offset.</param>
+        /// <returns>A <see cref="NetworkBuilder"/>.</returns>
+        public NetworkBuilder SetMaxTimeOffsetSeconds(int maxTimeOffsetSeconds)
+        {
+            this.MaxTimeOffsetSeconds = maxTimeOffsetSeconds;
+            return this;
+        }
+
+        /// <summary>
         /// Sets the maximum tip age in seconds to consider node in initial block download.
         /// </summary>
         /// <param name="maxTipAge">Maximum tip age in seconds to consider node in initial block download.</param>
@@ -101,6 +113,7 @@ namespace NBitcoin
                 .SetPort(network.DefaultPort)
                 .SetRPCPort(network.RPCPort)
                 .SetTxFees(network.MinTxFee, network.FallbackFee, network.MinRelayTxFee)
+                .SetMaxTimeOffsetSeconds(network.MaxTimeOffsetSeconds)
                 .SetMaxTipAge(network.MaxTipAge);
         }
 

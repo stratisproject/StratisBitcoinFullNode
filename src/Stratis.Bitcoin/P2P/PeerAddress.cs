@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.P2P
@@ -230,7 +231,7 @@ namespace Stratis.Bitcoin.P2P
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
-                Endpoint = endPoint,
+                Endpoint = endPoint.MapToIpv6(),
                 loopback = IPAddress.Loopback.ToString()
             };
         }

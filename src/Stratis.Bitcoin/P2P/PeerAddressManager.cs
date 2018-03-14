@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Data folder of where the json peer file is located.</summary>
         DataFolder PeerFilePath { get; set; }
 
-        /// <summary>Key value store that indexes all discovered peers by their end point.</summary>
-        ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; }
+        /// <summary>A collection of all discovered peers.</summary>
+        List<PeerAddress> Peers { get; }
 
         /// <summary>
         /// Adds a peer to the <see cref="Peers"/> dictionary.
@@ -101,8 +101,12 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        
+        /// <summary>Key value store that indexes all discovered peers by their end point.</summary>
+        private readonly ConcurrentDictionary<IPEndPoint, PeerAddress> peers;
+
         /// <inheritdoc />
-        public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
+        public List<PeerAddress> Peers => this.peers.Select(item => item.Value).ToList();
 
         /// <summary>The file name of the peers file.</summary>
         internal const string PeerFileName = "peers.json";
@@ -119,9 +123,9 @@ namespace Stratis.Bitcoin.P2P
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.Peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
+            this.peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             this.PeerFilePath = peerFilePath;
-            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.Peers);
+            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.peers);
         }
 
         /// <inheritdoc />
@@ -131,18 +135,21 @@ namespace Stratis.Bitcoin.P2P
             var peers = fileStorage.LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
-                this.Peers.TryAdd(peer.Endpoint, peer);
+                // Ensure that any address already in store is mapped.
+                peer.Endpoint = peer.Endpoint.MapToIpv6();
+                
+                this.peers.TryAdd(peer.Endpoint, peer);
             });
         }
 
         /// <inheritdoc />
         public void SavePeers()
         {
-            if (this.Peers.Any() == false)
+            if (this.peers.Any() == false)
                 return;
 
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath.AddressManagerFilePath);
-            fileStorage.SaveToFile(this.Peers.OrderByDescending(p => p.Value.LastConnectionSuccess).Select(p => p.Value).ToList(), PeerFileName);
+            fileStorage.SaveToFile(this.peers.OrderByDescending(p => p.Value.LastConnectionSuccess).Select(p => p.Value).ToList(), PeerFileName);
         }
 
         /// <inheritdoc/>
@@ -150,9 +157,9 @@ namespace Stratis.Bitcoin.P2P
         {
             if (!endPoint.Address.IsRoutable(true))
                 return;
-
+            
             var peerToAdd = PeerAddress.Create(endPoint, source);
-            this.Peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
+            this.peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
 
         /// <inheritdoc/>
@@ -227,7 +234,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public PeerAddress FindPeer(IPEndPoint endPoint)
         {
-            var peer = this.Peers.Skip(0).SingleOrDefault(p => p.Key.Match(endPoint));
+            var peer = this.peers.Skip(0).SingleOrDefault(p => p.Key.Match(endPoint));
             if (peer.Value != null)
                 return peer.Value;
             return null;

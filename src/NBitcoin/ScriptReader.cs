@@ -337,7 +337,7 @@ namespace NBitcoin
             return op;
         }
 
-        internal Op()
+        public Op()
         {
 
         }
