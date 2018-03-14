@@ -141,7 +141,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
-                                //return true; // TODO: OBVIOUSLY DON'T DO THIS
+                                if (txout.ScriptPubKey.IsSmartContractExec)
+                                {
+                                    return true;
+                                }
+
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
                                 var ctx = new ScriptEvaluationContext();
                                 ctx.ScriptVerify = flags.ScriptFlags;
