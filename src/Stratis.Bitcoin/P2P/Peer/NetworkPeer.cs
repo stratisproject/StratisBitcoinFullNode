@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary> 
         private int disposed;
-        
+
         /// <summary>
         /// Async context to allow to recognize whether <see cref="onDisconnected"/> callback execution is scheduled in this async context.
         /// <para>
@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
-            
+
             this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
 
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
                 this.State = NetworkPeerState.Connected;
-                
+
                 this.InitDefaultBehaviors(this.ConnectionParameters);
                 this.Connection.StartReceiveMessages();
 
@@ -469,7 +469,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
                         this.onDisconnected(this);
-                    
+
                     this.onDisconnectedAsyncContext.Value = null;
                 }
             }
@@ -831,7 +831,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             else
                 this.logger.LogTrace("Disconnection callback is not specified.");
-            
+
 
             this.logger.LogTrace("(-)");
         }
