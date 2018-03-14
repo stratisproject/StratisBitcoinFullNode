@@ -102,6 +102,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -215,7 +217,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="parameters">Various settings and requirements related to how the connections with peers are going to be established, or <c>null</c> to use default parameters.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        private NetworkPeer(bool inbound, IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        private NetworkPeer(bool inbound, IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, ISelfEndpointTracker selfEndpointTracker)
         {
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
@@ -228,6 +230,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.PeerEndPoint = peerEndPoint;
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.selfEndpointTracker = selfEndpointTracker;
 
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
@@ -245,8 +248,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory)
+        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, INetworkPeerFactory networkPeerFactory, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, ISelfEndpointTracker selfEndpointTracker)
+            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker)
         {
             TcpClient client = new TcpClient(AddressFamily.InterNetworkV6);
             client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -271,8 +274,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peerVersion">Version message payload received from the peer.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory)
-            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory)
+        public NetworkPeer(IPEndPoint peerEndPoint, Network network, NetworkPeerConnectionParameters parameters, TcpClient client, IDateTimeProvider dateTimeProvider, INetworkPeerFactory networkPeerFactory, ILoggerFactory loggerFactory, ISelfEndpointTracker selfEndpointTracker)
+            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker)
         {
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
@@ -480,6 +483,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogDebug("Connection to self detected, disconnecting.");
 
                 this.Disconnect("Connected to self");
+                this.selfEndpointTracker.Add(version.AddressReceiver);
 
                 this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                 throw new OperationCanceledException();
