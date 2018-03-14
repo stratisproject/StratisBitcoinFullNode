@@ -150,6 +150,8 @@ namespace Stratis.Bitcoin.P2P
             if (this.peers.Any() == false)
                 return;
 
+            ResetBannedPeers();
+
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath.AddressManagerFilePath);
             fileStorage.SaveToFile(this.peers.OrderByDescending(p => p.Value.LastConnectionSuccess).Select(p => p.Value).ToList(), PeerFileName);
         }
@@ -254,17 +256,15 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private void ResetBannedPeers()
         {
-            foreach (KeyValuePair<IPEndPoint, PeerAddress> peer in 
-                this.Peers.Where(p => p.Value.IsBanned.HasValue && p.Value.IsBanned.Value))
+            foreach (PeerAddress peer in this.Peers.Where(p => p.BanUntil.HasValue))
             {
-                if (peer.Value.BanUntil < this.dateTimeProvider.GetUtcNow())
+                if (peer.BanUntil < this.dateTimeProvider.GetUtcNow())
                 {
-                    peer.Value.IsBanned = false;
-                    peer.Value.BanUntil = null;
-                    peer.Value.BannedReason = string.Empty;
+                    peer.BanDate = null;
+                    peer.BanUntil = null;
                 }
 
-                this.logger.LogTrace("({0}:'{1}' : No longer banned.)", nameof(peer.Value.Endpoint), peer.Value.Endpoint);
+                this.logger.LogTrace("({0}:'{1}' : No longer banned.)", nameof(peer.Endpoint), peer.Endpoint);
             }
         }
     }

@@ -80,6 +80,24 @@ namespace Stratis.Bitcoin.P2P
         public DateTime? LastSeen { get; private set; }
 
         /// <summary>
+        /// The UTC Date when a Peer is banned.
+        /// <para>
+        /// This is set in <see cref="PeerBanning"/>, against <see cref="PeerAddress"/>.
+        /// </para>
+        /// </summary>
+        [JsonProperty(PropertyName = "bandate", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? BanDate { get; set; }
+
+        /// <summary>
+        /// UTC date of when the ban will expire against a Peer.
+        /// <para>
+        /// This is set in <see cref="PeerBanning"/>, against <see cref="PeerAddress"/>.
+        /// </para>
+        /// </summary>
+        [JsonProperty(PropertyName = "banuntil", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? BanUntil { get; set; }
+
+        /// <summary>
         /// <c>True</c> if the peer has had connection attempts but none successful.
         /// </summary>
         [JsonIgnore]
