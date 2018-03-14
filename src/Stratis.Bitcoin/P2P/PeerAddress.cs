@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.P2P
@@ -164,33 +164,6 @@ namespace Stratis.Bitcoin.P2P
         public DateTime? LastDiscoveredFrom { get; private set; }
 
         /// <summary>
-        /// Determine whether the peer has been banned.
-        /// <para>
-        /// This is set in <see cref="PeerBanning"/>.
-        /// </para>
-        /// </summary>
-        [JsonProperty(PropertyName = "isbanned", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? IsBanned { get; set; }
-
-        /// <summary>
-        /// Reason for the banning the Peer.
-        /// <para>
-        /// This is set in <see cref="PeerBanning"/>.
-        /// </para>
-        /// </summary>
-        [JsonProperty(PropertyName = "bannedreason", NullValueHandling = NullValueHandling.Ignore)]
-        public string BannedReason { get; set; }
-
-        /// <summary>
-        /// The UTC date of when the ban will expire.
-        /// <para>
-        /// This is set in <see cref="PeerBanning"/>.
-        /// </para>
-        /// </summary>
-        [JsonProperty(PropertyName = "banuntiltime", NullValueHandling = NullValueHandling.Ignore)]
-        public DateTime? BanUntil { get; set; }
-
-        /// <summary>
         /// Resets the amount of <see cref="ConnectionAttempts"/>.
         /// <para>
         /// This is reset when the amount of failed connection attempts reaches 
@@ -258,7 +231,7 @@ namespace Stratis.Bitcoin.P2P
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
-                Endpoint = endPoint,
+                Endpoint = endPoint.MapToIpv6(),
                 loopback = IPAddress.Loopback.ToString()
             };
         }
