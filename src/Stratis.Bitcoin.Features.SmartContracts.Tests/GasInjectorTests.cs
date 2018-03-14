@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                                             public class Test : SmartContract
                                             {
-                                                public Test(SmartContractState state) : base(state) {}
+                                                public Test(ISmartContractState state) : base(state) {}
 
                                                 public void TestMethod(int number)
                                                 {
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const string ContractName = "Test";
         private const string MethodName = "TestMethod";
 
-        private readonly SmartContractGasInjector spendGasInjector = new SmartContractGasInjector();
+        private readonly ISmartContractGasInjector spendGasInjector = new SmartContractGasInjector();
 
         private readonly ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
 
@@ -68,14 +68,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160());
                 var vm = new ReflectionVirtualMachine(persistentState);
 
-                var executionContext = new SmartContractExecutionContext(new Block(0, 0, 0), new Message(Address.Zero, Address.Zero, 0, (Gas) 500000), 1, new object[] { 1 });
+                var executionContext = new SmartContractExecutionContext(new Block(0, Address.Zero, 0), new Message(Address.Zero, Address.Zero, 0, (Gas) 500000), 1, new object[] { 1 });
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160());
+
+                ISmartContractExecutionResult result = vm.ExecuteMethod(
                     injectedAssemblyBytes, 
                     ContractName, 
                     MethodName, 
                     executionContext,
-                    gasMeter);
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
                 Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUnitsUsed));
             }
         }

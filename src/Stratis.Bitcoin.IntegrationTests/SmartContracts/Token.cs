@@ -3,7 +3,7 @@ using Stratis.SmartContracts;
 
 public class Token : SmartContract
 {
-    public Token(SmartContractState state) 
+    public Token(ISmartContractState state) 
         : base(state)
     {
         Balances = PersistentState.GetMapping<ulong>("Balances");
@@ -21,7 +21,7 @@ public class Token : SmartContract
         }
     }
 
-    public SmartContractMapping<ulong> Balances { get; }
+    public ISmartContractMapping<ulong> Balances { get; }
 
     [SmartContractInit]
     public void Init()

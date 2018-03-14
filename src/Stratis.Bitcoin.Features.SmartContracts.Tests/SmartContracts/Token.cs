@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
 {
     public class Token : SmartContract
     {
-        public Token(SmartContractState state) 
+        public Token(ISmartContractState state) 
             : base(state)
         {
             this.Balances = PersistentState.GetMapping<ulong>("Balances");
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
             private set { PersistentState.SetObject("Owner", value); }
         }
 
-        public SmartContractMapping<ulong> Balances { get; set; }
+        public ISmartContractMapping<ulong> Balances { get; set; }
 
         [SmartContractInit]
         public void Init()

@@ -3,10 +3,11 @@ using System.IO;
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class ReflectionVirtualMachineTests
     {
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
 
         public ReflectionVirtualMachineTests()
         {
@@ -58,23 +59,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
+                var sender = deserializedCall.Sender?.ToString() ?? Address.Zero.ToString();
+
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new uint160(2), 0),
+                                new Stratis.SmartContracts.Block(1, new Address("2"), 0),
                                 new Message(
-                                    new Address(deserializedCall.To),
-                                    new Address(deserializedCall.Sender),
+                                    new Address(deserializedCall.To.ToString()),
+                                    new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
                                 deserializedCall.GasUnitPrice
                             );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.To);
+
+                ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
                     "StorageTest",
                     "StoreData",
                     context,
-                    gasMeter);
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
 
                 stateRepository.Commit();
 
@@ -123,12 +131,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
                 var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To);
                 var vm = new ReflectionVirtualMachine(persistentState);
+                var sender = deserializedCall.Sender?.ToString() ?? Address.Zero.ToString();
 
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new uint160(2), 0),
+                                new Stratis.SmartContracts.Block(1, new Address("2"), 0),
                                 new Message(
-                                    new Address(deserializedCall.To),
-                                    new Address(deserializedCall.Sender),
+                                    new Address(deserializedCall.To.ToString()),
+                                    new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
@@ -136,12 +145,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.MethodParameters
                             );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(
+
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.To);
+                
+                ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
                     "StorageTestWithParameters",
                     "StoreData",
                     context,
-                    gasMeter);
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
 
                 track.Commit();
 

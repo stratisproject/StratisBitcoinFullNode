@@ -2,7 +2,7 @@
 
 public sealed class StorageTestWithParameters : SmartContract
 {
-    public StorageTestWithParameters(SmartContractState state)
+    public StorageTestWithParameters(ISmartContractState state)
         : base(state)
     {
     }

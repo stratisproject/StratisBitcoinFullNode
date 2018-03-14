@@ -9,10 +9,11 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly CoinView coinView;
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
         private List<Transaction> blockTxsProcessed;
         private Transaction lastProcessed;
 
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IContractStateRepository stateRoot,
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
-            SmartContractGasInjector gasInjector)
+            ISmartContractGasInjector gasInjector)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
@@ -215,7 +216,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
             var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress);
-            SmartContractExecutionResult result = executor.Execute();
+            ISmartContractExecutionResult result = executor.Execute();
 
             if (result.InternalTransactions.Any())
                 this.lastProcessed = result.InternalTransactions.FirstOrDefault();

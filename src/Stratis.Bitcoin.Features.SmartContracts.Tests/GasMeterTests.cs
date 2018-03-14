@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.Exceptions;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.Exceptions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

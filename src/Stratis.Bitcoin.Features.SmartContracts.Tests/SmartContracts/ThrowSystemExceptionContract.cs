@@ -3,7 +3,7 @@ using Stratis.SmartContracts;
 
 public sealed class ThrowSystemExceptionContract : SmartContract
 {
-    public ThrowSystemExceptionContract(SmartContractState state)
+    public ThrowSystemExceptionContract(ISmartContractState state)
         : base(state)
     {
     }

@@ -1,9 +1,9 @@
 ﻿using Stratis.SmartContracts;
-using Stratis.SmartContracts.Exceptions;
+using Stratis.SmartContracts.Core.Exceptions;
 
 public sealed class ThrowOutOfGasExceptionContract : SmartContract
 {
-    public ThrowOutOfGasExceptionContract(SmartContractState state)
+    public ThrowOutOfGasExceptionContract(ISmartContractState state)
         : base(state)
     {
     }

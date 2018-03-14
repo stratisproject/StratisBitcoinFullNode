@@ -1,9 +1,10 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -11,7 +12,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class SmartContractTransactionExecutorTests
     {
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
         private readonly ContractStateRepositoryRoot stateRepository;
 
         public SmartContractTransactionExecutorTests()
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
 
             var executor = new SmartContractTransactionExecutor(this.stateRepository, this.decompiler, new SmartContractValidator(new ISmartContractValidator[] { }), this.gasInjector, deserializedCall, 0, 0, deserializedCall.To);
-            SmartContractExecutionResult result = executor.Execute();
+            ISmartContractExecutionResult result = executor.Execute();
 
             Assert.True(result.Revert);
             Assert.Single(result.InternalTransactions);
