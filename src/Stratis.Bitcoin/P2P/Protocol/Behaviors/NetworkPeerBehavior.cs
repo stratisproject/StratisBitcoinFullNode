@@ -39,10 +39,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
             lock (this.cs)
             {
-                this.AttachedPeer = peer;
                 if (Disconnected(peer))
                     return;
 
+                this.AttachedPeer = peer;
+                 
                 this.AttachCore();
             }
         }
@@ -55,7 +56,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         private static bool Disconnected(INetworkPeer peer)
         {
-            return (peer.State == NetworkPeerState.Disconnecting) || (peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline);
+            return (peer.State == NetworkPeerState.Created) || (peer.State == NetworkPeerState.Disconnecting) ||
+                   (peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline);
         }
 
         public void Detach()

@@ -164,6 +164,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
+            if (prevBlock == null)
+            {
+                this.logger.LogTrace("(-)[REORG]");
+                ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
 
             // Verify signature.
             if (!this.VerifySignature(prevUtxo, transaction, 0, ScriptVerify.None))

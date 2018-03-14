@@ -87,6 +87,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void DiscoverPeers(IConnectionManager connectionManager)
         {
+            this.logger.LogTrace("()");
+
             // If peers are specified in the -connect arg then discovery does not happen.            
             if (connectionManager.ConnectionSettings.Connect.Any())
                 return;
@@ -106,6 +108,8 @@ namespace Stratis.Bitcoin.P2P
             },
             this.nodeLifetime.ApplicationStopping,
             TimeSpans.TenSeconds);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -113,6 +117,8 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private async Task DiscoverPeersAsync()
         {
+            this.logger.LogTrace("()");
+
             var peersToDiscover = new List<IPEndPoint>();
             var foundPeers = this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).ToList();
             peersToDiscover.AddRange(foundPeers.Select(p => p.Endpoint));
@@ -120,15 +126,21 @@ namespace Stratis.Bitcoin.P2P
             if (peersToDiscover.Count == 0)
             {
                 // On normal circumstances the dns seeds are ping only once per node lifetime
-                if(this.isSeedAndDnsAttempted)
+                if (this.isSeedAndDnsAttempted)
+                {
+                    this.logger.LogTrace("(-)[DNS_Attempted]");
                     return;
+                }
 
                 this.AddDNSSeedNodes(peersToDiscover);
                 this.AddSeedNodes(peersToDiscover);
                 this.isSeedAndDnsAttempted = true;
 
                 if (peersToDiscover.Count == 0)
+                {
+                    this.logger.LogTrace("(-)[NO_ADDRESSES]");
                     return;
+                }
 
                 peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
             }
@@ -146,7 +158,7 @@ namespace Stratis.Bitcoin.P2P
             
             await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
-                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
+                using (CancellationTokenSource connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
                     this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
 
@@ -176,10 +188,15 @@ namespace Stratis.Bitcoin.P2P
                     }
                     finally
                     {
-                        networkPeer?.Dispose("Discovery job done");
+                        networkPeer?.Disconnect("Discovery job done");
+                        networkPeer?.Dispose();
                     }
+
+                    this.logger.LogTrace("Discovery from '{0}' finished", endPoint);
                 }
             }).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
