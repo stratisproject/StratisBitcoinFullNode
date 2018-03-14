@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.P2P
         private readonly TimeSpan burstConnectionInterval;
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
-        private readonly ConnectedPeersHelper connectedPeersHelper;
+        private readonly NetworkPeerDisposer networkPeerDisposer;
 
         /// <summary>Parameterless constructor for dependency injection.</summary>
         protected PeerConnector(
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.P2P
             this.NodeSettings = nodeSettings;
             this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
-            this.connectedPeersHelper = new ConnectedPeersHelper(this.loggerFactory, this.OnPeerDisposed);
+            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.OnPeerDisposed);
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
             this.defaultConnectionInterval = TimeSpans.Second;
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.P2P
                     timeoutTokenSource.CancelAfter(5000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters, this.connectedPeersHelper).ConfigureAwait(false);
+                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters, this.networkPeerDisposer).ConfigureAwait(false);
 
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                     this.AddPeer(peer);
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.P2P
         public void Dispose()
         {
             this.asyncLoop?.Dispose();
-            this.connectedPeersHelper.Dispose();
+            this.networkPeerDisposer.Dispose();
         }
     }
 }

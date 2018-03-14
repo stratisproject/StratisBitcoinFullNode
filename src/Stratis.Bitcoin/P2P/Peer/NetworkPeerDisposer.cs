@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P.Peer
 {
     /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
-    public class ConnectedPeersHelper : IDisposable
+    public class NetworkPeerDisposer : IDisposable
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -29,11 +29,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConnectedPeersHelper" /> class.
+        /// Initializes a new instance of the <see cref="NetworkPeerDisposer" /> class.
         /// </summary>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="onPeerDisposed">Callback that is called before the peer is disposed.</param>
-        public ConnectedPeersHelper(ILoggerFactory loggerFactory, Action<INetworkPeer> onPeerDisposed = null)
+        public NetworkPeerDisposer(ILoggerFactory loggerFactory, Action<INetworkPeer> onPeerDisposed = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 

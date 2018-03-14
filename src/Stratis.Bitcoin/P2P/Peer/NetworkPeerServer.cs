@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly CancellationTokenSource serverCancel;
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
-        private readonly ConnectedPeersHelper connectedPeersHelper;
+        private readonly NetworkPeerDisposer networkPeerDisposer;
 
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
-            this.connectedPeersHelper = new ConnectedPeersHelper(loggerFactory);
+            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
-                    if (this.connectedPeersHelper.ConnectedPeersCount >= MaxConnectionThreshold)
+                    if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
                     {
                         this.logger.LogTrace("Maximum connection threshold [{0}] reached, closing the client.", MaxConnectionThreshold);
                         tcpClient.Close();
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.connectedPeersHelper);
+                    this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
                 }
             }
             catch (OperationCanceledException)
@@ -191,10 +191,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogTrace("Waiting for accepting task to complete.");
             this.acceptTask.Wait();
             
-            if (this.connectedPeersHelper.ConnectedPeersCount > 0)
-                this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.connectedPeersHelper.ConnectedPeersCount);
+            if (this.networkPeerDisposer.ConnectedPeersCount > 0)
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.networkPeerDisposer.ConnectedPeersCount);
             
-            this.connectedPeersHelper.Dispose();
+            this.networkPeerDisposer.Dispose();
 
             this.logger.LogTrace("(-)");
         }

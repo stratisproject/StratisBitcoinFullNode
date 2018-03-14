@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Connection
         public List<NetworkPeerServer> Servers { get; }
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
-        private readonly ConnectedPeersHelper connectedPeersHelper;
+        private readonly NetworkPeerDisposer networkPeerDisposer;
 
         public ConnectionManager(
             IDateTimeProvider dateTimeProvider,
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Connection
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
-            this.connectedPeersHelper = new ConnectedPeersHelper(this.loggerFactory);
+            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory);
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
-            this.connectedPeersHelper.Dispose();
+            this.networkPeerDisposer.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -431,7 +431,7 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = true
             });
 
-            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.connectedPeersHelper).ConfigureAwait(false);
+            INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.networkPeerDisposer).ConfigureAwait(false);
 
             try
             {
