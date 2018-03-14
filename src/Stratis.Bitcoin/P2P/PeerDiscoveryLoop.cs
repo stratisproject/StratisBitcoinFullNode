@@ -62,6 +62,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
+        /// <summary>Indicates the dns and seed nodes where attempted.</summary>
+        private bool isSeedAndDnsAttempted;
+
         public PeerDiscovery(
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory,
@@ -111,16 +114,34 @@ namespace Stratis.Bitcoin.P2P
         private async Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<IPEndPoint>();
-            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.Endpoint));
+            var foundPeers = this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).ToList();
+            peersToDiscover.AddRange(foundPeers.Select(p => p.Endpoint));
 
             if (peersToDiscover.Count == 0)
             {
+                // On normal circumstances the dns seeds are ping only once per node lifetime
+                if(this.isSeedAndDnsAttempted)
+                    return;
+
                 this.AddDNSSeedNodes(peersToDiscover);
                 this.AddSeedNodes(peersToDiscover);
+                this.isSeedAndDnsAttempted = true;
 
-                peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
                 if (peersToDiscover.Count == 0)
                     return;
+
+                peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
+            }
+            else
+            {
+                // If all attempts have failed then probe the dns seeds again.
+                if (!this.isSeedAndDnsAttempted && foundPeers.All(peer => peer.Attempted))
+                {
+                    peersToDiscover.Clear();
+                    this.AddDNSSeedNodes(peersToDiscover);
+                    this.AddSeedNodes(peersToDiscover);
+                    this.isSeedAndDnsAttempted = true;
+                }
             }
             
             await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
