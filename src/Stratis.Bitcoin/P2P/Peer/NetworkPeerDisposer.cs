@@ -9,16 +9,19 @@ namespace Stratis.Bitcoin.P2P.Peer
 {
     /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
     /// <remarks>
+    /// Each component that creates instances of <see cref="NetworkPeer"/> should be responsible for disposing it. 
     /// <para>
-    /// This class is needed in order to allow creators of the peers be responsible of their disposal. 
-    /// Each of those components is supposed to maintain an instance of <see cref="NetworkPeerDisposer"/>.
-    /// When such component is being disposed it's instance of <see cref="NetworkPeerDisposer"/> that contains peers
-    /// created by that component should be disposed as well.
+    /// Implementing this functionality in such components will lead to having similar code in these components.
+    /// Instead, this class could be used in order to provide such functionality.
+    /// This means that the responsibility for destroying the peer can delegated to this class, which simplifies the
+    /// code of the owning component.   
     /// </para>
     /// <para>
-    /// Since there is a possibility of a deadlock if <see cref="NetworkPeer"/> instance would dispose itself
-    /// <see cref="NetworkPeer.Dispose"/> should be executed from a separated component in a separated task. 
-    /// This class provides such functionality.
+    /// When a new peer is created (and the <see cref="OnPeerDisconnectedHandler"/> callback is used as an <see cref="NetworkPeer.onDisconnected"/> in the constructor)
+    /// by a component that utilizes this class, <see cref="AddPeer"/> should be used to inform  this class about it. Once the peer is added, the owning component no 
+    /// longer needs to care about this peer's disposal. 
+    /// When a peer disconnects, this class will invoke peer's disposal in a separated task.
+    /// Also when <see cref="Dispose"/> is called, all connected peers added to this component will be disposed. 
     /// </para>
     /// </remarks>
     public class NetworkPeerDisposer : IDisposable
