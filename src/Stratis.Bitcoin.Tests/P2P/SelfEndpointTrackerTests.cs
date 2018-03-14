@@ -47,8 +47,13 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             SelfEndpointTracker selfEndpointTrackerTracker = new SelfEndpointTracker();
             selfEndpointTrackerTracker.Add(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234));
-            selfEndpointTrackerTracker.Now = () => DateTime.UtcNow.AddHours(SelfEndpointTracker.ExpiryInHours);
+            this.SimulateMovingForwardInTimeByExpiryHours(selfEndpointTrackerTracker);
             Assert.False(selfEndpointTrackerTracker.IsSelf(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234)));
+        }
+
+        private void SimulateMovingForwardInTimeByExpiryHours(SelfEndpointTracker selfEndpointTrackerTracker)
+        {
+            selfEndpointTrackerTracker.Now = () => DateTime.UtcNow.AddHours(SelfEndpointTracker.ExpiryInHours);
         }
     }
 }
