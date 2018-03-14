@@ -143,6 +143,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             {
                                 if (txout.ScriptPubKey.IsSmartContractExec)
                                 {
+                                    // If we get here we can assume that
+                                    // txOut is a valid SmartContractExec
+                                    // and that somebody has not just added a 
+                                    // SmartContractExec instruction to bypass
+                                    // script validation
                                     return true;
                                 }
 
