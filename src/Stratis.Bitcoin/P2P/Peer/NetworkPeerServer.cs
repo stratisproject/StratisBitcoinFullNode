@@ -46,8 +46,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Cancellation that is triggered on shutdown to stop all pending operations.</summary>
         private readonly CancellationTokenSource serverCancel;
 
-        /// <summary>List of active peers mapped by their connection's unique identifiers.</summary>
-        private readonly ConcurrentDictionary<int, INetworkPeer> peersById;
+        /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
+        private readonly NetworkPeerDisposer networkPeerDisposer;
 
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
@@ -61,12 +61,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
-        public NetworkPeerServer(Network network, IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version, ILoggerFactory loggerFactory, INetworkPeerFactory networkPeerFactory)
+        public NetworkPeerServer(Network network,
+            IPEndPoint localEndPoint,
+            IPEndPoint externalEndPoint,
+            ProtocolVersion version,
+            ILoggerFactory loggerFactory,
+            INetworkPeerFactory networkPeerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
+            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
@@ -83,7 +89,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.tcpListener.Server.NoDelay = true;
             this.tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-            this.peersById = new ConcurrentDictionary<int, INetworkPeer>();
             this.acceptTask = Task.CompletedTask;
 
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
@@ -149,7 +154,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
-                    if (this.peersById.Count >= MaxConnectionThreshold)
+                    if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
                     {
                         this.logger.LogTrace("Maximum connection threshold [{0}] reached, closing the client.", MaxConnectionThreshold);
                         tcpClient.Close();
@@ -158,11 +163,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    INetworkPeer networkPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters());
-
-                    this.peersById.TryAdd(networkPeer.Connection.Id, networkPeer);
-
-                    networkPeer.StateChanged.Register(this.OnStateChangedAsync);
+                    this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
                 }
             }
             catch (OperationCanceledException)
@@ -175,29 +176,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.logger.LogTrace("(-)");
-        }
-        
-        /// <summary>
-        /// Callback that is called when a network status of a connected client peer changes.
-        /// <para>The peer is removed from the list of connected peers if the connection has been terminated for any reason.</para>
-        /// </summary>
-        /// <param name="peer">The connected peer.</param>
-        /// <param name="oldState">Previous state of the peer. New state of the peer is stored in its <see cref="INetworkPeer.State"/> property.</param>
-        private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}.{5}:{6})", nameof(peer), peer.PeerEndPoint, nameof(oldState), oldState, nameof(peer), nameof(peer.State), peer.State);
-
-            if ((peer.State == NetworkPeerState.Disconnecting)
-                || (peer.State == NetworkPeerState.Failed)
-                || (peer.State == NetworkPeerState.Offline))
-            {
-                peer.StateChanged.Unregister(this.OnStateChangedAsync);
-                this.peersById.TryRemove(peer.Connection.Id, out INetworkPeer unused);
-                peer.Dispose("Peer disconnected");
-            }
-
-            this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -212,30 +190,11 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.logger.LogTrace("Waiting for accepting task to complete.");
             this.acceptTask.Wait();
-
-            try
-            {
-                if (this.peersById.Count > 0)
-                {
-                    List<INetworkPeer> peers = this.peersById.Values.ToList();
-
-                    this.logger.LogInformation("Waiting for {0} connected clients to finish.", peers.Count);
-
-                    foreach (INetworkPeer peer in peers)
-                    {
-                        this.logger.LogTrace("Disposing and waiting for connection ID {0}.", peer.Connection.Id);
-
-                        peer.Dispose("Node shutdown");
-                        peer.Connection.DisposeComplete.Task.Wait();
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-            }
-
-            this.peersById.Clear();
+            
+            if (this.networkPeerDisposer.ConnectedPeersCount > 0)
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.networkPeerDisposer.ConnectedPeersCount);
+            
+            this.networkPeerDisposer.Dispose();
 
             this.logger.LogTrace("(-)");
         }
