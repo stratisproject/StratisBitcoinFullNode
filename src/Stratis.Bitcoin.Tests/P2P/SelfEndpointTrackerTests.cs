@@ -46,11 +46,8 @@ namespace Stratis.Bitcoin.Tests.P2P
         public void IsSelf_ForSameEndpointButExpired_IsFalse()
         {
             SelfEndpointTracker selfEndpointTrackerTracker = new SelfEndpointTracker();
-
-            selfEndpointTrackerTracker.Now = () => DateTime.UtcNow.AddHours(-SelfEndpointTracker.ExpiryInHours);
             selfEndpointTrackerTracker.Add(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234));
-            selfEndpointTrackerTracker.Now = () => DateTime.UtcNow;
-
+            selfEndpointTrackerTracker.Now = () => DateTime.UtcNow.AddHours(SelfEndpointTracker.ExpiryInHours);
             Assert.False(selfEndpointTrackerTracker.IsSelf(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234)));
         }
     }
