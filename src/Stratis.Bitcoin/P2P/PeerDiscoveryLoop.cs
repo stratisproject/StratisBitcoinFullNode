@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.P2P
                 // On normal circumstances the dns seeds are ping only once per node lifetime
                 if (this.isSeedAndDnsAttempted)
                 {
-                    this.logger.LogTrace("(-)[DNS_Attempted]");
+                    this.logger.LogTrace("(-)[DNS_ATTEMPTED]");
                     return;
                 }
 
