@@ -8,6 +8,19 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P.Peer
 {
     /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
+    /// <remarks>
+    /// <para>
+    /// This class is needed in order to allow creators of the peers be responsible of their disposal. 
+    /// Each of those components is supposed to maintain an instance of <see cref="NetworkPeerDisposer"/>.
+    /// When such component is being disposed it's instance of <see cref="NetworkPeerDisposer"/> that contains peers
+    /// created by that component should be disposed as well.
+    /// </para>
+    /// <para>
+    /// Since there is a possibility of a deadlock if <see cref="NetworkPeer"/> instance would dispose itself
+    /// <see cref="NetworkPeer.Dispose"/> should be executed from a separated component in a separated task. 
+    /// This class provides such functionality.
+    /// </para>
+    /// </remarks>
     public class NetworkPeerDisposer : IDisposable
     {
         /// <summary>Instance logger.</summary>
