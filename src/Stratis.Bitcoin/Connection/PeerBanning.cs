@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -80,18 +81,16 @@ namespace Stratis.Bitcoin.Connection
                 }
             }
 
-            if (banPeer)
-            {
-                this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
+            if (!banPeer) return;
 
-                PeerAddress peerToAdd = PeerAddress.Create(endpoint, endpoint.Address);
+            PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
 
-                peerToAdd.IsBanned = true;
-                peerToAdd.BannedReason = reason;
-                peerToAdd.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds);
+            if (peerAddress == null) return;
 
-                this.peerAddressManager.Peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
-            }
+            peerAddress.BanDate = this.dateTimeProvider.GetUtcNow();
+            peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds);
+
+            this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
 
             this.logger.LogTrace("(-)");
         }
@@ -103,30 +102,12 @@ namespace Stratis.Bitcoin.Connection
 
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
-            PeerAddress peerAddress;
-
-            this.peerAddressManager.Peers.TryGetValue(endpoint, out peerAddress);
+            PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
 
             if (peerAddress == null)
                 return false;
 
-            bool isBanned = false;
-
-            if (peerAddress.IsBanned == true)
-            {
-                isBanned = peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow();
-
-                // If BanUntil has expired then reset.
-                if (!isBanned)
-                {
-                    peerAddress.IsBanned = false;
-                    peerAddress.BanUntil = null;
-                    if (this.peerAddressManager.Peers.TryAdd(peerAddress.Endpoint, peerAddress))
-                        this.logger.LogTrace("({0}:'{1}' : No longer banned.)", nameof(endpoint), endpoint);
-                }
-            }
-
-            return isBanned;
+            return peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow();
         }
     }
 }

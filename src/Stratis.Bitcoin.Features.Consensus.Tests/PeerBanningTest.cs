@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
+            context.PeerAddressManager.AddPeer(peer, peer.Address.MapToIPv6());
 
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((INetworkPeer)null);
 
@@ -49,6 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
+            context.PeerAddressManager.AddPeer(peerEndPoint, peerEndPoint.Address.MapToIPv6());
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
             var peer = new Mock<INetworkPeer>();
@@ -61,6 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var block = blocks.First();
             block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
             await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peerEndPoint });
+
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
 
@@ -147,16 +150,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
-
-            int banSeconds = context.ConnectionManager.ConnectionSettings.BanTimeSeconds;
+            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act
-            context.PeerBanning.BanPeer(endpoint, banSeconds, nameof(PeerBanningTest));
+            context.PeerBanning.BanPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
-            Assert.True(peer.IsBanned);
-            Assert.True(peer.BannedReason == nameof(PeerBanningTest));
+            Assert.True(peer.BanUntil.HasValue);
             Assert.NotNull(peer.BanUntil);
         }
 
@@ -170,19 +171,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
-
-            int banSeconds = context.ConnectionManager.ConnectionSettings.BanTimeSeconds;
+            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act - Ban Peer, save store, clear current Peers, load store
-            context.PeerBanning.BanPeer(endpoint, banSeconds, nameof(PeerBanningTest));
+            context.PeerBanning.BanPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
             context.PeerAddressManager.SavePeers();
             context.PeerAddressManager.Peers.Clear();
             context.PeerAddressManager.LoadPeers();
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
-            Assert.True(peer.IsBanned);
-            Assert.True(peer.BannedReason == nameof(PeerBanningTest));
+            Assert.NotNull(peer.BanDate);
             Assert.NotNull(peer.BanUntil);
         }
 
@@ -196,6 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
+            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act 
             context.PeerBanning.BanPeer(endpoint, 1, nameof(PeerBanningTest));
@@ -209,8 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
-            Assert.False(peer.IsBanned);
-            Assert.True(peer.BannedReason == string.Empty);
+            Assert.Null(peer.BanDate);
             Assert.Null(peer.BanUntil);
         }
     }
