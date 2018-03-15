@@ -120,6 +120,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -283,6 +285,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.Network = network;
             this.Behaviors = new NetworkPeerBehaviorsCollection(this);
+            this.selfEndpointTracker = selfEndpointTracker;
 
             this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
 
@@ -586,6 +589,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogDebug("Connection to self detected, disconnecting.");
 
                 this.Disconnect("Connected to self");
+                this.selfEndpointTracker.Add(version.AddressReceiver);
 
                 this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
                 throw new OperationCanceledException();
