@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.P2P
 
             if (peersToDiscover.Count == 0)
             {
-                // On normal circumstances the dns seeds are ping only once per node lifetime
+                // On normal circumstances the dns seeds are attempted only once per node lifetime.
                 if (this.isSeedAndDnsAttempted)
                 {
                     this.logger.LogTrace("(-)[DNS_ATTEMPTED]");
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.P2P
             }
             else
             {
-                // If all attempts have failed then probe the dns seeds again.
+                // If all attempts have failed then attempt the dns seeds again.
                 if (!this.isSeedAndDnsAttempted && foundPeers.All(peer => peer.Attempted))
                 {
                     peersToDiscover.Clear();
