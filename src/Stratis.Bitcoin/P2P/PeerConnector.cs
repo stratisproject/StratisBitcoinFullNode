@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.P2P
 
             if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
             {
-                this.logger.LogTrace($"{peerAddress.Endpoint} is self ip/port. Therefore not connecting.");
+                this.logger.LogTrace($"{peerAddress.Endpoint} is self. Therefore not connecting.");
                 this.logger.LogTrace("(-)");
                 return;
             }
