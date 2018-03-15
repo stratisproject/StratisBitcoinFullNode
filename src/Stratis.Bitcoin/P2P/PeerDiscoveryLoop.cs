@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        /// <summary>Indicates the dns and seed nodes where attempted.</summary>
+        /// <summary>Indicates the dns and seed nodes were attempted.</summary>
         private bool isSeedAndDnsAttempted;
 
         public PeerDiscovery(
