@@ -107,6 +107,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
 
+        /// <summary>Constructor for dependency injection.</summary>
         protected PeerConnector(
             IAsyncLoopFactory asyncLoopFactory,
             IDateTimeProvider dateTimeProvider,
