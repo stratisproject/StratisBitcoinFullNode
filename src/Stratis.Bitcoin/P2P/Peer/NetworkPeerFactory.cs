@@ -77,8 +77,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>A provider of network payload messages.</summary>
         private readonly PayloadProvider payloadProvider;
 
-        private readonly ISelfEndpointTracker selfEndpointTracker;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -99,7 +97,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="payloadProvider">A provider of network payload messages.</param>
-        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider, ISelfEndpointTracker selfEndpointTracker)
+        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -109,7 +107,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.payloadProvider = payloadProvider;
-            this.selfEndpointTracker = selfEndpointTracker;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.lastClientId = 0;
         }
