@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

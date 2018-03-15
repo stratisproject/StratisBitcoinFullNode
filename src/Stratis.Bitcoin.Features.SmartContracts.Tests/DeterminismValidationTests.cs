@@ -1,5 +1,5 @@
-﻿using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.Util;
+﻿using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                                             public class Test : SmartContract
                                             {
-                                                public Test(SmartContractState state)
+                                                public Test(ISmartContractState state)
                                                     : base(state) {}
 
                                                 public void TestMethod()
@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 public class Token : SmartContract
                 {
-                    public Token(SmartContractState state): base(state) 
+                    public Token(ISmartContractState state): base(state) 
                     {
                         Balances = PersistentState.GetMapping<ulong>(""Balances"");
                     }
@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }
 
-                    public SmartContractMapping<ulong> Balances { get; set; }
+                    public ISmartContractMapping<ulong> Balances { get; set; }
 
                     [SmartContractInit]
                     public void Init()

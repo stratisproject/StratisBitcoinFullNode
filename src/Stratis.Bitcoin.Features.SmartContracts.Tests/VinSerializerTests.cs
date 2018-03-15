@@ -1,7 +1,7 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

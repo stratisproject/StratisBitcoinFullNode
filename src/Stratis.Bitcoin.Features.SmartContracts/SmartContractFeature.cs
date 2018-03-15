@@ -11,8 +11,10 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -55,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
-                        services.AddSingleton<SmartContractGasInjector>();
+                        services.AddSingleton<ISmartContractGasInjector, SmartContractGasInjector>();
 
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Stratis.SmartContracts.Hashing;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Core.Hashing;
+using Stratis.SmartContracts.Core.State;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

@@ -1,8 +1,8 @@
 ﻿using System.Text;
 using DBreeze;
 using NBitcoin;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

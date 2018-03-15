@@ -9,11 +9,12 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.Exceptions;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -72,18 +73,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160()); var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, 0, 0),
+                new Stratis.SmartContracts.Block(0, Address.Zero, 0),
                 new Message(Address.Zero, Address.Zero, 0, gasLimit),
                 1,
                 new object[] { }
             );
 
-            SmartContractExecutionResult result = vm.ExecuteMethod(
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository);
+            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(Address.Zero.ToUint160());
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowOutOfGasExceptionContract",
                 "ThrowException",
                 context,
-                gasMeter);
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
+
             Assert.Equal(typeof(OutOfGasException), result.Exception.GetType());
         }
 
@@ -99,18 +106,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, 0, 0),
+                new Stratis.SmartContracts.Block(0, Address.Zero, 0),
                 new Message(Address.Zero, Address.Zero, 0, gasLimit),
                 1,
                 new object[] { }
             );
 
-            SmartContractExecutionResult result = vm.ExecuteMethod(
+            var internalTransactionExecutor = new InternalTransactionExecutor(repository);
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160());
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowRefundGasExceptionContract",
                 "ThrowException",
                 context,
-                gasMeter);
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
 
             Assert.Equal<ulong>(10, result.GasUnitsUsed);
             Assert.Equal(typeof(RefundGasException), result.Exception.GetType());
@@ -128,18 +140,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, 0, 0),
+                new Stratis.SmartContracts.Block(0, Address.Zero, 0),
                 new Message(Address.Zero, Address.Zero, 0, (Gas)100),
                 1,
                 new object[] { }
             );
 
-            SmartContractExecutionResult result = vm.ExecuteMethod(
+            var internalTransactionExecutor = new InternalTransactionExecutor(repository);
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160());
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowSystemExceptionContract",
                 "ThrowException",
                 context,
-                gasMeter);
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
 
             Assert.Equal(typeof(Exception), result.Exception.GetType());
         }

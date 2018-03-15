@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Xunit;
 using Block = NBitcoin.Block;
 

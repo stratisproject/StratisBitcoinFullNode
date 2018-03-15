@@ -27,9 +27,10 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public ContractStateRepositoryRoot stateRoot;
             public SmartContractDecompiler decompiler;
             public SmartContractValidator validator;
-            public SmartContractGasInjector gasInjector;
+            public ISmartContractGasInjector gasInjector;
 
             private bool useCheckpoints = true;
 
@@ -391,6 +392,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// TODO: Add consensusvalidator calls
         /// </summary>
         [Fact]
+
         public async Task SmartContracts_NoTransfers_Async()
         {
             var context = new TestContext();
