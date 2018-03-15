@@ -167,21 +167,12 @@ namespace NBitcoin
             return true;
         }
 
-        public static ulong GetStakeEntropyBit(Block block)
-        {
-            // Take last bit of block hash as entropy bit
-            ulong nEntropyBit = (block.GetHash().GetLow64() & (ulong)1);
-
-            //LogPrint("stakemodifier", "GetStakeEntropyBit: hashBlock=%s nEntropyBit=%u\n", GetHash().ToString(), nEntropyBit);
-            return nEntropyBit;
-        }
-
         /// <summary>
         /// Check PoW and that the blocks connect correctly
         /// </summary>
         /// <param name="network">The network being used</param>
         /// <returns>True if PoW is correct</returns>
-        public static bool Validate(Network network, ChainedBlock chainedBlock, StakeChain stakeChain = null)
+        public static bool Validate(Network network, ChainedBlock chainedBlock)
         {
             if (network == null)
                 throw new ArgumentNullException("network");
@@ -192,11 +183,7 @@ namespace NBitcoin
             var hashPrevCorrect = chainedBlock.Height == 0 || chainedBlock.Header.HashPrevBlock == chainedBlock.Previous.HashBlock;
             var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash(network.NetworkOptions);
 
-            if (stakeChain == null)
-                return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
-
-            var workCorrect = stakeChain.CheckPowPosAndTarget(chainedBlock, stakeChain.Get(chainedBlock.HashBlock), network);
-            return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect && workCorrect;
+            return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
         }
     }
 
@@ -219,34 +206,6 @@ namespace NBitcoin
         public abstract BlockStake Get(uint256 blockid);
 
         public abstract void Set(uint256 blockid, BlockStake blockStake);
-
-        public bool CheckPowPosAndTarget(ChainedBlock chainedBlock, BlockStake blockStake, Network network)
-        {
-            return this.CheckPowPosAndTarget(chainedBlock, blockStake, network.Consensus);
-        }
-
-        public bool CheckPowPosAndTarget(ChainedBlock chainedBlock, BlockStake blockStake, Consensus consensus)
-        {
-            if (chainedBlock.Height == 0)
-                return true;
-
-            if (blockStake.IsProofOfWork() && !chainedBlock.Header.CheckProofOfWork(consensus))
-                return false;
-
-            return chainedBlock.Header.Bits == this.GetWorkRequired(chainedBlock, blockStake, consensus);
-        }
-
-        public Target GetWorkRequired(ChainedBlock chainedBlock, BlockStake blockStake, Consensus consensus)
-        {
-            return BlockValidator.GetNextTargetRequired(this, chainedBlock.Previous, consensus, blockStake.IsProofOfStake());
-        }
     }
 
-    public static class StakeExtentions
-    {
-        public static bool CheckProofOfStake(this Block block)
-        {
-            return BlockStake.CheckProofOfStake(block);
-        }
-    }
 }
