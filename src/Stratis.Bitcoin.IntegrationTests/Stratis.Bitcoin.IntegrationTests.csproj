@@ -58,6 +58,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="SmartContracts\Demo.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\InterContract1.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>

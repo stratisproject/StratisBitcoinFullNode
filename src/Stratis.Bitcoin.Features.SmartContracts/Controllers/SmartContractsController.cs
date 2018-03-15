@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult GetCode([FromQuery]string address)
         {
             var numeric = new uint160(address);
-            byte[] contractCode = GetSyncedStateRoot().GetCode(numeric);
+            byte[] contractCode = this.stateRoot.GetCode(numeric);
 
             // In the future, we could be more explicit about whether a contract exists (or indeed, did ever exist)
             if (contractCode == null || !contractCode.Any())
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult GetBalance([FromQuery]string address)
         {
             var numeric = new uint160(address);
-            ulong balance = GetSyncedStateRoot().GetCurrentBalance(numeric);
+            ulong balance = this.stateRoot.GetCurrentBalance(numeric);
             return Json(balance);
         }
 
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             }
 
             uint160 numeric = new uint160(request.ContractAddress);
-            byte[] storageValue = GetSyncedStateRoot().GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
+            byte[] storageValue = this.stateRoot.GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
             if (SmartContractCarrierDataType.UInt == request.DataType)
                 return Json(BitConverter.ToUInt32(storageValue, 0));
             return Json(Encoding.UTF8.GetString(storageValue)); // TODO: Use the modular serializer Francois is working on :)
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
-            var model = new BuildCreateContractTransactionResponse
+            var model = new BuildCallContractTransactionResponse
             {
                 Hex = transactionResult.ToHex(),
                 Fee = context.TransactionFee,
@@ -195,11 +195,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 HttpStatusCode.BadRequest,
                 string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
                 string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
-        }
-
-        private ContractStateRepositoryRoot GetSyncedStateRoot()
-        {
-            return this.stateRoot.GetSnapshotTo(this.consensus.Tip.Header.HashStateRoot.ToBytes());
         }
     }
 }
