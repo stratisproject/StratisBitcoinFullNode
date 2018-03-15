@@ -86,6 +86,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
 
+        /// <summary>Tracker for endpoints known to be self.</summary>
         private readonly ISelfEndpointTracker selfEndpointTracker;
 
         /// <summary>Factory for creating P2P network peers.</summary>
@@ -106,7 +107,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
 
-        /// <summary>Parameterless constructor for dependency injection.</summary>
         protected PeerConnector(
             IAsyncLoopFactory asyncLoopFactory,
             IDateTimeProvider dateTimeProvider,
