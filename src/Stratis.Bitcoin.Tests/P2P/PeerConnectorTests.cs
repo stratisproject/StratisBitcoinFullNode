@@ -255,6 +255,12 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.False(peerConnector.CanStartConnect);
         }
 
+        [Fact]
+        public void ConnectAsync_WithASelfConnectionAttempt_DoesNotConnect()
+        {
+            Assert.False(true, "feature in progress, placeholder to prevent Merge.");
+        }
+
         private IConnectionManager CreateConnectionManager(NodeSettings nodeSettings, ConnectionManagerSettings connectionSettings, IPeerAddressManager peerAddressManager, IPeerConnector peerConnector)
         {
             var connectionManager = new ConnectionManager(
