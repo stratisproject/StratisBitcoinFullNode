@@ -36,12 +36,12 @@ namespace Stratis.Bitcoin.P2P
 
         private void Prune()
         {
-            Dictionary<IPEndPoint, DateTime> dictionary = 
+            Dictionary<IPEndPoint, DateTime> unexpiredItems = 
                 this.currentKnownEndpointsAndExpiryDate
                     .Where(x => x.Value > this.dateTimeProvider.GetUtcNow())
                     .ToDictionary(x => x.Key, x => x.Value);
 
-            this.currentKnownEndpointsAndExpiryDate = new ConcurrentDictionary<IPEndPoint, DateTime>(dictionary);
+            this.currentKnownEndpointsAndExpiryDate = new ConcurrentDictionary<IPEndPoint, DateTime>(unexpiredItems);
         }
     }
 }

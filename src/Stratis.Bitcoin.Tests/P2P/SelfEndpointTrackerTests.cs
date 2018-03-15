@@ -9,13 +9,13 @@ namespace Stratis.Bitcoin.Tests.P2P
 {
     public class SelfEndpointTrackerTests
     {
-        private readonly Mock<IDateTimeProvider> datetimeProvider;
+        private readonly Mock<IDateTimeProvider> mockDatetimeProvider;
         private readonly ISelfEndpointTracker selfEndpointTracker;
 
         public SelfEndpointTrackerTests()
         {
-            this.datetimeProvider = new Mock<IDateTimeProvider>();
-            this.selfEndpointTracker = new SelfEndpointTracker(this.datetimeProvider.Object);
+            this.mockDatetimeProvider = new Mock<IDateTimeProvider>();
+            this.selfEndpointTracker = new SelfEndpointTracker(this.mockDatetimeProvider.Object);
         }
 
         [Fact]
@@ -52,16 +52,16 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void IsSelf_ForSameEndpointButExpired_IsFalse()
         {
-            selfEndpointTracker.Add(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234));
+            this.selfEndpointTracker.Add(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234));
 
             this.SimulateMovingForwardInTimeByExpiryHours();
 
-            Assert.False(selfEndpointTracker.IsSelf(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234)));
+            Assert.False(this.selfEndpointTracker.IsSelf(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234)));
         }
 
         private void SimulateMovingForwardInTimeByExpiryHours()
         {
-            this.datetimeProvider.Setup(x => x.GetUtcNow())
+            this.mockDatetimeProvider.Setup(x => x.GetUtcNow())
                 .Returns(DateTime.UtcNow.AddHours(SelfEndpointTracker.ExpiryInHours));
         }
     }
