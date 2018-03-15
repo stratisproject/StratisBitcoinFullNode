@@ -26,11 +26,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "Air price is required.")]
-        public string AirPrice { get; set; }
+        [Required(ErrorMessage = "Gas price is required.")]
+        public string GasPrice { get; set; }
 
-        [Required(ErrorMessage = "Air limit is required.")]
-        public string AirLimit { get; set; }
+        [Required(ErrorMessage = "Gas limit is required.")]
+        public string GasLimit { get; set; }
 
         public string[] Parameters { get; set; }
     }

@@ -106,20 +106,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            ulong airPrice = ulong.Parse(request.AirPrice);
-            ulong airLimit = ulong.Parse(request.AirLimit);
+            ulong gasPrice = ulong.Parse(request.GasPrice);
+            ulong gasLimit = ulong.Parse(request.GasLimit);
 
             SmartContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), airPrice, new Gas(airLimit), request.Parameters);
+                carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit), request.Parameters);
             }
             else
             {
-                carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), airPrice, new Gas(airLimit));
+                carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit));
             }
 
-            ulong totalFee = airPrice * airLimit + ulong.Parse(request.FeeAmount);
+            ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
@@ -150,20 +150,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            ulong airPrice = ulong.Parse(request.AirPrice);
-            ulong airLimit = ulong.Parse(request.AirLimit);
+            ulong gasPrice = ulong.Parse(request.GasPrice);
+            ulong gasLimit = ulong.Parse(request.GasLimit);
 
             SmartContractCarrier carrier;
             if(request.Parameters != null && request.Parameters.Any())
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit), request.Parameters);
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
             }
             else
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, airPrice, new Gas(airLimit));
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit));
             }
 
-            ulong totalFee = airPrice * airLimit + ulong.Parse(request.FeeAmount);
+            ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
