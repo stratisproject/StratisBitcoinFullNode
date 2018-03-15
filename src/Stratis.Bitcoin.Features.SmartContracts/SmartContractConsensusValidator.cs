@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.originalStateRoot = stateRoot;
-            //this.currentStateRoot = stateRoot.StartTracking();
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
@@ -65,9 +64,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
             // Start state from previous block's root
+            this.originalStateRoot.SyncToRoot(context.ConsensusTip.Header.HashStateRoot.ToBytes());
             this.currentStateRoot = this.originalStateRoot.StartTracking();
-                
-                //.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
 
             if (!context.SkipValidation)
             {
@@ -173,12 +171,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             this.currentStateRoot.Commit();
-            this.originalStateRoot.Commit();
 
             if (new uint256(this.originalStateRoot.Root) != block.Header.HashStateRoot)
                 throw new Exception("State roots aren't matching - should create new exception");
 
-            //this.originalStateRoot.SyncToRoot(this.currentStateRoot.Root);
+            this.originalStateRoot.Commit();
+
             this.logger.LogTrace("(-)");
         }
 

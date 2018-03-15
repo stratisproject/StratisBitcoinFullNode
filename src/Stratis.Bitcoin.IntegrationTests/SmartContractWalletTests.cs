@@ -155,8 +155,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-                IContractStateRepository senderState = scSender.FullNode.NodeService<IContractStateRepository>();
-                IContractStateRepository receiverState = scReceiver.FullNode.NodeService<IContractStateRepository>();
+                ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
+                ContractStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
                 uint160 tokenContractAddress = trx.GetNewContractAddress();
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
