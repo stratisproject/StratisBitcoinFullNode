@@ -32,8 +32,9 @@ namespace Stratis.Bitcoin.P2P
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
             ConnectionManagerSettings connectionSettings,
-            IPeerAddressManager peerAddressManager) :
-            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            ISelfEndpointTracker selfEndpointTracker) :
+            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, selfEndpointTracker)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Requirements.RequiredServices = NetworkPeerServices.Network;

@@ -105,6 +105,8 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
 
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         /// <summary>Factory for creating P2P network peers.</summary>
         private INetworkPeerFactory networkPeerFactory;
 
@@ -130,7 +132,8 @@ namespace Stratis.Bitcoin.P2P
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
             ConnectionManagerSettings connectionSettings,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            ISelfEndpointTracker selfEndpointTracker)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.ConnectedPeers = new NetworkPeerCollection();
@@ -143,6 +146,7 @@ namespace Stratis.Bitcoin.P2P
             this.NodeSettings = nodeSettings;
             this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
+            this.selfEndpointTracker = selfEndpointTracker;
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
             this.defaultConnectionInterval = TimeSpans.Second;
@@ -229,6 +233,13 @@ namespace Stratis.Bitcoin.P2P
         internal async Task ConnectAsync(PeerAddress peerAddress)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.Endpoint);
+
+            if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
+            {
+                this.logger.LogTrace($"{peerAddress.Endpoint} is self ip/port. Therefore not connecting.");
+                this.logger.LogTrace("(-)");
+                return;
+            }
 
             INetworkPeer peer = null;
 
