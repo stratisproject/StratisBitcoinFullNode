@@ -347,17 +347,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .SpendsCoinbase(true)
                     .FromTx(maliciousTx));
 
-            BlockTemplate pblocktemplate3 = await BuildBlockAsync(context);
-
-            // We should not be able to create an output with a P2PKH of our malicious attacker
-            var maliciousTransaction = pblocktemplate3.Block.Transactions
-                .Where(t => t.Outputs.Any(o => o.ScriptPubKey.Equals(maliciousPaymentScript))).ToList();
-
-            Assert.Empty(maliciousTransaction);
-
-            //var maliciousOutput = maliciousTransaction[0].Outputs.FirstOrDefault(o => o.ScriptPubKey.Equals(maliciousPaymentScript));
-
-            //Assert.Equal(maliciousAmount, maliciousOutput.Value);            
+            await Assert.ThrowsAsync<ConsensusErrorException>(async () =>
+            {
+                await BuildBlockAsync(context);
+            });
         }
 
         /// <summary>

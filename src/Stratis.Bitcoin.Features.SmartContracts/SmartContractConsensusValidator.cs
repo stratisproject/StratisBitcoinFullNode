@@ -143,12 +143,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             {
                                 if (txout.ScriptPubKey.IsSmartContractExec)
                                 {
-                                    // If we get here we can assume that
-                                    // txOut is a valid SmartContractExec
-                                    // and that somebody has not just added a 
-                                    // SmartContractExec instruction to bypass
-                                    // script validation
-                                    return true;
+                                    return input.ScriptSig.IsSmartContractSpend;
                                 }
 
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
@@ -180,7 +175,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             if (new uint256(this.currentStateRoot.GetRoot()) != block.Header.HashStateRoot)
-                throw new Exception("State roots aren't matching - should create new exception");
+                SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.currentStateRoot.Commit();
             this.originalStateRoot.SyncToRoot(this.currentStateRoot.GetRoot());
@@ -197,21 +192,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateCoinView(context, transaction);
 
+            // If we get inside this code block, the transaction being executed is a generated/condensing transaction.
             if (this.lastProcessed != null)
             {
                 // ensure that transactions generated are equal
                 if (this.lastProcessed.GetHash() != transaction.GetHash())
-                    throw new Exception("Not matching - should create a proper exception here.");
+                    SmartContractConsensusErrors.UnequalCondensingTx.Throw();
                 this.lastProcessed = null;
                 return;
             }
+
+            // If we are here, it's a user-created transaction, so it CANNOT contain OP_SPEND.
+            if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
+                SmartContractConsensusErrors.UserOpSpend.Throw();
 
             TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
             // boring transaction, return
             if (contractTxOut == null)
                 return;
-
-            // if it's a condensing transaction, need to ensure it's identical 
 
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
