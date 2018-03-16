@@ -20,7 +20,7 @@
             return this.Value;
         }
 
-        public static implicit operator Address(string value)
+        public static explicit operator Address(string value)
         {
             return new Address(value);
         }
