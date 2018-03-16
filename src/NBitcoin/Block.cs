@@ -348,9 +348,6 @@ namespace NBitcoin
         /// <returns></returns>
         public bool Check(Consensus consensus)
         {
-            if (consensus.NetworkOptions.IsProofOfStake)
-                return BlockStake.Check(this, consensus);
-
             return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);
         }
 

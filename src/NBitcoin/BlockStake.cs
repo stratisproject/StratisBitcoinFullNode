@@ -72,13 +72,6 @@ namespace NBitcoin
             return !IsProofOfStake(block);
         }
 
-        public static Tuple<OutPoint, ulong> GetProofOfStake(Block block)
-        {
-            return IsProofOfStake(block) ?
-            new Tuple<OutPoint, ulong>(block.Transactions[1].Inputs.First().PrevOut, block.Transactions[1].LockTime) :
-            new Tuple<OutPoint, ulong>(new OutPoint(), (ulong)0);
-        }
-
         public void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.flags);
@@ -121,52 +114,6 @@ namespace NBitcoin
             return true;
         }
 
-        public bool GeneratedStakeModifier()
-        {
-            return (this.Flags & BlockFlag.BLOCK_STAKE_MODIFIER) > 0;
-        }
-
-        public void SetStakeModifier(ulong modifier, bool fGeneratedStakeModifier)
-        {
-            this.StakeModifier = modifier;
-            if (fGeneratedStakeModifier)
-                this.Flags |= BlockFlag.BLOCK_STAKE_MODIFIER;
-        }
-
-        public static bool Check(Block block, Consensus consensus)
-        {
-            return block.CheckMerkleRoot() && BlockStake.CheckProofOfWork(block, consensus) && BlockStake.CheckProofOfStake(block);
-        }
-
-        public static bool CheckProofOfWork(Block block, Consensus consensus)
-        {
-            // if POS return true else check POW algo
-            return IsProofOfStake(block) || block.Header.CheckProofOfWork(consensus);
-        }
-
-        public static bool CheckProofOfStake(Block block)
-        {
-            // todo: move this to the full node code.
-            // this code is not the full check of POS 
-            // full POS check will be introduced with the full node
-
-            if (IsProofOfWork(block))
-                return true;
-
-            // Coinbase output should be empty if proof-of-stake block
-            if (block.Transactions[0].Outputs.Count != 1 || !block.Transactions[0].Outputs[0].IsEmpty)
-                return false;
-
-            // Second transaction must be coinstake, the rest must not be
-            if (!block.Transactions[1].IsCoinStake)
-                return false;
-
-            if (block.Transactions.Skip(2).Any(t => t.IsCoinStake))
-                return false;
-
-            return true;
-        }
-
         /// <summary>
         /// Check PoW and that the blocks connect correctly
         /// </summary>
@@ -200,12 +147,4 @@ namespace NBitcoin
             set { this.blockSignature = value; }
         }
     }
-
-    public abstract class StakeChain
-    {
-        public abstract BlockStake Get(uint256 blockid);
-
-        public abstract void Set(uint256 blockid, BlockStake blockStake);
-    }
-
 }

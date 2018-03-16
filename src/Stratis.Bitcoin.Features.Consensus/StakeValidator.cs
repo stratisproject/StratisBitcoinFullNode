@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        private readonly StakeChain stakeChain;
+        private readonly IStakeChain stakeChain;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="chain">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public ChainedBlock GetLastPowPosChainedBlock(StakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake)
+        public ChainedBlock GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake)
         {
             Guard.Assert(startChainedBlock != null);
 
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
+        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedBlock), chainedBlock, nameof(proofOfStake), proofOfStake);
 

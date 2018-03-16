@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Information holding POS data chained.</summary>
-        public StakeChain StakeChain { get; }
+        public IStakeChain StakeChain { get; }
 
         /// <summary>A puller that can pull blocks from peers on demand.</summary>
         public LookaheadBlockPuller Puller { get; }
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             NodeSettings nodeSettings,
             IPeerBanning peerBanning,
             IConsensusRules consensusRules,
-            StakeChain stakeChain = null)
+            IStakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(validator, nameof(validator));
