@@ -20,6 +20,16 @@
             return this.Value;
         }
 
+        public static implicit operator Address(string value)
+        {
+            return new Address(value);
+        }
+
+        public static implicit operator string(Address x)
+        {
+            return x.Value;
+        }
+
         public static bool operator ==(Address obj1, Address obj2)
         {
             return obj1.Value == obj2.Value;
