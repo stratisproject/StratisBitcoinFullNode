@@ -21,19 +21,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public class SmartContractFeature : FullNodeFeature
     {
         private readonly ILogger logger;
-        private readonly IContractStateRepository contractStateRepository;
+        private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IConsensusLoop consensusLoop;
 
-        public SmartContractFeature(ILoggerFactory loggerFactory, IContractStateRepository contractStateRepository, IConsensusLoop consensusLoop)
+        public SmartContractFeature(ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot, IConsensusLoop consensusLoop)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.contractStateRepository = contractStateRepository;
+            this.stateRoot = stateRoot;
             this.consensusLoop = consensusLoop;
         }
 
         public override void Initialize()
         {
-            this.contractStateRepository.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
+            this.stateRoot.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
-                        services.AddSingleton<IContractStateRepository, ContractStateRepositoryRoot>();
+                        services.AddSingleton<ContractStateRepositoryRoot>();
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();

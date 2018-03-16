@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
-        private readonly IContractStateRepository stateRoot;
+        private readonly ContractStateRepositoryRoot stateRoot;
 
         private readonly SmartContractDecompiler smartContractDecompiler;
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            IContractStateRepository stateRoot,
+            ContractStateRepositoryRoot stateRoot,
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
             ISmartContractGasInjector gasInjector,

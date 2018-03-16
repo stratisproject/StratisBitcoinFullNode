@@ -21,7 +21,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private List<TxOut> refundOutputs = new List<TxOut>();
 
-        private IContractStateRepository stateRepository;
+        private ContractStateRepositoryRoot stateRoot;
+        private ContractStateRepositoryRoot currentStateRepository;
 
         private readonly SmartContractDecompiler decompiler;
         private readonly ISmartContractGasInjector gasInjector;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
-            IContractStateRepository stateRepository,
+            ContractStateRepositoryRoot stateRoot,
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
             ISmartContractGasInjector gasInjector,
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
-            this.stateRepository = stateRepository;
+            this.stateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
@@ -58,13 +59,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
             this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
-
+            this.currentStateRepository = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
-
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-
-            this.stateRepository.Commit();
-
             return this.pblocktemplate;
         }
 
@@ -78,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateHeaders();
 
-            this.pblock.Header.HashStateRoot = new uint256(this.stateRepository.GetRoot());
+            this.pblock.Header.HashStateRoot = new uint256(this.currentStateRepository.Root);
         }
 
         /// <summary>
@@ -141,7 +138,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public ISmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
         {
-            IContractStateRepository nestedStateRepository = this.stateRepository.StartTracking();
+            IContractStateRepository nestedStateRepository = this.currentStateRepository.StartTracking();
 
             var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
             ISmartContractExecutionResult executionResult = executor.Execute();
