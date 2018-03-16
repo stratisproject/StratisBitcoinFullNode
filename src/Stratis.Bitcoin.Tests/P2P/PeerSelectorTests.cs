@@ -518,7 +518,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// Peer 1 gets returned in the Connected set.
         /// </summary>
         [Fact]
-        public void PeerState_TestReturnFromPeerConnectedSet_IgnoringBannerPeer()
+        public void PeerState_TestReturnFromPeerConnectedSet_IgnoringBannedPeer()
         {
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endPointOne = new IPEndPoint(ipAddress, 80);
