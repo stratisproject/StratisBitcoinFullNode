@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.P2P
         void Add(IPEndPoint ipEndPoint);
 
         /// <summary>Checks if endpoint is known to be itself against the pruned dictionary.</summary>
-        /// <param name="ipEndPoint"></param>
+        /// <param name="ipEndPoint">The endpoint to check.</param>
         /// <returns><c>true</c> if self, <c>false</c> if unknown.</returns>
         bool IsSelf(IPEndPoint ipEndPoint);
     }
