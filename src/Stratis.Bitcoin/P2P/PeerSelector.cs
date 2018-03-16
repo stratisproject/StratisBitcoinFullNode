@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.P2P
         IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount);
 
         /// <summary>
-        /// Return peers which've had connection attempts but none successful. 
+        /// Return peers which have had connection attempts, but none successful. 
         /// <para>
         /// The result filters out peers which satisfies the above condition within the 
         /// last 60 seconds and that has had more than 10 failed attempts.
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.P2P
         IEnumerable<PeerAddress> Attempted();
 
         /// <summary>
-        /// Return peers which've had successful connection attempts.
+        /// Return peers which have had successful connection attempts.
         /// <para>
         /// The result filters out peers which satisfies the above condition within the 
         /// last 60 seconds.
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.P2P
         IEnumerable<PeerAddress> Connected();
 
         /// <summary>
-        /// Return peers which've never had connection attempts. 
+        /// Return peers which have never had connection attempts. 
         /// </summary>
         IEnumerable<PeerAddress> Fresh();
 
@@ -196,6 +196,7 @@ namespace Stratis.Bitcoin.P2P
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
             var discoverable = this.peerAddresses.Values.Where(p => p.LastDiscoveredFrom < this.dateTimeProvider.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours));
+
             var allPeers = discoverable.OrderBy(p => this.random.Next()).Take(1000).ToList();
             return allPeers;
         }
@@ -261,27 +262,32 @@ namespace Stratis.Bitcoin.P2P
         public IEnumerable<PeerAddress> Attempted()
         {
             return this.peerAddresses.Values.Where(p =>
-                                p.Attempted &&
-                                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
-                                p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours));
+                p.Attempted &&
+                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
+                p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
+                !p.IsBanned);
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Connected()
         {
-            return this.peerAddresses.Values.Where(p => p.Connected && p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60));
+            return this.peerAddresses.Values.Where(p => p.Connected && 
+                                                        p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
+                                                        !p.IsBanned);
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Fresh()
         {
-            return this.peerAddresses.Values.Where(p => p.Fresh);
+            return this.peerAddresses.Values.Where(p => p.Fresh && !p.IsBanned);
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Handshaked()
         {
-            return this.peerAddresses.Values.Where(p => p.Handshaked && p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60));
+            return this.peerAddresses.Values.Where(p => p.Handshaked && 
+                                                        p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
+                                                        !p.IsBanned);
         }
     }
 }

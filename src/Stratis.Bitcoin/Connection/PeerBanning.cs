@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -46,7 +45,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Functionality of PeerAddressManager.</summary> 
+        /// <summary>Keeps a set of peers discovered on the network in cache and on disk.</summary> 
         private readonly IPeerAddressManager peerAddressManager;
 
         public PeerBanning(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
@@ -65,8 +64,8 @@ namespace Stratis.Bitcoin.Connection
 
             reason = reason ?? "unknown";
 
-            bool banPeer = true;
             INetworkPeer peer = this.connectionManager.ConnectedPeers.FindByEndpoint(endpoint);
+
             if (peer != null)
             {
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
@@ -76,21 +75,24 @@ namespace Stratis.Bitcoin.Connection
                 }
                 else
                 {
-                    banPeer = false;
-                    this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason);
+                    this.logger.LogTrace("(-)[WHITELISTED]");
+                    return;
                 }
             }
 
-            if (!banPeer) return;
-
             PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
 
-            if (peerAddress == null) return;
+            if (peerAddress == null)
+            {
+                this.logger.LogTrace("(-)[PEERNOTFOUND]");
+                return;
+            }
 
-            peerAddress.BanDate = this.dateTimeProvider.GetUtcNow();
+            peerAddress.BanTimeStamp = this.dateTimeProvider.GetUtcNow();
             peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds);
+            peerAddress.BanReason = reason;
 
-            this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason);
+            this.logger.LogDebug("Peer '{0}' banned for reason '{1}', until {2}.", endpoint, reason, peerAddress.BanUntil.ToString());
 
             this.logger.LogTrace("(-)");
         }
@@ -105,7 +107,12 @@ namespace Stratis.Bitcoin.Connection
             PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
 
             if (peerAddress == null)
+            {
+                this.logger.LogTrace("(-)[PEERNOTFOUND]");
                 return false;
+            }
+
+            this.logger.LogTrace("(-)");
 
             return peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow();
         }

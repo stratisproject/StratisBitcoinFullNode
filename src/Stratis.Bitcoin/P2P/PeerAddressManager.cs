@@ -137,11 +137,22 @@ namespace Stratis.Bitcoin.P2P
             {
                 // Ensure that any address already in store is mapped.
                 peer.Endpoint = peer.Endpoint.MapToIpv6();
-                
-                this.peers.TryAdd(peer.Endpoint, peer);
-            });
 
-            ResetBannedPeers();
+                // If no longer banned reset ban details.
+                if (peer.BanUntil.HasValue && peer.BanUntil < this.dateTimeProvider.GetUtcNow())
+                {
+                    peer.BanTimeStamp = null;
+                    peer.BanUntil = null;
+                    peer.BanReason = string.Empty;
+
+                    this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
+                }
+
+                if (!this.peers.TryAdd(peer.Endpoint, peer))
+                {
+                    this.peers.AddOrUpdate(peer.Endpoint, peer, (key, oldValue) => peer);
+                }
+            });
         }
 
         /// <inheritdoc />
@@ -149,8 +160,6 @@ namespace Stratis.Bitcoin.P2P
         {
             if (this.peers.Any() == false)
                 return;
-
-            ResetBannedPeers();
 
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath.AddressManagerFilePath);
             fileStorage.SaveToFile(this.peers.OrderByDescending(p => p.Value.LastConnectionSuccess).Select(p => p.Value).ToList(), PeerFileName);
@@ -248,24 +257,6 @@ namespace Stratis.Bitcoin.P2P
         public void Dispose()
         {
             this.SavePeers();
-        }
-
-        /// <summary>
-        /// When the PeerAddressManager saves peers to disk, check if any of
-        /// banned Peers have expired.  If so, then reset the Peers.
-        /// </summary>
-        private void ResetBannedPeers()
-        {
-            foreach (PeerAddress peer in this.Peers.Where(p => p.BanUntil.HasValue))
-            {
-                if (peer.BanUntil < this.dateTimeProvider.GetUtcNow())
-                {
-                    peer.BanDate = null;
-                    peer.BanUntil = null;
-                }
-
-                this.logger.LogTrace("({0}:'{1}' : No longer banned.)", nameof(peer.Endpoint), peer.Endpoint);
-            }
         }
     }
 }

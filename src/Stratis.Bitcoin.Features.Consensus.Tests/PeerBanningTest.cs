@@ -159,6 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
             Assert.True(peer.BanUntil.HasValue);
             Assert.NotNull(peer.BanUntil);
+            Assert.NotEmpty(peer.BanReason);
         }
 
         [Fact]
@@ -181,8 +182,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
-            Assert.NotNull(peer.BanDate);
+            Assert.NotNull(peer.BanTimeStamp);
             Assert.NotNull(peer.BanUntil);
+            Assert.NotEmpty(peer.BanReason);
         }
 
         [Fact]
@@ -201,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             context.PeerBanning.BanPeer(endpoint, 1, nameof(PeerBanningTest));
             context.PeerAddressManager.SavePeers();
 
-            // wait 1 sec for ban to expire.
+            // Wait one second for ban to expire.
             Thread.Sleep(1000);
 
             context.PeerAddressManager.Peers.Clear();
@@ -209,8 +211,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
-            Assert.Null(peer.BanDate);
+            Assert.Null(peer.BanTimeStamp);
             Assert.Null(peer.BanUntil);
+            Assert.Empty(peer.BanReason);
         }
     }
 }
