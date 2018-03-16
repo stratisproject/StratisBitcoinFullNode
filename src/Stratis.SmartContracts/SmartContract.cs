@@ -1,58 +1,97 @@
 ﻿using System;
+using System.Globalization;
 
 namespace Stratis.SmartContracts
 {
+    /// <summary>
+    /// All smart contracts created on the Stratis blockchain is required to implement this base class.
+    /// <para>
+    /// Provides base functionality to spend gas and transfer funds between contracts.
+    /// </para>
+    /// </summary>
     public abstract class SmartContract
     {
-        protected Address Address => this.Message.ContractAddress;
-
-        public ulong Balance => this.getBalance();
-
-        public Gas GasUsed { get; private set; }
-
-        public Block Block { get; }
-
-        public Message Message { get; }
-
-        public IPersistentState PersistentState { get; }
-        
         /// <summary>
-        /// Used to track the gas usage for this contract instance
+        /// The address of the smart contract.
+        /// </summary>
+        protected Address Address { get { return this.Message.ContractAddress; } }
+
+        /// <summary>
+        /// Returns the balance of the smart contract.
+        /// </summary>
+        public ulong Balance { get { return this.getBalance(); } }
+
+        /// <summary>
+        /// TODO: Add documentation
+        /// </summary>
+        protected readonly Block Block;
+
+        /// <summary>
+        /// TODO: Add documentation
+        /// </summary>
+        protected readonly Message Message;
+
+        /// <summary>
+        /// TODO: Add documentation
+        /// </summary>
+        protected readonly IPersistentState PersistentState;
+
+        /// <summary>
+        /// Tracks the gas usage for this contract instance.
         /// </summary>
         private readonly IGasMeter gasMeter;
-        private readonly IInternalTransactionExecutor internalTransactionExecutor;
+
+        /// <summary>
+        /// Gets the balance of the contract, if applicable.
+        /// </summary>
         private readonly Func<ulong> getBalance;
-        private readonly ISmartContractState state;
 
-        protected SmartContract(ISmartContractState state)
+        /// <summary>
+        /// Executes the smart contract.
+        /// </summary>
+        private readonly IInternalTransactionExecutor internalTransactionExecutor;
+
+        /// <summary>
+        /// TODO: Add documentation
+        /// </summary>
+        private readonly ISmartContractState smartContractState;
+
+        protected SmartContract(ISmartContractState smartContractState)
         {
-            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            this.Message = state.Message;
-            this.Block = state.Block;
-            this.PersistentState = state.PersistentState;
-            this.gasMeter = state.GasMeter;
-            this.internalTransactionExecutor = state.InternalTransactionExecutor;
-            this.getBalance = state.GetBalance;
-            this.state = state;
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+
+            this.gasMeter = smartContractState.GasMeter;
+            this.Block = smartContractState.Block;
+            this.getBalance = smartContractState.GetBalance;
+            this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
+            this.Message = smartContractState.Message;
+            this.PersistentState = smartContractState.PersistentState;
+            this.smartContractState = smartContractState;
         }
 
         /// <summary>
-        /// Expends the given amount of gas. If this takes the spent gas over the entered limit, throw an OutOfGasException
+        /// Expends the given amount of gas.
+        /// <para>
+        /// If this takes the spent gas over the entered limit, throw an OutOfGasException
+        /// </para>
         /// </summary>
-        /// <param name="spend">TODO: This is currently a ulong instead of a Gas because it needs to receive values from injected IL and it's difficult to create non-primitive types</param>
-        public void SpendGas(ulong spend)
+        /// <param name="gasToSpend">TODO: This is currently a ulong instead of a Gas because it needs to receive values from injected IL and it's difficult to create non-primitive types</param>
+        public void SpendGas(ulong gasToSpend)
         {
-            this.gasMeter.Spend((Gas) spend);
+            this.gasMeter.Spend((Gas)gasToSpend);
         }
 
         /// <summary>
-        /// Sends funds to an address. If the address is a contract and parameters are given, it will execute a method on the contract with the given parameters.
+        /// Sends funds to an address.
+        /// <para>
+        /// If the address is a contract and parameters are given, it will execute a method on the contract with the given parameters.
+        /// </para>
         /// </summary>
-        /// <param name="addressTo"></param>
-        /// <param name="amount"></param>
-        protected ITransferResult Transfer(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
+        /// <param name="addressTo">The address to transfer the funds to.</param>
+        /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
+        protected ITransferResult TransferFunds(Address addressTo, ulong amountToTransfer, TransferFundsToContract transactionDetails = null)
         {
-            return this.internalTransactionExecutor.Transfer(this.state, addressTo, amount, transactionDetails);            
+            return this.internalTransactionExecutor.TransferFunds(this.smartContractState, addressTo, amountToTransfer, transactionDetails);
         }
     }
 }

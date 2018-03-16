@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Block = NBitcoin.Block;
 

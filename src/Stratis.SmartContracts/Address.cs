@@ -1,8 +1,10 @@
 ﻿namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// This is only really used to aid Smart Contract Developers' understanding of addresses.
-    /// They may not easily understand the idea of sending to a uint160
+    /// Helper struct that wraps uint160 operations.
+    /// <para>
+    /// This struct makes it easier to semantically understand send and receive addresses.
+    /// </para>
     /// </summary>
     public struct Address
     {
@@ -14,7 +16,7 @@
         }
 
         public static readonly Address Zero = new Address("0x0000000000000000000000000000000000000000");
-    
+
         public override string ToString()
         {
             return this.Value;

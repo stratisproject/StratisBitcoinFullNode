@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.Core.State
         /// </summary>
         public byte[] UnspentHash { get; set; }
 
-        public AccountState(){}
+        public AccountState() { }
 
         #region Serialization
 

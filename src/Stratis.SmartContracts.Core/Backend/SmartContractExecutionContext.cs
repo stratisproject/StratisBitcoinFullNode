@@ -3,26 +3,18 @@
     /// <summary>
     /// Information about the current state of the blockchain that is passed into the virtual machine.
     /// </summary>
-    public class SmartContractExecutionContext : ISmartContractExecutionContext
+    public sealed class SmartContractExecutionContext : ISmartContractExecutionContext
     {
-        /// <summary>
-        /// TODO: Add documentation.
-        /// </summary>
+        /// <inheritdoc/>
         public Block Block { get; }
 
-        /// <summary>
-        /// TODO: Add documentation.
-        /// </summary>
+        /// <inheritdoc/>
         public ulong GasPrice { get; }
 
-        /// <summary>
-        /// These are the method parameters to be injected into the method call by the <see cref="Stratis.SmartContracts.Core.SmartContractTransactionExecutor"/>.
-        /// </summary>
+        /// <inheritdoc/>
         public object[] Parameters { get; private set; }
 
-        /// <summary>
-        /// TODO: Add documentation.
-        /// </summary>
+        /// <inheritdoc/>
         public Message Message { get; }
 
         public SmartContractExecutionContext(Block block, Message message, ulong gasPrice, object[] methodParameters = null)

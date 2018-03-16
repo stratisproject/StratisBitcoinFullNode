@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <Authors>Stratis Group Ltd.</Authors>
+    <Company>Stratis Group Ltd.</Company>
+    <Product>Stratis Smart Contracts</Product>
+    <Version>1.0.0-alpha-test</Version>
+    <PackageId>Stratis.SmartContracts</PackageId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
-  </ItemGroup>
 
 </Project>

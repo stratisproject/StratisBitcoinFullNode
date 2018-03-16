@@ -76,6 +76,6 @@ namespace Stratis.SmartContracts.Core.State
     /// </summary>
     public class DBreezeContractStateStore : DBreezeByteStore
     {
-        public DBreezeContractStateStore(DataFolder dataFolder) : base(new DBreezeEngine(dataFolder.SmartContractStatePath), "state") {}
+        public DBreezeContractStateStore(DataFolder dataFolder) : base(new DBreezeEngine(dataFolder.SmartContractStatePath), "state") { }
     }
 }

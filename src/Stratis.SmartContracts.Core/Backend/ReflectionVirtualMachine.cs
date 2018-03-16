@@ -18,32 +18,32 @@ namespace Stratis.SmartContracts.Core.Backend
         }
 
         public ISmartContractExecutionResult ExecuteMethod(
-            byte[] contractCode, 
-            string contractTypeName, 
-            string contractMethodName, 
-            ISmartContractExecutionContext context, 
-            IGasMeter gasMeter, 
-            IInternalTransactionExecutor internalTxExecutor, 
+            byte[] contractCode,
+            string contractTypeName,
+            string contractMethodName,
+            ISmartContractExecutionContext context,
+            IGasMeter gasMeter,
+            IInternalTransactionExecutor internalTxExecutor,
             Func<ulong> getBalance)
         {
-            var assembly = Assembly.Load(contractCode);
-            Type type = assembly.GetType(contractTypeName);
+            var executionResult = new SmartContractExecutionResult();
+            if (contractMethodName == null)
+                return executionResult;
 
-            var state = new SmartContractState(
-                context.Block, 
-                context.Message, 
+            var contractAssembly = Assembly.Load(contractCode);
+            Type contractType = contractAssembly.GetType(contractTypeName);
+
+            var contractState = new SmartContractState(
+                context.Block,
+                context.Message,
                 this.persistentState,
                 gasMeter,
                 internalTxExecutor,
                 getBalance);
 
-            var contract = (SmartContract)Activator.CreateInstance(type, state);
+            var contract = (SmartContract)Activator.CreateInstance(contractType, contractState);
 
-            var executionResult = new SmartContractExecutionResult();
-            if (contractMethodName == null)
-                return executionResult;
-
-            MethodInfo methodToInvoke = type.GetMethod(contractMethodName);
+            MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
 
             try
             {
@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Core.Backend
             }
             finally
             {
-                executionResult.GasUnitsUsed = gasMeter.ConsumedGas;
+                executionResult.GasUnitsUsed = gasMeter.GasConsumed;
             }
 
             return executionResult;

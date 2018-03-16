@@ -2,6 +2,9 @@
 
 namespace Stratis.SmartContracts
 {
+    /// <summary>
+    /// Defines what gets returned should a contract execute a transfer.
+    /// </summary>
     public interface ITransferResult
     {
         /// <summary>

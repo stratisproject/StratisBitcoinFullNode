@@ -16,7 +16,8 @@ namespace Stratis.SmartContracts.Core.State
             V Value();
         }
 
-        public class SimpleEntry<V> : IEntry<V> {
+        public class SimpleEntry<V> : IEntry<V>
+        {
 
             private V val;
 
@@ -67,7 +68,7 @@ namespace Stratis.SmartContracts.Core.State
                 }
                 if (this.valueSizeEstimator != null)
                 {
-                    this.size -= (int) this.valueSizeEstimator.EstimateSize(value);
+                    this.size -= (int)this.valueSizeEstimator.EstimateSize(value);
                 }
             }
         }

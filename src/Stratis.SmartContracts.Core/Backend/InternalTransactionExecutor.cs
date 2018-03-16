@@ -3,64 +3,72 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
-    /// <summary>
-    /// Handles the execution of transactions that happen internally
-    /// to a SmartContract, eg. a Transfer of funds to another contract.
-    /// </summary>
-    public class InternalTransactionExecutor : IInternalTransactionExecutor
+    ///<inheritdoc/>
+    public sealed class InternalTransactionExecutor : IInternalTransactionExecutor
     {
-        private readonly IContractStateRepository stateRepository;
+        private readonly IContractStateRepository constractStateRepository;
 
-        public InternalTransactionExecutor(IContractStateRepository stateRepository)
+        public InternalTransactionExecutor(IContractStateRepository constractStateRepository)
         {
-            this.stateRepository = stateRepository;
+            this.constractStateRepository = constractStateRepository;
         }
 
-        public ITransferResult Transfer(ISmartContractState state, Address addressTo, ulong amount, TransactionDetails transactionDetails)
+        ///<inheritdoc/>
+        public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
             //TODO: The act of calling this should cost a lot of gas!
-
-            if (state.GetBalance() < amount)
+            if (smartContractState.GetBalance() < amountToTransfer)
                 throw new InsufficientBalanceException();
 
-            // Discern whether is a contract or ordinary address.
-            byte[] contractCode = this.stateRepository.GetCode(addressTo.ToUint160());
-
+            //Discern whether this is a contract or an ordinary address.
+            byte[] contractCode = this.constractStateRepository.GetCode(addressTo.ToUint160());
             if (contractCode == null || contractCode.Length == 0)
             {
-                // Is not a contract, so just record the transfer and return
-                this.stateRepository.TransferBalance(state.Message.ContractAddress.ToUint160(), addressTo.ToUint160(), amount);
-                return new TransferResult();
+                //If it is not a contract, just record the transfer and return.
+                this.constractStateRepository.TransferBalance(smartContractState.Message.ContractAddress.ToUint160(), addressTo.ToUint160(), amountToTransfer);
+                return TransferResult.Empty();
             }
 
-            // It's a contract - instantiate the contract and execute.
-            IContractStateRepository track = this.stateRepository.StartTracking();
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, state.GasMeter);
+            return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, contractDetails);
+        }
+
+        /// <summary>
+        /// If the address to where the funds will be tranferred to is a contract, instantiate and execute it.
+        /// </summary>
+        private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
+        {
+            IContractStateRepository track = this.constractStateRepository.StartTracking();
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter);
             IPersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160());
-            Message newMessage = new Message(addressTo, state.Message.ContractAddress, amount, (Gas)(state.Message.GasLimit - state.GasMeter.ConsumedGas));
-            ISmartContractExecutionContext newContext = new SmartContractExecutionContext(state.Block, newMessage, 0, transactionDetails.Parameters);
+
+            var newMessage = new Message(addressTo, smartContractState.Message.ContractAddress, amountToTransfer, (Gas)(smartContractState.Message.GasLimit - smartContractState.GasMeter.GasConsumed));
+
+            ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, 0, contractDetails.MethodParameters);
+
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+
+            ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
                 contractCode,
-                transactionDetails.ContractTypeName,
-                transactionDetails.ContractMethodName,
+                contractDetails.ContractTypeName,
+                contractDetails.ContractMethodName,
                 newContext,
-                state.GasMeter,
+                smartContractState.GasMeter,
                 this,
-                state.GetBalance);
+                smartContractState.GetBalance);
 
-            state.GasMeter.Spend(result.GasUnitsUsed);
+            smartContractState.GasMeter.Spend(executionResult.GasUnitsUsed);
 
-            if (result.Revert)
+            if (executionResult.Revert)
             {
-                // contract execution unsuccessful
                 track.Rollback();
-                return new TransferResult(null, result.Exception);
+                return TransferResult.Failed(executionResult.Exception);
             }
 
             track.Commit();
-            this.stateRepository.TransferBalance(state.Message.ContractAddress.ToUint160(), addressTo.ToUint160(), amount);
-            return new TransferResult(result.Return, null);
+
+            this.constractStateRepository.TransferBalance(smartContractState.Message.ContractAddress.ToUint160(), addressTo.ToUint160(), amountToTransfer);
+
+            return TransferResult.Transferred(executionResult.Return);
         }
     }
 }

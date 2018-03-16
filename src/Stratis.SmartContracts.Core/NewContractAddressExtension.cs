@@ -10,7 +10,6 @@ namespace Stratis.SmartContracts.Core
         /// Get the address for a newly deployed contract.
         /// </summary>
         /// <param name="transaction"></param>
-        /// <returns></returns>
         public static uint160 GetNewContractAddress(this Transaction transaction)
         {
             return GetContractAddressFromTransactionHash(transaction.GetHash());
@@ -20,7 +19,6 @@ namespace Stratis.SmartContracts.Core
         /// Get the address for a newly deployed contract.
         /// </summary>
         /// <param name="transaction"></param>
-        /// <returns></returns>
         public static uint160 GetNewContractAddress(this SmartContractCarrier carrier)
         {
             return GetContractAddressFromTransactionHash(carrier.TransactionHash);

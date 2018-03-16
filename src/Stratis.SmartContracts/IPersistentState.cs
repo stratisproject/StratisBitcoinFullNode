@@ -1,5 +1,8 @@
 ﻿namespace Stratis.SmartContracts
 {
+    /// <summary>
+    /// Contract that specifies how items are retrieved/saved in a smart contract. 
+    /// </summary>
     public interface IPersistentState
     {
         T GetObject<T>(string key);

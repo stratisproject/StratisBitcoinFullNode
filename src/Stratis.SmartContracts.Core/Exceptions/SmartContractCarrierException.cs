@@ -7,7 +7,6 @@
         public SmartContractCarrierException(string message)
             : base(message)
         {
-
         }
     }
 }

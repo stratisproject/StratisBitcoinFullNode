@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Stratis.SmartContracts.Core.Exceptions;
 
 namespace Stratis.SmartContracts.Core.Util
 {
@@ -17,7 +19,6 @@ namespace Stratis.SmartContracts.Core.Util
         /// Get the compiled bytecode for the specified file.
         /// </summary>
         /// <param name="filename"></param>
-        /// <returns></returns>
         public static byte[] GetAssemblyBytesFromFile(string filename)
         {
             string source = File.ReadAllText(filename);
@@ -28,7 +29,6 @@ namespace Stratis.SmartContracts.Core.Util
         /// Get the compiled bytecode for the specified C# source code.
         /// </summary>
         /// <param name="source"></param>
-        /// <returns></returns>
         public static byte[] GetAssemblyBytesFromSource(string source)
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
@@ -42,9 +42,9 @@ namespace Stratis.SmartContracts.Core.Util
             using (var dllStream = new MemoryStream())
             using (var pdbStream = new MemoryStream())
             {
-                Microsoft.CodeAnalysis.Emit.EmitResult emitResult = compilation.Emit(dllStream, pdbStream);
+                EmitResult emitResult = compilation.Emit(dllStream, pdbStream);
                 if (!emitResult.Success)
-                    throw new Exception("Compilation didn't work yo!");
+                    throw new Exception("Smart contract compilation failed.");
 
                 return dllStream.ToArray();
             }
@@ -53,28 +53,31 @@ namespace Stratis.SmartContracts.Core.Util
         /// <summary>
         /// Gets all references needed for compilation. Ideally should use the same list as the contract validator.
         /// </summary>
-        /// <returns></returns>
         private static IList<MetadataReference> GetReferences()
         {
-            var dd = typeof(Enumerable).Assembly.Location;
-            DirectoryInfo coreDir = Directory.GetParent(dd);
+            var assemblyLocation = typeof(Enumerable).Assembly.Location;
+            DirectoryInfo coreDir = Directory.GetParent(assemblyLocation);
 
-            List<MetadataReference> references = new List<MetadataReference>
+            var references = new List<MetadataReference>
             {
                 MetadataReference.CreateFromFile(coreDir.FullName + Path.DirectorySeparatorChar + "mscorlib.dll"),
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
             };
 
             AssemblyName[] referencedAssemblies = Assembly.GetEntryAssembly().GetReferencedAssemblies();
+
             foreach (AssemblyName referencedAssembly in referencedAssemblies)
             {
                 var loadedAssembly = Assembly.Load(referencedAssembly);
 
                 references.Add(MetadataReference.CreateFromFile(loadedAssembly.Location));
             }
+
             references.Add(MetadataReference.CreateFromFile(typeof(Address).Assembly.Location));
             references.Add(MetadataReference.CreateFromFile(typeof(SmartContract).Assembly.Location));
+            references.Add(MetadataReference.CreateFromFile(typeof(SmartContractException).Assembly.Location));
             references.Add(MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location));
+
             return references;
         }
     }
