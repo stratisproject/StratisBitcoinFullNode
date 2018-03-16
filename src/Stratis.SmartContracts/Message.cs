@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     public class Message
     {
-        internal Address ContractAddress { get; }
+        public Address ContractAddress { get; }
 
         public Address Sender { get; }
 

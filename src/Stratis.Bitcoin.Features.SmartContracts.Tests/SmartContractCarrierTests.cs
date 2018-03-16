@@ -2,6 +2,7 @@
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

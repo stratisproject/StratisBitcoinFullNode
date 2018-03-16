@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -51,6 +52,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
 
             return this;
+        }
+
+        /// <summary>Prints the help information on how to configure the Consensus settings to the logger.</summary>
+        /// <param name="network">The network to use.</param>
+        public static void PrintHelp(Network network)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
+            builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
+
+            NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
     }
 }

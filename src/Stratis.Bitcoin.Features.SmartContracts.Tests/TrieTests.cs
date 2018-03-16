@@ -1,7 +1,7 @@
 ﻿using System;
 using Xunit;
 using System.Text;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {

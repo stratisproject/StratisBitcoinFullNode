@@ -9,10 +9,11 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -20,12 +21,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-        private readonly IContractStateRepository originalStateRoot;
-        private IContractStateRepository currentStateRoot;
+        private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
         private List<Transaction> blockTxsProcessed;
         private Transaction lastProcessed;
 
@@ -35,16 +35,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            IContractStateRepository stateRoot,
+            ContractStateRepositoryRoot stateRoot,
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
-            SmartContractGasInjector gasInjector)
+            ISmartContractGasInjector gasInjector)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.originalStateRoot = stateRoot;
-            this.currentStateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
@@ -65,7 +64,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
             // Start state from previous block's root
-            this.currentStateRoot = this.originalStateRoot.GetSnapshotTo(context.ConsensusTip.Header.HashStateRoot.ToBytes());
+            this.originalStateRoot.SyncToRoot(context.ConsensusTip.Header.HashStateRoot.ToBytes());
+            IContractStateRepository trackedState = this.originalStateRoot.StartTracking();
 
             if (!context.SkipValidation)
             {
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     }
                 }
 
-                this.UpdateCoinView(context, tx);
+                this.UpdateCoinViewAndExecuteContracts(context, tx, trackedState);
                 this.blockTxsProcessed.Add(tx);
             }
 
@@ -170,11 +170,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            if (new uint256(this.currentStateRoot.GetRoot()) != block.Header.HashStateRoot)
+            trackedState.Commit();
+
+            if (new uint256(this.originalStateRoot.Root) != block.Header.HashStateRoot)
                 throw new Exception("State roots aren't matching - should create new exception");
 
-            this.currentStateRoot.Commit();
-            this.originalStateRoot.SyncToRoot(this.currentStateRoot.GetRoot());
+            this.originalStateRoot.Commit();
+
             this.logger.LogTrace("(-)");
         }
 
@@ -184,7 +186,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         /// <param name="context"></param>
         /// <param name="transaction"></param>
-        protected override void UpdateCoinView(RuleContext context, Transaction transaction)
+        protected void UpdateCoinViewAndExecuteContracts(RuleContext context, Transaction transaction, IContractStateRepository trackedState)
         {
             base.UpdateCoinView(context, transaction);
 
@@ -207,7 +209,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
-            IContractStateRepository track = this.currentStateRoot.StartTracking();
+            IContractStateRepository track = trackedState.StartTracking();
             var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
 
             smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
@@ -215,12 +217,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
             var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress);
-            SmartContractExecutionResult result = executor.Execute();
+            ISmartContractExecutionResult result = executor.Execute();
+
+            if (result.Revert)
+                track.Rollback();
+            else
+                track.Commit();
 
             if (result.InternalTransactions.Any())
                 this.lastProcessed = result.InternalTransactions.FirstOrDefault();
-
-            track.Commit();
         }
     }
 }

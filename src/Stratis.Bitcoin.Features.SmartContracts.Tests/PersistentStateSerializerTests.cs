@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             // Checking that these all work for now. 
             // TODO: Check that these actually are serialized in a performant way
-            TestType<Address>(new Address(new uint160(123456)));
+            TestType<Address>(new Address(new uint160(123456).ToString()));
             TestType<bool>(true);
             TestType<int>((int)32);
             TestType<long>((long)6775492);

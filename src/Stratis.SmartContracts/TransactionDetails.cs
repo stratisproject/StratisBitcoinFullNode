@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     /// <summary>
     /// Carries data that should be sent to a contract in a new transaction.

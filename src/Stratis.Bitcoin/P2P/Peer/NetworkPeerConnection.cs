@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol;
-using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -48,7 +47,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private TcpClient tcpClient;
 
         /// <summary>Prevents parallel execution of multiple write operations on <see cref="stream"/>.</summary>
-        private AsyncLock writeLock;
+        private readonly AsyncLock writeLock;
 
         /// <summary>Stream to send and receive messages through established TCP connection.</summary>
         /// <remarks>Write operations on the stream have to be protected by <see cref="writeLock"/>.</remarks>
@@ -64,7 +63,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>Network peer this connection connects to.</summary>
-        private INetworkPeer peer;
+        private readonly INetworkPeer peer;
 
         /// <summary>Cancellation to be triggered at shutdown to abort all pending operations on the connection.</summary>
         public CancellationTokenSource CancellationSource { get; private set; }
@@ -75,41 +74,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Queue of incoming messages distributed to message consumers.</summary>
         public MessageProducer<IncomingMessage> MessageProducer { get; private set; }
 
-        /// <summary>New network state to set to the peer when shutdown is initiated.</summary>
-        private NetworkPeerState setPeerStateOnShutdown;
-
-        /// <summary>Task completion that is completed when the work of the shutdown procedure is finished, including detaching from behaviors.</summary>
-        /// <seealso cref="Shutdown"/>
-        /// <see cref="DisposeComplete"/>
-        public TaskCompletionSource<bool> ShutdownComplete { get; private set; }
-
-        /// <summary>Task completion that is completed when the work of <see cref="Dispose"/> is finished.</summary>
-        /// <remarks>Note that first, <see cref="ShutdownComplete"/> is completed and then some more disposing 
-        /// occurs in <see cref="Dispose"/>. Only when all disposing work is done, this source is completed.</remarks>
-        public TaskCompletionSource<bool> DisposeComplete { get; private set; }
-
-        /// <summary>Lock object to protect access to <see cref="shutdownInProgress"/>, <see cref="shutdownCalled"/>, <see cref="disposeRequested"/>, and <see cref="disposed"/> during the shutdown sequence.</summary>
-        private readonly object shutdownLock;
-
-        /// <summary>Set to <c>true</c> during the execution of shutdown procedure, <c>false</c> otherwise.</summary>
-        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
-        /// <seealso cref="Shutdown"/>
-        private bool shutdownInProgress;
-
-        /// <summary>Set to <c>true</c> if <see cref="Shutdown"/> was called already, <c>false</c> otherwise.</summary>
-        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
-        /// <seealso cref="Shutdown"/>
-        private bool shutdownCalled;
-
-        /// <summary>Set to <c>true</c> if any of the detached behavior during the shutdown procedure requested connection object disposal, <c>false</c> otherwise.</summary>
-        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
-        /// <seealso cref="Shutdown"/>
-        private bool disposeRequested;
-
-        /// <summary>Set to <c>true</c> if disposal procedure has been executed, <c>false</c> otherwise.</summary>
-        /// <remarks>All access to his object has to be protected by <see cref="shutdownLock"/>.</remarks>
-        /// <seealso cref="Shutdown"/>
-        private bool disposed;
+        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary> 
+        private int disposed;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -132,15 +98,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
 
             this.peer = peer;
-            this.setPeerStateOnShutdown = NetworkPeerState.Offline;
             this.tcpClient = client;
             this.Id = clientId;
 
             this.stream = this.tcpClient.Connected ? this.tcpClient.GetStream() : null;
-            this.ShutdownComplete = new TaskCompletionSource<bool>();
-            this.DisposeComplete = new TaskCompletionSource<bool>();
 
-            this.shutdownLock = new object();
             this.writeLock = new AsyncLock();
 
             this.CancellationSource = new CancellationTokenSource();
@@ -188,111 +150,16 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("Receiving cancelled.");
+                this.peer.Disconnect("Receiving cancelled.");
+            }
             catch (Exception ex)
             {
-                if (ex is OperationCanceledException)
-                {
-                    this.logger.LogTrace("Receiving cancelled.");
-                }
-                else
-                {
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-
-                    if (this.peer.DisconnectReason == null)
-                    {
-                        this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                        {
-                            Reason = "Unexpected exception while waiting for a message",
-                            Exception = ex
-                        };
-                    }
-
-                    // We can not set the peer state directly here because it would 
-                    // trigger state changing event handlers and could cause deadlock.
-                    if (this.peer.State != NetworkPeerState.Offline)
-                        this.setPeerStateOnShutdown = NetworkPeerState.Failed;
-                }
-
-                this.CallShutdown();
+                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                this.peer.Disconnect("Unexpected exception while waiting for a message", ex);
             }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Calls <see cref="Shutdown"/> in a separated context.
-        /// </summary>
-        private void CallShutdown()
-        {
-            Task.Run(() => this.Shutdown());
-        }
-
-        /// <summary>
-        /// When the connection is terminated, this method terminates the connection and informs connected behaviors about the termination.
-        /// </summary>
-        /// <remarks>
-        /// The shutdown sequence of this object can come either from the cancellation token (which triggers the execution of this method)
-        /// or from disposal of the object. Moreover, the attached behaviors which are detached here can call the disposal of the object 
-        /// during the process of detachment or if they implement state changed handler.
-        /// </para>
-        /// <para>
-        /// This is why we need to carefully control the dispose sequence in order to prevent deadlock while still making sure 
-        /// the whole cleanup is done before the caller of <see cref="Dispose"/> is given the control back.
-        /// <para>
-        /// To achieve this, we prohibit execution of <see cref="Dispose"/> from the attached behaviors. 
-        /// This is done using <see cref="shutdownInProgress"/>, which prevents execution of the disposal procedure - see the body of <see cref="Dispose"/>.
-        /// </para>
-        /// <para>
-        /// If disposal is requested from the behavior being detached, <see cref="disposeRequested"/> is set and <see cref="Dispose"/>
-        /// is called when all behaviors are detached.
-        /// </para>
-        /// <para>
-        /// <see cref="shutdownCalled"/> protects this method from being called more than once.
-        /// </para>
-        /// </remarks>
-        private void Shutdown()
-        {
-            this.logger.LogTrace("()");
-
-            lock (this.shutdownLock)
-            {
-                if (this.shutdownCalled)
-                {
-                    this.logger.LogTrace("(-)[SHUTDOWN_CALLED]");
-                    return;
-                }
-
-                this.shutdownCalled = true;
-                this.shutdownInProgress = true;
-            }
-
-            this.Disconnect();
-
-            if ((this.peer.State != NetworkPeerState.Failed) && (this.peer.State != this.setPeerStateOnShutdown))
-                this.peer.SetStateAsync(this.setPeerStateOnShutdown).GetAwaiter().GetResult();
-
-            foreach (INetworkPeerBehavior behavior in this.peer.Behaviors)
-            {
-                try
-                {
-                    behavior.Detach();
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogError("Error while detaching behavior '{0}': {1}", behavior.GetType().FullName, ex.ToString());
-                }
-            }
-
-            this.ShutdownComplete.SetResult(true);
-
-            bool callDispose = false;
-            lock (this.shutdownLock)
-            {
-                this.shutdownInProgress = false;
-                callDispose = this.disposeRequested;
-            }
-
-            if (callDispose) this.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -397,7 +264,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
-                this.CallShutdown();
+                this.peer.Disconnect("Connection to the peer has been terminated");
                 this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                 throw;
             }
@@ -405,19 +272,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
-                if (this.peer.DisconnectReason == null)
-                {
-                    this.peer.DisconnectReason = new NetworkPeerDisconnectReason()
-                    {
-                        Reason = "Unexpected exception while sending a message",
-                        Exception = ex
-                    };
-                }
+                this.peer.Disconnect("Unexpected exception while sending a message", ex);
 
-                if (this.peer.State != NetworkPeerState.Offline)
-                    this.setPeerStateOnShutdown = NetworkPeerState.Failed;
-
-                this.CallShutdown();
                 this.logger.LogTrace("(-)[EXCEPTION]");
                 throw new OperationCanceledException();
             }
@@ -619,46 +475,31 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            bool callShutdown = false;
-            lock (this.shutdownLock)
+            if (Interlocked.CompareExchange(ref this.disposed, 1, 0) == 1)
             {
-                if (this.disposed)
-                {
-                    this.logger.LogTrace("(-)[DISPOSED]");
-                    return;
-                }
-
-                if (this.shutdownInProgress)
-                {
-                    this.disposeRequested = true;
-                    this.logger.LogTrace("(-)[SHUTDOWN_IN_PROGRESS]");
-                    return;
-                }
-
-                this.disposed = true;
-
-                callShutdown = !this.shutdownCalled;
+                this.logger.LogTrace("(-)[DISPOSED]");
+                return;
             }
+            
+            this.Disconnect();
 
-            if (callShutdown) this.CallShutdown();
             this.CancellationSource.Cancel();
 
             this.receiveMessageTask?.Wait();
-            this.ShutdownComplete.Task.Wait();
 
             this.messageProducerRegistration.Dispose();
             this.messageListener.Dispose();
 
             this.CancellationSource.Dispose();
             this.writeLock.Dispose();
-
-            this.DisposeComplete.SetResult(true);
-
+            
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        private void Disconnect()
+        /// <summary>
+        /// Closes TCP connection and disposes it's stream.
+        /// </summary>
+        public void Disconnect()
         {
             this.logger.LogTrace("()");
 
@@ -667,7 +508,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.stream = null;
             this.tcpClient = null;
-
+          
             disposeStream?.Dispose();
             disposeTcpClient?.Dispose();
 

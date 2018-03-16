@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Text;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Features.Dns
@@ -91,6 +93,22 @@ namespace Stratis.Bitcoin.Features.Dns
             logger.LogTrace("(-)");
 
             return this;
+        }
+
+        /// <summary>Prints the help information on how to configure the DNS settings to the logger.</summary>
+        /// <param name="network">The network to use.</param>
+        public static void PrintHelp(Network network)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine($"-dnslistenport=<0-65535>  The DNS listen port. Defaults to '{ DefaultDnsListenPort }'.");
+            builder.AppendLine($"-dnsfullnode=<0 or 1>     Enables running the DNS Seed service as a full node.");
+            builder.AppendLine($"-dnspeerblacklistthresholdinseconds=<seconds>  The number of seconds since a peer last connected before being blacklisted from the DNS nodes. Default: {DefaultDnsPeerBlacklistThresholdInSeconds }.");
+            builder.AppendLine($"-dnshostname=<string>     The host name for the node when running as a DNS Seed service.");
+            builder.AppendLine($"-dnsnameserver=<string>   The DNS Seed Service nameserver.");
+            builder.AppendLine($"-dnsmailbox=<string>      The e-mail address used as the administrative point of contact for the domain.");
+
+            NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
     }
 }

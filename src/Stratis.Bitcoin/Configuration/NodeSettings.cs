@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
-        
+
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
 
@@ -242,9 +242,14 @@ namespace Stratis.Bitcoin.Configuration
             this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
             this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
             this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
-
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
+
+            // Add a prefix set by the user to the agent. This will allow people running nodes to
+            // identify themselves if they wish. The prefix is limited to 10 characters.
+            string agentPrefix = config.GetOrDefault("agentprefix", string.Empty);
+            agentPrefix = agentPrefix.Substring(0, Math.Min(10, agentPrefix.Length));
+            this.Agent = string.IsNullOrEmpty(agentPrefix) ? this.Agent : $"{agentPrefix}-{this.Agent}"; 
 
             return this;
         }
@@ -400,12 +405,10 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
-            builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
-            builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification(0 to verify all). Defaults to network specific value.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }

@@ -8,12 +8,12 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.Exceptions;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -21,10 +21,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private List<TxOut> refundOutputs = new List<TxOut>();
 
-        private IContractStateRepository stateRepository;
+        private ContractStateRepositoryRoot stateRoot;
+        private ContractStateRepositoryRoot currentStateRepository;
 
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
         private readonly SmartContractValidator validator;
 
         private uint160 coinbaseAddress;
@@ -39,15 +40,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
-            IContractStateRepository stateRepository,
+            ContractStateRepositoryRoot stateRoot,
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
-            SmartContractGasInjector gasInjector,
+            ISmartContractGasInjector gasInjector,
             CoinView coinView,
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
-            this.stateRepository = stateRepository;
+            this.stateRoot = stateRoot;
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
@@ -58,13 +59,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
             this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
-
+            this.currentStateRepository = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
-
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-
-            this.stateRepository.Commit();
-
             return this.pblocktemplate;
         }
 
@@ -78,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateHeaders();
 
-            this.pblock.Header.HashStateRoot = new uint256(this.stateRepository.GetRoot());
+            this.pblock.Header.HashStateRoot = new uint256(this.currentStateRepository.Root);
         }
 
         /// <summary>
@@ -112,7 +109,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </remarks> 
         private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
         {
-            SmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height, this.difficulty);
+            ISmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height, this.difficulty);
 
             // Add the mempool entry transaction to the block 
             // and adjust BlockSize, BlockWeight and SigOpsCost
@@ -139,12 +136,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             //---------------------------------------------
         }
 
-        public SmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
+        public ISmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
         {
-            IContractStateRepository nestedStateRepository = this.stateRepository.StartTracking();
+            IContractStateRepository nestedStateRepository = this.currentStateRepository.StartTracking();
 
             var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
-            SmartContractExecutionResult executionResult = executor.Execute();
+            ISmartContractExecutionResult executionResult = executor.Execute();
 
             // Update state--------------------------------
             if (executionResult.Revert)
@@ -177,7 +174,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// If an <see cref="OutOfGasException"/> was thrown no refund will be done.
         /// </para>
         /// </summary>
-        private ulong CalculateRefund(SmartContractCarrier carrier, SmartContractExecutionResult result)
+        private ulong CalculateRefund(SmartContractCarrier carrier, ISmartContractExecutionResult result)
         {
             if (result.Exception is OutOfGasException)
                 return 0;

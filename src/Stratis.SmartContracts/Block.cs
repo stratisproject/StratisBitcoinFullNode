@@ -1,18 +1,16 @@
-﻿using NBitcoin;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
-    public class Block
+    public struct Block
     {
-        public ulong Number { get; }
-        public uint160 Coinbase { get; }
-        public ulong Difficulty { get; }
-
-        public Block(ulong number, uint160 coinbase, ulong difficulty)
+        public Block(ulong number, Address coinbase, ulong difficulty)
         {
-            Number = number;
-            Coinbase = coinbase;
-            Difficulty = difficulty;
+            this.Number = number;
+            this.Coinbase = coinbase;
+            this.Difficulty = difficulty;
         }
+
+        public ulong Number { get; }
+        public Address Coinbase { get; }
+        public ulong Difficulty { get; }
     }
 }

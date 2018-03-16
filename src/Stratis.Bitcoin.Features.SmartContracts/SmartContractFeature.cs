@@ -11,27 +11,29 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractFeature : FullNodeFeature
     {
         private readonly ILogger logger;
-        private readonly IContractStateRepository contractStateRepository;
+        private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IConsensusLoop consensusLoop;
 
-        public SmartContractFeature(ILoggerFactory loggerFactory, IContractStateRepository contractStateRepository, IConsensusLoop consensusLoop)
+        public SmartContractFeature(ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot, IConsensusLoop consensusLoop)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.contractStateRepository = contractStateRepository;
+            this.stateRoot = stateRoot;
             this.consensusLoop = consensusLoop;
         }
 
         public override void Initialize()
         {
-            this.contractStateRepository.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
+            this.stateRoot.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -55,11 +57,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
-                        services.AddSingleton<SmartContractGasInjector>();
+                        services.AddSingleton<ISmartContractGasInjector, SmartContractGasInjector>();
 
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
-                        services.AddSingleton<IContractStateRepository, ContractStateRepositoryRoot>();
+                        services.AddSingleton<ContractStateRepositoryRoot>();
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();

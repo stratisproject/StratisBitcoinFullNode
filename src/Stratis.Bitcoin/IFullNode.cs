@@ -31,6 +31,9 @@ namespace Stratis.Bitcoin
         /// <summary>Provides current state of the node.</summary>
         FullNodeState State { get; }
 
+        /// <summary>Time the node started.</summary>
+        DateTime StartTime { get; }
+
         /// <summary>
         /// Starts the full node and all its features.
         /// </summary>

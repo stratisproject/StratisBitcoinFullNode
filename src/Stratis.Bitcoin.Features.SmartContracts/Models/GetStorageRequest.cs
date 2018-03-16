@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {

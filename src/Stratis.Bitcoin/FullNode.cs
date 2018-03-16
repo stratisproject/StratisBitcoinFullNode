@@ -53,6 +53,9 @@ namespace Stratis.Bitcoin
         /// <inheritdoc />
         public FullNodeState State { get; private set; }
 
+        /// <inheritdoc />
+        public DateTime StartTime { get; set; }
+
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
 
@@ -174,6 +177,7 @@ namespace Stratis.Bitcoin
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
             this.State = FullNodeState.Initialized;
+            this.StartTime = this.DateTimeProvider.GetUtcNow();
             return this;
         }
 

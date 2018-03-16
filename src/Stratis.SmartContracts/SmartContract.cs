@@ -1,20 +1,12 @@
-﻿using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.Exceptions;
-using Stratis.SmartContracts.State;
+﻿using System;
 
 namespace Stratis.SmartContracts
 {
-    public class SmartContract
+    public abstract class SmartContract
     {
         protected Address Address => this.Message.ContractAddress;
 
-        protected ulong Balance
-        {
-            get
-            {
-                return this.stateRepository.GetCurrentBalance(this.Address.ToUint160());
-            }
-        }
+        public ulong Balance => this.getBalance();
 
         public Gas GasUsed { get; private set; }
 
@@ -22,26 +14,26 @@ namespace Stratis.SmartContracts
 
         public Message Message { get; }
 
-        public PersistentState PersistentState { get; }
-
-        /// <summary>
-        /// Used when creating new contracts or sending funds.
-        /// </summary>
-        private readonly IContractStateRepository stateRepository;
-
+        public IPersistentState PersistentState { get; }
+        
         /// <summary>
         /// Used to track the gas usage for this contract instance
         /// </summary>
-        private readonly GasMeter gasMeter;
+        private readonly IGasMeter gasMeter;
+        private readonly IInternalTransactionExecutor internalTransactionExecutor;
+        private readonly Func<ulong> getBalance;
+        private readonly ISmartContractState state;
 
-        public SmartContract(SmartContractState state)
+        protected SmartContract(ISmartContractState state)
         {
             System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
             this.Message = state.Message;
             this.Block = state.Block;
             this.PersistentState = state.PersistentState;
-            this.stateRepository = state.StateRepository;
             this.gasMeter = state.GasMeter;
+            this.internalTransactionExecutor = state.InternalTransactionExecutor;
+            this.getBalance = state.GetBalance;
+            this.state = state;
         }
 
         /// <summary>
@@ -58,49 +50,9 @@ namespace Stratis.SmartContracts
         /// </summary>
         /// <param name="addressTo"></param>
         /// <param name="amount"></param>
-        protected TransferResult Transfer(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
+        protected ITransferResult Transfer(Address addressTo, ulong amount, TransactionDetails transactionDetails = null)
         {
-            //TODO: The act of calling this should cost a lot of gas!
-
-            if (this.Balance < amount)
-                throw new InsufficientBalanceException();
-
-            // Discern whether is a contract or ordinary address.
-            byte[] contractCode = this.stateRepository.GetCode(addressTo.ToUint160());
-
-            if (contractCode == null || contractCode.Length == 0)
-            {
-                // Is not a contract, so just record the transfer and return
-                this.stateRepository.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
-                return new TransferResult();
-            }
-
-            // It's a contract - instantiate the contract and execute.
-            IContractStateRepository track = this.stateRepository.StartTracking();
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, this.gasMeter);
-            PersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160());
-            Message newMessage = new Message(addressTo, this.Address, amount, (Gas) (this.Message.GasLimit - this.GasUsed));
-            SmartContractExecutionContext newContext = new SmartContractExecutionContext(this.Block, newMessage, 0, transactionDetails.Parameters);
-            ReflectionVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
-            SmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode, 
-                transactionDetails.ContractTypeName, 
-                transactionDetails.ContractMethodName, 
-                newContext,
-                this.gasMeter);
-
-            SpendGas(result.GasUnitsUsed);
-
-            if (result.Revert)
-            {
-                // contract execution unsuccessful
-                track.Rollback();
-                return new TransferResult(null, result.Exception);
-            }
-
-            track.Commit();
-            this.stateRepository.TransferBalance(this.Address.ToUint160(), addressTo.ToUint160(), amount);
-            return new TransferResult(result.Return, null);
+            return this.internalTransactionExecutor.Transfer(this.state, addressTo, amount, transactionDetails);            
         }
     }
 }
