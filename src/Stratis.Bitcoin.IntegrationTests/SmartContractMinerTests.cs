@@ -295,6 +295,72 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
+        /// Try and spend outputs we don't own
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_TrySpendingFundsThatArentOurs_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress = tx.GetNewContractAddress();
+            Assert.NotNull(context.state.GetCode(newContractAddress));
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 5000000000L - gasBudget;
+
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", gasPrice, gasLimit);
+            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
+
+            context.mempool.Clear();
+
+            var maliciousPerson = new Key();
+            var entryFee = 10000;
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+            var maliciousTxBuilder = new TransactionBuilder();
+            var maliciousAmount = 500000000; // 5 BTC
+            var maliciousPaymentScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(maliciousPerson.PubKey);
+
+            maliciousTxBuilder.AddCoins(pblocktemplate2.Block.Transactions[2]);
+            maliciousTxBuilder.Send(maliciousPaymentScript, maliciousAmount);
+            maliciousTxBuilder.SetChange(context.privateKey);
+            maliciousTxBuilder.SendFees(entryFee);
+            var maliciousTx = maliciousTxBuilder.BuildTransaction(false);
+
+            // Signing example
+            //tx.Sign(new Key[] { context.privateKey }, funds);
+
+            context.mempool.AddUnchecked(
+                maliciousTx.GetHash(), 
+                entry.Fee(entryFee)
+                    .Time(context.date.GetTime())
+                    .SpendsCoinbase(true)
+                    .FromTx(maliciousTx));
+
+            BlockTemplate pblocktemplate3 = await BuildBlockAsync(context);
+
+            // We should not be able to create an output with a P2PKH of our malicious attacker
+            var maliciousTransaction = pblocktemplate3.Block.Transactions
+                .Where(t => t.Outputs.Any(o => o.ScriptPubKey.Equals(maliciousPaymentScript))).ToList();
+
+            Assert.Empty(maliciousTransaction);
+
+            //var maliciousOutput = maliciousTransaction[0].Outputs.FirstOrDefault(o => o.ScriptPubKey.Equals(maliciousPaymentScript));
+
+            //Assert.Equal(maliciousAmount, maliciousOutput.Value);            
+        }
+
+        /// <summary>
         /// Test that contracts correctly send funds to one person
         /// </summary>
         [Fact]
