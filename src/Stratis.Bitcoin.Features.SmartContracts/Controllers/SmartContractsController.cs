@@ -32,16 +32,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
-        private readonly Network network;
 
-        public SmartContractsController(ContractStateRepositoryRoot  stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
+        public SmartContractsController(ContractStateRepositoryRoot  stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
             this.walletTransactionHandler = walletTransactionHandler;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.network = network;
         }
 
         [Route("code")]
@@ -78,7 +76,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
-            //var contractAddress = new ContractAddress(address, this.network);.Hash.
             var numeric = new uint160(address);
             ulong balance = this.stateRoot.GetCurrentBalance(numeric);
             return Json(balance);
