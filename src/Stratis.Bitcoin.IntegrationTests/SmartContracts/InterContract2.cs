@@ -6,7 +6,7 @@ public class InterContract2 : SmartContract
 
     public int ContractTransfer(string addressString)
     {
-        ITransferResult result = Transfer(new Address(addressString), 100, new TransactionDetails
+        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
             ContractMethodName = "ReturnInt",
             ContractTypeName = "InterContract1"
@@ -17,7 +17,7 @@ public class InterContract2 : SmartContract
 
     public bool ContractTransferWithFail(string addressString)
     {
-        ITransferResult result = Transfer(new Address(addressString), 100, new TransactionDetails
+        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
             ContractMethodName = "ThrowException",
             ContractTypeName = "InterContract1"

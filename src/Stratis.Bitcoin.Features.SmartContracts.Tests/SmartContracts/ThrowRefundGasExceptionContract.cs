@@ -10,7 +10,7 @@ public sealed class ThrowRefundGasExceptionContract : SmartContract
 
     public void ThrowException()
     {
-        SpendGas((Gas) 10);
+        SpendGas((Gas)10);
 
         throw new RefundGasException();
     }

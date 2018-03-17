@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
         }
-        
+
         [Route("code")]
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             ulong gasLimit = ulong.Parse(request.GasLimit);
 
             SmartContractCarrier carrier;
-            if(request.Parameters != null && request.Parameters.Any())
+            if (request.Parameters != null && request.Parameters.Any())
             {
                 carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
             }

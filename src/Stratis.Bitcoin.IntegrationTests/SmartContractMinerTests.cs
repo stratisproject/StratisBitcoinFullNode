@@ -293,13 +293,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public async Task SmartContracts_TransferFundsToSingleRecipient_Async()
         {
-            TestContext context = new TestContext();
+            var context = new TestContext();
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
             Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
-            
+
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
@@ -498,7 +498,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToString()),
             };
-            
+
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", gasPrice, gasLimit, testMethodParameters);
             pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("test")));

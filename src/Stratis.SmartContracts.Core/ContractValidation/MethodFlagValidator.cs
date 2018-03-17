@@ -109,7 +109,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public static string ErrorType = "Invalid Method Flags";
 
         public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
-        {            
+        {
             // Instruction accesses external info.
             var invalid = method.IsNative || method.IsPInvokeImpl || method.IsUnmanaged || method.IsInternalCall;
 

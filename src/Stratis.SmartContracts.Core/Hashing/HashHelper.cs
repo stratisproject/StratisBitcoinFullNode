@@ -24,7 +24,6 @@ namespace Stratis.SmartContracts.Core.Hashing
         /// </summary>
         /// <param name="address"></param>
         /// <param name="nonce"></param>
-        /// <returns></returns>
         public static byte[] NewContractAddress(byte[] address, byte[] nonce)
         {
             return Keccak256(address.Concat(nonce).ToArray()).Skip(12).ToArray();

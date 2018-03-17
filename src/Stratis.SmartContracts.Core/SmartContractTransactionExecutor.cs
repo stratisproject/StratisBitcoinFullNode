@@ -102,9 +102,9 @@ namespace Stratis.SmartContracts.Core
                 Func<ulong> getBalance = () => this.nestedStateRepository.GetCurrentBalance(contractAddress);
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
-                    contractCode.ToArray(), 
-                    decompilation.ContractType.Name, 
-                    initMethod?.Name, 
+                    contractCode.ToArray(),
+                    decompilation.ContractType.Name,
+                    initMethod?.Name,
                     executionContext,
                     gasMeter,
                     internalTransactionExecutor,
@@ -132,7 +132,7 @@ namespace Stratis.SmartContracts.Core
             // YO! VERY IMPORTANT! 
 
             // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
-   
+
             this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
             using (var ms = new MemoryStream())
@@ -150,23 +150,25 @@ namespace Stratis.SmartContracts.Core
 
                 var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress, this.network);
                 this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
-                ReflectionVirtualMachine vm = new ReflectionVirtualMachine(persistentState);
+                var vm = new ReflectionVirtualMachine(persistentState);
+
+                var executionContext = new SmartContractExecutionContext
+                (
+                    new Block(Convert.ToUInt64(this.height), new Address(this.coinbaseAddress.ToString()), Convert.ToUInt64(this.difficulty)),
+                    new Message(
+                        new Address(contractAddress.ToString()),
+                        new Address(this.smartContractCarrier.Sender.ToString()),
+                        this.smartContractCarrier.TxOutValue,
+                        this.smartContractCarrier.GasLimit
+                        ),
+                    this.smartContractCarrier.GasUnitPrice,
+                    this.smartContractCarrier.MethodParameters);
+
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
                     contractCodeWGas,
                     decompilation.ContractType.Name,
                     this.smartContractCarrier.MethodName,
-                    new SmartContractExecutionContext
-                    (
-                          new Block(Convert.ToUInt64(this.height), new Address(this.coinbaseAddress.ToString()), Convert.ToUInt64(this.difficulty)),
-                          new Message(
-                              new Address(contractAddress.ToString()),
-                              new Address(this.smartContractCarrier.Sender.ToString()),
-                              this.smartContractCarrier.TxOutValue,
-                              this.smartContractCarrier.GasLimit
-                          ),
-                          this.smartContractCarrier.GasUnitPrice,
-                          this.smartContractCarrier.MethodParameters
-                      ),
+                    executionContext,
                     gasMeter,
                     internalTransactionExecutor,
                     getBalance);

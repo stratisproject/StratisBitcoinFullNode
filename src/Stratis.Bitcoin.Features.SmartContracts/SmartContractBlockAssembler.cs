@@ -58,11 +58,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
             this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
-            this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
+            this.SetCoinbaseAddress(GetSenderUtil.GetAddressFromScript(scriptPubKeyIn));
             this.currentStateRepository = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
             this.coinbase.Outputs.AddRange(this.refundOutputs);
             return this.pblocktemplate;
+        }
+
+        /// <summary>
+        /// This will be removed once we have implemented the new assemblers.
+        /// </summary>
+        /// <param name="scriptPubKeyIn"></param>
+        public void SetCoinbaseAddress(uint160 address)
+        {
+            this.coinbaseAddress = address;
         }
 
         /// <summary>

@@ -9,8 +9,8 @@
             this.Difficulty = difficulty;
         }
 
-        public ulong Number { get; }
         public Address Coinbase { get; }
         public ulong Difficulty { get; }
+        public ulong Number { get; }
     }
 }

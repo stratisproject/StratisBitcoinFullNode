@@ -1,5 +1,8 @@
 ﻿namespace Stratis.SmartContracts.Core.Backend
 {
+    /// <summary>
+    /// Defines how execution context for smart contract executor should be constructed.
+    /// </summary>
     public interface ISmartContractExecutionContext
     {
         /// <summary>
@@ -15,7 +18,7 @@
         ulong GasPrice { get; }
 
         /// <summary>
-        /// These are the method parameters to be injected into the method call by the <see cref="Stratis.SmartContracts.Core.SmartContractTransactionExecutor"/>.
+        /// These are the method parameters to be injected into the method call by the <see cref="SmartContractTransactionExecutor"/>.
         /// </summary>
         object[] Parameters { get; }
     }

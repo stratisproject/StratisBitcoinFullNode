@@ -2,35 +2,39 @@
 
 namespace Stratis.SmartContracts.Core.Backend
 {
-    public class GasMeter : IGasMeter
+    /// <inheritdoc/>
+    public sealed class GasMeter : IGasMeter
     {
-        public GasMeter(Gas availableGas)
+        /// <inheritdoc/>
+        public Gas GasAvailable { get; private set; }
+
+        /// <inheritdoc/>
+        public Gas GasConsumed
         {
-            this.AvailableGas = availableGas;
-            this.GasLimit = availableGas;
+            get { return (Gas)(this.GasLimit - this.GasAvailable); }
         }
 
+        /// <inheritdoc/>
         public Gas GasLimit { get; }
 
-        public Gas AvailableGas { get; private set; }
-
-        public Gas ConsumedGas => (Gas)(this.GasLimit - this.AvailableGas);
-
-        private bool IsEnoughGas(Gas requiredGas)
+        public GasMeter(Gas gasAvailable)
         {
-            return this.AvailableGas >= requiredGas;
+            this.GasAvailable = gasAvailable;
+            this.GasLimit = gasAvailable;
         }
 
-        public void Spend(Gas spend)
+        /// <inheritdoc/>
+        /// <remarks>TODO Can we make it more obvious when program execution will be interrupted?</remarks>
+        public void Spend(Gas gasToSpend)
         {
-            //@TODO Can we make it more obvious when program execution will be interrupted?
-            if (!this.IsEnoughGas(spend))
+            if (this.GasAvailable >= gasToSpend)
             {
-                this.AvailableGas = (Gas)0;
-                throw new OutOfGasException("Went over gas limit of " + this.GasLimit);
+                this.GasAvailable -= gasToSpend;
+                return;
             }
 
-            this.AvailableGas -= spend;
+            this.GasAvailable = (Gas)0;
+            throw new OutOfGasException("Went over gas limit of " + this.GasLimit);
         }
     }
 }

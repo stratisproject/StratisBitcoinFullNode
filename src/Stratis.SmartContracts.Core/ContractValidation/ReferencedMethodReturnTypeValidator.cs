@@ -353,7 +353,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "System.Reflection.Assembly System.Reflection.Emit.AssemblyBuilder::nCreateDynamicAssembly(System.AppDomain,System.Reflection.AssemblyName,System.Security.Policy.Evidence,System.Threading.StackCrawlMark&,System.Byte[],System.Byte[],System.Reflection.Emit.AssemblyBuilderAccess,System.Reflection.Emit.DynamicAssemblyFlags,System.Security.SecurityContextSource)",
             "System.Runtime.InteropServices.WindowsRuntime.IRestrictedErrorInfo System.Runtime.InteropServices.WindowsRuntime.UnsafeNativeMethods::GetRestrictedErrorInfo()"
         };
-        
+
         public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
         {
             foreach (Mono.Cecil.Cil.Instruction instruction in method.Body.Instructions)

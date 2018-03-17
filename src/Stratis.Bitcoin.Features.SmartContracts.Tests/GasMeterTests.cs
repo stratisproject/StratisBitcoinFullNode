@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gas = new Gas(1000);
             var gasMeter = new GasMeter(gas);
 
-            Assert.Equal(gas, gasMeter.AvailableGas);
+            Assert.Equal(gas, gasMeter.GasAvailable);
         }
 
         [Fact]
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gas = new Gas(1000);
             var gasMeter = new GasMeter(gas);
 
-            Assert.Equal(Gas.None, gasMeter.ConsumedGas);
+            Assert.Equal(Gas.None, gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -45,8 +45,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             gasMeter.Spend(consumed);
 
-            Assert.Equal(consumed, gasMeter.ConsumedGas);
-            Assert.Equal(diff, gasMeter.AvailableGas);
+            Assert.Equal(consumed, gasMeter.GasConsumed);
+            Assert.Equal(diff, gasMeter.GasAvailable);
         }
 
         [Fact]

@@ -43,9 +43,9 @@ namespace Stratis.SmartContracts.Core
 
         public void AddGasCalculationToContract(TypeDefinition contractType, TypeDefinition baseType)
         {
-            // Get gas expend method
+            // Get gas spend method
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
-            MethodReference gasMethodReference = contractType.Module.Import(gasMethod);
+            MethodReference gasMethodReference = contractType.Module.ImportReference(gasMethod);
 
             // @TODO - Ignore constructors for now...
             foreach (MethodDefinition method in contractType.Methods.Where(m => !m.IsConstructor))
@@ -93,13 +93,13 @@ namespace Stratis.SmartContracts.Core
                 // is a call to another method
                 else if (CallingOps.Contains(instruction.OpCode))
                 {
-                    var methodToCall = (MethodReference) instruction.Operand;
+                    var methodToCall = (MethodReference)instruction.Operand;
 
                     // If it's a method inside this contract then the gas will be injected no worries.
                     if (methodToCall.DeclaringType == methodDefinition.DeclaringType)
                     {
                         position++;
-                        gasTally = (Gas) (gasTally + instructionCost);
+                        gasTally = (Gas)(gasTally + instructionCost);
                     }
                     // If it's a method outside this contract then we will need to get some average in future.
                     else
@@ -141,7 +141,7 @@ namespace Stratis.SmartContracts.Core
             ILProcessor il = methodDefinition.Body.GetILProcessor();
             Instruction ldarg0 = il.Create(OpCodes.Ldarg_0);
             Instruction gasInstruction = il.Create(OpCodes.Call, gasMethod);
-            Instruction pushInstruction = il.Create(OpCodes.Ldc_I8, (long) opcodeCount.Value);
+            Instruction pushInstruction = il.Create(OpCodes.Ldc_I8, (long)opcodeCount.Value);
 
             // Ref: https://stackoverflow.com/questions/16346155/cil-opcode-ldarg-0-is-used-even-though-there-are-no-arguments
             il.InsertBefore(instruction, ldarg0);
