@@ -18,6 +18,11 @@ public class TransferTest : SmartContract
         Transfer(new Address("0x0000000000000000000000000000000000000124"), 100);
     }
 
+    public void P2KTest()
+    {
+        Transfer(new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"), 100);
+    }
+
     public bool DoNothing()
     {
         return true;

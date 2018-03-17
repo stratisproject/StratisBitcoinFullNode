@@ -1,4 +1,5 @@
-﻿using Stratis.SmartContracts.Util;
+﻿using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 public class DemoHelperTests

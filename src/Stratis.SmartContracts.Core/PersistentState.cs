@@ -13,6 +13,7 @@ namespace Stratis.SmartContracts.Core
         public uint160 ContractAddress { get; }
         private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
         private readonly IPersistenceStrategy persistenceStrategy;
+        private readonly Network network;
 
         /// <summary>
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
@@ -21,12 +22,13 @@ namespace Stratis.SmartContracts.Core
         /// <param name="stateDb"></param>
         /// <param name="persistenceStrategy"></param>
         /// <param name="contractAddress"></param>
-        public PersistentState(IContractStateRepository stateDb, IPersistenceStrategy persistenceStrategy, uint160 contractAddress)
+        public PersistentState(IContractStateRepository stateDb, IPersistenceStrategy persistenceStrategy, uint160 contractAddress, Network network)
         {
             this.StateDb = stateDb;
             this.persistenceStrategy = persistenceStrategy;
             this.ContractAddress = contractAddress;
             this.counter = 0;
+            this.network = network;
         }
 
         public T GetObject<T>(string key)
@@ -43,7 +45,7 @@ namespace Stratis.SmartContracts.Core
         public void SetObject<T>(string key, T obj)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj));
+            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj, this.network));
         }
 
         public ISmartContractMapping<V> GetMapping<V>(string name)
@@ -64,7 +66,7 @@ namespace Stratis.SmartContracts.Core
     /// </summary>
     public class PersistentStateSerializer
     {
-        public byte[] Serialize(object o)
+        public byte[] Serialize(object o, Network network)
         {
             if (o is byte[])
                 return (byte[])o;
@@ -76,7 +78,7 @@ namespace Stratis.SmartContracts.Core
                 return new byte[] { Convert.ToByte(((char)o)) };
 
             if (o is Address)
-                return ((Address)o).ToUint160().ToBytes();
+                return ((Address)o).ToUint160(network).ToBytes();
 
             if (o is bool)
                 return (BitConverter.GetBytes((bool)o));

@@ -19,8 +19,19 @@ namespace Stratis.SmartContracts.Core
             return bytes;
         }
 
-        public static uint160 ToUint160(this Address address)
+        public static uint160 ToUint160(this Address address, Network network)
         {
+            // God there has to be a better way to do this?
+            try
+            {
+                if (BitcoinPubKeyAddress.IsValid(address.Value, ref network))
+                    return new uint160(new BitcoinPubKeyAddress(address.Value, network).Hash.ToBytes());
+            }
+            catch (FormatException e)
+            {
+
+            }
+
             return new uint160(address.Value);
         }
     }

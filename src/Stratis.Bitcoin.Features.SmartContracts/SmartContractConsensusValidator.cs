@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.ContractValidation;
@@ -26,6 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly ISmartContractGasInjector gasInjector;
+        private readonly Network network;
         private List<Transaction> blockTxsProcessed;
         private Transaction lastProcessed;
 
@@ -48,6 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.validator = validator;
             this.gasInjector = gasInjector;
             this.lastProcessed = null;
+            this.network = network;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
@@ -216,7 +217,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress);
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress, this.network);
             ISmartContractExecutionResult result = executor.Execute();
 
             if (result.Revert)

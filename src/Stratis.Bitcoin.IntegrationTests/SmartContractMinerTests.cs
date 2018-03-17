@@ -434,6 +434,39 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Should deploy 2 contracts, and then send funds from one to the other and end up with correct balances for all.
         /// </summary>
         [Fact]
+        public async Task SmartContracts_TransferToP2PKH_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            // This uses a lot of gas
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress = tx.GetNewContractAddress();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 1000;
+
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "P2KTest", gasPrice, gasLimit);
+            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
+            Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
+            Assert.Equal(pblocktemplate.Block.Transactions[1].GetHash(), pblocktemplate.Block.Transactions[2].Inputs[0].PrevOut.Hash); // Input should be from the call that was just made.
+            Assert.Equal(900, pblocktemplate.Block.Transactions[2].Outputs[0].Value); // First txout should be the change back to the contract, with a value of 900
+            Assert.Equal(100, pblocktemplate.Block.Transactions[2].Outputs[1].Value); // First txout should be the transfer to the second contract, with a value of 100
+        }
+
+        /// <summary>
+        /// Should deploy 2 contracts, and then send funds from one to the other and end up with correct balances for all.
+        /// </summary>
+        [Fact]
         public async Task SmartContracts_TransferBetweenContracts_Async()
         {
             TestContext context = new TestContext();

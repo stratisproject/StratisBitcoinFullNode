@@ -1,4 +1,5 @@
-﻿using Stratis.SmartContracts.Core.Exceptions;
+﻿using NBitcoin;
+using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Core.Backend
@@ -10,10 +11,12 @@ namespace Stratis.SmartContracts.Core.Backend
     public class InternalTransactionExecutor : IInternalTransactionExecutor
     {
         private readonly IContractStateRepository stateRepository;
+        private readonly Network network;
 
-        public InternalTransactionExecutor(IContractStateRepository stateRepository)
+        public InternalTransactionExecutor(IContractStateRepository stateRepository, Network network)
         {
             this.stateRepository = stateRepository;
+            this.network = network;
         }
 
         public ITransferResult Transfer(ISmartContractState state, Address addressTo, ulong amount, TransactionDetails transactionDetails)
@@ -24,19 +27,19 @@ namespace Stratis.SmartContracts.Core.Backend
                 throw new InsufficientBalanceException();
 
             // Discern whether is a contract or ordinary address.
-            byte[] contractCode = this.stateRepository.GetCode(addressTo.ToUint160());
+            byte[] contractCode = this.stateRepository.GetCode(addressTo.ToUint160(this.network));
 
             if (contractCode == null || contractCode.Length == 0)
             {
                 // Is not a contract, so just record the transfer and return
-                this.stateRepository.TransferBalance(state.Message.ContractAddress.ToUint160(), addressTo.ToUint160(), amount);
+                this.stateRepository.TransferBalance(state.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amount);
                 return new TransferResult();
             }
 
             // It's a contract - instantiate the contract and execute.
             IContractStateRepository track = this.stateRepository.StartTracking();
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, state.GasMeter);
-            IPersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160());
+            IPersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160(this.network), this.network);
             Message newMessage = new Message(addressTo, state.Message.ContractAddress, amount, (Gas)(state.Message.GasLimit - state.GasMeter.ConsumedGas));
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(state.Block, newMessage, 0, transactionDetails.Parameters);
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
@@ -59,7 +62,7 @@ namespace Stratis.SmartContracts.Core.Backend
             }
 
             track.Commit();
-            this.stateRepository.TransferBalance(state.Message.ContractAddress.ToUint160(), addressTo.ToUint160(), amount);
+            this.stateRepository.TransferBalance(state.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amount);
             return new TransferResult(result.Return, null);
         }
     }

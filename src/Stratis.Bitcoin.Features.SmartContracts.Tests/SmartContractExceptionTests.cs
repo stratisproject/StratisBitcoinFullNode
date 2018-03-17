@@ -26,10 +26,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class SmartContractExceptionTests
     {
         private readonly ContractStateRepositoryRoot repository;
+        private readonly Network network;
 
         public SmartContractExceptionTests()
         {
             this.repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.network = Network.SmartContractsRegTest;
         }
 
         [Fact]
@@ -70,7 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasLimit = (Gas)100;
             var gasMeter = new GasMeter(gasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160()); var vm = new ReflectionVirtualMachine(persistentState);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
                 new Stratis.SmartContracts.Block(0, Address.Zero, 0),
@@ -79,8 +82,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new object[] { }
             );
 
-            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository);
-            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(Address.Zero.ToUint160());
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
+            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(Address.Zero.ToUint160(this.network));
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
@@ -102,7 +105,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasLimit = (Gas)100;
             var gasMeter = new GasMeter(gasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160());
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160(this.network), this.network);
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
@@ -112,8 +115,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new object[] { }
             );
 
-            var internalTransactionExecutor = new InternalTransactionExecutor(repository);
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160());
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160(this.network));
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
@@ -136,7 +139,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasLimit = (Gas)100;
             var gasMeter = new GasMeter(gasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160());
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160(this.network), this.network);
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
@@ -146,8 +149,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new object[] { }
             );
 
-            var internalTransactionExecutor = new InternalTransactionExecutor(repository);
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160());
+            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160(this.network));
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
