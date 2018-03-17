@@ -163,10 +163,16 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.ReadTxPrevFailed.Throw();
 
             ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
-            UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
             if (prevBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
+                ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
+
+            UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
+            if (prevUtxo == null)
+            {
+                this.logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
