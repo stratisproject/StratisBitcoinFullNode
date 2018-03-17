@@ -20,7 +20,7 @@ public class TransferTest : SmartContract
 
     public void P2KTest()
     {
-        Transfer(new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"), 100);
+        TransferFunds(new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"), 100);
     }
 
     public bool DoNothing()
