@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <summary>
     /// Cache layer for coinview prevents too frequent updates of the data in the underlaying storage.
     /// </summary>
-    public class CachedCoinView : CoinView, IBackedCoinView
+    public class CachedCoinView : CoinView, IBackedCoinView, IDisposable
     {
         /// <summary>
         /// Item of the coinview cache that holds information about the unspent outputs
@@ -434,6 +434,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private void WaitOngoingTasks()
         {
             Task.WaitAll(this.flushingTask, this.rewindingTask);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            //TODO
         }
     }
 }
