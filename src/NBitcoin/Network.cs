@@ -58,7 +58,6 @@ namespace NBitcoin
         STEALTH_ADDRESS,
         ASSET_ID,
         COLORED_ADDRESS,
-        CONTRACT_ADDRESS,
         MAX_BASE58_TYPES,
     };
 

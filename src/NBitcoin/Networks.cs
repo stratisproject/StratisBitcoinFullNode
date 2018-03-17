@@ -607,7 +607,6 @@ namespace NBitcoin
             network.base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2b };
             network.base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
             network.base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
-            network.base58Prefixes[(int)Base58Type.CONTRACT_ADDRESS] = new byte[] { 0x23 };
 
             var encoder = new Bech32Encoder("tb");
             network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
@@ -680,7 +679,6 @@ namespace NBitcoin
             network.base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
             network.base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
             network.base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
-            network.base58Prefixes[(int)Base58Type.CONTRACT_ADDRESS] = new byte[] { 0x1C, 0x7F };
 
             var encoder = new Bech32Encoder("tb");
             network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
