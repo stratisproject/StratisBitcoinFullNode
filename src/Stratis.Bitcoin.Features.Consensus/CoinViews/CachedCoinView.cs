@@ -287,9 +287,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.unspents.Remove(entry.Key);
 
                 this.innerBlockHash = this.blockHash;
-                this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
             }
-            
+
+            this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
+
             this.logger.LogTrace("(-)");
         }
 
