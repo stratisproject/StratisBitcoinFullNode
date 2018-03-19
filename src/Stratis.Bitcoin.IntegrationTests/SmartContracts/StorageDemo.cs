@@ -1,8 +1,8 @@
 ﻿using Stratis.SmartContracts;
 
-public class Demo : SmartContract
+public class StorageDemo : SmartContract
 {
-    public Demo(ISmartContractState state) : base(state) { }
+    public StorageDemo(ISmartContractState state) : base(state) { }
 
     public int Counter
     {
@@ -28,11 +28,24 @@ public class Demo : SmartContract
         }
     }
 
+    public Address Owner
+    {
+        get
+        {
+            return PersistentState.GetObject<Address>("Owner");
+        }
+        set
+        {
+            PersistentState.SetObject<Address>("Owner", value);
+        }
+    }
+
     [SmartContractInit]
     public void Init()
     {
         Counter = 12345;
         TestSave = "Hello, smart contract world!";
+        Owner = Message.Sender;
     }
 
     public void Increment()
