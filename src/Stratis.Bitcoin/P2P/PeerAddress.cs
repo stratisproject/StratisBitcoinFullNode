@@ -99,7 +99,6 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>
         /// Reason for banning the peer.
-        /// </summary>
         /// <remarks>
         /// This is set in <see cref="PeerBanning"/>.
         /// </remarks>
@@ -108,29 +107,16 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>
         /// Maintain a count of bad behaviour.  
-        /// </summary>
         /// <para>
         /// Once a certain score is reached ban the peer.
         /// </para>
+        /// </summary>
         /// <remarks>
         /// The logic around this has not yet been implemented.
         /// This is set in <see cref="PeerBanning"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "banscore", NullValueHandling = NullValueHandling.Ignore)]
         public uint? BanScore { get; set; }
-
-        /// <summary>
-        /// <c>True</c> if <see cref="BanUntil"/> is in the future.
-        /// </summary>
-        [JsonIgnore]
-        public bool IsBanned
-        {
-            get
-            {
-                return 
-                    (this.BanUntil > DateTime.UtcNow.Date);
-            }
-        }
 
         /// <summary>
         /// <c>True</c> if the peer has had connection attempts but none successful.

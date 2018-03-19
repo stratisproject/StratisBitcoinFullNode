@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
 
@@ -265,7 +266,7 @@ namespace Stratis.Bitcoin.P2P
                 p.Attempted &&
                 p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
                 p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
-                !p.IsBanned);
+                !IsBanned(p));
         }
 
         /// <inheritdoc/>
@@ -273,13 +274,13 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.peerAddresses.Values.Where(p => p.Connected && 
                                                         p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
-                                                        !p.IsBanned);
+                                                        !IsBanned(p));
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Fresh()
         {
-            return this.peerAddresses.Values.Where(p => p.Fresh && !p.IsBanned);
+            return this.peerAddresses.Values.Where(p => p.Fresh && !IsBanned(p));
         }
 
         /// <inheritdoc/>
@@ -287,7 +288,15 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.peerAddresses.Values.Where(p => p.Handshaked && 
                                                         p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
-                                                        !p.IsBanned);
+                                                        !IsBanned(p));
+        }
+
+        /// <summary>
+        /// <c>True</c> if <see cref="PeerAddress.BanUntil"/> is in the future.
+        /// </summary>
+        private bool IsBanned(PeerAddress peerAddress)
+        {
+            return (peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow());
         }
     }
 }

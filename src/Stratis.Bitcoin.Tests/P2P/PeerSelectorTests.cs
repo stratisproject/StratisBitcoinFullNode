@@ -472,13 +472,15 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a particular peer is returned from the attempted peers 
         /// set and ignores banned peers.
-        ///
+        /// <para>
         /// Scenario:
         /// Peer 1 has had a connection attempt (more than 1 hour ago).
         /// Peer 2 has had a connection attempt (more than 1 hour ago), and is banned.
-        ///
+        /// </para>
+        /// <para>
         /// Result:
         /// Peer 1 is in the attempted set, peer 2 is ignored.
+        /// </para>
         /// </summary>
         [Fact]
         public void PeerState_TestReturnFromPeerAttemptedSet_IgnoringBannedPeer()
@@ -509,13 +511,15 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a particular peer is returned from the connected peers
         /// set and ignores banned peers.
-        ///
+        /// <para>
         /// Scenario :
         /// Peer 1 has had a successful connection made to it (more than 60 seconds ago).
         /// Peer 2 has had a successful connection made to it (more than 60 seconds ago), and is banned.
-        ///
+        /// </para>
+        /// <para>
         /// Result:
         /// Peer 1 gets returned in the Connected set.
+        /// </para>
         /// </summary>
         [Fact]
         public void PeerState_TestReturnFromPeerConnectedSet_IgnoringBannedPeer()
@@ -546,13 +550,15 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a peer is returned from the fresh peers
         /// set, and the banned peer is ignored.
-        ///
+        /// <para>
         /// Scenario 1:
         /// Peer 1 has had no connection attempts.
         /// Peer 2 has had no connection attempts, and is banned.
-        ///
+        /// </para>
+        /// <para>
         /// Result:
         /// Peer 1 is in the Fresh set.
+        /// </para>
         /// </summary>
         [Fact]
         public void PeerState_TestReturnFromPeerFreshSet_IgnoringBannedPeer()
@@ -579,13 +585,15 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// <summary>
         /// Ensures that a particular peer is returned from the handshaked peers
         /// set, and the banned peer is ignored.
-        ///
+        /// <para>
         /// Scenario 1:
         /// Peer 1 has had a successful handshake (more than 60 seconds ago).
         /// Peer 2 has had a successful handshake (more than 60 seconds ago), and is banned.
-        ///
+        /// </para>
+        /// <para>
         /// Result:
         /// Peer 1 gets returned in the Connected set, and Peer 2 is ignored.
+        /// </para>
         /// </summary>
         [Fact]
         public void PeerState_TestReturnFromPeerHandshakedSet_IgnoringBanned()

@@ -148,10 +148,7 @@ namespace Stratis.Bitcoin.P2P
                     this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
                 }
 
-                if (!this.peers.TryAdd(peer.Endpoint, peer))
-                {
-                    this.peers.AddOrUpdate(peer.Endpoint, peer, (key, oldValue) => peer);
-                }
+                this.peers.AddOrUpdate(peer.Endpoint, peer, (key, oldValue) => peer);
             });
         }
 
