@@ -114,7 +114,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             public List<Blockinfo> blockinfo;
             public Network network;
-            //public NetworkOptions networkOptions;
             public Script scriptPubKey;
             public uint160 coinbaseAddress;
             public BlockTemplate newBlock;
@@ -392,7 +391,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// TODO: Add consensusvalidator calls
         /// </summary>
         [Fact]
-
         public async Task SmartContracts_NoTransfers_Async()
         {
             var context = new TestContext();
@@ -496,7 +494,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToString()),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToAddress(context.network)),
             };
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", gasPrice, gasLimit, testMethodParameters);

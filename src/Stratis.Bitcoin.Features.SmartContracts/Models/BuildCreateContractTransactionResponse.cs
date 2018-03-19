@@ -15,6 +15,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public uint256 TransactionId { get; set; }
 
         [JsonProperty(PropertyName ="newContractAddress")]
-        public uint160 NewContractAddress { get; set; }
+        public string NewContractAddress { get; set; }
     }
 }

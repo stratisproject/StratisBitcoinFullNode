@@ -32,21 +32,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
+        private readonly Network network;
 
-        public SmartContractsController(ContractStateRepositoryRoot  stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
             this.walletTransactionHandler = walletTransactionHandler;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.network = network;
         }
 
         [Route("code")]
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
-            var numeric = new uint160(address);
+            uint160 numeric = new Address(address).ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(numeric);
 
             // In the future, we could be more explicit about whether a contract exists (or indeed, did ever exist)
@@ -76,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
-            var numeric = new uint160(address);
+            uint160 numeric = new Address(address).ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(numeric);
             return Json(balance);
         }
@@ -90,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            uint160 numeric = new uint160(request.ContractAddress);
+            uint160 numeric = new Address(request.ContractAddress).ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
             if (SmartContractCarrierDataType.UInt == request.DataType)
                 return Json(BitConverter.ToUInt32(storageValue, 0));
@@ -135,7 +137,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 Hex = transactionResult.ToHex(),
                 Fee = context.TransactionFee,
                 TransactionId = transactionResult.GetHash(),
-                NewContractAddress = transactionResult.GetNewContractAddress()
+                NewContractAddress = transactionResult.GetNewContractAddress().ToAddress(this.network)
             };
 
             return this.Json(model);
@@ -152,15 +154,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
+            uint160 numeric = new Address(request.ContractAddress).ToUint160(this.network);
 
             SmartContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, numeric, request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
             }
             else
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit));
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, numeric, request.MethodName, gasPrice, new Gas(gasLimit));
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);

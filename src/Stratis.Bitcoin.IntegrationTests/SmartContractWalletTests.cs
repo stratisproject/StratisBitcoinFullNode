@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     GasPrice = "1",
                     Amount = "0",
                     MethodName = "Increment",
-                    ContractAddress = response.NewContractAddress.ToString(),
+                    ContractAddress = response.NewContractAddress,
                     FeeAmount = "30000",
                     Password = "123456",
                     WalletName = "mywallet"

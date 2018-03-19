@@ -21,18 +21,12 @@ namespace Stratis.SmartContracts.Core
 
         public static uint160 ToUint160(this Address address, Network network)
         {
-            // God there has to be a better way to do this?
-            try
-            {
-                if (BitcoinPubKeyAddress.IsValid(address.Value, ref network))
-                    return new uint160(new BitcoinPubKeyAddress(address.Value, network).Hash.ToBytes());
-            }
-            catch (FormatException e)
-            {
+            return new uint160(new BitcoinPubKeyAddress(address.Value, network).Hash.ToBytes());
+        }
 
-            }
-
-            return new uint160(address.Value);
+        public static Address ToAddress(this uint160 address, Network network)
+        {
+            return new Address(new BitcoinPubKeyAddress(new KeyId(address), network).ToString());
         }
     }
 }

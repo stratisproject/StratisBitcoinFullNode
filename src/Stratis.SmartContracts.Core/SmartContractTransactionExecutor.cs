@@ -87,10 +87,10 @@ namespace Stratis.SmartContracts.Core
 
                 var executionContext = new SmartContractExecutionContext
                     (
-                        new Block(this.height, new Address(this.coinbaseAddress.ToString()), this.difficulty),
+                        new Block(this.height, this.coinbaseAddress.ToAddress(this.network), this.difficulty),
                         new Message(
-                            new Address(contractAddress.ToString()),
-                            new Address(this.smartContractCarrier.Sender.ToString()),
+                            contractAddress.ToAddress(this.network),
+                            this.smartContractCarrier.Sender.ToAddress(this.network),
                             this.smartContractCarrier.TxOutValue,
                             this.smartContractCarrier.GasLimit
                             ),
@@ -154,10 +154,10 @@ namespace Stratis.SmartContracts.Core
 
                 var executionContext = new SmartContractExecutionContext
                 (
-                    new Block(Convert.ToUInt64(this.height), new Address(this.coinbaseAddress.ToString()), Convert.ToUInt64(this.difficulty)),
+                    new Block(Convert.ToUInt64(this.height), this.coinbaseAddress.ToAddress(this.network), Convert.ToUInt64(this.difficulty)),
                     new Message(
-                        new Address(contractAddress.ToString()),
-                        new Address(this.smartContractCarrier.Sender.ToString()),
+                        contractAddress.ToAddress(this.network),
+                        this.smartContractCarrier.Sender.ToAddress(this.network),
                         this.smartContractCarrier.TxOutValue,
                         this.smartContractCarrier.GasLimit
                         ),
@@ -188,7 +188,7 @@ namespace Stratis.SmartContracts.Core
             IList<TransferInfo> transfers = this.nestedStateRepository.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
-                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
+                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository, this.network);
                 executionResult.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
 
@@ -208,7 +208,7 @@ namespace Stratis.SmartContracts.Core
         {
             if (this.smartContractCarrier.TxOutValue > 0)
             {
-                Transaction tx = new CondensingTx(this.smartContractCarrier).CreateRefundTransaction();
+                Transaction tx = new CondensingTx(this.smartContractCarrier, this.network).CreateRefundTransaction();
                 executionResult.InternalTransactions.Add(tx);
             }
 
