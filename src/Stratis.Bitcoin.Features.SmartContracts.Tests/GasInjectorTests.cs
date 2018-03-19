@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private const string ContractName = "Test";
         private const string MethodName = "TestMethod";
+        private static readonly Address TestAddress =  (Address) "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         private readonly ISmartContractGasInjector spendGasInjector = new SmartContractGasInjector();
 
@@ -68,13 +69,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var gasLimit = (Gas)500000;
                 var gasMeter = new GasMeter(gasLimit);
                 var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
-                var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160(this.network), this.network);
+                var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
-                var executionContext = new SmartContractExecutionContext(new Stratis.SmartContracts.Block(0, Address.Zero, 0), new Message(Address.Zero, Address.Zero, 0, (Gas) 500000), 1, new object[] { 1 });
+                var executionContext = new SmartContractExecutionContext(new Stratis.SmartContracts.Block(0, TestAddress, 0), new Message(TestAddress, TestAddress, 0, (Gas) 500000), 1, new object[] { 1 });
 
                 var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160(this.network));
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
                     injectedAssemblyBytes, 

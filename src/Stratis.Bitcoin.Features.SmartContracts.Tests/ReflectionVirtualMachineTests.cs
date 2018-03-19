@@ -18,6 +18,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ISmartContractGasInjector gasInjector;
         private readonly Network network;
 
+        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+
         public ReflectionVirtualMachineTests()
         {
             this.decompiler = new SmartContractDecompiler();
@@ -61,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
-                var sender = deserializedCall.Sender?.ToString() ?? Address.Zero.ToString();
+                var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
 
                 var context = new SmartContractExecutionContext(
                                 new Stratis.SmartContracts.Block(1, new Address("2"), 0),
@@ -133,12 +135,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
                 var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
-                var sender = deserializedCall.Sender?.ToString() ?? Address.Zero.ToString();
+                var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
                 var context = new SmartContractExecutionContext(
                                 new Stratis.SmartContracts.Block(1, new Address("2"), 0),
                                 new Message(
-                                    new Address(deserializedCall.To.ToString()),
+                                    deserializedCall.To.ToAddress(this.network),
                                     new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
