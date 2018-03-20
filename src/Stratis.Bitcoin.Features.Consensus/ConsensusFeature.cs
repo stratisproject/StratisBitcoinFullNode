@@ -161,8 +161,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.logger.LogInformation("Flushing Cache CoinView...");
                 cache.FlushAsync().GetAwaiter().GetResult();
+                cache.Dispose();
             }
-
+           
             this.dBreezeCoinView.Dispose();
         }
     }
