@@ -209,6 +209,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ExecuteContractTransaction(context, transaction, contractTxOut);
         }
 
+        /// <summary>
+        /// Validates that any condensing transaction matches the transaction generated during execution
+        /// </summary>
+        /// <param name="transaction"></param>
         private void ValidateGeneratedTransaction(Transaction transaction)
         {
             if (this.generatedTransaction.GetHash() != transaction.GetHash())
@@ -217,6 +221,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             return;
         }
         
+        /// <summary>
+        /// Validates that a submitted transacction doesn't contain illegal operations
+        /// </summary>
+        /// <param name="transaction"></param>
         private void ValidateSubmittedTransaction(Transaction transaction)
         {
             if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
@@ -225,6 +233,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 SmartContractConsensusErrors.UserInternalCall.Throw(); 
         }
 
+        /// <summary>
+        /// Executes the smart contract part of a transaction
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="transaction"></param>
+        /// <param name="contractTxOut"></param>
         private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut contractTxOut)
         {
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
