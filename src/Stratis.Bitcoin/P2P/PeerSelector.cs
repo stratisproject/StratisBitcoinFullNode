@@ -114,7 +114,10 @@ namespace Stratis.Bitcoin.P2P
 
             PeerAddress peerAddress = null;
 
-            List<PeerAddress> peers = this.SelectPreferredPeers().ToList();
+            List<PeerAddress> peers = this.SelectPreferredPeers()
+                .Where(p => !this.selfEndpointTracker.IsSelf(p.Endpoint))
+                .ToList();
+
             if (peers.Any())
             {
                 peerAddress = this.Random(peers);

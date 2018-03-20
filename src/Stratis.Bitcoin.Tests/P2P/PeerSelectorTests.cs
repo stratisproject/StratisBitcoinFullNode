@@ -471,9 +471,9 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         /// <summary>
-        /// Tests that own peer address is not returning during discover.
+        /// Tests that own peer address is not returning during discover and SelectPeersForDiscovery and SelectPeer.
         ///
-        /// Scenario:
+        /// Scenario 1 - SelectPeersForDiscovery:
         /// PeerAddressManager contains 2 peers.
         /// 1 Peer that is within self endpoint tracker.
         /// 1 Peer not withing self endpoint tracker.
@@ -481,31 +481,48 @@ namespace Stratis.Bitcoin.Tests.P2P
         /// We ask for 2 peers.
         /// 
         /// Result:
-        /// 1 peers returned. It is not the one within self endpoint tracker
+        /// 1 peers returned. It is not the one within self endpoint tracker.
+        /// 
+        /// Scenario 2 - SelectPeer:
+        /// PeerAddressManager contains 2 peers.
+        /// 1 Peer that is within self endpoint tracker.
+        /// 1 Peer not withing self endpoint tracker.
+        /// 
+        /// We ask for a peer.
+        /// 
+        /// Result:
+        /// Peer returned is not the one within self endpoint tracker.
         /// </summary>
         [Fact]
-        public void SelectPeersForDiscovery_ContainingOwnIPEndoint_DoesNotReturnOwnEndpoint()
+        public void SelectPeersForDiscovery_WhenPeerAddressesContainsOwnIPEndoint_DoesNotReturnOwnEndpoint()
         {
             var selfIpEndPoint = new IPEndPoint(new IPAddress(1), 123);
             var selfPeerAddress = new PeerAddress() {Endpoint = selfIpEndPoint};
-            selfPeerAddress.SetDiscoveredFrom(DateTime.MinValue); 
+            selfPeerAddress.SetDiscoveredFrom(DateTime.MinValue);
+
             var otherIpEndPoint = new IPEndPoint(new IPAddress(2), 345);
             var otherPeerAddress = new PeerAddress() {Endpoint = otherIpEndPoint};
             otherPeerAddress.SetDiscoveredFrom(DateTime.MinValue);
-
-            var selfEndpointTracker = new SelfEndpointTracker();
-            selfEndpointTracker.Add(selfIpEndPoint);
 
             var peerAddresses = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             peerAddresses.AddOrUpdate(selfIpEndPoint, selfPeerAddress, (x, y) => selfPeerAddress);
             peerAddresses.AddOrUpdate(otherIpEndPoint, otherPeerAddress, (x, y) => otherPeerAddress);
 
+            var selfEndpointTracker = new SelfEndpointTracker();
+            selfEndpointTracker.Add(selfIpEndPoint);
+
             var peerSelector = new PeerSelector(new DateTimeProvider(), this.loggerFactory, peerAddresses, selfEndpointTracker);
+             
+            IEnumerable<PeerAddress> peers = peerSelector.SelectPeersForDiscovery(2);
 
-            var peers = peerSelector.SelectPeersForDiscovery(2);
-
-            Assert.Single(peers);
             Assert.Equal(otherPeerAddress, peers.Single());
+
+            // Note: This for loop is because Random is currently a hard dependency rather than using dependency inversion. 
+            // It is not 100% safe without mocking random, so a workaround of 20 attempts used for now.
+            for (int i = 0; i < 20; i++)
+            {
+                Assert.Equal(otherPeerAddress, peerSelector.SelectPeer());
+            }
         }
     }
 }
