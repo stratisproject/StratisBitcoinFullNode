@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly SmartContractValidator validator;
         private readonly SmartContractGasInjector gasInjector;
         private List<Transaction> blockTxsProcessed;
-        private Transaction lastProcessed;
+        private Transaction generatedTransaction;
 
         public SmartContractConsensusValidator(
             CoinView coinView,
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
-            this.lastProcessed = null;
+            this.generatedTransaction = null;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
-                                if (txout.ScriptPubKey.IsSmartContractExec)
+                                if (txout.ScriptPubKey.IsSmartContractExec || txout.ScriptPubKey.IsSmartContractInternalCall)
                                 {
                                     return input.ScriptSig.IsSmartContractSpend;
                                 }
@@ -192,25 +192,41 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateCoinView(context, transaction);
 
-            // If we get inside this code block, the transaction being executed is a generated/condensing transaction.
-            if (this.lastProcessed != null)
+            if (this.generatedTransaction != null)
             {
-                // ensure that transactions generated are equal
-                if (this.lastProcessed.GetHash() != transaction.GetHash())
-                    SmartContractConsensusErrors.UnequalCondensingTx.Throw();
-                this.lastProcessed = null;
+                ValidateGeneratedTransaction(transaction);
                 return;
             }
-
-            // If we are here, it's a user-created transaction, so it CANNOT contain OP_SPEND.
-            if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
-                SmartContractConsensusErrors.UserOpSpend.Throw();
+            
+            // If we are here, was definitely submitted by someone
+            ValidateSubmittedTransaction(transaction);
 
             TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
             // boring transaction, return
             if (contractTxOut == null)
                 return;
 
+            ExecuteContractTransaction(context, transaction, contractTxOut);
+        }
+
+        private void ValidateGeneratedTransaction(Transaction transaction)
+        {
+            if (this.generatedTransaction.GetHash() != transaction.GetHash())
+                SmartContractConsensusErrors.UnequalCondensingTx.Throw();
+            this.generatedTransaction = null;
+            return;
+        }
+        
+        private void ValidateSubmittedTransaction(Transaction transaction)
+        {
+            if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
+                SmartContractConsensusErrors.UserOpSpend.Throw();
+            if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall))
+                SmartContractConsensusErrors.UserInternalCall.Throw(); 
+        }
+
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut contractTxOut)
+        {
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
             ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
@@ -225,9 +241,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractExecutionResult result = executor.Execute();
 
             if (result.InternalTransactions.Any())
-                this.lastProcessed = result.InternalTransactions.FirstOrDefault();
+                this.generatedTransaction = result.InternalTransactions.FirstOrDefault();
 
             track.Commit();
         }
+
     }
 }

@@ -318,7 +318,8 @@ namespace NBitcoin
         // smart contracts
         OP_CREATECONTRACT = 0xc0,
         OP_CALLCONTRACT = 0xc1,
-        OP_SPEND = 0xc2
+        OP_SPEND = 0xc2,
+        OP_INTERNALCALLCONTRACT = 0xc3
     };
 
     public enum HashVersion
@@ -588,6 +589,18 @@ namespace NBitcoin
                     return false;
 
                 return op.Code == OpcodeType.OP_SPEND;
+            }
+        }
+
+        public bool IsSmartContractInternalCall
+        {
+            get
+            {
+                var op = ToOps().FirstOrDefault();
+                if (op == null)
+                    return false;
+
+                return op.Code == OpcodeType.OP_INTERNALCALLCONTRACT;
             }
         }
 
