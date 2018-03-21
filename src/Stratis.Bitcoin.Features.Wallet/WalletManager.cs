@@ -92,6 +92,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>The settings for the wallet feature.</summary>
+        private readonly WalletSettings walletSettings;
+
         public uint256 WalletTipHash { get; set; }
 
         // TODO: a second lookup dictionary is proposed to lookup for spent outputs
@@ -103,7 +106,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder,
+            NodeSettings settings, 
+            WalletSettings walletSettings,
+            DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
@@ -114,11 +119,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(settings, nameof(settings));
+            Guard.NotNull(walletSettings, nameof(walletSettings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
+            this.walletSettings = walletSettings;
             this.lockObject = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -132,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
-
+            
             // register events
             if (this.broadcasterManager != null)
             {
@@ -858,7 +865,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transactionHex,
+                    Hex = this.walletSettings.SaveTransactionHex ? transactionHex : null,
                     IsPropagated = isPropagated
                 };
 
@@ -974,7 +981,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     BlockHeight = blockHeight,
-                    Hex = transactionHex,
+                    Hex = this.walletSettings.SaveTransactionHex ? transactionHex : null,
                     IsCoinStake = isCoinStake == false ? (bool?)null : true
                 };
 
