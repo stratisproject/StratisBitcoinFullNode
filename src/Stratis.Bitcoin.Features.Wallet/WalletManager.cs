@@ -1258,12 +1258,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             List<uint256> idsToRemove = transactionsIds.ToList();
             Wallet wallet = this.GetWallet(walletName);
-            IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
-            
+
             HashSet<(uint256, DateTimeOffset)> result = new HashSet<(uint256, DateTimeOffset)>();
 
             lock (this.lockObject)
             {
+                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
@@ -1304,14 +1304,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
-
             Wallet wallet = this.GetWallet(walletName);
-            IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
 
             HashSet<(uint256, DateTimeOffset)> removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
 
             lock (this.lockObject)
             {
+                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
