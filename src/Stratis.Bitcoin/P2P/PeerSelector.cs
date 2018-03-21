@@ -208,7 +208,8 @@ namespace Stratis.Bitcoin.P2P
         {
             IEnumerable<PeerAddress> discoverable = this.peerAddresses.Values
                 .Where(p => p.LastDiscoveredFrom < this.dateTimeProvider.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours))
-                .Where(p => !this.selfEndpointTracker.IsSelf(p.Endpoint));
+                .Where(p => !this.selfEndpointTracker.IsSelf(p.Endpoint))
+                .Where(p => !IsBanned(p));
 
             return discoverable.OrderBy(p => this.random.Next()).Take(1000).ToList();
         }

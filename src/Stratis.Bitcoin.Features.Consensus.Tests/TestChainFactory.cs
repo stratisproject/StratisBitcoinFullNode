@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock), DateTimeProvider.Default, testChainContext.LoggerFactory);
 
             DataFolder dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
-            testChainContext.PeerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory);
+            testChainContext.PeerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker());
 
             testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
             testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNetworkPeerCollection>();
