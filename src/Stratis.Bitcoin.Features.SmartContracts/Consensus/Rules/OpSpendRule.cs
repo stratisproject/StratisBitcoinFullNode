@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -14,12 +15,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     {
         public override Task RunAsync(RuleContext context)
         {
-            var block = context.BlockValidationContext.Block;
+            Block block = context.BlockValidationContext.Block;
 
-            var opSpendTransactions = block.Transactions.Where(tx =>
-                tx.Outputs.Any(o => o.ScriptPubKey.ToOps().Any(x => x.Code == OpcodeType.OP_SPEND)));
+            IEnumerable<Transaction> opSpendTransactions = block.Transactions.Where(tx =>
+                tx.Inputs.Any(o => o.ScriptSig.ToOps().Any(x => x.Code == OpcodeType.OP_SPEND)));
 
-            foreach (var opSpendTransaction in opSpendTransactions)
+            foreach (Transaction opSpendTransaction in opSpendTransactions)
             {
                 var thisIndex = block.Transactions.IndexOf(opSpendTransaction);
 
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                     this.Throw();
                 };
 
-                var previousTransaction = block.Transactions[thisIndex - 1];
+                Transaction previousTransaction = block.Transactions[thisIndex - 1];
 
                 var previousWasOpCall = previousTransaction.Outputs.Any(o =>
                     o.ScriptPubKey.ToOps().Any(op => op.Code == OpcodeType.OP_CALLCONTRACT));

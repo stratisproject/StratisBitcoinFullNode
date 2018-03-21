@@ -83,6 +83,9 @@ namespace Stratis.Bitcoin.Features.Api
                 {
                     setup.IncludeXmlComments(walletXmlPath);
                 }
+
+                setup.DescribeAllEnumsAsStrings();
+
             });
         }
 
