@@ -829,6 +829,59 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Removed transactions from the wallet.
+        /// </summary>
+        [Route("remove-transactions")]
+        [HttpDelete]
+        public IActionResult RemoveTransactions([FromQuery]RemoveTransactionsModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                HashSet<(uint256 transactionId, DateTimeOffset creationTime)> result;
+
+                if (request.DeleteAll)
+                {
+                    result = this.walletManager.RemoveAllTransactions(request.WalletName);
+                }
+                else
+                {
+                    IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
+                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                }
+
+                // If the user chose to resync the wallet after removing transactions.
+                if (result.Any() && request.ReSync)
+                {
+                    // From the list of removed transactions, check which one is the oldest.
+                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
+
+                    this.walletSyncManager.SyncFromHeight(this.chain.GetHeightAtTime(earliestDate.DateTime));
+                }
+
+                IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
+                {
+                    TransactionId = r.transactionId,
+                    CreationTime = r.creationTime
+                });
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Gets the extpubkey of the specified account.
         /// </summary>
         [Route("extpubkey")]
