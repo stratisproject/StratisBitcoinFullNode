@@ -471,7 +471,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         /// <summary>
-        /// Tests that own peer address is not returning during discover and SelectPeersForDiscovery and SelectPeer.
+        /// Tests that own peer address is not returning during SelectPeersForDiscovery and SelectPeer.
         ///
         /// Scenario 1 - SelectPeersForDiscovery:
         /// PeerAddressManager contains 2 peers.

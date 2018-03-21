@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Stratis.StratisD": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -addnode=127.0.0.2"
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
