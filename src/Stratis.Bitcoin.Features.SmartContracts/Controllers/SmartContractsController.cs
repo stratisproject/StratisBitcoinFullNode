@@ -20,6 +20,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
@@ -92,9 +93,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             uint160 numeric = new uint160(request.ContractAddress);
             byte[] storageValue = this.stateRoot.GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
-            if (SmartContractCarrierDataType.UInt == request.DataType)
-                return Json(BitConverter.ToUInt32(storageValue, 0));
-            return Json(Encoding.UTF8.GetString(storageValue)); // TODO: Use the modular serializer Francois is working on :)
+            return Json(GetStorageValue(request.DataType, storageValue).ToString());
         }
 
         [Route("build-create")]
@@ -182,6 +181,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             };
 
             return this.Json(model);
+        }
+
+        private static object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
+        {
+            PersistentStateSerializer serializer = new PersistentStateSerializer();
+            switch (dataType)
+            {
+                case SmartContractDataType.Address:
+                    return serializer.Deserialize<Address>(bytes);
+                case SmartContractDataType.Bool:
+                    return serializer.Deserialize<bool>(bytes);
+                case SmartContractDataType.Bytes:
+                    return serializer.Deserialize<byte[]>(bytes);
+                case SmartContractDataType.Char:
+                    return serializer.Deserialize<char>(bytes);
+                case SmartContractDataType.Int:
+                    return serializer.Deserialize<int>(bytes);
+                case SmartContractDataType.Long:
+                    return serializer.Deserialize<long>(bytes);
+                case SmartContractDataType.Sbyte:
+                    return serializer.Deserialize<sbyte>(bytes);
+                case SmartContractDataType.String:
+                    return serializer.Deserialize<string>(bytes);
+                case SmartContractDataType.Uint:
+                    return serializer.Deserialize<uint>(bytes);
+                case SmartContractDataType.Ulong:
+                    return serializer.Deserialize<ulong>(bytes);
+            }
+            return null;
         }
 
         /// <summary>
