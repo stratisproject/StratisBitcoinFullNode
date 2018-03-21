@@ -14,8 +14,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void Add(IPEndPoint ipEndPoint)
         {
-            if (!this.IsSelf(ipEndPoint))
-                this.knownSelfEndpoints.Add(ipEndPoint);
+            this.knownSelfEndpoints.Add(ipEndPoint);
         }
         /// <inheritdoc/>
         public bool IsSelf(IPEndPoint ipEndPoint)
