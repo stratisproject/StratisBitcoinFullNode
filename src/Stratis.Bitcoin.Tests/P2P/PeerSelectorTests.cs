@@ -470,6 +470,48 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         /// <summary>
+        /// Ensures a banned peer is ignored from the selector during discovery.
+        /// <para>
+        /// Scenario :
+        /// PeerAddressManager contains two peers.
+        /// One banned peer.
+        /// One discovered peers.
+        /// </para>
+        /// <para>
+        /// Result:
+        /// One peer returned, banned peer ignored.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForDiscovery_IgnoringBannedPeer()
+        {
+            string discoveredpeer = "::ffff:192.168.0.2";
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endPointOne = new IPEndPoint(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse(discoveredpeer);
+            var endPointTwo = new IPEndPoint(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory);
+            peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
+
+            // Discovered peer.
+            ipAddress = IPAddress.Parse(discoveredpeer);
+            peerAddressManager.PeerDiscoveredFrom(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddHours(-25));
+
+            // Banned peer.
+            peerAddressManager.FindPeer(endPointOne).BanUntil = DateTime.UtcNow.AddMinutes(1);
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForDiscovery(2);
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointTwo));
+        }
+
+        /// <summary>
         /// Ensures that a particular peer is returned from the attempted peers 
         /// set and ignores banned peers.
         /// <para>
