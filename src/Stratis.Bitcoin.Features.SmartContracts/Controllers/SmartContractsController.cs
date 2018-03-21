@@ -186,31 +186,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             return this.Json(model);
         }
 
-        private static object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
+        private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
         {
             PersistentStateSerializer serializer = new PersistentStateSerializer();
             switch (dataType)
             {
                 case SmartContractDataType.Address:
-                    return serializer.Deserialize<Address>(bytes);
+                    return serializer.Deserialize<Address>(bytes, this.network);
                 case SmartContractDataType.Bool:
-                    return serializer.Deserialize<bool>(bytes);
+                    return serializer.Deserialize<bool>(bytes, this.network);
                 case SmartContractDataType.Bytes:
-                    return serializer.Deserialize<byte[]>(bytes);
+                    return serializer.Deserialize<byte[]>(bytes, this.network);
                 case SmartContractDataType.Char:
-                    return serializer.Deserialize<char>(bytes);
+                    return serializer.Deserialize<char>(bytes, this.network);
                 case SmartContractDataType.Int:
-                    return serializer.Deserialize<int>(bytes);
+                    return serializer.Deserialize<int>(bytes, this.network);
                 case SmartContractDataType.Long:
-                    return serializer.Deserialize<long>(bytes);
+                    return serializer.Deserialize<long>(bytes, this.network);
                 case SmartContractDataType.Sbyte:
-                    return serializer.Deserialize<sbyte>(bytes);
+                    return serializer.Deserialize<sbyte>(bytes, this.network);
                 case SmartContractDataType.String:
-                    return serializer.Deserialize<string>(bytes);
+                    return serializer.Deserialize<string>(bytes, this.network);
                 case SmartContractDataType.Uint:
-                    return serializer.Deserialize<uint>(bytes);
+                    return serializer.Deserialize<uint>(bytes, this.network);
                 case SmartContractDataType.Ulong:
-                    return serializer.Deserialize<ulong>(bytes);
+                    return serializer.Deserialize<ulong>(bytes, this.network);
             }
             return null;
         }

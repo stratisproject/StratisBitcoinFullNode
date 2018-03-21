@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private void TestType<T>(T input)
         {
             byte[] testBytes = this.serializer.Serialize(input, Network.SmartContractsRegTest);
-            T output = this.serializer.Deserialize<T>(testBytes);
+            T output = this.serializer.Deserialize<T>(testBytes, Network.SmartContractsRegTest);
             Assert.Equal(input, output);
         }
     }

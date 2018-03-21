@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Core
             if (bytes == null)
                 return default(T);
 
-            return serializer.Deserialize<T>(bytes);
+            return serializer.Deserialize<T>(bytes, this.network);
         }
 
         public void SetObject<T>(string key, T obj)
