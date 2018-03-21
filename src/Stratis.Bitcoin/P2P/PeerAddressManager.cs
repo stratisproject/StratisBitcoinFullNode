@@ -118,14 +118,14 @@ namespace Stratis.Bitcoin.P2P
         public IPeerSelector PeerSelector { get; private set; }
 
         /// <summary>Constructor used by dependency injection.</summary>
-        public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory)
+        public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory, ISelfEndpointTracker selfEndpointTracker)
         {
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             this.PeerFilePath = peerFilePath;
-            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.peers);
+            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.peers, selfEndpointTracker);
         }
 
         /// <inheritdoc />

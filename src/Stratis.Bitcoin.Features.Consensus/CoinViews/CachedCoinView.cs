@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <summary>
     /// Cache layer for coinview prevents too frequent updates of the data in the underlaying storage.
     /// </summary>
-    public class CachedCoinView : CoinView, IBackedCoinView
+    public class CachedCoinView : CoinView, IBackedCoinView, IDisposable
     {
         /// <summary>
         /// Item of the coinview cache that holds information about the unspent outputs
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public CachePerformanceCounter PerformanceCounter { get; set; }
 
         /// <summary>Lock object to protect access to <see cref="unspents"/>, <see cref="blockHash"/>, and <see cref="innerBlockHash"/>.</summary>
-        private readonly ReaderWriterLock lockobj;
+        private readonly AsyncLock lockobj;
 
         /// <summary>Hash of the block headers of the tip of the coinview.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
@@ -103,12 +103,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             get { return this.unspents.Count; }
         }
-
-        /// <summary>Task that handles persisting of unsaved changes to the underlaying coinview. Used for synchronization.</summary>
-        private Task flushingTask = Task.CompletedTask;
-
-        /// <summary>Task that handles rewinding of the the underlaying coinview. Used for synchronization.</summary>
-        private Task rewindingTask = Task.CompletedTask;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -160,7 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.dateTimeProvider = dateTimeProvider;
             this.stakeChainStore = stakeChainStore;
             this.MaxItems = CacheMaxItemsDefault;
-            this.lockobj = new ReaderWriterLock();
+            this.lockobj = new AsyncLock();
             this.unspents = new Dictionary<uint256, CacheItem>();
             this.PerformanceCounter = new CachePerformanceCounter(this.dateTimeProvider);
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
@@ -176,9 +170,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
             List<int> miss = new List<int>();
             List<uint256> missedTxIds = new List<uint256>();
-            using (this.lockobj.LockRead())
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                this.WaitOngoingTasks();
                 for (int i = 0; i < txIds.Length; i++)
                 {
                     CacheItem cache;
@@ -203,9 +196,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlaying coinview.", missedTxIds.Count);
             FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
-            using (this.lockobj.LockWrite())
+
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                this.flushingTask.Wait();
                 uint256 innerblockHash = fetchedCoins.BlockHash;
                 if (this.blockHash == null)
                 {
@@ -233,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (cacheEntryCount > this.MaxItems)
             {
                 this.logger.LogTrace("Cache is full now with {0} entries, evicting ...", cacheEntryCount);
-                this.Evict();
+                await this.EvictAsync().ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(result.BlockHash), result.BlockHash, nameof(result.UnspentOutputs), nameof(result.UnspentOutputs.Length), result.UnspentOutputs.Length);
@@ -268,9 +261,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
 
-            using (this.lockobj.LockWrite())
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                this.WaitOngoingTasks();
                 if (this.innerBlockHash == null)
                 {
                     this.logger.LogTrace("(-)[NULL_INNER_TIP]");
@@ -287,18 +279,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     u.Value.OriginalOutputs = u.Value.UnspentOutputs?.Outputs.ToArray();
                 }
 
-                this.flushingTask = this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash);
+                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash).ConfigureAwait(false);
 
-                // Remove prunable entries from cache as they are being flushed down.
+                // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
                 foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
                     this.unspents.Remove(entry.Key);
 
                 this.innerBlockHash = this.blockHash;
             }
-
-            // Can't await inside a lock.
-            await this.flushingTask.ConfigureAwait(false);
 
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
 
@@ -309,11 +298,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Deletes some items from the cache to free space for new items.
         /// Only items that are persisted in the underlaying storage can be deleted from the cache.
         /// </summary>
-        private void Evict()
+        private async Task EvictAsync()
         {
             this.logger.LogTrace("()");
 
-            using (this.lockobj.LockWrite())
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 // TODO: Do not create new random source every time.
                 Random rand = new Random();
@@ -334,20 +323,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public override async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
             this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
-            using (this.lockobj.LockWrite())
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                this.WaitOngoingTasks();
                 if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
                 {
                     this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
-                    return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
+                    throw new InvalidOperationException("Invalid oldBlockHash");
                 }
 
                 this.blockHash = nextBlockHash;
@@ -381,7 +369,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
 
             this.logger.LogTrace("(-)");
-            return Task.FromResult(true);
         }
 
         /// <inheritdoc />
@@ -392,10 +379,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
 
-            Task<uint256> rewindingInner = null;
-            using (this.lockobj.LockWrite())
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                this.WaitOngoingTasks();
                 if (this.blockHash == this.innerBlockHash)
                     this.unspents.Clear();
 
@@ -408,32 +393,20 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.logger.LogTrace("(-)[REWOUND_TO_INNER]:'{0}'", this.blockHash);
                     return this.blockHash;
                 }
-                else
-                {
-                    rewindingInner = this.inner.Rewind();
-                    this.rewindingTask = rewindingInner;
-                }
-            }
 
-            uint256 hash = await rewindingInner.ConfigureAwait(false);
-            using (this.lockobj.LockWrite())
-            {
+                uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
-            }
 
-            this.logger.LogTrace("(-):'{0}'", hash);
-            return hash;
+                this.logger.LogTrace("(-):'{0}'", hash);
+                return hash;
+            }
         }
 
-        /// <summary>
-        /// Wait until flushing and rewinding task complete if any is in progress.
-        /// </summary>
-        /// <remarks>TODO: This is blocking call and is used in async methods, which quite
-        /// strongly erases the goals of using async in those methods.</remarks>
-        private void WaitOngoingTasks()
+        /// <inheritdoc />
+        public void Dispose()
         {
-            Task.WaitAll(this.flushingTask, this.rewindingTask);
+            this.lockobj.Dispose();
         }
     }
 }

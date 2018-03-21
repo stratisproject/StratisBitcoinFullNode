@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class PosConsensusRules : ConsensusRules
     {
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        public StakeChain StakeChain { get; }
+        public IStakeChain StakeChain { get; }
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         public IStakeValidator StakeValidator { get; }
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, StakeChain stakeChain, IStakeValidator stakeValidator) 
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, IStakeChain stakeChain, IStakeValidator stakeValidator) 
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
         {
             this.StakeChain = stakeChain;
