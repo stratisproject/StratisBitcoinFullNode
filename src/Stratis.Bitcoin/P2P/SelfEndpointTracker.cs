@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
+using ConcurrentCollections;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -10,13 +8,14 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public class SelfEndpointTracker : ISelfEndpointTracker
     {
-        /// <summary>Bag to hold the endpoints currently known to be itself.</summary>
-        private readonly ConcurrentBag<IPEndPoint> knownSelfEndpoints = new ConcurrentBag<IPEndPoint>();
+        /// <summary>Hashset to hold the endpoints currently known to be itself.</summary>
+        private readonly ConcurrentHashSet<IPEndPoint> knownSelfEndpoints = new ConcurrentHashSet<IPEndPoint>();
 
         /// <inheritdoc/>
         public void Add(IPEndPoint ipEndPoint)
         {
-            this.knownSelfEndpoints.Add(ipEndPoint);
+            if (!this.IsSelf(ipEndPoint))
+                this.knownSelfEndpoints.Add(ipEndPoint);
         }
         /// <inheritdoc/>
         public bool IsSelf(IPEndPoint ipEndPoint)
