@@ -504,7 +504,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             mockLoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
             ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory);
+            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory, new SelfEndpointTracker());
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in testDataSet)
             {
