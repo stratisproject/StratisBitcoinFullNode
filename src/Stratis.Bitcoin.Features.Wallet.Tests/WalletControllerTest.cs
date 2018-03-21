@@ -1841,6 +1841,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             // Arrange.
             string walletName = "wallet1";
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot());
             uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
             uint256 trxId2 = uint256.Parse("a3dd63ec364fcb59043a1cf209285d8e60f1cc06186d4dcbce496cdbb4303401");
             HashSet<(uint256 trxId, DateTimeOffset creationTime)> resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
@@ -1850,6 +1852,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new Mock<IWalletManager>();
             var walletSyncManager = new Mock<IWalletSyncManager>();
             walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
+            walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
             ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
 
@@ -1920,6 +1923,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             // Arrange.
             string walletName = "wallet1";
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot());
             uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
             HashSet<(uint256 trxId, DateTimeOffset creationTime)> resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
             resultModel.Add((trxId1, DateTimeOffset.Now));
@@ -1927,6 +1932,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new Mock<IWalletManager>();
             var walletSyncManager = new Mock<IWalletSyncManager>();
             walletManager.Setup(manager => manager.RemoveTransactionsByIds(walletName, new []{ trxId1 })).Returns(resultModel);
+            walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
             ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
 
