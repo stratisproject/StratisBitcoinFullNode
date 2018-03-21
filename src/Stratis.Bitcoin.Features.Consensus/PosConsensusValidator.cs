@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public IStakeValidator StakeValidator { get; }
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        private readonly StakeChain stakeChain;
+        private readonly IStakeChain stakeChain;
 
         /// <summary>Proof of Stake consensus options.</summary>
         private readonly PosConsensusOptions consensusOptions;
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IStakeValidator stakeValidator,
             ICheckpoints checkpoints,
             Network network,
-            StakeChain stakeChain,
+            IStakeChain stakeChain,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
@@ -122,8 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             base.ExecuteBlock(context, taskScheduler);
 
-            // TODO: A temporary fix till this methods is fixed in NStratis.
-            (this.stakeChain as StakeChainStore).Set(context.BlockValidationContext.ChainedBlock, context.Stake.BlockStake);
+            this.stakeChain.Set(context.BlockValidationContext.ChainedBlock, context.Stake.BlockStake);
 
             this.logger.LogTrace("(-)");
         }
