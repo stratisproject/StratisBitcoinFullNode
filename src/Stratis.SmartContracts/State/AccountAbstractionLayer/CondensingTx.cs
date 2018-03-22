@@ -159,7 +159,7 @@ namespace Stratis.SmartContracts.State.AccountAbstractionLayer
             AccountState accountState = this.stateRepository.GetAccountState(address);
             if (accountState != null)
             {
-                return new Script(OpcodeType.OP_INTERNALCALLCONTRACT, Op.GetPushOp(address.ToBytes()));
+                return new Script(OpcodeType.OP_INTERNALCONTRACTTRANSFER, Op.GetPushOp(address.ToBytes()));
             }
 
             return CreateScript(address);
