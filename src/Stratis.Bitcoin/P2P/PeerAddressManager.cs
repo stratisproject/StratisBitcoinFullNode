@@ -137,8 +137,18 @@ namespace Stratis.Bitcoin.P2P
             {
                 // Ensure that any address already in store is mapped.
                 peer.Endpoint = peer.Endpoint.MapToIpv6();
-                
-                this.peers.TryAdd(peer.Endpoint, peer);
+
+                // If no longer banned reset ban details.
+                if (peer.BanUntil.HasValue && peer.BanUntil < this.dateTimeProvider.GetUtcNow())
+                {
+                    peer.BanTimeStamp = null;
+                    peer.BanUntil = null;
+                    peer.BanReason = string.Empty;
+
+                    this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
+                }
+
+                this.peers.AddOrUpdate(peer.Endpoint, peer, (key, oldValue) => peer);
             });
         }
 
