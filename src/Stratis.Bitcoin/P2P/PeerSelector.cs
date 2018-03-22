@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.P2P
             IEnumerable<PeerAddress> discoverable = this.peerAddresses.Values
                 .Where(p => p.LastDiscoveredFrom < this.dateTimeProvider.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours))
                 .Where(p => !this.selfEndpointTracker.IsSelf(p.Endpoint))
-                .Where(p => !IsBanned(p));
+                .Where(p => !this.IsBanned(p));
 
             return discoverable.OrderBy(p => this.random.Next()).Take(1000).ToList();
         }
@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.P2P
                 p.Attempted &&
                 p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
                 p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
-                !IsBanned(p));
+                !this.IsBanned(p));
         }
 
         /// <inheritdoc/>
@@ -286,13 +286,13 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.peerAddresses.Values.Where(p => p.Connected && 
                                                         p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
-                                                        !IsBanned(p));
+                                                        !this.IsBanned(p));
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Fresh()
         {
-            return this.peerAddresses.Values.Where(p => p.Fresh && !IsBanned(p));
+            return this.peerAddresses.Values.Where(p => p.Fresh && !this.IsBanned(p));
         }
 
         /// <inheritdoc/>
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.peerAddresses.Values.Where(p => p.Handshaked && 
                                                         p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
-                                                        !IsBanned(p));
+                                                        !this.IsBanned(p));
         }
 
         /// <summary>
