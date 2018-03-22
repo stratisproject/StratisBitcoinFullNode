@@ -25,6 +25,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
+        public WalletSettings()
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
         /// <param name="callback">Callback routine to be called once the wallet settings are loaded.</param>
         public WalletSettings(Action<WalletSettings> callback = null)
         {        

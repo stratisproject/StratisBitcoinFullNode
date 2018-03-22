@@ -1955,7 +1955,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
             Assert.NotNull(model);
-            Assert.Equal(1, model.Count());
+            Assert.Single(model);
             Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
         }
     }
