@@ -22,7 +22,6 @@ namespace Stratis.SmartContracts.Core
         private readonly IContractStateRepository nestedStateRepository;
 
         private readonly uint160 coinbaseAddress;
-        private readonly ulong difficulty;
         private readonly ulong height;
 
         public SmartContractTransactionExecutor(
@@ -32,7 +31,6 @@ namespace Stratis.SmartContracts.Core
             ISmartContractGasInjector smartContractGasInjector,
             SmartContractCarrier smartContractCarrier,
             ulong height,
-            ulong difficulty,
             uint160 coinbaseAddress)
         {
             this.stateRepository = stateRepository;
@@ -42,7 +40,6 @@ namespace Stratis.SmartContracts.Core
             this.gasInjector = smartContractGasInjector;
             this.smartContractCarrier = smartContractCarrier;
             this.height = height;
-            this.difficulty = difficulty;
             this.coinbaseAddress = coinbaseAddress;
         }
 
@@ -83,7 +80,7 @@ namespace Stratis.SmartContracts.Core
 
                 var executionContext = new SmartContractExecutionContext
                     (
-                        new Block(this.height, new Address(this.coinbaseAddress.ToString()), this.difficulty),
+                        new Block(this.height, new Address(this.coinbaseAddress.ToString())),
                         new Message(
                             new Address(contractAddress.ToString()),
                             new Address(this.smartContractCarrier.Sender.ToString()),
@@ -150,7 +147,7 @@ namespace Stratis.SmartContracts.Core
 
                 var executionContext = new SmartContractExecutionContext
                 (
-                    new Block(Convert.ToUInt64(this.height), new Address(this.coinbaseAddress.ToString()), Convert.ToUInt64(this.difficulty)),
+                    new Block(Convert.ToUInt64(this.height), new Address(this.coinbaseAddress.ToString())),
                     new Message(
                         new Address(contractAddress.ToString()),
                         new Address(this.smartContractCarrier.Sender.ToString()),

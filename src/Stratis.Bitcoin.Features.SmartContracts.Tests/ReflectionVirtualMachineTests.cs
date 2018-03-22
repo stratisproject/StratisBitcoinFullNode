@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var sender = deserializedCall.Sender?.ToString() ?? Address.Zero.ToString();
 
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new Address("2"), 0),
+                                new Stratis.SmartContracts.Block(1, new Address("2")),
                                 new Message(
                                     new Address(deserializedCall.To.ToString()),
                                     new Address(sender),
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var sender = deserializedCall.Sender?.ToString() ?? Address.Zero.ToString();
 
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new Address("2"), 0),
+                                new Stratis.SmartContracts.Block(1, new Address("2")),
                                 new Message(
                                     new Address(deserializedCall.To.ToString()),
                                     new Address(sender),

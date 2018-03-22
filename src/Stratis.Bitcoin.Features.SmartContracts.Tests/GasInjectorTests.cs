@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistentState = new PersistentState(this.repository, persistenceStrategy, Address.Zero.ToUint160());
                 var vm = new ReflectionVirtualMachine(persistentState);
 
-                var executionContext = new SmartContractExecutionContext(new Block(0, Address.Zero, 0), new Message(Address.Zero, Address.Zero, 0, (Gas) 500000), 1, new object[] { 1 });
+                var executionContext = new SmartContractExecutionContext(new Block(0, Address.Zero), new Message(Address.Zero, Address.Zero, 0, (Gas) 500000), 1, new object[] { 1 });
 
                 var internalTransactionExecutor = new InternalTransactionExecutor(repository);
                 Func<ulong> getBalance = () => repository.GetCurrentBalance(Address.Zero.ToUint160());

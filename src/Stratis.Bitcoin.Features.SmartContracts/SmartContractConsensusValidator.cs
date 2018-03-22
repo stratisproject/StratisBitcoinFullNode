@@ -206,7 +206,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // if it's a condensing transaction, need to ensure it's identical 
 
             ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
-            ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
 
             IContractStateRepository track = trackedState.StartTracking();
             var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
@@ -215,7 +214,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress);
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, coinbaseAddress);
             ISmartContractExecutionResult result = executor.Execute();
 
             if (result.Revert)

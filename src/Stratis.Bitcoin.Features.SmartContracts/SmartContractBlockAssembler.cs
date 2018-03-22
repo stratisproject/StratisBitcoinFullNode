@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
-        private ulong difficulty;
 
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -57,7 +56,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
-            this.difficulty = this.consensusLoop.Chain.GetWorkRequired(this.network, this.consensusLoop.Tip.Height);
             this.SetCoinbaseAddress(GetSenderUtil.GetAddressFromScript(scriptPubKeyIn));
             this.currentStateRepository = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
@@ -118,7 +116,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </remarks> 
         private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
         {
-            ISmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height, this.difficulty);
+            ISmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height);
 
             // Add the mempool entry transaction to the block 
             // and adjust BlockSize, BlockWeight and SigOpsCost
@@ -145,11 +143,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             //---------------------------------------------
         }
 
-        public ISmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height, ulong difficulty)
+        public ISmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height)
         {
             IContractStateRepository nestedStateRepository = this.currentStateRepository.StartTracking();
 
-            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, difficulty, this.coinbaseAddress);
+            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, this.coinbaseAddress);
             ISmartContractExecutionResult executionResult = executor.Execute();
 
             // Update state--------------------------------
