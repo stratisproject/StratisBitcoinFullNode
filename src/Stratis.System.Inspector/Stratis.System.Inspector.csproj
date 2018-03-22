@@ -7,10 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="6.1.1" />
-    <PackageReference Include="Mono.Cecil" Version="0.9.6.4" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
   </ItemGroup>
 

@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
 
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
-            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), It.IsAny<NetworkPeerConnectionParameters>())).Returns(Task.FromResult(networkPeer.Object));
+            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer.Object));
 
             var peerConnector = new PeerConnectorAddNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactory.Object, this.nodeLifetime, nodeSettings, connectionManagerSettings, peerAddressManager);
 
@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManager);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            Assert.Contains(endpointAddNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
+            Assert.Contains(endpointAddNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
 
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
-            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), It.IsAny<NetworkPeerConnectionParameters>())).Returns(Task.FromResult(networkPeer.Object));
+            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer.Object));
 
             var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactory.Object, this.nodeLifetime, nodeSettings, connectionManagerSettings, peerAddressManager);
 
@@ -134,9 +134,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManager);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointConnectNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.Contains(endpointConnectNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointDiscoveredNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
 
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
-            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), It.IsAny<NetworkPeerConnectionParameters>())).Returns(Task.FromResult(networkPeer.Object));
+            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer.Object));
 
             var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactory.Object, this.nodeLifetime, nodeSettings, connectionManagerSettings, peerAddressManager);
 
@@ -215,9 +215,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManager);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.DoesNotContain(endpointConnectNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointDiscoveredNode, peerConnector.ConnectedPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointAddNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.DoesNotContain(endpointConnectNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            Assert.Contains(endpointDiscoveredNode, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
 
         [Fact]

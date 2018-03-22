@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
@@ -52,8 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         private void Throw()
         {
             // TODO make nicer
-            new ConsensusError("total-gas-value-greater-than-total-fee",
-                "total supplied gas value was greater than total supplied fee value").Throw();
+            new ConsensusError("total-gas-value-greater-than-total-fee", "total supplied gas value was greater than total supplied fee value").Throw();
         }
     }
 }

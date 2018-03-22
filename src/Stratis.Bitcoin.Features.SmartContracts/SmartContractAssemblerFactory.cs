@@ -6,8 +6,9 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -31,13 +32,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
-        private readonly IContractStateRepository stateRoot;
+        private readonly ContractStateRepositoryRoot stateRoot;
 
         private readonly SmartContractDecompiler smartContractDecompiler;
 
         private readonly SmartContractValidator smartContractValidator;
 
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
 
         private readonly CoinView coinView;
 
@@ -48,10 +49,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            IContractStateRepository stateRoot,
+            ContractStateRepositoryRoot stateRoot,
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
-            SmartContractGasInjector gasInjector,
+            ISmartContractGasInjector gasInjector,
             CoinView coinView,
             StakeChain stakeChain = null)
         {

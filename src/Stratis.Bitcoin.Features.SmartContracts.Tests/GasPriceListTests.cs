@@ -3,7 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
+using Stratis.SmartContracts.Core.Backend;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 { Instruction.Create(OpCodes.Nop), 1  }
             };
 
-            foreach (var kvp in priceList)
+            foreach (KeyValuePair<Instruction, ulong> kvp in priceList)
             {
                 Instruction instruction = kvp.Key;
                 ulong price = kvp.Value;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 { Instruction.Create(OpCodes.Ldstr, "test"), 1  }
             };
 
-            foreach (var kvp in priceList)
+            foreach (KeyValuePair<Instruction, ulong> kvp in priceList)
             {
                 Instruction instruction = kvp.Key;
                 ulong price = kvp.Value;
@@ -48,8 +48,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SmartContracts_GasPrice_TestStorageOperationPrices()
         {
             byte[] key = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            byte[] value= new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            Gas cost = (Gas) (20000 * key.Length + 20000 * value.Length);
+            byte[] value = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Gas cost = (Gas)(20000 * key.Length + 20000 * value.Length);
 
             Assert.Equal(cost, GasPriceList.StorageOperationCost(key, value));
         }
@@ -61,8 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var moduleDefinition = ModuleDefinition.ReadModule(module);
 
-            var type = moduleDefinition.Types.First(t => t.FullName.Contains("DateTime"));
-            var method = type.Methods.First(m => m.FullName.Contains("Parse"));
+            TypeDefinition type = moduleDefinition.Types.First(t => t.FullName.Contains("DateTime"));
+            MethodDefinition method = type.Methods.First(m => m.FullName.Contains("Parse"));
 
             Assert.Equal((Gas)0, GasPriceList.MethodCallCost(method));
         }

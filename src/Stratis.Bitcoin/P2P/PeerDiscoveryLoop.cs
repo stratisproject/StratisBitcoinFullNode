@@ -84,6 +84,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void DiscoverPeers(IConnectionManager connectionManager)
         {
+            this.logger.LogTrace("()");
+
             // If peers are specified in the -connect arg then discovery does not happen.            
             if (connectionManager.ConnectionSettings.Connect.Any())
                 return;
@@ -103,6 +105,8 @@ namespace Stratis.Bitcoin.P2P
             },
             this.nodeLifetime.ApplicationStopping,
             TimeSpans.TenSeconds);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -110,6 +114,8 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private async Task DiscoverPeersAsync()
         {
+            this.logger.LogTrace("()");
+
             var peersToDiscover = new List<IPEndPoint>();
             peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.Endpoint));
 
@@ -120,12 +126,17 @@ namespace Stratis.Bitcoin.P2P
 
                 peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
                 if (peersToDiscover.Count == 0)
+                {
+                    this.logger.LogTrace("(-)[NO_ADDRESSES]");
                     return;
+                }
             }
-            
+
+            this.logger.LogTrace("{0} addresses are selected for discovery.", peersToDiscover.Count);
+
             await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
-                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
+                using (CancellationTokenSource connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
                     this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
 
@@ -155,10 +166,15 @@ namespace Stratis.Bitcoin.P2P
                     }
                     finally
                     {
-                        networkPeer?.Dispose("Discovery job done");
+                        networkPeer?.Disconnect("Discovery job done");
+                        networkPeer?.Dispose();
                     }
+
+                    this.logger.LogTrace("Discovery from '{0}' finished", endPoint);
                 }
             }).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

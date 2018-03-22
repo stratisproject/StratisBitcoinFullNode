@@ -5,10 +5,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
 {
     public class Token : SmartContract
     {
-        public Token(SmartContractState state) 
+        public Token(ISmartContractState state) 
             : base(state)
         {
-            this.Balances = PersistentState.GetMapping<Address, ulong>();
+            this.Balances = PersistentState.GetMapping<ulong>("Balances");
         }
 
         public Address Owner
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
             private set { PersistentState.SetObject("Owner", value); }
         }
 
-        public SmartContractMapping<Address, ulong> Balances { get; set; }
+        public ISmartContractMapping<ulong> Balances { get; set; }
 
         [SmartContractInit]
         public void Init()
@@ -32,17 +32,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
                                     Message.Sender.ToString());
 
             amount = amount + Block.Number;
-            this.Balances[receiver] += amount;
+            this.Balances[receiver.ToString()] += amount;
             return true;
         }
 
         public bool Send(Address receiver, ulong amount)
         {
-            if (this.Balances.Get(Message.Sender) < amount)
+            if (this.Balances.Get(Message.Sender.ToString()) < amount)
                 throw new Exception("Sender doesn't have high enough balance");
 
-            this.Balances[receiver] += amount;
-            this.Balances[Message.Sender] -= amount;
+            this.Balances[receiver.ToString()] += amount;
+            this.Balances[Message.Sender.ToString()] -= amount;
             return true;
         }
 

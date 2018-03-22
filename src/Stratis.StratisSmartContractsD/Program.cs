@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -26,8 +28,8 @@ namespace Stratis.StratisSmartContractsD
             try
             {
                 //Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                // TODO: Set test network to be used here and inject into NodeSettings, OR at least look into how the NodeRunner does it in IntegrationTests
-                NodeSettings nodeSettings = new NodeSettings(args: args, loadConfiguration: false);
+                Network network = Network.SmartContractsTest;
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args, loadConfiguration: false);
 
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static

@@ -1,50 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// This is only really used to aid Smart Contract Developers' understanding of addresses.
-    /// They may not easily understand the idea of sending to a uint160
+    /// Helper struct that wraps uint160 operations.
+    /// <para>
+    /// This struct makes it easier to semantically understand send and receive addresses.
+    /// </para>
     /// </summary>
-    public class Address
+    public struct Address
     {
-        private uint160 numeric;
+        public string Value;
 
         public Address(string address)
         {
-            this.numeric = new uint160(address);
-        }
-
-        public Address(ulong numeric) : this( (uint160) numeric) { }
-
-        public static readonly Address Zero = new Address(0);
-
-        internal Address(uint160 numeric)
-        {
-            this.numeric = numeric;
-        }
-
-        public uint160 ToUint160()
-        {
-            return this.numeric;
+            this.Value = address;
         }
 
         public override string ToString()
         {
-            return this.numeric.ToString();
+            return this.Value;
+        }
+
+        public static explicit operator Address(string value)
+        {
+            return new Address(value);
+        }
+
+        public static implicit operator string(Address x)
+        {
+            return x.Value;
         }
 
         public static bool operator ==(Address obj1, Address obj2)
         {
-            if (ReferenceEquals(obj1, obj2))
-                return true;
-            else if (ReferenceEquals(obj1, null) != ReferenceEquals(obj2, null))
-                return false;
-
-            return obj1.numeric == obj2.numeric;
+            return obj1.Value == obj2.Value;
         }
 
         public static bool operator !=(Address obj1, Address obj2)
@@ -54,7 +42,7 @@ namespace Stratis.SmartContracts
 
         public override bool Equals(object obj)
         {
-            return this == (Address) obj;
+            return this == (Address)obj;
         }
 
         public override int GetHashCode()

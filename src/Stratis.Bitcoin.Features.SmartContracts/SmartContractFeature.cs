@@ -10,22 +10,29 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
+using Stratis.Bitcoin.Features.SmartContracts.Controllers;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractFeature : FullNodeFeature
     {
         private readonly ILogger logger;
+        private readonly ContractStateRepositoryRoot stateRoot;
+        private readonly IConsensusLoop consensusLoop;
 
-        public SmartContractFeature(ILoggerFactory loggerFactory)
+        public SmartContractFeature(ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot, IConsensusLoop consensusLoop)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.stateRoot = stateRoot;
+            this.consensusLoop = consensusLoop;
         }
 
         public override void Initialize()
         {
+            this.stateRoot.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -49,23 +56,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
-                        services.AddSingleton<SmartContractGasInjector>();
+                        services.AddSingleton<ISmartContractGasInjector, SmartContractGasInjector>();
 
-                        // TODO: Get root from somewhere and get these strings from somewhere
-                        //DBreezeEngine engine = new DBreezeEngine("C:/data");
-                        //DBreezeByteStore byteStore = new DBreezeByteStore(engine, "ContractState");
+                        services.AddSingleton<DBreezeContractStateStore>();
+                        services.AddSingleton<NoDeleteContractStateSource>();
+                        services.AddSingleton<ContractStateRepositoryRoot>();
 
-                        //  TODO: For testing, we use in-memory database for now. Real life needs to use dbreeze.
-
-                        MemoryDictionarySource byteStore = new MemoryDictionarySource();
-
-                        ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
-                        byte[] root = null;
-
-                        ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB, root);
-                        services.AddSingleton<IContractStateRepository>(repository);
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
+
+                        services.AddSingleton<SmartContractsController>();
 
                         AddSmartContractRulesToExistingRules(services);
                     });

@@ -657,7 +657,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Outputs = new List<TransactionOutputModel>()
                 };
 
-                foreach (var output in transaction.Outputs)
+                foreach (var output in transaction.Outputs.Where(x=> !x.ScriptPubKey.IsSmartContractExec)) // Edited for smart contracts 
                 {
                     model.Outputs.Add(new TransactionOutputModel
                     {

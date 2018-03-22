@@ -3,10 +3,11 @@ using System.IO;
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.ContractValidation;
-using Stratis.SmartContracts.State;
-using Stratis.SmartContracts.Util;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -14,12 +15,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class ReflectionVirtualMachineTests
     {
         private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractGasInjector gasInjector;
+        private readonly ISmartContractGasInjector gasInjector;
+        private readonly Network network;
+
+        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         public ReflectionVirtualMachineTests()
         {
             this.decompiler = new SmartContractDecompiler();
             this.gasInjector = new SmartContractGasInjector();
+            this.network = Network.SmartContractsRegTest;
         }
 
         [Fact]
@@ -55,26 +60,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
                 var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
-                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To);
+                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
+                var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
+
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new uint160(2), 0),
+                                new Stratis.SmartContracts.Block(1, new Address("2"), 0),
                                 new Message(
-                                    new Address(deserializedCall.To),
-                                    new Address(deserializedCall.Sender),
+                                    new Address(deserializedCall.To.ToString()),
+                                    new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
                                 deserializedCall.GasUnitPrice
                             );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.To);
+
+                ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
                     "StorageTest",
                     "StoreData",
                     context,
-                    gasMeter);
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
 
                 stateRepository.Commit();
 
@@ -121,14 +133,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
                 var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
-                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To);
+                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
+                var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new uint160(2), 0),
+                                new Stratis.SmartContracts.Block(1, new Address("2"), 0),
                                 new Message(
-                                    new Address(deserializedCall.To),
-                                    new Address(deserializedCall.Sender),
+                                    deserializedCall.To.ToAddress(this.network),
+                                    new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
@@ -136,17 +149,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.MethodParameters
                             );
 
-                SmartContractExecutionResult result = vm.ExecuteMethod(
+
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.To);
+                
+                ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
                     "StorageTestWithParameters",
                     "StoreData",
                     context,
-                    gasMeter);
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
 
                 track.Commit();
 
-                Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(), Encoding.UTF8.GetBytes("orders")), 0));
-                Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(), Encoding.UTF8.GetBytes("orders")), 0));
+                Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
+                Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
             }
         }
     }

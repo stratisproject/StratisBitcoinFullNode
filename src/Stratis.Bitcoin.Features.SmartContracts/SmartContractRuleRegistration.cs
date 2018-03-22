@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SmartContractRuleRegistration : IRuleRegistration
+    public sealed class SmartContractRuleRegistration : IRuleRegistration
     {
         private readonly IRuleRegistration baseRuleRegistration;
 
@@ -15,15 +15,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public IEnumerable<ConsensusRule> GetRules()
         {
-            foreach (ConsensusRule rule in this.baseRuleRegistration.GetRules())
-            {
-                yield return rule;
-            }
-
-            yield return new TxOutSmartContractExecRule();
-            yield return new OpSpendRule();
-            yield return new GasBudgetRule();
-            yield return new OpCreateZeroValueRule();
+            var rules = new List<ConsensusRule>();
+            rules.AddRange(this.baseRuleRegistration.GetRules());
+            rules.Add(new TxOutSmartContractExecRule());
+            rules.Add(new OpSpendRule());
+            rules.Add(new GasBudgetRule());
+            rules.Add(new OpCreateZeroValueRule());
+            return rules;
         }
     }
 }

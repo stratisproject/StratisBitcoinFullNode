@@ -2,11 +2,11 @@
 
 public class InterContract2 : SmartContract
 {
-    public InterContract2(SmartContractState state) : base(state) { }
+    public InterContract2(ISmartContractState state) : base(state) { }
 
     public int ContractTransfer(string addressString)
     {
-        TransferResult result = Transfer(new Address(addressString), 100, new TransactionDetails
+        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
             ContractMethodName = "ReturnInt",
             ContractTypeName = "InterContract1"
@@ -17,7 +17,7 @@ public class InterContract2 : SmartContract
 
     public bool ContractTransferWithFail(string addressString)
     {
-        TransferResult result = Transfer(new Address(addressString), 100, new TransactionDetails
+        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
             ContractMethodName = "ThrowException",
             ContractTypeName = "InterContract1"

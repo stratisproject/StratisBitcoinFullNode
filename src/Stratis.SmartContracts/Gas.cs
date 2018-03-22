@@ -16,10 +16,11 @@
 
         /// <summary>
         /// Values of type ulong must be explicitly cast to Gas to ensure developer's intention.
+        /// <para>
         /// ulong u = 10000;
-        /// Gas g = (Gas) u;
+        /// Gas g = (Gas)u;
+        /// </para>
         /// </summary>
-        /// <param name="value"></param>
         public static explicit operator Gas(ulong value)
         {
             return new Gas(value);
@@ -27,15 +28,16 @@
 
         public static explicit operator Gas(int value)
         {
-            return new Gas((ulong) value);
+            return new Gas((ulong)value);
         }
 
         /// <summary>
         /// Ensures we can implicitly treat Gas as an ulong.
+        /// <para>
         /// Gas g = new Gas(10000);
         /// ulong u = g;
+        /// </para>
         /// </summary>
-        /// <param name="gas"></param>
         public static implicit operator ulong(Gas gas)
         {
             return gas.Value;

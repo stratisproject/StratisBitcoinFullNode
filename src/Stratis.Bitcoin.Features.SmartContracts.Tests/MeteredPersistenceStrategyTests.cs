@@ -2,8 +2,9 @@
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Backend;
-using Stratis.SmartContracts.State;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.State;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             sr.Verify(s => s.SetStorageValue(testAddress, testKey, testValue));            
 
             // Test that gas is used
-            Assert.True(gasMeter.ConsumedGas < availableGas);
+            Assert.True(gasMeter.GasConsumed < availableGas);
         }
     }
 }

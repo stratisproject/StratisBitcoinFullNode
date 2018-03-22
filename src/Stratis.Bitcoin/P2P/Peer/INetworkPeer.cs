@@ -68,29 +68,24 @@ namespace Stratis.Bitcoin.P2P.Peer
         NetworkOptions SupportedTransactionOptions { get; }
 
         /// <summary>When a peer is disconnected this is set to human readable information about why it happened.</summary>
-        NetworkPeerDisconnectReason DisconnectReason { get; set; }
+        NetworkPeerDisconnectReason DisconnectReason { get; }
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         Network Network { get; }
 
         /// <summary>Event that is triggered when the peer's network state is changed.</summary>
+        /// <remarks>Do not dispose the peer from this callback.</remarks>
         AsyncExecutionEvent<INetworkPeer, NetworkPeerState> StateChanged { get; }
 
         /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
+        /// <remarks>Do not dispose the peer from this callback.</remarks>
         AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived { get; }
-
+        
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         NetworkPeerConnectionParameters ConnectionParameters { get; }
 
         /// <summary>Queue of the connections' incoming messages distributed to message consumers.</summary>
         MessageProducer<IncomingMessage> MessageProducer { get; }
-
-        /// <summary>
-        /// Sets a new network state of the peer.
-        /// </summary>
-        /// <param name="newState">New network state to be set.</param>
-        /// <remarks>This method is not thread safe.</remarks>
-        Task SetStateAsync(NetworkPeerState newState);
 
         /// <summary>
         /// Connects the node to an outbound peer using already initialized information about the peer and starts receiving messages in a separate task.
@@ -156,12 +151,5 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <typeparam name="T">Type of the behavior to find.</typeparam>
         /// <returns>Collection of behaviors of specific type.</returns>
         T Behavior<T>() where T : NetworkPeerBehavior;
-
-        /// <summary>
-       /// Disconnects the peer and cleans up.
-       /// </summary>
-       /// <param name="reason">Human readable reason for disconnecting.</param>
-       /// <param name="exception">Exception because of which the disconnection happened, or <c>null</c> if there were no exception.</param>
-        void Dispose(string reason, Exception exception = null);
     }
 }

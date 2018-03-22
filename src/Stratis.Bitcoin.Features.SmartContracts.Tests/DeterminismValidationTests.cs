@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Mono.Cecil;
-using Stratis.SmartContracts.Util;
-using Stratis.SmartContracts.ContractValidation;
+﻿using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -21,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                                             public class Test : SmartContract
                                             {
-                                                public Test(SmartContractState state)
+                                                public Test(ISmartContractState state)
                                                     : base(state) {}
 
                                                 public void TestMethod()
@@ -350,9 +345,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 public class Token : SmartContract
                 {
-                    public Token(SmartContractState state): base(state) 
+                    public Token(ISmartContractState state): base(state) 
                     {
-                        Balances = PersistentState.GetMapping<Address, ulong>();
+                        Balances = PersistentState.GetMapping<ulong>(""Balances"");
                     }
 
                     public Address Owner
@@ -367,7 +362,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }
 
-                    public SmartContractMapping<Address, ulong> Balances { get; set; }
+                    public ISmartContractMapping<ulong> Balances { get; set; }
 
                     [SmartContractInit]
                     public void Init()
@@ -381,17 +376,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             throw new Exception(""Sender of this message is not the owner. "" + Owner.ToString() +"" vs "" + Message.Sender.ToString());
 
                         amount = amount + Block.Number;
-                        Balances[receiver] += amount;
+                        Balances[receiver.ToString()] += amount;
                         return true;
                     }
 
                     public bool Send(Address receiver, ulong amount)
                     {
-                        if (Balances.Get(Message.Sender) < amount)
+                        if (Balances.Get(Message.Sender.ToString()) < amount)
                             throw new Exception(""Sender doesn't have high enough balance"");
 
-                        Balances[receiver] += amount;
-                        Balances[Message.Sender] -= amount;
+                        Balances[receiver.ToString()] += amount;
+                        Balances[Message.Sender.ToString()] -= amount;
                         return true;
                     }
 

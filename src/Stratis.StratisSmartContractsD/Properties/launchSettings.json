@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.StratisSmartContractsD": {
+      "commandName": "Project",
+      "commandLineArgs": "-connect=20.190.57.145"
+    }
+  }
+}

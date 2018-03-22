@@ -3,49 +3,49 @@ using Stratis.SmartContracts;
 
 public class Token : SmartContract
 {
-    public Token(SmartContractState state) 
+    public Token(ISmartContractState state)
         : base(state)
     {
-        Balances = PersistentState.GetMapping<Address, ulong>();
+        this.Balances = this.PersistentState.GetMapping<ulong>("Balances");
     }
 
     public Address Owner
     {
         get
         {
-            return PersistentState.GetObject<Address>("Owner");
+            return this.PersistentState.GetObject<Address>("Owner");
         }
         private set
         {
-            PersistentState.SetObject("Owner", value);
+            this.PersistentState.SetObject("Owner", value);
         }
     }
 
-    public SmartContractMapping<Address, ulong> Balances { get; }
+    public ISmartContractMapping<ulong> Balances { get; }
 
     [SmartContractInit]
     public void Init()
     {
-        Owner = Message.Sender;
+        this.Owner = this.Message.Sender;
     }
 
     public bool Mint(Address receiver, ulong amount)
     {
-        if (Message.Sender != Owner)
-            throw new Exception("Sender of this message is not the owner. " + Owner.ToString() + " vs " + Message.Sender.ToString());
+        if (this.Message.Sender != this.Owner)
+            throw new Exception("Sender of this message is not the owner. " + this.Owner.ToString() + " vs " + this.Message.Sender.ToString());
 
-        amount = amount + Block.Number;
-        Balances[receiver] += amount;
+        amount = amount + this.Block.Number;
+        this.Balances[receiver.ToString()] += amount;
         return true;
     }
 
     public bool Send(Address receiver, ulong amount)
     {
-        if (Balances.Get(Message.Sender) < amount)
+        if (this.Balances.Get(this.Message.Sender.ToString()) < amount)
             throw new Exception("Sender doesn't have high enough balance");
 
-        Balances[receiver] += amount;
-        Balances[Message.Sender] -= amount;
+        this.Balances[receiver.ToString()] += amount;
+        this.Balances[this.Message.Sender.ToString()] -= amount;
         return true;
     }
 

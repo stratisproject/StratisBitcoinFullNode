@@ -2,7 +2,7 @@
 
 public class StorageTest : SmartContract
 {
-    public StorageTest(SmartContractState state)
+    public StorageTest(ISmartContractState state)
         : base(state)
     {
     }
