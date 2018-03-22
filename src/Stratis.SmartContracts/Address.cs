@@ -15,8 +15,6 @@
             this.Value = address;
         }
 
-        public static readonly Address Zero = new Address("0x0000000000000000000000000000000000000000");
-
         public override string ToString()
         {
             return this.Value;

@@ -8,6 +8,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class SmartContractListTests
     {
+        private readonly Network network;
+
+        public SmartContractListTests()
+        {
+            this.network = Network.SmartContractsRegTest;
+        }
+
         [Fact]
         public void SmartContractList_ListHasCountTest()
         {
@@ -22,7 +29,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(
                 repository,
                 persistenceStrategy,
-                uint160.One);
+                uint160.One,
+                this.network);
 
             var list = new SmartContractList<string>(persistentState, listName);
 
@@ -47,7 +55,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(
                 repository,
                 persistenceStrategy,
-                uint160.One);
+                uint160.One,
+                this.network);
 
             var list = new SmartContractList<string>(persistentState, listName);
 
@@ -76,7 +85,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(
                 repository,
                 persistenceStrategy,
-                uint160.One);
+                uint160.One,
+                this.network);
 
             var list = new SmartContractList<string>(persistentState, listName);
 
@@ -115,7 +125,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(
                 repository,
                 persistenceStrategy,
-                uint160.One);
+                uint160.One,
+                this.network);
 
             var list = new SmartContractList<string>(persistentState, listName);
 
@@ -151,7 +162,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(
                 repository,
                 persistenceStrategy,
-                uint160.One);
+                uint160.One,
+                this.network);
 
             var list = new SmartContractList<string>(persistentState, listName);
 

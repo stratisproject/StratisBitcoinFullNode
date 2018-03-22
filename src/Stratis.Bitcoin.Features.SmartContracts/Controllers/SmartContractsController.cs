@@ -33,22 +33,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
+        private readonly Network network;
 
-        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
             this.walletTransactionHandler = walletTransactionHandler;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.network = network;
         }
 
         [Route("code")]
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
-            var numeric = new uint160(address);
-            byte[] contractCode = this.stateRoot.GetCode(numeric);
+            uint160 addressNumeric = new Address(address).ToUint160(this.network);
+            byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
 
             // In the future, we could be more explicit about whether a contract exists (or indeed, did ever exist)
             if (contractCode == null || !contractCode.Any())
@@ -77,8 +79,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
-            var numeric = new uint160(address);
-            ulong balance = this.stateRoot.GetCurrentBalance(numeric);
+            uint160 addressNumeric = new Address(address).ToUint160(this.network);
+            ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
             return Json(balance);
         }
 
@@ -91,8 +93,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            uint160 numeric = new uint160(request.ContractAddress);
-            byte[] storageValue = this.stateRoot.GetStorageValue(numeric, Encoding.UTF8.GetBytes(request.StorageKey));
+            uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
+            byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
         }
 
@@ -134,7 +136,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 Hex = transactionResult.ToHex(),
                 Fee = context.TransactionFee,
                 TransactionId = transactionResult.GetHash(),
-                NewContractAddress = transactionResult.GetNewContractAddress()
+                NewContractAddress = transactionResult.GetNewContractAddress().ToAddress(this.network)
             };
 
             return this.Json(model);
@@ -151,15 +153,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
+            uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
 
             SmartContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
             }
             else
             {
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, new uint160(request.ContractAddress), request.MethodName, gasPrice, new Gas(gasLimit));
+                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit));
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
@@ -183,31 +186,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             return this.Json(model);
         }
 
-        private static object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
+        private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
         {
             PersistentStateSerializer serializer = new PersistentStateSerializer();
             switch (dataType)
             {
                 case SmartContractDataType.Address:
-                    return serializer.Deserialize<Address>(bytes);
+                    return serializer.Deserialize<Address>(bytes, this.network);
                 case SmartContractDataType.Bool:
-                    return serializer.Deserialize<bool>(bytes);
+                    return serializer.Deserialize<bool>(bytes, this.network);
                 case SmartContractDataType.Bytes:
-                    return serializer.Deserialize<byte[]>(bytes);
+                    return serializer.Deserialize<byte[]>(bytes, this.network);
                 case SmartContractDataType.Char:
-                    return serializer.Deserialize<char>(bytes);
+                    return serializer.Deserialize<char>(bytes, this.network);
                 case SmartContractDataType.Int:
-                    return serializer.Deserialize<int>(bytes);
+                    return serializer.Deserialize<int>(bytes, this.network);
                 case SmartContractDataType.Long:
-                    return serializer.Deserialize<long>(bytes);
+                    return serializer.Deserialize<long>(bytes, this.network);
                 case SmartContractDataType.Sbyte:
-                    return serializer.Deserialize<sbyte>(bytes);
+                    return serializer.Deserialize<sbyte>(bytes, this.network);
                 case SmartContractDataType.String:
-                    return serializer.Deserialize<string>(bytes);
+                    return serializer.Deserialize<string>(bytes, this.network);
                 case SmartContractDataType.Uint:
-                    return serializer.Deserialize<uint>(bytes);
+                    return serializer.Deserialize<uint>(bytes, this.network);
                 case SmartContractDataType.Ulong:
-                    return serializer.Deserialize<ulong>(bytes);
+                    return serializer.Deserialize<ulong>(bytes, this.network);
             }
             return null;
         }

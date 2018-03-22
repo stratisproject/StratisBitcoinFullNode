@@ -12,6 +12,7 @@ namespace Stratis.SmartContracts.Core
         public uint160 ContractAddress { get; }
         private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
         private readonly IPersistenceStrategy persistenceStrategy;
+        private readonly Network network;
 
         /// <summary>
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
@@ -20,11 +21,12 @@ namespace Stratis.SmartContracts.Core
         /// <param name="stateDb"></param>
         /// <param name="persistenceStrategy"></param>
         /// <param name="contractAddress"></param>
-        public PersistentState(IContractStateRepository stateDb, IPersistenceStrategy persistenceStrategy, uint160 contractAddress)
+        public PersistentState(IContractStateRepository stateDb, IPersistenceStrategy persistenceStrategy, uint160 contractAddress, Network network)
         {
             this.StateDb = stateDb;
             this.persistenceStrategy = persistenceStrategy;
             this.ContractAddress = contractAddress;
+            this.network = network;
         }
 
         public T GetObject<T>(string key)
@@ -35,13 +37,13 @@ namespace Stratis.SmartContracts.Core
             if (bytes == null)
                 return default(T);
 
-            return serializer.Deserialize<T>(bytes);
+            return serializer.Deserialize<T>(bytes, this.network);
         }
 
         public void SetObject<T>(string key, T obj)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj));
+            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, serializer.Serialize(obj, this.network));
         }
 
         public ISmartContractMapping<V> GetMapping<V>(string name)

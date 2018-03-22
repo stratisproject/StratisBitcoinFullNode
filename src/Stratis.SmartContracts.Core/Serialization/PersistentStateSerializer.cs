@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using NBitcoin;
 
 namespace Stratis.SmartContracts.Core.Serialization
 {
@@ -10,7 +11,7 @@ namespace Stratis.SmartContracts.Core.Serialization
     /// </summary>
     public class PersistentStateSerializer
     {
-        public byte[] Serialize(object o)
+        public byte[] Serialize(object o, Network network)
         {
             if (o is byte[])
                 return (byte[])o;
@@ -22,7 +23,7 @@ namespace Stratis.SmartContracts.Core.Serialization
                 return new byte[] { Convert.ToByte(((char)o)) };
 
             if (o is Address)
-                return Encoding.UTF8.GetBytes(((Address)o).Value);
+                return ((Address)o).ToUint160(network).ToBytes();
 
             if (o is bool)
                 return (BitConverter.GetBytes((bool)o));
@@ -48,7 +49,7 @@ namespace Stratis.SmartContracts.Core.Serialization
             throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
-        public T Deserialize<T>(byte[] stream)
+        public T Deserialize<T>(byte[] stream, Network network)
         {
             if (stream == null || stream.Length == 0)
                 return default(T);
@@ -63,7 +64,7 @@ namespace Stratis.SmartContracts.Core.Serialization
                 return (T)(object)Convert.ToChar(stream[0]);
 
             if (typeof(T) == typeof(Address))
-                return (T)(object)new Address(Encoding.UTF8.GetString(stream));
+                return (T)(object)new Address(new BitcoinPubKeyAddress(new KeyId(stream),network).ToString());
 
             if (typeof(T) == typeof(bool))
                 return (T)(object)(Convert.ToBoolean(stream[0]));

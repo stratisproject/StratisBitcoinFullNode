@@ -41,17 +41,20 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private IList<ContractUnspentOutput> unspents;
 
-        public CondensingTx(SmartContractCarrier smartContractCarrier)
+        private readonly Network network;
+
+        public CondensingTx(SmartContractCarrier smartContractCarrier, Network network)
         {
             this.smartContractCarrier = smartContractCarrier;
 
             this.nVouts = new Dictionary<uint160, uint>();
             this.txBalances = new Dictionary<uint160, ulong>();
             this.unspents = new List<ContractUnspentOutput>();
+            this.network = network;
         }
 
-        public CondensingTx(SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository stateRepository)
-            : this(smartContractCarrier)
+        public CondensingTx(SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network)
+            : this(smartContractCarrier, network)
         {
             this.stateRepository = stateRepository;
             this.transfers = transfers;
