@@ -281,7 +281,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             byte[] ownerFromStorage = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
-            Assert.Equal(ownerFromStorage, context.coinbaseAddress.ToBytes());
+            byte[] coinbaseToBytes = context.coinbaseAddress.ToBytes();
+            Assert.Equal(ownerFromStorage, coinbaseToBytes);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }

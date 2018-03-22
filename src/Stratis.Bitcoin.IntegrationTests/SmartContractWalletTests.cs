@@ -233,6 +233,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
                 var senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                var senderWalletManager = scSender.FullNode.WalletManager();
+                
+                var result1 = senderWalletManager.GetUnusedAddresses(new WalletAccountReference(WalletName, AccountName), 1);
+
+                // TODO: Clean this up ^^
+
 
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
@@ -243,7 +249,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                     ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageDemo.cs").ToHexString(),
                     FeeAmount = "30000",
                     Password = Password,
-                    WalletName = WalletName
+                    WalletName = WalletName,
+                    Sender = result1.FirstOrDefault().Address
                 };
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
                 var response = (BuildCreateContractTransactionResponse)result.Value;
