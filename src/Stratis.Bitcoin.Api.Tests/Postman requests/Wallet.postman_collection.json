@@ -705,6 +705,92 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Remove transactions",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:38221/api/wallet/remove-transactions?ids=d9cf9794611d69c971888bc75a9889ae65e2e6f2ec8ff4948491da4e5e2380f1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "38221",
+					"path": [
+						"api",
+						"wallet",
+						"remove-transactions"
+					],
+					"query": [
+						{
+							"key": "ids",
+							"value": "d9cf9794611d69c971888bc75a9889ae65e2e6f2ec8ff4948491da4e5e2380f1",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Remove All transactions",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:38221/api/wallet/remove-transactions?walletname=wallet1&ids=ec2d28b474a59c7b4aea2ea3fd517805ddab51579a3a86f2754841c6e4f30f12&resync=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "38221",
+					"path": [
+						"api",
+						"wallet",
+						"remove-transactions"
+					],
+					"query": [
+						{
+							"key": "walletname",
+							"value": "wallet1",
+							"equals": true
+						},
+						{
+							"key": "ids",
+							"value": "ec2d28b474a59c7b4aea2ea3fd517805ddab51579a3a86f2754841c6e4f30f12",
+							"equals": true
+						},
+						{
+							"key": "resync",
+							"value": "true",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
 		}
 	]
 }

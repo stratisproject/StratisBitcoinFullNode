@@ -86,6 +86,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
 
+        /// <summary>Tracker for endpoints known to be self.</summary>
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         /// <summary>Factory for creating P2P network peers.</summary>
         private INetworkPeerFactory networkPeerFactory;
 
@@ -104,7 +107,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
 
-        /// <summary>Parameterless constructor for dependency injection.</summary>
+        /// <summary>Constructor for dependency injection.</summary>
         protected PeerConnector(
             IAsyncLoopFactory asyncLoopFactory,
             IDateTimeProvider dateTimeProvider,
@@ -114,7 +117,8 @@ namespace Stratis.Bitcoin.P2P
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
             ConnectionManagerSettings connectionSettings,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            ISelfEndpointTracker selfEndpointTracker)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.ConnectorPeers = new NetworkPeerCollection();
@@ -128,6 +132,7 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
             this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.OnPeerDisposed);
+            this.selfEndpointTracker = selfEndpointTracker;
             this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
 
             this.defaultConnectionInterval = TimeSpans.Second;
@@ -225,6 +230,13 @@ namespace Stratis.Bitcoin.P2P
         internal async Task ConnectAsync(PeerAddress peerAddress)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.Endpoint);
+
+            if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
+            {
+                this.logger.LogTrace("{0} is self. Therefore not connecting.", peerAddress.Endpoint);
+                this.logger.LogTrace("(-)");
+                return;
+            }
 
             INetworkPeer peer = null;
 
