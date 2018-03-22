@@ -1250,6 +1250,85 @@ namespace Stratis.Bitcoin.Features.Wallet
             return this.Wallets.Min(w => w.CreationTime);
         }
 
+        /// <inheritdoc />
+        public HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds)
+        {
+            Guard.NotNull(transactionsIds, nameof(transactionsIds));
+            Guard.NotEmpty(walletName, nameof(walletName));
+
+            List<uint256> idsToRemove = transactionsIds.ToList();
+            Wallet wallet = this.GetWallet(walletName);
+
+            HashSet<(uint256, DateTimeOffset)> result = new HashSet<(uint256, DateTimeOffset)>();
+
+            lock (this.lockObject)
+            {
+                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+                foreach (HdAccount account in accounts)
+                {
+                    foreach (HdAddress address in account.GetCombinedAddresses())
+                    {
+                        for (int i = 0; i < address.Transactions.Count; i++)
+                        {
+                            TransactionData transaction = address.Transactions.ElementAt(i);
+
+                            // Remove the transaction from the list of transactions affecting an address.
+                            // Only transactions that haven't been confirmed in a block can be removed.
+                            if (!transaction.IsConfirmed() && idsToRemove.Contains(transaction.Id))
+                            {
+                                result.Add((transaction.Id, transaction.CreationTime));
+                                address.Transactions = address.Transactions.Except(new[] {transaction}).ToList();
+                                i--;
+                            }
+
+                            // Remove the spending transaction object containing this transaction id.
+                            if (transaction.SpendingDetails != null && !transaction.SpendingDetails.IsSpentConfirmed() && idsToRemove.Contains(transaction.SpendingDetails.TransactionId))
+                            {
+                                result.Add((transaction.SpendingDetails.TransactionId, transaction.SpendingDetails.CreationTime));
+                                address.Transactions.ElementAt(i).SpendingDetails = null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (result.Any())
+            {
+                this.SaveWallet(wallet);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName)
+        {
+            Guard.NotEmpty(walletName, nameof(walletName));
+            Wallet wallet = this.GetWallet(walletName);
+
+            HashSet<(uint256, DateTimeOffset)> removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
+
+            lock (this.lockObject)
+            {
+                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+                foreach (HdAccount account in accounts)
+                {
+                    foreach (HdAddress address in account.GetCombinedAddresses())
+                    {
+                        removedTransactions.UnionWith(address.Transactions.Select(t => (t.Id, t.CreationTime)));
+                        address.Transactions.Clear();
+                    }
+                }
+            }
+
+            if (removedTransactions.Any())
+            {
+                this.SaveWallet(wallet);
+            }
+
+            return removedTransactions;
+        }
+
         /// <summary>
         /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
         /// </summary>

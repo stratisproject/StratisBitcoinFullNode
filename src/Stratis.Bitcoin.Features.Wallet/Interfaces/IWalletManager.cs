@@ -245,5 +245,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         DateTimeOffset GetOldestWalletCreationTime();
+
+        /// <summary>
+        /// Removes the specified transactions from the wallet and persist it.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <param name="transactionsIds">The IDs of trandactions to remove.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
+
+        /// <summary>
+        /// Removes all the transactions from the wallet and persist it.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
     }
 }

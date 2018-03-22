@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Validations;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
@@ -153,6 +156,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
         public string Hex { get; set; }
+    }
+
+    /// <summary>
+    /// Model object to use as input to the Api request for removing transactions from a wallet.
+    /// </summary>
+    /// <seealso cref="RequestModel" />
+    public class RemoveTransactionsModel : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is required.")]
+        public string WalletName { get; set; }
+
+        [FromQuery(Name = "ids")]
+        public IEnumerable<string> TransactionsIds { get; set; }
+
+        [FromQuery(Name = "all")]
+        public bool DeleteAll { get; set; }
+
+        [JsonProperty(PropertyName = "reSync")]
+        public bool ReSync { get; set; }
     }
 
     public class GetUnusedAddressModel : RequestModel
