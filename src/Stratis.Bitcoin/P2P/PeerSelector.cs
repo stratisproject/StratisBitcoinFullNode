@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private bool IsBanned(PeerAddress peerAddress)
         {
-            return (peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow());
+            return peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow();
         }
     }
 }
