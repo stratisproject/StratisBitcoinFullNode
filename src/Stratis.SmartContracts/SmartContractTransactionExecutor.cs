@@ -174,7 +174,7 @@ namespace Stratis.SmartContracts
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
                 var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
-                executionResult.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+                executionResult.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
             this.nestedStateRepository.Transfers.Clear();
@@ -194,7 +194,7 @@ namespace Stratis.SmartContracts
             if (this.smartContractCarrier.TxOutValue > 0)
             {
                 Transaction tx = new CondensingTx(this.smartContractCarrier).CreateRefundTransaction();
-                executionResult.InternalTransactions.Add(tx);
+                executionResult.InternalTransaction = tx;
             }
 
             this.nestedStateRepository.Rollback();

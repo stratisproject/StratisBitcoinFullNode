@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Backend
@@ -35,7 +34,7 @@ namespace Stratis.SmartContracts.Backend
         /// <summary>
         /// A list of transactions made inside the contract call. Should only be one condensing transaction for now.
         /// </summary>
-        public List<Transaction> InternalTransactions { get; set; }
+        public Transaction InternalTransaction { get; set; }
 
         /// <summary>
         /// Used in Ethereum to increase a gas refund.
@@ -47,11 +46,6 @@ namespace Stratis.SmartContracts.Backend
         /// </summary>
         public uint160 NewContractAddress { get; set; }
 
-        public SmartContractExecutionResult()
-        {
-            this.InternalTransactions = new List<Transaction>();
-        }
-
         /// <summary>
         /// After a contract is executed internally, we will need to merge the results.
         /// </summary>
@@ -59,11 +53,6 @@ namespace Stratis.SmartContracts.Backend
         public void Merge(SmartContractExecutionResult another)
         {
             throw new NotImplementedException();
-            if (another.Exception == null && !another.Revert)
-            {
-                this.FutureRefund += another.FutureRefund;
-                this.InternalTransactions.AddRange(another.InternalTransactions);
-            }
         }
 
     }

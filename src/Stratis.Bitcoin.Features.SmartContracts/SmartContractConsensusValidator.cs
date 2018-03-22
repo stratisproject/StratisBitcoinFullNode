@@ -254,8 +254,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress);
             SmartContractExecutionResult result = executor.Execute();
 
-            if (result.InternalTransactions.Any())
-                this.generatedTransaction = result.InternalTransactions.FirstOrDefault();
+            if (result.InternalTransaction != null)
+                this.generatedTransaction = result.InternalTransaction;
 
             track.Commit();
         }

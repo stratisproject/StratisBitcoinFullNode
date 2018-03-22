@@ -54,13 +54,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractExecutionResult result = executor.Execute();
 
             Assert.True(result.Revert);
-            Assert.Single(result.InternalTransactions);
-            Assert.Single(result.InternalTransactions[0].Inputs);
-            Assert.Single(result.InternalTransactions[0].Outputs);
+            Assert.NotNull(result.InternalTransaction);
+            Assert.Single(result.InternalTransaction.Inputs);
+            Assert.Single(result.InternalTransaction.Outputs);
 
-            var actualSender = new uint160(result.InternalTransactions[0].Outputs[0].ScriptPubKey.GetDestination().ToBytes());
+            var actualSender = new uint160(result.InternalTransaction.Outputs[0].ScriptPubKey.GetDestination().ToBytes());
             Assert.Equal(senderAddress, actualSender);
-            Assert.Equal(100, result.InternalTransactions[0].Outputs[0].Value);
+            Assert.Equal(100, result.InternalTransaction.Outputs[0].Value);
         }
     }
 }
