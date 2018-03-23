@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -10,6 +12,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
@@ -34,6 +37,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             get { return this.process == null && this.process.HasExited; }
         }
 
+        public FullNode FullNode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        bool INodeRunner.IsDisposed => throw new NotImplementedException();
+
         public void Kill()
         {
             if (!this.IsDisposed)
@@ -43,25 +50,48 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-        public void Start(string dataDir)
+        public void OnStart(string dataDir)
         {
-            this.process = Process.Start(new FileInfo(this.bitcoinD).FullName,
-                $"-conf=bitcoin.conf -datadir={dataDir} -debug=net");
+            this.process = Process.Start(new FileInfo(this.bitcoinD).FullName, $"-conf=bitcoin.conf -datadir={dataDir} -debug=net");
+        }
+
+        void INodeRunner.Kill()
+        {
+            throw new NotImplementedException();
+        }
+
+        void INodeRunner.OnStart(string dataDir)
+        {
+            throw new NotImplementedException();
         }
     }
 
-    public class StratisBitcoinPosRunner : INodeRunner
+    public abstract class NodeRunner : INodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
+        protected Action<IFullNodeBuilder> Callback;
+        public FullNode FullNode { get; set; }
+        public bool IsDisposed { get { return this.FullNode.State == FullNodeState.Disposed; } }
+        public bool SkipRules { get; internal set; }
 
-        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
+        protected NodeRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
         {
-            this.callback = callback;
+            this.Callback = callback;
+            this.SkipRules = skipRules;
         }
 
-        public bool IsDisposed
+        public abstract FullNode OnBuild(NodeSettings nodeSettings);
+        public abstract void OnStart(string dataDirectory);
+
+        protected IFullNodeBuilder Build(NodeSettings nodeSettings)
         {
-            get { return this.FullNode.State == FullNodeState.Disposed; }
+            return new FullNodeBuilder().UseNodeSettings(nodeSettings).UseBlockStore().UseMempool().UseWallet().AddRPC().MockIBD();
+        }
+
+        protected FullNode BuildFromCallBack(NodeSettings nodeSettings)
+        {
+            var builder = new FullNodeBuilder().UseNodeSettings(nodeSettings);
+            this.Callback(builder);
+            return (FullNode)builder.Build();
         }
 
         public void Kill()
@@ -69,46 +99,41 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.FullNode?.Dispose();
         }
 
-        public void Start(string dataDir)
+        protected void Start(NodeSettings nodeSettings)
         {
-            NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args:new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration:false);
-
-            var node = BuildFullNode(nodeSettings, this.callback);
-
-            this.FullNode = node;
+            this.FullNode = OnBuild(nodeSettings);
             this.FullNode.Start();
         }
+    }
 
-        public static FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+    public sealed class StratisPosRunner : NodeRunner
+    {
+        public StratisPosRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
+            : base(skipRules, callback)
+        {
+        }
+
+        public override void OnStart(string dataDir)
+        {
+            base.Start(new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false));
+        }
+
+        public override FullNode OnBuild(NodeSettings nodeSettings)
         {
             FullNode node;
 
-            if (callback != null)
-            {
-                var builder = new FullNodeBuilder().UseNodeSettings(args);
-
-                callback(builder);
-
-                node = (FullNode)builder.Build();
-            }
+            if (this.Callback != null)
+                node = base.BuildFromCallBack(nodeSettings);
             else
             {
-                node = (FullNode)new FullNodeBuilder()
-                    .UseNodeSettings(args)
-                    .UsePosConsensus()
-                    .UseBlockStore()
-                    .UseMempool()
-                    .UseWallet()
-                    .AddPowPosMining()
-                    .AddRPC()
-                    .MockIBD()
-                    .Build();
+                node = (FullNode)Build(nodeSettings)
+                                .UsePosConsensus(this.SkipRules ? new PosTestRuleRegistration() : null)
+                                .AddPowPosMining()
+                                .Build();
             }
 
             return node;
         }
-
-        public FullNode FullNode;
 
         /// <summary>
         /// Builds a node with POS miner and RPC enabled.
@@ -119,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// but all the features required for it are enabled.</remarks>
         public static IFullNode BuildStakingNode(string dir, bool staking = true)
         {
-            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" }, loadConfiguration:false);
+            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" }, loadConfiguration: false);
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UsePosConsensus()
@@ -135,65 +160,110 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public class StratisBitcoinPowRunner : INodeRunner
+    public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
-
-        public StratisBitcoinPowRunner(Action<IFullNodeBuilder> callback = null) : base()
+        public StratisBitcoinPowRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
+            : base(skipRules, callback)
         {
-            this.callback = callback;
         }
 
-        public bool IsDisposed
+        public override void OnStart(string dataDir)
         {
-            get { return this.FullNode.State == FullNodeState.Disposed; }
+            base.Start(new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir }, loadConfiguration: false));
         }
 
-        public void Kill()
-        {
-            this.FullNode?.Dispose();
-        }
-
-        public void Start(string dataDir)
-        {
-            NodeSettings nodeSettings = new NodeSettings(args:new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir }, loadConfiguration:false);
-
-            var node = BuildFullNode(nodeSettings, this.callback);
-
-            this.FullNode = node;
-            this.FullNode.Start();
-        }
-
-        public static FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+        public override FullNode OnBuild(NodeSettings args)
         {
             FullNode node;
 
-            if (callback != null)
-            {
-                var builder = new FullNodeBuilder().UseNodeSettings(args);
-
-                callback(builder);
-
-                node = (FullNode)builder.Build();
-            }
+            if (this.Callback != null)
+                node = base.BuildFromCallBack(args);
             else
             {
-                node = (FullNode)new FullNodeBuilder()
-                    .UseNodeSettings(args)
-                    .UsePowConsensus()
-                    .UseBlockStore()
-                    .UseMempool()
-                    .AddMining()
-                    .UseWallet()
-                    .AddRPC()
-                    .MockIBD()
-                    .Build();
+                node = (FullNode)Build(args)
+                                .UsePowConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
+                                .AddMining()
+                                .Build();
             }
 
             return node;
         }
+    }
 
-        public FullNode FullNode;
+    public sealed class StratisPowRunner : NodeRunner
+    {
+        public StratisPowRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
+            : base(skipRules, callback)
+        {
+        }
+
+        public override void OnStart(string dataDir)
+        {
+            base.Start(new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false));
+        }
+
+        public override FullNode OnBuild(NodeSettings nodeSettings)
+        {
+            FullNode fullNode;
+
+            if (this.Callback != null)
+                fullNode = BuildFromCallBack(nodeSettings);
+            else
+            {
+                fullNode = (FullNode)Build(nodeSettings)
+                                    .UsePowConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
+                                    .AddMining()
+                                    .Build();
+            }
+
+            return fullNode;
+        }
+    }
+
+    public sealed class PowTestRuleRegistration : IRuleRegistration
+    {
+        public IEnumerable<ConsensusRule> GetRules()
+        {
+            return new List<ConsensusRule>() { new PowTestRule() };
+        }
+    }
+
+    public sealed class PosTestRuleRegistration : IRuleRegistration
+    {
+        public IEnumerable<ConsensusRule> GetRules()
+        {
+            return new List<ConsensusRule>() { new PosTestRule() };
+        }
+    }
+
+    public sealed class PowTestRule : ConsensusRule
+    {
+        public override Task RunAsync(RuleContext context)
+        {
+            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
+            context.BlockValidationContext.ChainedBlock = this.Parent.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
+            context.SetBestBlock(this.Parent.DateTimeProvider.GetTimeOffset());
+
+            context.Flags = new Base.Deployments.DeploymentFlags();
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class PosTestRule : ConsensusRule
+    {
+        public override Task RunAsync(RuleContext context)
+        {
+            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
+            context.BlockValidationContext.ChainedBlock = this.Parent.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
+            context.SetBestBlock(this.Parent.DateTimeProvider.GetTimeOffset());
+
+            context.Flags = new Base.Deployments.DeploymentFlags();
+
+            context.SetStake();
+
+            return Task.CompletedTask;
+        }
     }
 
     public static class FullNodeTestBuilderExtension

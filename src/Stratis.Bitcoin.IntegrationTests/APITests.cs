@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.builder = NodeBuilder.Create();
 
-            this.stratisPowNode = this.builder.CreateStratisPowNode(false, fullNodeBuilder =>
+            this.stratisPowNode = this.builder.CreateStratisBitcoinPowNode(false, fullNodeBuilder =>
             {
                 fullNodeBuilder
                .UsePowConsensus()

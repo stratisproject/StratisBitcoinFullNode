@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -9,8 +9,8 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
-using System;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -33,8 +33,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateStratisBitcoinPowNode();
+                var stratisReceiver = builder.CreateStratisBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode();
+                CoreNode stratisNodeSync = builder.CreateStratisBitcoinPowNode();
                 builder.StartAll();
 
                 // Move a wallet file to the right folder and restart the wallet manager to take it into account.
@@ -126,9 +126,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateStratisBitcoinPowNode();
+                var stratisReceiver = builder.CreateStratisBitcoinPowNode();
+                var stratisReorg = builder.CreateStratisBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -278,9 +278,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateStratisBitcoinPowNode();
+                var stratisReceiver = builder.CreateStratisBitcoinPowNode();
+                var stratisReorg = builder.CreateStratisBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -339,9 +339,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateStratisBitcoinPowNode();
+                var stratisReceiver = builder.CreateStratisBitcoinPowNode();
+                var stratisReorg = builder.CreateStratisBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisminer = builder.CreateStratisPowNode();
+                var stratisminer = builder.CreateStratisBitcoinPowNode();
 
                 builder.StartAll();
                 stratisminer.NotInIBD();
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // stop the node it will persist the chain with the reset tip
                 stratisNodeSync.FullNode.Dispose();
 
-                var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
+                var newNodeInstance = builder.CloneStratisBitcoinPowNode(stratisNodeSync);
 
                 // load the node, this should hit the block store recover code
                 newNodeInstance.Start();

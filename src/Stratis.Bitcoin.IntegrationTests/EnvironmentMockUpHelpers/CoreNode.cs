@@ -12,7 +12,6 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -76,13 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <summary>Get stratis full node if possible.</summary>
         public FullNode FullNode
         {
-            get
-            {
-                if (this.runner is StratisBitcoinPosRunner)
-                    return ((StratisBitcoinPosRunner)this.runner).FullNode;
-
-                return ((StratisBitcoinPowRunner)this.runner).FullNode;
-            }
+            get { return this.runner.FullNode; }
         }
 
         private void CleanFolder()
@@ -90,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             NodeBuilder.CleanupTestFolder(this.Folder);
         }
 
-        public void Sync(CoreNode node, bool keepConnection = false)
+        public void SyncFrom(CoreNode node, bool keepConnection = false)
         {
             var rpc = this.CreateRPCClient();
             var rpc1 = node.CreateRPCClient();
@@ -153,7 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             File.WriteAllText(this.Config, config.ToString());
             lock (this.lockObject)
             {
-                this.runner.Start(this.DataFolder);
+                this.runner.OnStart(this.DataFolder);
                 this.State = CoreNodeState.Starting;
             }
             while (true)

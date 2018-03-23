@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             //create nodes
             for (int i = 0; i < nodesCount; ++i)
             {
-                CoreNode node = this.nodeBuilder.CreateStratisPowNode(true);
+                CoreNode node = this.nodeBuilder.CreateStratisBitcoinPowNode(true);
                 node.NotInIBD();
 
                 node.FullNode.WalletManager().CreateWallet("dummyPassword", "dummyWallet");

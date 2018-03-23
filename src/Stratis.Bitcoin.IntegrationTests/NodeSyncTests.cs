@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node1 = builder.CreateStratisPowNode();
-                var node2 = builder.CreateStratisPowNode();
+                var node1 = builder.CreateStratisBitcoinPowNode();
+                var node2 = builder.CreateStratisBitcoinPowNode();
                 builder.StartAll();
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
@@ -46,8 +46,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNode = builder.CreateNode();
+                var stratisNode = builder.CreateStratisBitcoinPowNode();
+                var coreNode = builder.CreateBitcoinNode();
                 builder.StartAll();
 
                 stratisNode.NotInIBD();
@@ -73,9 +73,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var stratisNodeSync = builder.CreateStratisPowNode();
-                var coreCreateNode = builder.CreateNode();
+                var stratisNode = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var coreCreateNode = builder.CreateBitcoinNode();
                 builder.StartAll();
 
                 stratisNode.NotInIBD();
@@ -105,9 +105,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNodeSync = builder.CreateNode();
-                var coreCreateNode = builder.CreateNode();
+                var stratisNode = builder.CreateStratisBitcoinPowNode();
+                var coreNodeSync = builder.CreateBitcoinNode();
+                var coreCreateNode = builder.CreateBitcoinNode();
                 builder.StartAll();
 
                 stratisNode.NotInIBD();
