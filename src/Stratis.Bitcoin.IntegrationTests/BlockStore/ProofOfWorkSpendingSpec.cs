@@ -29,11 +29,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void Attempt_to_spend_coin_earned_through_proof_of_work_as_soon_as_it_is_mined_will_fail()
         {
-            //Given(a_stratis_bitcoin_node_on_regtest);
-            //And(proof_of_work_blocks_have_just_been_mined);
-            //And(maturity_has_not_been_reached);
-            //When(i_try_to_spend_the_coins);
-            //Then(then_transaction_should_be_rejected_from_the_mempool);
+            Given(a_stratis_bitcoin_node_on_regtest);
+            And(proof_of_work_blocks_mined_to_just_before_maturity);
+            When(i_try_to_spend_the_coins);
+            Then(then_transaction_should_be_rejected_from_the_mempool);
+
+            Given(proof_of_work_blocks_mined_past_maturity);
+            When(i_try_to_spend_the_coins);
+            Then(then_transaction_should_be_accepted_by_the_mempool);
+
+
 
             var stratisSender = this.nodeBuilder.CreateStratisPowNode();
 
@@ -110,6 +115,17 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             //                              .GetSpendableTransactionsInWallet("mywallet").First().Transaction
             //                              .BlockHeight);
         }
+
+        private void then_transaction_should_be_accepted_by_the_mempool()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void proof_of_work_blocks_mined_past_maturity()
+        {
+            throw new NotImplementedException();
+        }
+
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
@@ -126,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             throw new System.NotImplementedException();
         }
 
-        private void proof_of_work_blocks_have_just_been_mined()
+        private void proof_of_work_blocks_mined_to_just_before_maturity()
         {
             throw new System.NotImplementedException();
         }
