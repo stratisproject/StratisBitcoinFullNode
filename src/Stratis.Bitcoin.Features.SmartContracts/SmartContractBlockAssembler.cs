@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             IContractStateRepository nestedStateRepository = this.currentStateRepository.StartTracking();
 
-            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, this.coinbaseAddress);
+            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, this.coinbaseAddress, this.network);
             ISmartContractExecutionResult executionResult = executor.Execute();
 
             // Update state--------------------------------

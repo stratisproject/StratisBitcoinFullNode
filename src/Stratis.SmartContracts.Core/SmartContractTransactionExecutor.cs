@@ -24,6 +24,8 @@ namespace Stratis.SmartContracts.Core
         private readonly uint160 coinbaseAddress;
         private readonly ulong height;
 
+        private readonly Network network;
+
         public SmartContractTransactionExecutor(
             IContractStateRepository stateRepository,
             SmartContractDecompiler smartContractDecompiler,
@@ -31,7 +33,8 @@ namespace Stratis.SmartContracts.Core
             ISmartContractGasInjector smartContractGasInjector,
             SmartContractCarrier smartContractCarrier,
             ulong height,
-            uint160 coinbaseAddress)
+            uint160 coinbaseAddress,
+            Network network)
         {
             this.stateRepository = stateRepository;
             this.nestedStateRepository = stateRepository.StartTracking();
@@ -41,6 +44,7 @@ namespace Stratis.SmartContracts.Core
             this.smartContractCarrier = smartContractCarrier;
             this.height = height;
             this.coinbaseAddress = coinbaseAddress;
+            this.network = network;
         }
 
         public ISmartContractExecutionResult Execute()
@@ -73,17 +77,17 @@ namespace Stratis.SmartContracts.Core
 
                 GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
                 IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
-                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
+                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 MethodDefinition initMethod = decompilation.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
 
                 var executionContext = new SmartContractExecutionContext
                     (
-                        new Block(this.height, new Address(this.coinbaseAddress.ToString())),
+                        new Block(this.height, this.coinbaseAddress.ToAddress(this.network)),
                         new Message(
-                            new Address(contractAddress.ToString()),
-                            new Address(this.smartContractCarrier.Sender.ToString()),
+                            contractAddress.ToAddress(this.network),
+                            this.smartContractCarrier.Sender.ToAddress(this.network),
                             this.smartContractCarrier.TxOutValue,
                             this.smartContractCarrier.GasLimit
                             ),
@@ -91,7 +95,7 @@ namespace Stratis.SmartContracts.Core
                         this.smartContractCarrier.MethodParameters
                     );
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository);
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository, this.network);
                 Func<ulong> getBalance = () => this.nestedStateRepository.GetCurrentBalance(contractAddress);
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
@@ -138,19 +142,19 @@ namespace Stratis.SmartContracts.Core
 
                 GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
                 IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository);
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository, this.network);
                 Func<ulong> getBalance = () => this.nestedStateRepository.GetCurrentBalance(contractAddress);
 
-                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress);
+                var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress, this.network);
                 this.nestedStateRepository.CurrentCarrier = this.smartContractCarrier;
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var executionContext = new SmartContractExecutionContext
                 (
-                    new Block(Convert.ToUInt64(this.height), new Address(this.coinbaseAddress.ToString())),
+                    new Block(Convert.ToUInt64(this.height), this.coinbaseAddress.ToAddress(this.network)),
                     new Message(
-                        new Address(contractAddress.ToString()),
-                        new Address(this.smartContractCarrier.Sender.ToString()),
+                        contractAddress.ToAddress(this.network),
+                        this.smartContractCarrier.Sender.ToAddress(this.network),
                         this.smartContractCarrier.TxOutValue,
                         this.smartContractCarrier.GasLimit
                         ),
@@ -181,7 +185,7 @@ namespace Stratis.SmartContracts.Core
             IList<TransferInfo> transfers = this.nestedStateRepository.Transfers;
             if (transfers.Any() || this.smartContractCarrier.TxOutValue > 0)
             {
-                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository);
+                var condensingTx = new CondensingTx(this.smartContractCarrier, transfers, this.nestedStateRepository, this.network);
                 executionResult.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
             }
 
@@ -201,7 +205,7 @@ namespace Stratis.SmartContracts.Core
         {
             if (this.smartContractCarrier.TxOutValue > 0)
             {
-                Transaction tx = new CondensingTx(this.smartContractCarrier).CreateRefundTransaction();
+                Transaction tx = new CondensingTx(this.smartContractCarrier, this.network).CreateRefundTransaction();
                 executionResult.InternalTransactions.Add(tx);
             }
 
