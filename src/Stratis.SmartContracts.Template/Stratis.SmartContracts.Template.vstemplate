@@ -1,4 +1,4 @@
-﻿<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
+﻿<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="ProjectGroup">
   <TemplateData>
     <Name>Stratis SmartContract</Name>
     <Description>A project template for creating a new Stratis smart contract</Description>
@@ -16,8 +16,17 @@
     <CreateInPlace>true</CreateInPlace>
   </TemplateData>
   <TemplateContent>
-    <Project TargetFileName="SmartContractTemplate.csproj" File="SmartContractTemplate.csproj" ReplaceParameters="true">
-      <ProjectItem ReplaceParameters="true" TargetFileName="Contract.cs">Contract.cs</ProjectItem>
-    </Project>
+    <ProjectCollection>
+      <ProjectTemplateLink ProjectName="$safeprojectname$">
+        Template\Stratis.SmartContracts.Contract.vstemplate
+      </ProjectTemplateLink>
+      <ProjectTemplateLink ProjectName="$safeprojectname$.Tests">
+        Tests\Stratis.SmartContracts.Test.vstemplate
+      </ProjectTemplateLink>
+    </ProjectCollection>
   </TemplateContent>
+  <WizardExtension>
+    <Assembly>TemplateBuilder, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>TemplateBuilder.RootWizard</FullClassName>
+  </WizardExtension>
 </VSTemplate>
