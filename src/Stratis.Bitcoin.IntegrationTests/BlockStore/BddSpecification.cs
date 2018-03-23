@@ -2,8 +2,22 @@
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
-    public abstract class BddSpecification
+    public abstract class BddSpecification : IDisposable
     {
+        protected BddSpecification()
+        {
+            this.BeforeTest();
+        }
+
+        protected virtual void BeforeTest() {}
+
+        protected virtual void AfterTest() {}
+
+        public void Dispose()
+        {
+            this.AfterTest();
+        }
+
         public void Given(Action action)
         {
             action.Invoke();
