@@ -744,23 +744,38 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
+                bool walletUpdated = false;
                 foreach (Transaction transaction in block.Transactions)
-                    this.ProcessTransaction(transaction, chainedBlock.Height, block, true);
+                {
+                    bool trxFound = this.ProcessTransaction(transaction, chainedBlock.Height, block, true);
+                    if (trxFound)
+                    {
+                        walletUpdated = true;
+                    }
+                }
 
                 // Update the wallets with the last processed block height.
+                // It's important that updating the height happens after the block processing is complete,
+                // as if the node is stopped, on re-opening it will start updating from the previous height.
                 this.UpdateLastBlockSyncedHeight(chainedBlock);
+
+                if (walletUpdated)
+                {
+                    this.SaveWallets();
+                }
             }
 
             this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true)
+        public bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), hash, nameof(blockHeight), blockHeight);
-            var foundTrx = new List<Tuple<Script, uint256>>();
+            
+            bool foundReceivingTrx = false, foundSendingTrx = false;
 
             lock (this.lockObject)
             {
@@ -771,7 +786,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
-                        foundTrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
+                        foundReceivingTrx = true;
                     }
                 }
 
@@ -801,11 +816,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                     });
 
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
+                    foundSendingTrx = true;
                 }
             }
 
+            // Figure out what to do when this transaction is found to affect the wallet.
+            if (foundSendingTrx || foundReceivingTrx)
+            {
+                // Save the wallet when the transaction was not included in a block. 
+                if (blockHeight == null)
+                {
+                    this.SaveWallets();
+                }
+            }
 
             this.logger.LogTrace("(-)");
+            return foundSendingTrx || foundReceivingTrx;
         }
 
         /// <summary>
