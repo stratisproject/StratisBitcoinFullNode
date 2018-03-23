@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             }
         }
 
-        private void then_transaction_should_be_rejected_from_the_mempool()
+        private void the_transaction_should_be_rejected_from_the_mempool()
         {
             this.caughtException.Should().BeOfType<WalletException>();
 

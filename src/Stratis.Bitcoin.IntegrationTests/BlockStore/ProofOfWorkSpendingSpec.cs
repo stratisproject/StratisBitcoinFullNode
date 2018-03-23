@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             Given(a_stratis_bitcoin_node_and_wallet);
             And(proof_of_work_blocks_mined_to_just_before_maturity);
             When(i_try_to_spend_the_coins);
-            Then(then_transaction_should_be_rejected_from_the_mempool);
+            Then(the_transaction_should_be_rejected_from_the_mempool);
         }
 
         [Fact]
