@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings, 
+            NodeSettings settings,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
@@ -139,12 +139,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
-            
+
             // register events
             if (this.broadcasterManager != null)
             {
                 this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
             }
+
+            this.keysLookup = new Dictionary<Script, HdAddress>();
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -226,8 +228,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
                 HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
-                account.CreateAddresses(this.network, UnusedAddressesBuffer);
-                account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
+                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
             // If the chain is downloaded, we set the height of the newly created wallet to it.
@@ -245,7 +248,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
-            this.LoadKeysLookupLock();
 
             this.logger.LogTrace("(-)");
             return mnemonic;
@@ -316,8 +318,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
                 HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
-                account.CreateAddresses(this.network, UnusedAddressesBuffer);
-                account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
+                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
@@ -336,7 +339,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
-            this.LoadKeysLookupLock();
 
             this.logger.LogTrace("(-)");
             return wallet;
@@ -436,7 +438,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 int diff = unusedAddresses.Count - count;
                 if (diff < 0)
                 {
-                    account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
+                    IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
+                    this.UpdateKeysLookupLock(newReceivingAddresses);
                     generated = true;
                 }
 
@@ -449,11 +452,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (generated)
             {
-                // save the changes to the file
+                // Save the changes to the file.
                 this.SaveWallet(wallet);
-
-                // adds the address to the list of tracked addresses
-                this.LoadKeysLookupLock();
             }
 
             this.logger.LogTrace("(-)");
@@ -474,13 +474,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // no more change addresses left. create a new one.
                 if (changeAddress == null)
                 {
-                    var accountAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
-                    changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
+                    changeAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
+
+                    // Adds the address to the list of tracked addresses.
+                    this.UpdateKeysLookupLock(new[] { changeAddress });
                 }
             }
-
-            // Adds the address to the list of tracked addresses.
-            this.LoadKeysLookupLock();
 
             // Persist the address to the wallet files.
             this.SaveWallets();
@@ -684,9 +683,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(fork, nameof(fork));
             this.logger.LogTrace("({0}:'{1}'", nameof(fork), fork);
 
-            if (this.keysLookup == null)
-                this.LoadKeysLookupLock();
-
             lock (this.lockObject)
             {
                 IEnumerable<HdAddress> allAddresses = this.keysLookup.Values;
@@ -764,11 +760,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), hash, nameof(blockHeight), blockHeight);
-
-            // Load the keys for lookup if they are not loaded yet.
-            if (this.keysLookup == null)
-                this.LoadKeysLookupLock();
-
             var foundTrx = new List<Tuple<Script, uint256>>();
 
             lock (this.lockObject)
@@ -813,10 +804,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
-            if (foundTrx.Any())
-            {
-                this.LoadKeysLookupLock();
-            }
 
             this.logger.LogTrace("(-)");
         }
@@ -1032,9 +1019,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
-                    account.CreateAddresses(this.network, accountsToAdd, isChange);
+                    var newAddresses = account.CreateAddresses(this.network, accountsToAdd, isChange);
 
-                    this.LoadKeysLookupLock();
+                    this.UpdateKeysLookupLock(newAddresses);
 
                     // Persists the address to the wallet file.
                     this.SaveWallet(wallet);
@@ -1194,23 +1181,38 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockObject)
             {
-                var lookup = new Dictionary<Script, HdAddress>();
-                foreach (var wallet in this.Wallets)
+                //var lookup = new Dictionary<Script, HdAddress>();
+                foreach (Wallet wallet in this.Wallets)
                 {
-                    var accounts = wallet.GetAccountsByCoinType(this.coinType);
-                    foreach (var account in accounts)
+                    IEnumerable<HdAddress> addresses = wallet.GetAllAddressesByCoinType(this.coinType);
+                    foreach (HdAddress address in addresses)
                     {
-                        var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
-                        foreach (var address in addresses)
-                        {
-                            lookup.Add(address.ScriptPubKey, address);
-                            if (address.Pubkey != null)
-                                lookup.Add(address.Pubkey, address);
-                        }
+                        this.keysLookup[address.ScriptPubKey] = address;
+                        if (address.Pubkey != null)
+                            this.keysLookup[address.Pubkey] = address;
                     }
                 }
+            }
+        }
 
-                this.keysLookup = lookup;
+        /// <summary>
+        /// Update the keys and transactions we're tracking in memory for faster lookups.
+        /// </summary>
+        public void UpdateKeysLookupLock(IEnumerable<HdAddress> addresses)
+        {
+            if (addresses == null || !addresses.Any())
+            {
+                return;
+            }
+
+            lock (this.lockObject)
+            {
+                foreach (HdAddress address in addresses)
+                {
+                    this.keysLookup[address.ScriptPubKey] = address;
+                    if (address.Pubkey != null)
+                        this.keysLookup[address.Pubkey] = address;
+                }
             }
         }
 

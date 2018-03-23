@@ -145,6 +145,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
+        /// Gets all the addresses contained in this wallet.
+        /// </summary>
+        /// <param name="coinType">Type of the coin.</param>
+        /// <returns>A list of all the addresses contained in this wallet.</returns>
+        public IEnumerable<HdAddress> GetAllAddressesByCoinType(CoinType coinType)
+        {
+            var accounts = this.GetAccountsByCoinType(coinType).ToList();
+
+            List<HdAddress> allAddresses = new List<HdAddress>();
+            foreach (HdAccount account in accounts)
+            {
+                allAddresses.AddRange(account.GetCombinedAddresses());
+            }
+            return allAddresses;
+        }
+
+        /// <summary>
         /// Adds an account to the current wallet.
         /// </summary>
         /// <remarks>
@@ -577,11 +594,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="network">The network these addresses will be for.</param>
         /// <param name="addressesQuantity">The number of addresses to create.</param>
         /// <param name="isChange">Whether the addresses added are change (internal) addresses or receiving (external) addresses.</param>
-        /// <returns>A list of addresses in Base58 format.</returns>
-        public List<string> CreateAddresses(Network network, int addressesQuantity, bool isChange = false)
+        /// <returns>The created addresses.</returns>
+        public IEnumerable<HdAddress> CreateAddresses(Network network, int addressesQuantity, bool isChange = false)
         {
-            List<string> addressesCreated = new List<string>();
-
             var addresses = isChange ? this.InternalAddresses : this.ExternalAddresses;
 
             // Get the index of the last address that contains transactions.
@@ -591,6 +606,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 firstNewAddressIndex = addresses.Max(add => add.Index) + 1;
             }
 
+            List<HdAddress> addressesCreated = new List<HdAddress>();
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
                 // Generate a new address.
@@ -598,17 +614,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 BitcoinPubKeyAddress address = pubkey.GetAddress(network);
 
                 // Add the new address details to the list of addresses.
-                addresses.Add(new HdAddress
+                HdAddress newAddress = new HdAddress
                 {
                     Index = i,
-                    HdPath = HdOperations.CreateHdPath((int)this.GetCoinType(), this.Index, i, isChange),
+                    HdPath = HdOperations.CreateHdPath((int) this.GetCoinType(), this.Index, i, isChange),
                     ScriptPubKey = address.ScriptPubKey,
                     Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),
                     Transactions = new List<TransactionData>()
-                });
+                };
 
-                addressesCreated.Add(address.ToString());
+                addresses.Add(newAddress);
+                addressesCreated.Add(newAddress);
             }
 
             if (isChange)
