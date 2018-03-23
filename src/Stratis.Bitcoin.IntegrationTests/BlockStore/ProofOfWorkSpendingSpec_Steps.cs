@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
-    public partial class ProofOfWorkSpendingSpec
+    public partial class ProofOfWorkSpendingSpecification
     {
         private NodeBuilder nodeBuilder;
         private CoreNode stratisBitcoinNode;
