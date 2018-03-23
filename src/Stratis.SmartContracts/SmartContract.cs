@@ -101,7 +101,7 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Returns a Keccak256 hash of the given bytes.
+        /// Returns a 32-byte Keccak256 hash of the given bytes.
         /// </summary>
         /// <param name="toHash"></param>
         /// <returns></returns>
