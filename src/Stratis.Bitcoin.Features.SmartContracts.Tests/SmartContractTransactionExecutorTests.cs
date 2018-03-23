@@ -53,7 +53,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
 
-            var executor = new SmartContractTransactionExecutor(this.stateRepository, this.decompiler, new SmartContractValidator(new ISmartContractValidator[] { }), this.gasInjector, deserializedCall, 0, 0, deserializedCall.To, this.network);
+            var executor = new SmartContractTransactionExecutor(this.stateRepository, this.decompiler, new SmartContractValidator(new ISmartContractValidator[] { }), this.gasInjector, deserializedCall, 0, deserializedCall.To, this.network);
+
             ISmartContractExecutionResult result = executor.Execute();
 
             Assert.True(result.Revert);

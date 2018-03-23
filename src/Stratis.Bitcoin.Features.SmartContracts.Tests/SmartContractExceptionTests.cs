@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transaction = new Transaction();
             var txMempoolEntry = new TxMempoolEntry(transaction, 1000, DateTimeProvider.Default.GetUtcNow().Ticks, 0, 0, new Money(1000), true, 100, new LockPoints(), newOptions);
             assembler.SetCoinbaseAddress(new uint160(3));
-            assembler.ExecuteContractFeesAndRefunds(carrier, txMempoolEntry, 0, 0);
+            assembler.ExecuteContractFeesAndRefunds(carrier, txMempoolEntry, 0);
 
             Assert.Equal(595, assembler.fees);
         }
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress, 0),
+                new Stratis.SmartContracts.Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress, 0),
+                new Stratis.SmartContracts.Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress, 0),
+                new Stratis.SmartContracts.Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, (Gas)100),
                 1,
                 new object[] { }
