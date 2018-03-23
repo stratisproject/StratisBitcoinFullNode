@@ -51,6 +51,12 @@ namespace Stratis.SmartContracts
         /// </summary>
         private readonly IInternalTransactionExecutor internalTransactionExecutor;
 
+
+        /// <summary>
+        /// Provides access to internal hashing functions.
+        /// </summary>
+        private readonly IInternalHashHelper internalHashHelper;
+
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
@@ -92,6 +98,16 @@ namespace Stratis.SmartContracts
         protected ITransferResult TransferFunds(Address addressTo, ulong amountToTransfer, TransferFundsToContract transactionDetails = null)
         {
             return this.internalTransactionExecutor.TransferFunds(this.smartContractState, addressTo, amountToTransfer, transactionDetails);
+        }
+
+        /// <summary>
+        /// Returns a Keccak256 hash of the given bytes.
+        /// </summary>
+        /// <param name="toHash"></param>
+        /// <returns></returns>
+        protected byte[] Keccak256(byte[] toHash)
+        {
+            return this.internalHashHelper.Keccak256(toHash);
         }
     }
 }

@@ -16,6 +16,7 @@ namespace Stratis.SmartContracts.Core
             IPersistentState persistentState,
             IGasMeter gasMeter,
             IInternalTransactionExecutor internalTransactionExecutor,
+            IInternalHashHelper internalHashHelper,
             Func<ulong> getBalance)
         {
             this.Block = block;
@@ -23,6 +24,7 @@ namespace Stratis.SmartContracts.Core
             this.PersistentState = persistentState;
             this.GasMeter = gasMeter;
             this.InternalTransactionExecutor = internalTransactionExecutor;
+            this.InternalHashHelper = internalHashHelper;
             this.GetBalance = getBalance;
         }
 
@@ -35,6 +37,8 @@ namespace Stratis.SmartContracts.Core
         public IGasMeter GasMeter { get; }
 
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }
+
+        public IInternalHashHelper InternalHashHelper { get; }
 
         public Func<ulong> GetBalance { get; }
     }

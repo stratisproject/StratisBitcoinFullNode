@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using HashLib;
+﻿using HashLib;
 using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Core.Hashing
@@ -13,20 +12,19 @@ namespace Stratis.SmartContracts.Core.Hashing
         public static readonly byte[] EmptyDataHash = Keccak256(EmptyByteArray);
         public static readonly byte[] EmptyElementRlp = RLP.EncodeElement(EmptyByteArray);
         public static readonly byte[] EmptyTrieHash = Keccak256(EmptyElementRlp);
+        private static readonly IHash Keccak = HashFactory.Crypto.SHA3.CreateKeccak256();
 
         public static byte[] Keccak256(byte[] input)
         {
-            return HashFactory.Crypto.SHA3.CreateKeccak256().ComputeBytes(input).GetBytes();
+            return Keccak.ComputeBytes(input).GetBytes();
         }
+    }
 
-        /// <summary>
-        /// TODO: Concrete rules around byte size here OR remove if we're not even using it
-        /// </summary>
-        /// <param name="address"></param>
-        /// <param name="nonce"></param>
-        public static byte[] NewContractAddress(byte[] address, byte[] nonce)
+    public class InternalHashHelper : IInternalHashHelper
+    {
+        public byte[] Keccak256(byte[] toHash)
         {
-            return Keccak256(address.Concat(nonce).ToArray()).Skip(12).ToArray();
+            return HashHelper.Keccak256(toHash);
         }
     }
 }
