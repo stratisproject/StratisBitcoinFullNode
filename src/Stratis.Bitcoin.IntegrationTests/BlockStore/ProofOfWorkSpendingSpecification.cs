@@ -2,7 +2,7 @@
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
-    public partial class ProofOfWorkSpendingSpec : BddSpecification
+    public partial class ProofOfWorkSpendingSpecification : BddSpecification
     {
         [Fact]
         public void Attempt_to_spend_coin_earned_through_proof_of_work_before_coin_maturity_will_fail()
