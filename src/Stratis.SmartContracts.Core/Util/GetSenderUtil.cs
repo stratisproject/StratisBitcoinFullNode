@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts.Core.Util
         public static uint160 GetAddressFromScript(Script script)
         {
             if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(script))
-                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
+                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes());
 
             if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
                 return new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
