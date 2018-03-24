@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "Gas limit is required.")]
         public string GasLimit { get; set; }
 
+        public string Sender { get; set; }
+
         public string[] Parameters { get; set; }
     }
 }
