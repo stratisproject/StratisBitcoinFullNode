@@ -70,6 +70,7 @@ namespace Stratis.SmartContracts
             this.Block = smartContractState.Block;
             this.getBalance = smartContractState.GetBalance;
             this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
+            this.internalHashHelper = smartContractState.InternalHashHelper;
             this.Message = smartContractState.Message;
             this.PersistentState = smartContractState.PersistentState;
             this.smartContractState = smartContractState;
