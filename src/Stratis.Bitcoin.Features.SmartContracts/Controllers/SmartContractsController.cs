@@ -34,8 +34,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
         private readonly Network network;
+        private readonly CoinType coinType;
+        private readonly IWalletManager walletManager;
 
-        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
+        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IWalletManager walletManager, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
@@ -43,6 +45,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
+            this.coinType = (CoinType)network.Consensus.CoinType;
+            this.walletManager = walletManager;
         }
 
         [Route("code")]
@@ -120,6 +124,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit));
             }
 
+            List<OutPoint> selectedInputs = new List<OutPoint>();
+            HdAddress senderAddress = null;
+            if (!string.IsNullOrWhiteSpace(request.Sender))
+            {
+                Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
+                selectedInputs = senderAddress.UnspentTransactions().Select(x => new OutPoint(x.Id, x.Index)).ToList();
+            }
+
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
@@ -127,6 +141,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 request.Password)
             {
                 TransactionFee = totalFee,
+                ChangeAddress = senderAddress,
+                SelectedInputs = selectedInputs
             };
 
             Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);

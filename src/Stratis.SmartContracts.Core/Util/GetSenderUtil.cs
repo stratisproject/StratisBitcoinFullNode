@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Core.Util
             Script script = null;
             bool scriptFilled = false;
 
-            if (blockTxs != null & blockTxs.Count > 0)
+                if (blockTxs != null & blockTxs.Count > 0)
             {
                 foreach (Transaction btx in blockTxs)
                 {
@@ -56,10 +56,10 @@ namespace Stratis.SmartContracts.Core.Util
         public static uint160 GetAddressFromScript(Script script)
         {
             if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(script))
-                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes(), false);
+                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes());
 
             if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
-                return new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes(), false);
+                return new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
 
             throw new Exception("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
         }

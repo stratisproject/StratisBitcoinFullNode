@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.Core.Serialization
                 return (T)(object)Convert.ToChar(stream[0]);
 
             if (typeof(T) == typeof(Address))
-                return (T)(object)new Address(new BitcoinPubKeyAddress(new KeyId(stream),network).ToString());
+                return (T)(object)new uint160(stream).ToAddress(network);
 
             if (typeof(T) == typeof(bool))
                 return (T)(object)(Convert.ToBoolean(stream[0]));

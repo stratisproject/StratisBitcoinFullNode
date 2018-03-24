@@ -194,7 +194,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AddRecipients(context);
             this.AddCoins(context);
             this.AddSecrets(context);
-            this.FindChangeAddress(context);
+            // Also added for smart contract demo
+            if (!context.ChangeAddressSet)
+            {
+                this.FindChangeAddress(context);
+            }
+            else
+            {
+                context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
+            }
+            // End smart contract change
             this.AddFee(context);
         }
 
@@ -428,6 +437,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// the rest of the coins go in to a change address that is under the senders control.
         /// </remarks>
         public HdAddress ChangeAddress { get; set; }
+
+        public bool ChangeAddressSet
+        {
+            get
+            {
+                return this.ChangeAddress != null;
+            }
+        }
 
         /// <summary>
         /// The total fee on the transaction.
