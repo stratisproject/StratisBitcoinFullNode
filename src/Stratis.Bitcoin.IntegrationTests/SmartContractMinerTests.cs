@@ -153,13 +153,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Note that by default, these tests run with size accounting enabled.
                 this.network = Network.SmartContractsRegTest;
-
-                //this.networkOptions = new NetworkOptions
-                //{
-                //    IsProofOfStake = false,
-                //    IsWitness = false,
-                //    IsSmartContracts = true
-                //};
                 this.privateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.privateKey.PubKey);
 
