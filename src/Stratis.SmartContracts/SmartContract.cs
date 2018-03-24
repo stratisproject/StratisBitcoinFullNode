@@ -51,6 +51,12 @@ namespace Stratis.SmartContracts
         /// </summary>
         private readonly IInternalTransactionExecutor internalTransactionExecutor;
 
+
+        /// <summary>
+        /// Provides access to internal hashing functions.
+        /// </summary>
+        private readonly IInternalHashHelper internalHashHelper;
+
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
@@ -95,6 +101,15 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
+        /// Returns a 32-byte Keccak256 hash of the given bytes.
+        /// </summary>
+        /// <param name="toHash"></param>
+        /// <returns></returns>
+        protected byte[] Keccak256(byte[] toHash)
+        {
+            return this.internalHashHelper.Keccak256(toHash);
+        }
+
         /// If the input condition is not met, contract execution will be halted by throwing an exception.
         /// </summary>
         /// <param name="condition"></param>

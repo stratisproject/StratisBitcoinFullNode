@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Stratis.SmartContracts.Core.Hashing;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -39,6 +40,7 @@ namespace Stratis.SmartContracts.Core.Backend
                 this.persistentState,
                 gasMeter,
                 internalTxExecutor,
+                new InternalHashHelper(),
                 getBalance);
 
             var contract = (SmartContract)Activator.CreateInstance(contractType, contractState);
