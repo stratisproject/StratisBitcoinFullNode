@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return this.memPool.MapTx.Values.Where(t => ids.Contains(t.TransactionHash)).Select(s => s.Transaction).ToList();
             });
             IEnumerable<UnspentOutputs> memOutputs = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
-            coins.UnspentOutputs = coins.UnspentOutputs.Concat(memOutputs).ToArray();
+            coins = new FetchCoinsResponse(coins.UnspentOutputs.Concat(memOutputs).ToArray(), coins.BlockHash);
 
             // the UTXO set might have been updated with a recently received block
             // but the block has not yet arrived to the mempool and remove the pending trx

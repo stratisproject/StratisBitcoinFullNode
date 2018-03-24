@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -21,6 +22,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="top">Coinview at the top of the stack.</param>
         public CoinViewStack(CoinView top)
         {
+            Guard.NotNull(top, nameof(top));
+
             this.Top = top;
             CoinView current = top;
             while (current is IBackedCoinView)
@@ -39,10 +42,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             CoinView current = this.Top;
             while (current is IBackedCoinView)
             {
-                yield return current;
+                if (current != null)
+                    yield return current;
+
                 current = ((IBackedCoinView)current).Inner;
             }
-            yield return current;
+
+            if (current != null)
+                yield return current;
         }
 
         /// <summary>
