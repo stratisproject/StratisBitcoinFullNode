@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 //Now check if Core connect to stratis
                 stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
-                Thread.Sleep(100); // let the node disconnect
+                TestHelper.WaitLoop(() => coreNode.CreateRPCClient().GetPeersInfo().Length == 0);
 
                 tip = coreNode.FindBlock(10).Last();
                 coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
