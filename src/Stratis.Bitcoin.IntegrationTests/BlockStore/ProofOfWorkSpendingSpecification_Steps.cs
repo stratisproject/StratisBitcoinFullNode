@@ -56,12 +56,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.MineBlocks(1, this.sendingStratisBitcoinNode);
         }
 
-        private void more_blocks_mined_to_just_before_maturity_of_original_block()
+        private void more_blocks_mined_to_just_BEFORE_maturity_of_original_block()
         {
             this.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode);
         }
 
-        private void more_blocks_mined_to_just_after_maturity_of_original_block()
+        private void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
         {
             this.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode);
         }
