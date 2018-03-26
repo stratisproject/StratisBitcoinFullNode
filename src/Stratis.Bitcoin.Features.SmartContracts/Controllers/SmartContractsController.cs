@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts;
@@ -36,8 +37,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly Network network;
         private readonly CoinType coinType;
         private readonly IWalletManager walletManager;
+        private readonly IBroadcasterManager broadcasterManager;
 
-        public SmartContractsController(ContractStateRepositoryRoot stateRoot, IConsensusLoop consensus, IWalletTransactionHandler walletTransactionHandler, IWalletManager walletManager, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
+        public SmartContractsController(
+            ContractStateRepositoryRoot stateRoot,
+            IConsensusLoop consensus,
+            IWalletTransactionHandler walletTransactionHandler,
+            IWalletManager walletManager,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            IBroadcasterManager broadcasterManager,
+            Network network)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
@@ -47,6 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.walletManager = walletManager;
+            this.broadcasterManager = broadcasterManager;
         }
 
         [Route("code")]
@@ -111,6 +122,57 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
+            return Json(BuildCreateTx(request));
+        }
+
+        [Route("build-call")]
+        [HttpPost]
+        public IActionResult BuildCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            return Json(BuildCallTx(request));
+        }
+
+
+        [Route("build-and-send-create")]
+        [HttpPost]
+        public IActionResult BuildAndSendCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            BuildCreateContractTransactionResponse response = BuildCreateTx(request);
+            var transaction = new Transaction(response.Hex);
+            this.walletManager.ProcessTransaction(transaction, null, null, false);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+            return Json(response);
+        }
+
+        [Route("build-and-send-call")]
+        [HttpPost]
+        public IActionResult BuildAndSendCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            BuildCallContractTransactionResponse response = BuildCallTx(request);
+            var transaction = new Transaction(response.Hex);
+            this.walletManager.ProcessTransaction(transaction, null, null, false);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            return Json(BuildCallTx(request));
+        }
+
+        private BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
+        {
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
 
@@ -131,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-                selectedInputs = senderAddress.UnspentTransactions().Select(x => new OutPoint(x.Id, x.Index)).ToList();
+                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 100).Where(x => x.Address.Address == request.Sender).Select(x=>x.ToOutPoint()).ToList();
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
@@ -147,25 +209,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
-            var model = new BuildCreateContractTransactionResponse
+            return new BuildCreateContractTransactionResponse
             {
                 Hex = transactionResult.ToHex(),
                 Fee = context.TransactionFee,
                 TransactionId = transactionResult.GetHash(),
                 NewContractAddress = transactionResult.GetNewContractAddress().ToAddress(this.network)
             };
-
-            return this.Json(model);
         }
 
-        [Route("build-call")]
-        [HttpPost]
-        public IActionResult BuildCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        private BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
@@ -181,6 +235,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit));
             }
 
+            List<OutPoint> selectedInputs = new List<OutPoint>();
+            HdAddress senderAddress = null;
+            if (!string.IsNullOrWhiteSpace(request.Sender))
+            {
+                Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
+                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 100).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            }
+
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
@@ -192,15 +256,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
-            var model = new BuildCallContractTransactionResponse
+            return new BuildCallContractTransactionResponse
             {
                 Hex = transactionResult.ToHex(),
                 Fee = context.TransactionFee,
                 TransactionId = transactionResult.GetHash()
             };
-
-            return this.Json(model);
         }
+
+
 
         private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
         {

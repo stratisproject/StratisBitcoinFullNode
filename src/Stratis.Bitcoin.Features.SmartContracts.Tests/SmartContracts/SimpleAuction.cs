@@ -2,7 +2,7 @@
 
 public class SimpleAuction : SmartContract
 {
-    protected SimpleAuction(ISmartContractState smartContractState) : base(smartContractState)
+    public SimpleAuction(ISmartContractState smartContractState) : base(smartContractState)
     {
         PendingReturns = PersistentState.GetMapping<ulong>("PendingReturns");
     }
@@ -75,7 +75,6 @@ public class SimpleAuction : SmartContract
         AuctionEndBlock = Block.Number + biddingBlocks;
         HasEnded = false;
     }
-
 
     public void Bid()
     {
