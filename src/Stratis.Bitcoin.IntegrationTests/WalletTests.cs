@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
-                stratisSender.GenerateStratis(maturity + 51);
+                stratisSender.GenerateStratisWithMiner(maturity + 51);
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
