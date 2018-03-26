@@ -12,20 +12,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public sealed class PoSMintingTests
     {
-        //private ExtendedLoggerFactory loggerFactory;
-        //private Network network;
-
-        //public PoSMintingTests()
-        //{
-        //    this.network = Network.Main;
-        //    this.network.Consensus.Options = new PowConsensusOptions();
-
-        //    this.loggerFactory = new ExtendedLoggerFactory();
-        //    this.loggerFactory.AddConsoleWithFilters();
-        //}
-
         [Fact]
-        public void CanStakeAndSignBlocks()
+        public void ProofOfStake_MintNewCoinsViaStaking()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
