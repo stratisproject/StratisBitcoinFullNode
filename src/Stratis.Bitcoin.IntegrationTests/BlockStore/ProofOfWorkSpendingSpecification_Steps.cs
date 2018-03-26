@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
@@ -14,6 +15,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
     {
         private const string SendingWalletName = "sending wallet";
         private const string ReceivingWalletName = "receiving wallet";
+        private const string WalletPassword = "123456";
+        private const string AccountName = "account 0";
         private NodeBuilder nodeBuilder;
         private CoreNode sendingStratisBitcoinNode;
         private CoreNode receivingStratisBitcoinNode;
@@ -21,6 +24,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Exception caughtException;
         private Transaction lastTransaction;
         private int totalMinedBlocks;
+
+        // NOTE: This constructor is only needed if you want the test to log the step names.
+        public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+        }
 
         protected override void BeforeTest()
         {
@@ -44,8 +52,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.sendingStratisBitcoinNode.CreateRPCClient().AddNode(this.receivingStratisBitcoinNode.Endpoint, true);
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.receivingStratisBitcoinNode, this.sendingStratisBitcoinNode));
 
-            this.sendingStratisBitcoinNode.FullNode.WalletManager().CreateWallet("123456", SendingWalletName);
-            this.receivingStratisBitcoinNode.FullNode.WalletManager().CreateWallet("123456", ReceivingWalletName);
+            this.sendingStratisBitcoinNode.FullNode.WalletManager().CreateWallet(WalletPassword, SendingWalletName);
+            this.receivingStratisBitcoinNode.FullNode.WalletManager().CreateWallet(WalletPassword, ReceivingWalletName);
 
             this.coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode
                 .Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
@@ -68,9 +76,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void MineBlocks(int blockCount, CoreNode node)
         {
-            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(SendingWalletName, "account 0"));
+            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(SendingWalletName, AccountName));
             var wallet = node.FullNode.WalletManager().GetWalletByName(SendingWalletName);
-            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress("123456", address).PrivateKey;
+            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(WalletPassword, address).PrivateKey;
 
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
 
@@ -89,12 +97,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void spending_the_coins_from_original_block()
         {
             var sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
-                .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, "account 0"), 2).ElementAt(1);
+                .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, AccountName), 2).ElementAt(1);
 
             try
             {
                 this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler().BuildTransaction(
-                    CreateTransactionBuildContext(new WalletAccountReference(SendingWalletName, "account 0"), "123456", sendtoAddress.ScriptPubKey,
+                    CreateTransactionBuildContext(new WalletAccountReference(SendingWalletName, AccountName), WalletPassword, sendtoAddress.ScriptPubKey,
                         Money.COIN * 1, FeeType.Medium, 101));
 
                 this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));

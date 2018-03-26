@@ -1,15 +1,9 @@
 ﻿using Xunit;
-using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public partial class ProofOfWorkSpendingSpecification : BddSpecification
     {
-        // NOTE: This constructor is only needed if you want the test to log the step names.
-        public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
-        {
-        }
-
         [Fact]
         public void Attempt_to_spend_coin_earned_through_proof_of_work_BEFORE_coin_maturity_will_fail()
         {
