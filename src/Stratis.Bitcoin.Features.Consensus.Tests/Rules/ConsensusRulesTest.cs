@@ -258,6 +258,70 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             Assert.Equal(consensusError.Code, blockValidationContext.Error.Code);
         }
 
+        // test extension methods
+        [Fact]
+        public void TryFindRule_RuleFound_ReturnsConsensusRule()
+        {
+            this.ruleRegistrations = new List<ConsensusRule> {
+                new BlockSizeRule()
+            };
+
+            var consensusRules = this.InitializeConsensusRules();
+            consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
+
+            var rule = consensusRules.Rules.TryFindRule<BlockSizeRule>();
+
+            Assert.NotNull(rule);
+            Assert.True(rule is BlockSizeRule);
+        }
+
+        [Fact]
+        public void TryFindRule_RuleNotFound_ReturnsNull()
+        {
+            this.ruleRegistrations = new List<ConsensusRule> {
+                new BlockHeaderRule()
+            };
+
+            var consensusRules = this.InitializeConsensusRules();
+            consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
+
+            var rule = consensusRules.Rules.TryFindRule<BlockSizeRule>();
+
+            Assert.Null(rule);
+        }
+
+        [Fact]
+        public void FindRule_RuleFound_ReturnsConsensusRule()
+        {
+            this.ruleRegistrations = new List<ConsensusRule> {
+                new BlockSizeRule()
+            };
+
+            var consensusRules = this.InitializeConsensusRules();
+            consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
+
+            var rule = consensusRules.Rules.FindRule<BlockSizeRule>();
+
+            Assert.NotNull(rule);
+            Assert.True(rule is BlockSizeRule);
+        }
+
+        [Fact]
+        public void FindRule_RuleNotFound_ThrowsException()
+        {
+            Assert.Throws<Exception>(() =>
+            {
+                this.ruleRegistrations = new List<ConsensusRule> {
+                    new BlockHeaderRule()
+                };
+
+                var consensusRules = this.InitializeConsensusRules();
+                consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
+
+                consensusRules.Rules.FindRule<BlockSizeRule>();
+            });
+        }
+
         private TestConsensusRules InitializeConsensusRules()
         {
             return new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object);
@@ -312,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
                 return Task.FromResult(15);
             }
-        }
+        }       
 
         private class TestConsensusRules : ConsensusRules
         {
