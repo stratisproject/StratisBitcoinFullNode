@@ -92,6 +92,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>The settings for the wallet feature.</summary>
+        private readonly WalletSettings walletSettings;
+
         public uint256 WalletTipHash { get; set; }
 
         // TODO: a second lookup dictionary is proposed to lookup for spent outputs
@@ -103,7 +106,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder,
+            NodeSettings settings, 
+            WalletSettings walletSettings,
+            DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
@@ -114,11 +119,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(settings, nameof(settings));
+            Guard.NotNull(walletSettings, nameof(walletSettings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
+            this.walletSettings = walletSettings;
             this.lockObject = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -132,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
-
+            
             // register events
             if (this.broadcasterManager != null)
             {
@@ -770,10 +777,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (TxOut utxo in transaction.Outputs)
                 {
                     // Check if the outputs contain one of our addresses.
-                    if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
+                    if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
                     {
-                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, transaction.Outputs.IndexOf(utxo),
-                            utxo.Value, utxo.ScriptPubKey, blockHeight, block, isPropagated);
+                        this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundTrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
                     }
                 }
@@ -782,9 +788,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
                 {
                     TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
-
-                    // Find the script this input references.
-                    Script keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
 
                     // Get the details of the outputs paid out.
                     IEnumerable<TxOut> paidOutTo = transaction.Outputs.Where(o =>
@@ -806,7 +809,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         return !addr.IsChangeAddress() && !transaction.IsCoinStake;
                     });
 
-                    this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.IsCoinStake, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
+                    this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                 }
             }
 
@@ -822,28 +825,29 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Adds a transaction that credits the wallet with new coins.
         /// This method is can be called many times for the same transaction (idempotent).
         /// </summary>
-        /// <param name="transactionHash">The transaction hash.</param>
-        /// <param name="time">The time.</param>
-        /// <param name="isCoinStake">A value indicating whether this is a coin stake transaction or not.</param>
-        /// <param name="index">The index.</param>
-        /// <param name="amount">The amount.</param>
-        /// <param name="script">The script.</param>
+        /// <param name="transaction">The transaction from which details are added.</param>
+        /// <param name="utxo">The unspend output to add to the wallet.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
         /// <param name="isPropagated">Propagation state of the transaction.</param>
-        private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, bool isCoinStake, int index, Money amount, Script script,
-            int? blockHeight = null, Block block = null, bool isPropagated = true)
+        private void AddTransactionToWallet(Transaction transaction, TxOut utxo, int? blockHeight = null, Block block = null, bool isPropagated = true)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11},{12}:{13})", nameof(transactionHex), transactionHex,
-                nameof(transactionHash), transactionHash, nameof(time), time, nameof(isCoinStake), isCoinStake, nameof(index), index, nameof(amount), amount, nameof(blockHeight), blockHeight);
+            Guard.NotNull(transaction, nameof(transaction));
+            Guard.NotNull(utxo, nameof(utxo));
 
+            uint256 transactionHash = transaction.GetHash();
+
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), transactionHash, nameof(blockHeight), blockHeight);
+            
             // Get the collection of transactions to add to.
+            Script script = utxo.ScriptPubKey;
             this.keysLookup.TryGetValue(script, out HdAddress address);
             ICollection<TransactionData> addressTransactions = address.Transactions;
 
             // Check if a similar UTXO exists or not (same transaction ID and same index).
             // New UTXOs are added, existing ones are updated.
+            int index = transaction.Outputs.IndexOf(utxo);
+            Money amount = utxo.Value;
             TransactionData foundTransaction = addressTransactions.FirstOrDefault(t => (t.Id == transactionHash) && (t.Index == index));
             if (foundTransaction == null)
             {
@@ -851,14 +855,14 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
-                    IsCoinStake = isCoinStake == false ? (bool?)null : true,
+                    IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
                     Id = transactionHash,
-                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transactionHex,
+                    Hex = this.walletSettings.SaveTransactionHex ? transaction.ToHex() : null,
                     IsPropagated = isPropagated
                 };
 
@@ -905,20 +909,20 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Mark an output as spent, the credit of the output will not be used to calculate the balance.
         /// The output will remain in the wallet for history (and reorg).
         /// </summary>
-        /// <param name="transactionHash">The transaction hash.</param>
-        /// <param name="time">The time.</param>
-        /// <param name="isCoinStake">A value indicating whether this is a coin stake transaction or not.</param>
+        /// <param name="transaction">The transaction from which details are added.</param>
         /// <param name="paidToOutputs">A list of payments made out</param>
         /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
         /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
-        private void AddSpendingTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, bool isCoinStake, IEnumerable<TxOut> paidToOutputs,
+        private void AddSpendingTransactionToWallet(Transaction transaction, IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId, int? spendingTransactionIndex, int? blockHeight = null, Block block = null)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:'{7}',{8}:{9},{10}:{11},{12}:{13})", nameof(transactionHex), transactionHex,
-                nameof(transactionHash), transactionHash, nameof(time), time, nameof(isCoinStake), isCoinStake, nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
+            Guard.NotNull(transaction, nameof(transaction));
+            Guard.NotNull(paidToOutputs, nameof(paidToOutputs));
+
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:'{7}')", nameof(transaction), transaction.GetHash(),
+                nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
 
             // Get the transaction being spent.
             TransactionData spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
@@ -970,12 +974,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 SpendingDetails spendingDetails = new SpendingDetails
                 {
-                    TransactionId = transactionHash,
+                    TransactionId = transaction.GetHash(),
                     Payments = payments,
-                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     BlockHeight = blockHeight,
-                    Hex = transactionHex,
-                    IsCoinStake = isCoinStake == false ? (bool?)null : true
+                    Hex = this.walletSettings.SaveTransactionHex ? transaction.ToHex() : null,
+                    IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
 
                 spentTransaction.SpendingDetails = spendingDetails;
