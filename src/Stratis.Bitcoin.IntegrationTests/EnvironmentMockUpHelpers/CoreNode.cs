@@ -141,6 +141,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             config.Add("rpcport", this.ports[1].ToString());
             config.Add("printtoconsole", "1");
             config.Add("keypool", "10");
+            config.Add("agentprefix", "node" + this.ports[0].ToString());
             config.Import(this.ConfigParameters);
             File.WriteAllText(this.Config, config.ToString());
             lock (this.lockObject)

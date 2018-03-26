@@ -488,6 +488,202 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         /// <summary>
+        /// Ensures a banned peer is ignored from the selector during discovery.
+        /// <para>
+        /// Scenario :
+        /// PeerAddressManager contains two peers.
+        /// One banned peer.
+        /// One discovered peers.
+        /// </para>
+        /// <para>
+        /// Result:
+        /// One peer returned, banned peer ignored.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnPeersForDiscovery_IgnoringBannedPeer()
+        {
+            string discoveredpeer = "::ffff:192.168.0.2";
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endPointOne = new IPEndPoint(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse(discoveredpeer);
+            var endPointTwo = new IPEndPoint(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
+
+            // Discovered peer.
+            ipAddress = IPAddress.Parse(discoveredpeer);
+            peerAddressManager.PeerDiscoveredFrom(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddHours(-25));
+
+            // Banned peer.
+            peerAddressManager.FindPeer(endPointOne).BanUntil = DateTime.UtcNow.AddMinutes(1);
+
+            var peers = peerAddressManager.PeerSelector.SelectPeersForDiscovery(2);
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointTwo));
+        }
+
+        /// <summary>
+        /// Ensures that a particular peer is returned from the attempted peers 
+        /// set and ignores banned peers.
+        /// <para>
+        /// Scenario:
+        /// Peer 1 has had a connection attempt (more than 1 hour ago).
+        /// Peer 2 has had a connection attempt (more than 1 hour ago), and is banned.
+        /// </para>
+        /// <para>
+        /// Result:
+        /// Peer 1 is in the attempted set, peer 2 is ignored.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerState_TestReturnFromPeerAttemptedSet_IgnoringBannedPeer()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endPointOne = new IPEndPoint(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
+            var endPointTwo = new IPEndPoint(ipAddress, 80);
+
+            DataFolder peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
+
+            peerAddressManager.FindPeer(endPointTwo).BanUntil = DateTime.UtcNow.AddMinutes(1);
+
+            peerAddressManager.PeerAttempted(endPointOne, DateTime.UtcNow.AddHours(-2));
+            peerAddressManager.PeerAttempted(endPointTwo, DateTime.UtcNow.AddHours(-2));
+
+            IEnumerable<PeerAddress> peers = peerAddressManager.PeerSelector.Attempted();
+
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointOne));
+        }
+
+        /// <summary>
+        /// Ensures that a particular peer is returned from the connected peers
+        /// set and ignores banned peers.
+        /// <para>
+        /// Scenario :
+        /// Peer 1 has had a successful connection made to it (more than 60 seconds ago).
+        /// Peer 2 has had a successful connection made to it (more than 60 seconds ago), and is banned.
+        /// </para>
+        /// <para>
+        /// Result:
+        /// Peer 1 gets returned in the Connected set.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerState_TestReturnFromPeerConnectedSet_IgnoringBannedPeer()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endPointOne = new IPEndPoint(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
+            var endPointTwo = new IPEndPoint(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
+
+            peerAddressManager.FindPeer(endPointTwo).BanUntil = DateTime.UtcNow.AddMinutes(1);
+
+            peerAddressManager.PeerConnected(endPointOne, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerConnected(endPointTwo, DateTime.UtcNow.AddSeconds(-80));
+
+            IEnumerable<PeerAddress> peers = peerAddressManager.PeerSelector.Connected();
+
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointOne));
+        }
+
+        /// <summary>
+        /// Ensures that a peer is returned from the fresh peers
+        /// set, and the banned peer is ignored.
+        /// <para>
+        /// Scenario 1:
+        /// Peer 1 has had no connection attempts.
+        /// Peer 2 has had no connection attempts, and is banned.
+        /// </para>
+        /// <para>
+        /// Result:
+        /// Peer 1 is in the Fresh set.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerState_TestReturnFromPeerFreshSet_IgnoringBannedPeer()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endPointOne = new IPEndPoint(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
+            var endPointTwo = new IPEndPoint(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
+
+            peerAddressManager.FindPeer(endPointTwo).BanUntil = DateTime.UtcNow.AddMinutes(1);
+
+            var peers = peerAddressManager.PeerSelector.Fresh();
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointOne));
+        }
+
+        /// <summary>
+        /// Ensures that a particular peer is returned from the handshaked peers
+        /// set, and the banned peer is ignored.
+        /// <para>
+        /// Scenario 1:
+        /// Peer 1 has had a successful handshake (more than 60 seconds ago).
+        /// Peer 2 has had a successful handshake (more than 60 seconds ago), and is banned.
+        /// </para>
+        /// <para>
+        /// Result:
+        /// Peer 1 gets returned in the Connected set, and Peer 2 is ignored.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerState_TestReturnFromPeerHandshakedSet_IgnoringBanned()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endPointOne = new IPEndPoint(ipAddress, 80);
+
+            ipAddress = IPAddress.Parse("::ffff:192.168.0.2");
+            var endPointTwo = new IPEndPoint(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
+
+            peerAddressManager.FindPeer(endPointTwo).BanUntil = DateTime.UtcNow.AddMinutes(1);
+
+            peerAddressManager.PeerConnected(endPointOne, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerHandshaked(endPointOne, DateTime.UtcNow.AddSeconds(-80));
+
+            peerAddressManager.PeerConnected(endPointTwo, DateTime.UtcNow.AddSeconds(-80));
+            peerAddressManager.PeerHandshaked(endPointTwo, DateTime.UtcNow.AddSeconds(-80));
+
+            var peers = peerAddressManager.PeerSelector.Handshaked();
+            Assert.Single(peers);
+            Assert.Contains(peers, p => p.Endpoint.Match(endPointOne));
+        }
+
+        /// <summary>
         /// Tests that own peer address is not returning during SelectPeersForDiscovery and SelectPeer.
         /// <para>
         /// Scenario 1 - SelectPeersForDiscovery:

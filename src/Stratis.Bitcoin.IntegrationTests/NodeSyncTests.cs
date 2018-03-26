@@ -60,6 +60,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 //Now check if Core connect to stratis
                 stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
+                TestHelper.WaitLoop(() => coreNode.CreateRPCClient().GetPeersInfo().Length == 0);
+
                 tip = coreNode.FindBlock(10).Last();
                 coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
@@ -177,6 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                     stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                    TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                     var t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(11));
                     var t2 = Task.Delay(1000).ContinueWith(t => stratisReorg.GenerateStratisWithMiner(12));
@@ -263,6 +266,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     // Now disconnect the peers and mine block C2p on remote.
                     stratisMinerLocal.CreateRPCClient().RemoveNode(stratisMinerRemote.Endpoint);
+                    TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisMinerRemote));
 
                     // Mine block C2p.
                     stratisMinerRemote.GenerateStratisWithMiner(1);

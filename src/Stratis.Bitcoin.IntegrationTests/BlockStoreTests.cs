@@ -244,6 +244,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // remove node 2
                 stratisNodeSync.CreateRPCClient().RemoveNode(stratisNode2.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisNode2));
 
                 // mine some more with node 1
                 stratisNode1.GenerateStratisWithMiner(10);
@@ -254,6 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // remove node 1
                 stratisNodeSync.CreateRPCClient().RemoveNode(stratisNode1.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisNode1));
 
                 // mine a higher chain with node2
                 stratisNode2.GenerateStratisWithMiner(20);

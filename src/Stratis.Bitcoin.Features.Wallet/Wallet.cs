@@ -90,6 +90,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
+        /// Update the last block synced height and hash in the wallet.
+        /// </summary>
+        /// <param name="coinType">The type of the coin this account is for.</param>
+        /// <param name="block">The block whose details are used to update the wallet.</param>
+        public void SetLastBlockDetailsByCoinType(CoinType coinType, ChainedBlock block)
+        {
+            AccountRoot accountRoot = this.AccountsRoot.SingleOrDefault(a => a.CoinType == coinType);
+
+            if (accountRoot == null) return;
+
+            accountRoot.LastBlockSyncedHeight = block.Height;
+            accountRoot.LastBlockSyncedHash = block.HashBlock;
+        }
+
+        /// <summary>
         /// Gets all the transactions by coin type.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
@@ -803,7 +818,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets or sets the full transaction object.
         /// </summary>
         [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex);
+        public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
 
         /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
@@ -921,7 +936,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets or sets the full transaction object.
         /// </summary>
         [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex);
+        public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
 
         /// <summary>
         /// Determines whether this transaction being spent is confirmed.
