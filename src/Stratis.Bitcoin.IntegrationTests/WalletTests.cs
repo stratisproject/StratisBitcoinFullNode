@@ -128,6 +128,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
 
+                // Get 50 unused addresses from stratis stratisReceiver
+                // For each address send 1 coin
+                // Send transaction 
+                // Broadcast message
+
                 // send coins to the receiver
                 var sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
 
