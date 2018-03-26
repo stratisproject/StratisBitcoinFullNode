@@ -8,5 +8,10 @@ namespace $safeprojectname$
             : base(smartContractState)
         {
         }
+
+        public string Test()
+        {
+            return "Test";
+        }
     }
 }

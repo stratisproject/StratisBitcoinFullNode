@@ -13,8 +13,8 @@ namespace $safeprojectname$
         [TestInitialize]
         public void Initialize()
         {
-            var block = new Block(0, Address.Zero, 0);
-            var message = new Message(Address.Zero, Address.Zero, 0, (Gas)0);
+            var block = new Block(0, new Address());
+            var message = new Message(new Address(), new Address(), 0, (Gas)0);
             var getBalance = new Func<ulong>(() => Balance);
 
             this.smartContractState = new TestSmartContractState(
@@ -23,7 +23,8 @@ namespace $safeprojectname$
                 null,
                 null,
                 null,
-                getBalance
+                getBalance,
+                null
             );
         }
 
@@ -52,7 +53,8 @@ namespace $safeprojectname$
             IPersistentState persistentState,
             IGasMeter gasMeter,
             IInternalTransactionExecutor transactionExecutor,
-            Func<ulong> getBalance)
+            Func<ulong> getBalance,
+            IInternalHashHelper hashHelper)
         {
             this.Block = block;
             this.Message = message;
@@ -60,6 +62,7 @@ namespace $safeprojectname$
             this.GasMeter = gasMeter;
             this.InternalTransactionExecutor = transactionExecutor;
             this.GetBalance = getBalance;
+            this.InternalHashHelper = hashHelper;
         }
 
         public Block Block { get; }
@@ -68,5 +71,6 @@ namespace $safeprojectname$
         public IGasMeter GasMeter { get; }
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }
         public Func<ulong> GetBalance { get; }
+        public IInternalHashHelper InternalHashHelper { get; }
     }
 }
