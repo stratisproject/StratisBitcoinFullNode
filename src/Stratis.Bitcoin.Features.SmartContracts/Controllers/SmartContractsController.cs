@@ -271,6 +271,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 request.Password)
             {
                 TransactionFee = totalFee,
+                ChangeAddress = senderAddress,
+                SelectedInputs = selectedInputs
             };
 
             Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
