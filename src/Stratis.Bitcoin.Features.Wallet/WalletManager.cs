@@ -97,9 +97,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public uint256 WalletTipHash { get; set; }
 
-        // TODO: a second lookup dictionary is proposed to lookup for spent outputs
-        // every time we find a trx that credits we need to add it to this lookup
-        // private Dictionary<OutPoint, TransactionData> outpointLookup;
+        // In order to allow faster look-ups of transactions affecting the wallets' addresses,
+        // we keep a couple of objects in memory:
+        // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
+        // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
+        private Dictionary<OutPoint, TransactionData> outpointLookup;
         internal Dictionary<Script, HdAddress> keysLookup;
 
         public WalletManager(
@@ -147,6 +149,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             this.keysLookup = new Dictionary<Script, HdAddress>();
+            this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -791,9 +794,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
-                foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
+                foreach (TxIn input in transaction.Inputs)
                 {
-                    TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
+                    this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx);
+                    if (tTx == null)
+                    {
+                        continue;
+                    }
 
                     // Get the details of the outputs paid out.
                     IEnumerable<TxOut> paidOutTo = transaction.Outputs.Where(o =>
@@ -886,6 +893,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 addressTransactions.Add(newTransaction);
+                this.AddInputKeysLookupLock(newTransaction);
             }
             else
             {
@@ -997,6 +1005,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
+                this.RemoveInputKeysLookupLock(spentTransaction);
             }
             else // If this spending transaction is being confirmed in a block.
             {
@@ -1048,9 +1057,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                     var newAddresses = account.CreateAddresses(this.network, accountsToAdd, isChange);
 
                     this.UpdateKeysLookupLock(newAddresses);
-
-                    // Persists the address to the wallet file.
-                    this.SaveWallet(wallet);
                 }
             }
 
@@ -1215,6 +1221,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.keysLookup[address.ScriptPubKey] = address;
                         if (address.Pubkey != null)
                             this.keysLookup[address.Pubkey] = address;
+
+                        foreach (var unspentTransaction in address.UnspentTransactions())
+                        {
+                            this.outpointLookup[new OutPoint(unspentTransaction.Id, unspentTransaction.Index)] = unspentTransaction;
+                        }
+                        
                     }
                 }
             }
@@ -1238,6 +1250,33 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (address.Pubkey != null)
                         this.keysLookup[address.Pubkey] = address;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Add to the list of unspent outputs kept in memory for faster lookups.
+        /// </summary>
+        private void AddInputKeysLookupLock(TransactionData transactionData)
+        {
+            Guard.NotNull(transactionData, nameof(transactionData));
+
+            lock (this.lockObject)
+            {
+                this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
+            }
+        }
+
+        /// <summary>
+        /// Remove from the list of unspent outputs kept in memory.
+        /// </summary>
+        private void RemoveInputKeysLookupLock(TransactionData transactionData)
+        {
+            Guard.NotNull(transactionData, nameof(transactionData));
+            Guard.NotNull(transactionData.SpendingDetails, nameof(transactionData.SpendingDetails));
+            
+            lock (this.lockObject)
+            {
+                this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
             }
         }
 
