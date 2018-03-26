@@ -1,13 +1,10 @@
 ﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static Stratis.Bitcoin.Features.Miner.PosMinting;
 
@@ -15,19 +12,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public sealed class PoSMintingTests
     {
-        private ExtendedLoggerFactory loggerFactory;
-        private Network network;
+        //private ExtendedLoggerFactory loggerFactory;
+        //private Network network;
 
-        public PoSMintingTests()
-        {
-            IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+        //public PoSMintingTests()
+        //{
+        //    this.network = Network.Main;
+        //    this.network.Consensus.Options = new PowConsensusOptions();
 
-            this.network = Network.Main;
-            this.network.Consensus.Options = new PowConsensusOptions();
-
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
-        }
+        //    this.loggerFactory = new ExtendedLoggerFactory();
+        //    this.loggerFactory.AddConsoleWithFilters();
+        //}
 
         [Fact]
         public void CanStakeAndSignBlocks()

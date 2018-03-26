@@ -32,14 +32,16 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private Process process;
 
+        public FullNode FullNode
+        {
+            get { return null; }
+            set { return; }
+        }
+
         public bool IsDisposed
         {
             get { return this.process == null && this.process.HasExited; }
         }
-
-        public FullNode FullNode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        bool INodeRunner.IsDisposed => throw new NotImplementedException();
 
         public void Kill()
         {
@@ -53,16 +55,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public void OnStart(string dataDir)
         {
             this.process = Process.Start(new FileInfo(this.bitcoinD).FullName, $"-conf=bitcoin.conf -datadir={dataDir} -debug=net");
-        }
-
-        void INodeRunner.Kill()
-        {
-            throw new NotImplementedException();
-        }
-
-        void INodeRunner.OnStart(string dataDir)
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -84,7 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         protected IFullNodeBuilder Build(NodeSettings nodeSettings)
         {
-            return new FullNodeBuilder().UseNodeSettings(nodeSettings).UseBlockStore().UseMempool().UseWallet().AddRPC().MockIBD();
+            return new FullNodeBuilder().UseNodeSettings(nodeSettings).UseBlockStore().UseMempool().UseWallet().AddRPC();
         }
 
         protected FullNode BuildFromCallBack(NodeSettings nodeSettings)
@@ -129,6 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 node = (FullNode)Build(nodeSettings)
                                 .UsePosConsensus(this.SkipRules ? new PosTestRuleRegistration() : null)
                                 .AddPowPosMining()
+                                .MockIBD()
                                 .Build();
             }
 
@@ -183,6 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 node = (FullNode)Build(args)
                                 .UsePowConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
                                 .AddMining()
+                                .MockIBD()
                                 .Build();
             }
 
@@ -211,8 +205,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             else
             {
                 fullNode = (FullNode)Build(nodeSettings)
-                                    .UsePosConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
+                                    .UsePosConsensus(this.SkipRules ? new PosTestRuleRegistration() : null)
                                     .AddMining()
+                                    .MockIBD()
                                     .Build();
             }
 
@@ -280,10 +275,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                         ServiceDescriptor ibdService = services.FirstOrDefault(x => x.ServiceType == typeof(IInitialBlockDownloadState));
 
                         if (ibdService != null)
-                        {
                             services.Remove(ibdService);
-                            services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
-                        }
+
+                        services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
                     });
                 }
             });
