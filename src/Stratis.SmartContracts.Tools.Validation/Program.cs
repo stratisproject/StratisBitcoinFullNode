@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts.Tools.Validation
                 {
                     FileName = file,
                     CompilationErrors = new List<CompilationError>(),
-                    DeterminismValidationErrors = new List<ValidationError>(),
+                    DeterminismValidationErrors = new List<SmartContractValidationError>(),
                     FormatValidationErrors = new List<ValidationError>()
                 };
 
@@ -137,9 +137,7 @@ namespace Stratis.SmartContracts.Tools.Validation
 
                 validationData
                     .DeterminismValidationErrors
-                    .AddRange(determinismValidationResult
-                        .Errors
-                        .Select(e => new ValidationError { Message = e.Message }));
+                    .AddRange(determinismValidationResult.Errors);
             }
 
             List<IReportSection> reportStructure = new List<IReportSection>();
