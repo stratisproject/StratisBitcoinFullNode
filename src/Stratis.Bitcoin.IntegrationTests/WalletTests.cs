@@ -145,6 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     };
 
                 Transaction transaction = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+                Assert.Equal(51, transaction.Outputs.Count);
 
                 // Broadcast to the other node.
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
@@ -156,9 +157,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(Money.COIN * 50, stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);  
 
-                // Generate two new blocks do the trx is confirmed.
-                stratisSender.GenerateStratis(1, new List<Transaction> { transaction.Clone() });
-                stratisSender.GenerateStratis(1);
+                // Generate new blocks so the trx is confirmed.
+                stratisSender.GenerateStratisWithMiner(1);
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
