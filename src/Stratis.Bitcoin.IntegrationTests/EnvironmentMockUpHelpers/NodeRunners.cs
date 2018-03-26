@@ -112,20 +112,21 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public override FullNode OnBuild(NodeSettings nodeSettings)
         {
-            FullNode node;
+            FullNode fullNode;
 
             if (this.Callback != null)
-                node = base.BuildFromCallBack(nodeSettings);
+                fullNode = base.BuildFromCallBack(nodeSettings);
             else
             {
-                node = (FullNode)Build(nodeSettings)
-                                .UsePosConsensus(this.SkipRules ? new PosTestRuleRegistration() : null)
-                                .AddPowPosMining()
-                                .MockIBD()
-                                .Build();
+                IFullNodeBuilder builder = null;
+                builder = Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD();
+                if (this.SkipRules)
+                    builder.MockRules(new PosTestRuleRegistration());
+
+                fullNode = (FullNode)builder.Build();
             }
 
-            return node;
+            return fullNode;
         }
 
         /// <summary>
@@ -165,22 +166,22 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             base.Start(new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir }, loadConfiguration: false));
         }
 
-        public override FullNode OnBuild(NodeSettings args)
+        public override FullNode OnBuild(NodeSettings nodeSettings)
         {
-            FullNode node;
+            FullNode fullNode;
 
             if (this.Callback != null)
-                node = base.BuildFromCallBack(args);
+                fullNode = base.BuildFromCallBack(nodeSettings);
             else
             {
-                node = (FullNode)Build(args)
-                                .UsePowConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
-                                .AddMining()
-                                .MockIBD()
-                                .Build();
+                IFullNodeBuilder builder = null;
+                builder = Build(nodeSettings).UsePowConsensus().AddMining().MockIBD();
+                if (this.SkipRules)
+                    builder.MockRules(new PowTestRuleRegistration());
+                fullNode = (FullNode)builder.Build();
             }
 
-            return node;
+            return fullNode;
         }
     }
 
@@ -204,11 +205,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 fullNode = BuildFromCallBack(nodeSettings);
             else
             {
-                fullNode = (FullNode)Build(nodeSettings)
-                                    .UsePosConsensus(this.SkipRules ? new PosTestRuleRegistration() : null)
-                                    .AddMining()
-                                    .MockIBD()
-                                    .Build();
+                IFullNodeBuilder builder = null;
+                builder = Build(nodeSettings).UsePosConsensus().AddMining().MockIBD();
+                if (this.SkipRules)
+                    builder.MockRules(new PosTestRuleRegistration());
+                fullNode = (FullNode)builder.Build();
             }
 
             return fullNode;
@@ -278,6 +279,26 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                             services.Remove(ibdService);
 
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
+                    });
+                }
+            });
+
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder MockRules(this IFullNodeBuilder fullNodeBuilder, IRuleRegistration ruleRegistration)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                foreach (IFeatureRegistration feature in features.FeatureRegistrations)
+                {
+                    feature.FeatureServices(services =>
+                    {
+                        ServiceDescriptor rules = services.FirstOrDefault(x => x.ServiceType == typeof(IRuleRegistration));
+                        if (rules != null)
+                            services.Remove(rules);
+
+                        services.AddSingleton(ruleRegistration);
                     });
                 }
             });

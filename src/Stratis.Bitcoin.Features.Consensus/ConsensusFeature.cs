@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
-        public static IFullNodeBuilder UsePowConsensus(this IFullNodeBuilder fullNodeBuilder, IRuleRegistration ruleRegistration = null)
+        public static IFullNodeBuilder UsePowConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
@@ -201,18 +201,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, PowConsensusRules>();
-
-                    if (ruleRegistration != null)
-                        services.AddSingleton(ruleRegistration);
-                    else
-                        services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
+                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
                 });
             });
 
             return fullNodeBuilder;
         }
 
-        public static IFullNodeBuilder UsePosConsensus(this IFullNodeBuilder fullNodeBuilder, IRuleRegistration ruleRegistration = null)
+        public static IFullNodeBuilder UsePosConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
@@ -246,11 +242,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
-
-                        if (ruleRegistration != null)
-                            services.AddSingleton(ruleRegistration);
-                        else
-                            services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
+                        services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });
             });
 
