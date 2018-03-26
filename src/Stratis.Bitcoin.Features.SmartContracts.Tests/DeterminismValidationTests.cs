@@ -334,6 +334,97 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region MethodParams
+        [Fact]
+        public void ValidateAllowedMethodParams()
+        {
+            string adjustedSource = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {
+                                                public Test(ISmartContractState state)
+                                                    : base(state) {}
+
+                                                public void Bool(bool param)
+                                                {
+                                                }
+
+                                                public void Byte(byte param)
+                                                {
+                                                }
+
+                                                public void ByteArray(byte[] param)
+                                                {
+                                                }
+
+                                                public void Char(char param)
+                                                {
+                                                }
+
+                                                public void SByte(sbyte param)
+                                                {
+                                                }
+
+                                                public void String(string param)
+                                                {
+                                                }                                           
+
+                                                public void Int32(int param)
+                                                {
+                                                }
+
+                                                public void UInt32(uint param)
+                                                {
+                                                }
+
+                                                public void UInt64(ulong param)
+                                                {
+                                                }
+
+                                                public void Address1(Address param)
+                                                {
+                                                }
+                                            }";
+
+            var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
+            Assert.True(result.Valid);
+        }
+
+        [Fact]
+        public void ValidateDisallowedMethodParams()
+        {
+            string adjustedSource = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {
+                                                public Test(ISmartContractState state)
+                                                    : base(state) {}         
+
+                                                public void Int64(long param)
+                                                {
+                                                }
+
+                                                public void DateTime1(DateTime param)
+                                                {
+                                                }
+
+                                                public void F(float param)
+                                                {
+                                                }
+                                            }";
+
+            var assemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(adjustedSource);
+            var decomp = _decompiler.GetModuleDefinition(assemblyBytes);
+            var result = _validator.Validate(decomp);
+            Assert.False(result.Valid);
+        }
+
+        #endregion
+
         #region SimpleContract
 
         [Fact]
