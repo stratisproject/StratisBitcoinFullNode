@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Tools.Validation.Report.Sections
 
             foreach (var error in data.DeterminismValidationErrors)
             {
-                yield return new ReportElement($"Error: {error.Message}");
+                yield return new ReportElement($"Method {error.MethodFullName}: {error.Message}");
             }
 
             yield return new NewLineElement();
