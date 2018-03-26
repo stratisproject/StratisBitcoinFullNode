@@ -796,8 +796,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx);
-                    if (tTx == null)
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
                     {
                         continue;
                     }
@@ -1226,7 +1225,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             this.outpointLookup[new OutPoint(unspentTransaction.Id, unspentTransaction.Index)] = unspentTransaction;
                         }
-                        
                     }
                 }
             }
