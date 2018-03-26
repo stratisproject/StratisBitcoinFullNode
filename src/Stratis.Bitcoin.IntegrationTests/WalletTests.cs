@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void WalletCanReceiveManyTransactionInputs()
+        public void WalletCanSendOneTransactionWithManyOutputs()
         { 
             using (NodeBuilder builder = NodeBuilder.Create())
             {
@@ -130,18 +130,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 IEnumerable<HdAddress> recevierAddresses = stratisReceiver.FullNode.WalletManager()
                     .GetUnusedAddresses(new WalletAccountReference("mywallet", "account 0"), 50);
 
-                var recipients = new List<Recipient>();
-
-                foreach (HdAddress address in recevierAddresses)
-                {
-                    var tx = new Transaction();
-                    tx.Outputs.Add(new TxOut(Money.COIN, address.ScriptPubKey));
-                    recipients.Add(new Recipient
+                List<Recipient> recipients = recevierAddresses.Select(address => new Recipient
                     {
                         ScriptPubKey = address.ScriptPubKey,
                         Amount = Money.COIN
-                    });
-                }
+                    })
+                    .ToList();
 
                 var transactionBuildContext = new TransactionBuildContext(
                     new WalletAccountReference("mywallet", "account 0"), recipients, "123456")
