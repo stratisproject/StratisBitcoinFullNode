@@ -478,6 +478,7 @@ namespace NBitcoin
             {
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), builder.Port), // danger cloud node
                 new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
             }); 
 
             return builder.BuildAndRegister();
