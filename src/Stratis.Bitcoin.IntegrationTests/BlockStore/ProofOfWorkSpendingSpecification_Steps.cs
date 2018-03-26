@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Transaction lastTransaction;
         private int totalMinedBlocks;
 
-        // NOTE: This constructor is only needed if you want the test to log the step names.
+        // NOTE: This constructor is allows test steps names to be logged
         public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
         }
@@ -74,26 +74,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode);
         }
 
-        private void MineBlocks(int blockCount, CoreNode node)
-        {
-            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(SendingWalletName, AccountName));
-            var wallet = node.FullNode.WalletManager().GetWalletByName(SendingWalletName);
-            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(WalletPassword, address).PrivateKey;
-
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
-
-            node.GenerateStratisWithMiner(blockCount);
-                        this.totalMinedBlocks = this.totalMinedBlocks + blockCount;
-
-            this.sendingStratisBitcoinNode.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(SendingWalletName)
-                .Sum(s => s.Transaction.Amount)
-                .Should().Be(Money.COIN * this.totalMinedBlocks * 50);
-
-            //wait for block store to sync(or catch-up)
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
-        }
-
         private void spending_the_coins_from_original_block()
         {
             var sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
@@ -120,8 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             var walletException = (WalletException)this.caughtException;
             walletException.Message.Should().Be("No spendable transactions found.");
 
-            // reset for any future checks in same test
-            this.caughtException = null;
+            this.ResetCaughtException();
         }
 
         private void the_transaction_is_put_in_the_mempool()
@@ -139,6 +118,35 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
             };
+        }
+
+        private void MineBlocks(int blockCount, CoreNode node)
+        {
+            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(SendingWalletName, AccountName));
+            var wallet = node.FullNode.WalletManager().GetWalletByName(SendingWalletName);
+            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(WalletPassword, address).PrivateKey;
+
+            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+
+            node.GenerateStratisWithMiner(blockCount);
+            this.totalMinedBlocks = this.totalMinedBlocks + blockCount;
+
+            this.sendingStratisBitcoinNode.FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(SendingWalletName)
+                .Sum(s => s.Transaction.Amount)
+                .Should().Be(Money.COIN * this.totalMinedBlocks * 50);
+
+            WaitForBlockStoreToSync(node);
+        }
+
+        private void ResetCaughtException()
+        {
+            this.caughtException = null;
+        }
+
+        private void WaitForBlockStoreToSync(CoreNode node)
+        {
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
         }
     }
 }
