@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     sendTrickle = true;
                     // Use half the delay for outbound peers, as there is less privacy concern for them.
-                    this.NextInvSend = this.manager.DateTimeProvider.GetTime() + TimeSpan.TicksPerMinute;
+                    this.NextInvSend = this.manager.DateTimeProvider.GetTime() + 10;
                     // TODO: PoissonNextSend(nNow, InventoryBroadcastInterval >> !pto->fInbound);
                 }
 
