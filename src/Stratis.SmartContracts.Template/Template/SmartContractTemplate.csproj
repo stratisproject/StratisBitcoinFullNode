@@ -5,7 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stratis.SmartContracts" Version="1.0.0-alpha-test" />
+    <PackageReference Include="Stratis.SmartContracts" Version="1.0.1-alpha-test" />
   </ItemGroup>
 
+  
 </Project>
