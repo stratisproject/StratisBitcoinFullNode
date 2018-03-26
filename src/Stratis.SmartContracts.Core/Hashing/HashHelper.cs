@@ -8,11 +8,11 @@ namespace Stratis.SmartContracts.Core.Hashing
     /// </summary>
     public static class HashHelper
     {
+        private static readonly IHash Keccak = HashFactory.Crypto.SHA3.CreateKeccak256();
         public static readonly byte[] EmptyByteArray = new byte[0];
         public static readonly byte[] EmptyDataHash = Keccak256(EmptyByteArray);
         public static readonly byte[] EmptyElementRlp = RLP.EncodeElement(EmptyByteArray);
         public static readonly byte[] EmptyTrieHash = Keccak256(EmptyElementRlp);
-        private static readonly IHash Keccak = HashFactory.Crypto.SHA3.CreateKeccak256();
 
         /// <summary>
         /// Returns a 32-byte Keccak256 hash of the given bytes.
