@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -41,6 +43,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     }
 
     /// <summary>
+    /// Test consensus rules for unit tests.
+    /// </summary>
+    public class TestConsensusRules : ConsensusRules
+    {        
+        private Mock<IRuleRegistration> ruleRegistration;
+
+        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        {
+            this.ruleRegistration = new Mock<IRuleRegistration>();
+        }
+
+        public T RegisterRule<T>() where T : ConsensusRule, new()
+        {
+            T rule = new T();
+            this.ruleRegistration.Setup(r => r.GetRules())
+                .Returns(new List<ConsensusRule>() { rule });
+
+            this.Register(this.ruleRegistration.Object);
+            return rule;
+        }       
+    }
+
+    /// <summary>
     /// Factory for creating the test chain.
     /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
     /// </summary>
@@ -56,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             string dataDir = Path.Combine("TestData", pathName);
             Directory.CreateDirectory(dataDir);
 
-            testRulesContext.NodeSettings = new NodeSettings(network, args:new[] { $"-datadir={dataDir}" });
+            testRulesContext.NodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" });
 
             if (dataDir != null)
             {
@@ -92,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chain.Tip);
             block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
             block.Header.Nonce = 0;
-            
+
             var maxTries = int.MaxValue;
 
             while (maxTries > 0 && !block.CheckProofOfWork(network.Consensus))

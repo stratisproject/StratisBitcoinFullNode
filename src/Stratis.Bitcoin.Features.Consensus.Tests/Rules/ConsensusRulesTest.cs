@@ -14,39 +14,10 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
-    public class ConsensusRulesTest
+    public class ConsensusRulesTest : ConsensusRuleUnitTestBase
     {
-        private Network network;
-        private Mock<ILoggerFactory> loggerFactory;
-        private Mock<IDateTimeProvider> dateTimeProvider;
-        private ConcurrentChain concurrentChain;
-        private NodeDeployments nodeDeployments;
-        private ConsensusSettings consensusSettings;
-        private Mock<ICheckpoints> checkpoints;
-        private List<ConsensusRule> ruleRegistrations;
-        private Mock<IRuleRegistration> ruleRegistration;
-
-        public ConsensusRulesTest()
+        public ConsensusRulesTest() : base()
         {
-            this.network = Network.TestNet;
-            this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(typeof(TestConsensusRules).FullName))
-                .Returns(new Mock<ILogger>().Object);
-            this.dateTimeProvider = new Mock<IDateTimeProvider>();
-
-            this.concurrentChain = new ConcurrentChain(this.network);
-            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.consensusSettings = new ConsensusSettings
-            {
-                BlockAssumedValid = null,
-                UseCheckpoints = true
-            };
-            this.checkpoints = new Mock<ICheckpoints>();
-
-            this.ruleRegistrations = new List<ConsensusRule>();
-            this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
         }
 
         [Fact]
@@ -83,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             };
 
             var consensusRules = InitializeConsensusRules();
-
+            
             consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
 
             var rules = consensusRules.Rules.ToList();
@@ -322,11 +293,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             });
         }
 
-        private TestConsensusRules InitializeConsensusRules()
-        {
-            return new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object);
-        }
-
         [ValidationRule]
         private class ConsensusRuleWithValidationAttribute : ConsensusRule
         {
@@ -376,14 +342,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
                 return Task.FromResult(15);
             }
-        }       
-
-        private class TestConsensusRules : ConsensusRules
-        {
-            public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
-                : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
-            {
-            }
-        }
+        }              
     }
 }
