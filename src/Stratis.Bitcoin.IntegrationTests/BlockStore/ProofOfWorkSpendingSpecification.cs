@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {

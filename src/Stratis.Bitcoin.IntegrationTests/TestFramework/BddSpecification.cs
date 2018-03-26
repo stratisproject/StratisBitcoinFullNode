@@ -1,7 +1,7 @@
 ﻿using System;
 using Xunit.Abstractions;
 
-namespace Stratis.Bitcoin.IntegrationTests.BlockStore
+namespace Stratis.Bitcoin.IntegrationTests.TestFramework
 {
     public abstract class BddSpecification : IDisposable
     {
@@ -27,22 +27,22 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         public void Given(Action action)
         {
-            RunStep(action, "Given");
+            this.RunStep(action, "Given");
         }
 
         public void When(Action action)
         {
-            RunStep(action, "When");
+            this.RunStep(action, "When");
         }
 
         public void Then(Action action)
         {
-            RunStep(action, "Then");
+            this.RunStep(action, "Then");
         }
 
         public void And(Action action)
         {
-            RunStep(action, "And");
+            this.RunStep(action, "And");
         }
 
         private void RunStep(Action action, string stepType)
