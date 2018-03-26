@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
 
         private void RunStep(Action action, string stepType)
         {
-            this.output?.WriteLine(stepType + " " + action.Method.Name.Replace("_", " "));
+            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {action.Method.Name.Replace("_", " ")}");
             action.Invoke();
         }
     }
