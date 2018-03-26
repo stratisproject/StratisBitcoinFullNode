@@ -4,17 +4,23 @@ using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public partial class ProofOfWorkSpendingSpecification
     {
+        private const string SendingWalletName = "sending wallet";
+        private const string ReceivingWalletName = "receiving wallet";
         private NodeBuilder nodeBuilder;
-        private CoreNode stratisBitcoinNode;
+        private CoreNode sendingStratisBitcoinNode;
+        private CoreNode receivingStratisBitcoinNode;
         private int coinbaseMaturity;
         private Exception caughtException;
+        private Transaction lastTransaction;
+        private int totalMinedBlocks;
 
         protected override void BeforeTest()
         {
@@ -26,85 +32,72 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.nodeBuilder.Dispose();
         }
 
-        private void proof_of_work_blocks_mined_past_maturity()
+        private void a_sending_and_receiving_stratis_bitcoin_node_and_wallet()
         {
-            this.MineToHeight(this.coinbaseMaturity);
-            this.MineToHeight(this.coinbaseMaturity);
-
-            // the mining should add coins to the wallet
-            TestHelper.WaitLoop(() => this.stratisBitcoinNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet")
-                                          .Sum(s => s.Transaction.Amount) > Money.COIN * this.coinbaseMaturity * 50);
-        }
-
-        public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
-            Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
-        {
-            return new TransactionBuildContext(accountReference,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
-            {
-                MinConfirmations = minConfirmations,
-                FeeType = feeType
-            };
-        }
-
-        private void a_stratis_bitcoin_node_and_wallet()
-        {
-            this.stratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode();
+            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode();
+            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode();
 
             this.nodeBuilder.StartAll();
-            this.stratisBitcoinNode.NotInIBD();
+            this.sendingStratisBitcoinNode.NotInIBD();
+            this.receivingStratisBitcoinNode.NotInIBD();
 
-            this.stratisBitcoinNode.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+            this.sendingStratisBitcoinNode.CreateRPCClient().AddNode(this.receivingStratisBitcoinNode.Endpoint, true);
+            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.receivingStratisBitcoinNode, this.sendingStratisBitcoinNode));
 
-            this.coinbaseMaturity = (int)this.stratisBitcoinNode.FullNode
+            this.sendingStratisBitcoinNode.FullNode.WalletManager().CreateWallet("123456", SendingWalletName);
+            this.receivingStratisBitcoinNode.FullNode.WalletManager().CreateWallet("123456", ReceivingWalletName);
+
+            this.coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode
                 .Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
         }
 
-        private void proof_of_work_blocks_mined_to_just_before_maturity()
+        private void a_block_is_mined_creating_spendable_coins()
         {
-            int targetHeight = this.coinbaseMaturity - 1;
-
-            this.MineToHeight(targetHeight);
-
-            // the mining should add coins to the wallet
-            var total = this.stratisBitcoinNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet")
-                .Sum(s => s.Transaction.Amount);
-
-            Assert.Equal(Money.COIN * targetHeight * 50, total);
+            this.MineBlocks(1, this.sendingStratisBitcoinNode);
         }
 
-        private void MineToHeight(int targetHeight)
+        private void more_blocks_mined_to_just_before_maturity_of_original_block()
         {
-            var address = this.stratisBitcoinNode.FullNode.WalletManager()
-                .GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
+            this.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode);
+        }
 
-            var wallet = this.stratisBitcoinNode.FullNode.WalletManager().GetWalletByName("mywallet");
+        private void more_blocks_mined_to_just_after_maturity_of_original_block()
+        {
+            this.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode);
+        }
 
+        private void MineBlocks(int blockCount, CoreNode node)
+        {
+            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(SendingWalletName, "account 0"));
+            var wallet = node.FullNode.WalletManager().GetWalletByName(SendingWalletName);
             var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress("123456", address).PrivateKey;
 
-            this.stratisBitcoinNode.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey,
-                this.stratisBitcoinNode.FullNode.Network));
+            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
 
-            this.stratisBitcoinNode.GenerateStratisWithMiner(targetHeight);
+            node.GenerateStratisWithMiner(blockCount);
+                        this.totalMinedBlocks = this.totalMinedBlocks + blockCount;
 
-            // wait for block repo for block sync to work
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisBitcoinNode));
+            this.sendingStratisBitcoinNode.FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(SendingWalletName)
+                .Sum(s => s.Transaction.Amount)
+                .Should().Be(Money.COIN * this.totalMinedBlocks * 50);
+
+            //wait for block store to sync(or catch-up)
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
         }
 
-        private void i_try_to_spend_the_coins()
+        private void spending_the_coins_from_original_block()
         {
-            // Build Transaction 
-            // ====================
-            // send coins to next self address
-            var sendtoAddress = this.stratisBitcoinNode.FullNode.WalletManager()
-                .GetUnusedAddresses(new WalletAccountReference("mywallet", "account 0"), 2).ElementAt(1);
+            var sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
+                .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, "account 0"), 2).ElementAt(1);
 
             try
             {
-                this.stratisBitcoinNode.FullNode.WalletTransactionHandler().BuildTransaction(
-                    CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456",
-                        sendtoAddress.ScriptPubKey,
-                        Money.COIN * 100, FeeType.Medium, 101));
+                this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler().BuildTransaction(
+                    CreateTransactionBuildContext(new WalletAccountReference(SendingWalletName, "account 0"), "123456", sendtoAddress.ScriptPubKey,
+                        Money.COIN * 1, FeeType.Medium, 101));
+
+                this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));
             }
             catch (Exception exception)
             {
@@ -112,20 +105,32 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             }
         }
 
-        private void the_transaction_should_be_rejected_from_the_mempool()
+        private void the_transaction_is_rejected_from_the_mempool()
         {
             this.caughtException.Should().BeOfType<WalletException>();
 
             var walletException = (WalletException)this.caughtException;
             walletException.Message.Should().Be("No spendable transactions found.");
 
-            // reset for future checks
+            // reset for any future checks in same test
             this.caughtException = null;
         }
 
-        private void the_transaction_should_be_accepted_by_the_mempool()
+        private void the_transaction_is_put_in_the_mempool()
         {
+            var tx = this.sendingStratisBitcoinNode.FullNode.MempoolManager().GetTransaction(this.lastTransaction.GetHash()).GetAwaiter().GetResult();
+            tx.GetHash().Should().Be(this.lastTransaction.GetHash());
             this.caughtException.Should().BeNull();
+        }
+
+        public static TransactionBuildContext CreateTransactionBuildContext(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        {
+            return new TransactionBuildContext(accountReference,
+                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
+            {
+                MinConfirmations = minConfirmations,
+                FeeType = feeType
+            };
         }
     }
 }
