@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             else
             {
                 fullNode = (FullNode)Build(nodeSettings)
-                                    .UsePowConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
+                                    .UsePosConsensus(this.SkipRules ? new PowTestRuleRegistration() : null)
                                     .AddMining()
                                     .Build();
             }

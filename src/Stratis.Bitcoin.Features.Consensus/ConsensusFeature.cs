@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, PowConsensusRules>();
 
-                    if (ruleRegistration == null)
+                    if (ruleRegistration != null)
                         services.AddSingleton(ruleRegistration);
                     else
                         services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
 
-                        if (ruleRegistration == null)
+                        if (ruleRegistration != null)
                             services.AddSingleton(ruleRegistration);
                         else
                             services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();

@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var nodeGenerateCoins = builder.SkipRules().CreateStratisPosNode();
+                var nodeGenerateCoins = builder.SkipRules().CreateStratisPowNode();
                 nodeGenerateCoins.StartAsync().GetAwaiter().GetResult();
 
                 // Set up wallet to generate coins.
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(nodeGenerateCoins));
 
                 // Create a Proof-Of-Stake node
-                var nodeProofOfStake = builder.CreateStratisPosNode();
+                var nodeProofOfStake = builder.SkipRules().CreateStratisPosNode();
                 nodeProofOfStake.StartAsync().GetAwaiter().GetResult();
 
                 // Wait for the PoS node to sync the 102 blocks from the proof of work node

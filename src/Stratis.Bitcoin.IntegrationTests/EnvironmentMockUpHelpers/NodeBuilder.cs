@@ -247,6 +247,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowRunner(this.skipRules, callback), Network.RegTest, start);
         }
 
+        public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        {
+            return CreateNode(new StratisPowRunner(this.skipRules, callback), Network.StratisRegTest, start, "stratis.conf");
+        }
+
         public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             return CreateNode(new StratisPosRunner(this.skipRules, callback), Network.StratisRegTest, start, "stratis.conf");
