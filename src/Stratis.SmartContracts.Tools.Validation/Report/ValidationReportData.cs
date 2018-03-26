@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stratis.SmartContracts.Core.ContractValidation;
 
 namespace Stratis.SmartContracts.Tools.Validation.Report
 {
@@ -21,7 +22,7 @@ namespace Stratis.SmartContracts.Tools.Validation.Report
 
         public bool DeterminismValid { get; set; }
 
-        public List<ValidationError> DeterminismValidationErrors { get; set; }
+        public List<SmartContractValidationError> DeterminismValidationErrors { get; set; }
     }
 
     public class CompilationError
