@@ -281,6 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // remove the reorg node
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
                 var forkblock = stratisReceiver.FullNode.Chain.Tip;
 
                 // send more coins to the wallet
@@ -384,6 +385,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // remove the reorg node
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains
                 // ================================================
@@ -442,9 +444,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
 
-                // remove the reorg node
+                // remove the reorg node and wait for node to be disconnected
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains
                 // ================================================
