@@ -6,9 +6,12 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
     public abstract class BddSpecification : IDisposable
     {
         protected readonly ITestOutputHelper output;
+        private DateTime startOfTestTime;
+        private DateTime endOfTestTime;
 
         protected BddSpecification()
         {
+            this.startOfTestTime = DateTime.UtcNow;
             this.BeforeTest();
         }
 
@@ -20,6 +23,8 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         public void Dispose()
         {
             this.AfterTest();
+            this.endOfTestTime = DateTime.UtcNow;
+            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(this.endOfTestTime-this.startOfTestTime).TotalSeconds} seconds.]");
         }
 
         protected abstract void BeforeTest();
