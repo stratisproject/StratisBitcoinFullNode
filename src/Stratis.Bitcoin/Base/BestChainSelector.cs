@@ -141,7 +141,10 @@ namespace Stratis.Bitcoin.Base
                     if (this.chain.SetTipIfChainworkIsGreater(tip))
                     {
                         // This allows garbage collection to collect the duplicated pendingTip and ancestors.
-                        tip = this.chain.GetBlock(tip.HashBlock);
+                        ChainedBlock chainedTip = this.chain.GetBlock(tip.HashBlock);
+
+                        if (chainedTip != null)
+                            tip = chainedTip;
                     }
                 }
 
