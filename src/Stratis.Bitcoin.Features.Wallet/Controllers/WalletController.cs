@@ -869,8 +869,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedBlock);
                     this.walletManager.SaveWallet(wallet);
 
-                    // Start the syncing process.
-                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height);
+                    // Start the syncing process from the block before the earliest transaction was seen.
+                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height - 1);
                 }
 
                 IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
