@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using DBreeze;
@@ -33,12 +34,12 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
     /// <summary>
     /// This is taken from 'MinerTests.cs' and adjusted to use a different block validator.
     /// </summary>
-    public class SmartContractMinerTests
+    public sealed class SmartContractMinerTests
     {
         private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
             }
 
-            public async Task InitializeAsync([System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
+            public async Task InitializeAsync([CallerMemberName] string callingMethod = "")
             {
                 this.blockinfo = new List<Blockinfo>();
                 var lst = blockinfoarr.Cast<long>().ToList();

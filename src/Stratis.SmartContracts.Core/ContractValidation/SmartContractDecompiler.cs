@@ -6,13 +6,21 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 {
     public class SmartContractDecompiler
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>TODO: Ensure that AppContext.BaseDirectory is robust here.</remarks>
+        /// <remarks>TODO: Fix using in MemoryStream.</remarks>
         public SmartContractDecompilation GetModuleDefinition(byte[] bytes, IAssemblyResolver assemblyResolver = null)
         {
-            // TODO: Ensure that AppContext.BaseDirectory is robust here
             IAssemblyResolver resolver = assemblyResolver ?? new DefaultAssemblyResolver();
-            SmartContractDecompilation result = new SmartContractDecompilation();
-            result.ModuleDefinition = ModuleDefinition.ReadModule(new MemoryStream(bytes), new ReaderParameters { AssemblyResolver = resolver });
+            var result = new SmartContractDecompilation
+            {
+                ModuleDefinition = ModuleDefinition.ReadModule(new MemoryStream(bytes), new ReaderParameters { AssemblyResolver = resolver })
+            };
+
             result.ContractType = result.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+
             return result;
         }
     }

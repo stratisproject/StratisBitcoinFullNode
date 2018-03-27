@@ -142,11 +142,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
-                                return true; // TODO: OBVIOUSLY DON'T DO THIS
-                                var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext();
-                                ctx.ScriptVerify = flags.ScriptFlags;
-                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+                                // TODO: OBVIOUSLY DON'T DO THIS
+                                return true;
+                                //var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
+                                //var ctx = new ScriptEvaluationContext();
+                                //ctx.ScriptVerify = flags.ScriptFlags;
+                                //return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
                             checkInput.Start(taskScheduler);
                             checkInputs.Add(checkInput);
@@ -206,23 +207,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 return;
 
             // if it's a condensing transaction, need to ensure it's identical 
+            ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
-            ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
+            //IContractStateRepository track = trackedState.StartTracking();
+            var carrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
+            carrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 
-            IContractStateRepository track = trackedState.StartTracking();
-            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
-
-            smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, coinbaseAddress, this.network);
-            ISmartContractExecutionResult result = executor.Execute();
-
-            if (result.Revert)
-                track.Rollback();
-            else
-                track.Commit();
+            var executor = SmartContractExecutor.InitializeForConsensus(carrier, this.decompiler, this.gasInjector, this.network, trackedState, this.validator);
+            ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
 
             if (result.InternalTransactions.Any())
                 this.lastProcessed = result.InternalTransactions.FirstOrDefault();

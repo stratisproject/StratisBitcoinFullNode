@@ -2,7 +2,7 @@
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public class SmartContractValidator
+    public sealed class SmartContractValidator
     {
         private readonly IList<ISmartContractValidator> validators;
 

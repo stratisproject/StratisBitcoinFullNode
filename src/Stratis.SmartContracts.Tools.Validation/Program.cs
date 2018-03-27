@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.Tools.Validation
                     return;
                 }
             }
-            catch (OptionException e)
+            catch (OptionException)
             {
                 Console.WriteLine("Error parsing command line args");
                 return;
@@ -102,8 +102,8 @@ namespace Stratis.SmartContracts.Tools.Validation
                     validationData.CompilationErrors
                         .AddRange(compilationResult
                             .Diagnostics
-                            .Select(d => new CompilationError {Message = d.ToString()}));
-            
+                            .Select(d => new CompilationError { Message = d.ToString() }));
+
                     continue;
                 }
 
@@ -123,17 +123,17 @@ namespace Stratis.SmartContracts.Tools.Validation
 
                 SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
 
-                validationData.FormatValid = formatValidationResult.Valid;
+                validationData.FormatValid = formatValidationResult.IsValid;
 
                 validationData
                     .FormatValidationErrors
                     .AddRange(formatValidationResult
                         .Errors
-                        .Select(e => new ValidationError { Message = e.Message }));              
-                
+                        .Select(e => new ValidationError { Message = e.Message }));
+
                 SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(decompilation);
 
-                validationData.DeterminismValid = determinismValidationResult.Valid;
+                validationData.DeterminismValid = determinismValidationResult.IsValid;
 
                 validationData
                     .DeterminismValidationErrors
@@ -144,7 +144,7 @@ namespace Stratis.SmartContracts.Tools.Validation
             reportStructure.Add(new HeaderSection());
             reportStructure.Add(new CompilationSection());
 
-            if(showContractBytes)
+            if (showContractBytes)
                 reportStructure.Add(new ByteCodeSection());
 
             reportStructure.Add(new FormatSection());
@@ -157,7 +157,7 @@ namespace Stratis.SmartContracts.Tools.Validation
             {
                 renderer.Render(reportStructure, data);
             }
-            
+
             Console.ReadKey();
         }
 

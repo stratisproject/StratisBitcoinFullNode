@@ -2,12 +2,15 @@
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public class SmartContractDecompilation
+    public sealed class SmartContractDecompilation
     {
-        public ModuleDefinition ModuleDefinition { get; set; }
+        public TypeDefinition BaseType
+        {
+            get { return this.ContractType.BaseType.Resolve(); }
+        }
 
         public TypeDefinition ContractType { get; set; }
 
-        public TypeDefinition BaseType => this.ContractType.BaseType.Resolve();
+        public ModuleDefinition ModuleDefinition { get; set; }
     }
 }

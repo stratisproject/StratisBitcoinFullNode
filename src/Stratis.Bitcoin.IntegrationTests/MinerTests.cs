@@ -118,8 +118,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             public int baseheight;
             public CachedCoinView cachedCoinView;
 
-            private bool useCheckpoints = true;
-
             public async Task InitializeAsync()
             {
                 this.blockinfo = new List<Blockinfo>();
@@ -211,12 +209,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Just to make sure we can still make simple blocks
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
-            }
-
-            internal TestContext WithoutCheckpoints()
-            {
-                this.useCheckpoints = false;
-                return this;
             }
         }
 
@@ -341,7 +333,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public async Task MinerCreateBlockSigopsLimit1000Async()
         {
             var context = new TestContext();
-            await context.WithoutCheckpoints().InitializeAsync();
+            await context.InitializeAsync();
 
             // block sigops > limit: 1000 CHECKMULTISIG + 1
             var tx = new Transaction();
@@ -448,7 +440,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public async Task MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
         {
             var context = new TestContext();
-            await context.WithoutCheckpoints().InitializeAsync();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());

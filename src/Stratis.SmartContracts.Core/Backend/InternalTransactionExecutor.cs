@@ -19,15 +19,16 @@ namespace Stratis.SmartContracts.Core.Backend
         ///<inheritdoc/>
         public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
-            //TODO: The act of calling this should cost a lot of gas!
-            if (smartContractState.GetBalance() < amountToTransfer)
+            // TODO: The act of calling this should cost a lot of gas!
+            var balance = smartContractState.GetBalance();
+            if (balance < amountToTransfer)
                 throw new InsufficientBalanceException();
 
-            //Discern whether this is a contract or an ordinary address.
+            // Discern whether this is a contract or an ordinary address.
             byte[] contractCode = this.constractStateRepository.GetCode(addressTo.ToUint160(this.network));
             if (contractCode == null || contractCode.Length == 0)
             {
-                //If it is not a contract, just record the transfer and return.
+                // If it is not a contract, just record the transfer and return.
                 this.constractStateRepository.TransferBalance(smartContractState.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amountToTransfer);
                 return TransferResult.Empty();
             }
@@ -59,7 +60,7 @@ namespace Stratis.SmartContracts.Core.Backend
                 this,
                 smartContractState.GetBalance);
 
-            smartContractState.GasMeter.Spend(executionResult.GasUnitsUsed);
+            smartContractState.GasMeter.Spend(executionResult.GasConsumed);
 
             if (executionResult.Revert)
             {

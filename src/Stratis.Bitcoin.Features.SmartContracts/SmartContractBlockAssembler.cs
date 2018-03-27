@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -22,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private List<TxOut> refundOutputs = new List<TxOut>();
 
         private ContractStateRepositoryRoot stateRoot;
-        private ContractStateRepositoryRoot currentStateRepository;
+        private ContractStateRepositoryRoot stateSnapshot;
 
         private readonly SmartContractDecompiler decompiler;
         private readonly ISmartContractGasInjector gasInjector;
@@ -47,29 +46,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
-            this.stateRoot = stateRoot;
-            this.decompiler = decompiler;
-            this.validator = validator;
-            this.gasInjector = gasInjector;
             this.coinView = coinView;
+            this.decompiler = decompiler;
+            this.gasInjector = gasInjector;
+            this.stateRoot = stateRoot;
+            this.validator = validator;
         }
 
-        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)
         {
-            this.SetCoinbaseAddress(GetSenderUtil.GetAddressFromScript(scriptPubKeyIn));
-            this.currentStateRepository = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
-            base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
+            this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
+            this.stateSnapshot = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
+
+            base.CreateNewBlock(scriptPubKeyIn, mineWitnessTx);
+
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-            return this.pblocktemplate;
-        }
 
-        /// <summary>
-        /// This will be removed once we have implemented the new assemblers.
-        /// </summary>
-        /// <param name="scriptPubKeyIn"></param>
-        public void SetCoinbaseAddress(uint160 address)
-        {
-            this.coinbaseAddress = address;
+            return this.pblocktemplate;
         }
 
         /// <summary>
@@ -82,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateHeaders();
 
-            this.pblock.Header.HashStateRoot = new uint256(this.currentStateRepository.Root);
+            this.pblock.Header.HashStateRoot = new uint256(this.stateSnapshot.Root);
         }
 
         /// <summary>
@@ -97,29 +90,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
-            {
                 base.AddToBlock(mempoolEntry);
-                return;
-            }
-
-            var smartContractCarrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
-            smartContractCarrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
-
-            this.AddContractCallToBlock(mempoolEntry, smartContractCarrier);
+            else
+                this.AddContractCallToBlock(mempoolEntry, smartContractTxOut);
         }
 
         /// <summary>
-        /// Executes the contract and adds all relevant fees and refunds to the block.
+        /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
-        /// <remarks>
-        /// TODO: At some point we need to change height to a ulong.
-        /// </remarks> 
-        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, SmartContractCarrier carrier)
+        /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
+        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
         {
-            ISmartContractExecutionResult result = ExecuteContractFeesAndRefunds(carrier, mempoolEntry, (ulong)this.height);
+            var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
+            carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+
+            SmartContractExecutor executor = SmartContractExecutor.InitializeForBlockAssembler(carrier, this.decompiler, this.gasInjector, mempoolEntry.Fee, this.network, this.stateSnapshot, this.validator);
+            ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
+
+            // Add fee from the execution result to the block.
+            this.pblocktemplate.VTxFees.Add(result.Fee);
+            this.fees += result.Fee;
+
+            // If there are refunds, add them to the block
+            if (result.Refunds.Any())
+                this.refundOutputs.AddRange(result.Refunds);
 
             // Add the mempool entry transaction to the block 
-            // and adjust BlockSize, BlockWeight and SigOpsCost
+            // and adjust BlockSize, BlockWeight and SigOpsCost.
             this.pblock.AddTransaction(mempoolEntry.Transaction);
             this.pblocktemplate.TxSigOpsCost.Add(mempoolEntry.SigOpCost);
 
@@ -130,9 +127,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.blockTx++;
             this.blockSigOpsCost += mempoolEntry.SigOpCost;
             this.inBlock.Add(mempoolEntry);
-            //---------------------------------------------
 
-            // Add internal transactions made during execution
+            // Process any internal transactions made during execution.
             foreach (Transaction transaction in result.InternalTransactions)
             {
                 this.pblock.AddTransaction(transaction);
@@ -140,71 +136,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     this.blockSize += transaction.GetSerializedSize();
                 this.blockTx++;
             }
-            //---------------------------------------------
-        }
-
-        public ISmartContractExecutionResult ExecuteContractFeesAndRefunds(SmartContractCarrier carrier, TxMempoolEntry txMempoolEntry, ulong height)
-        {
-            IContractStateRepository nestedStateRepository = this.currentStateRepository.StartTracking();
-
-            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, this.coinbaseAddress, this.network);
-            ISmartContractExecutionResult executionResult = executor.Execute();
-
-            // Update state--------------------------------
-            if (executionResult.Revert)
-                nestedStateRepository.Rollback();
-            else
-                nestedStateRepository.Commit();
-            //---------------------------------------------
-
-            var toRefund = CalculateRefund(carrier, executionResult);
-            if (toRefund > 0)
-            {
-                ulong txFeeAndGas = txMempoolEntry.Fee - toRefund;
-                this.pblocktemplate.VTxFees.Add(txFeeAndGas);
-                this.fees += txFeeAndGas;
-
-                ProcessRefund(carrier, toRefund);
-            }
-            else
-            {
-                this.pblocktemplate.VTxFees.Add(txMempoolEntry.Fee);
-                this.fees += txMempoolEntry.Fee;
-            }
-
-            return executionResult;
-        }
-
-        /// <summary>
-        /// Calculates the refund amount.
-        /// <para>
-        /// If an <see cref="OutOfGasException"/> was thrown no refund will be done.
-        /// </para>
-        /// </summary>
-        private ulong CalculateRefund(SmartContractCarrier carrier, ISmartContractExecutionResult result)
-        {
-            if (result.Exception is OutOfGasException)
-                return 0;
-
-            ulong toRefund = carrier.GasCostBudget - (result.GasUnitsUsed * carrier.GasUnitPrice);
-            return toRefund;
-        }
-
-        /// <summary>
-        /// Create the script to send the relevant funds back to the user.
-        /// TODO: Multiple refunds to same user should be consolidated to 1 TxOut to save space
-        /// </summary>
-        private void ProcessRefund(SmartContractCarrier carrier, ulong toRefund)
-        {
-            var senderScript = new Script(
-                OpcodeType.OP_DUP,
-                OpcodeType.OP_HASH160,
-                Op.GetPushOp(carrier.Sender.ToBytes()),
-                OpcodeType.OP_EQUALVERIFY,
-                OpcodeType.OP_CHECKSIG
-            );
-
-            this.refundOutputs.Add(new TxOut(toRefund, senderScript));
         }
     }
 }

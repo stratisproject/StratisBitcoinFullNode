@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void VM_Execute_Contract_WithoutParameters()
+        public void VM_ExecuteContract_WithoutParameters()
         {
             //Get the contract execution code------------------------
             byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTest.cs");
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
                 var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
-                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To, this.network);
+                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
@@ -68,16 +68,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var context = new SmartContractExecutionContext(
                                 new Stratis.SmartContracts.Block(1, new Address("2")),
                                 new Message(
-                                    new Address(deserializedCall.To.ToString()),
+                                    new Address(deserializedCall.ContractAddress.ToString()),
                                     new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
-                                deserializedCall.GasUnitPrice
+                                deserializedCall.GasPrice
                             );
 
                 var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.To);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
@@ -90,13 +90,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 stateRepository.Commit();
 
-                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.To, Encoding.UTF8.GetBytes("TestKey")));
-                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.To, Encoding.UTF8.GetBytes("TestKey")));
+                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
             }
         }
 
         [Fact]
-        public void VM_Execute_Contract_WithParameters()
+        public void VM_ExecuteContract_WithParameters()
         {
             //Get the contract execution code------------------------
             byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTestWithParameters.cs");
@@ -133,26 +133,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
                 var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
-                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.To, this.network);
+                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
                 var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
                 var context = new SmartContractExecutionContext(
                                 new Stratis.SmartContracts.Block(1, new Address("2")),
                                 new Message(
-                                    deserializedCall.To.ToAddress(this.network),
+                                    deserializedCall.ContractAddress.ToAddress(this.network),
                                     new Address(sender),
                                     deserializedCall.TxOutValue,
                                     deserializedCall.GasLimit
                                     ),
-                                deserializedCall.GasUnitPrice,
+                                deserializedCall.GasPrice,
                                 deserializedCall.MethodParameters
                             );
 
-
                 var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.To);
-                
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
+
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
                     "StorageTestWithParameters",
@@ -167,6 +166,117 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
                 Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
             }
+        }
+
+        [Fact]
+        public void VM_ExecuteContract_ConstructorFails_Refund()
+        {
+            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractConstructorInvalid.cs");
+
+            var gasLimit = (Gas)100;
+            var gasMeter = new GasMeter(gasLimit);
+
+            var state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+
+            var persistenceStrategy = new MeteredPersistenceStrategy(state, gasMeter);
+            var persistentState = new PersistentState(state, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
+
+            var context = new SmartContractExecutionContext(
+                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Message(TestAddress, TestAddress, 0, gasLimit),
+                1,
+                new object[] { }
+            );
+
+            var internalTransactionExecutor = new InternalTransactionExecutor(state, this.network);
+            ulong getBalance() => state.GetCurrentBalance(TestAddress.ToUint160(this.network));
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode,
+                "ContractConstructorInvalid",
+                "Test",
+                context,
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
+
+            Assert.NotNull(result.Exception);
+            // TODO: We need to add asserts that test gas consumed.
+        }
+
+        [Fact]
+        public void VM_ExecuteContract_MethodParameters_InvalidParameterCount()
+        {
+            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractMethodParametersUnresolved.cs");
+
+            var gasLimit = (Gas)100;
+            var gasMeter = new GasMeter(gasLimit);
+
+            var state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+
+            var persistenceStrategy = new MeteredPersistenceStrategy(state, gasMeter);
+            var persistentState = new PersistentState(state, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
+
+            var context = new SmartContractExecutionContext(
+                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Message(TestAddress, TestAddress, 0, gasLimit),
+                1,
+                new object[] { 1 }
+            );
+
+            var internalTransactionExecutor = new InternalTransactionExecutor(state, this.network);
+            ulong getBalance() => state.GetCurrentBalance(TestAddress.ToUint160(this.network));
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode,
+                "ContractMethodParametersUnresolved",
+                "TestMethod",
+                context,
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
+
+            Assert.NotNull(result.Exception);
+            // TODO: We need to add asserts that test gas consumed.
+        }
+
+        [Fact]
+        public void VM_ExecuteContract_MethodParameters_ParameterTypeMismatch()
+        {
+            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractMethodParameterTypeMismatch.cs");
+
+            var gasLimit = (Gas)100;
+            var gasMeter = new GasMeter(gasLimit);
+
+            var state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+
+            var persistenceStrategy = new MeteredPersistenceStrategy(state, gasMeter);
+            var persistentState = new PersistentState(state, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
+
+            var context = new SmartContractExecutionContext(
+                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Message(TestAddress, TestAddress, 0, gasLimit),
+                1,
+                new object[] { true }
+            );
+
+            var internalTransactionExecutor = new InternalTransactionExecutor(state, this.network);
+            ulong getBalance() => state.GetCurrentBalance(TestAddress.ToUint160(this.network));
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode,
+                "ContractMethodParameterTypeMismatch",
+                "TestMethod",
+                context,
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
+
+            Assert.NotNull(result.Exception);
+            // TODO: We need to add asserts that test gas consumed.
         }
     }
 }

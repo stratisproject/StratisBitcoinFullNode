@@ -7,29 +7,18 @@ namespace Stratis.SmartContracts.Core.Backend
     public interface ISmartContractExecutionResult
     {
         /// <summary>
-        /// The amount of gas units used through execution of the smart contract.
-        /// </summary>
-        Gas GasUnitsUsed { get; set; }
-
-        /// <summary>
-        /// If an object is returned from the method called, it will be stored here.
-        /// </summary>
-        object Return { get; set; }
-
-        /// <summary>
         /// If there is an exception during execution, it will be stored here.
         /// </summary>
         Exception Exception { get; set; }
 
         /// <summary>
-        /// Whether the state changes made during execution should be reverted. If an exception occurred, then should be true.
+        /// The calculated fee for executing the smart contract transaction and including it in the block.
+        /// <para>
+        /// Normally this will be the mempool fee but if there are refunds, the fee will be
+        /// the mempool fee less the refund.
+        /// </para>
         /// </summary>
-        bool Revert { get; }
-
-        /// <summary>
-        /// A list of transactions made inside the contract call. Should only be one condensing transaction for now.
-        /// </summary>
-        List<Transaction> InternalTransactions { get; set; }
+        ulong Fee { get; set; }
 
         /// <summary>
         /// Used in Ethereum to increase a gas refund.
@@ -37,14 +26,45 @@ namespace Stratis.SmartContracts.Core.Backend
         ulong FutureRefund { get; set; }
 
         /// <summary>
-        /// If the execution created a new contract, its address will be stored here.
+        /// The amount of gas units used through execution of the smart contract.
         /// </summary>
-        uint160 NewContractAddress { get; set; }
+        Gas GasConsumed { get; set; }
+
+        /// <summary>
+        /// A list of transactions made inside the contract call.
+        /// <para>
+        /// There should only be one condensing transaction for now.
+        /// </para>
+        /// </summary>
+        List<Transaction> InternalTransactions { get; set; }
 
         /// <summary>
         /// After a contract is executed internally, we will need to merge the results.
         /// </summary>
         /// <param name="another"></param>
         void Merge(ISmartContractExecutionResult another);
+
+        /// <summary>
+        /// If the execution created a new contract, its address will be stored here.
+        /// </summary>
+        uint160 NewContractAddress { get; set; }
+
+        /// <summary>
+        /// If a refund is due to the sender, set this here.
+        /// <para>
+        /// An example of this will be if for instance an exception occurred and not all the gas was spent.
+        /// </para>
+        /// </summary>
+        List<TxOut> Refunds { get; set; }
+
+        /// <summary>
+        /// If an object is returned from the method called, it will be stored here.
+        /// </summary>
+        object Return { get; set; }
+
+        /// <summary>
+        /// Whether the state changes made during execution should be reverted. If an exception occurred, then should be true.
+        /// </summary>
+        bool Revert { get; }
     }
 }

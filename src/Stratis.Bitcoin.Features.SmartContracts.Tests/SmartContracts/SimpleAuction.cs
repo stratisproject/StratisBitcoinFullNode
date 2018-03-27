@@ -4,29 +4,30 @@ public class SimpleAuction : SmartContract
 {
     public SimpleAuction(ISmartContractState smartContractState) : base(smartContractState)
     {
-        PendingReturns = PersistentState.GetMapping<ulong>("PendingReturns");
+        this.PendingReturns = this.PersistentState.GetMapping<ulong>("PendingReturns");
     }
 
     public Address Owner
     {
         get
         {
-            return PersistentState.GetObject<Address>("Owner");
+            return this.PersistentState.GetObject<Address>("Owner");
         }
         set
         {
-            PersistentState.SetObject<Address>("Owner", value);
+            this.PersistentState.SetObject<Address>("Owner", value);
         }
     }
 
-    public ulong AuctionEndBlock {
+    public ulong AuctionEndBlock
+    {
         get
         {
-            return PersistentState.GetObject<ulong>("AuctionEndBlock");
+            return this.PersistentState.GetObject<ulong>("AuctionEndBlock");
         }
         set
         {
-            PersistentState.SetObject<ulong>("AuctionEndBlock", value);
+            this.PersistentState.SetObject<ulong>("AuctionEndBlock", value);
         }
     }
 
@@ -34,11 +35,11 @@ public class SimpleAuction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<Address>("HighestBidder");
+            return this.PersistentState.GetObject<Address>("HighestBidder");
         }
         set
         {
-            PersistentState.SetObject<Address>("HighestBidder", value);
+            this.PersistentState.SetObject<Address>("HighestBidder", value);
         }
     }
 
@@ -46,11 +47,11 @@ public class SimpleAuction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<ulong>("HighestBid");
+            return this.PersistentState.GetObject<ulong>("HighestBid");
         }
         set
         {
-            PersistentState.SetObject<ulong>("HighestBid", value);
+            this.PersistentState.SetObject<ulong>("HighestBid", value);
         }
     }
 
@@ -60,51 +61,50 @@ public class SimpleAuction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<bool>("hasended");
+            return this.PersistentState.GetObject<bool>("hasended");
         }
         set
         {
-            PersistentState.SetObject<bool>("hasended", value);
+            this.PersistentState.SetObject<bool>("hasended", value);
         }
     }
 
     [SmartContractInit]
     public void Initialise(ulong biddingBlocks)
     {
-        Owner = Message.Sender;
-        AuctionEndBlock = Block.Number + biddingBlocks;
-        HasEnded = false;
+        this.Owner = this.Message.Sender;
+        this.AuctionEndBlock = this.Block.Number + biddingBlocks;
+        this.HasEnded = false;
     }
 
     public void Bid()
     {
-        Assert(Block.Number < AuctionEndBlock);
-        Assert(Message.Value > HighestBid);
-        if (HighestBid > 0)
+        Assert(this.Block.Number < this.AuctionEndBlock);
+        Assert(this.Message.Value > this.HighestBid);
+        if (this.HighestBid > 0)
         {
-            PendingReturns[HighestBidder] = HighestBid;
+            this.PendingReturns[this.HighestBidder] = this.HighestBid;
         }
-        HighestBidder = Message.Sender;
-        HighestBid = Message.Value;
+        this.HighestBidder = this.Message.Sender;
+        this.HighestBid = this.Message.Value;
     }
 
     public bool Withdraw()
     {
-        ulong amount = PendingReturns[Message.Sender];
+        ulong amount = this.PendingReturns[this.Message.Sender];
         Assert(amount > 0);
-        PendingReturns[Message.Sender] = 0;
-        ITransferResult transferResult = TransferFunds(Message.Sender, amount);
+        this.PendingReturns[this.Message.Sender] = 0;
+        ITransferResult transferResult = TransferFunds(this.Message.Sender, amount);
         if (!transferResult.Success)
-            PendingReturns[Message.Sender] = amount;
+            this.PendingReturns[this.Message.Sender] = amount;
         return transferResult.Success;
     }
 
     public void AuctionEnd()
     {
-        Assert(Block.Number >= AuctionEndBlock);
-        Assert(!HasEnded);
-        HasEnded = true;
-        TransferFunds(Owner, HighestBid);
+        Assert(this.Block.Number >= this.AuctionEndBlock);
+        Assert(!this.HasEnded);
+        this.HasEnded = true;
+        TransferFunds(this.Owner, this.HighestBid);
     }
-
 }
