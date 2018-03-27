@@ -214,8 +214,6 @@ namespace Stratis.Bitcoin
             // Initialize peer connection.
             this.ConnectionManager.Initialize();
 
-            this.bestChainSelector.Initialize();
-
             // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();
 

@@ -149,7 +149,7 @@ namespace NBitcoin
         {
             using (this.lockObject.LockWrite())
             {
-                if (this.tip == null || block.ChainWork > this.tip.ChainWork)
+                if ((this.tip == null) || (block.ChainWork > this.tip.ChainWork))
                 {
                     this.SetTipLocked(block);
                     return true;

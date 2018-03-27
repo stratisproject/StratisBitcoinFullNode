@@ -24,14 +24,8 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Queue with tips from the disconnected peers.</summary>
         private readonly AsyncQueue<ChainedBlock> unavailableTipsProcessingQueue;
 
-        /// <summary>Task in which <see cref="unavailableTipsProcessingQueue"/> is being continuously dequeued.</summary>
-        private Task dequeueTask;
-
         /// <summary>Collection of all available tips provided by connected peers.</summary>
         private readonly Dictionary<int, ChainedBlock> availableTips;
-
-        /// <summary>Cancellation source.</summary>
-        private readonly CancellationTokenSource cancellation;
         
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
@@ -56,52 +50,38 @@ namespace Stratis.Bitcoin.Base
 
             this.lockObject = new object();
             this.availableTips = new Dictionary<int, ChainedBlock>();
-            this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>();
-            this.cancellation = new CancellationTokenSource();
-        }
 
-        public void Initialize()
-        {
-            this.logger.LogTrace("()");
-
-            this.dequeueTask = Task.Run(async () =>
+            this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>((tip, token) =>
             {
-                while (!this.cancellation.IsCancellationRequested)
+                this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
+
+                // Ignore it if it wasn't the best chain's tip.
+                if (tip != this.chain.Tip)
                 {
-                    try
-                    {
-                        // Tip or a peer that was disconnected.
-                        ChainedBlock tip = await this.unavailableTipsProcessingQueue.DequeueAsync(this.cancellation.Token).ConfigureAwait(false);
+                    this.logger.LogTrace("(-)[NOT_BEST_CHAIN_TIP]");
+                    return Task.CompletedTask;
+                }
 
-                        // Ignore it if it wasn't the best chain's tip.
-                        if (tip != this.chain.Tip)
-                            continue;
+                lock (this.lockObject)
+                {
+                    if (this.availableTips.Count > 0)
+                    {
+                        // Find best tip from available ones.
+                        ChainedBlock bestTip = this.availableTips.Aggregate((item1, item2) => item1.Value.ChainWork > item2.Value.ChainWork ? item1 : item2).Value;
+
+                        if (this.chain.Tip != bestTip)
+                            this.chain.SetTip(bestTip);
                     }
-                    catch (OperationCanceledException)
+                    else
                     {
-                        continue;
-                    }
-
-                    lock (this.lockObject)
-                    {
-                        if (this.availableTips.Count > 0)
-                        {
-                            // Find best tip from available ones.
-                            ChainedBlock bestTip = this.availableTips.Aggregate((item1, item2) => item1.Value.ChainWork > item2.Value.ChainWork ? item1 : item2).Value;
-
-                            if (this.chain.Tip != bestTip)
-                                this.chain.SetTip(bestTip);
-                        }
-                        else
-                        {
-                            // There are no available tips, switch to the consensus tip. 
-                            this.chain.SetTip(this.chainState.ConsensusTip);
-                        }
+                        // There are no available tips, switch to the consensus tip. 
+                        this.chain.SetTip(this.chainState.ConsensusTip);
                     }
                 }
-            });
 
-            this.logger.LogTrace("(-)");
+                this.logger.LogTrace("(-)");
+                return Task.CompletedTask;
+            });
         }
 
         /// <summary>
@@ -189,11 +169,7 @@ namespace Stratis.Bitcoin.Base
         public void Dispose()
         {
             this.logger.LogTrace("()");
-
-            this.cancellation.Cancel();
-
-            this.dequeueTask?.Wait();
-
+            
             this.unavailableTipsProcessingQueue.Dispose();
 
             // Switch to the consensus tip. 
