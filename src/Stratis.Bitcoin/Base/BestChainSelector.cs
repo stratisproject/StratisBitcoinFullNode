@@ -196,6 +196,9 @@ namespace Stratis.Bitcoin.Base
 
             this.unavailableTipsProcessingQueue.Dispose();
 
+            // Switch to the consensus tip. 
+            this.chain.SetTip(this.chainState.ConsensusTip);
+
             this.logger.LogTrace("(-)");
         }
     }
