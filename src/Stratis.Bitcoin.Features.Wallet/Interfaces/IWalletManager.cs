@@ -119,6 +119,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<FlatHistory> GetHistory(Wallet wallet);
 
         /// <summary>
+        /// Gets the balances of this wallet's accounts.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>Collection of account balances.</returns>
+        IEnumerable<AccountBalance> GetBalances(string walletName);
+
+        /// <summary>
         /// Gets some general information about a wallet.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>

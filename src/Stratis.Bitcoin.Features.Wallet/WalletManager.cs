@@ -18,22 +18,6 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
-    /// A class that represents a flat view of the wallets history.
-    /// </summary>
-    public class FlatHistory
-    {
-        /// <summary>
-        /// The address associated with this UTXO
-        /// </summary>
-        public HdAddress Address { get; set; }
-
-        /// <summary>
-        /// The transaction representing the UTXO.
-        /// </summary>
-        public TransactionData Transaction { get; set; }
-    }
-
-    /// <summary>
     /// A manager providing operations on wallets.
     /// </summary>
     public class WalletManager : IWalletManager
@@ -524,6 +508,30 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("(-):*.Count={0}", items.Count());
             return items;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<AccountBalance> GetBalances(string walletName)
+        {
+            List<AccountBalance> balances = new List<AccountBalance>();
+
+            lock (this.lockObject)
+            {
+                var accounts = this.GetAccounts(walletName).ToList();
+                foreach (var account in accounts)
+                {
+                    (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
+
+                    balances.Add(new AccountBalance
+                    {
+                        Account = account,
+                        AmountConfirmed = result.AmountConfirmed,
+                        AmountUnconfirmed = result.AmountUnconfirmed
+                    });
+                }
+            }
+
+            return balances;
         }
 
         /// <summary>
