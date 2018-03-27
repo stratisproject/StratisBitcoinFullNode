@@ -276,8 +276,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(752400000000, receivetotal);
 
                 // generate two new blocks do the trx is confirmed
-                stratisReceiver.GenerateStratis(1, new List<Transaction>(new[] { trx.Clone() }));
-                stratisReceiver.GenerateStratis(1);
+                stratisReceiver.GenerateStratisWithMiner(1);
 
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReceiver));
