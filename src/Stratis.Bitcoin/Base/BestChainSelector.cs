@@ -59,6 +59,8 @@ namespace Stratis.Bitcoin.Base
 
         public void Initialize()
         {
+            this.logger.LogTrace("()");
+
             this.dequeueTask = Task.Run(async () =>
             {
                 while (!this.cancellation.IsCancellationRequested)
@@ -87,6 +89,8 @@ namespace Stratis.Bitcoin.Base
                     }
                 }
             });
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -100,6 +104,8 @@ namespace Stratis.Bitcoin.Base
         /// </returns>
         public bool TrySetAvailableTip(int peerConnectionId, ChainedBlock tip)
         {
+            this.logger.LogTrace("()");
+
             bool switchToNewTip = false;
 
             if (tip.ChainWork > this.chain.Tip.ChainWork)
@@ -107,26 +113,23 @@ namespace Stratis.Bitcoin.Base
                 // Long reorganization protection on POS networks.
                 switchToNewTip = true;
                 uint maxReorgLength = this.chainState.MaxReorgLength;
-                if (maxReorgLength != 0)
+                ChainedBlock consensusTip = this.chainState.ConsensusTip;
+                if (maxReorgLength != 0 && consensusTip != null)
                 {
-                    ChainedBlock consensusTip = this.chainState.ConsensusTip;
-                    if (consensusTip != null)
+                    ChainedBlock fork = tip.FindFork(consensusTip);
+
+                    if ((fork != null) && (fork != consensusTip))
                     {
-                        ChainedBlock fork = tip.FindFork(consensusTip);
+                        int reorgLength = consensusTip.Height - fork.Height;
 
-                        if ((fork != null) && (fork != consensusTip))
+                        if (reorgLength > maxReorgLength)
                         {
-                            int reorgLength = consensusTip.Height - fork.Height;
-
-                            if (reorgLength > maxReorgLength)
-                            {
-                                this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                                this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
-                                return false;
-                            }
-                            else
-                                this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+                            this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
+                            this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
+                            return false;
                         }
+                        else
+                            this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                     }
                 }
             }
@@ -147,6 +150,7 @@ namespace Stratis.Bitcoin.Base
                 this.availableTips.AddOrReplace(peerConnectionId, tip);
             }
 
+            this.logger.LogTrace("(-)");
             return true;
         }
 
@@ -156,6 +160,8 @@ namespace Stratis.Bitcoin.Base
         /// <param name="peerConnectionId">The peer connection id.</param>
         public void RemoveAvailableTip(int peerConnectionId)
         {
+            this.logger.LogTrace("()");
+
             lock (this.lockObject)
             {
                 if (this.availableTips.TryGetValue(peerConnectionId, out ChainedBlock tip))
@@ -164,16 +170,22 @@ namespace Stratis.Bitcoin.Base
                     this.unavailableTipsProcessingQueue.Enqueue(tip);
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
+            this.logger.LogTrace("()");
+
             this.cancellation.Cancel();
 
             this.dequeueTask?.Wait();
 
             this.unavailableTipsProcessingQueue.Dispose();
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
