@@ -25,17 +25,18 @@ namespace Stratis.SmartContracts.Core
 
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
+            //byte[] hashedKey = HashHelper.Keccak256(key);
             return this.stateDb.GetStorageValue(address, key);
         }
 
         public void StoreBytes(uint160 address, byte[] key, byte[] value)
         {
+            //byte[] hashedKey = HashHelper.Keccak256(key);
             Gas operationCost = GasPriceList.StorageOperationCost(
                 key,
                 value);
 
             this.gasMeter.Spend(operationCost);
-
             this.stateDb.SetStorageValue(address, key, value);
         }
     }

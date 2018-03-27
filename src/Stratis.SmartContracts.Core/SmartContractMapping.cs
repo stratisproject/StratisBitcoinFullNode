@@ -10,7 +10,6 @@ namespace Stratis.SmartContracts.Core
     /// <typeparam name="V"></typeparam>
     public class SmartContractMapping<V> : ISmartContractMapping<V>
     {
-        private readonly StringKeyHashingStrategy keyHashingStrategy;
         private readonly string name;
         private readonly IPersistentState persistentState;
 
@@ -23,7 +22,6 @@ namespace Stratis.SmartContracts.Core
 
             this.name = name;
             this.persistentState = persistentState;
-            this.keyHashingStrategy = StringKeyHashingStrategy.Default;
         }
 
         public void Put(string key, V value)
@@ -48,16 +46,14 @@ namespace Stratis.SmartContracts.Core
             }
         }
 
-        /// <summary>
-        /// I feel like there's a better way of doing this. If someone stores a value in keccak256("{baseNum}{stringKey}"), it overwrites it!
-        /// 
-        /// Can we somehow handle mappings + lists in a way that people can't mess with them?
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
         private string GetKeyString(string key)
         {
-            return this.keyHashingStrategy.Hash(this.name, key);
+            return this.name + FormatKey(key);
+        }
+
+        private string FormatKey(string key)
+        {
+            return $"[{key}]";
         }
     }
 }
