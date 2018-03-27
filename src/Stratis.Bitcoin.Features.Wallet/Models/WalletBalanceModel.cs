@@ -8,14 +8,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public WalletBalanceModel()
         {
-            this.AccountsBalances = new List<AccountBalance>();
+            this.AccountsBalances = new List<AccountBalanceModel>();
         }
 
         [JsonProperty(PropertyName = "balances")]
-        public List<AccountBalance> AccountsBalances { get; set; }
+        public List<AccountBalanceModel> AccountsBalances { get; set; }
     }
 
-    public class AccountBalance
+    public class AccountBalanceModel
     {
         [JsonProperty(PropertyName = "accountName")]
         public string Name { get; set; }
