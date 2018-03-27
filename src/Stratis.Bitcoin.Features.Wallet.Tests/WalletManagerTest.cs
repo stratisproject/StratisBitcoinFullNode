@@ -1577,7 +1577,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
-
+            walletManager.LoadKeysLookupLock();
             walletManager.ProcessTransaction(transaction);
 
             var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
@@ -1668,7 +1668,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
-
+            walletManager.LoadKeysLookupLock();
             walletManager.ProcessTransaction(transaction);
 
             var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
@@ -1752,6 +1752,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
+            walletManager.LoadKeysLookupLock();
 
             walletManager.ProcessTransaction(transaction);
 
@@ -1843,6 +1844,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
+            walletManager.LoadKeysLookupLock();
 
             var block = WalletTestsHelpers.AppendTransactionInNewBlockToChain(chainInfo.chain, transaction);
 
@@ -1938,6 +1940,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
+            walletManager.LoadKeysLookupLock();
 
             var block = WalletTestsHelpers.AppendTransactionInNewBlockToChain(chainInfo.chain, transaction);
 
@@ -2301,6 +2304,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void RemoveBlocksRemovesTransactionsWithHigherBlockHeightAndUpdatesLastSyncedBlockHeight()
         {
+            var trxId = uint256.Parse("21e74d1daed6dec93d58396a3406803c5fc8d220b59f4b4dd185cab5f7a9a22e");
+            int trxCount = 0;
             var concurrentchain = new ConcurrentChain(Network.Main);
             var chainedBlock = WalletTestsHelpers.AppendBlock(null, concurrentchain).ChainedBlock;
             chainedBlock = WalletTestsHelpers.AppendBlock(chainedBlock, concurrentchain).ChainedBlock;
@@ -2317,21 +2322,27 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // reorg at block 3
 
             // Trx at block 0 is not spent
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.First().Id = trxId >> trxCount++; ;
             wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.First().SpendingDetails = null;
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.First().Id = trxId >> trxCount++;
             wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.First().SpendingDetails = null;
 
             // Trx at block 2 is spent in block 3, after reorg it will not be spendable.
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.First().SpendingDetails.TransactionId = trxId >> trxCount++;
             wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.First().SpendingDetails.BlockHeight = 3;
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Transactions.First().SpendingDetails.TransactionId = trxId >> trxCount++;
             wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Transactions.First().SpendingDetails.BlockHeight = 3;
 
             // Trx at block 3 is spent at block 5, after reorg it will be spendable.
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(2).Transactions.First().SpendingDetails.TransactionId = trxId >> trxCount++; ;
             wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(2).Transactions.First().SpendingDetails.BlockHeight = 5;
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(2).Transactions.First().SpendingDetails.TransactionId = trxId >> trxCount++; ;
             wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(2).Transactions.First().SpendingDetails.BlockHeight = 5;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
-
+            walletManager.LoadKeysLookupLock();
             walletManager.RemoveBlocks(chainedBlock);
 
             Assert.Equal(chainedBlock.GetLocator().Blocks, wallet.BlockLocator);
@@ -2430,7 +2441,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chainInfo.chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             walletManager.Wallets.Add(wallet);
-
+            walletManager.LoadKeysLookupLock();
             walletManager.WalletTipHash = block.Header.GetHash();
 
             var chainedBlock = chainInfo.chain.GetBlock(block.GetHash());
@@ -2530,6 +2541,64 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
             Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+        }
+
+        [Fact]
+        public void GetAccountBalancesReturnsCorrectAccountBalances()
+        {
+            // Arrange.
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+            
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), null));
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(10000), 1));
+
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(20000), null));
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(120000), 2));
+
+            account.ExternalAddresses.Add(accountAddress1);
+            account.InternalAddresses.Add(accountAddress2);
+
+            HdAccount account2 = WalletTestsHelpers.CreateAccount("account 2");
+            HdAddress account2Address1 = WalletTestsHelpers.CreateAddress();
+            account2Address1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(5), new Money(74000), null));
+            account2Address1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(6), new Money(18700), 3));
+
+            HdAddress account2Address2 = WalletTestsHelpers.CreateAddress();
+            account2Address2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(7), new Money(65000), null));
+            account2Address2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(8), new Money(89300), 4));
+
+            account2.ExternalAddresses.Add(account2Address1);
+            account2.InternalAddresses.Add(account2Address2);
+
+            var accounts = new List<HdAccount> { account, account2 };
+
+            Wallet wallet = WalletTestsHelpers.CreateWallet("myWallet");
+            wallet.AccountsRoot.Add(new AccountRoot());
+            wallet.AccountsRoot.First().Accounts = accounts;
+
+            walletManager.Wallets.Add(wallet);
+
+            // Act.
+            var balances = walletManager.GetBalances("myWallet");
+
+            // Assert.
+            AccountBalance resultingBalance = balances.First();
+            Assert.Equal(account.Name, resultingBalance.Account.Name);
+            Assert.Equal(account.HdPath, resultingBalance.Account.HdPath);
+            Assert.Equal(new Money(130000), resultingBalance.AmountConfirmed);
+            Assert.Equal(new Money(35000), resultingBalance.AmountUnconfirmed);
+
+            resultingBalance = balances.ElementAt(1);
+            Assert.Equal(account2.Name, resultingBalance.Account.Name);
+            Assert.Equal(account2.HdPath, resultingBalance.Account.HdPath);
+            Assert.Equal(new Money(108000), resultingBalance.AmountConfirmed);
+            Assert.Equal(new Money(139000), resultingBalance.AmountUnconfirmed);
         }
 
         [Fact]

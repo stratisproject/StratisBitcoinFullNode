@@ -1,20 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 {
     public class FeeTests
     {
         [Fact]
         public void BlockPolicyEstimates()
         {
-            var dateTimeSet = new MemoryPoolTests.DateTimeProviderSet();
+            var dateTimeSet = new DateTimeProviderSet();
             var settings = NodeSettings.Default();
             TxMempool mpool = new TxMempool(DateTimeProvider.Default,
                 new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
@@ -218,6 +218,22 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.EstimateFee(i).FeePerK);
                 Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.GetMinFee(1).FeePerK);
                 Assert.True(mpool.EstimateSmartPriority(i, out answerFound) == BlockPolicyEstimator.InfPriority);
+            }
+        }
+
+        public class DateTimeProviderSet : DateTimeProvider
+        {
+            public long time;
+            public DateTime timeutc;
+
+            public override long GetTime()
+            {
+                return this.time;
+            }
+
+            public override DateTime GetUtcNow()
+            {
+                return this.timeutc;
             }
         }
     }

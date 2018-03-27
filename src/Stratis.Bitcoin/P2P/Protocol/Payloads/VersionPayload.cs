@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
-        private bool relay;
+        private bool relay = true;
         public bool Relay
         {
             get

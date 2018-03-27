@@ -476,21 +476,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 WalletBalanceModel model = new WalletBalanceModel();
 
-                var accounts = this.walletManager.GetAccounts(request.WalletName).ToList();
-                foreach (var account in accounts)
-                {
-                    var result = account.GetSpendableAmount();
+                IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(request.WalletName);
 
-                    AccountBalance balance = new AccountBalance
+                foreach (AccountBalance balance in balances)
+                {
+                    HdAccount account = balance.Account;
+                    model.AccountsBalances.Add(new AccountBalanceModel
                     {
                         CoinType = this.coinType,
                         Name = account.Name,
                         HdPath = account.HdPath,
-                        AmountConfirmed = result.ConfirmedAmount,
-                        AmountUnconfirmed = result.UnConfirmedAmount,
-                    };
-
-                    model.AccountsBalances.Add(balance);
+                        AmountConfirmed = balance.AmountConfirmed,
+                        AmountUnconfirmed = balance.AmountUnconfirmed
+                    });
                 }
 
                 return this.Json(model);
@@ -869,8 +867,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedBlock);
                     this.walletManager.SaveWallet(wallet);
 
-                    // Start the syncing process.
-                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height);
+                    // Start the syncing process from the block before the earliest transaction was seen.
+                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height - 1);
                 }
 
                 IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
