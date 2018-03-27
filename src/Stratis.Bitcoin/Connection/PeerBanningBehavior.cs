@@ -31,12 +31,16 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ConnectionManagerBehavior connectionManagerBehavior;
 
+        /// <summary><c>true</c> if <see cref="OnMessageReceivedAsync"/> was registered; <c>false</c> otherwise.</summary>
+        private bool eventHandlerRegistered;
+
         public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.peerBanning = peerBanning;
             this.nodeSettings = nodeSettings;
+            this.eventHandlerRegistered = false;
         }
 
         /// <inheritdoc />
@@ -57,6 +61,7 @@ namespace Stratis.Bitcoin.Connection
                 {
                     this.logger.LogDebug("Peer '{0}' was previously banned.", peer.RemoteSocketEndpoint);
                     peer.Disconnect("A banned node tried to connect.");
+                    this.logger.LogTrace("(-)[PEER_BANNED]");
                     return;
                 }
             }
@@ -64,6 +69,7 @@ namespace Stratis.Bitcoin.Connection
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
             this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<ConnectionManagerBehavior>();
+            this.eventHandlerRegistered = true;
 
             this.logger.LogTrace("(-)");
         }
@@ -94,7 +100,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+            if (this.eventHandlerRegistered)
+                this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }

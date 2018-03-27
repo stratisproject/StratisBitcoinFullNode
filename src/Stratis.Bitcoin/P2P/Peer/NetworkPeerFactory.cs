@@ -77,6 +77,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>A provider of network payload messages.</summary>
         private readonly PayloadProvider payloadProvider;
 
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -97,7 +99,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="payloadProvider">A provider of network payload messages.</param>
-        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider)
+        /// <param name="selfEndpointTracker">Tracker for endpoints known to be self.</param>
+        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider, ISelfEndpointTracker selfEndpointTracker)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -107,6 +110,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.payloadProvider = payloadProvider;
+            this.selfEndpointTracker = selfEndpointTracker;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.lastClientId = 0;
         }
@@ -121,7 +125,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, onDisconnected);
+            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
 
             networkPeerDisposer?.AddPeer(peer);
 
@@ -163,7 +167,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, onDisconnected);
+            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
             
             try
             {

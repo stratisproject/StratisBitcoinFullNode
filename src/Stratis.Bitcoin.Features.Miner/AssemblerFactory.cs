@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        protected readonly StakeChain stakeChain;
+        protected readonly IStakeChain stakeChain;
 
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            StakeChain stakeChain = null)
+            IStakeChain stakeChain = null)
         {
             this.consensusLoop = consensusLoop;
             this.network = network;
@@ -84,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        protected readonly StakeChain stakeChain;
+        protected readonly IStakeChain stakeChain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -103,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IStakeValidator stakeValidator,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            StakeChain stakeChain = null)
+            IStakeChain stakeChain = null)
         {
             this.consensusLoop = consensusLoop;
             this.network = network;

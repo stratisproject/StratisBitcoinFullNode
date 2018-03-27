@@ -118,14 +118,14 @@ namespace Stratis.Bitcoin.P2P
         public IPeerSelector PeerSelector { get; private set; }
 
         /// <summary>Constructor used by dependency injection.</summary>
-        public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory)
+        public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory, ISelfEndpointTracker selfEndpointTracker)
         {
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peers = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             this.PeerFilePath = peerFilePath;
-            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.peers);
+            this.PeerSelector = new PeerSelector(this.dateTimeProvider, this.loggerFactory, this.peers, selfEndpointTracker);
         }
 
         /// <inheritdoc />
@@ -137,8 +137,18 @@ namespace Stratis.Bitcoin.P2P
             {
                 // Ensure that any address already in store is mapped.
                 peer.Endpoint = peer.Endpoint.MapToIpv6();
-                
-                this.peers.TryAdd(peer.Endpoint, peer);
+
+                // If no longer banned reset ban details.
+                if (peer.BanUntil.HasValue && peer.BanUntil < this.dateTimeProvider.GetUtcNow())
+                {
+                    peer.BanTimeStamp = null;
+                    peer.BanUntil = null;
+                    peer.BanReason = string.Empty;
+
+                    this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
+                }
+
+                this.peers.AddOrUpdate(peer.Endpoint, peer, (key, oldValue) => peer);
             });
         }
 
