@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetAddressesWithBalances([FromQuery] string walletName)
         {
-            var allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName).GroupBy(x => x.Address);
+            var allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName, 10).GroupBy(x => x.Address);
 
             List<object> ret = new List<object>();
 
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName).Where(x => x.Address.Address == request.Sender).Select(x=>x.ToOutPoint()).ToList();
+                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 10).Where(x => x.Address.Address == request.Sender).Select(x=>x.ToOutPoint()).ToList();
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 10).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);

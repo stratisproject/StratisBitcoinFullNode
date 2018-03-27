@@ -31,17 +31,17 @@ namespace $safeprojectname$
         [TestMethod]
         public void TestMethod()
         {
-            var contract = new Contract(smartContractState);
-
-            Assert.AreEqual("Test", contract.Test());
+            //var contract = new Contract(smartContractState);
+            //Assert.AreEqual("Test", contract.Test());
+            throw new NotImplementedException();
         }
 
         [TestMethod]
         public void TestBalance()
         {
-            var contract = new Contract(smartContractState);
-
-            Assert.AreEqual(Balance, contract.Balance);
+        //var contract = new Contract(smartContractState);
+        //Assert.AreEqual(Balance, contract.Balance);
+        throw new NotImplementedException();
         }
     }
 
