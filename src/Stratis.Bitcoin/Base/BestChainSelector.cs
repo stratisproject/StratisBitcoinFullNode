@@ -64,19 +64,25 @@ namespace Stratis.Bitcoin.Base
 
                 lock (this.lockObject)
                 {
-                    if (this.availableTips.Count > 0)
-                    {
-                        // Find best tip from available ones.
-                        ChainedBlock bestTip = this.availableTips.Aggregate((item1, item2) => item1.Value.ChainWork > item2.Value.ChainWork ? item1 : item2).Value;
+                    // If better tip is not found consensus tip should be used.
+                    ChainedBlock bestTip = this.chainState.ConsensusTip;
 
-                        if (this.chain.Tip != bestTip)
-                            this.chain.SetTip(bestTip);
-                    }
-                    else
+                    // Find best tip from available ones.
+                    foreach (ChainedBlock availableTip in this.availableTips.Values)
                     {
-                        // There are no available tips, switch to the consensus tip. 
-                        this.chain.SetTip(this.chainState.ConsensusTip);
+                        if (availableTip == this.chain.Tip)
+                        {
+                            // Do nothing if there is at least one available tip that is equal to the best chain's tip. 
+                            this.logger.LogTrace("(-)[EQUIVALENT_TIP_FOUND]");
+
+                            return Task.CompletedTask;
+                        }
+
+                        if (bestTip.ChainWork < availableTip.ChainWork)
+                            bestTip = availableTip;
                     }
+
+                    this.chain.SetTip(bestTip);
                 }
 
                 this.logger.LogTrace("(-)");
@@ -85,7 +91,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// Sets available tip if it doesn't violate the max reorg protection rule..
+        /// Sets available tip if it doesn't violate the max reorg protection rule.
         /// </summary>
         /// <param name="peerConnectionId">The peer connection id.</param>
         /// <param name="tip">The tip.</param>
@@ -95,7 +101,8 @@ namespace Stratis.Bitcoin.Base
         /// </returns>
         public bool TrySetAvailableTip(int peerConnectionId, ChainedBlock tip)
         {
-            this.logger.LogTrace("()");
+            Guard.NotNull(tip, nameof(tip));
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peerConnectionId), peerConnectionId, nameof(tip), tip);
 
             bool switchToNewTip = false;
 
@@ -105,7 +112,7 @@ namespace Stratis.Bitcoin.Base
                 switchToNewTip = true;
                 uint maxReorgLength = this.chainState.MaxReorgLength;
                 ChainedBlock consensusTip = this.chainState.ConsensusTip;
-                if (maxReorgLength != 0 && consensusTip != null)
+                if ((maxReorgLength != 0) && (consensusTip != null))
                 {
                     ChainedBlock fork = tip.FindFork(consensusTip);
 
