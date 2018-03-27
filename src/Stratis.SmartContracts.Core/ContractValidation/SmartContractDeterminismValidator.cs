@@ -74,7 +74,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         {
             List<SmartContractValidationError> errors = new List<SmartContractValidationError>();
 
-            Dictionary<string, MethodDefinition> visitedMethods = new Dictionary<string, MethodDefinition>();
+            Dictionary<string, List<SmartContractValidationError>> visitedMethods = new Dictionary<string, List<SmartContractValidationError>>();
 
             IEnumerable<MethodDefinition> userDefinedMethods = 
                 decompilation
@@ -91,17 +91,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
                 foreach (MethodDefinition referencedMethod in userReferencedMethods)
                 {
-                    var referencedMethodValidationResult = ValidateNonUserMethod(referencedMethod, visitedMethods);
+                    List<SmartContractValidationError> referencedMethodValidationResult = ValidateNonUserMethod(referencedMethod, visitedMethods);
 
-                    if (referencedMethodValidationResult.Any())
-                    {
-                        errors.Add(new SmartContractValidationError(
-                            method.Name,
-                            method.FullName,
-                            "Non-deterministic method reference",
-                            $"Use of {referencedMethod.FullName} is not deterministic."
-                        ));
-                    }
+                    errors.AddRange(referencedMethodValidationResult);
                 }
             }
 
@@ -134,27 +126,55 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <param name="method"></param>
         /// <param name="visitedMethods"></param>
         /// <returns></returns>
-        private static IEnumerable<SmartContractValidationError> ValidateNonUserMethod(MethodDefinition method, Dictionary<string, MethodDefinition> visitedMethods)
+        private static List<SmartContractValidationError> ValidateNonUserMethod(MethodDefinition method, Dictionary<string, List<SmartContractValidationError>> visitedMethods)
         {
+            // If we've visited the method already we can use the existing validation errors
+            if (visitedMethods.ContainsKey(method.FullName))
+            {
+                return visitedMethods[method.FullName];
+            }
+
+            // Validate all referenced methods
             IEnumerable<MethodDefinition> referencedMethods = GetMethods(method);
 
             List<SmartContractValidationError> validationErrors = new List<SmartContractValidationError>();
 
             foreach (MethodDefinition referencedMethod in referencedMethods)
             {
-                if (visitedMethods.ContainsKey(referencedMethod.FullName))
-                {
-                    continue;
-                }
-
-                validationErrors.AddRange(ValidateNonUserMethod(referencedMethod, visitedMethods));
+                List<SmartContractValidationError> methodValidationErrors = ValidateNonUserMethod(referencedMethod, visitedMethods);
                 
-                visitedMethods.Add(referencedMethod.FullName, referencedMethod);
+                validationErrors.AddRange(methodValidationErrors);
             }
 
-            validationErrors.AddRange(ValidateWith(NonUserMethodValidators, method));
+            // Validate this method
+            IEnumerable<SmartContractValidationError> validationResults = ValidateWith(NonUserMethodValidators, method);
 
-            return validationErrors;
+            validationErrors.AddRange(validationResults);
+
+            // Some System methods recursively reference themselves (!) so this is needed
+            if (visitedMethods.ContainsKey(method.FullName))
+            {
+                visitedMethods[method.FullName] = validationErrors;
+            }                
+            else
+            {
+                visitedMethods.Add(method.FullName, validationErrors);
+            }
+
+            if (validationErrors.Any())
+            {
+                return new List<SmartContractValidationError>
+                {
+                    new SmartContractValidationError(
+                        method.Name,
+                        method.FullName,
+                        "Non-deterministic method reference",
+                        $"Use of {method.FullName} is not deterministic."
+                    )
+                };
+            }
+
+            return new List<SmartContractValidationError>();
         }
 
         private static IEnumerable<SmartContractValidationError> ValidateWith(IEnumerable<IMethodDefinitionValidator> validators, MethodDefinition method)
