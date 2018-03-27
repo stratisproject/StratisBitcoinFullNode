@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
@@ -26,24 +27,34 @@ namespace Stratis.Bitcoin.Base
         private readonly Dictionary<int, ChainedBlock> availableTips;
 
         private readonly CancellationTokenSource cancellation;
+        
+        /// <summary>Information about node's chain.</summary>
+        private readonly IChainState chainState;
 
         /// <summary>Protects access to <see cref="availableTips"/>.</summary>
         private readonly object lockObject;
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
         /// Creates new instance of <see cref="BestChainSelector"/>
         /// </summary>
-        public BestChainSelector(ConcurrentChain chain)
+        /// <param name="chain">TODO</param>
+        /// <param name="chainState">Information about node's chain.</param>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        public BestChainSelector(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory)
         {
             this.chain = chain;
+            this.chainState = chainState;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.lockObject = new object();
             this.availableTips = new Dictionary<int, ChainedBlock>();
             this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>();
             this.cancellation = new CancellationTokenSource();
 
-            //move max reorg and chain switching here
-            //chb provides a tip and we answer if its ok or peer should be banned
+            //TODO add logging
         }
 
         public void Initialize()
@@ -54,9 +65,10 @@ namespace Stratis.Bitcoin.Base
                 {
                     try
                     {
-                        // tip or a peer that was disconnected
+                        // Tip or a peer that was disconnected.
                         ChainedBlock tip = await this.unavailableTipsProcessingQueue.DequeueAsync(this.cancellation.Token).ConfigureAwait(false);
 
+                        // Ignore it if it wasn't the best chain's tip.
                         if (tip != this.chain.Tip)
                             continue;
                     }
@@ -67,23 +79,81 @@ namespace Stratis.Bitcoin.Base
 
                     lock (this.lockObject)
                     {
+                        // Find best tip from available ones.
                         ChainedBlock bestTip = this.availableTips.Aggregate((item1, item2) => item1.Value.ChainWork > item2.Value.ChainWork ? item1 : item2).Value;
-
-                        if (bestTip != this.chain.Tip)
+                        
+                        if (this.chain.Tip != bestTip)
                             this.chain.SetTip(bestTip);
                     }
                 }
             });
         }
-        
-        public void SetAvailableTip(int peerConnectionId, ChainedBlock tip)
+
+        /// <summary>
+        /// Sets available tip if it doesn't violate the max reorg protection rule..
+        /// </summary>
+        /// <param name="peerConnectionId">The peer connection id.</param>
+        /// <param name="tip">The tip.</param>
+        /// <returns>
+        /// <c>true</c> if the tip was added to the available tips collection, 
+        /// <c>false</c> if it's invalid and violates the max reorg rule.
+        /// </returns>
+        public bool TrySetAvailableTip(int peerConnectionId, ChainedBlock tip)
         {
+            bool switchToNewTip = false;
+
+            if (tip.ChainWork > this.chain.Tip.ChainWork)
+            {
+                // Long reorganization protection on POS networks.
+                switchToNewTip = true;
+                uint maxReorgLength = this.chainState.MaxReorgLength;
+                if (maxReorgLength != 0)
+                {
+                    ChainedBlock consensusTip = this.chainState.ConsensusTip;
+                    if (consensusTip != null)
+                    {
+                        ChainedBlock fork = tip.FindFork(consensusTip);
+
+                        if ((fork != null) && (fork != consensusTip))
+                        {
+                            int reorgLength = consensusTip.Height - fork.Height;
+
+                            if (reorgLength > maxReorgLength)
+                            {
+                                this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
+                                this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
+                                return false;
+                            }
+                            else
+                                this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+                        }
+                    }
+                }
+            }
+
             lock (this.lockObject)
             {
+                if (switchToNewTip)
+                {
+                    this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", tip, tip.ChainWork);
+
+                    if (this.chain.SetTipIfChainworkIsGreater(tip))
+                    {
+                        // This allows garbage collection to collect the duplicated pendingTip and ancestors.
+                        tip = this.chain.GetBlock(tip.HashBlock);
+                    }
+                }
+
                 this.availableTips.AddOrReplace(peerConnectionId, tip);
             }
+
+            return true;
         }
 
+        /// <summary>
+        /// Removes tip assiciated with the provided peer connection ID.
+        /// </summary>
+        /// <param name="peerConnectionId">The peer connection id.</param>
         public void RemoveAvailableTip(int peerConnectionId)
         {
             lock (this.lockObject)

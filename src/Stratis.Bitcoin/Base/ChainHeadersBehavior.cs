@@ -368,38 +368,10 @@ namespace Stratis.Bitcoin.Base
             if (pendingTipBefore != this.pendingTip)
                 this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-            if ((this.pendingTip != null) && (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork))
+            if (this.pendingTip != null)
             {
-                // Long reorganization protection on POS networks.
-                bool reorgPrevented = false;
-                uint maxReorgLength = this.chainState.MaxReorgLength;
-                if (maxReorgLength != 0)
-                {
-                    Network network = peer.Network;
-                    ChainedBlock consensusTip = this.chainState.ConsensusTip;
-                    if ((network != null) && (consensusTip != null))
-                    {
-                        ChainedBlock fork = this.pendingTip.FindFork(consensusTip);
-                        if ((fork != null) && (fork != consensusTip))
-                        {
-                            int reorgLength = consensusTip.Height - fork.Height;
-                            if (reorgLength > maxReorgLength)
-                            {
-                                this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                                this.InvalidHeaderReceived = true;
-                                reorgPrevented = true;
-                            }
-                            else this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
-                        }
-                    }
-                }
-
-                // Switch to better chain.
-                if (!reorgPrevented)
-                {
-                    this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", this.pendingTip, this.pendingTip.ChainWork);
-                    this.Chain.SetTip(this.pendingTip);
-                }
+                if (!this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip))
+                    this.InvalidHeaderReceived = true;
             }
 
             ChainedBlock chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
@@ -407,8 +379,6 @@ namespace Stratis.Bitcoin.Base
             {
                 // This allows garbage collection to collect the duplicated pendingTip and ancestors.
                 this.pendingTip = chainedPendingTip;
-
-                this.bestChainSelector.SetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip);
             }
 
             // If we made any advancement or the sync is enforced by 'doTrySync'- continue syncing.
