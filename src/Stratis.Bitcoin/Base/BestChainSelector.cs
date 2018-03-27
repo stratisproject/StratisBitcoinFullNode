@@ -18,14 +18,19 @@ namespace Stratis.Bitcoin.Base
     /// </remarks>
     public class BestChainSelector : IDisposable
     {
+        /// <summary>Thread safe class representing a chain of headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
+        /// <summary>Queue with tips from the disconnected peers.</summary>
         private readonly AsyncQueue<ChainedBlock> unavailableTipsProcessingQueue;
 
+        /// <summary>Task in which <see cref="unavailableTipsProcessingQueue"/> is being continuously dequeued.</summary>
         private Task dequeueTask;
 
+        /// <summary>Collection of all available tips provided by connected peers.</summary>
         private readonly Dictionary<int, ChainedBlock> availableTips;
 
+        /// <summary>Cancellation source.</summary>
         private readonly CancellationTokenSource cancellation;
         
         /// <summary>Information about node's chain.</summary>
@@ -40,7 +45,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>
         /// Creates new instance of <see cref="BestChainSelector"/>
         /// </summary>
-        /// <param name="chain">TODO</param>
+        /// <param name="chain">Thread safe class representing a chain of headers from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public BestChainSelector(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory)
@@ -53,8 +58,6 @@ namespace Stratis.Bitcoin.Base
             this.availableTips = new Dictionary<int, ChainedBlock>();
             this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>();
             this.cancellation = new CancellationTokenSource();
-
-            //TODO add logging
         }
 
         public void Initialize()
@@ -81,11 +84,19 @@ namespace Stratis.Bitcoin.Base
 
                     lock (this.lockObject)
                     {
-                        // Find best tip from available ones.
-                        ChainedBlock bestTip = this.availableTips.Aggregate((item1, item2) => item1.Value.ChainWork > item2.Value.ChainWork ? item1 : item2).Value;
-                        
-                        if (this.chain.Tip != bestTip)
-                            this.chain.SetTip(bestTip);
+                        if (this.availableTips.Count > 0)
+                        {
+                            // Find best tip from available ones.
+                            ChainedBlock bestTip = this.availableTips.Aggregate((item1, item2) => item1.Value.ChainWork > item2.Value.ChainWork ? item1 : item2).Value;
+
+                            if (this.chain.Tip != bestTip)
+                                this.chain.SetTip(bestTip);
+                        }
+                        else
+                        {
+                            // There are no available tips, switch to the consensus tip. 
+                            this.chain.SetTip(this.chainState.ConsensusTip);
+                        }
                     }
                 }
             });
@@ -155,7 +166,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// Removes tip assiciated with the provided peer connection ID.
+        /// Removes tip associated with the provided peer connection ID.
         /// </summary>
         /// <param name="peerConnectionId">The peer connection id.</param>
         public void RemoveAvailableTip(int peerConnectionId)
