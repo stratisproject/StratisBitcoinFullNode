@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
     public partial class ReOrgRegularlySpecification : BddSpecification
     {
         [Fact]
-        public void A_selfishly_mining_node_broadcasts_every_20_blocks_causing_reorg()
+        public void A_selfishly_mining_node_broadcasts_longer_chain_causing_reorg()
         {
             Given(four_nodes);
             And(each_mine_a_blocks);
