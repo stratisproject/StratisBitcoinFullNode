@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
+using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public static void Main(string[] args)
         {
             RunAllTestsOf<WalletTests>();
+            RunAllTestsOf<WalletTestsManyTxnInputsAndOutputsSpecification>();
             RunAllTestsOf<NodeSyncTests>();
         }
 
