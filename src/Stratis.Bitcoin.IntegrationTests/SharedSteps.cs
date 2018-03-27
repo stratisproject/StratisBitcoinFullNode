@@ -43,32 +43,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.WaitForBlockStoreToSync(node);
 
-            var rewardCoinCount = this.GetRewardCoins(node.FullNode.Chain.Height, blockCount, 0);
-
-
+            var rewardCoinCount = blockCount * Money.COIN * 50;
             
             balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
-        }
-
-        private long GetRewardCoins(int currentHeight, int blockCount, long currentTotalCoin)
-        {
-            int halvingInterval = Network.RegTest.Consensus.SubsidyHalvingInterval;
-            long reward = 50 * Money.COIN;
-
-            var maxBlocksAtThisReward = currentHeight;
-            while (maxBlocksAtThisReward > halvingInterval)
-            {
-                reward = reward / 2;
-                maxBlocksAtThisReward = maxBlocksAtThisReward - halvingInterval;
-            }
-
-            var coinsAtThisRewardLevel = Math.Min(maxBlocksAtThisReward, blockCount) * reward;
-            currentTotalCoin += coinsAtThisRewardLevel;
-
-            if (Math.Min(maxBlocksAtThisReward, blockCount) == blockCount)
-                return currentTotalCoin;
-
-            return GetRewardCoins(currentHeight - halvingInterval, blockCount - halvingInterval, currentTotalCoin);
         }
 
         public void WaitForBlockStoreToSync(params CoreNode[] nodes)
