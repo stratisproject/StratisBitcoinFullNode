@@ -22,17 +22,17 @@ namespace Stratis.SmartContracts
         public ulong Balance { get { return this.getBalance(); } }
 
         /// <summary>
-        /// TODO: Add documentation
+        /// Holds details about the current block.
         /// </summary>
         protected readonly Block Block;
 
         /// <summary>
-        /// TODO: Add documentation
+        /// Holds details about the current transaction that has been sent.
         /// </summary>
         protected readonly Message Message;
 
         /// <summary>
-        /// TODO: Add documentation
+        ///  Provides functionality for the saving and retrieval of objects inside smart contracts.
         /// </summary>
         protected readonly IPersistentState PersistentState;
 
