@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.keySender = walletSender.GetExtendedPrivateKeyForAddress(WalletPassword, addrSender).PrivateKey;
         }
 
-        private void a_block_is_minded()
+        private void a_block_is_mined()
         {
             this.stratisSender.SetDummyMinerSecret(new BitcoinSecret(this.keySender, this.stratisSender.FullNode.Network));
             this.CoinBaseMaturity = (int)this.stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
