@@ -85,6 +85,9 @@ namespace Stratis.Bitcoin.Base
 
         public bool InvalidHeaderReceived { get; private set; }
 
+        /// <summary>Selects the best available chain based on Tips provided by the peers and switches to it.</summary>
+        private readonly BestChainSelector bestChainSelector;
+
         /// <summary>
         /// Initializes an instanse of the object.
         /// </summary>
@@ -92,7 +95,8 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
+        /// <param name="bestChainSelector">Selects the best available chain based on Tips provided by the peers and switches to it.</param>
+        public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, BestChainSelector bestChainSelector, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
 
@@ -100,6 +104,7 @@ namespace Stratis.Bitcoin.Base
             this.chain = chain;
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
+            this.bestChainSelector = bestChainSelector;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
 
             this.AutoSync = true;
@@ -143,6 +148,8 @@ namespace Stratis.Bitcoin.Base
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
+
+            this.bestChainSelector.RemoveAvailableTip(this.AttachedPeer.Connection.Id);
 
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
@@ -400,6 +407,8 @@ namespace Stratis.Bitcoin.Base
             {
                 // This allows garbage collection to collect the duplicated pendingTip and ancestors.
                 this.pendingTip = chainedPendingTip;
+
+                this.bestChainSelector.SetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip);
             }
 
             // If we made any advancement or the sync is enforced by 'doTrySync'- continue syncing.
@@ -494,7 +503,7 @@ namespace Stratis.Bitcoin.Base
 
         public override object Clone()
         {
-            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.loggerFactory)
+            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory)
             {
                 CanSync = this.CanSync,
                 CanRespondToGetHeaders = this.CanRespondToGetHeaders,

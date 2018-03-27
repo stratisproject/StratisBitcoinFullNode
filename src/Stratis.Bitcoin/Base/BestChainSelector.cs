@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -54,11 +52,18 @@ namespace Stratis.Bitcoin.Base
             {
                 while (!this.cancellation.IsCancellationRequested)
                 {
-                    // tip or a peer that was disconnected
-                    ChainedBlock tip = await this.unavailableTipsProcessingQueue.DequeueAsync().ConfigureAwait(false);
+                    try
+                    {
+                        // tip or a peer that was disconnected
+                        ChainedBlock tip = await this.unavailableTipsProcessingQueue.DequeueAsync(this.cancellation.Token).ConfigureAwait(false);
 
-                    if (tip != this.chain.Tip)
+                        if (tip != this.chain.Tip)
+                            continue;
+                    }
+                    catch (OperationCanceledException)
+                    {
                         continue;
+                    }
 
                     lock (this.lockObject)
                     {
