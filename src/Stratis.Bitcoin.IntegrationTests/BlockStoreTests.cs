@@ -147,9 +147,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
-                var stratisNode1 = builder.CreateStratisBitcoinPowNode();
-                var stratisNode2 = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
+                var stratisNode1 = builder.CreateBitcoinPowNode();
+                var stratisNode2 = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // stop the node it will persist the chain with the reset tip
                 stratisNodeSync.FullNode.Dispose();
 
-                var newNodeInstance = builder.CloneStratisBitcoinPowNode(stratisNodeSync);
+                var newNodeInstance = builder.CloneBitcoinPowNode(stratisNodeSync);
 
                 // load the node, this should hit the block store recover code
                 newNodeInstance.Start();
@@ -221,9 +221,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
-                var stratisNode1 = builder.CreateStratisBitcoinPowNode();
-                var stratisNode2 = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
+                var stratisNode1 = builder.CreateBitcoinPowNode();
+                var stratisNode2 = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
@@ -274,8 +274,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode1 = builder.CreateStratisBitcoinPowNode();
-                var stratisNode2 = builder.CreateStratisBitcoinPowNode();
+                var stratisNode1 = builder.CreateBitcoinPowNode();
+                var stratisNode2 = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNode1.NotInIBD();
                 stratisNode2.NotInIBD();

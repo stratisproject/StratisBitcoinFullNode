@@ -154,9 +154,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class StratisBitcoinPowRunner : NodeRunner
+    public sealed class BitcoinPowRunner : NodeRunner
     {
-        public StratisBitcoinPowRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
+        public BitcoinPowRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
             : base(skipRules, callback)
         {
         }

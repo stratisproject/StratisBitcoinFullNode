@@ -237,14 +237,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return node;
         }
 
-        public CoreNode CreateBitcoinNode(bool start = false)
+        public CoreNode CreateBitcoinCoreNode(bool start = false)
         {
             return CreateNode(new BitcoinCoreRunner(this.BitcoinD), Network.RegTest, start);
         }
 
-        public CoreNode CreateStratisBitcoinPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateBitcoinPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
-            return CreateNode(new StratisBitcoinPowRunner(this.skipRules, callback), Network.RegTest, start);
+            return CreateNode(new BitcoinPowRunner(this.skipRules, callback), Network.RegTest, start);
         }
 
         public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
@@ -257,9 +257,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return CreateNode(new StratisPosRunner(this.skipRules, callback), Network.StratisRegTest, start, "stratis.conf");
         }
 
-        public CoreNode CloneStratisBitcoinPowNode(CoreNode cloneNode)
+        public CoreNode CloneBitcoinPowNode(CoreNode cloneNode)
         {
-            var node = new CoreNode(cloneNode.Folder, new StratisBitcoinPowRunner(false), this, Network.RegTest, false);
+            var node = new CoreNode(cloneNode.Folder, new BitcoinPowRunner(false), this, Network.RegTest, false);
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode node = builder.CreateBitcoinNode();
+                CoreNode node = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
                 RPCClient rpcClient = node.CreateRPCClient();
@@ -42,8 +42,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode nodeA = builder.CreateBitcoinNode();
-                CoreNode nodeB = builder.CreateBitcoinNode();
+                CoreNode nodeA = builder.CreateBitcoinCoreNode();
+                CoreNode nodeB = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 rpc.RemoveNode(nodeA.Endpoint);

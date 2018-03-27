@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNodeSync.FullNode.Settings.RequireStandard = true; // make sure to test standard tx
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisBitcoinPowNode();
+                var stratisNode = builder.CreateBitcoinPowNode();
                 builder.StartAll();
 
                 stratisNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode.FullNode.Network));
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -328,9 +328,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisBitcoinPowNode();
-                var stratisNode1 = builder.CreateStratisBitcoinPowNode();
-                var stratisNode2 = builder.CreateStratisBitcoinPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
+                var stratisNode1 = builder.CreateBitcoinPowNode();
+                var stratisNode2 = builder.CreateBitcoinPowNode();
                 builder.StartAll();
 
                 stratisNodeSync.NotInIBD();
