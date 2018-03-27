@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Base
 {
     /// <summary>
-    /// Selects the best available chain based on Tips provided by the peers and switches to it.
+    /// Selects the best available chain based on tips provided by the peers and switches to it.
     /// </summary>
     /// <remarks>
     /// When a peer that provided the best chain is disconnected we select the best chain that is backed by one of the connected

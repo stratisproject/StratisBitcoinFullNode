@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Base
 
         public bool InvalidHeaderReceived { get; private set; }
 
-        /// <summary>Selects the best available chain based on Tips provided by the peers and switches to it.</summary>
+        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
         private readonly BestChainSelector bestChainSelector;
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        /// <param name="bestChainSelector">Selects the best available chain based on Tips provided by the peers and switches to it.</param>
+        /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
         public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, BestChainSelector bestChainSelector, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
@@ -368,12 +368,9 @@ namespace Stratis.Bitcoin.Base
             if (pendingTipBefore != this.pendingTip)
                 this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-            if (this.pendingTip != null)
-            {
-                if (!this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip))
-                    this.InvalidHeaderReceived = true;
-            }
-
+            if ((this.pendingTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip))
+                this.InvalidHeaderReceived = true;
+            
             ChainedBlock chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
             if (chainedPendingTip != null)
             {

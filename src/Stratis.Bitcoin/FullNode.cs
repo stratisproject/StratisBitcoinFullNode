@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
 
-        /// <summary>Selects the best available chain based on Tips provided by the peers and switches to it.</summary>
+        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
         private BestChainSelector bestChainSelector;
 
         /// <summary>Best chain of block headers from genesis.</summary>

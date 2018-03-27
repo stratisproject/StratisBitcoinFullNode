@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
-        /// <summary>Selects the best available chain based on Tips provided by the peers and switches to it.</summary>
+        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
         private readonly BestChainSelector bestChainSelector;
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        /// <param name="bestChainSelector">Selects the best available chain based on Tips provided by the peers and switches to it.</param>
+        /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
