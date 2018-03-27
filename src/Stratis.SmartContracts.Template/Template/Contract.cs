@@ -19,7 +19,8 @@ public class SimpleAuction : SmartContract
         }
     }
 
-    public ulong AuctionEndBlock {
+    public ulong AuctionEndBlock
+    {
         get
         {
             return PersistentState.GetObject<ulong>("AuctionEndBlock");
