@@ -272,15 +272,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var trx = stratisReceiver.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
                 Assert.Equal(50, trx.Inputs.Count);
 
-                //// Sync both nodes.
-                //stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
-                //TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisSender, stratisReceiver));
-
                 // Broadcast
                 stratisReceiver.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
 
                 // Wait for the trx to arrive
-                TestHelper.WaitLoop(() => stratisSender.CreateRPCClient().GetRawMempool().Length > 0);
                 TestHelper.WaitLoop(() => stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any());
 
                 long receivetotal = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
@@ -290,7 +285,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisSender, stratisReceiver));
 
-                TestHelper.WaitLoop(() => maturity + 6 == stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
+                TestHelper.WaitLoop(() => 3 == stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
             }
         }
 
