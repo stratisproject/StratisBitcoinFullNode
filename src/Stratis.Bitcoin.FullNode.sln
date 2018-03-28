@@ -107,6 +107,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Temp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.TemplateVSIX", "Stratis.SmartContracts.TemplateVSIX\Stratis.SmartContracts.TemplateVSIX.csproj", "{904931EE-66E1-42D6-916F-F6CA0771D852}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Standards", "Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj", "{3F9CF095-4F65-4185-936A-6126F7269E93}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -277,6 +279,10 @@ Global
 		{904931EE-66E1-42D6-916F-F6CA0771D852}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{904931EE-66E1-42D6-916F-F6CA0771D852}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{904931EE-66E1-42D6-916F-F6CA0771D852}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -317,6 +323,7 @@ Global
 		{BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{23A4582D-D384-4529-929B-DD2C347DF283} = {BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}
 		{904931EE-66E1-42D6-916F-F6CA0771D852} = {BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}
+		{3F9CF095-4F65-4185-936A-6126F7269E93} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}
