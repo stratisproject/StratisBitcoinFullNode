@@ -154,9 +154,9 @@ namespace NBitcoin
                     this.SetTipLocked(block);
                     return true;
                 }
-                else
-                    return false;
             }
+
+            return false;
         }
 
         private ChainedBlock SetTipLocked(ChainedBlock block)

@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Base
         private readonly ILogger logger;
 
         /// <summary>
-        /// Creates new instance of <see cref="BestChainSelector"/>
+        /// Creates new instance of <see cref="BestChainSelector"/>.
         /// </summary>
         /// <param name="chain">Thread safe class representing a chain of headers from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
@@ -51,49 +51,50 @@ namespace Stratis.Bitcoin.Base
             this.lockObject = new object();
             this.availableTips = new Dictionary<int, ChainedBlock>();
 
-            this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>((tip, token) =>
+            this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>(this.OnEnqueueAsync);
+        }
+
+        private Task OnEnqueueAsync(ChainedBlock tip, CancellationToken cancellationToken)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
+
+            // Ignore it if it wasn't the best chain's tip.
+            if (tip != this.chain.Tip)
             {
-                this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
+                this.logger.LogTrace("(-)[NOT_BEST_CHAIN_TIP]");
+                return Task.CompletedTask;
+            }
 
-                // Ignore it if it wasn't the best chain's tip.
-                if (tip != this.chain.Tip)
+            lock (this.lockObject)
+            {
+                // If better tip is not found consensus tip should be used.
+                ChainedBlock bestTip = this.chainState.ConsensusTip;
+
+                // Find best tip from available ones.
+                foreach (ChainedBlock availableTip in this.availableTips.Values)
                 {
-                    this.logger.LogTrace("(-)[NOT_BEST_CHAIN_TIP]");
-                    return Task.CompletedTask;
-                }
-
-                lock (this.lockObject)
-                {
-                    // If better tip is not found consensus tip should be used.
-                    ChainedBlock bestTip = this.chainState.ConsensusTip;
-
-                    // Find best tip from available ones.
-                    foreach (ChainedBlock availableTip in this.availableTips.Values)
+                    if (availableTip == this.chain.Tip)
                     {
-                        if (availableTip == this.chain.Tip)
-                        {
-                            // Do nothing if there is at least one available tip that is equal to the best chain's tip. 
-                            this.logger.LogTrace("(-)[EQUIVALENT_TIP_FOUND]");
-
-                            return Task.CompletedTask;
-                        }
-
-                        if (bestTip.ChainWork < availableTip.ChainWork)
-                            bestTip = availableTip;
+                        // Do nothing if there is at least one available tip that is equal to the best chain's tip. 
+                        this.logger.LogTrace("(-)[EQUIVALENT_TIP_FOUND]");
+                        return Task.CompletedTask;
                     }
 
-                    this.chain.SetTip(bestTip);
+                    if ((bestTip.ChainWork < availableTip.ChainWork) && !this.IsMaxReorgRuleViolated(availableTip))
+                        bestTip = availableTip;
                 }
 
-                this.logger.LogTrace("(-)");
-                return Task.CompletedTask;
-            });
+                this.chain.SetTip(bestTip);
+            }
+
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Sets available tip if it doesn't violate the max reorg protection rule.
         /// </summary>
-        /// <param name="peerConnectionId">The peer connection id.</param>
+        /// <param name="peerConnectionId">Unique ID of the peer's connection.</param>
         /// <param name="tip">The tip.</param>
         /// <returns>
         /// <c>true</c> if the tip was added to the available tips collection, 
@@ -102,63 +103,67 @@ namespace Stratis.Bitcoin.Base
         public bool TrySetAvailableTip(int peerConnectionId, ChainedBlock tip)
         {
             Guard.NotNull(tip, nameof(tip));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peerConnectionId), peerConnectionId, nameof(tip), tip);
-
-            bool switchToNewTip = false;
-
-            if (tip.ChainWork > this.chain.Tip.ChainWork)
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(peerConnectionId), peerConnectionId, nameof(tip), tip);
+            
+            if (this.IsMaxReorgRuleViolated(tip))
             {
-                // Long reorganization protection on POS networks.
-                switchToNewTip = true;
-                uint maxReorgLength = this.chainState.MaxReorgLength;
-                ChainedBlock consensusTip = this.chainState.ConsensusTip;
-                if ((maxReorgLength != 0) && (consensusTip != null))
-                {
-                    ChainedBlock fork = tip.FindFork(consensusTip);
-
-                    if ((fork != null) && (fork != consensusTip))
-                    {
-                        int reorgLength = consensusTip.Height - fork.Height;
-
-                        if (reorgLength > maxReorgLength)
-                        {
-                            this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                            this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
-                            return false;
-                        }
-                        else
-                            this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
-                    }
-                }
+                this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]:false");
+                return false;
             }
-
+            
             lock (this.lockObject)
             {
-                if (switchToNewTip)
+                if (this.chain.SetTipIfChainworkIsGreater(tip))
                 {
                     this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", tip, tip.ChainWork);
 
-                    if (this.chain.SetTipIfChainworkIsGreater(tip))
-                    {
-                        // This allows garbage collection to collect the duplicated pendingTip and ancestors.
-                        ChainedBlock chainedTip = this.chain.GetBlock(tip.HashBlock);
-
-                        if (chainedTip != null)
-                            tip = chainedTip;
-                    }
+                    // This allows garbage collection to collect the duplicated pendingTip and ancestors.
+                    tip = this.chain.GetBlock(tip.HashBlock) ?? tip;
                 }
 
                 this.availableTips.AddOrReplace(peerConnectionId, tip);
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):true");
             return true;
+        }
+
+        /// <summary>Checks if <paramref name="tip"/> violates the max reorg rule for POS networks.</summary>
+        /// <param name="tip">The tip.</param>
+        /// <returns><c>true</c> if maximum reorg rule violated, <c>false</c> otherwise.</returns>
+        private bool IsMaxReorgRuleViolated(ChainedBlock tip)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
+
+            uint maxReorgLength = this.chainState.MaxReorgLength;
+            ChainedBlock consensusTip = this.chainState.ConsensusTip;
+            if ((maxReorgLength != 0) && (consensusTip != null))
+            {
+                ChainedBlock fork = tip.FindFork(consensusTip);
+
+                if ((fork != null) && (fork != consensusTip))
+                {
+                    int reorgLength = consensusTip.Height - fork.Height;
+
+                    if (reorgLength > maxReorgLength)
+                    {
+                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
+                        this.logger.LogTrace("(-):true");
+                        return true;
+                    }
+                    else
+                        this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+                }
+            }
+
+            this.logger.LogTrace("(-):false");
+            return false;
         }
 
         /// <summary>
         /// Removes tip associated with the provided peer connection ID.
         /// </summary>
-        /// <param name="peerConnectionId">The peer connection id.</param>
+        /// <param name="peerConnectionId">Unique ID of the peer's connection.</param>
         public void RemoveAvailableTip(int peerConnectionId)
         {
             this.logger.LogTrace("()");
