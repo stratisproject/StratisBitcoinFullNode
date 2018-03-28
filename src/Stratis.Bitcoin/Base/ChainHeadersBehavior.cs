@@ -149,10 +149,10 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.bestChainSelector.RemoveAvailableTip(this.AttachedPeer.Connection.Id);
-
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+            
+            this.bestChainSelector.RemoveAvailableTip(this.AttachedPeer.Connection.Id);
 
             this.logger.LogTrace("(-)");
         }
