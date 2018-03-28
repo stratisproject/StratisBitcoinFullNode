@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using FluentAssertions.Common;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
@@ -137,9 +138,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void transaction_is_returned_to_the_mem_pool()
         {
-            var transaction = this.fourthNode.FullNode.MempoolManager().GetTransaction(this.secondNodeTransaction.GetHash()).GetAwaiter().GetResult();
-            transaction.Should().NotBeNull();
-            transaction.GetHash().Should().Be(this.secondNodeTransaction.GetHash());
+            this.fourthNode.CreateRPCClient().GetRawMempool()
+                .Should().ContainSingle()
+                .Which.IsSameOrEqualTo(this.secondNodeTransaction.GetHash());
         }
 
         private void mining_continues_to_maturity_to_allow_spend()
