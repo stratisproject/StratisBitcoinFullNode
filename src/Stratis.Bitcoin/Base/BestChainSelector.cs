@@ -61,15 +61,15 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
 
-            // Ignore it if it wasn't the best chain's tip.
-            if (tip != this.chain.Tip)
-            {
-                this.logger.LogTrace("(-)[NOT_BEST_CHAIN_TIP]");
-                return Task.CompletedTask;
-            }
-
             lock (this.lockObject)
             {
+                // Ignore it if it wasn't the best chain's tip.
+                if (tip != this.chain.Tip)
+                {
+                    this.logger.LogTrace("(-)[NOT_BEST_CHAIN_TIP]");
+                    return Task.CompletedTask;
+                }
+
                 // If better tip is not found consensus tip should be used.
                 ChainedBlock bestTip = this.chainState.ConsensusTip;
 
