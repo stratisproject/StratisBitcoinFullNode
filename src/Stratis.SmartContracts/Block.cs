@@ -5,7 +5,7 @@
     /// </summary>
     public struct Block
     {
-        internal Block(ulong number, Address coinbase)
+        public Block(ulong number, Address coinbase)
         {
             this.Number = number;
             this.Coinbase = coinbase;

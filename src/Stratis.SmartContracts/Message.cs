@@ -25,7 +25,7 @@
         /// </summary>
         public ulong Value { get; }
 
-        internal Message(Address contractAddress, Address sender, ulong value, Gas gasLimit)
+        public Message(Address contractAddress, Address sender, ulong value, Gas gasLimit)
         {
             this.ContractAddress = contractAddress;
             this.Sender = sender;
