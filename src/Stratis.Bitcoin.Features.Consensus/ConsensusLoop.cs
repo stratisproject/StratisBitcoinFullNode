@@ -231,6 +231,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // chain will never know if a reorg happened.
                 utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
+
+            this.Chain.SetTip(this.Tip);
+
             this.Puller.SetLocation(this.Tip);
 
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async (token) =>

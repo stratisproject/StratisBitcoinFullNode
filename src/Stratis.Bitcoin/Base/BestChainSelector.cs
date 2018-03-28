@@ -54,6 +54,9 @@ namespace Stratis.Bitcoin.Base
             this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>(this.OnEnqueueAsync);
         }
 
+        /// <summary>Called when peer disconnects.</summary>
+        /// <param name="tip">Tip that used to belong to a disconnected peer.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         private Task OnEnqueueAsync(ChainedBlock tip, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
@@ -80,6 +83,8 @@ namespace Stratis.Bitcoin.Base
                         return Task.CompletedTask;
                     }
 
+                    // We need to check max reorg here again because it is possible that since the last check our tip has advanced and now 
+                    // available tip claims a reorg of length that is longer than maximum allowed.
                     if ((bestTip.ChainWork < availableTip.ChainWork) && !this.IsMaxReorgRuleViolated(availableTip))
                         bestTip = availableTip;
                 }
@@ -117,7 +122,7 @@ namespace Stratis.Bitcoin.Base
                 {
                     this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", tip, tip.ChainWork);
 
-                    // This allows garbage collection to collect the duplicated pendingTip and ancestors.
+                    // This allows garbage collection to collect the duplicated tip and it's ancestors.
                     tip = this.chain.GetBlock(tip.HashBlock) ?? tip;
                 }
 
@@ -151,8 +156,8 @@ namespace Stratis.Bitcoin.Base
                         this.logger.LogTrace("(-):true");
                         return true;
                     }
-                    else
-                        this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+
+                    this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                 }
             }
 
@@ -166,7 +171,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="peerConnectionId">Unique ID of the peer's connection.</param>
         public void RemoveAvailableTip(int peerConnectionId)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(peerConnectionId), peerConnectionId);
 
             lock (this.lockObject)
             {
@@ -174,6 +179,8 @@ namespace Stratis.Bitcoin.Base
                 {
                     this.availableTips.Remove(peerConnectionId);
                     this.unavailableTipsProcessingQueue.Enqueue(tip);
+
+                    this.logger.LogTrace("Available tip '{0}' for peer connection id {1} was removed.", tip, peerConnectionId);
                 }
             }
 
@@ -186,10 +193,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
             
             this.unavailableTipsProcessingQueue.Dispose();
-
-            // Switch to the consensus tip. 
-            this.chain.SetTip(this.chainState.ConsensusTip);
-
+            
             this.logger.LogTrace("(-)");
         }
     }
