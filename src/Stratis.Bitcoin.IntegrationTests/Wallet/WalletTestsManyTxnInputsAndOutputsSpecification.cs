@@ -9,7 +9,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             Given(a_stratis_sender_and_receiver_node_and_their_wallets);
             And(a_block_is_mined);
-            Then(many_transaction_inputs_go_to_the_sender);
+            When(a_transaction_is_sent_to_receiver_via_fifty_outputs);
+            Then(the_transaction_is_recevied);
         }
 
         [Fact]
@@ -17,9 +18,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             Given(a_stratis_sender_and_receiver_node_and_their_wallets);
             And(a_block_is_mined);
-            When(many_transaction_inputs_go_to_the_sender);
-            When(many_transaction_outputs_go_back_to_the_receiver);
-            Then(the_receiver_has_many_inputs);
+            When(a_transaction_is_sent_to_receiver_via_fifty_outputs);
+            And(the_transaction_is_recevied);
+            Then(the_recevier_sends_back_a_transaction_using_all_the_outputs);
         }
     }
 }
