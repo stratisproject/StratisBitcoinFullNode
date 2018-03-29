@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.Wallet.Tests;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void RunAsync_DoNotSkipValidation_BlockAssumedValidSetOnConsensus_BlockLowerThanAssumedValidHeight_SetSkipValidation()
         {
-            this.concurrentChain = WalletTestsHelpers.GenerateChainWithHeight(15, this.network);
+            this.concurrentChain = GenerateChainWithHeight(15, this.network);
             this.consensusSettings.BlockAssumedValid = this.concurrentChain.GetBlock(10).HashBlock;
 
             this.consensusRules = this.InitializeConsensusRules();
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void RunAsync_DoNotSkipValidation_BlockAssumedValidSetOnConsensus_BlockEqualToThanAssumedValidHeight_SetSkipValidation()
         {
-            this.concurrentChain = WalletTestsHelpers.GenerateChainWithHeight(15, this.network);
+            this.concurrentChain = GenerateChainWithHeight(15, this.network);
             this.consensusSettings.BlockAssumedValid = this.concurrentChain.GetBlock(10).HashBlock;
 
             this.consensusRules = this.InitializeConsensusRules();
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void RunAsync_DoNotSkipValidation_BlockAssumedValidSetOnConsensus_BlockHigherThanAssumedValidHeight_DoesNotSetSkipValidation()
         {
-            this.concurrentChain = WalletTestsHelpers.GenerateChainWithHeight(15, this.network);
+            this.concurrentChain = GenerateChainWithHeight(15, this.network);
             this.consensusSettings.BlockAssumedValid = this.concurrentChain.GetBlock(3).HashBlock;
 
             this.consensusRules = this.InitializeConsensusRules();
@@ -134,6 +134,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(rule.RunAsync(ruleContext).GetAwaiter().IsCompleted);
             Assert.False(ruleContext.SkipValidation);
+        }
+
+        private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
+        {
+            var chain = new ConcurrentChain(network);
+            var nonce = RandomUtils.GetUInt32();
+            var prevBlockHash = chain.Genesis.HashBlock;
+            for (var i = 0; i < blockAmount; i++)
+            {
+                var block = new Block();
+                block.AddTransaction(new Transaction());
+                block.UpdateMerkleRoot();
+                block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
+                block.Header.HashPrevBlock = prevBlockHash;
+                block.Header.Nonce = nonce;
+                chain.SetTip(block.Header);
+                prevBlockHash = block.GetHash();
+            }
+
+            return chain;
         }
     }
 }

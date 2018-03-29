@@ -42,8 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             CoinView current = this.Top;
             while (current is IBackedCoinView)
             {
-                if (current != null)
-                    yield return current;
+                yield return current;
 
                 current = ((IBackedCoinView)current).Inner;
             }

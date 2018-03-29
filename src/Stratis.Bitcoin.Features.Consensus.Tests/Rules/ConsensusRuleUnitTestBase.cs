@@ -39,11 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.concurrentChain = new ConcurrentChain(this.network);
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.consensusSettings = new ConsensusSettings
-            {
-                BlockAssumedValid = null,
-                UseCheckpoints = true
-            };
+            this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
 
             this.ruleRegistrations = new List<ConsensusRule>();
