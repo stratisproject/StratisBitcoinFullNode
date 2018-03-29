@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         public void A_selfishly_mining_node_broadcasts_longer_chain_causing_reorg()
         {
             Given(four_nodes);
-            And(each_mine_a_blocks);
+            And(each_mine_a_block);
             And(mining_continues_to_maturity_to_allow_spend);
             And(selfish_miner_disconnects_and_mines_10_blocks);
             And(second_node_creates_a_transaction_and_broadcasts);
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             When(selfish_node_reconnects_and_broadcasts);
             Then(second_third_and_fourth_node_reorg_to_longest_chain);
             And(transaction_from_shorter_chain_is_missing);
-            // And(transaction_is_returned_to_the_mem_pool); // TODO: not implemented in the production code yet
+            And(transaction_is_NOT_YET_returned_to_the_mem_pool);
         }
     }
 }

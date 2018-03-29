@@ -5,26 +5,21 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
 {
     public abstract class BddSpecification : IDisposable
     {
-        protected readonly ITestOutputHelper output;
-        private DateTime startOfTestTime;
-        private DateTime endOfTestTime;
+        private readonly ITestOutputHelper output;
+        private readonly DateTime startOfTestTime;
 
-        protected BddSpecification()
-        {
-            this.startOfTestTime = DateTime.UtcNow;
-            this.BeforeTest();
-        }
-
-        protected BddSpecification(ITestOutputHelper output) : this()
+        protected BddSpecification(ITestOutputHelper output)
         {
             this.output = output;
+            this.startOfTestTime = DateTime.UtcNow;
+            this.BeforeTest();
         }
 
         public void Dispose()
         {
             this.AfterTest();
-            this.endOfTestTime = DateTime.UtcNow;
-            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(this.endOfTestTime-this.startOfTestTime).TotalSeconds} seconds.]");
+            var endOfTestTime = DateTime.UtcNow;
+            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
         }
 
         protected abstract void BeforeTest();

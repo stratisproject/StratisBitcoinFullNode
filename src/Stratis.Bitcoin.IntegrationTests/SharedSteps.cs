@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -9,25 +8,27 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SharedSteps
     {
-        public static TransactionBuildContext CreateTransactionBuildContext(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        public static TransactionBuildContext CreateTransactionBuildContext(string sendingWalletName, string sendingAccountName, string sendingPassword, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
-            return new TransactionBuildContext(accountReference,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
+            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName),
+                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), sendingPassword)
             {
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
             };
         }
 
-        public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, int expectedFees = 0)
+        public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
         {
             this.WaitForBlockStoreToSync(node);
 
+            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
+
             var balanceBeforeMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
+                .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
             var wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
             var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
 
@@ -37,6 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var balanceAfterMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
+                .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
             var balanceIncrease = balanceAfterMining - balanceBeforeMining;
