@@ -11,23 +11,25 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractTransactionExecutorTests
+    public sealed class SmartContractExecutorTests
     {
         private readonly SmartContractDecompiler decompiler;
         private readonly ISmartContractGasInjector gasInjector;
-        private readonly ContractStateRepositoryRoot stateRepository;
         private readonly Network network;
+        private readonly IContractStateRepository state;
+        private readonly SmartContractValidator validator;
 
-        public SmartContractTransactionExecutorTests()
+        public SmartContractExecutorTests()
         {
             this.decompiler = new SmartContractDecompiler();
             this.gasInjector = new SmartContractGasInjector();
-            this.stateRepository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource())); ;
             this.network = Network.SmartContractsRegTest;
+            this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
         }
 
         [Fact]
-        public void ExecuteCallContract_Fails_ReturnFundsToSender()
+        public void SME_CallContract_Fails_ReturnFundsToSender()
         {
             //Get the contract execution code------------------------
             byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowSystemExceptionContract.cs");
@@ -50,9 +52,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             deserializedCall.Sender = senderAddress;
             //-------------------------------------------------------
 
-            this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
+            this.state.SetCode(new uint160(1), contractExecutionCode);
 
-            var executor = SmartContractExecutor.InitializeForBlockAssembler(deserializedCall, this.decompiler, this.gasInjector, new Money(10000), this.network, this.stateRepository, new SmartContractValidator(new ISmartContractValidator[] { }));
+            SmartContractExecutor executor = SmartContractExecutor.InitializeForBlockAssembler(deserializedCall, this.decompiler, this.gasInjector, new Money(10000), this.network, this.state, new SmartContractValidator(new ISmartContractValidator[] { }));
             ISmartContractExecutionResult result = executor.Execute(0, deserializedCall.ContractAddress);
 
             Assert.True(result.Revert);
@@ -65,8 +67,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(100, result.InternalTransactions[0].Outputs[0].Value);
         }
 
-        [Fact]
-        public void ExecuteCreateContract_ValidationFails_RefundGas_MempoolFeeLessGas()
+        //[Fact]
+        public void SME_CreateContract_ValidationFails_RefundGas_MempoolFeeLessGas()
         {
             //Get the contract execution code------------------------
             byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractFailsValidation.cs");
@@ -89,10 +91,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             deserializedCreate.Sender = senderAddress;
             //-------------------------------------------------------
 
-            this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
+            this.state.SetCode(new uint160(1), contractExecutionCode);
             var validator = new SmartContractValidator(new ISmartContractValidator[] { new SmartContractDeterminismValidator() });
 
-            var executor = SmartContractExecutor.InitializeForBlockAssembler(deserializedCreate, this.decompiler, this.gasInjector, new Money(10000), this.network, this.stateRepository, validator);
+            SmartContractExecutor executor = SmartContractExecutor.InitializeForBlockAssembler(deserializedCreate, this.decompiler, this.gasInjector, new Money(10000), this.network, this.state, validator);
             ISmartContractExecutionResult result = executor.Execute(0, deserializedCreate.GetNewContractAddress());
 
             Assert.True(result.Revert);
@@ -102,15 +104,79 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Executor_Contract_DoesNotExist_Refund()
+        public void SME_CallContract_DoesNotExist_Refund()
         {
             var state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             var toAddress = new uint160(1);
-            var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)100);
+            var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)10000);
 
             var executor = new CallSmartContract(carrier, this.decompiler, this.gasInjector, this.network, state, new SmartContractValidator(new ISmartContractValidator[] { }));
             ISmartContractExecutionResult result = executor.Execute(0, toAddress);
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
+        }
+
+        [Fact]
+        public void SME_CreateContract_ConstructorFails_Refund()
+        {
+            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractConstructorInvalid.cs");
+
+            var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
+            var tx = new Transaction();
+            TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
+            var deserialized = SmartContractCarrier.Deserialize(tx, txOut);
+            deserialized.Sender = new uint160(2);
+
+            var executor = SmartContractExecutor.InitializeForBlockAssembler(deserialized, this.decompiler, this.gasInjector, new Money(10000), this.network, this.state, this.validator);
+            ISmartContractExecutionResult result = executor.Execute(0, new uint160(1));
+
+            Assert.NotNull(result.Exception);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void SME_CreateContract_MethodParameters_InvalidParameterCount()
+        {
+            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractInvalidParameterCount.cs");
+
+            string[] methodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 5),
+            };
+
+            SmartContractCarrier carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
+            var tx = new Transaction();
+            TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
+            var deserialized = SmartContractCarrier.Deserialize(tx, txOut);
+            deserialized.Sender = new uint160(2);
+
+            var executor = SmartContractExecutor.InitializeForBlockAssembler(deserialized, this.decompiler, this.gasInjector, new Money(10000), this.network, this.state, this.validator);
+            ISmartContractExecutionResult result = executor.Execute(0, new uint160(1));
+
+            Assert.NotNull(result.Exception);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void SME_CreateContract_MethodParameters_ParameterTypeMismatch()
+        {
+            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractMethodParameterTypeMismatch.cs");
+
+            string[] methodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
+            };
+
+            var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
+            var tx = new Transaction();
+            TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
+            var deserialized = SmartContractCarrier.Deserialize(tx, txOut);
+            deserialized.Sender = new uint160(2);
+
+            var executor = SmartContractExecutor.InitializeForBlockAssembler(deserialized, this.decompiler, this.gasInjector, new Money(10000), this.network, this.state, this.validator);
+            ISmartContractExecutionResult result = executor.Execute(0, new uint160(1));
+
+            Assert.NotNull(result.Exception);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
     }
 }

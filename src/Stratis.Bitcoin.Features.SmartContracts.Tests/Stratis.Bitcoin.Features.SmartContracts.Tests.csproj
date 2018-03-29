@@ -24,7 +24,7 @@
     <Compile Update="SmartContracts\ContractMethodParameterTypeMismatch.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="SmartContracts\ContractMethodParametersUnresolved.cs">
+    <Compile Update="SmartContracts\ContractInvalidParameterCount.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\Demo.cs">

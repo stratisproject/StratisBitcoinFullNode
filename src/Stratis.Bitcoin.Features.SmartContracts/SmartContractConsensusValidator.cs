@@ -201,16 +201,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 return;
             }
 
-            TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-            // boring transaction, return
-            if (contractTxOut == null)
+            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            if (smartContractTxOut == null)
                 return;
 
             // if it's a condensing transaction, need to ensure it's identical 
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
-            //IContractStateRepository track = trackedState.StartTracking();
-            var carrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
+            var carrier = SmartContractCarrier.Deserialize(transaction, smartContractTxOut);
             carrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;

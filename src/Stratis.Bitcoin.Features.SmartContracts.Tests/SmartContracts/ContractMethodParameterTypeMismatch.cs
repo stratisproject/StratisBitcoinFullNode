@@ -7,6 +7,7 @@ public sealed class ContractMethodParameterTypeMismatch : SmartContract
     {
     }
 
+    [SmartContractInit]
     public void TestMethod(int orders)
     {
     }
