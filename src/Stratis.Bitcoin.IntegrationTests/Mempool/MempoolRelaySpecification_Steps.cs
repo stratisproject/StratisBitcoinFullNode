@@ -45,7 +45,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             this.nodeC.NotInIBD();
 
             this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+        }
 
+        protected void nodeA_mines_coins_that_are_spendable()
+        {
             // add some coins to nodeA
             this.nodeA.SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodeA.FullNode.Network));
             this.nodeA.GenerateStratisWithMiner(this.coinbaseMaturity + 1);
@@ -58,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeA, this.nodeB));
         }
 
-        protected void nodeA_nodeB_and_nodeC_are_not_whitelisted()
+        protected void nodeA_nodeB_and_nodeC_are_NON_whitelisted()
         {
             this.nodeA.FullNode.NodeService<IConnectionManager>().ConnectedPeers.First().Behavior<ConnectionManagerBehavior>().Whitelisted = false;
             this.nodeB.FullNode.NodeService<IConnectionManager>().ConnectedPeers.First().Behavior<ConnectionManagerBehavior>().Whitelisted = false;
@@ -68,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         protected void nodeB_connects_to_nodeC()
         {
             this.nodeB.CreateRPCClient().AddNode(this.nodeC.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeA, this.nodeB));
+            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeB, this.nodeC));
         }
 
         protected void nodeA_creates_a_transaction_and_propagates_to_nodeB()
@@ -90,8 +93,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             var rpc = this.nodeC.CreateRPCClient();
             TestHelper.WaitLoop(() => rpc.GetRawMempool().Any());
-            var trxid = this.nodeC.CreateRPCClient().GetRawMempool().Should().ContainSingle().Which;
-            trxid.IsSameOrEqualTo(this.transaction.GetHash());
+
+            rpc.GetRawMempool()
+                .Should().ContainSingle()
+                .Which.IsSameOrEqualTo(this.transaction.GetHash());
         }
     }
 }
