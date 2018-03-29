@@ -7,6 +7,7 @@ using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
+using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
@@ -71,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
@@ -105,7 +106,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, (Gas)100),
                 1,
                 new object[] { }

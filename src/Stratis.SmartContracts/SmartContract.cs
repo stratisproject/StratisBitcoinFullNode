@@ -24,12 +24,12 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
-        protected readonly Block Block;
+        protected readonly IBlock Block;
 
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
-        protected readonly Message Message;
+        protected readonly IMessage Message;
 
         /// <summary>
         /// TODO: Add documentation

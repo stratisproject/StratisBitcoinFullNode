@@ -8,9 +8,9 @@
         /// <summary>
         /// TODO: Add documentation.
         /// </summary>
-        Block Block { get; }
+        IBlock Block { get; }
 
-        Message Message { get; }
+        IMessage Message { get; }
 
         /// <summary>
         /// TODO: Add documentation.

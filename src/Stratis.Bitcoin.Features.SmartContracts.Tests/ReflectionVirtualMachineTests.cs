@@ -9,6 +9,7 @@ using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
+using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -66,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
 
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new Address("2")),
+                                new Block(1, new Address("2")),
                                 new Message(
                                     new Address(deserializedCall.ContractAddress.ToString()),
                                     new Address(sender),
@@ -138,7 +139,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
                 var context = new SmartContractExecutionContext(
-                                new Stratis.SmartContracts.Block(1, new Address("2")),
+                                new Block(1, new Address("2")),
                                 new Message(
                                     deserializedCall.ContractAddress.ToAddress(this.network),
                                     new Address(sender),
@@ -183,7 +184,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
@@ -220,7 +221,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { 1 }
@@ -257,7 +258,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { true }

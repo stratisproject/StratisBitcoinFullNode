@@ -1,6 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts.Core
 {
-    public struct Block
+    public struct Block : IBlock
     {
         public Block(ulong number, Address coinbase)
         {
