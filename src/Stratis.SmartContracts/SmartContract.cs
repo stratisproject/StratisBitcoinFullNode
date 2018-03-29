@@ -24,12 +24,12 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// Holds details about the current block.
         /// </summary>
-        protected readonly Block Block;
+        protected readonly IBlock Block;
 
         /// <summary>
         /// Holds details about the current transaction that has been sent.
         /// </summary>
-        protected readonly Message Message;
+        protected readonly IMessage Message;
 
         /// <summary>
         ///  Provides functionality for the saving and retrieval of objects inside smart contracts.

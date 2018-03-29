@@ -1,9 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts.Core
 {
-    /// <summary>
-    /// Holds information about the current contract call.
-    /// </summary>
-    public sealed class Message
+    public sealed class Message : IMessage
     {
         /// <summary>
         /// The address of the contract currently being executed.

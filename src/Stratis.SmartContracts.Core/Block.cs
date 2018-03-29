@@ -1,16 +1,7 @@
-﻿namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts.Core
 {
-    /// <summary>
-    /// Holds information about the current block.
-    /// </summary>
-    public struct Block
+    public struct Block : IBlock
     {
-        public Block(ulong number, Address coinbase)
-        {
-            this.Number = number;
-            this.Coinbase = coinbase;
-        }
-
         /// <summary>
         /// The coinbase address of the current block. 
         /// The address that will receive the mining award for this block.
@@ -21,5 +12,11 @@
         /// The height of the current block.
         /// </summary>
         public ulong Number { get; }
+
+        public Block(ulong number, Address coinbase)
+        {
+            this.Number = number;
+            this.Coinbase = coinbase;
+        }
     }
 }

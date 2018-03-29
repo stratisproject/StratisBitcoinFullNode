@@ -6,7 +6,7 @@
     public sealed class SmartContractExecutionContext : ISmartContractExecutionContext
     {
         /// <inheritdoc/>
-        public Block Block { get; }
+        public IBlock Block { get; }
 
         /// <inheritdoc/>
         public ulong GasPrice { get; }
@@ -15,9 +15,9 @@
         public object[] Parameters { get; private set; }
 
         /// <inheritdoc/>
-        public Message Message { get; }
+        public IMessage Message { get; }
 
-        public SmartContractExecutionContext(Block block, Message message, ulong gasPrice, object[] methodParameters = null)
+        public SmartContractExecutionContext(IBlock block, IMessage message, ulong gasPrice, object[] methodParameters = null)
         {
             //TODO: Add some null checks here
 
