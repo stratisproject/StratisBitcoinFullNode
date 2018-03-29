@@ -5,22 +5,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
     public partial class WalletTestsManyTxnInputsAndOutputsSpecification 
     {
         [Fact]
-        public void Wallet_can_send_one_transaction_with_many_outputs()
+        public void Wallet_can_send_funds_with_many_txn_outputs()
         {
-            Given(a_stratis_sender_and_receiver_node_and_their_wallets);
+            Given(a_sender_and_receiver_and_their_wallets);
             And(a_block_is_mined);
-            When(a_transaction_is_sent_to_receiver_via_fifty_outputs);
-            Then(the_transaction_is_recevied);
+            When(funds_are_sent_to_receiver_via_fifty_txn_outputs);
+            Then(the_funds_are_received);
         }
 
         [Fact]
-        public void Wallet_can_send_and_receive_many_transaction_inputs_and_ouputs()
+        public void Wallet_can_receive_funds_using_many_txn_inputs()
         {
-            Given(a_stratis_sender_and_receiver_node_and_their_wallets);
-            And(a_block_is_mined);
-            When(a_transaction_is_sent_to_receiver_via_fifty_outputs);
-            And(the_transaction_is_recevied);
-            Then(the_recevier_sends_back_a_transaction_using_all_the_outputs);
+            Given(sender_sends_funds_with_fifty_txn_outputs);
+            When(the_receiver_creates_a_txn_using_fifty_txn_inputs_and_sends_back);
+            Then(the_sender_receives_the_funds);
         }
     }
 }

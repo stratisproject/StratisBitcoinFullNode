@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string WalletAccountName = "account 0";
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
+        private long stratisReceiverTotalAmount;
         private Key keySender;
         private TransactionBuildContext transactionBuildContext;
         private int CoinBaseMaturity;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.nodeBuilder.Dispose();
         }
 
-        private void a_stratis_sender_and_receiver_node_and_their_wallets()
+        private void a_sender_and_receiver_and_their_wallets()
         {
             this.stratisSender = this.nodeBuilder.CreateStratisPowNode();
             this.stratisReceiver = this.nodeBuilder.CreateStratisPowNode();
@@ -75,7 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.stratisReceiver, this.stratisSender));
         }
 
-        private void a_transaction_is_sent_to_receiver_via_fifty_outputs()
+        private void funds_are_sent_to_receiver_via_fifty_txn_outputs()
         {
             // Get 50 unused addresses from the receiver.
             IEnumerable<HdAddress> recevierAddresses = this.stratisReceiver.FullNode.WalletManager()
@@ -87,30 +88,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = new TransactionBuildContext(
-                new WalletAccountReference(WalletName, WalletAccountName), recipients, WalletPassword)
+            this.transactionBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, WalletAccountName), recipients, WalletPassword)
             {
                 FeeType = FeeType.Medium,
                 MinConfirmations = 101
             };
 
-            Transaction transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
+            Transaction transaction = this.stratisSender.FullNode.WalletTransactionHandler().
+                BuildTransaction(this.transactionBuildContext);
+
             transaction.Outputs.Count.Should().Be(51);
 
             // Broadcast to the other node.
-            this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+            this.stratisSender.FullNode.NodeService<WalletController>().
+                SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
             // Wait for the trx's to arrive.
             TestHelper.WaitLoop(() => this.stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
             TestHelper.WaitLoop(() => this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
         }
 
-        private void the_transaction_is_recevied()
+        private void the_funds_are_received()
         {
-            this.stratisReceiver.FullNode.WalletManager().
+            this.stratisReceiverTotalAmount = this.stratisReceiver.FullNode.WalletManager().
                 GetSpendableTransactionsInWallet(WalletName).
-                Sum(s => s.Transaction.Amount).
-                Should().Be(Money.COIN * 50);
+                Sum(s => s.Transaction.Amount);
+
+            this.stratisReceiverTotalAmount.Should().Be(5000000000);
 
             this.stratisReceiver.FullNode.WalletManager().
                 GetSpendableTransactionsInWallet(WalletName).
@@ -132,17 +136,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.stratisReceiver.FullNode.WalletManager().
                 GetSpendableTransactionsInWallet("mywallet").
                 First().Transaction.BlockHeight.
-                Should().Be(this.CoinBaseMaturity + 52);
+                Should().Be(this.CoinBaseMaturity + 52);       
         }
 
-        private void the_recevier_sends_back_a_transaction_using_all_the_outputs()
+        private void the_receiver_creates_a_txn_using_fifty_txn_inputs_and_sends_back()
         {
-            // Now send many inputs from receviever back to sender.         
-            var total = this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName)
-                .Sum(s => s.Transaction.Amount);
-            total.Should().Be(5000000000);
-
-            // send coins to the receiver.
+            // Send coins to the receiver.
             var sendto = this.stratisSender.FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
@@ -152,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 {
                     new Recipient
                     {
-                        Amount = total - Money.COIN,
+                        Amount = this.stratisReceiverTotalAmount - Money.COIN,
                         ScriptPubKey = sendto.ScriptPubKey
                     }
                 }.ToList(), WalletPassword);
@@ -160,6 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Check receiver has the correct inputs.
             var trx = this.stratisReceiver.FullNode.WalletTransactionHandler()
                 .BuildTransaction(this.transactionBuildContext);
+
             trx.Inputs.Count.Should().Be(50);
 
             // Broadcast.
@@ -169,20 +169,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Wait for the trx to arrive.
             TestHelper.WaitLoop(() =>
                 this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
+        }
 
-            this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName)
-                .Sum(s => s.Transaction.Amount).Should().Be(747500000000);
+        private void the_sender_receives_the_funds()
+        {
+            this.stratisSender.FullNode.WalletManager().
+                GetSpendableTransactionsInWallet(WalletName).
+                Sum(s => s.Transaction.Amount).Should().Be(747500000000);
 
-            this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Count().Should()
-                .Be(1);
+            this.stratisReceiver.FullNode.WalletManager().
+                GetSpendableTransactionsInWallet(WalletName).
+                Count().Should().Be(1);
 
             // wait for block repo for block sync to work.
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.stratisSender, this.stratisReceiver));
 
-            TestHelper.WaitLoop(() =>
-                3 == this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First()
-                    .Transaction.BlockHeight);
+            TestHelper.WaitLoop(() => 3 == this.stratisSender.FullNode.WalletManager().
+                    GetSpendableTransactionsInWallet(WalletName).
+                    First().Transaction.BlockHeight);
+        }
+
+        private void sender_sends_funds_with_fifty_txn_outputs()
+        {
+            a_sender_and_receiver_and_their_wallets();
+            a_block_is_mined();
+            funds_are_sent_to_receiver_via_fifty_txn_outputs();
+            the_funds_are_received();
         }
     }
 }
