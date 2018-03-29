@@ -63,6 +63,12 @@ namespace Stratis.SmartContracts.Tools.Validation
 
             foreach (string file in inputFiles)
             {
+                if (!File.Exists(file))
+                {
+                    Console.WriteLine($"{file} does not exist");
+                    continue;
+                }
+
                 string source;
 
                 Console.WriteLine($"Reading {file}");
@@ -157,8 +163,6 @@ namespace Stratis.SmartContracts.Tools.Validation
             {
                 renderer.Render(reportStructure, data);
             }
-
-            Console.ReadKey();
         }
 
         private static void ShowVersion()
