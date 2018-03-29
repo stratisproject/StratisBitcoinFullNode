@@ -18,7 +18,7 @@
         ulong GasPrice { get; }
 
         /// <summary>
-        /// These are the method parameters to be injected into the method call by the <see cref="SmartContractTransactionExecutor"/>.
+        /// These are the method parameters to be injected into the method call by the <see cref="SmartContractExecutor"/>.
         /// </summary>
         object[] Parameters { get; }
     }

@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     gasMeter,
                     internalTransactionExecutor,
                     getBalance);
-                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasUnitsUsed));
+                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));
             }
         }
     }

@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.Core
             SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(this.smartContractCarrier.ContractExecutionCode);
             SmartContractValidationResult validationResult = this.validator.ValidateContract(decompilation);
 
-            if (!validationResult.Valid)
+            if (!validationResult.IsValid)
             {
                 // TODO: Expend all of users fee - no deployment
                 throw new NotImplementedException();
@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.Core
                             this.smartContractCarrier.TxOutValue,
                             this.smartContractCarrier.GasLimit
                             ),
-                        this.smartContractCarrier.GasUnitPrice,
+                        this.smartContractCarrier.GasPrice,
                         this.smartContractCarrier.MethodParameters
                     );
 
@@ -126,7 +126,7 @@ namespace Stratis.SmartContracts.Core
 
         private ISmartContractExecutionResult ExecuteCall()
         {
-            byte[] contractCode = this.stateRepository.GetCode(this.smartContractCarrier.To);
+            byte[] contractCode = this.stateRepository.GetCode(this.smartContractCarrier.ContractAddress);
             SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractCode);
 
             // YO! VERY IMPORTANT! 
@@ -141,7 +141,7 @@ namespace Stratis.SmartContracts.Core
 
                 byte[] contractCodeWGas = ms.ToArray();
 
-                uint160 contractAddress = this.smartContractCarrier.To;
+                uint160 contractAddress = this.smartContractCarrier.ContractAddress;
 
                 GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
                 IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter, this.keyEncodingStrategy);
@@ -161,7 +161,7 @@ namespace Stratis.SmartContracts.Core
                         this.smartContractCarrier.TxOutValue,
                         this.smartContractCarrier.GasLimit
                         ),
-                    this.smartContractCarrier.GasUnitPrice,
+                    this.smartContractCarrier.GasPrice,
                     this.smartContractCarrier.MethodParameters);
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(

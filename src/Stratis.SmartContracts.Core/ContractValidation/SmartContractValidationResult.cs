@@ -3,10 +3,11 @@ using System.Linq;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public class SmartContractValidationResult
+    public sealed class SmartContractValidationResult
     {
-        public List<SmartContractValidationError> Errors { get; set; }
-        public bool Valid => !this.Errors.Any();
+        public List<SmartContractValidationError> Errors { get; private set; }
+        public Gas GasUnitsUsed { get; set; }
+        public bool IsValid { get { return !this.Errors.Any(); } }
 
         public SmartContractValidationResult()
         {

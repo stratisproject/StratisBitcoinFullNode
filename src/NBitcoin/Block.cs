@@ -358,19 +358,6 @@ namespace NBitcoin
             this.Header.HashMerkleRoot = GetMerkleRoot().Hash;
         }
 
-        /// <summary>
-        /// Check proof of work and merkle root
-        /// </summary>
-        /// <param name="consensus"></param>
-        /// <returns></returns>
-        public bool Check(Consensus consensus)
-        {
-            if (consensus.NetworkOptions.IsProofOfStake)
-                return BlockStake.Check(this, consensus);
-
-            return this.CheckMerkleRoot() && this.Header.CheckProofOfWork(consensus);
-        }
-
         public bool CheckProofOfWork(Consensus consensus)
         {
             return this.Header.CheckProofOfWork(consensus);

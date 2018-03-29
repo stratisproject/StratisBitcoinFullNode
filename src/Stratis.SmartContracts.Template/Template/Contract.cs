@@ -61,11 +61,11 @@ public class SimpleAuction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<bool>("hasended");
+            return PersistentState.GetObject<bool>("HasEnded");
         }
         set
         {
-            PersistentState.SetObject<bool>("hasended", value);
+            PersistentState.SetObject<bool>("HasEnded", value);
         }
     }
 

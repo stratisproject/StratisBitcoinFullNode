@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
-        public async Task OpSpend_PreviousTransactionNone_FailureAsync()
+        public void OpSpend_PreviousTransactionNone_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
-        public async Task OpSpend_PreviousTransactionOther_FailureAsync()
+        public void OpSpend_PreviousTransactionOther_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();

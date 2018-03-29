@@ -8,13 +8,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [JsonProperty(PropertyName = "fee")]
         public Money Fee { get; set; }
 
-        [JsonProperty(PropertyName= "hex")]
+        [JsonProperty(PropertyName = "hex")]
         public string Hex { get; set; }
 
         [JsonProperty(PropertyName = "transactionId")]
         public uint256 TransactionId { get; set; }
 
-        [JsonProperty(PropertyName ="newContractAddress")]
+        [JsonProperty(PropertyName = "newContractAddress")]
         public string NewContractAddress { get; set; }
     }
 }

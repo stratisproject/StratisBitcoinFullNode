@@ -27,7 +27,7 @@ namespace Stratis.SmartContracts.Core.Backend
             IInternalTransactionExecutor internalTxExecutor,
             Func<ulong> getBalance)
         {
-            var executionResult = new SmartContractExecutionResult();
+            ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
             if (contractMethodName == null)
                 return executionResult;
 
@@ -43,21 +43,40 @@ namespace Stratis.SmartContracts.Core.Backend
                 new InternalHashHelper(),
                 getBalance);
 
-            var contract = (SmartContract)Activator.CreateInstance(contractType, contractState);
-
-            MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
+            SmartContract smartContract = null;
 
             try
             {
-                executionResult.Return = methodToInvoke.Invoke(contract, context.Parameters);
+                smartContract = (SmartContract)Activator.CreateInstance(contractType, contractState);
+            }
+            catch (Exception exception)
+            {
+                // If contract instantiation failed, return any gas consumed.
+                executionResult.Exception = exception.InnerException ?? exception;
+                executionResult.GasConsumed = gasMeter.GasConsumed;
+                return executionResult;
+            }
+
+            try
+            {
+                MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
+                executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
+            }
+            catch (ArgumentException argumentException)
+            {
+                executionResult.Exception = argumentException;
             }
             catch (TargetInvocationException targetException)
             {
                 executionResult.Exception = targetException.InnerException ?? targetException;
             }
+            catch (TargetParameterCountException parameterExcepion)
+            {
+                executionResult.Exception = parameterExcepion;
+            }
             finally
             {
-                executionResult.GasUnitsUsed = gasMeter.GasConsumed;
+                executionResult.GasConsumed = gasMeter.GasConsumed;
             }
 
             return executionResult;

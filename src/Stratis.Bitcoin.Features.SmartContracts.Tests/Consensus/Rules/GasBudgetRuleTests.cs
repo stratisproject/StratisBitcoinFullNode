@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         [Fact]
         public async Task GasBudgetRule_SuccessAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             GasBudgetRule rule = testContext.CreateRule<GasBudgetRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus,
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             transactionBuilder.SendFees(relayFeeSatoshis);
             transactionBuilder.Send(new Script(serialized), gasBudgetSatoshis);
 
-            var transaction = transactionBuilder.BuildTransaction(false);
+            Transaction transaction = transactionBuilder.BuildTransaction(false);
 
             context.BlockValidationContext.Block.Transactions = new List<Transaction>
             {
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         [Fact]
         public async Task GasBudgetRule_MultipleOutputs_SuccessAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             GasBudgetRule rule = testContext.CreateRule<GasBudgetRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus,
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             // Add a change output to the transaction
             transactionBuilder.SetChange(new Script());
 
-            var transaction = transactionBuilder.BuildTransaction(false);
+            Transaction transaction = transactionBuilder.BuildTransaction(false);
 
             context.BlockValidationContext.Block.Transactions = new List<Transaction>
             {
@@ -113,11 +113,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         /// <summary>
         /// In this test we supply a higher gas limit in our carrier than what we budgeted for in our transaction
         /// </summary>
-        /// <returns></returns>
         [Fact]
-        public async Task GasBudgetRule_FailureAsync()
+        public void GasBudgetRule_FailureAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             GasBudgetRule rule = testContext.CreateRule<GasBudgetRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus,
@@ -150,14 +149,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             transactionBuilder.SendFees(relayFeeSatoshis);
             transactionBuilder.Send(new Script(serialized), gasBudgetSatoshis);
 
-            var transaction = transactionBuilder.BuildTransaction(false);
+            Transaction transaction = transactionBuilder.BuildTransaction(false);
 
             context.BlockValidationContext.Block.Transactions = new List<Transaction>
             {
                 transaction
             };
 
-            var error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Task<ConsensusErrorException> error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
     }
 }

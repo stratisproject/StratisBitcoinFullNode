@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        protected readonly StakeChain stakeChain;
+        protected readonly IStakeChain stakeChain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -57,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ISmartContractGasInjector gasInjector,
             IKeyEncodingStrategy keyEncodingStrategy,
             CoinView coinView,
-            StakeChain stakeChain = null)
+            IStakeChain stakeChain = null)
         {
             this.consensusLoop = consensusLoop;
             this.network = network;

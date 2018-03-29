@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly CoinView coinView;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        private readonly StakeChain stakeChain;
+        private readonly IStakeChain stakeChain;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private readonly IStakeValidator stakeValidator;
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
-            StakeChain stakeChain,
+            IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,

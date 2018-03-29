@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Mock<ITxMempool> txMempool;
         private Mock<IDateTimeProvider> dateTimeProvider;
         private Mock<IStakeValidator> stakeValidator;
-        private Mock<StakeChain> stakeChain;
+        private Mock<IStakeChain> stakeChain;
         private Mock<IPosConsensusValidator> validator;
         private RuleContext callbackRuleContext = null;
         private Money powReward;
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.txMempool = new Mock<ITxMempool>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.stakeValidator = new Mock<IStakeValidator>();
-            this.stakeChain = new Mock<StakeChain>();
+            this.stakeChain = new Mock<IStakeChain>();
             this.powReward = new Money(100 * 1000 * 1000);
             this.validator = new Mock<IPosConsensusValidator>();
             this.network = Network.StratisTest;
@@ -509,7 +509,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
-            StakeChain stakeChain,
+            IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,

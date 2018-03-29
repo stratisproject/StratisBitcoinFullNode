@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Base
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Disposable resources that will be disposed when the feature stops.</summary>
-        private readonly List<IDisposable> disposableResources = new List<IDisposable>();
+        private readonly List<IDisposable> disposableResources;
 
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Base
         private readonly ILoggerFactory loggerFactory;
 
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
-        private readonly TimeSyncBehaviorState timeSyncBehaviorState;
+        private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
         /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
         private readonly DBreezeSerializer dbreezeSerializer;
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Base
             ChainRepository chainRepository,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
-            TimeSyncBehaviorState timeSyncBehaviorState,
+            ITimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
@@ -152,6 +152,7 @@ namespace Stratis.Bitcoin.Base
             this.loggerFactory = loggerFactory;
             this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.disposableResources = new List<IDisposable>();
         }
 
         /// <inheritdoc />
@@ -187,7 +188,7 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogDebug("Time synchronization with peers is disabled.");
             }
 
-            this.disposableResources.Add(this.timeSyncBehaviorState);
+            this.disposableResources.Add(this.timeSyncBehaviorState as IDisposable);
             this.disposableResources.Add(this.chainRepository);
 
             this.logger.LogTrace("(-)");
@@ -305,7 +306,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
                     services.AddSingleton<ChainRepository>();
-                    services.AddSingleton<TimeSyncBehaviorState>();
+                    services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
 
@@ -322,6 +323,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IPeerConnector, PeerConnectorConnectNode>();
                     services.AddSingleton<IPeerConnector, PeerConnectorDiscovery>();
                     services.AddSingleton<IPeerDiscovery, PeerDiscovery>();
+                    services.AddSingleton<ISelfEndpointTracker, SelfEndpointTracker>();
                 });
             });
 
