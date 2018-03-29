@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PosBlockSignatureRule : PosConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
