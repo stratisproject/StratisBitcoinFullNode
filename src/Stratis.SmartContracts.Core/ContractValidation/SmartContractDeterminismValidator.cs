@@ -93,7 +93,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 {
                     List<SmartContractValidationError> referencedMethodValidationResult = ValidateNonUserMethod(referencedMethod, visitedMethods);
 
-                    errors.AddRange(referencedMethodValidationResult);
+                    if (referencedMethodValidationResult.Any())
+                    {
+                        // Condense non-user method errors
+                        errors.Add(new SmartContractValidationError(
+                            method.Name,
+                            method.FullName,
+                            "Non-deterministic method reference",
+                            $"Use of {referencedMethod.FullName} is not deterministic."
+                        ));
+                    }
                 }
             }
 
