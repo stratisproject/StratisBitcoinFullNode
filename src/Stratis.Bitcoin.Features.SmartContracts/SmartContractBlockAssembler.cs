@@ -28,6 +28,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ISmartContractGasInjector gasInjector;
         private readonly SmartContractValidator validator;
 
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
+
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
 
@@ -43,6 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
             ISmartContractGasInjector gasInjector,
+            IKeyEncodingStrategy keyEncodingStrategy,
             CoinView coinView,
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
@@ -52,6 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.validator = validator;
             this.gasInjector = gasInjector;
             this.coinView = coinView;
+            this.keyEncodingStrategy = keyEncodingStrategy;
         }
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
@@ -147,7 +151,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             IContractStateRepository nestedStateRepository = this.currentStateRepository.StartTracking();
 
-            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, height, this.coinbaseAddress, this.network);
+            var executor = new SmartContractTransactionExecutor(nestedStateRepository, this.decompiler, this.validator, this.gasInjector, carrier, this.keyEncodingStrategy, height, this.coinbaseAddress, this.network);
             ISmartContractExecutionResult executionResult = executor.Execute();
 
             // Update state--------------------------------

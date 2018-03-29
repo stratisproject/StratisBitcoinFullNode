@@ -9,11 +9,13 @@ namespace Stratis.SmartContracts.Core.Backend
     {
         private readonly IContractStateRepository constractStateRepository;
         private readonly Network network;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
-        public InternalTransactionExecutor(IContractStateRepository constractStateRepository, Network network)
+        public InternalTransactionExecutor(IContractStateRepository constractStateRepository, Network network, IKeyEncodingStrategy keyEncodingStrategy)
         {
             this.constractStateRepository = constractStateRepository;
             this.network = network;
+            this.keyEncodingStrategy = keyEncodingStrategy;
         }
 
         ///<inheritdoc/>
@@ -41,7 +43,7 @@ namespace Stratis.SmartContracts.Core.Backend
         private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
             IContractStateRepository track = this.constractStateRepository.StartTracking();
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter);
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
             IPersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160(this.network), this.network);
 
             var newMessage = new Message(addressTo, smartContractState.Message.ContractAddress, amountToTransfer, (Gas)(smartContractState.Message.GasLimit - smartContractState.GasMeter.GasConsumed));

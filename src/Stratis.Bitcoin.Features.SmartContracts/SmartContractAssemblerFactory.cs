@@ -40,6 +40,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private readonly ISmartContractGasInjector gasInjector;
 
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
+
         private readonly CoinView coinView;
 
         public SmartContractAssemblerFactory(
@@ -53,6 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractDecompiler smartContractDecompiler,
             SmartContractValidator smartContractValidator,
             ISmartContractGasInjector gasInjector,
+            IKeyEncodingStrategy keyEncodingStrategy,
             CoinView coinView,
             StakeChain stakeChain = null)
         {
@@ -65,6 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.smartContractDecompiler = smartContractDecompiler;
             this.smartContractValidator = smartContractValidator;
             this.gasInjector = gasInjector;
+            this.keyEncodingStrategy = keyEncodingStrategy;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
             this.loggerFactory = loggerFactory;
@@ -85,6 +89,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.smartContractDecompiler,
                 this.smartContractValidator,
                 this.gasInjector,
+                this.keyEncodingStrategy,
                 this.coinView,
                 options);
         }

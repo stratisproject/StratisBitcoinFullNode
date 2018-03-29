@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly SmartContractDecompiler decompiler;
         private readonly SmartContractValidator validator;
         private readonly ISmartContractGasInjector gasInjector;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly Network network;
         private List<Transaction> blockTxsProcessed;
         private Transaction lastProcessed;
@@ -38,7 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ContractStateRepositoryRoot stateRoot,
             SmartContractDecompiler decompiler,
             SmartContractValidator validator,
-            ISmartContractGasInjector gasInjector)
+            ISmartContractGasInjector gasInjector,
+            IKeyEncodingStrategy keyEncodingStrategy)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
@@ -49,6 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.gasInjector = gasInjector;
             this.lastProcessed = null;
             this.network = network;
+            this.keyEncodingStrategy = keyEncodingStrategy;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
@@ -216,7 +219,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, coinbaseAddress, this.network);
+            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, this.keyEncodingStrategy, blockNum, coinbaseAddress, this.network);
             ISmartContractExecutionResult result = executor.Execute();
 
             if (result.Revert)

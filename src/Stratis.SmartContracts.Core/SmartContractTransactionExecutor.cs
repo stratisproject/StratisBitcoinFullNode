@@ -20,6 +20,7 @@ namespace Stratis.SmartContracts.Core
 
         private readonly IContractStateRepository stateRepository;
         private readonly IContractStateRepository nestedStateRepository;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
         private readonly uint160 coinbaseAddress;
         private readonly ulong height;
@@ -32,6 +33,7 @@ namespace Stratis.SmartContracts.Core
             SmartContractValidator smartContractValidator,
             ISmartContractGasInjector smartContractGasInjector,
             SmartContractCarrier smartContractCarrier,
+            IKeyEncodingStrategy keyEncodingStrategy,
             ulong height,
             uint160 coinbaseAddress,
             Network network)
@@ -42,6 +44,7 @@ namespace Stratis.SmartContracts.Core
             this.validator = smartContractValidator;
             this.gasInjector = smartContractGasInjector;
             this.smartContractCarrier = smartContractCarrier;
+            this.keyEncodingStrategy = keyEncodingStrategy;
             this.height = height;
             this.coinbaseAddress = coinbaseAddress;
             this.network = network;
@@ -76,7 +79,7 @@ namespace Stratis.SmartContracts.Core
                 byte[] contractCode = ms.ToArray();
 
                 GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
-                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
+                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter, this.keyEncodingStrategy);
                 var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress, this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
@@ -95,7 +98,7 @@ namespace Stratis.SmartContracts.Core
                         this.smartContractCarrier.MethodParameters
                     );
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository, this.network);
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository, this.network, this.keyEncodingStrategy);
                 Func<ulong> getBalance = () => this.nestedStateRepository.GetCurrentBalance(contractAddress);
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
@@ -141,8 +144,8 @@ namespace Stratis.SmartContracts.Core
                 uint160 contractAddress = this.smartContractCarrier.To;
 
                 GasMeter gasMeter = new GasMeter(this.smartContractCarrier.GasLimit);
-                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter);
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository, this.network);
+                IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.nestedStateRepository, gasMeter, this.keyEncodingStrategy);
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.nestedStateRepository, this.network, this.keyEncodingStrategy);
                 Func<ulong> getBalance = () => this.nestedStateRepository.GetCurrentBalance(contractAddress);
 
                 var persistentState = new PersistentState(this.nestedStateRepository, persistenceStrategy, contractAddress, this.network);

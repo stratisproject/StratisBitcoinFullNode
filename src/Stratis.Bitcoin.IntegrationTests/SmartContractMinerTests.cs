@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 BlockMinFeeRate = blockMinFeeRate
             };
 
-            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.decompiler, testContext.validator, testContext.gasInjector, testContext.cachedCoinView, options);
+            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.decompiler, testContext.validator, testContext.gasInjector, testContext.keyEncodingStrategy, testContext.cachedCoinView, options);
         }
 
         public class Blockinfo
@@ -137,6 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public SmartContractDecompiler decompiler;
             public SmartContractValidator validator;
             public ISmartContractGasInjector gasInjector;
+            public IKeyEncodingStrategy keyEncodingStrategy;
 
             private bool useCheckpoints = true;
 
@@ -172,6 +173,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var consensusSettings = new ConsensusSettings().Load(nodeSettings);
                 consensusSettings.UseCheckpoints = this.useCheckpoints;
 
+                this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
+
                 var folder = TestDirectory.Create(Path.Combine(AppContext.BaseDirectory, callingMethod));
 
                 var engine = new DBreezeEngine(folder.FolderName);
@@ -188,7 +191,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 });
 
                 this.gasInjector = new SmartContractGasInjector();
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.decompiler, this.validator, this.gasInjector);
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.decompiler, this.validator, this.gasInjector, this.keyEncodingStrategy);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider());
 

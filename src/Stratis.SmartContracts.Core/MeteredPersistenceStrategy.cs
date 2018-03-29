@@ -13,31 +13,34 @@ namespace Stratis.SmartContracts.Core
     {
         private readonly IContractStateRepository stateDb;
         private readonly IGasMeter gasMeter;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
-        public MeteredPersistenceStrategy(IContractStateRepository stateDb, IGasMeter gasMeter)
+        public MeteredPersistenceStrategy(IContractStateRepository stateDb, IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
         {
             Guard.NotNull(stateDb, nameof(stateDb));
             Guard.NotNull(gasMeter, nameof(gasMeter));
+            Guard.NotNull(gasMeter, nameof(keyEncodingStrategy));
 
             this.stateDb = stateDb;
             this.gasMeter = gasMeter;
+            this.keyEncodingStrategy = keyEncodingStrategy;
         }
 
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
-            //byte[] hashedKey = HashHelper.Keccak256(key);
+            byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
             return this.stateDb.GetStorageValue(address, key);
         }
 
         public void StoreBytes(uint160 address, byte[] key, byte[] value)
         {
-            //byte[] hashedKey = HashHelper.Keccak256(key);
+            byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
             Gas operationCost = GasPriceList.StorageOperationCost(
-                key,
+                encodedKey,
                 value);
 
             this.gasMeter.Spend(operationCost);
-            this.stateDb.SetStorageValue(address, key, value);
+            this.stateDb.SetStorageValue(address, encodedKey, value);
         }
     }
 }

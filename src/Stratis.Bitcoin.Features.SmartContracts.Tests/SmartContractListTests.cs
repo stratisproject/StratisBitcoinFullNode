@@ -139,8 +139,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var testItem = list.Get(0);
             var testItem2 = list.Get(1);
 
-            var firstItemHash = StringKeyHashingStrategy.Default.Hash($"{listName}[0]");
-            var secondItemHash = StringKeyHashingStrategy.Default.Hash($"{listName}[1]");
+            var firstItemHash = $"{listName}[0]";
+            var secondItemHash = $"{listName}[1]";
 
             var item = persistentState.GetObject<string>(firstItemHash);
             var item2 = persistentState.GetObject<string>(secondItemHash);

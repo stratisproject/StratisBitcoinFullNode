@@ -15,6 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ISmartContractGasInjector gasInjector;
         private readonly ContractStateRepositoryRoot stateRepository;
         private readonly Network network;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
         public SmartContractTransactionExecutorTests()
         {
@@ -22,6 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.gasInjector = new SmartContractGasInjector();
             this.stateRepository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource())); ;
             this.network = Network.SmartContractsRegTest;
+            this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
         }
 
         [Fact]
@@ -53,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
 
-            var executor = new SmartContractTransactionExecutor(this.stateRepository, this.decompiler, new SmartContractValidator(new ISmartContractValidator[] { }), this.gasInjector, deserializedCall, 0, deserializedCall.To, this.network);
+            var executor = new SmartContractTransactionExecutor(this.stateRepository, this.decompiler, new SmartContractValidator(new ISmartContractValidator[] { }), this.gasInjector, deserializedCall, this.keyEncodingStrategy, 0, deserializedCall.To, this.network);
 
             ISmartContractExecutionResult result = executor.Execute();
 
