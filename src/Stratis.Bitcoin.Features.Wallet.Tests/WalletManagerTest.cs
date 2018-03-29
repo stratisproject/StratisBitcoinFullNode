@@ -2544,6 +2544,64 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void GetAccountBalancesReturnsCorrectAccountBalances()
+        {
+            // Arrange.
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+            
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), null));
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(10000), 1));
+
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(20000), null));
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(120000), 2));
+
+            account.ExternalAddresses.Add(accountAddress1);
+            account.InternalAddresses.Add(accountAddress2);
+
+            HdAccount account2 = WalletTestsHelpers.CreateAccount("account 2");
+            HdAddress account2Address1 = WalletTestsHelpers.CreateAddress();
+            account2Address1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(5), new Money(74000), null));
+            account2Address1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(6), new Money(18700), 3));
+
+            HdAddress account2Address2 = WalletTestsHelpers.CreateAddress();
+            account2Address2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(7), new Money(65000), null));
+            account2Address2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(8), new Money(89300), 4));
+
+            account2.ExternalAddresses.Add(account2Address1);
+            account2.InternalAddresses.Add(account2Address2);
+
+            var accounts = new List<HdAccount> { account, account2 };
+
+            Wallet wallet = WalletTestsHelpers.CreateWallet("myWallet");
+            wallet.AccountsRoot.Add(new AccountRoot());
+            wallet.AccountsRoot.First().Accounts = accounts;
+
+            walletManager.Wallets.Add(wallet);
+
+            // Act.
+            var balances = walletManager.GetBalances("myWallet");
+
+            // Assert.
+            AccountBalance resultingBalance = balances.First();
+            Assert.Equal(account.Name, resultingBalance.Account.Name);
+            Assert.Equal(account.HdPath, resultingBalance.Account.HdPath);
+            Assert.Equal(new Money(130000), resultingBalance.AmountConfirmed);
+            Assert.Equal(new Money(35000), resultingBalance.AmountUnconfirmed);
+
+            resultingBalance = balances.ElementAt(1);
+            Assert.Equal(account2.Name, resultingBalance.Account.Name);
+            Assert.Equal(account2.HdPath, resultingBalance.Account.HdPath);
+            Assert.Equal(new Money(108000), resultingBalance.AmountConfirmed);
+            Assert.Equal(new Money(139000), resultingBalance.AmountUnconfirmed);
+        }
+
+        [Fact]
         public void CheckWalletBalanceEstimationWithUnConfirmedTransactions()
         {
             DataFolder dataFolder = CreateDataFolder(this);
