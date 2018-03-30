@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
+using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -36,37 +28,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void VM_Throws_RefundGasException_RefundCorrectAmount()
-        {
-            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
-            Network.Main.Consensus.Options = newOptions;
-
-            var consensusLoop = new Mock<IConsensusLoop>();
-
-            var mempool = new Mock<ITxMempool>();
-
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowRefundGasExceptionContract.cs");
-            var stateRoot = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            stateRoot.SetCode(new uint160(1), contractCode);
-
-            var extendedLoggerFactory = new ExtendedLoggerFactory();
-            extendedLoggerFactory.AddConsoleWithFilters();
-
-            var assembler = new SmartContractBlockAssembler(consensusLoop.Object, Network.Main, new MempoolSchedulerLock(), mempool.Object, DateTimeProvider.Default, null,
-                extendedLoggerFactory, stateRoot, new SmartContractDecompiler(), new SmartContractValidator(new List<ISmartContractValidator>()), new SmartContractGasInjector(), null);
-
-            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "ThrowException", 5, (Gas)100);
-            carrier.Sender = new uint160(2);
-
-            var transaction = new Transaction();
-            var txMempoolEntry = new TxMempoolEntry(transaction, 1000, DateTimeProvider.Default.GetUtcNow().Ticks, 0, 0, new Money(1000), true, 100, new LockPoints(), newOptions);
-            assembler.SetCoinbaseAddress(new uint160(3));
-            assembler.ExecuteContractFeesAndRefunds(carrier, txMempoolEntry, 0, 0);
-
-            Assert.Equal(595, assembler.fees);
-        }
-
-        [Fact]
         public void VM_Throws_OutOfGasException_CanCatch()
         {
             byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowOutOfGasExceptionContract.cs");
@@ -78,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress, 0),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
@@ -111,14 +72,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress, 0),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
                 1,
                 new object[] { }
             );
 
             var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
+            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
@@ -129,7 +90,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 internalTransactionExecutor,
                 getBalance);
 
-            Assert.Equal<ulong>(10, result.GasUnitsUsed);
+            Assert.Equal<ulong>(10, result.GasConsumed);
             Assert.Equal(typeof(RefundGasException), result.Exception.GetType());
         }
 
@@ -145,14 +106,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
-                new Stratis.SmartContracts.Block(0, TestAddress, 0),
+                new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, (Gas)100),
                 1,
                 new object[] { }
             );
 
-            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
+            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,

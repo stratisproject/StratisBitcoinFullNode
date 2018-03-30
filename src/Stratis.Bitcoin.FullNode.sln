@@ -95,11 +95,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.System.Inspector", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisSmartContractsD", "Stratis.StratisSmartContractsD\Stratis.StratisSmartContractsD.csproj", "{8F14EEDE-933C-44EA-8AB4-6D59E2CD3468}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Tools.Validation", "Stratis.SmartContracts.Tools.Validation\Stratis.SmartContracts.Tools.Validation.csproj", "{6A11F4D2-64DF-489E-AE51-A3FE93EC1EF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Tools.Validation", "Stratis.SmartContracts.Tools.Validation\Stratis.SmartContracts.Tools.Validation.csproj", "{6A11F4D2-64DF-489E-AE51-A3FE93EC1EF6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core", "Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj", "{BCEC1FAC-9CF0-4B72-83EA-8A0F9FE4A43D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts", "Stratis.SmartContracts\Stratis.SmartContracts.csproj", "{DE3BBE96-4672-4445-8B0D-75AC6A09D44F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts", "Stratis.SmartContracts\Stratis.SmartContracts.csproj", "{DE3BBE96-4672-4445-8B0D-75AC6A09D44F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VSSmartContractTemplate", "VSSmartContractTemplate", "{BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Template", "Stratis.SmartContracts.Template\Stratis.SmartContracts.Template.csproj", "{23A4582D-D384-4529-929B-DD2C347DF283}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.TemplateVSIX", "Stratis.SmartContracts.TemplateVSIX\Stratis.SmartContracts.TemplateVSIX.csproj", "{904931EE-66E1-42D6-916F-F6CA0771D852}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Standards", "Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj", "{3F9CF095-4F65-4185-936A-6126F7269E93}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -263,6 +271,18 @@ Global
 		{DE3BBE96-4672-4445-8B0D-75AC6A09D44F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE3BBE96-4672-4445-8B0D-75AC6A09D44F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE3BBE96-4672-4445-8B0D-75AC6A09D44F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23A4582D-D384-4529-929B-DD2C347DF283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23A4582D-D384-4529-929B-DD2C347DF283}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23A4582D-D384-4529-929B-DD2C347DF283}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23A4582D-D384-4529-929B-DD2C347DF283}.Release|Any CPU.Build.0 = Release|Any CPU
+		{904931EE-66E1-42D6-916F-F6CA0771D852}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{904931EE-66E1-42D6-916F-F6CA0771D852}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{904931EE-66E1-42D6-916F-F6CA0771D852}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{904931EE-66E1-42D6-916F-F6CA0771D852}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F9CF095-4F65-4185-936A-6126F7269E93}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -300,6 +320,10 @@ Global
 		{6A11F4D2-64DF-489E-AE51-A3FE93EC1EF6} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{BCEC1FAC-9CF0-4B72-83EA-8A0F9FE4A43D} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{DE3BBE96-4672-4445-8B0D-75AC6A09D44F} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{23A4582D-D384-4529-929B-DD2C347DF283} = {BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}
+		{904931EE-66E1-42D6-916F-F6CA0771D852} = {BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}
+		{3F9CF095-4F65-4185-936A-6126F7269E93} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}

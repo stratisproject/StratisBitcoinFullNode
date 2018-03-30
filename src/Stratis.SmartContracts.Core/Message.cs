@@ -1,6 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts.Core
 {
-    public sealed class Message
+    public sealed class Message : IMessage
     {
         public Address ContractAddress { get; }
 

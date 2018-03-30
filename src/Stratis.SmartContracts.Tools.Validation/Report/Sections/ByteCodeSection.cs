@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Tools.Validation.Report.Sections
     {
         public IEnumerable<IReportElement> CreateSection(ValidationReportData data)
         {
-            if (data.CompilationSuccess)
+            if (data.CompilationSuccess && data.FormatValid && data.DeterminismValid)
             {
                 yield return new ReportElement("ByteCode");
                 yield return new ReportElement(data.CompilationBytes.ToHexString());

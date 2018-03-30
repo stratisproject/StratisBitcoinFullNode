@@ -24,12 +24,12 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
-        protected readonly Block Block;
+        protected readonly IBlock Block;
 
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
-        protected readonly Message Message;
+        protected readonly IMessage Message;
 
         /// <summary>
         /// TODO: Add documentation
@@ -51,6 +51,12 @@ namespace Stratis.SmartContracts
         /// </summary>
         private readonly IInternalTransactionExecutor internalTransactionExecutor;
 
+
+        /// <summary>
+        /// Provides access to internal hashing functions.
+        /// </summary>
+        private readonly IInternalHashHelper internalHashHelper;
+
         /// <summary>
         /// TODO: Add documentation
         /// </summary>
@@ -64,6 +70,7 @@ namespace Stratis.SmartContracts
             this.Block = smartContractState.Block;
             this.getBalance = smartContractState.GetBalance;
             this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
+            this.internalHashHelper = smartContractState.InternalHashHelper;
             this.Message = smartContractState.Message;
             this.PersistentState = smartContractState.PersistentState;
             this.smartContractState = smartContractState;
@@ -92,6 +99,25 @@ namespace Stratis.SmartContracts
         protected ITransferResult TransferFunds(Address addressTo, ulong amountToTransfer, TransferFundsToContract transactionDetails = null)
         {
             return this.internalTransactionExecutor.TransferFunds(this.smartContractState, addressTo, amountToTransfer, transactionDetails);
+        }
+
+        /// <summary>
+        /// Returns a 32-byte Keccak256 hash of the given bytes.
+        /// </summary>
+        /// <param name="toHash"></param>
+        /// <returns></returns>
+        protected byte[] Keccak256(byte[] toHash)
+        {
+            return this.internalHashHelper.Keccak256(toHash);
+        }
+
+        /// If the input condition is not met, contract execution will be halted by throwing an exception.
+        /// </summary>
+        /// <param name="condition"></param>
+        protected void Assert(bool condition)
+        {
+            if (!condition)
+                throw new Exception("Condition inside 'Assert' call was false.");
         }
     }
 }

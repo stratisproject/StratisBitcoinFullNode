@@ -8,9 +8,28 @@ namespace Stratis.SmartContracts.Core.Backend
     /// </summary>
     public static class GasPriceList
     {
+        /// <summary>The base cost trying to execute a smart contract.</summary>
+        public static Gas BaseCost = (Gas)1000;
+
+        /// <summary>The cost per gas unit if contract does not exist.</summary>
+        private const ulong ContractDoesNotExistCost = 1000;
+
+        /// <summary>The cost per gas unit if contract validation fails.</summary>
+        private const ulong ContractValidationFailedCost = 1000;
+
         private const int StorageGasCost = 1;
         private const int MethodCallGasCost = 0;
         private const int InstructionGasCost = 1;
+
+        public static Gas ContractDoesNotExist()
+        {
+            return (Gas)(ContractDoesNotExistCost);
+        }
+
+        public static Gas ContractValidationFailed()
+        {
+            return (Gas)(ContractValidationFailedCost);
+        }
 
         /// <summary>
         /// TODO - Add actual costs

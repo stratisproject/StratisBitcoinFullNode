@@ -9,7 +9,6 @@ namespace Stratis.SmartContracts.Core.Exceptions
         protected SmartContractException(string message)
             : base(message)
         {
-
         }
     }
 }

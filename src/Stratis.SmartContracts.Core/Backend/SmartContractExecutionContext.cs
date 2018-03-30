@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.Core.Backend
+﻿using Stratis.Bitcoin.Utilities;
+
+namespace Stratis.SmartContracts.Core.Backend
 {
     /// <summary>
     /// Information about the current state of the blockchain that is passed into the virtual machine.
@@ -6,20 +8,21 @@
     public sealed class SmartContractExecutionContext : ISmartContractExecutionContext
     {
         /// <inheritdoc/>
-        public Block Block { get; }
+        public IBlock Block { get; }
 
         /// <inheritdoc/>
         public ulong GasPrice { get; }
 
         /// <inheritdoc/>
-        public object[] Parameters { get; private set; }
+        public IMessage Message { get; }
 
         /// <inheritdoc/>
-        public Message Message { get; }
+        public object[] Parameters { get; private set; }
 
-        public SmartContractExecutionContext(Block block, Message message, ulong gasPrice, object[] methodParameters = null)
+        public SmartContractExecutionContext(IBlock block, IMessage message, ulong gasPrice, object[] methodParameters = null)
         {
-            //TODO: Add some null checks here
+            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(message, nameof(message));
 
             this.Block = block;
             this.Message = message;

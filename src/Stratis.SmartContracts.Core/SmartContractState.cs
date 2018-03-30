@@ -11,11 +11,12 @@ namespace Stratis.SmartContracts.Core
     public sealed class SmartContractState : ISmartContractState
     {
         public SmartContractState(
-            Block block,
-            Message message,
+            IBlock block,
+            IMessage message,
             IPersistentState persistentState,
             IGasMeter gasMeter,
             IInternalTransactionExecutor internalTransactionExecutor,
+            IInternalHashHelper internalHashHelper,
             Func<ulong> getBalance)
         {
             this.Block = block;
@@ -23,18 +24,21 @@ namespace Stratis.SmartContracts.Core
             this.PersistentState = persistentState;
             this.GasMeter = gasMeter;
             this.InternalTransactionExecutor = internalTransactionExecutor;
+            this.InternalHashHelper = internalHashHelper;
             this.GetBalance = getBalance;
         }
 
-        public Block Block { get; }
+        public IBlock Block { get; }
 
-        public Message Message { get; }
+        public IMessage Message { get; }
 
         public IPersistentState PersistentState { get; }
 
         public IGasMeter GasMeter { get; }
 
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }
+
+        public IInternalHashHelper InternalHashHelper { get; }
 
         public Func<ulong> GetBalance { get; }
     }

@@ -119,6 +119,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<FlatHistory> GetHistory(Wallet wallet);
 
         /// <summary>
+        /// Gets the balances of this wallet's accounts.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>Collection of account balances.</returns>
+        IEnumerable<AccountBalance> GetBalances(string walletName);
+
+        /// <summary>
         /// Gets some general information about a wallet.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
@@ -157,7 +164,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="blockHeight">The height of the block this transaction came from. Null if it was not a transaction included in a block.</param>
         /// <param name="block">The block in which this transaction was included.</param>
         /// <param name="isPropagated">Transaction propagation state.</param>
-        void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
+        /// <returns>A value indicating whether this transaction affects the wallet.</returns>
+        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
 
         /// <summary>
         /// Saves the wallet into the file system.
@@ -245,5 +253,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         DateTimeOffset GetOldestWalletCreationTime();
+
+        /// <summary>
+        /// Removes the specified transactions from the wallet and persist it.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <param name="transactionsIds">The IDs of trandactions to remove.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
+
+        /// <summary>
+        /// Removes all the transactions from the wallet and persist it.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
     }
 }

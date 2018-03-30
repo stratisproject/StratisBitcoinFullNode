@@ -80,6 +80,45 @@ namespace Stratis.Bitcoin.P2P
         public DateTime? LastSeen { get; private set; }
 
         /// <summary>
+        /// UTC DateTime when a peer is banned.
+        /// </summary>
+        /// <remarks>
+        /// This is set in <see cref="PeerBanning"/>.
+        /// </remarks>
+        [JsonProperty(PropertyName = "bantimestamp", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? BanTimeStamp { get; set; }
+
+        /// <summary>
+        /// UTC DateTime when the ban expires against the peer.
+        /// </summary>
+        /// <remarks>
+        /// This is set in <see cref="PeerBanning"/>.
+        /// </remarks>
+        [JsonProperty(PropertyName = "banuntil", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? BanUntil { get; set; }
+
+        /// <summary>
+        /// Reason for banning the peer.
+        /// <remarks>
+        /// This is set in <see cref="PeerBanning"/>.
+        /// </remarks>
+        [JsonProperty(PropertyName = "banreason", NullValueHandling = NullValueHandling.Ignore)]
+        public string BanReason { get; set; }
+
+        /// <summary>
+        /// Maintain a count of bad behaviour.  
+        /// <para>
+        /// Once a certain score is reached ban the peer.
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// The logic around this has not yet been implemented.
+        /// This is set in <see cref="PeerBanning"/>.
+        /// </remarks>
+        [JsonProperty(PropertyName = "banscore", NullValueHandling = NullValueHandling.Ignore)]
+        public uint? BanScore { get; set; }
+
+        /// <summary>
         /// <c>True</c> if the peer has had connection attempts but none successful.
         /// </summary>
         [JsonIgnore]

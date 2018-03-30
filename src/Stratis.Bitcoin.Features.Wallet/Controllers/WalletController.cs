@@ -476,21 +476,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 WalletBalanceModel model = new WalletBalanceModel();
 
-                var accounts = this.walletManager.GetAccounts(request.WalletName).ToList();
-                foreach (var account in accounts)
-                {
-                    var result = account.GetSpendableAmount();
+                IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(request.WalletName);
 
-                    AccountBalance balance = new AccountBalance
+                foreach (AccountBalance balance in balances)
+                {
+                    HdAccount account = balance.Account;
+                    model.AccountsBalances.Add(new AccountBalanceModel
                     {
                         CoinType = this.coinType,
                         Name = account.Name,
                         HdPath = account.HdPath,
-                        AmountConfirmed = result.ConfirmedAmount,
-                        AmountUnconfirmed = result.UnConfirmedAmount,
-                    };
-
-                    model.AccountsBalances.Add(balance);
+                        AmountConfirmed = balance.AmountConfirmed,
+                        AmountUnconfirmed = balance.AmountUnconfirmed
+                    });
                 }
 
                 return this.Json(model);
@@ -818,6 +816,66 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         IsChange = address.IsChangeAddress()
                     })
                 };
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Removed transactions from the wallet.
+        /// </summary>
+        [Route("remove-transactions")]
+        [HttpDelete]
+        public IActionResult RemoveTransactions([FromQuery]RemoveTransactionsModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                HashSet<(uint256 transactionId, DateTimeOffset creationTime)> result;
+
+                if (request.DeleteAll)
+                {
+                    result = this.walletManager.RemoveAllTransactions(request.WalletName);
+                }
+                else
+                {
+                    IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
+                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                }
+
+                // If the user chose to resync the wallet after removing transactions.
+                if (result.Any() && request.ReSync)
+                {
+                    // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
+                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
+                    ChainedBlock chainedBlock = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+
+                    // Update the wallet and save it to the file system.
+                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                    wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedBlock);
+                    this.walletManager.SaveWallet(wallet);
+
+                    // Start the syncing process from the block before the earliest transaction was seen.
+                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height - 1);
+                }
+
+                IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
+                {
+                    TransactionId = r.transactionId,
+                    CreationTime = r.creationTime
+                });
 
                 return this.Json(model);
             }

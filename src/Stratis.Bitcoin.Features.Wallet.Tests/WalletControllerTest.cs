@@ -1140,11 +1140,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account2.ExternalAddresses.Add(account2Address1);
             account2.InternalAddresses.Add(account2Address2);
 
-            var accounts = new List<HdAccount> { account, account2 };
-            var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(w => w.GetAccounts("myWallet"))
-                .Returns(accounts);
+            var accountsBalances = new List<AccountBalance>
+            {
+                new AccountBalance { Account = account, AmountConfirmed = new Money(130000), AmountUnconfirmed = new Money(35000) },
+                new AccountBalance { Account = account2, AmountConfirmed = new Money(108000), AmountUnconfirmed = new Money(139000) }
+            };
 
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(w => w.GetBalances("myWallet")).Returns(accountsBalances);
+            
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
             {
@@ -1157,7 +1161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotNull(model);
             Assert.Equal(2, model.AccountsBalances.Count);
 
-            AccountBalance resultingBalance = model.AccountsBalances[0];
+            AccountBalanceModel resultingBalance = model.AccountsBalances[0];
             Assert.Equal(Network.Main.Consensus.CoinType, (int)resultingBalance.CoinType);
             Assert.Equal(account.Name, resultingBalance.Name);
             Assert.Equal(account.HdPath, resultingBalance.HdPath);
@@ -1218,7 +1222,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetBalanceWithExceptionReturnsBadRequest()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(m => m.GetAccounts("myWallet"))
+            mockWalletWrapper.Setup(m => m.GetBalances("myWallet"))
                   .Throws(new InvalidOperationException("Issue retrieving accounts."));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1487,7 +1491,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Setup(m => m.GetWalletsFiles())
                 .Returns((walletPath, new[] { "wallet1.wallet.json", "wallet2.wallet.json" }));
 
-            //var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletFileExtension()).Returns("wallet.json");
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1835,6 +1838,129 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(actualFee);
             Assert.Equal(expectedFee, actualFee);
+        }
+
+        [Fact]
+        public void RemoveAllTransactionsWithSyncEnabledSyncsAfterRemoval()
+        {
+            // Arrange.
+            string walletName = "wallet1";
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot());
+            uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
+            uint256 trxId2 = uint256.Parse("a3dd63ec364fcb59043a1cf209285d8e60f1cc06186d4dcbce496cdbb4303401");
+            HashSet<(uint256 trxId, DateTimeOffset creationTime)> resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
+            resultModel.Add((trxId1, DateTimeOffset.Now));
+            resultModel.Add((trxId2, DateTimeOffset.Now));
+
+            var walletManager = new Mock<IWalletManager>();
+            var walletSyncManager = new Mock<IWalletSyncManager>();
+            walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
+            walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
+            walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
+
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            RemoveTransactionsModel requestModel = new RemoveTransactionsModel
+            {
+                WalletName = walletName,
+                ReSync = true,
+                DeleteAll = true
+            };
+
+            // Act.
+            IActionResult result = controller.RemoveTransactions(requestModel);
+
+            // Assert.
+            walletManager.VerifyAll();
+            walletSyncManager.Verify(manager => manager.SyncFromHeight(It.IsAny<int>()), Times.Once);
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
+            Assert.NotNull(model);
+            Assert.Equal(2, model.Count());
+            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
+            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId2) != null);
+        }
+
+        [Fact]
+        public void RemoveAllTransactionsWithSyncDisabledDoesNotSyncAfterRemoval()
+        {
+            // Arrange.
+            string walletName = "wallet1";
+            uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
+            uint256 trxId2 = uint256.Parse("a3dd63ec364fcb59043a1cf209285d8e60f1cc06186d4dcbce496cdbb4303401");
+            HashSet<(uint256 trxId, DateTimeOffset creationTime)> resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
+            resultModel.Add((trxId1, DateTimeOffset.Now));
+            resultModel.Add((trxId2, DateTimeOffset.Now));
+
+            var walletManager = new Mock<IWalletManager>();
+            var walletSyncManager = new Mock<IWalletSyncManager>();
+            walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
+
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            RemoveTransactionsModel requestModel = new RemoveTransactionsModel
+            {
+                WalletName = walletName,
+                ReSync = false,
+                DeleteAll = true
+            };
+
+            // Act.
+            IActionResult result = controller.RemoveTransactions(requestModel);
+
+            // Assert.
+            walletManager.VerifyAll();
+            walletSyncManager.Verify(manager => manager.SyncFromHeight(It.IsAny<int>()), Times.Never);
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
+            Assert.NotNull(model);
+            Assert.Equal(2, model.Count());
+            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
+            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId2) != null);
+        }
+        
+        [Fact]
+        public void RemoveTransactionsWithIdsRemovesAllTransactionsByIds()
+        {
+            // Arrange.
+            string walletName = "wallet1";
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot());
+            uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
+            HashSet<(uint256 trxId, DateTimeOffset creationTime)> resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
+            resultModel.Add((trxId1, DateTimeOffset.Now));
+            
+            var walletManager = new Mock<IWalletManager>();
+            var walletSyncManager = new Mock<IWalletSyncManager>();
+            walletManager.Setup(manager => manager.RemoveTransactionsByIds(walletName, new []{ trxId1 })).Returns(resultModel);
+            walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
+            walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
+
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            RemoveTransactionsModel requestModel = new RemoveTransactionsModel
+            {
+                WalletName = walletName,
+                ReSync = true,
+                TransactionsIds = new [] { "d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400" }
+            };
+
+            // Act.
+            IActionResult result = controller.RemoveTransactions(requestModel);
+
+            // Assert.
+            walletManager.VerifyAll();
+            walletManager.Verify(manager => manager.RemoveAllTransactions(It.IsAny<string>()), Times.Never);
+            walletSyncManager.Verify(manager => manager.SyncFromHeight(It.IsAny<int>()), Times.Once);
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
+            Assert.NotNull(model);
+            Assert.Single(model);
+            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
         }
     }
 

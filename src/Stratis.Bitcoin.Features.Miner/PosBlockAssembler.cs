@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        private readonly StakeChain stakeChain;
+        private readonly IStakeChain stakeChain;
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private readonly IStakeValidator stakeValidator;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
-            StakeChain stakeChain,
+            IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,

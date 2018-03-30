@@ -202,12 +202,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // If we are here, was definitely submitted by someone
             ValidateSubmittedTransaction(transaction);
 
-            TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-            // boring transaction, return
-            if (contractTxOut == null)
+            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            if (smartContractTxOut == null)
                 return;
 
-            ExecuteContractTransaction(context, transaction, contractTxOut);
+            ExecuteContractTransaction(context, transaction, smartContractTxOut);
         }
 
         /// <summary>
@@ -242,23 +241,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <param name="contractTxOut"></param>
         private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut contractTxOut)
         {
-            ulong blockNum = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
-            ulong difficulty = Convert.ToUInt64(context.NextWorkRequired.Difficulty);
+            ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
             IContractStateRepository track = this.originalStateRoot.StartTracking();
             var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
 
             smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = new SmartContractTransactionExecutor(track, this.decompiler, this.validator, this.gasInjector, smartContractCarrier, blockNum, difficulty, coinbaseAddress, this.network);
-            ISmartContractExecutionResult result = executor.Execute();
-
-            if (result.Revert)
-                track.Rollback();
-            else
-                track.Commit();
+            var executor = SmartContractExecutor.InitializeForConsensus(smartContractCarrier, this.decompiler, this.gasInjector, this.network, track, this.validator);
+            ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;

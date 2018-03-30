@@ -7,6 +7,6 @@ public class DemoHelperTests
     [Fact]
     public void GetHexStringForDemo()
     {
-        string example = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/Demo.cs").ToHexString();
+        string example = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/SimpleAuction.cs").ToHexString();
     }
 }

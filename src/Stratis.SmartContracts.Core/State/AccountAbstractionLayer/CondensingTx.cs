@@ -174,13 +174,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// <param name="address">The address of the receiver.</param>
         private Script CreateScript(uint160 address)
         {
-            var script = new Script(
-                OpcodeType.OP_DUP,
-                OpcodeType.OP_HASH160,
-                Op.GetPushOp(address.ToBytes()),
-                OpcodeType.OP_EQUALVERIFY,
-                OpcodeType.OP_CHECKSIG
-            );
+            Script script = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(address));
             return script;
         }
 
@@ -195,13 +189,13 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
                     Nvout = this.smartContractCarrier.Nvout,
                     Value = this.smartContractCarrier.TxOutValue
                 });
-                this.txBalances[this.smartContractCarrier.To] = this.smartContractCarrier.TxOutValue;
+                this.txBalances[this.smartContractCarrier.ContractAddress] = this.smartContractCarrier.TxOutValue;
             }
 
             // For each unique address, if it is a contract, get the utxo it currently holds.
             var uniqueAddresses = new HashSet<uint160>
             {
-                this.smartContractCarrier.To
+                this.smartContractCarrier.ContractAddress
             };
 
             foreach (TransferInfo transferInfo in this.transfers)

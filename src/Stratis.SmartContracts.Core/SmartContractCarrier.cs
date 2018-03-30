@@ -15,31 +15,34 @@ namespace Stratis.SmartContracts.Core
     /// <list>
     /// <item><see cref="VmVersion"/></item>
     /// <item><see cref="OpCodeType"/></item>
-    /// <item>If applicable <see cref="To"/></item>
+    /// <item>If applicable <see cref="ContractAddress"/></item>
     /// <item>If applicable <see cref="MethodName"/></item>
     /// <item>If applicable <see cref="ContractExecutionCode"/></item>
     /// <item>If applicable <see cref="MethodParameters"/></item>
-    /// <item><see cref="GasUnitPrice"/></item>
+    /// <item><see cref="GasPrice"/></item>
     /// <item><see cref="GasLimit"/></item>
     /// </list>
-    /// </para>
+    /// </para>111
     /// </summary>
     public sealed class SmartContractCarrier
     {
+        /// <summary>This is the contract's address.</summary>
+        public uint160 ContractAddress { get; set; }
+
         /// <summary>The contract code that will be executed.</summary>
         public byte[] ContractExecutionCode { get; private set; }
 
-        /// <summary>The maximum amount of satoshi that can spent to execute this contract.</summary>
+        /// <summary>The maximum amount of gas units that can spent to execute this contract.</summary>
         public Gas GasLimit { get; private set; }
 
         /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
         public ulong GasCostBudget
         {
-            get { return this.GasUnitPrice * this.GasLimit; }
+            get { return this.GasPrice * this.GasLimit; }
         }
 
         /// <summary>The amount it costs per unit of gas to execute the contract.</summary>
-        public ulong GasUnitPrice { get; private set; }
+        public ulong GasPrice { get; private set; }
 
         /// <summary>The size of the bytes (int) we take to determine the length of the subsequent byte array.</summary>
         private const int intLength = sizeof(int);
@@ -76,9 +79,6 @@ namespace Stratis.SmartContracts.Core
         /// </summary>
         public int VmVersion { get; private set; }
 
-        /// <summary>This is the new contract's address.</summary>
-        public uint160 To { get; set; }
-
         private SmartContractCarrier(IMethodParameterSerializer serializer)
         {
             this.serializer = serializer;
@@ -93,7 +93,7 @@ namespace Stratis.SmartContracts.Core
             carrier.VmVersion = vmVersion;
             carrier.OpCodeType = OpcodeType.OP_CREATECONTRACT;
             carrier.ContractExecutionCode = contractExecutionCode ?? throw new SmartContractCarrierException(nameof(contractExecutionCode) + " is null");
-            carrier.GasUnitPrice = gasPrice;
+            carrier.GasPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
         }
@@ -111,9 +111,9 @@ namespace Stratis.SmartContracts.Core
         /// <summary>
         /// Instantiates a <see cref="OpcodeType.OP_CALLCONTRACT"/> smart contract carrier with parameters.
         /// </summary>
-        public static SmartContractCarrier CallContract(int vmVersion, uint160 to, string methodName, ulong gasPrice, Gas gasLimit, string[] methodParameters)
+        public static SmartContractCarrier CallContract(int vmVersion, uint160 contractAddress, string methodName, ulong gasPrice, Gas gasLimit, string[] methodParameters)
         {
-            SmartContractCarrier carrier = CallContract(vmVersion, to, methodName, gasPrice, gasLimit);
+            SmartContractCarrier carrier = CallContract(vmVersion, contractAddress, methodName, gasPrice, gasLimit);
             carrier.WithParameters(methodParameters);
             return carrier;
         }
@@ -121,14 +121,14 @@ namespace Stratis.SmartContracts.Core
         /// <summary>
         /// Instantiates a <see cref="OpcodeType.OP_CALLCONTRACT"/> smart contract carrier.
         /// </summary>
-        public static SmartContractCarrier CallContract(int vmVersion, uint160 to, string methodName, ulong gasPrice, Gas gasLimit)
+        public static SmartContractCarrier CallContract(int vmVersion, uint160 contractAddress, string methodName, ulong gasPrice, Gas gasLimit)
         {
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
             carrier.VmVersion = vmVersion;
             carrier.OpCodeType = OpcodeType.OP_CALLCONTRACT;
-            carrier.To = to;
+            carrier.ContractAddress = contractAddress;
             carrier.MethodName = methodName ?? throw new SmartContractCarrierException(nameof(methodName) + " is null");
-            carrier.GasUnitPrice = gasPrice;
+            carrier.GasPrice = gasPrice;
             carrier.GasLimit = gasLimit;
             return carrier;
         }
@@ -170,7 +170,7 @@ namespace Stratis.SmartContracts.Core
 
             if (carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT)
             {
-                carrier.To = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
+                carrier.ContractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 carrier.MethodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
             }
 
@@ -182,7 +182,7 @@ namespace Stratis.SmartContracts.Core
                 carrier.MethodParameters = carrier.serializer.ToObjects(methodParameters);
 
             carrier.Nvout = Convert.ToUInt32(transaction.Outputs.IndexOf(smartContractTxOut));
-            carrier.GasUnitPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            carrier.GasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             carrier.GasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             carrier.TransactionHash = transaction.GetHash();
             carrier.TxOutValue = smartContractTxOut.Value;
@@ -240,7 +240,7 @@ namespace Stratis.SmartContracts.Core
 
             if (this.OpCodeType == OpcodeType.OP_CALLCONTRACT)
             {
-                bytes.AddRange(this.PrefixLength(this.To.ToBytes()));
+                bytes.AddRange(this.PrefixLength(this.ContractAddress.ToBytes()));
                 bytes.AddRange(this.PrefixLength(Encoding.UTF8.GetBytes(this.MethodName)));
             }
 
@@ -252,7 +252,7 @@ namespace Stratis.SmartContracts.Core
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.GasUnitPrice)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.GasPrice)));
             bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.GasLimit)));
 
             return bytes.ToArray();

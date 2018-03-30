@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using HashLib;
+﻿using HashLib;
 using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Core.Hashing
@@ -9,24 +8,36 @@ namespace Stratis.SmartContracts.Core.Hashing
     /// </summary>
     public static class HashHelper
     {
+        private static readonly IHash Keccak = HashFactory.Crypto.SHA3.CreateKeccak256();
         public static readonly byte[] EmptyByteArray = new byte[0];
         public static readonly byte[] EmptyDataHash = Keccak256(EmptyByteArray);
         public static readonly byte[] EmptyElementRlp = RLP.EncodeElement(EmptyByteArray);
         public static readonly byte[] EmptyTrieHash = Keccak256(EmptyElementRlp);
 
+        /// <summary>
+        /// Returns a 32-byte Keccak256 hash of the given bytes.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static byte[] Keccak256(byte[] input)
         {
-            return HashFactory.Crypto.SHA3.CreateKeccak256().ComputeBytes(input).GetBytes();
+            return Keccak.ComputeBytes(input).GetBytes();
         }
+    }
 
+    /// <summary>
+    /// This gets injected into the contract to provide implementations for the hashing of data. 
+    /// </summary>
+    public class InternalHashHelper : IInternalHashHelper
+    {
         /// <summary>
-        /// TODO: Concrete rules around byte size here OR remove if we're not even using it
+        /// Returns a 32-byte Keccak256 hash of the given bytes.
         /// </summary>
-        /// <param name="address"></param>
-        /// <param name="nonce"></param>
-        public static byte[] NewContractAddress(byte[] address, byte[] nonce)
+        /// <param name="toHash"></param>
+        /// <returns></returns>
+        public byte[] Keccak256(byte[] toHash)
         {
-            return Keccak256(address.Concat(nonce).ToArray()).Skip(12).ToArray();
+            return HashHelper.Keccak256(toHash);
         }
     }
 }

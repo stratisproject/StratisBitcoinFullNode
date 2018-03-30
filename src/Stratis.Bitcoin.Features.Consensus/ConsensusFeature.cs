@@ -161,8 +161,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.logger.LogInformation("Flushing Cache CoinView...");
                 cache.FlushAsync().GetAwaiter().GetResult();
+                cache.Dispose();
             }
-
+           
             this.dBreezeCoinView.Dispose();
         }
     }
@@ -233,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>();
                         services.AddSingleton<IConsensusLoop, ConsensusLoop>();
-                        services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
+                        services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>().AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();

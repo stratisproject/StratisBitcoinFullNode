@@ -5,9 +5,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
-    public class SmartContractNodeSyncTests
+    public sealed class SmartContractNodeSyncTests
     {
         [Fact]
         public void NodesCanConnectToEachOthers()
