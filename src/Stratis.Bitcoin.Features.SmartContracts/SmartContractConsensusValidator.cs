@@ -238,26 +238,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         /// <param name="context"></param>
         /// <param name="transaction"></param>
-        /// <param name="contractTxOut"></param>
-        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut contractTxOut)
+        /// <param name="smartContractTxOut"></param>
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
-            IContractStateRepository track = this.originalStateRoot.StartTracking();
-            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
+            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, smartContractTxOut);
 
             smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = SmartContractExecutor.InitializeForConsensus(smartContractCarrier, this.decompiler, this.gasInjector, this.network, track, this.validator);
+            var executor = SmartContractExecutor.InitializeForConsensus(
+                smartContractCarrier, 
+                this.decompiler, 
+                this.gasInjector, 
+                this.network, 
+                this.originalStateRoot, 
+                this.validator
+            );
             ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
-
-            track.Commit();
         }
 
     }
