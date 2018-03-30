@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts
         private readonly IInternalHashHelper internalHashHelper;
 
         /// <summary>
-        /// TODO: Add documentation
+        /// The current state of the blockchain and current transaction.
         /// </summary>
         private readonly ISmartContractState smartContractState;
 
