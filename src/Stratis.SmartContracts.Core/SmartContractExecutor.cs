@@ -268,7 +268,7 @@ namespace Stratis.SmartContracts.Core
             if (transfers.Any() || this.carrier.TxOutValue > 0)
             {
                 var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
-                this.Result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+                this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
             this.stateSnapshot.Transfers.Clear();
@@ -283,7 +283,7 @@ namespace Stratis.SmartContracts.Core
             if (this.carrier.TxOutValue > 0)
             {
                 Transaction tx = new CondensingTx(this.carrier, this.network).CreateRefundTransaction();
-                this.Result.InternalTransactions.Add(tx);
+                this.Result.InternalTransaction = tx;
             }
         }
     }

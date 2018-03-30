@@ -162,9 +162,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             AccountState accountState = this.stateRepository.GetAccountState(address);
             if (accountState != null)
             {
-                // This is meant to be a 'callcontract' with 0 for all parameters - and it should never be executed itself. It exists inside the execution of another contract.
-                var newSmartContractCarrier = SmartContractCarrier.CallContract(1, address, string.Empty, 0, Gas.None);
-                return new Script(newSmartContractCarrier.Serialize());
+                return new Script(OpcodeType.OP_INTERNALCONTRACTTRANSFER, Op.GetPushOp(address.ToBytes()));
             }
 
             return this.CreateScript(address);

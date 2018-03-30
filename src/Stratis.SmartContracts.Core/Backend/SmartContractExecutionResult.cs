@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Core.Backend
         public Gas GasConsumed { get; set; }
 
         /// <inheritdoc/>
-        public List<Transaction> InternalTransactions { get; set; }
+        public Transaction InternalTransaction { get; set; }
 
         /// <inheritdoc/>
         public uint160 NewContractAddress { get; set; }
@@ -43,7 +43,6 @@ namespace Stratis.SmartContracts.Core.Backend
 
         public SmartContractExecutionResult()
         {
-            this.InternalTransactions = new List<Transaction>();
             this.Refunds = new List<TxOut>();
         }
 
@@ -53,12 +52,6 @@ namespace Stratis.SmartContracts.Core.Backend
         public void Merge(ISmartContractExecutionResult another)
         {
             throw new NotImplementedException();
-
-            //if (another.Exception == null && !another.Revert)
-            //{
-            //    this.FutureRefund += another.FutureRefund;
-            //    this.InternalTransactions.AddRange(another.InternalTransactions);
-            //}
         }
 
         /// <summary>

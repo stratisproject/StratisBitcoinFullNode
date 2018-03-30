@@ -128,12 +128,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.blockSigOpsCost += mempoolEntry.SigOpCost;
             this.inBlock.Add(mempoolEntry);
 
-            // Process any internal transactions made during execution.
-            foreach (Transaction transaction in result.InternalTransactions)
+            // Add internal transactions made during execution
+            if(result.InternalTransaction != null)
             {
-                this.pblock.AddTransaction(transaction);
+                this.pblock.AddTransaction(result.InternalTransaction);
                 if (this.needSizeAccounting)
-                    this.blockSize += transaction.GetSerializedSize();
+                    this.blockSize += result.InternalTransaction.GetSerializedSize();
                 this.blockTx++;
             }
         }
