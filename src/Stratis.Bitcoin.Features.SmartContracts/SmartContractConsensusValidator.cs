@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -22,12 +21,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
-        private readonly SmartContractDecompiler decompiler;
-        private readonly SmartContractValidator validator;
-        private readonly ISmartContractGasInjector gasInjector;
-        private readonly Network network;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
+        private SmartContractExecutorFactory executorFactory;
 
         public SmartContractConsensusValidator(
             CoinView coinView,
@@ -36,19 +32,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            SmartContractDecompiler decompiler,
-            SmartContractValidator validator,
-            ISmartContractGasInjector gasInjector)
+            SmartContractExecutorFactory executorFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.originalStateRoot = stateRoot;
-            this.decompiler = decompiler;
-            this.validator = validator;
-            this.gasInjector = gasInjector;
             this.generatedTransaction = null;
-            this.network = network;
+            this.executorFactory = executorFactory;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
@@ -250,14 +241,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = SmartContractExecutor.InitializeForConsensus(
-                smartContractCarrier, 
-                this.decompiler, 
-                this.gasInjector, 
-                this.network, 
-                this.originalStateRoot, 
-                this.validator
-            );
+            SmartContractExecutor executor = this.executorFactory.CreateExecutorForConsensusValidator(smartContractCarrier, this.originalStateRoot);
             ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
 
             if (result.InternalTransaction != null)

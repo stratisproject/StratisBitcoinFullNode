@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 BlockMinFeeRate = blockMinFeeRate
             };
 
-            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.decompiler, testContext.validator, testContext.gasInjector, testContext.cachedCoinView, options);
+            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.executorFactory, testContext.cachedCoinView, options);
         }
 
         public class Blockinfo
@@ -137,6 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public SmartContractDecompiler decompiler;
             public SmartContractValidator validator;
             public ISmartContractGasInjector gasInjector;
+            public SmartContractExecutorFactory executorFactory;
 
             private bool useCheckpoints = true;
             public Key privateKey;
@@ -190,7 +191,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
 
                 this.gasInjector = new SmartContractGasInjector();
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.decompiler, this.validator, this.gasInjector);
+                this.executorFactory = new SmartContractExecutorFactory(this.decompiler, this.gasInjector, this.validator, this.network);
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
