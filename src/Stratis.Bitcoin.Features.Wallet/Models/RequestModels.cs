@@ -125,6 +125,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string DestinationAddress { get; set; }
 
         [Required(ErrorMessage = "An amount is required.")]
+        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
         public string Amount { get; set; }
 
         public string FeeType { get; set; }
