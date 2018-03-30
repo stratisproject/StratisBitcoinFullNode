@@ -283,8 +283,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             byte[] ownerFromStorage = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
-            byte[] coinbaseToBytes = context.coinbaseAddress.ToBytes();
-            Assert.Equal(ownerFromStorage, coinbaseToBytes);
+            byte[] ownerToBytes = context.privateKey.PubKey.GetAddress(context.network).Hash.ToBytes();
+            Assert.Equal(ownerFromStorage, ownerToBytes);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
         }
