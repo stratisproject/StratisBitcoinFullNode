@@ -405,7 +405,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count)
+        public HdAddress GetUnusedChangeAddress(WalletAccountReference accountReference)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(accountReference), accountReference);
+
+            HdAddress res = this.GetUnusedAddresses(accountReference, 1, true).Single();
+
+            this.logger.LogTrace("(-)");
+            return res;
+        }
+
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
         {
             Guard.NotNull(accountReference, nameof(accountReference));
             Guard.Assert(count > 0);
@@ -421,20 +433,34 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-                List<HdAddress> unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                List<HdAddress> unusedAddresses = isChange ? 
+                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() : 
+                    account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                
                 int diff = unusedAddresses.Count - count;
                 if (diff < 0)
                 {
-                    IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
-                    this.UpdateKeysLookupLock(newReceivingAddresses);
+                    IEnumerable<HdAddress> newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange);
+                    this.UpdateKeysLookupLock(newAddresses);
                     generated = true;
                 }
 
-                addresses = account
-                    .ExternalAddresses
-                    .Where(acc => !acc.Transactions.Any())
-                    .OrderBy(x => x.Index)
-                    .Take(count);
+                if (isChange)
+                {
+                    addresses = account
+                        .InternalAddresses
+                        .Where(acc => !acc.Transactions.Any())
+                        .OrderBy(x => x.Index)
+                        .Take(count);
+                }
+                else
+                {
+                    addresses = account
+                        .ExternalAddresses
+                        .Where(acc => !acc.Transactions.Any())
+                        .OrderBy(x => x.Index)
+                        .Take(count);
+                }
             }
 
             if (generated)
