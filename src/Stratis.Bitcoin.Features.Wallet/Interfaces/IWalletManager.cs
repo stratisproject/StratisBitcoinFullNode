@@ -229,14 +229,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         ICollection<uint256> GetFirstWalletBlockLocator();
-
-        /// <summary>
-        /// Gets a change address or create one if all change addresses are used.
-        /// </summary>
-        /// <param name="account">The account to create the change address.</param>
-        /// <returns>The new HD address.</returns>
-        HdAddress GetOrCreateChangeAddress(HdAccount account);
-
+        
         /// <summary>
         /// Gets the list of the wallet filenames, along with the folder in which they're contained.
         /// </summary>

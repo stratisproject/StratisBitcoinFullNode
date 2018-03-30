@@ -472,35 +472,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return addresses;
         }
-
-        /// <inheritdoc />
-        public HdAddress GetOrCreateChangeAddress(HdAccount account)
-        {
-            this.logger.LogTrace("()");
-            HdAddress changeAddress = null;
-
-            lock (this.lockObject)
-            {
-                // Get an address to send the change to.
-                changeAddress = account.GetFirstUnusedChangeAddress();
-
-                // No more change addresses left so create a new one.
-                if (changeAddress == null)
-                {
-                    changeAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
-
-                    // Adds the address to the list of tracked addresses.
-                    this.UpdateKeysLookupLock(new[] { changeAddress });
-                }
-            }
-
-            // Persist the address to the wallet files.
-            this.SaveWallets();
-
-            this.logger.LogTrace("(-)");
-            return changeAddress;
-        }
-
+        
         /// <inheritdoc />
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {

@@ -812,8 +812,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
-
+            var result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
+            
             Assert.Equal(alice.GetAddress().ToString(), result.Address);
         }
 
@@ -839,8 +839,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ExternalAddresses = new List<HdAddress>()
             });
             walletManager.Wallets.Add(wallet);
-
-            var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
+            
+            var result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
 
             Assert.NotNull(result.Address);
         }
