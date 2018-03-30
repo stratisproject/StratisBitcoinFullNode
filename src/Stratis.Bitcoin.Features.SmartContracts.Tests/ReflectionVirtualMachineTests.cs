@@ -17,8 +17,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private readonly SmartContractDecompiler decompiler;
         private readonly ISmartContractGasInjector gasInjector;
+        private readonly Gas gasLimit;
+        private readonly IGasMeter gasMeter;
         private readonly Network network;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly PersistentState persistentState;
+        private readonly ContractStateRepositoryRoot state;
 
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
@@ -28,6 +32,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.gasInjector = new SmartContractGasInjector();
             this.network = Network.SmartContractsRegTest;
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
+            this.gasLimit = (Gas)10000;
+            this.gasMeter = new GasMeter(this.gasLimit);
+
+            this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter, this.keyEncodingStrategy);
+            this.persistentState = new PersistentState(this.state, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
         }
 
         [Fact]

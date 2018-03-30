@@ -19,6 +19,7 @@ namespace Stratis.SmartContracts.Core
         protected readonly SmartContractCarrier carrier;
         protected readonly SmartContractDecompiler decompiler;
         protected readonly ISmartContractGasInjector gasInjector;
+        protected readonly IGasMeter gasMeter;
         protected readonly Network network;
         protected readonly IContractStateRepository stateSnapshot;
         protected readonly SmartContractValidator validator;
@@ -46,6 +47,7 @@ namespace Stratis.SmartContracts.Core
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.validator = validator;
             this.keyEncodingStrategy = keyEncodingStrategy;
+            this.gasMeter = new GasMeter(this.carrier.GasLimit);
         }
 
         private static SmartContractExecutor Initialize(
@@ -107,13 +109,12 @@ namespace Stratis.SmartContracts.Core
             this.blockHeight = blockHeight;
             this.coinbaseAddress = coinbaseAddress;
 
+            PreExecute();
             OnExecute();
             PostExecute();
 
             return this.Result;
         }
-
-        public abstract void OnExecute();
 
         protected byte[] AddGasToContractExecutionCode(SmartContractDecompilation decompilation)
         {
@@ -145,25 +146,40 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
                 );
 
-            var gasMeter = new GasMeter(this.carrier.GasLimit);
-
             byte[] contractCodeWithGas = AddGasToContractExecutionCode(decompilation);
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(this.stateSnapshot, persistenceStrategy, contractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
             ISmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCodeWithGas.ToArray(),
+                contractCodeWithGas,
                 decompilation.ContractType.Name,
                 methodName,
                 executionContext,
-                gasMeter,
+                this.gasMeter,
                 new InternalTransactionExecutor(this.stateSnapshot, this.network, this.keyEncodingStrategy),
                 getBalance);
 
             return result;
         }
 
+        /// <summary>
+        /// Any logic that should happen before we start contract execution and/or validation
+        /// happens here.
+        /// <para>
+        /// A base fee should be spent before contract execution starts.
+        /// </para>
+        /// </summary>
+        private void PreExecute()
+        {
+            this.gasMeter.Spend(GasPriceList.BaseCost);
+        }
+
+        public abstract void OnExecute();
+
+        /// <summary>
+        /// Any logic that should happen after contract execution has taken place happens here.
+        /// </summary>
         private void PostExecute()
         {
             if (this.mempoolFee != null)
@@ -191,7 +207,7 @@ namespace Stratis.SmartContracts.Core
             // Create a new address for the contract.
             uint160 newContractAddress = this.carrier.GetNewContractAddress();
 
-            // Create a account for the contract in the state repository.
+            // Create an account for the contract in the state repository.
             this.stateSnapshot.CreateAccount(newContractAddress);
 
             // Decompile the contract execution code and validate it.
@@ -205,7 +221,7 @@ namespace Stratis.SmartContracts.Core
                 return;
             }
 
-            // Try and create the smart contract.
+            // Create the smart contract
             MethodDefinition initMethod = decompilation.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
             this.Result = CreateContextAndExecute(newContractAddress, decompilation, initMethod?.Name);
 
@@ -271,7 +287,7 @@ namespace Stratis.SmartContracts.Core
             if (transfers.Any() || this.carrier.TxOutValue > 0)
             {
                 var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
-                this.Result.InternalTransactions.Add(condensingTx.CreateCondensingTransaction());
+                this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
             this.stateSnapshot.Transfers.Clear();
@@ -286,7 +302,7 @@ namespace Stratis.SmartContracts.Core
             if (this.carrier.TxOutValue > 0)
             {
                 Transaction tx = new CondensingTx(this.carrier, this.network).CreateRefundTransaction();
-                this.Result.InternalTransactions.Add(tx);
+                this.Result.InternalTransaction = tx;
             }
         }
     }

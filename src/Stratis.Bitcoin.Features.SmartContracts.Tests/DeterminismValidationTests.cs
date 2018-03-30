@@ -118,7 +118,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
-
         #region BitConverter
 
         [Fact]
@@ -162,7 +161,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         #endregion
-
 
         #region Decimal and Floats
 

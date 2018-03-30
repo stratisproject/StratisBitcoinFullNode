@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using DBreeze;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -141,6 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public IKeyEncodingStrategy keyEncodingStrategy;
 
             private bool useCheckpoints = true;
+            public Key privateKey;
 
             public TestContext()
             {
@@ -155,9 +155,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // Note that by default, these tests run with size accounting enabled.
                 this.network = Network.SmartContractsRegTest;
-                var hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
-                this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
-                this.coinbaseAddress = new uint160(new Script(hex).Hash.ToBytes());
+                this.privateKey = new Key();
+                this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.privateKey.PubKey);
+
+                this.coinbaseAddress = new uint160(this.privateKey.PubKey.Hash.ToBytes(), false);
                 this.newBlock = new BlockTemplate();
 
                 this.entry = new TestMemPoolEntryHelper();
@@ -285,10 +286,69 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             byte[] ownerFromStorage = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
-            byte[] coinbaseToBytes = context.coinbaseAddress.ToBytes();
-            Assert.Equal(ownerFromStorage, coinbaseToBytes);
+            byte[] ownerToBytes = context.privateKey.PubKey.GetAddress(context.network).Hash.ToBytes();
+            Assert.Equal(ownerFromStorage, ownerToBytes);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+        }
+
+        /// <summary>
+        /// Try and spend outputs we don't own
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_TrySpendingFundsThatArentOurs_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress = tx.GetNewContractAddress();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 5000000000L - gasBudget;
+
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", gasPrice, gasLimit);
+            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
+
+            context.mempool.Clear();
+
+            var maliciousPerson = new Key();
+            var entryFee = 10000;
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+            var maliciousTxBuilder = new TransactionBuilder();
+            var maliciousAmount = 500000000; // 5 BTC
+            var maliciousPaymentScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(maliciousPerson.PubKey);
+
+            maliciousTxBuilder.AddCoins(pblocktemplate2.Block.Transactions[2]);
+            maliciousTxBuilder.Send(maliciousPaymentScript, maliciousAmount);
+            maliciousTxBuilder.SetChange(context.privateKey);
+            maliciousTxBuilder.SendFees(entryFee);
+            var maliciousTx = maliciousTxBuilder.BuildTransaction(false);
+
+            // Signing example
+            //tx.Sign(new Key[] { context.privateKey }, funds);
+
+            context.mempool.AddUnchecked(
+                maliciousTx.GetHash(), 
+                entry.Fee(entryFee)
+                    .Time(context.date.GetTime())
+                    .SpendsCoinbase(true)
+                    .FromTx(maliciousTx));
+
+            await Assert.ThrowsAsync<ConsensusErrorException>(async () =>
+            {
+                await BuildBlockAsync(context);
+            });
         }
 
         /// <summary>
@@ -575,8 +635,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var entryFee = gasBudget;
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
             Transaction tx = new Transaction();
-            tx.AddInput(new TxIn(new OutPoint(prevOutHash, 0), new Script(OpcodeType.OP_1)));
+            var txIn = new TxIn(new OutPoint(prevOutHash, 0));
+            txIn.ScriptSig = context.privateKey.ScriptPubKey;
+            tx.AddInput(txIn);
             tx.AddOutput(new TxOut(new Money(value), new Script(smartContractCarrier.Serialize())));
+            tx.Sign(context.privateKey, false);
             context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(entryFee).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
             return tx;
         }

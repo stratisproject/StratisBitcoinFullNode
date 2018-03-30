@@ -34,6 +34,7 @@ namespace Stratis.SmartContracts.Core.Backend
             }
 
             this.GasAvailable = (Gas)0;
+
             throw new OutOfGasException("Went over gas limit of " + this.GasLimit);
         }
     }

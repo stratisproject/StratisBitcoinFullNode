@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly Network network;
         private List<Transaction> blockTxsProcessed;
-        private Transaction lastProcessed;
+        private Transaction generatedTransaction;
 
         public SmartContractConsensusValidator(
             CoinView coinView,
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.decompiler = decompiler;
             this.validator = validator;
             this.gasInjector = gasInjector;
-            this.lastProcessed = null;
+            this.generatedTransaction = null;
             this.network = network;
             this.keyEncodingStrategy = keyEncodingStrategy;
         }
@@ -145,12 +145,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
-                                // TODO: OBVIOUSLY DON'T DO THIS
-                                return true;
-                                //var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                //var ctx = new ScriptEvaluationContext();
-                                //ctx.ScriptVerify = flags.ScriptFlags;
-                                //return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+                                if (txout.ScriptPubKey.IsSmartContractExec || txout.ScriptPubKey.IsSmartContractInternalCall)
+                                {
+                                    return input.ScriptSig.IsSmartContractSpend;
+                                }
+
+                                var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
+                                var ctx = new ScriptEvaluationContext();
+                                ctx.ScriptVerify = flags.ScriptFlags;
+                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
                             checkInput.Start(taskScheduler);
                             checkInputs.Add(checkInput);
@@ -175,10 +178,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            trackedState.Commit();
-
             if (new uint256(this.originalStateRoot.Root) != block.Header.HashStateRoot)
-                throw new Exception("State roots aren't matching - should create new exception");
+                SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.originalStateRoot.Commit();
 
@@ -195,35 +196,77 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.UpdateCoinView(context, transaction);
 
-            if (this.lastProcessed != null)
+            if (this.generatedTransaction != null)
             {
-                // ensure that transactions generated are equal
-                if (this.lastProcessed.GetHash() != transaction.GetHash())
-                    throw new Exception("Not matching - should create a proper exception here.");
-                this.lastProcessed = null;
+                ValidateGeneratedTransaction(transaction);
                 return;
             }
+            
+            // If we are here, was definitely submitted by someone
+            ValidateSubmittedTransaction(transaction);
 
-            TxOut contractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-            // boring transaction, return
-            if (contractTxOut == null)
+            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            if (smartContractTxOut == null)
                 return;
 
-            // if it's a condensing transaction, need to ensure it's identical 
+            ExecuteContractTransaction(context, transaction, smartContractTxOut);
+        }
+
+        /// <summary>
+        /// Validates that any condensing transaction matches the transaction generated during execution
+        /// </summary>
+        /// <param name="transaction"></param>
+        private void ValidateGeneratedTransaction(Transaction transaction)
+        {
+            if (this.generatedTransaction.GetHash() != transaction.GetHash())
+                SmartContractConsensusErrors.UnequalCondensingTx.Throw();
+            this.generatedTransaction = null;
+            return;
+        }
+        
+        /// <summary>
+        /// Validates that a submitted transacction doesn't contain illegal operations
+        /// </summary>
+        /// <param name="transaction"></param>
+        private void ValidateSubmittedTransaction(Transaction transaction)
+        {
+            if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
+                SmartContractConsensusErrors.UserOpSpend.Throw();
+            if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall))
+                SmartContractConsensusErrors.UserInternalCall.Throw(); 
+        }
+
+        /// <summary>
+        /// Executes the smart contract part of a transaction
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="transaction"></param>
+        /// <param name="smartContractTxOut"></param>
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
+        {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
-            //IContractStateRepository track = trackedState.StartTracking();
-            var carrier = SmartContractCarrier.Deserialize(transaction, contractTxOut);
-            carrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, smartContractTxOut);
+
+            smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            var executor = SmartContractExecutor.InitializeForConsensus(carrier, this.decompiler, this.gasInjector, this.network, trackedState, this.validator, this.keyEncodingStrategy);
+            var executor = SmartContractExecutor.InitializeForConsensus(
+                smartContractCarrier, 
+                this.decompiler, 
+                this.gasInjector, 
+                this.network, 
+                this.originalStateRoot, 
+                this.validator,
+                this.keyEncodingStrategy
+            );
             ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
 
-            if (result.InternalTransactions.Any())
-                this.lastProcessed = result.InternalTransactions.FirstOrDefault();
+            if (result.InternalTransaction != null)
+                this.generatedTransaction = result.InternalTransaction;
         }
+
     }
 }

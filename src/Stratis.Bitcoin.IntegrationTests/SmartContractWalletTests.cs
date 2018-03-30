@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a token contract
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)1000;
+                Gas gasLimit = (Gas)2000;
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
                 var contractCreateScript = new Script(contractCarrier.Serialize());
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
@@ -149,6 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     MinConfirmations = 101,
                     FeeType = FeeType.High,
                 };
+
                 Transaction transferContractTransaction = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
 
                 // Broadcast the token transaction to the network

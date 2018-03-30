@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (smartContractTxOut == null)
                 base.AddToBlock(mempoolEntry);
             else
-                this.AddContractCallToBlock(mempoolEntry, smartContractTxOut);
+                this.AddContractToBlock(mempoolEntry, smartContractTxOut);
         }
 
 
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
-        private void AddContractCallToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
+        private void AddContractToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
         {
             var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
             carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
@@ -134,12 +134,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.blockSigOpsCost += mempoolEntry.SigOpCost;
             this.inBlock.Add(mempoolEntry);
 
-            // Process any internal transactions made during execution.
-            foreach (Transaction transaction in result.InternalTransactions)
+            // Add internal transactions made during execution
+            if(result.InternalTransaction != null)
             {
-                this.pblock.AddTransaction(transaction);
+                this.pblock.AddTransaction(result.InternalTransaction);
                 if (this.needSizeAccounting)
-                    this.blockSize += transaction.GetSerializedSize();
+                    this.blockSize += result.InternalTransaction.GetSerializedSize();
                 this.blockTx++;
             }
         }

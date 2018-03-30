@@ -31,12 +31,9 @@ namespace Stratis.SmartContracts.Core.Backend
         Gas GasConsumed { get; set; }
 
         /// <summary>
-        /// A list of transactions made inside the contract call.
-        /// <para>
-        /// There should only be one condensing transaction for now.
-        /// </para>
+        /// The condensing transaction produced by the contract execution.
         /// </summary>
-        List<Transaction> InternalTransactions { get; set; }
+        Transaction InternalTransaction { get; set; }
 
         /// <summary>
         /// After a contract is executed internally, we will need to merge the results.
