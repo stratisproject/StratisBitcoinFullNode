@@ -257,6 +257,16 @@ namespace NBitcoin
         }
     }
 
+    public static class StringExtensions
+    {
+        public static string ToHexString(this string asciiString)
+        {
+            if (string.IsNullOrEmpty(asciiString)) return asciiString;
+            var charsInHex = asciiString.Cast<int>().Select(c => string.Format("{0:x2}", c));
+            return string.Join(string.Empty, charsInHex);
+        }
+
+    }
     internal static class ByteArrayExtensions
     {
         internal static bool StartWith(this byte[] data, byte[] versionBytes)

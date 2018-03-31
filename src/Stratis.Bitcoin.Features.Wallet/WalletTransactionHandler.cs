@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly CoinType coinType;
 
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Transaction BuildTransaction(TransactionBuildContext context)
+        public virtual Transaction BuildTransaction(TransactionBuildContext context)
         {
             this.InitializeTransactionBuilder(context);
 
@@ -60,14 +60,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             // build transaction
             context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
-            if (!context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-            {
-                string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
-                this.logger.LogError($"Build transaction failed: {errorsMessage}");
-                throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
-            }
+            VerifyTransaction(context);
 
             return context.Transaction;
+        }
+
+        protected void VerifyTransaction(TransactionBuildContext context)
+        {
+            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                return;
+            string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
+            this.logger.LogError($"Build transaction failed: {errorsMessage}");
+            throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
         }
 
         /// <inheritdoc />
@@ -180,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        private void InitializeTransactionBuilder(TransactionBuildContext context)
+        protected void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));

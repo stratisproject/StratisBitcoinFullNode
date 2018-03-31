@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     {
         private readonly IWalletManager walletManager;
 
-        private readonly IWalletTransactionHandler walletTransactionHandler;
+        protected readonly IWalletTransactionHandler walletTransactionHandler;
 
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         private readonly IBroadcasterManager broadcasterManager;
 
@@ -591,21 +591,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                    request.Password)
-                {
-                    TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
-                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
-                };
-
-                if (!string.IsNullOrEmpty(request.FeeType))
-                {
-                    context.FeeType = FeeParser.Parse(request.FeeType);
-                }
+                TransactionBuildContext context = CreateTransactionBuildContext(request);
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
@@ -623,6 +609,27 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+        protected TransactionBuildContext CreateTransactionBuildContext(BuildTransactionRequest request)
+        {
+            var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+            var context = new TransactionBuildContext(
+                new WalletAccountReference(request.WalletName, request.AccountName),
+                new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
+                request.Password)
+            {
+                TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
+                MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
+            };
+
+            if (!string.IsNullOrEmpty(request.FeeType))
+            {
+                context.FeeType = FeeParser.Parse(request.FeeType);
+            }
+
+            return context;
         }
 
         /// <summary>
@@ -943,7 +950,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>
-        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
+        protected static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
         {
             List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
             return ErrorHelpers.BuildErrorResponse(

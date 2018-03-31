@@ -296,7 +296,7 @@ namespace NBitcoin
                 set;
             }
         }
-        internal class TransactionBuildingContext
+        internal protected class TransactionBuildingContext
         {
             public TransactionBuildingContext(TransactionBuilder builder)
             {
@@ -436,7 +436,7 @@ namespace NBitcoin
             }
         }
 
-        internal class BuilderGroup
+        internal protected class BuilderGroup
         {
             TransactionBuilder _Parent;
             public BuilderGroup(TransactionBuilder parent)
@@ -1031,23 +1031,35 @@ namespace NBitcoin
         /// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
         public Transaction BuildTransaction(bool sign, SigHash sigHash)
         {
+            TransactionBuildingContext ctx = CreateTransactionBuildingContext();
+            ctx.Finish();
+
+            if (sign)
+            {
+                SignTransactionInPlace(ctx.Transaction, sigHash);
+            }
+            return ctx.Transaction;
+        }
+
+        protected TransactionBuildingContext CreateTransactionBuildingContext()
+        {
             TransactionBuildingContext ctx = new TransactionBuildingContext(this);
-            if(_CompletedTransaction != null)
+            if (_CompletedTransaction != null)
                 ctx.Transaction = _CompletedTransaction.Clone();
-            if(_LockTime != null)
+            if (_LockTime != null)
                 ctx.Transaction.LockTime = _LockTime.Value;
-            foreach(var group in _BuilderGroups)
+            foreach (var group in _BuilderGroups)
             {
                 ctx.Group = group;
                 ctx.AdditionalBuilders.Clear();
                 ctx.AdditionalFees = Money.Zero;
 
                 ctx.ChangeType = ChangeType.Colored;
-                foreach(var builder in group.IssuanceBuilders)
+                foreach (var builder in group.IssuanceBuilders)
                     builder(ctx);
 
                 var buildersByAsset = group.BuildersByAsset.ToList();
-                foreach(var builders in buildersByAsset)
+                foreach (var builders in buildersByAsset)
                 {
                     var coins = group.Coins.Values.OfType<ColoredCoin>().Where(c => c.Amount.Id == builders.Key);
 
@@ -1066,13 +1078,8 @@ namespace NBitcoin
                 ctx.ChangeType = ChangeType.Uncolored;
                 BuildTransaction(ctx, group, group.Builders, group.Coins.Values.OfType<Coin>(), Money.Zero);
             }
-            ctx.Finish();
 
-            if(sign)
-            {
-                SignTransactionInPlace(ctx.Transaction, sigHash);
-            }
-            return ctx.Transaction;
+            return ctx;
         }
 
         private IEnumerable<ICoin> BuildTransaction(
@@ -1254,7 +1261,7 @@ namespace NBitcoin
         /// <param name="tx">The transaction to check</param>
         /// <param name="errors">Detected errors</param>
         /// <returns>True if no error</returns>
-        public bool Verify(Transaction tx, out TransactionPolicyError[] errors)
+        public virtual bool Verify(Transaction tx, out TransactionPolicyError[] errors)
         {
             return Verify(tx, null as Money, out errors);
         }
