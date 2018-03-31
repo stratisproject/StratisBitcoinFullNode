@@ -50,7 +50,10 @@ namespace Stratis.SmartContracts.Core
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
         }
 
-        private static SmartContractExecutor Initialize(
+        /// <summary>
+        /// Returns a new SmartContractExecutor.
+        /// </summary>
+        public static SmartContractExecutor Initialize(
             SmartContractCarrier carrier,
             SmartContractDecompiler decompiler,
             ISmartContractGasInjector gasInjector,
@@ -65,43 +68,21 @@ namespace Stratis.SmartContracts.Core
                 return new CallSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
         }
 
-        /// <summary>
-        /// Initialize the smart contract executor for the block assembler. 
-        /// <para>
-        /// After the contract has been executed, it will process any fees and/or refunds.
-        /// </para>
-        /// </summary>
-        public static SmartContractExecutor InitializeForBlockAssembler(
-            SmartContractCarrier carrier,
-            SmartContractDecompiler decompiler,
-            ISmartContractGasInjector gasInjector,
-            Money mempoolFee,
-            Network network,
-            IContractStateRepository stateRepository,
-            SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy)
-        {
-            SmartContractExecutor executor = Initialize(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
-            executor.mempoolFee = mempoolFee;
-            return executor;
-        }
 
-        /// <summary>
-        /// Initialize the smart contract executor for the consensus validator. 
-        /// <para>
-        /// Fees and refunds will not be processed after contract execution.
-        /// </para>
         /// </summary>
-        public static SmartContractExecutor InitializeForConsensus(
+        public static SmartContractExecutor Initialize(
             SmartContractCarrier carrier,
             SmartContractDecompiler decompiler,
             ISmartContractGasInjector gasInjector,
             Network network,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy)
+            IKeyEncodingStrategy keyEncodingStrategy,
+            Money mempoolFee)
         {
-            return Initialize(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
+            SmartContractExecutor ret = Initialize(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
+            ret.mempoolFee = mempoolFee;
+            return ret;
         }
 
         public ISmartContractExecutionResult Execute(ulong blockHeight, uint160 coinbaseAddress)
