@@ -38,7 +38,8 @@ namespace Stratis.SmartContracts.Core
             Network network,
             IContractStateRepository stateSnapshot,
             SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy)
+            IKeyEncodingStrategy keyEncodingStrategy,
+            Money mempoolFee)
         {
             this.carrier = carrier;
             this.decompiler = decompiler;
@@ -47,28 +48,12 @@ namespace Stratis.SmartContracts.Core
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.validator = validator;
             this.keyEncodingStrategy = keyEncodingStrategy;
+            this.mempoolFee = mempoolFee;
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
         }
 
         /// <summary>
-        /// Returns a new SmartContractExecutor.
-        /// </summary>
-        public static SmartContractExecutor Initialize(
-            SmartContractCarrier carrier,
-            SmartContractDecompiler decompiler,
-            ISmartContractGasInjector gasInjector,
-            Network network,
-            IContractStateRepository stateRepository,
-            SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy)
-        {
-            if (carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
-                return new CreateSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
-            else
-                return new CallSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
-        }
-
-
+        /// Returns the correct SmartContractExecutor based on the carrier opcode.
         /// </summary>
         public static SmartContractExecutor Initialize(
             SmartContractCarrier carrier,
@@ -80,9 +65,10 @@ namespace Stratis.SmartContracts.Core
             IKeyEncodingStrategy keyEncodingStrategy,
             Money mempoolFee)
         {
-            SmartContractExecutor ret = Initialize(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy);
-            ret.mempoolFee = mempoolFee;
-            return ret;
+            if (carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
+                return new CreateSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy, mempoolFee);
+            else
+                return new CallSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy, mempoolFee);
         }
 
         public ISmartContractExecutionResult Execute(ulong blockHeight, uint160 coinbaseAddress)
@@ -177,8 +163,9 @@ namespace Stratis.SmartContracts.Core
             Network network,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy)
-            : base(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy)
+            IKeyEncodingStrategy keyEncodingStrategy,
+            Money mempoolFee)
+            : base(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy, mempoolFee)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT);
         }
@@ -224,8 +211,9 @@ namespace Stratis.SmartContracts.Core
             Network network,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy)
-            : base(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy)
+            IKeyEncodingStrategy keyEncodingStrategy,
+            Money mempoolFee)
+            : base(carrier, decompiler, gasInjector, network, stateRepository, validator, keyEncodingStrategy, mempoolFee)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT);
         }

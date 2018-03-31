@@ -1,5 +1,7 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -28,5 +30,20 @@ namespace Stratis.SmartContracts.Core
         {
             return new Address(new BitcoinPubKeyAddress(new KeyId(address), network).ToString());
         }
+
+        public static Money GetFee(this Transaction transaction, UnspentOutputSet inputs)
+        {
+            Money valueIn = Money.Zero;
+            for (int i = 0; i < transaction.Inputs.Count; i++)
+            {
+                OutPoint prevout = transaction.Inputs[i].PrevOut;
+                UnspentOutputs coins = inputs.AccessCoins(prevout.Hash);
+                valueIn += coins.TryGetOutput(prevout.N).Value;
+            }
+            return valueIn - transaction.TotalOut;
+        }
+
     }
 }
+
+
