@@ -450,7 +450,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
         /// <summary>
         /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds.
-        /// TODO: Add consensusvalidator calls
         /// </summary>
         [Fact]
         public async Task SmartContracts_NoTransfers_Async()
