@@ -56,13 +56,6 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         Models.GetStakingInfoModel GetStakingInfoModel();
 
         /// <summary>
-        /// Calculates the total balance from all UTXOs in the wallet that are mature.
-        /// </summary>
-        /// <param name="utxoStakeDescriptions">Description of coins in the wallet that will be used for staking.</param>
-        /// <returns>Total balance from all UTXOs in the wallet that are mature.</returns>
-        Money GetMatureBalance(List<PosMinting.UtxoStakeDescription> utxoStakeDescriptions);
-
-        /// <summary>
         /// Estimates the total staking weight of the network.
         /// </summary>
         /// <returns>Estimated amount of money that is used by all stakers on the network.</returns>
