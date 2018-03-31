@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Mock<INodeLifetime> nodeLifetime;
         private TestCoinView coinView;
         private Mock<IStakeChain> stakeChain;
+        private List<uint256> powBlocks;
         private Mock<IStakeValidator> stakeValidator;
         private MempoolSchedulerLock mempoolSchedulerLock;
         private Mock<ITxMempool> txMempool;
@@ -60,6 +61,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.coinView = new TestCoinView();
             this.stakeChain = new Mock<IStakeChain>();
+            this.powBlocks = new List<uint256>();
+            this.SetupStakeChain();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.mempoolSchedulerLock = new MempoolSchedulerLock();
             this.txMempool = new Mock<ITxMempool>();
@@ -75,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(this.cancellationTokenSource.Token);
 
             this.posMinting = InitializePosMinting();
-        }
+        }       
 
         public void Dispose()
         {
@@ -94,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Verifiable();
 
             this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
-            
+
             this.nodeLifetime.Verify();
             this.asyncLoopFactory.Verify();
         }
@@ -289,6 +292,142 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var result = this.posMinting.GetDifficulty(null);
 
             Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public void GetNetworkWeight_NoConsensusLoopTip_ReturnsZero()
+        {
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns((ChainedBlock)null);
+
+            var result = this.posMinting.GetNetworkWeight();
+
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void GetNetworkWeight_UsingConsensusLoop_HavingMoreThan73Blocks_CalculatesNetworkWeightUsingLatestBlocks()
+        {
+            this.chain = GenerateChainWithBlockTimeAndHeight(75, this.network, 60, 0x1df88f6f);
+            this.InitializePosMinting();
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns(this.chain.Tip);
+
+            var weight = this.posMinting.GetNetworkWeight();
+
+            Assert.Equal(4607763.9659653762, weight);
+        }
+
+        [Fact]
+        public void GetNetworkWeight_UsingConsensusLoop_HavingLessThan73Blocks_CalculatesNetworkWeightUsingLatestBlocks()
+        {
+            this.chain = GenerateChainWithBlockTimeAndHeight(50, this.network, 60, 0x1df88f6f);
+            this.InitializePosMinting();
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns(this.chain.Tip);
+
+            var weight = this.posMinting.GetNetworkWeight();
+
+            Assert.Equal(4701799.9652707893, weight);
+        }
+
+        [Fact]
+        public void GetNetworkWeight_NonPosBlocksInbetweenPosBlocks_SkipsPowBlocks_CalculatedNetworkWeightUsingLatestBlocks()
+        {
+            this.chain = GenerateChainWithBlockTimeAndHeight(73, this.network, 60, 0x1df88f6f);
+            // the following non-pos blocks should be excluded.
+            AddBlockToChainWithBlockTimeAndDifficulty(this.chain, 3, 60, 0x12345678);
+            
+            foreach (int blockHeight in new int[] { 74, 75, 76 })
+            {
+                var blockHash = this.chain.GetBlock(blockHeight).HashBlock;
+                this.powBlocks.Add(blockHash);
+            }
+
+            this.InitializePosMinting();
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns(this.chain.Tip);
+
+            var weight = this.posMinting.GetNetworkWeight();
+
+            Assert.Equal(4607763.9659653762, weight);
+        }
+
+        [Fact]
+        public void GetNetworkWeight_UsesLast73Blocks_CalculatedNetworkWeightUsingLatestBlocks()
+        {
+            this.chain = GenerateChainWithBlockTimeAndHeight(5, this.network, 60, 0x12345678);
+            // only the last 72 blocks should be included. 
+            // it skips the first block because it cannot determine it for a single block so we need to add 73.
+            AddBlockToChainWithBlockTimeAndDifficulty(this.chain, 73, 60, 0x1df88f6f);
+            this.InitializePosMinting();
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns(this.chain.Tip);
+
+            var weight = this.posMinting.GetNetworkWeight();
+
+            Assert.Equal(4607763.9659653762, weight);
+        }
+
+        private static void AddBlockToChainWithBlockTimeAndDifficulty(ConcurrentChain chain, int blockAmount, int incrementSeconds, uint nbits)
+        {
+            var prevBlockHash = chain.Tip.HashBlock;
+            var nonce = RandomUtils.GetUInt32();
+            var blockTime = Utils.UnixTimeToDateTime(chain.Tip.Header.Time).UtcDateTime;
+            for (var i = 0; i < blockAmount; i++)
+            {
+                var block = new Block();
+                block.AddTransaction(new Transaction());
+                block.UpdateMerkleRoot();
+                block.Header.BlockTime = new DateTimeOffset(blockTime);
+                blockTime = blockTime.AddSeconds(incrementSeconds);
+                block.Header.HashPrevBlock = prevBlockHash;
+                block.Header.Nonce = nonce;
+                block.Header.Bits = new Target(nbits);
+                chain.SetTip(block.Header);
+                prevBlockHash = block.GetHash();
+            }
+        }
+
+        public static ConcurrentChain GenerateChainWithBlockTimeAndHeight(int blockAmount, Network network, int incrementSeconds, uint nbits)
+        {
+            var chain = new ConcurrentChain(network);
+            var nonce = RandomUtils.GetUInt32();
+            var prevBlockHash = chain.Genesis.HashBlock;
+            var blockTime = Utils.UnixTimeToDateTime(chain.Genesis.Header.Time).UtcDateTime;
+            for (var i = 0; i < blockAmount; i++)
+            {
+                var block = new Block();
+                block.AddTransaction(new Transaction());
+                block.UpdateMerkleRoot();
+                block.Header.BlockTime = new DateTimeOffset(blockTime);
+                blockTime = blockTime.AddSeconds(incrementSeconds);
+                block.Header.HashPrevBlock = prevBlockHash;
+                block.Header.Nonce = nonce;
+                block.Header.Bits = new Target(nbits);
+                chain.SetTip(block.Header);
+                prevBlockHash = block.GetHash();
+            }
+
+            return chain;
+        }
+
+        private void SetupStakeChain()
+        {
+            uint256 callbackBlockId = new uint256();
+            this.stakeChain.Setup(s => s.Get(It.IsAny<uint256>()))
+                .Callback<uint256>((b) => { callbackBlockId = b; })
+                .Returns(() =>
+                {
+                    var blockStake = new BlockStake();
+
+                    if (!powBlocks.Contains(callbackBlockId))
+                    {
+                        blockStake.Flags = BlockFlag.BLOCK_PROOF_OF_STAKE;
+                    }
+
+                    return blockStake;
+                });
         }
 
         private PosMinting InitializePosMinting()

@@ -1170,7 +1170,7 @@ namespace Stratis.Bitcoin.Features.Miner
             while ((block != null) && (stakesHandled < interval))
             {
                 BlockStake blockStake = this.stakeChain.Get(block.HashBlock);
-                if (blockStake.IsProofOfStake())
+                if (blockStake != null && blockStake.IsProofOfStake())
                 {
                     if (prevStakeBlock != null)
                     {
