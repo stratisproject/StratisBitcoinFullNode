@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -23,9 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private ContractStateRepositoryRoot stateRoot;
         private ContractStateRepositoryRoot stateSnapshot;
 
-        private readonly SmartContractDecompiler decompiler;
-        private readonly ISmartContractGasInjector gasInjector;
-        private readonly SmartContractValidator validator;
+        private SmartContractExecutorFactory executorFactory;
 
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
@@ -39,18 +36,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            SmartContractDecompiler decompiler,
-            SmartContractValidator validator,
-            ISmartContractGasInjector gasInjector,
+            SmartContractExecutorFactory executorFactory,
             CoinView coinView,
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
             this.coinView = coinView;
-            this.decompiler = decompiler;
-            this.gasInjector = gasInjector;
             this.stateRoot = stateRoot;
-            this.validator = validator;
+            this.executorFactory = executorFactory;
         }
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)
@@ -104,7 +97,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
             carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
-            SmartContractExecutor executor = SmartContractExecutor.InitializeForBlockAssembler(carrier, this.decompiler, this.gasInjector, mempoolEntry.Fee, this.network, this.stateSnapshot, this.validator);
+            SmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
             ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
 
             // Add fee from the execution result to the block.

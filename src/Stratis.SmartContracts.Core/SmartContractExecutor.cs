@@ -36,7 +36,8 @@ namespace Stratis.SmartContracts.Core
             ISmartContractGasInjector gasInjector,
             Network network,
             IContractStateRepository stateSnapshot,
-            SmartContractValidator validator)
+            SmartContractValidator validator,
+            Money mempoolFee)
         {
             this.carrier = carrier;
             this.decompiler = decompiler;
@@ -44,59 +45,26 @@ namespace Stratis.SmartContracts.Core
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.validator = validator;
-
+            this.mempoolFee = mempoolFee;
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
         }
 
-        private static SmartContractExecutor Initialize(
+        /// <summary>
+        /// Returns a new SmartContractExecutor.
+        /// </summary>
+        public static SmartContractExecutor Initialize(
             SmartContractCarrier carrier,
             SmartContractDecompiler decompiler,
             ISmartContractGasInjector gasInjector,
             Network network,
             IContractStateRepository stateRepository,
-            SmartContractValidator validator)
+            SmartContractValidator validator,
+            Money mempoolFee)
         {
             if (carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
-                return new CreateSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator);
+                return new CreateSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, mempoolFee);
             else
-                return new CallSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator);
-        }
-
-        /// <summary>
-        /// Initialize the smart contract executor for the block assembler. 
-        /// <para>
-        /// After the contract has been executed, it will process any fees and/or refunds.
-        /// </para>
-        /// </summary>
-        public static SmartContractExecutor InitializeForBlockAssembler(
-            SmartContractCarrier carrier,
-            SmartContractDecompiler decompiler,
-            ISmartContractGasInjector gasInjector,
-            Money mempoolFee,
-            Network network,
-            IContractStateRepository stateRepository,
-            SmartContractValidator validator)
-        {
-            SmartContractExecutor executor = Initialize(carrier, decompiler, gasInjector, network, stateRepository, validator);
-            executor.mempoolFee = mempoolFee;
-            return executor;
-        }
-
-        /// <summary>
-        /// Initialize the smart contract executor for the consensus validator. 
-        /// <para>
-        /// Fees and refunds will not be processed after contract execution.
-        /// </para>
-        /// </summary>
-        public static SmartContractExecutor InitializeForConsensus(
-            SmartContractCarrier carrier,
-            SmartContractDecompiler decompiler,
-            ISmartContractGasInjector gasInjector,
-            Network network,
-            IContractStateRepository stateRepository,
-            SmartContractValidator validator)
-        {
-            return Initialize(carrier, decompiler, gasInjector, network, stateRepository, validator);
+                return new CallSmartContract(carrier, decompiler, gasInjector, network, stateRepository, validator, mempoolFee);
         }
 
         public ISmartContractExecutionResult Execute(ulong blockHeight, uint160 coinbaseAddress)
@@ -184,8 +152,14 @@ namespace Stratis.SmartContracts.Core
 
     public sealed class CreateSmartContract : SmartContractExecutor
     {
-        public CreateSmartContract(SmartContractCarrier carrier, SmartContractDecompiler decompiler, ISmartContractGasInjector gasInjector, Network network, IContractStateRepository stateRepository, SmartContractValidator validator)
-            : base(carrier, decompiler, gasInjector, network, stateRepository, validator)
+        public CreateSmartContract(SmartContractCarrier carrier,
+            SmartContractDecompiler decompiler,
+            ISmartContractGasInjector gasInjector,
+            Network network,
+            IContractStateRepository stateRepository,
+            SmartContractValidator validator,
+            Money mempoolFee)
+            : base(carrier, decompiler, gasInjector, network, stateRepository, validator, mempoolFee)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT);
         }
@@ -224,8 +198,14 @@ namespace Stratis.SmartContracts.Core
 
     public sealed class CallSmartContract : SmartContractExecutor
     {
-        public CallSmartContract(SmartContractCarrier carrier, SmartContractDecompiler decompiler, ISmartContractGasInjector gasInjector, Network network, IContractStateRepository stateRepository, SmartContractValidator validator)
-            : base(carrier, decompiler, gasInjector, network, stateRepository, validator)
+        public CallSmartContract(SmartContractCarrier carrier,
+            SmartContractDecompiler decompiler,
+            ISmartContractGasInjector gasInjector,
+            Network network,
+            IContractStateRepository stateRepository,
+            SmartContractValidator validator,
+            Money mempoolFee)
+            : base(carrier, decompiler, gasInjector, network, stateRepository, validator, mempoolFee)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT);
         }

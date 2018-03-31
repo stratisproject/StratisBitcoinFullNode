@@ -57,6 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
                         services.AddSingleton<ISmartContractGasInjector, SmartContractGasInjector>();
+                        services.AddSingleton<SmartContractExecutorFactory>();
 
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();

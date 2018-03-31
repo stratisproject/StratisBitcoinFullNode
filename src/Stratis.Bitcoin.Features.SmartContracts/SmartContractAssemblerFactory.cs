@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -35,11 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private readonly ContractStateRepositoryRoot stateRoot;
 
-        private readonly SmartContractDecompiler smartContractDecompiler;
-
-        private readonly SmartContractValidator smartContractValidator;
-
-        private readonly ISmartContractGasInjector gasInjector;
+        private readonly SmartContractExecutorFactory executorFactory;
 
         private readonly CoinView coinView;
 
@@ -51,9 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            SmartContractDecompiler smartContractDecompiler,
-            SmartContractValidator smartContractValidator,
-            ISmartContractGasInjector gasInjector,
+            SmartContractExecutorFactory executorFactory,
             CoinView coinView,
             IStakeChain stakeChain = null)
         {
@@ -63,9 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.mempool = mempool;
             this.dateTimeProvider = dateTimeProvider;
             this.stateRoot = stateRoot;
-            this.smartContractDecompiler = smartContractDecompiler;
-            this.smartContractValidator = smartContractValidator;
-            this.gasInjector = gasInjector;
+            this.executorFactory = executorFactory;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
             this.loggerFactory = loggerFactory;
@@ -83,9 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 chainTip,
                 this.loggerFactory,
                 this.stateRoot,
-                this.smartContractDecompiler,
-                this.smartContractValidator,
-                this.gasInjector,
+                this.executorFactory,
                 this.coinView,
                 options);
         }
