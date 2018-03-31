@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Tests;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -73,11 +74,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.nodeLifetime.Setup(n => n.ApplicationStopping)
                 .Returns(this.cancellationTokenSource.Token);
 
-            this.posMinting = new PosMinting(this.consensusLoop.Object, this.chain, this.network, this.connectionManager.Object,
-                this.dateTimeProvider.Object, this.assemblerFactory.Object,
-                this.initialBlockDownloadState.Object, this.nodeLifetime.Object, this.coinView, this.stakeChain.Object,
-                this.stakeValidator.Object, this.mempoolSchedulerLock, this.txMempool.Object,
-                this.walletManager.Object, this.asyncLoopFactory.Object, this.timeSyncBehaviorState.Object, this.LoggerFactory.Object);
+            this.posMinting = InitializePosMinting();
         }
 
         public void Dispose()
@@ -213,7 +210,104 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var model = this.posMinting.GetStakingInfoModel();
             Assert.Null(model.Errors);
             Assert.False(model.Enabled);
-        }      
+        }
+
+        // the difficulty tests are ported from: https://github.com/bitcoin/bitcoin/blob/3e1ee310437f4c93113f6121425beffdc94702c2/src/test/blockchain_tests.cpp
+        [Fact]
+        public void GetDifficulty_VeryLowTarget_ReturnsDifficulty()
+        {
+            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1f111111);
+
+            var result = this.posMinting.GetDifficulty(chainedBlock);
+
+            Assert.Equal(0.000001, Math.Round(result, 6));
+        }
+
+        [Fact]
+        public void GetDifficulty_LowTarget_ReturnsDifficulty()
+        {
+            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1ef88f6f);
+
+            var result = this.posMinting.GetDifficulty(chainedBlock);
+
+            Assert.Equal(0.000016, Math.Round(result, 6));
+        }
+
+        [Fact]
+        public void GetDifficulty_MidTarget_ReturnsDifficulty()
+        {
+            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1df88f6f);
+
+            var result = this.posMinting.GetDifficulty(chainedBlock);
+
+            Assert.Equal(0.004023, Math.Round(result, 6));
+        }
+
+        [Fact]
+        public void GetDifficulty_HighTarget_ReturnsDifficulty()
+        {
+            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1cf88f6f);
+
+            var result = this.posMinting.GetDifficulty(chainedBlock);
+
+            Assert.Equal(1.029916, Math.Round(result, 6));
+        }
+
+        [Fact]
+        public void GetDifficulty_VeryHighTarget_ReturnsDifficulty()
+        {
+            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x12345678);
+
+            var result = this.posMinting.GetDifficulty(chainedBlock);
+
+            Assert.Equal(5913134931067755359633408.0, Math.Round(result, 6));
+        }
+
+        [Fact]
+        public void GetDifficulty_BlockNull_UsesConsensusLoopTipAndStakeValidator_FindsBlock_ReturnsDifficulty()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns(this.chain.Tip);
+
+            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x12345678);
+            this.stakeValidator.Setup(s => s.GetLastPowPosChainedBlock(this.stakeChain.Object, It.Is<ChainedBlock>(c => c.HashBlock == this.chain.Tip.HashBlock), false))
+                .Returns(chainedBlock);
+
+            this.posMinting = this.InitializePosMinting();
+            var result = this.posMinting.GetDifficulty(null);
+
+            Assert.Equal(5913134931067755359633408.0, Math.Round(result, 6));
+        }
+
+        [Fact]
+        public void GetDifficulty_BlockNull_NoConsensusTip_ReturnsDefaultDifficulty()
+        {
+            this.consensusLoop.Setup(c => c.Tip)
+                .Returns((ChainedBlock)null);
+
+            var result = this.posMinting.GetDifficulty(null);
+
+            Assert.Equal(1, result);
+        }
+
+        private PosMinting InitializePosMinting()
+        {
+            return new PosMinting(this.consensusLoop.Object, this.chain, this.network, this.connectionManager.Object,
+                this.dateTimeProvider.Object, this.assemblerFactory.Object,
+                this.initialBlockDownloadState.Object, this.nodeLifetime.Object, this.coinView, this.stakeChain.Object,
+                this.stakeValidator.Object, this.mempoolSchedulerLock, this.txMempool.Object,
+                this.walletManager.Object, this.asyncLoopFactory.Object, this.timeSyncBehaviorState.Object, this.LoggerFactory.Object);
+        }
+
+        private static ChainedBlock CreateChainedBlockWithNBits(uint bits)
+        {
+            var blockHeader = new BlockHeader();
+            blockHeader.Time = 1269211443;
+            blockHeader.Bits = new Target(bits);
+            var chainedBlock = new ChainedBlock(blockHeader, blockHeader.GetHash(), 46367);
+            return chainedBlock;
+        }
 
         private class TestCoinView : CoinView
         {

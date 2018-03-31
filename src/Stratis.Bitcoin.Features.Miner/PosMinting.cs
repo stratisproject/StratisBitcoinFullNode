@@ -1126,15 +1126,21 @@ namespace Stratis.Bitcoin.Features.Miner
                 block = this.stakeValidator.GetLastPowPosChainedBlock(this.stakeChain, tip, false);
             }
 
-            uint shift = (block.Header.Bits >> 24) & 0xFF;
+            // the block window for difficulty adjustments = 24 blocks.
+            int blockWindow = 24;
+
+            // calculate the current shift value.
+            uint shift = (block.Header.Bits >> blockWindow) & 0xFF;
             double diff = (double)0x0000FFFF / (double)(block.Header.Bits & 0x00FFFFFF);
 
+            // shift the difficulty up.
             while (shift < 29)
             {
                 diff *= 256.0;
                 shift++;
             }
 
+            // shift the difficulty down.
             while (shift > 29)
             {
                 diff /= 256.0;
