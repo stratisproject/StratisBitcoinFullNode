@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// Constructs model for RPC "getstakinginfo" call.
         /// </summary>
         /// <returns>Staking information RPC response.</returns>
-        Models.GetStakingInfoModel GetGetStakingInfoModel();
+        Models.GetStakingInfoModel GetStakingInfoModel();
 
         /// <summary>
         /// Calculates the total balance from all UTXOs in the wallet that are mature.

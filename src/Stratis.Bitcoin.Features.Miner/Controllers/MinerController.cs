@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
-                GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
+                GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetStakingInfoModel() : new GetStakingInfoModel();
 
                 return this.Json(model);
             }

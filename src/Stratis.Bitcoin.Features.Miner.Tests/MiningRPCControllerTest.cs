@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetStakingInfo_WithPosMinting_ReturnsPosMintingStakingInfoModel()
         {
-            this.posMinting.Setup(p => p.GetGetStakingInfoModel())
+            this.posMinting.Setup(p => p.GetStakingInfoModel())
                 .Returns(new GetStakingInfoModel()
                 {
                     Enabled = true,
