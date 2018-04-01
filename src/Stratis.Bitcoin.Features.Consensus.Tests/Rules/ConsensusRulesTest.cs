@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
-    public class ConsensusRulesTest : ConsensusRuleUnitTestBase
+    public class ConsensusRulesTest : TestConsensusRulesUnitTestBase
     {
         public ConsensusRulesTest() : base()
         {
