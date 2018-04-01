@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     {
         private PosMinting posMinting;
         private bool initialBlockSignature;
+        private bool initialTimestamp;
         private Mock<IPosConsensusValidator> consensusValidator;
         private Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
@@ -48,12 +49,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public PosMintingTest()
         {
             this.initialBlockSignature = Block.BlockSignature;
+            this.initialTimestamp = Transaction.TimeStamp;
+            Transaction.TimeStamp = true;
             Block.BlockSignature = true;
 
             this.consensusValidator = new Mock<IPosConsensusValidator>();
-            this.consensusLoop = new Mock<IConsensusLoop>();
-            this.chain = new ConcurrentChain();
+            this.consensusLoop = new Mock<IConsensusLoop>();            
             this.network = Network.StratisTest;
+            this.chain = new ConcurrentChain(this.network);
             this.connectionManager = new Mock<IConnectionManager>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.assemblerFactory = new Mock<IAssemblerFactory>();
@@ -83,8 +86,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Dispose()
         {
             Block.BlockSignature = this.initialBlockSignature;
+            Transaction.TimeStamp = this.initialTimestamp;
         }
-
 
         [Fact]
         public void Stake_StakingLoopNotStarted_StartsStakingLoop()
