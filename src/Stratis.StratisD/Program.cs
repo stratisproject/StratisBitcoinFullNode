@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.SidechainWallet;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisD
@@ -33,16 +34,18 @@ namespace Stratis.StratisD
 
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
-                var node = new FullNodeBuilder()
+                var builder = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UsePosConsensus()
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()
+                    .UseSidechainWallet()
                     .AddPowPosMining()
                     .UseApi()
-                    .AddRPC()
-                    .Build();
+                    .AddRPC();
+                
+                var node = builder.Build();
 
                 if (node != null)
                     await node.RunAsync();

@@ -24,10 +24,28 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
     /// Controller providing operations on a wallet.
     /// </summary>
     [Route("api/[controller]")]
-    public class WalletController : Wallet.Controllers.WalletController
+    public class SidechainWalletController : Controller
     {
-        public WalletController(ILoggerFactory loggerFactory, IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network, ConcurrentChain chain, IBroadcasterManager broadcasterManager, IDateTimeProvider dateTimeProvider) : base(loggerFactory, walletManager, walletTransactionHandler, walletSyncManager, connectionManager, network, chain, broadcasterManager, dateTimeProvider)
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+        private readonly Network network;
+        private readonly IWalletTransactionHandler walletTransactionHandler;
+
+        public SidechainWalletController(
+            ILoggerFactory loggerFactory,
+            IWalletManager walletManager,
+            IWalletTransactionHandler walletTransactionHandler,
+            IWalletSyncManager walletSyncManager,
+            IConnectionManager connectionManager,
+            Network network,
+            ConcurrentChain chain,
+            IBroadcasterManager broadcasterManager,
+            IDateTimeProvider dateTimeProvider)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            //this.walletController = new Wallet.Controllers.WalletController(loggerFactory, walletManager, walletTransactionHandler, walletSyncManager, connectionManager, network, chain, broadcasterManager, dateTimeProvider);
+            this.walletTransactionHandler = walletTransactionHandler;
+            this.network = network;
         }
 
         /// <summary>
@@ -44,14 +62,14 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return Wallet.Controllers.WalletController.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
-                var context = (TransactionBuildContext)CreateTransactionBuildContext(request);
-                context.SidechainIdentifier = request.SidechainIdentifier;
-
+                var standardContext = Wallet.Controllers.WalletController.CreateTransactionBuildContext(request, this.network);
+                var context = new TransactionBuildContext(standardContext, request.SidechainIdentifier);
+                
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
                 var model = new WalletBuildTransactionModel

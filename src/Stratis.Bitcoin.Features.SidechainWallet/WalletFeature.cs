@@ -25,7 +25,8 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
     /// <inheritdoc />
     public class WalletFeature : Wallet.WalletFeature
     {
-        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain, IConnectionManager connectionManager, BroadcasterBehavior broadcasterBehavior, NodeSettings nodeSettings, WalletSettings walletSettings) : base(walletSyncManager, walletManager, signals, chain, connectionManager, broadcasterBehavior, nodeSettings, walletSettings)
+        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain, IConnectionManager connectionManager, BroadcasterBehavior broadcasterBehavior, NodeSettings nodeSettings, WalletSettings walletSettings) 
+            : base(walletSyncManager, walletManager, signals, chain, connectionManager, broadcasterBehavior, nodeSettings, walletSettings)
         {
         }
     }
@@ -43,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
             {
                 features
                 .AddFeature<SidechainWallet.WalletFeature>()
+                //.DependOn<Wallet.WalletFeature>()
                 .DependOn<MempoolFeature>()
                 .DependOn<BlockStoreFeature>()
                 .DependOn<RPCFeature>()
@@ -52,7 +54,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
                     services.AddSingleton<IWalletTransactionHandler, SidechainWallet.WalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, WalletManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<SidechainWallet.Controllers.WalletController>();
+                    services.AddSingleton<SidechainWallet.Controllers.SidechainWalletController>();
                     services.AddSingleton<WalletRPCController>();
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();

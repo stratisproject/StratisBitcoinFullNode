@@ -26,7 +26,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     {
         private readonly IWalletManager walletManager;
 
-        protected readonly IWalletTransactionHandler walletTransactionHandler;
+        private readonly IWalletTransactionHandler walletTransactionHandler;
+        public IWalletTransactionHandler WalletTransactionHandler => this.walletTransactionHandler;
 
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
-        protected readonly ILogger logger;
+        private readonly ILogger logger;
 
         private readonly IBroadcasterManager broadcasterManager;
 
@@ -591,7 +592,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                TransactionBuildContext context = CreateTransactionBuildContext(request);
+                TransactionBuildContext context = CreateTransactionBuildContext(request, this.network);
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
@@ -611,9 +612,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
         }
 
-        protected TransactionBuildContext CreateTransactionBuildContext(BuildTransactionRequest request)
+        public static TransactionBuildContext CreateTransactionBuildContext(BuildTransactionRequest request, Network network)
         {
-            var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+            var destination = BitcoinAddress.Create(request.DestinationAddress, network).ScriptPubKey;
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
@@ -950,7 +951,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>
-        protected static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
+        public static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
         {
             List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
             return ErrorHelpers.BuildErrorResponse(

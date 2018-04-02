@@ -10,16 +10,29 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
     /// <inheritdoc />
     public class TransactionBuildContext : Wallet.TransactionBuildContext
     {
-        public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients, string sidechainIdentifier) : base(accountReference, recipients)
-        {
-            Guard.NotEmpty(sidechainIdentifier, nameof(sidechainIdentifier));
-            this.SidechainIdentifier = sidechainIdentifier;
-        }
+        private TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients)
+            : base(accountReference, recipients) { }
 
-        public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients, string sidechainIdentifier, string walletPassword) : base(accountReference, recipients, walletPassword)
+        private TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword)
+            : base(accountReference, recipients, walletPassword) { }
+
+        public TransactionBuildContext(Wallet.TransactionBuildContext standardContext, string sidechainIdentifier)
+            : base(standardContext.AccountReference, standardContext.Recipients, standardContext.WalletPassword)
         {
             Guard.NotEmpty(sidechainIdentifier, nameof(sidechainIdentifier));
+            this.AllowOtherInputs = standardContext.AllowOtherInputs;
+            this.ChangeAddress = standardContext.ChangeAddress;
+            this.FeeType = standardContext.FeeType;
+            this.MinConfirmations = standardContext.MinConfirmations;
+            this.OverrideFeeRate = standardContext.OverrideFeeRate;
+            this.SelectedInputs = standardContext.SelectedInputs;
+            this.Shuffle = standardContext.Shuffle;
             this.SidechainIdentifier = sidechainIdentifier;
+            this.Sign = standardContext.Sign;
+            this.Transaction = standardContext.Transaction;
+            //this.TransactionBuilder = (TransactionBuilder)standardContext.TransactionBuilder;
+            this.TransactionFee = standardContext.TransactionFee;
+            this.UnspentOutputs = standardContext.UnspentOutputs;
         }
 
         public string SidechainIdentifier { get; set; }
