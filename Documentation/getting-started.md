@@ -54,6 +54,14 @@ cd Stratis.BitcoinD
 dotnet run -testnet
 ```  
 
+### Advanced options
+
+You can get a list of command line arguments to pass to the node with the -help command line argument. For example:
+```
+cd Stratis.StratisD
+dotnet run -help
+```  
+
 ### Script
 We have a nifty little script that can execute all the previous commands for you, including starting the node.  
 You just need to edit the file and specify whether you want to run a Stratis or a Bitcoin node, on MainNet or Testnet.  
