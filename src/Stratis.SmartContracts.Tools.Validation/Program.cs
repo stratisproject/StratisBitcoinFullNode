@@ -152,11 +152,12 @@ namespace Stratis.SmartContracts.Tools.Validation
             reportStructure.Add(new HeaderSection());
             reportStructure.Add(new CompilationSection());
 
+            reportStructure.Add(new FormatSection());
+            reportStructure.Add(new DeterminismSection());
+
             if (showContractBytes)
                 reportStructure.Add(new ByteCodeSection());
 
-            reportStructure.Add(new FormatSection());
-            reportStructure.Add(new DeterminismSection());
             reportStructure.Add(new FooterSection());
 
             var renderer = new StreamTextRenderer(Console.Out);
