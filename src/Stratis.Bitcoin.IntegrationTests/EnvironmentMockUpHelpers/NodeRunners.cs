@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -12,7 +10,6 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
@@ -34,8 +31,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public FullNode FullNode
         {
-            get { return null; }
-            set { return; }
+            get { throw new NotImplementedException(); }
+            set { throw new NotImplementedException(); }
         }
 
         public bool IsDisposed
@@ -63,12 +60,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         protected Action<IFullNodeBuilder> Callback;
         public FullNode FullNode { get; set; }
         public bool IsDisposed { get { return this.FullNode.State == FullNodeState.Disposed; } }
-        public bool SkipRules { get; internal set; }
 
-        protected NodeRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
+        protected NodeRunner(Action<IFullNodeBuilder> callback = null)
         {
             this.Callback = callback;
-            this.SkipRules = skipRules;
         }
 
         public abstract FullNode OnBuild(NodeSettings nodeSettings);
@@ -100,8 +95,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisPosRunner : NodeRunner
     {
-        public StratisPosRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
-            : base(skipRules, callback)
+        public StratisPosRunner(Action<IFullNodeBuilder> callback = null)
+            : base(callback)
         {
         }
 
@@ -117,14 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = base.BuildFromCallBack(nodeSettings);
             else
-            {
-                IFullNodeBuilder builder = null;
-                builder = Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD();
-                if (this.SkipRules)
-                    builder.MockRules(new PosTestRuleRegistration());
-
-                fullNode = (FullNode)builder.Build();
-            }
+                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD().Build();
 
             return fullNode;
         }
@@ -156,8 +144,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class BitcoinPowRunner : NodeRunner
     {
-        public BitcoinPowRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
-            : base(skipRules, callback)
+        public BitcoinPowRunner(Action<IFullNodeBuilder> callback = null)
+            : base(callback)
         {
         }
 
@@ -173,13 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = base.BuildFromCallBack(nodeSettings);
             else
-            {
-                IFullNodeBuilder builder = null;
-                builder = Build(nodeSettings).UsePowConsensus().AddMining().MockIBD();
-                if (this.SkipRules)
-                    builder.MockRules(new PowTestRuleRegistration());
-                fullNode = (FullNode)builder.Build();
-            }
+                fullNode = (FullNode)Build(nodeSettings).UsePowConsensus().AddMining().MockIBD().Build();
 
             return fullNode;
         }
@@ -187,8 +169,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisPowRunner : NodeRunner
     {
-        public StratisPowRunner(bool skipRules, Action<IFullNodeBuilder> callback = null)
-            : base(skipRules, callback)
+        public StratisPowRunner(Action<IFullNodeBuilder> callback = null)
+            : base(callback)
         {
         }
 
@@ -204,61 +186,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = BuildFromCallBack(nodeSettings);
             else
-            {
-                IFullNodeBuilder builder = null;
-                builder = Build(nodeSettings).UsePosConsensus().AddMining().MockIBD();
-                if (this.SkipRules)
-                    builder.MockRules(new PosTestRuleRegistration());
-                fullNode = (FullNode)builder.Build();
-            }
+                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddMining().MockIBD().Build();
 
             return fullNode;
-        }
-    }
-
-    public sealed class PowTestRuleRegistration : IRuleRegistration
-    {
-        public IEnumerable<ConsensusRule> GetRules()
-        {
-            return new List<ConsensusRule>() { new PowTestRule() };
-        }
-    }
-
-    public sealed class PosTestRuleRegistration : IRuleRegistration
-    {
-        public IEnumerable<ConsensusRule> GetRules()
-        {
-            return new List<ConsensusRule>() { new PosTestRule() };
-        }
-    }
-
-    public sealed class PowTestRule : ConsensusRule
-    {
-        public override Task RunAsync(RuleContext context)
-        {
-            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
-            context.BlockValidationContext.ChainedBlock = this.Parent.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-            context.SetBestBlock(this.Parent.DateTimeProvider.GetTimeOffset());
-
-            context.Flags = new Base.Deployments.DeploymentFlags();
-
-            return Task.CompletedTask;
-        }
-    }
-
-    public sealed class PosTestRule : ConsensusRule
-    {
-        public override Task RunAsync(RuleContext context)
-        {
-            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(NetworkOptions.TemporaryOptions), context.ConsensusTip);
-            context.BlockValidationContext.ChainedBlock = this.Parent.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-            context.SetBestBlock(this.Parent.DateTimeProvider.GetTimeOffset());
-
-            context.Flags = new Base.Deployments.DeploymentFlags();
-
-            context.SetStake();
-
-            return Task.CompletedTask;
         }
     }
 
@@ -279,26 +209,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                             services.Remove(ibdService);
 
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
-                    });
-                }
-            });
-
-            return fullNodeBuilder;
-        }
-
-        public static IFullNodeBuilder MockRules(this IFullNodeBuilder fullNodeBuilder, IRuleRegistration ruleRegistration)
-        {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                foreach (IFeatureRegistration feature in features.FeatureRegistrations)
-                {
-                    feature.FeatureServices(services =>
-                    {
-                        ServiceDescriptor rules = services.FirstOrDefault(x => x.ServiceType == typeof(IRuleRegistration));
-                        if (rules != null)
-                            services.Remove(rules);
-
-                        services.AddSingleton(ruleRegistration);
                     });
                 }
             });

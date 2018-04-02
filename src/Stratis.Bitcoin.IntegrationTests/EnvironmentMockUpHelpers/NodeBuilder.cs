@@ -107,7 +107,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         private List<IDisposable> disposables;
         private int last;
         private string root;
-        private bool skipRules = false;
 
         public NodeBuilder(string root, string bitcoindPath)
         {
@@ -244,22 +243,22 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public CoreNode CreateBitcoinPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
-            return CreateNode(new BitcoinPowRunner(this.skipRules, callback), Network.RegTest, start);
+            return CreateNode(new BitcoinPowRunner(callback), Network.RegTest, start);
         }
 
         public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
-            return CreateNode(new StratisPowRunner(this.skipRules, callback), Network.StratisRegTest, start, "stratis.conf");
+            return CreateNode(new StratisPowRunner(callback), Network.StratisRegTest, start, "stratis.conf");
         }
 
         public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
-            return CreateNode(new StratisPosRunner(this.skipRules, callback), Network.StratisRegTest, start, "stratis.conf");
+            return CreateNode(new StratisPosRunner(callback), Network.StratisRegTest, start, "stratis.conf");
         }
 
         public CoreNode CloneBitcoinPowNode(CoreNode cloneNode)
         {
-            var node = new CoreNode(cloneNode.Folder, new BitcoinPowRunner(false), this, Network.RegTest, false);
+            var node = new CoreNode(cloneNode.Folder, new BitcoinPowRunner(), this, Network.RegTest, false);
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
@@ -273,12 +272,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             CleanupTestFolder(child);
 
             return child;
-        }
-
-        public NodeBuilder SkipRules()
-        {
-            this.skipRules = true;
-            return this;
         }
 
         public void StartAll()
