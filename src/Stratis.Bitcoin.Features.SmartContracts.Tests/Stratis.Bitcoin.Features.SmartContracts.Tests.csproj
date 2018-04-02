@@ -30,6 +30,9 @@
     <Compile Update="SmartContracts\Demo.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\OutOfGasTest.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\SimpleAuction.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
@@ -39,16 +42,10 @@
     <Compile Update="SmartContracts\StorageTestWithParameters.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="SmartContracts\ThrowOutOfGasExceptionContract.cs">
+    <Compile Update="SmartContracts\ThrowExceptionContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\ContractFailsValidation.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="SmartContracts\ThrowRefundGasExceptionContract.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="SmartContracts\ThrowSystemExceptionContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\Token.cs">

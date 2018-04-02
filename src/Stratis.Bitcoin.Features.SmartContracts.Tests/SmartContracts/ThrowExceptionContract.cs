@@ -1,9 +1,9 @@
 ﻿using System;
 using Stratis.SmartContracts;
 
-public sealed class ThrowSystemExceptionContract : SmartContract
+public sealed class ThrowExceptionContract : SmartContract
 {
-    public ThrowSystemExceptionContract(ISmartContractState state)
+    public ThrowExceptionContract(ISmartContractState state)
         : base(state)
     {
     }
