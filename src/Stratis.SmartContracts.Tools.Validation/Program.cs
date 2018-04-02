@@ -144,10 +144,6 @@ namespace Stratis.SmartContracts.Tools.Validation
                 validationData
                     .DeterminismValidationErrors
                     .AddRange(determinismValidationResult.Errors);
-
-                // Don't show bytecode for invalid contracts, don't want to trick anyone. 
-                if (!validationData.DeterminismValid || !validationData.FormatValid)
-                    showContractBytes = false;
             }
 
             List<IReportSection> reportStructure = new List<IReportSection>();
