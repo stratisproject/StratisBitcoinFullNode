@@ -67,3 +67,8 @@ Two containers are available [here](https://hub.docker.com/u/stratisplatform/)
 
 - stratis-node: Run on the Bitcoin Main or Test networks
 - stratis-node-sim: Join our simulation network
+
+Swagger Endpoints
+-------------------
+
+Once the node is running, a Swagger interface (web UI for testing an API) is available at http://localhost:37221/swagger/
