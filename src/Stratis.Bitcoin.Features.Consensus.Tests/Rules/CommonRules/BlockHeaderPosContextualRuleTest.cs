@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public BlockHeaderPosContextualRuleTest() : base()
         {
             this.concurrentChain = GenerateChainWithHeight(5, this.network);
+            this.consensusRules = this.InitializeConsensusRules();
         }
 
         [Fact]
@@ -256,6 +257,50 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 ruleContext.BlockValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime;                
                 ruleContext.BlockValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime - 32;
                 ruleContext.BlockValidationContext.ChainedBlock.Header.Time = previousBlockHeaderTime - 32;
+
+                var rule = this.consensusRules.RegisterRule<BlockHeaderPosContextualRule>();
+                return rule.RunAsync(ruleContext);
+            });
+
+            Assert.Equal(ConsensusErrors.BlockTimestampTooEarly.Code, exception.ConsensusError.Code);
+            Assert.Equal(ConsensusErrors.BlockTimestampTooEarly.Message, exception.ConsensusError.Message);
+        }
+
+        [Fact]
+        public async Task RunAsync_BlockTimestampSameAsPrevious_ThrowsBlockTimestampTooEarlyConsensusErrorAsync()
+        {
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
+            {
+                var ruleContext = new RuleContext()
+                {
+                    SkipValidation = false,
+                    Stake = new ContextStakeInformation()
+                    {
+                        BlockStake = new NBitcoin.BlockStake()
+                        {
+                            Flags = NBitcoin.BlockFlag.BLOCK_PROOF_OF_STAKE
+                        }
+                    },
+                    BlockValidationContext = new BlockValidationContext()
+                    {
+                        ChainedBlock = this.concurrentChain.GetBlock(3),
+                        Block = new NBitcoin.Block()
+                        {
+                            Transactions = new List<NBitcoin.Transaction>()
+                            {
+                                new NBitcoin.Transaction(){ },
+                                new NBitcoin.Transaction(){ }
+                            }
+                        },
+                    },
+                };
+                this.network.Consensus.LastPOWBlock = 12500;
+
+                // time same as previous block.
+                var previousBlockHeaderTime = ruleContext.BlockValidationContext.ChainedBlock.Previous.Header.Time;
+                ruleContext.BlockValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime;
+                ruleContext.BlockValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime;
+                ruleContext.BlockValidationContext.ChainedBlock.Header.Time = previousBlockHeaderTime;
 
                 var rule = this.consensusRules.RegisterRule<BlockHeaderPosContextualRule>();
                 return rule.RunAsync(ruleContext);
