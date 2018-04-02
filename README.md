@@ -9,6 +9,7 @@
 [5]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
 [6]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
 
+This is a test!
 
 Stratis Bitcoin
 ===============
