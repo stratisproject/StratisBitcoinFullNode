@@ -7,11 +7,6 @@ public sealed class StorageTestWithParameters : SmartContract
     {
     }
 
-    [SmartContractInit]
-    public void Init()
-    {
-    }
-
     public void StoreData(int orders)
     {
         this.PersistentState.SetObject("orders", orders);

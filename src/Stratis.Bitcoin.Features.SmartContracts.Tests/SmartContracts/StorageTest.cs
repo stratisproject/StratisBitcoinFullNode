@@ -7,11 +7,6 @@ public class StorageTest : SmartContract
     {
     }
 
-    [SmartContractInit]
-    public void Init()
-    {
-    }
-
     public void StoreData()
     {
         this.PersistentState.SetObject("TestKey", "TestValue");

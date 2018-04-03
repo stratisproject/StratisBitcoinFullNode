@@ -2,13 +2,8 @@
 
 public sealed class ContractInvalidParameterCount : SmartContract
 {
-    public ContractInvalidParameterCount(ISmartContractState state)
+    public ContractInvalidParameterCount(ISmartContractState state, int orders, bool canOrder)
         : base(state)
     {
-    }
-
-    [SmartContractInit]
-    public void TestMethod(int orders, bool canOrder)
-    {
-    }
+    }    
 }

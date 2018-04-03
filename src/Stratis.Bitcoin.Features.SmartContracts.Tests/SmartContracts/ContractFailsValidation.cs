@@ -8,7 +8,6 @@ public sealed class ContractFailsValidation : SmartContract
     {
     }
 
-    [SmartContractInit]
     public void TestMethod()
     {
         var task = new Task(() => { });

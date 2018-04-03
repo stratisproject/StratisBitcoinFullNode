@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using Stratis.SmartContracts.Core.Hashing;
+using Stratis.SmartContracts.Core.Lifecycle;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -11,13 +12,57 @@ namespace Stratis.SmartContracts.Core.Backend
     {
         public static int VmVersion = 1;
         private readonly IPersistentState persistentState;
-        private const string InitMethod = "Init";
 
         public ReflectionVirtualMachine(IPersistentState persistentState)
         {
             this.persistentState = persistentState;
         }
 
+        /// <summary>
+        /// Creates a new instance of a smart contract by invoking the contract's constructor
+        /// </summary>
+        public ISmartContractExecutionResult Create(
+            byte[] contractCode, 
+            string contractTypeName,
+            ISmartContractExecutionContext context, 
+            IGasMeter gasMeter, 
+            IInternalTransactionExecutor internalTxExecutor,
+            Func<ulong> getBalance)
+        {
+            ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
+
+            var contractAssembly = Assembly.Load(contractCode);
+            Type contractType = contractAssembly.GetType(contractTypeName);
+
+            var contractState = new SmartContractState(
+                context.Block,
+                context.Message,
+                this.persistentState,
+                gasMeter,
+                internalTxExecutor,
+                new InternalHashHelper(),
+                getBalance);
+
+            // Invoke the constructor of the provided contract code
+            LifecycleResult result = SmartContractConstructor
+                .Construct(contractType, contractState, context.Parameters);
+
+            executionResult.GasConsumed = gasMeter.GasConsumed;
+
+            if (!result.Success)
+            {
+                executionResult.Exception = result.Exception.InnerException ?? result.Exception;
+                return executionResult;
+            }
+
+            executionResult.Return = result.Object;
+
+            return executionResult;
+        }
+
+        /// <summary>
+        /// Invokes a method on an existing smart contract
+        /// </summary>
         public ISmartContractExecutionResult ExecuteMethod(
             byte[] contractCode,
             string contractTypeName,
@@ -43,23 +88,27 @@ namespace Stratis.SmartContracts.Core.Backend
                 new InternalHashHelper(),
                 getBalance);
 
-            SmartContract smartContract = null;
+            LifecycleResult result = SmartContractRestorer.Restore(contractType, contractState);
 
-            try
-            {
-                smartContract = (SmartContract)Activator.CreateInstance(contractType, contractState);
-            }
-            catch (Exception exception)
+            if (!result.Success)
             {
                 // If contract instantiation failed, return any gas consumed.
-                executionResult.Exception = exception.InnerException ?? exception;
+                executionResult.Exception = result.Exception.InnerException ?? result.Exception;
                 executionResult.GasConsumed = gasMeter.GasConsumed;
                 return executionResult;
             }
 
+            SmartContract smartContract = result.Object;
+
             try
             {
                 MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
+
+                if (methodToInvoke.IsConstructor)
+                {
+                    throw new Exception("Cannot invoke constructor");
+                }
+
                 executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
             }
             catch (ArgumentException argumentException)

@@ -8,9 +8,4 @@ public sealed class ContractConstructorInvalid : SmartContract
     {
         throw new Exception("test");
     }
-
-    [SmartContractInit]
-    public void TestMethod()
-    {
-    }
 }

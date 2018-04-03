@@ -6,6 +6,8 @@ public class Token : SmartContract
     public Token(ISmartContractState state)
         : base(state)
     {
+        this.Owner = this.Message.Sender;
+
         this.Balances = this.PersistentState.GetMapping<ulong>("Balances");
     }
 
@@ -22,12 +24,6 @@ public class Token : SmartContract
     }
 
     public ISmartContractMapping<ulong> Balances { get; }
-
-    [SmartContractInit]
-    public void Init()
-    {
-        this.Owner = this.Message.Sender;
-    }
 
     public bool Mint(Address receiver, ulong amount)
     {

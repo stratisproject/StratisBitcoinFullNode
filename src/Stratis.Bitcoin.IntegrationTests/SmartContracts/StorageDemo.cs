@@ -2,7 +2,12 @@
 
 public class StorageDemo : SmartContract
 {
-    public StorageDemo(ISmartContractState state) : base(state) { }
+    public StorageDemo(ISmartContractState state) : base(state)
+    {
+        Counter = 12345;
+        TestSave = "Hello, smart contract world!";
+        Owner = Message.Sender;
+    }
 
     public int Counter
     {
@@ -38,14 +43,6 @@ public class StorageDemo : SmartContract
         {
             PersistentState.SetObject<Address>("Owner", value);
         }
-    }
-
-    [SmartContractInit]
-    public void Init()
-    {
-        Counter = 12345;
-        TestSave = "Hello, smart contract world!";
-        Owner = Message.Sender;
     }
 
     public void Increment()

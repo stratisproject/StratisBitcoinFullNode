@@ -47,8 +47,7 @@ namespace Stratis.SmartContracts.Core
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
             MethodReference gasMethodReference = contractType.Module.ImportReference(gasMethod);
 
-            // @TODO - Ignore constructors for now...
-            foreach (MethodDefinition method in contractType.Methods.Where(m => !m.IsConstructor))
+            foreach (MethodDefinition method in contractType.Methods)
             {
                 this.InjectSpendGasMethod(method, gasMethodReference);
             }
@@ -123,7 +122,19 @@ namespace Stratis.SmartContracts.Core
 
             foreach (Instruction instruction in gasToSpendForSegment.Keys)
             {
-                AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, instruction, gasToSpendForSegment[instruction]);
+                var injectAfterInstruction = instruction;
+
+                // If it's a constructor we need to skip the first 3 instructions. 
+                // These will always be invoking the base constructor
+                // ldarg.0
+                // ldarg.0
+                // call SmartContract::ctor
+                if (methodDefinition.IsConstructor)
+                {
+                    injectAfterInstruction = instruction.Next.Next.Next;
+                }
+
+                AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, injectAfterInstruction, gasToSpendForSegment[instruction]);
             }
 
             ILProcessor il = methodDefinition.Body.GetILProcessor();

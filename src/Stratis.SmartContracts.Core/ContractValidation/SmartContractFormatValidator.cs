@@ -20,7 +20,25 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             this.errors = new List<SmartContractValidationError>();
             this.ValidateLimitedAssemblyReferences(decompilation.ModuleDefinition);
             this.ValidateClassLimitations(decompilation.ModuleDefinition);
+            this.ValidateConstructor(decompilation.ModuleDefinition);
             return new SmartContractValidationResult(this.errors);
+        }
+
+        private void ValidateConstructor(ModuleDefinition moduleDefinition)
+        {
+            TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+
+            if (contractType == null)
+            {
+                // Already check earlier for multiple exported types
+                return;
+            }
+
+            var singleConstructorValidator = new SingleConstructorValidator();
+            var constructorParamValidator = new ConstructorParamValidator();
+            
+            this.errors.AddRange(singleConstructorValidator.Validate(contractType));
+            this.errors.AddRange(constructorParamValidator.Validate(contractType));
         }
 
         public void ValidateLimitedAssemblyReferences(ModuleDefinition moduleDefinition)

@@ -2,8 +2,12 @@
 
 public class SimpleAuction : SmartContract
 {
-    public SimpleAuction(ISmartContractState smartContractState) : base(smartContractState)
+    public SimpleAuction(ISmartContractState smartContractState, ulong biddingBlocks) 
+        : base(smartContractState)
     {
+        this.Owner = this.Message.Sender;
+        this.AuctionEndBlock = this.Block.Number + biddingBlocks;
+        this.HasEnded = false;
         this.PendingReturns = this.PersistentState.GetMapping<ulong>("PendingReturns");
     }
 
@@ -67,14 +71,6 @@ public class SimpleAuction : SmartContract
         {
             this.PersistentState.SetObject<bool>("hasended", value);
         }
-    }
-
-    [SmartContractInit]
-    public void Initialise(ulong biddingBlocks)
-    {
-        this.Owner = this.Message.Sender;
-        this.AuctionEndBlock = this.Block.Number + biddingBlocks;
-        this.HasEnded = false;
     }
 
     public void Bid()

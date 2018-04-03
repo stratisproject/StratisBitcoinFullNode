@@ -192,5 +192,81 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
             }
         }
+        
+        [Fact]
+        public void VM_CreateContract_WithParameters()
+        {
+            //Get the contract execution code------------------------
+            SmartContractCompilationResult compilationResult =
+                SmartContractCompiler.CompileFile("SmartContracts/SimpleAuction.cs");
+
+            Assert.True(compilationResult.Success);
+            byte[] contractExecutionCode = compilationResult.Compilation;
+            //-------------------------------------------------------
+
+            //    //Call smart contract and add to transaction-------------
+            string[] methodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, 5),
+            };
+
+            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)500000, methodParameters);
+            var transactionCall = new Transaction();
+            transactionCall.AddInput(new TxIn());
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
+            //-------------------------------------------------------
+
+            //Deserialize the contract from the transaction----------
+            //and get the module definition
+            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
+            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
+            //-------------------------------------------------------
+
+            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+
+            byte[] gasAwareExecutionCode;
+            using (var ms = new MemoryStream())
+            {
+                decompilation.ModuleDefinition.Write(ms);
+                gasAwareExecutionCode = ms.ToArray();
+
+                var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+                IContractStateRepository track = repository.StartTracking();
+
+                var gasMeter = new GasMeter(deserializedCall.GasLimit);
+                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
+                var persistentState = new PersistentState(repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+                var vm = new ReflectionVirtualMachine(persistentState);
+                var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
+
+                var context = new SmartContractExecutionContext(
+                                new Block(1, TestAddress),
+                                new Message(
+                                    TestAddress,
+                                    TestAddress,
+                                    deserializedCall.TxOutValue,
+                                    deserializedCall.GasLimit
+                                    ),
+                                deserializedCall.GasPrice,
+                                deserializedCall.MethodParameters
+                            );
+
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
+
+                ISmartContractExecutionResult result = vm.Create(
+                    gasAwareExecutionCode,
+                    "SimpleAuction",
+                    context,
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
+
+                track.Commit();
+
+                Assert.Equal(6, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("AuctionEndBlock")), 0));
+                Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("Owner")));
+            }
+        }
     }
 }

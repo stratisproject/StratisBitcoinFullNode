@@ -2,7 +2,11 @@
 
 public class Demo : SmartContract
 {
-    public Demo(ISmartContractState state) : base(state) { }
+    public Demo(ISmartContractState state) : base(state)
+    {
+        Counter = 12345;
+        TestSave = "Hello, smart contract world!";
+    }
 
     public int Counter
     {
@@ -26,13 +30,6 @@ public class Demo : SmartContract
         {
             PersistentState.SetObject<string>("TestSave", value);
         }
-    }
-
-    [SmartContractInit]
-    public void Init()
-    {
-        Counter = 12345;
-        TestSave = "Hello, smart contract world!";
     }
 
     public void Increment()

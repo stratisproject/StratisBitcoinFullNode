@@ -2,13 +2,8 @@
 
 public sealed class ContractMethodParameterTypeMismatch : SmartContract
 {
-    public ContractMethodParameterTypeMismatch(ISmartContractState state)
+    public ContractMethodParameterTypeMismatch(ISmartContractState state, int orders)
         : base(state)
-    {
-    }
-
-    [SmartContractInit]
-    public void TestMethod(int orders)
     {
     }
 }

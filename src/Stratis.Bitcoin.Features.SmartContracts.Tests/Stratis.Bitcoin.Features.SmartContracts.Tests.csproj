@@ -30,10 +30,19 @@
     <Compile Update="SmartContracts\Demo.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\InvalidParam.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\MultipleConstructor.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>	
     <Compile Update="SmartContracts\OutOfGasTest.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\SimpleAuction.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\SingleConstructor.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\StorageTest.cs">

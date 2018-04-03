@@ -189,9 +189,35 @@ namespace Stratis.SmartContracts.Core
                 return;
             }
 
-            // Create the smart contract
-            MethodDefinition initMethod = decompilation.ContractType.Methods.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof(SmartContractInitAttribute).FullName));
-            this.Result = CreateContextAndExecute(newContractAddress, decompilation, initMethod?.Name);
+            ulong getBalance() => this.stateSnapshot.GetCurrentBalance(newContractAddress);
+
+            var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
+            var executionContext = new SmartContractExecutionContext
+            (
+                block,
+                new Message(
+                    newContractAddress.ToAddress(this.network),
+                    this.carrier.Sender.ToAddress(this.network),
+                    this.carrier.TxOutValue,
+                    this.carrier.GasLimit
+                ),
+                this.carrier.GasPrice,
+                this.carrier.MethodParameters
+            );
+
+            byte[] contractCodeWithGas = AddGasToContractExecutionCode(decompilation);
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter);
+            var persistentState = new PersistentState(this.stateSnapshot, persistenceStrategy, newContractAddress, this.network);
+
+            var vm = new ReflectionVirtualMachine(persistentState);
+
+            this.Result = vm.Create(
+                contractCodeWithGas.ToArray(),
+                decompilation.ContractType.Name,
+                executionContext,
+                this.gasMeter,
+                new InternalTransactionExecutor(this.stateSnapshot, this.network),
+                getBalance);
 
             if (!this.Result.Revert)
             {
@@ -230,10 +256,7 @@ namespace Stratis.SmartContracts.Core
 
             // Decompile the byte code.
             SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode);
-
-            // YO! VERY IMPORTANT! 
-            // Make sure that somewhere around here we check that the method being called ISN'T the SmartContractInit method, or we're in trouble
-
+            
             // Execute the call to the contract.
             this.stateSnapshot.CurrentCarrier = this.carrier;
             this.Result = base.CreateContextAndExecute(this.carrier.ContractAddress, decompilation, this.carrier.MethodName);

@@ -475,6 +475,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 {
                     public Token(ISmartContractState state): base(state) 
                     {
+                        Owner = Message.Sender;
                         Balances = PersistentState.GetMapping<ulong>(""Balances"");
                     }
 
@@ -491,12 +492,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     }
 
                     public ISmartContractMapping<ulong> Balances { get; }
-
-                    [SmartContractInit]
-                    public void Init()
-                    {
-                        Owner = Message.Sender;
-                    }
 
                     public bool Mint(Address receiver, ulong amount)
                     {
