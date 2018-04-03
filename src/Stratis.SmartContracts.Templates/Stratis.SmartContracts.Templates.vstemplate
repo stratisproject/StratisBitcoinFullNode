@@ -1,7 +1,7 @@
 ﻿<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="ProjectGroup">
   <TemplateData>
-    <Name>Stratis SmartContract</Name>
-    <Description>A project template for creating a new Stratis smart contract</Description>
+    <Name>Stratis SmartContract Project</Name>
+    <Description>A solution containing a Stratis smart contract and unit test projects.</Description>
     <ProjectType>CSharp</ProjectType>
     <ProjectSubType>
     </ProjectSubType>
@@ -18,10 +18,10 @@
   <TemplateContent>
     <ProjectCollection>
       <ProjectTemplateLink ProjectName="$safeprojectname$">
-        Template\Stratis.SmartContracts.Contract.vstemplate
+        Contract\Stratis.SmartContracts.Contract.vstemplate
       </ProjectTemplateLink>
       <ProjectTemplateLink ProjectName="$safeprojectname$.Tests">
-        Tests\Stratis.SmartContracts.Test.vstemplate
+        Tests\Stratis.SmartContracts.Tests.vstemplate
       </ProjectTemplateLink>
     </ProjectCollection>
   </TemplateContent>

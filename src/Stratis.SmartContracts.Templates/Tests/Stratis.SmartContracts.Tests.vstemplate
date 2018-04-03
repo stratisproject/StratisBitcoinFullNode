@@ -1,19 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" xmlns:sdk="http://schemas.microsoft.com/developer/vstemplate-sdkextension/2010">
   <TemplateData>
-    <Name>$safeprojectname$.Tests</Name>
+    <Name>Stratis Smart Contract Unit Test Project</Name>
+    <DefaultName>Stratis Smart Contract Unit Test Project</DefaultName>
     <Description>A project template for creating a new Stratis smart contract unit test</Description>
     <ProjectType>CSharp</ProjectType>
     <RequiredFrameworkVersion>2.0</RequiredFrameworkVersion>
     <SortOrder>1000</SortOrder>
-    <TemplateID>58272fb8-a902-4edb-bb18-e1fd1cac0c8b</TemplateID>
     <CreateNewFolder>true</CreateNewFolder>
-    <DefaultName>$safeprojectname$.Tests</DefaultName>
     <ProvideDefaultName>true</ProvideDefaultName>
+    <Icon>__TemplateIcon.png</Icon>
     <CreateInPlace>true</CreateInPlace>
+    <Hidden>true</Hidden>
   </TemplateData>
   <TemplateContent>
-    <Project File="StratisSmartContractTemplateTest.csproj" ReplaceParameters="true">
+    <Project File="Stratis.SmartContracts.Tests.csproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" OpenInEditor="true">SmartContractTests.cs</ProjectItem>
     </Project>
   </TemplateContent>

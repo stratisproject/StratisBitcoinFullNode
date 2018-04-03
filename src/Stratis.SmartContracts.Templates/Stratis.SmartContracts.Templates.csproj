@@ -12,8 +12,8 @@
     <ProjectGuid>{23A4582D-D384-4529-929B-DD2C347DF283}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Stratis.SmartContracts.Template</RootNamespace>
-    <AssemblyName>Stratis.SmartContracts.Template</AssemblyName>
+    <RootNamespace>Stratis.SmartContracts.Templates</RootNamespace>
+    <AssemblyName>Stratis.SmartContracts.Templates</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
@@ -58,28 +58,30 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Template\Contract.cs" />
-    <None Include="Template\SmartContractTemplate.csproj" />
+    <None Include="Contract\Contract.cs" />
+    <None Include="Contract\Stratis.SmartContract.Contract.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <VSTemplate Include="Stratis.SmartContracts.Template.vstemplate">
+    <VSTemplate Include="Stratis.SmartContracts.Templates.vstemplate">
       <SubType>Designer</SubType>
     </VSTemplate>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Tests\StratisSmartContractTemplateTest.csproj">
+    <None Include="Tests\Stratis.SmartContracts.Tests.csproj">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <VSTemplate Include="Template\Stratis.SmartContracts.Contract.vstemplate">
+    <VSTemplate Include="Contract\Stratis.SmartContracts.Contract.vstemplate">
       <SubType>Designer</SubType>
     </VSTemplate>
   </ItemGroup>
   <ItemGroup>
-    <VSTemplate Include="Tests\Stratis.SmartContracts.Test.vstemplate" />
+    <VSTemplate Include="Tests\Stratis.SmartContracts.Tests.vstemplate" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Contract\__TemplateIcon.png" />
+    <Content Include="Tests\__TemplateIcon.png" />
     <Content Include="__TemplateIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
