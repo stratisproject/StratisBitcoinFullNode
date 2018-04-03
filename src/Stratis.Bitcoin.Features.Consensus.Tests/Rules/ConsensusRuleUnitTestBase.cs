@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public virtual T InitializeConsensusRules()
         {
-            throw new NotImplementedException("override and initialize the consensusrules!");            
+            throw new NotImplementedException("override and initialize the consensusrules!");
         }
 
         protected static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
@@ -80,6 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {
         public TestConsensusRulesUnitTestBase() : base()
         {
+            this.network.Consensus.Options = new PowConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
         }
 
