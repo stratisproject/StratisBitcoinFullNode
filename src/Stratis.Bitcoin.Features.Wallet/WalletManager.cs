@@ -438,29 +438,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                     account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
                 
                 int diff = unusedAddresses.Count - count;
+                List<HdAddress> newAddresses = new List<HdAddress>();
                 if (diff < 0)
                 {
-                    IEnumerable<HdAddress> newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange);
+                    newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange).ToList();
                     this.UpdateKeysLookupLock(newAddresses);
                     generated = true;
                 }
 
-                if (isChange)
-                {
-                    addresses = account
-                        .InternalAddresses
-                        .Where(acc => !acc.Transactions.Any())
-                        .OrderBy(x => x.Index)
-                        .Take(count);
-                }
-                else
-                {
-                    addresses = account
-                        .ExternalAddresses
-                        .Where(acc => !acc.Transactions.Any())
-                        .OrderBy(x => x.Index)
-                        .Take(count);
-                }
+                addresses = unusedAddresses.Concat(newAddresses).OrderBy(x => x.Index).Take(count);
             }
 
             if (generated)
