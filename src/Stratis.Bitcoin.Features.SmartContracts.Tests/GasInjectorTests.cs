@@ -220,13 +220,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 var gasLimit = (Gas)500000;
                 var gasMeter = new GasMeter(gasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
+                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
                 var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1);
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, new BasicKeyEncodingStrategy());
                 Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
                 ISmartContractExecutionResult result = vm.Create(
@@ -268,13 +268,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                 var gasLimit = (Gas)500000;
                 var gasMeter = new GasMeter(gasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
+                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
                 var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1, new []{ "Tset Owner"});
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, new BasicKeyEncodingStrategy());
                 Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
                 ISmartContractExecutionResult result = vm.Create(
