@@ -466,42 +466,74 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<FlatHistory> GetHistory(string walletName)
+        public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
-            this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
+            this.logger.LogTrace("({0}:'{1}', {2}:'{3}')", nameof(walletName), walletName, nameof(accountName), accountName);
 
             // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
             Wallet wallet = this.GetWalletByName(walletName);
-            IEnumerable<FlatHistory> res = this.GetHistory(wallet);
 
-            this.logger.LogTrace("(-):*.Count={0}", res.Count());
-            return res;
+            List<AccountHistory> accountsHistory = new List<AccountHistory>();
+
+            lock (this.lockObject)
+            {
+                List<HdAccount> accounts = new List<HdAccount>();
+                if (!string.IsNullOrEmpty(accountName))
+                {
+                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                }
+                else
+                {
+                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                }
+
+                foreach (var account in accounts)
+                {
+                    accountsHistory.Add(this.GetHistory(account));
+                }
+            }
+
+            this.logger.LogTrace("(-):*.Count={0}", accountsHistory.Count());
+            return accountsHistory;
         }
 
         /// <inheritdoc />
-        public IEnumerable<FlatHistory> GetHistory(Wallet wallet)
+        public AccountHistory GetHistory(HdAccount account)
         {
-            Guard.NotNull(wallet, nameof(wallet));
-            FlatHistory[] items = null;
+            Guard.NotNull(account, nameof(account));
+            FlatHistory[] items;
             lock (this.lockObject)
             {
-                // Get transactions contained in the wallet.
-                items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
+                // Get transactions contained in the account.
+                items = account.GetCombinedAddresses()
+                    .Where(a => a.Transactions.Any())
+                    .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", items.Count());
-            return items;
+            return new AccountHistory { Account = account, History = items };
         }
 
         /// <inheritdoc />
-        public IEnumerable<AccountBalance> GetBalances(string walletName)
+        public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null)
         {
             List<AccountBalance> balances = new List<AccountBalance>();
 
             lock (this.lockObject)
             {
-                var accounts = this.GetAccounts(walletName).ToList();
+                Wallet wallet = this.GetWalletByName(walletName);
+
+                List<HdAccount> accounts = new List<HdAccount>();
+                if (!string.IsNullOrEmpty(accountName))
+                {
+                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                }
+                else
+                {
+                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                }
+                
                 foreach (var account in accounts)
                 {
                     (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
@@ -516,24 +548,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return balances;
-        }
-
-        /// <summary>
-        /// Gets a collection of addresses that have transactions associated with them.
-        /// </summary>
-        /// <param name="wallet">The wallet to get the history from.</param>
-        /// <returns>A collection of addresses that have transactions associated with them.</returns>
-        private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
-        {
-            IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
-
-            foreach (HdAddress address in accounts.SelectMany(a => a.ExternalAddresses).Concat(accounts.SelectMany(a => a.InternalAddresses)))
-            {
-                if (address.Transactions.Any())
-                {
-                    yield return address;
-                }
-            }
         }
 
         /// <inheritdoc />
