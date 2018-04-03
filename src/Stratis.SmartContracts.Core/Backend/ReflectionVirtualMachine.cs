@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.Lifecycle;
 
@@ -106,7 +107,7 @@ namespace Stratis.SmartContracts.Core.Backend
 
                 if (methodToInvoke.IsConstructor)
                 {
-                    throw new Exception("Cannot invoke constructor");
+                    throw new ConstructorInvocationException("Cannot invoke constructor");
                 }
 
                 executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
@@ -122,6 +123,10 @@ namespace Stratis.SmartContracts.Core.Backend
             catch (TargetParameterCountException parameterExcepion)
             {
                 executionResult.Exception = parameterExcepion;
+            }
+            catch (ConstructorInvocationException constructorInvocationException)
+            {
+                executionResult.Exception = constructorInvocationException;
             }
             finally
             {
