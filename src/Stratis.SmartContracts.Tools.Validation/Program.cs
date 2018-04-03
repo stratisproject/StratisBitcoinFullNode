@@ -4,7 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Mono.Options;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Tools.Validation.Report;
 using Stratis.SmartContracts.Tools.Validation.Report.Sections;
 
@@ -56,7 +59,6 @@ namespace Stratis.SmartContracts.Tools.Validation
             var determinismValidator = new SmartContractDeterminismValidator();
             var formatValidator = new SmartContractFormatValidator();
 
-            var compiler = new SmartContractCompiler();
             var decompiler = new SmartContractDecompiler();
 
             var reportData = new List<ValidationReportData>();
@@ -97,7 +99,7 @@ namespace Stratis.SmartContracts.Tools.Validation
                 reportData.Add(validationData);
 
                 Console.WriteLine($"Compiling...");
-                SmartContractCompilationResult compilationResult = compiler.Compile(source);
+                SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
 
                 validationData.CompilationSuccess = compilationResult.Success;
 
@@ -150,11 +152,12 @@ namespace Stratis.SmartContracts.Tools.Validation
             reportStructure.Add(new HeaderSection());
             reportStructure.Add(new CompilationSection());
 
+            reportStructure.Add(new FormatSection());
+            reportStructure.Add(new DeterminismSection());
+
             if (showContractBytes)
                 reportStructure.Add(new ByteCodeSection());
 
-            reportStructure.Add(new FormatSection());
-            reportStructure.Add(new DeterminismSection());
             reportStructure.Add(new FooterSection());
 
             var renderer = new StreamTextRenderer(Console.Out);

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 
-namespace Stratis.SmartContracts.Tools.Validation
+namespace Stratis.SmartContracts.Core.Compilation
 {
     /// <summary>
     /// Resolver for .NET Core assemblies used in a 
@@ -21,20 +21,6 @@ namespace Stratis.SmartContracts.Tools.Validation
         public DotNetCoreAssemblyResolver()
         {
             this.libraries = new Dictionary<string, AssemblyDefinition>();
-        }
-
-        public virtual AssemblyDefinition Resolve(string fullName)
-        {
-            return this.Resolve(fullName, new ReaderParameters() { AssemblyResolver = this });
-        }
-
-        public virtual AssemblyDefinition Resolve(string fullName, ReaderParameters parameters)
-        {
-            if (fullName == null)
-            {
-                throw new ArgumentNullException(nameof(fullName));
-            }
-            return this.Resolve(AssemblyNameReference.Parse(fullName), parameters);
         }
 
         // IAssemblyResolver API
@@ -96,8 +82,26 @@ namespace Stratis.SmartContracts.Tools.Validation
 
         public void Dispose()
         {
-            Dispose(disposing: true);
+            this.Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+    }
+
+    public static class AssemblyResolverExtensions
+    {
+        public static AssemblyDefinition Resolve(this IAssemblyResolver resolver, string fullName)
+        {
+            return resolver.Resolve(fullName, new ReaderParameters() { AssemblyResolver = resolver });
+        }
+
+        public static AssemblyDefinition Resolve(this IAssemblyResolver resolver, string fullName, ReaderParameters parameters)
+        {
+            if (fullName == null)
+            {
+                throw new ArgumentNullException(nameof(fullName));
+            }
+            return resolver.Resolve(AssemblyNameReference.Parse(fullName), parameters);
+        }
+
     }
 }

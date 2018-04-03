@@ -6,8 +6,8 @@ using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 using Block = Stratis.SmartContracts.Core.Block;
 
@@ -51,16 +51,69 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TestGasInjector()
         {
-            byte[] originalAssemblyBytes = GetFileDllHelper.GetAssemblyBytesFromSource(TestSource);
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(TestSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
 
             var resolver = new DefaultAssemblyResolver();
             resolver.AddSearchDirectory(AppContext.BaseDirectory);
-            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
+            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes),
+                new ReaderParameters {AssemblyResolver = resolver});
             TypeDefinition contractType = moduleDefinition.GetType(ContractName);
             TypeDefinition baseType = contractType.BaseType.Resolve();
             MethodDefinition testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
             MethodDefinition constructorMethod = contractType.Methods.FirstOrDefault(x => x.Name.Contains("ctor"));
-            int aimGasAmount = testMethod.Body.Instructions.Count; // + constructorMethod.Body.Instructions.Count; // Have to figure out ctor gas metering
+            int aimGasAmount =
+                testMethod.Body.Instructions
+                    .Count; // + constructorMethod.Body.Instructions.Count; // Have to figure out ctor gas metering
+
+            this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+
+            using (var mem = new MemoryStream())
+            {
+                moduleDefinition.Write(mem);
+                byte[] injectedAssemblyBytes = mem.ToArray();
+
+                var gasLimit = (Gas) 500000;
+                var gasMeter = new GasMeter(gasLimit);
+                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
+                var persistentState = new PersistentState(this.repository, persistenceStrategy,
+                    TestAddress.ToUint160(this.network), this.network);
+                var vm = new ReflectionVirtualMachine(persistentState);
+
+                var executionContext = new SmartContractExecutionContext(
+                    new Block(0, TestAddress),
+                    new Message(TestAddress, TestAddress, 0, (Gas) 500000), 1, new object[] {1});
+
+                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
+                Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
+
+                ISmartContractExecutionResult result = vm.ExecuteMethod(
+                    injectedAssemblyBytes,
+                    ContractName,
+                    MethodName,
+                    executionContext,
+                    gasMeter,
+                    internalTransactionExecutor,
+                    getBalance);
+                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));
+            }
+        }
+
+        [Fact]
+        public void TestGasInjector_OutOfGasFails()
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/OutOfGasTest.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            var resolver = new DefaultAssemblyResolver();
+            resolver.AddSearchDirectory(AppContext.BaseDirectory);
+            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
+            TypeDefinition contractType = moduleDefinition.GetType("OutOfGasTest");
+            TypeDefinition baseType = contractType.BaseType.Resolve();
 
             this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
 
@@ -75,20 +128,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
                 var vm = new ReflectionVirtualMachine(persistentState);
 
-                var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas) 500000), 1, new object[] { 1 });
+                var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1);
 
                 var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
                 Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
-                    injectedAssemblyBytes, 
-                    ContractName, 
-                    MethodName, 
+                    injectedAssemblyBytes,
+                    "OutOfGasTest",
+                    "UseAllGas",
                     executionContext,
                     gasMeter,
                     internalTransactionExecutor,
                     getBalance);
-                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));
+
+                Assert.NotNull(result.Exception);
+                Assert.Equal((Gas)0, gasMeter.GasAvailable);
+                Assert.Equal(gasLimit, result.GasConsumed);
+                Assert.Equal(gasLimit, gasMeter.GasConsumed);
             }
         }
     }

@@ -3,9 +3,8 @@ using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
-using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 using Block = Stratis.SmartContracts.Core.Block;
 
@@ -19,25 +18,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private readonly ContractStateRepositoryRoot repository;
         private readonly Network network;
-        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private static readonly Address TestAddress = (Address) "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         public SmartContractExceptionTests()
         {
-            this.repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.repository =
+                new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.network = Network.SmartContractsRegTest;
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
         }
 
         [Fact]
-        public void VM_Throws_OutOfGasException_CanCatch()
+        public void VM_Throws_Exception_CanCatch()
         {
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowOutOfGasExceptionContract.cs");
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ThrowExceptionContract.cs");
+            Assert.True(compilationResult.Success);
 
-            var gasLimit = (Gas)100;
+            byte[] contractCode = compilationResult.Compilation;
+
+            var gasLimit = (Gas) 100;
             var gasMeter = new GasMeter(gasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy,
+                TestAddress.ToUint160(this.network), this.network);
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(
@@ -52,74 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
-                "ThrowOutOfGasExceptionContract",
-                "ThrowException",
-                context,
-                gasMeter,
-                internalTransactionExecutor,
-                getBalance);
-
-            Assert.Equal(typeof(OutOfGasException), result.Exception.GetType());
-        }
-
-        [Fact]
-        public void VM_Throws_RefundGasException_CanCatch()
-        {
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowRefundGasExceptionContract.cs");
-
-            var gasLimit = (Gas)100;
-            var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-            var vm = new ReflectionVirtualMachine(persistentState);
-
-            var context = new SmartContractExecutionContext(
-                new Block(0, TestAddress),
-                new Message(TestAddress, TestAddress, 0, gasLimit),
-                1,
-                new object[] { }
-            );
-
-            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
-            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode,
-                "ThrowRefundGasExceptionContract",
-                "ThrowException",
-                context,
-                gasMeter,
-                internalTransactionExecutor,
-                getBalance);
-
-            Assert.Equal<ulong>(10, result.GasConsumed);
-            Assert.Equal(typeof(RefundGasException), result.Exception.GetType());
-        }
-
-        [Fact]
-        public void VM_Throws_SystemException_CanCatch()
-        {
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowSystemExceptionContract.cs");
-
-            var gasLimit = (Gas)100;
-            var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-            var vm = new ReflectionVirtualMachine(persistentState);
-
-            var context = new SmartContractExecutionContext(
-                new Block(0, TestAddress),
-                new Message(TestAddress, TestAddress, 0, (Gas)100),
-                1,
-                new object[] { }
-            );
-
-            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
-            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode,
-                "ThrowSystemExceptionContract",
+                "ThrowExceptionContract",
                 "ThrowException",
                 context,
                 gasMeter,

@@ -1,4 +1,5 @@
 ﻿using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
@@ -7,6 +8,7 @@ public class DemoHelperTests
     [Fact]
     public void GetHexStringForDemo()
     {
-        string example = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/SimpleAuction.cs").ToHexString();
+        var compilationResult = SmartContractCompiler.CompileFile("SmartContracts/SimpleAuction.cs");
+        string example = compilationResult.Compilation.ToHexString();
     }
 }

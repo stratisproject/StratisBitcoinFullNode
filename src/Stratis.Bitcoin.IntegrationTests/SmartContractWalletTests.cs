@@ -13,6 +13,7 @@ using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
@@ -141,8 +142,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a token contract
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)2000;
-                var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
+                Gas gasLimit = (Gas)1000;
+                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
+                Assert.True(compilationResult.Success);
+
+                var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
+
                 var contractCreateScript = new Script(contractCarrier.Serialize());
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
@@ -175,7 +180,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.FullNode.MempoolManager().Clear();
 
                 // Create a transfer token contract
-                contractCarrier = SmartContractCarrier.CreateContract(vmVersion, GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/TransferTest.cs"), gasPrice, gasLimit);
+                compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
+                Assert.True(compilationResult.Success);
+                contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
                 contractCreateScript = new Script(contractCarrier.Serialize());
                 txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
@@ -260,6 +267,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
                 WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
+                Assert.True(compilationResult.Success);
 
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
@@ -267,7 +276,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     GasLimit = "10000",
                     GasPrice = "1",
                     Amount = "0",
-                    ContractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageDemo.cs").ToHexString(),
+                    ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "30000",
                     Password = Password,
                     WalletName = WalletName

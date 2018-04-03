@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
@@ -34,7 +35,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SME_CallContract_Fails_ReturnFundsToSender()
         {
             //Get the contract execution code------------------------
-            byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ThrowSystemExceptionContract.cs");
+            SmartContractCompilationResult compilationResult =
+                SmartContractCompiler.CompileFile("SmartContracts/ThrowExceptionContract.cs");
+            Assert.True(compilationResult.Success);
+            byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
             var toAddress = new uint160(1);
@@ -73,7 +77,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SME_CreateContract_ValidationFails_RefundGas_MempoolFeeLessGas()
         {
             //Get the contract execution code------------------------
-            byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractFailsValidation.cs");
+            SmartContractCompilationResult compilationResult =
+                SmartContractCompiler.CompileFile("SmartContracts/ContractFailsValidation.cs");
+            Assert.True(compilationResult.Success);
+            byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
             var toAddress = new uint160(1);
@@ -122,7 +129,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SME_CreateContract_ConstructorFails_Refund()
         {
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractConstructorInvalid.cs");
+            SmartContractCompilationResult compilationResult =
+                SmartContractCompiler.CompileFile("SmartContracts/ContractConstructorInvalid.cs");
+            Assert.True(compilationResult.Success);
+            byte[] contractCode = compilationResult.Compilation;
 
             var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
             var tx = new Transaction();
@@ -140,7 +150,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SME_CreateContract_MethodParameters_InvalidParameterCount()
         {
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractInvalidParameterCount.cs");
+            SmartContractCompilationResult compilationResult =
+                SmartContractCompiler.CompileFile("SmartContracts/ContractInvalidParameterCount.cs");
+            Assert.True(compilationResult.Success);
+            byte[] contractCode = compilationResult.Compilation;
 
             string[] methodParameters = new string[]
             {
@@ -163,7 +176,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SME_CreateContract_MethodParameters_ParameterTypeMismatch()
         {
-            byte[] contractCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/ContractMethodParameterTypeMismatch.cs");
+            SmartContractCompilationResult compilationResult =
+                SmartContractCompiler.CompileFile("SmartContracts/ContractMethodParameterTypeMismatch.cs");
+            Assert.True(compilationResult.Success);
+            byte[] contractCode = compilationResult.Compilation;
 
             string[] methodParameters = new string[]
             {

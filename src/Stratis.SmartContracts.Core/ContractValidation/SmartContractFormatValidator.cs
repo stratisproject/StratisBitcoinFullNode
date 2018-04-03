@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
+using Stratis.SmartContracts.Core.Compilation;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
@@ -10,16 +11,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         private List<SmartContractValidationError> errors;
 
         /// <summary>
-        /// TODO: These should be the same assemblies used during compilation of the initial file.
-        /// Should check if it can compile without these, and if not, we abandon.
+        /// The referenced assemblies allowed in the smart contract
         /// </summary>
-        private static readonly HashSet<Assembly> AllowedAssemblies = new HashSet<Assembly>
-        {
-            typeof(SmartContract).Assembly,
-            typeof(object).Assembly,
-            typeof(Enumerable).Assembly,
-            typeof(List<object>).Assembly
-        };
+        private static readonly IEnumerable<Assembly> AllowedAssemblies = ReferencedAssemblyResolver.AllowedAssemblies;
 
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
@@ -31,10 +25,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public void ValidateLimitedAssemblyReferences(ModuleDefinition moduleDefinition)
         {
-            // TODO: This check needs to be more robust -> What other way can we use?
             foreach (AssemblyNameReference assemblyReference in moduleDefinition.AssemblyReferences)
             {
-                if (!AllowedAssemblies.Any(x => x.FullName == assemblyReference.FullName))
+                if (!AllowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
                     this.errors.Add(new SmartContractValidationError("Assembly " + assemblyReference.FullName + " is not allowed."));
             }
         }

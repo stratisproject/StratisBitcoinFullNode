@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -44,7 +45,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void VM_ExecuteContract_WithoutParameters()
         {
             //Get the contract execution code------------------------
-            byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTest.cs");
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
             //Call smart contract and add to transaction-------------
@@ -115,7 +119,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void VM_ExecuteContract_WithParameters()
         {
             //Get the contract execution code------------------------
-            byte[] contractExecutionCode = GetFileDllHelper.GetAssemblyBytesFromFile("SmartContracts/StorageTestWithParameters.cs");
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageTestWithParameters.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
             //    //Call smart contract and add to transaction-------------
