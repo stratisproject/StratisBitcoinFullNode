@@ -405,7 +405,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count)
+        public HdAddress GetUnusedChangeAddress(WalletAccountReference accountReference)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(accountReference), accountReference);
+
+            HdAddress res = this.GetUnusedAddresses(accountReference, 1, true).Single();
+
+            this.logger.LogTrace("(-)");
+            return res;
+        }
+
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
         {
             Guard.NotNull(accountReference, nameof(accountReference));
             Guard.Assert(count > 0);
@@ -421,20 +433,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-                List<HdAddress> unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                List<HdAddress> unusedAddresses = isChange ? 
+                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() : 
+                    account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                
                 int diff = unusedAddresses.Count - count;
+                List<HdAddress> newAddresses = new List<HdAddress>();
                 if (diff < 0)
                 {
-                    IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
-                    this.UpdateKeysLookupLock(newReceivingAddresses);
+                    newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange).ToList();
+                    this.UpdateKeysLookupLock(newAddresses);
                     generated = true;
                 }
 
-                addresses = account
-                    .ExternalAddresses
-                    .Where(acc => !acc.Transactions.Any())
-                    .OrderBy(x => x.Index)
-                    .Take(count);
+                addresses = unusedAddresses.Concat(newAddresses).OrderBy(x => x.Index).Take(count);
             }
 
             if (generated)
@@ -446,35 +458,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return addresses;
         }
-
-        /// <inheritdoc />
-        public HdAddress GetOrCreateChangeAddress(HdAccount account)
-        {
-            this.logger.LogTrace("()");
-            HdAddress changeAddress = null;
-
-            lock (this.lockObject)
-            {
-                // Get an address to send the change to.
-                changeAddress = account.GetFirstUnusedChangeAddress();
-
-                // No more change addresses left so create a new one.
-                if (changeAddress == null)
-                {
-                    changeAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
-
-                    // Adds the address to the list of tracked addresses.
-                    this.UpdateKeysLookupLock(new[] { changeAddress });
-                }
-            }
-
-            // Persist the address to the wallet files.
-            this.SaveWallets();
-
-            this.logger.LogTrace("(-)");
-            return changeAddress;
-        }
-
+        
         /// <inheritdoc />
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {
