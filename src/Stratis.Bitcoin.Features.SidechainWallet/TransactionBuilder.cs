@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Security;
 using NBitcoin.Policy;
 
 namespace Stratis.Bitcoin.Features.SidechainWallet
@@ -18,36 +20,37 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
         public Transaction BuildCrossChainTransaction(TransactionBuildContext context, Network network, SigHash sigHash)
         {
             var buildingContext = this.CreateTransactionBuildingContext();
-            context.Transaction = FromStandardTransactionToCrossChainTransaction(buildingContext, context, network);
+            context.Transaction = FromStandardTransactionToCrossChainTransaction(context, network);
            
             buildingContext.Finish();
 
             if(context.Sign)
             {
-                SignTransactionInPlace(context.Transaction, sigHash);
+                this.SignTransactionInPlace(context.Transaction, sigHash);
             }
             return context.Transaction;
         }
          
-        private Transaction FromStandardTransactionToCrossChainTransaction(TransactionBuildingContext buildingContext, TransactionBuildContext context, Network network)
+        private Transaction FromStandardTransactionToCrossChainTransaction(TransactionBuildContext context, Network network)
         {
-            var sidechainMultisig = GetMultisigForChain(context.SidechainIdentifier);
             var changeAddress = context.ChangeAddress;
 
             var txClone = context.Transaction.Clone();
-            var sidechainOutput = txClone.Outputs
+            var initialOutput = txClone.Outputs
                 .Where(o => o.ScriptPubKey.PaymentScript.GetScriptAddress(network).Hash != changeAddress.Pubkey.Hash)
                 .Single(); //there should only be one recipient apart from the changeAddress
-
-            var gatewayOutput = new TxOut(txClone.TotalOut, new Script()
-                + OpcodeType.OP_DUP + OpcodeType.OP_HASH160 + Encoding.UTF8.GetBytes(sidechainMultisig) + OpcodeType.OP_EQUALVERIFY + OpcodeType.OP_CHECKSIG);
-            txClone.Outputs.Remove(sidechainOutput);
+            var sidechainMultisig = GetMultisigForChain(context.SidechainIdentifier);
+            if(sidechainMultisig.Length < 1) throw new ValidationException(string.Format("Multisig for sidechain {0} has no public key", context.SidechainIdentifier));
+            var pay2Multisig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(sidechainMultisig.Length / 2 + 1, sidechainMultisig);
+            
+            var gatewayOutput = new TxOut(txClone.TotalOut, pay2Multisig);
+            txClone.Outputs.Remove(initialOutput);
             txClone.Outputs.Add(gatewayOutput);
 
             //get the end target address
-            var sidechainAddressHash = sidechainOutput.ScriptPubKey.Hash.ToString().ToHexString();
+            var sidechainAddressHash = initialOutput.ScriptPubKey.GetDestinationAddress(network).ScriptPubKey.Hash;
             var newSidechainOutput = new TxOut(Money.Zero, new Script()
-                + OpcodeType.OP_RETURN + Encoding.UTF8.GetBytes(sidechainAddressHash));
+                + OpcodeType.OP_RETURN + Encoding.UTF8.GetBytes(sidechainAddressHash.ToString()));
             txClone.Outputs.Add(newSidechainOutput);
 
             return txClone;
@@ -59,15 +62,17 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
         /// </summary>
         /// <param name="sidechainIdentifier"></param>
         /// <returns></returns>
-        public string GetMultisigForChain(string sidechainIdentifier)
+        public PubKey[] GetMultisigForChain(string sidechainIdentifier)
         {
             try
             {
-                return "sladkjjldsfkajsdajkflajdlfl";
+                var randomMultisig = Enumerable.Range(0,5).Select(i => new PubKey($"a{i}")).ToArray();
+                return randomMultisig;
             }
+            // TODO : make the exception more specific once we know where it comes from
             catch (Exception exception)
             {
-                throw new Exception(string.Format("unable to retrieve sidechain multisig for {0}", sidechainIdentifier));
+                throw new Exception(string.Format("unable to retrieve sidechain multisig for {0}", sidechainIdentifier), exception);
             }
         }
 

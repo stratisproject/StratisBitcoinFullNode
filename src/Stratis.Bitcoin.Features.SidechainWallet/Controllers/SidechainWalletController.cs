@@ -33,17 +33,10 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
 
         public SidechainWalletController(
             ILoggerFactory loggerFactory,
-            IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
-            IWalletSyncManager walletSyncManager,
-            IConnectionManager connectionManager,
-            Network network,
-            ConcurrentChain chain,
-            IBroadcasterManager broadcasterManager,
-            IDateTimeProvider dateTimeProvider)
+            Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            //this.walletController = new Wallet.Controllers.WalletController(loggerFactory, walletManager, walletTransactionHandler, walletSyncManager, connectionManager, network, chain, broadcasterManager, dateTimeProvider);
             this.walletTransactionHandler = walletTransactionHandler;
             this.network = network;
         }

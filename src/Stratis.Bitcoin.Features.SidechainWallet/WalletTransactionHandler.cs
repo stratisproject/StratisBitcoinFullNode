@@ -11,7 +11,9 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
     /// <inheritdoc />
     public class WalletTransactionHandler : Wallet.WalletTransactionHandler
     {
-        public WalletTransactionHandler(ILoggerFactory loggerFactory, IWalletManager walletManager, IWalletFeePolicy walletFeePolicy, Network network) : base(loggerFactory, walletManager, walletFeePolicy, network)
+        public WalletTransactionHandler(ILoggerFactory loggerFactory, IWalletManager walletManager,
+                                        IWalletFeePolicy walletFeePolicy, Network network) 
+            : base(loggerFactory, walletManager, walletFeePolicy, network)
         {
             this.Network = network;
         }
