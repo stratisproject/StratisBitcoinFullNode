@@ -36,6 +36,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private readonly SmartContractExecutorFactory executorFactory;
 
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
+
         private readonly CoinView coinView;
 
         public SmartContractAssemblerFactory(
@@ -46,6 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
+            IKeyEncodingStrategy keyEncodingStrategy,
             SmartContractExecutorFactory executorFactory,
             CoinView coinView,
             IStakeChain stakeChain = null)
@@ -56,6 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.mempool = mempool;
             this.dateTimeProvider = dateTimeProvider;
             this.stateRoot = stateRoot;
+            this.keyEncodingStrategy = keyEncodingStrategy;
             this.executorFactory = executorFactory;
             this.coinView = coinView;
             this.stakeChain = stakeChain;

@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private readonly ContractStateRepositoryRoot repository;
         private readonly Network network;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private static readonly Address TestAddress = (Address) "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         public SmartContractExceptionTests()
@@ -25,6 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.repository =
                 new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.network = Network.SmartContractsRegTest;
+            this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
         }
 
         [Fact]
@@ -37,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas) 100;
             var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(this.repository, persistenceStrategy,
                 TestAddress.ToUint160(this.network), this.network);
             var vm = new ReflectionVirtualMachine(persistentState);
@@ -49,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new object[] { }
             );
 
-            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network);
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
             Func<ulong> getBalance = () => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(

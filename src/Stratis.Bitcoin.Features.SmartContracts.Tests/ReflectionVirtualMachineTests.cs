@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly Gas gasLimit;
         private readonly IGasMeter gasMeter;
         private readonly Network network;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly PersistentState persistentState;
         private readonly ContractStateRepositoryRoot state;
 
@@ -31,12 +32,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.decompiler = new SmartContractDecompiler();
             this.gasInjector = new SmartContractGasInjector();
             this.network = Network.SmartContractsRegTest;
-
+            this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.gasLimit = (Gas)10000;
             this.gasMeter = new GasMeter(this.gasLimit);
 
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter, this.keyEncodingStrategy);
             this.persistentState = new PersistentState(this.state, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
         }
 
@@ -75,8 +76,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 IContractStateRepository stateRepository = repository.StartTracking();
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
+
+                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
                 var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
+
                 var vm = new ReflectionVirtualMachine(persistentState);
 
                 var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
@@ -92,8 +95,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.GasPrice
                             );
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
                 Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
+
 
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
@@ -151,8 +155,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 IContractStateRepository track = repository.StartTracking();
 
                 var gasMeter = new GasMeter(deserializedCall.GasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter);
+
+                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
                 var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
+
                 var vm = new ReflectionVirtualMachine(persistentState);
                 var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
@@ -168,9 +174,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.MethodParameters
                             );
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network);
+                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
                 Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
-
+                
                 ISmartContractExecutionResult result = vm.ExecuteMethod(
                     gasAwareExecutionCode,
                     "StorageTestWithParameters",

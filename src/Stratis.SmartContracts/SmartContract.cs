@@ -22,17 +22,17 @@ namespace Stratis.SmartContracts
         public ulong Balance { get { return this.getBalance(); } }
 
         /// <summary>
-        /// TODO: Add documentation
+        /// Holds details about the current block.
         /// </summary>
         protected readonly IBlock Block;
 
         /// <summary>
-        /// TODO: Add documentation
+        /// Holds details about the current transaction that has been sent.
         /// </summary>
         protected readonly IMessage Message;
 
         /// <summary>
-        /// TODO: Add documentation
+        ///  Provides functionality for the saving and retrieval of objects inside smart contracts.
         /// </summary>
         protected readonly IPersistentState PersistentState;
 
@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts
         private readonly IInternalHashHelper internalHashHelper;
 
         /// <summary>
-        /// TODO: Add documentation
+        /// The current state of the blockchain and current transaction.
         /// </summary>
         private readonly ISmartContractState smartContractState;
 

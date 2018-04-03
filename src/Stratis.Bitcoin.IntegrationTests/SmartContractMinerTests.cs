@@ -138,6 +138,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public SmartContractDecompiler decompiler;
             public SmartContractValidator validator;
             public ISmartContractGasInjector gasInjector;
+            public IKeyEncodingStrategy keyEncodingStrategy;
             public SmartContractExecutorFactory executorFactory;
 
             private bool useCheckpoints = true;
@@ -176,6 +177,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var consensusSettings = new ConsensusSettings().Load(nodeSettings);
                 consensusSettings.UseCheckpoints = this.useCheckpoints;
 
+                this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
+
                 var folder = TestDirectory.Create(Path.Combine(AppContext.BaseDirectory, callingMethod));
 
                 var engine = new DBreezeEngine(folder.FolderName);
@@ -192,7 +195,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
 
                 this.gasInjector = new SmartContractGasInjector();
-                this.executorFactory = new SmartContractExecutorFactory(this.decompiler, this.gasInjector, this.validator, this.network);
+
+                this.executorFactory = new SmartContractExecutorFactory(this.decompiler, this.gasInjector, this.validator, this.keyEncodingStrategy, this.network);
                 SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
@@ -465,7 +469,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
         /// <summary>
         /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds.
-        /// TODO: Add consensusvalidator calls
         /// </summary>
         [Fact]
         public async Task SmartContracts_NoTransfers_Async()

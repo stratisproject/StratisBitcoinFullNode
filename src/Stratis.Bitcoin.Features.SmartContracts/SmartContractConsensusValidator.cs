@@ -21,9 +21,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
+        private SmartContractExecutorFactory executorFactory;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
-        private SmartContractExecutorFactory executorFactory;
+        private uint refundCounter;
 
         public SmartContractConsensusValidator(
             CoinView coinView,
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.originalStateRoot = stateRoot;
             this.generatedTransaction = null;
             this.executorFactory = executorFactory;
+            this.refundCounter = 1;
         }
 
         // Same as base, just that it always validates true for scripts for now. Purely for testing.
@@ -58,6 +60,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // Start state from previous block's root
             this.originalStateRoot.SyncToRoot(context.ConsensusTip.Header.HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.originalStateRoot.StartTracking();
+
+            this.refundCounter = 1;
 
             if (!context.SkipValidation)
             {
@@ -182,6 +186,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <param name="transaction"></param>
         protected void UpdateCoinViewAndExecuteContracts(RuleContext context, Transaction transaction, IContractStateRepository trackedState)
         {
+            Money mempoolFee = 0;
+            if (!transaction.IsCoinBase)
+            {
+                mempoolFee = transaction.GetFee(context.Set);
+            }
+
             base.UpdateCoinView(context, transaction);
 
             if (this.generatedTransaction != null)
@@ -197,7 +207,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (smartContractTxOut == null)
                 return;
 
-            ExecuteContractTransaction(context, transaction, smartContractTxOut);
+            ExecuteContractTransaction(context, transaction, smartContractTxOut, mempoolFee);
         }
 
         /// <summary>
@@ -230,7 +240,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <param name="context"></param>
         /// <param name="transaction"></param>
         /// <param name="smartContractTxOut"></param>
-        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut, Money mempoolFee)
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
@@ -241,11 +251,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            SmartContractExecutor executor = this.executorFactory.CreateExecutorForConsensusValidator(smartContractCarrier, this.originalStateRoot);
+            SmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
+
             ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
+
+            ValidateRefunds(result.Refunds, context.BlockValidationContext.Block.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
+        }
+
+        private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
+        {
+            foreach(TxOut refund in refunds)
+            {
+                TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
+                if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
+                    SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
+                this.refundCounter++;
+            }
         }
 
     }

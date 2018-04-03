@@ -1,7 +1,7 @@
 ﻿namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// Value type representing an amount of Gas. Use this to avoid developer confusion with many other ulong values in NBitcoin.
+    /// Value type representing an amount of Gas. Use this to avoid confusion with many other ulong values.
     /// </summary>
     public struct Gas
     {

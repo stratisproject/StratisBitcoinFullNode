@@ -11,13 +11,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class MeteredPersistenceStrategyTests
     {
+        private readonly IKeyEncodingStrategy keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
+
         [Fact]
         public void SmartContracts_MeteredPersistenceStrategy_TestNullInjectedArgsThrow()
         {
             var sr = new Mock<IContractStateRepository>();
 
-            Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(null, new GasMeter((Gas) 0)));
-            Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(sr.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(null, new GasMeter((Gas) 0), this.keyEncodingStrategy));
+            Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(sr.Object, null, this.keyEncodingStrategy));
         }
 
         [Fact]
@@ -39,7 +41,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             MeteredPersistenceStrategy strategy = new MeteredPersistenceStrategy(
                 sr.Object,
-                gasMeter
+                gasMeter,
+                this.keyEncodingStrategy
                 );
 
             strategy.StoreBytes(

@@ -88,6 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.AddContractToBlock(mempoolEntry, smartContractTxOut);
         }
 
+
         /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
             carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
-            SmartContractExecutor executor = this.executorFactory.CreateExecutorForBlockAssembler(carrier, mempoolEntry.Fee, this.stateSnapshot);
+            SmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
             ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
 
             // Add fee from the execution result to the block.

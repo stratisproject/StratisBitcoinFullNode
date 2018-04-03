@@ -62,6 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
+                        services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();

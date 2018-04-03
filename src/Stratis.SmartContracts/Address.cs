@@ -1,13 +1,16 @@
 ﻿namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// Helper struct that wraps uint160 operations.
+    /// Helper struct that represents a STRAT address.
     /// <para>
-    /// This struct makes it easier to semantically understand send and receive addresses.
+    /// This struct is used when sending or receiving funds.
     /// </para>
     /// </summary>
     public struct Address
     {
+        /// <summary>
+        /// The address as a string, in base58 format.
+        /// </summary>
         public string Value;
 
         public Address(string address)

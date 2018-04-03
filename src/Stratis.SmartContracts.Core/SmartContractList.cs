@@ -23,13 +23,11 @@ namespace Stratis.SmartContracts.Core
         {
             get
             {
-                string baseKey = this.KeyHashingStrategy.Hash(this.CountName);
-                return this.persistentState.GetObject<uint>(baseKey);
+                return this.persistentState.GetObject<uint>(this.CountName);
             }
             private set
             {
-                string baseKey = this.KeyHashingStrategy.Hash(this.CountName);
-                this.persistentState.SetObject(baseKey, value);
+                this.persistentState.SetObject(this.CountName, value);
             }
         }
 
@@ -42,10 +40,7 @@ namespace Stratis.SmartContracts.Core
 
             this.persistentState = persistentState;
             this.name = name;
-            this.KeyHashingStrategy = StringKeyHashingStrategy.Default;
         }
-
-        public StringKeyHashingStrategy KeyHashingStrategy { get; }
 
         public void Add(T item)
         {
@@ -83,9 +78,7 @@ namespace Stratis.SmartContracts.Core
         /// <returns></returns>
         private string GetKeyString(string key)
         {
-            return this.KeyHashingStrategy.Hash(
-                this.name,
-                key);
+            return this.name + key; 
         }
     }
 }

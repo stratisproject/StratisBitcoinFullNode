@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Stratis.SmartContracts.Core")]
 [assembly: InternalsVisibleTo("Stratis.SmartContracts.Tests")]
 [assembly: InternalsVisibleTo("Stratis.SmartContracts.Backend")]
 [assembly: InternalsVisibleTo("Stratis.SmartContracts.Demo")]
