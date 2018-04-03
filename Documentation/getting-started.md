@@ -71,4 +71,9 @@ Two containers are available [here](https://hub.docker.com/u/stratisplatform/)
 Swagger Endpoints
 -------------------
 
-Once the node is running, a Swagger interface (web UI for testing an API) is available at http://localhost:37221/swagger/
+Once the node is running, a Swagger interface (web UI for testing an API) is available.
+
+* For Bitcoin: http://localhost:37220/swagger/
+* For Stratis: http://localhost:37221/swagger/
+* For Bitcoin Testnet: http://localhost:38220/swagger/
+* For Stratis Testnet: http://localhost:38221/swagger/
