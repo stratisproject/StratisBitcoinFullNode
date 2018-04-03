@@ -5,7 +5,7 @@
   "walletName": "theWallet",
   "accountName": "theAccount",
   "destinationAddress": "SbTyxdUG6FNPa5oJhMN9TDerb8eeVboTXA",
-  "amount": "120.3",
+  "amount": "12.3",
   "allowUnconfirmed": true,
   "shuffleOutputs": true
 }

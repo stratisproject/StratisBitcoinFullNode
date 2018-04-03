@@ -65,10 +65,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             return context.Transaction;
         }
 
-        protected void VerifyTransaction(TransactionBuildContext context)
+        private void VerifyTransaction(TransactionBuildContext context)
         {
             if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
                 return;
+            this.LogAndThrowWalletException(errors);
+        }
+
+        protected void LogAndThrowWalletException(TransactionPolicyError[] errors)
+        {
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
             throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");

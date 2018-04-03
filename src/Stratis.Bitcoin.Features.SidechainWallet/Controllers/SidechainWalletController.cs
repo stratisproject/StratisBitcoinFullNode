@@ -11,7 +11,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.SidechainWallet.Interfaces;
 using Stratis.Bitcoin.Features.SidechainWallet.Models;
 using Stratis.Bitcoin.Features.SidechainWallet;
 using Stratis.Bitcoin.Interfaces;
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
             {
                 var standardContext = Wallet.Controllers.WalletController.CreateTransactionBuildContext(request, this.network);
                 var context = new TransactionBuildContext(standardContext, request.SidechainIdentifier);
-                
+
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
                 var model = new WalletBuildTransactionModel

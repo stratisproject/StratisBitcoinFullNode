@@ -12,8 +12,9 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Interfaces
         /// address in the OP_RETURN output
         /// </summary>
         /// <param name="context">The context that is used to build a new cross chain transaction.</param>
+        /// <param name="network">Network being used to make the transaction</param>
         /// <returns>The new transaction.</returns>
-        Transaction BuildCrossChainTransaction(TransactionBuildContext context);
+        Transaction BuildCrossChainTransaction(TransactionBuildContext context, Network network);
 
     }
 }

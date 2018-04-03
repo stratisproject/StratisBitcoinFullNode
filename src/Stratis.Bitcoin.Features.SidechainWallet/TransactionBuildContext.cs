@@ -36,6 +36,5 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
         }
 
         public string SidechainIdentifier { get; set; }
-        public new SidechainWallet.TransactionBuilder TransactionBuilder { get; set; }
     }
 }
