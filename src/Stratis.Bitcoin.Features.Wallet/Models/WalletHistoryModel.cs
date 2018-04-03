@@ -12,8 +12,28 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public WalletHistoryModel()
         {
+            this.AccountsHistoryModel = new List<AccountHistoryModel>();
+        }
+
+        [JsonProperty(PropertyName = "history")]
+        public List<AccountHistoryModel> AccountsHistoryModel { get; set; }
+    }
+
+    public class AccountHistoryModel
+    {
+        public AccountHistoryModel()
+        {
             this.TransactionsHistory = new List<TransactionItemModel>();
         }
+
+        [JsonProperty(PropertyName = "accountName")]
+        public string Name { get; set; }
+
+        [JsonProperty(PropertyName = "accountHdPath")]
+        public string HdPath { get; set; }
+
+        [JsonProperty(PropertyName = "coinType")]
+        public CoinType CoinType { get; set; }
 
         [JsonProperty(PropertyName = "transactionsHistory")]
         public List<TransactionItemModel> TransactionsHistory { get; set; }

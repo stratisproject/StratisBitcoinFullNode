@@ -405,7 +405,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count)
+        public HdAddress GetUnusedChangeAddress(WalletAccountReference accountReference)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(accountReference), accountReference);
+
+            HdAddress res = this.GetUnusedAddresses(accountReference, 1, true).Single();
+
+            this.logger.LogTrace("(-)");
+            return res;
+        }
+
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
         {
             Guard.NotNull(accountReference, nameof(accountReference));
             Guard.Assert(count > 0);
@@ -421,20 +433,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-                List<HdAddress> unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                List<HdAddress> unusedAddresses = isChange ? 
+                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() : 
+                    account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                
                 int diff = unusedAddresses.Count - count;
+                List<HdAddress> newAddresses = new List<HdAddress>();
                 if (diff < 0)
                 {
-                    IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
-                    this.UpdateKeysLookupLock(newReceivingAddresses);
+                    newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange).ToList();
+                    this.UpdateKeysLookupLock(newAddresses);
                     generated = true;
                 }
 
-                addresses = account
-                    .ExternalAddresses
-                    .Where(acc => !acc.Transactions.Any())
-                    .OrderBy(x => x.Index)
-                    .Take(count);
+                addresses = unusedAddresses.Concat(newAddresses).OrderBy(x => x.Index).Take(count);
             }
 
             if (generated)
@@ -446,35 +458,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return addresses;
         }
-
-        /// <inheritdoc />
-        public HdAddress GetOrCreateChangeAddress(HdAccount account)
-        {
-            this.logger.LogTrace("()");
-            HdAddress changeAddress = null;
-
-            lock (this.lockObject)
-            {
-                // Get an address to send the change to.
-                changeAddress = account.GetFirstUnusedChangeAddress();
-
-                // No more change addresses left so create a new one.
-                if (changeAddress == null)
-                {
-                    changeAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
-
-                    // Adds the address to the list of tracked addresses.
-                    this.UpdateKeysLookupLock(new[] { changeAddress });
-                }
-            }
-
-            // Persist the address to the wallet files.
-            this.SaveWallets();
-
-            this.logger.LogTrace("(-)");
-            return changeAddress;
-        }
-
+        
         /// <inheritdoc />
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {
@@ -482,42 +466,74 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<FlatHistory> GetHistory(string walletName)
+        public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
-            this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
+            this.logger.LogTrace("({0}:'{1}', {2}:'{3}')", nameof(walletName), walletName, nameof(accountName), accountName);
 
             // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
             Wallet wallet = this.GetWalletByName(walletName);
-            IEnumerable<FlatHistory> res = this.GetHistory(wallet);
 
-            this.logger.LogTrace("(-):*.Count={0}", res.Count());
-            return res;
+            List<AccountHistory> accountsHistory = new List<AccountHistory>();
+
+            lock (this.lockObject)
+            {
+                List<HdAccount> accounts = new List<HdAccount>();
+                if (!string.IsNullOrEmpty(accountName))
+                {
+                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                }
+                else
+                {
+                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                }
+
+                foreach (var account in accounts)
+                {
+                    accountsHistory.Add(this.GetHistory(account));
+                }
+            }
+
+            this.logger.LogTrace("(-):*.Count={0}", accountsHistory.Count());
+            return accountsHistory;
         }
 
         /// <inheritdoc />
-        public IEnumerable<FlatHistory> GetHistory(Wallet wallet)
+        public AccountHistory GetHistory(HdAccount account)
         {
-            Guard.NotNull(wallet, nameof(wallet));
-            FlatHistory[] items = null;
+            Guard.NotNull(account, nameof(account));
+            FlatHistory[] items;
             lock (this.lockObject)
             {
-                // Get transactions contained in the wallet.
-                items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
+                // Get transactions contained in the account.
+                items = account.GetCombinedAddresses()
+                    .Where(a => a.Transactions.Any())
+                    .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", items.Count());
-            return items;
+            return new AccountHistory { Account = account, History = items };
         }
 
         /// <inheritdoc />
-        public IEnumerable<AccountBalance> GetBalances(string walletName)
+        public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null)
         {
             List<AccountBalance> balances = new List<AccountBalance>();
 
             lock (this.lockObject)
             {
-                var accounts = this.GetAccounts(walletName).ToList();
+                Wallet wallet = this.GetWalletByName(walletName);
+
+                List<HdAccount> accounts = new List<HdAccount>();
+                if (!string.IsNullOrEmpty(accountName))
+                {
+                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                }
+                else
+                {
+                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                }
+                
                 foreach (var account in accounts)
                 {
                     (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
@@ -532,24 +548,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return balances;
-        }
-
-        /// <summary>
-        /// Gets a collection of addresses that have transactions associated with them.
-        /// </summary>
-        /// <param name="wallet">The wallet to get the history from.</param>
-        /// <returns>A collection of addresses that have transactions associated with them.</returns>
-        private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
-        {
-            IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
-
-            foreach (HdAddress address in accounts.SelectMany(a => a.ExternalAddresses).Concat(accounts.SelectMany(a => a.InternalAddresses)))
-            {
-                if (address.Transactions.Any())
-                {
-                    yield return address;
-                }
-            }
         }
 
         /// <inheritdoc />
