@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
-    public partial class ReOrgRegularlySpecification : BddSpecification
+    public partial class ReorgToLongestChainSpecification : BddSpecification
     {
         [Fact]
         public void A_selfishly_mining_node_broadcasts_longer_chain_causing_reorg()

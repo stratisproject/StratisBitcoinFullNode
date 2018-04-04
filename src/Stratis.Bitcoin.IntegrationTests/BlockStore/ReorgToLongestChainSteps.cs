@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
-    public partial class ReOrgRegularlySpecification
+    public partial class ReorgToLongestChainSpecification
     {
         private SharedSteps sharedSteps;
         private Transaction shorterChainTransaction;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string NodeC = "C";
         private const string NodeD = "D";
 
-        public ReOrgRegularlySpecification(ITestOutputHelper output) : base(output)
+        public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
         }
 
