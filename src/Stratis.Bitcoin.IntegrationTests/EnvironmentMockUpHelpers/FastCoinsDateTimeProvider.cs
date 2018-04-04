@@ -4,12 +4,12 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
-    public sealed class InstantPowBlockDateTimeProvider : IDateTimeProvider
+    public sealed class FastCoinsDateTimeProvider : IDateTimeProvider
     {
         private TimeSpan adjustedTimeOffset;
         private DateTime startFrom;
 
-        public InstantPowBlockDateTimeProvider()
+        public FastCoinsDateTimeProvider()
         {
             this.adjustedTimeOffset = TimeSpan.Zero;
             this.startFrom = new DateTime(2018, 1, 1);
@@ -39,12 +39,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public DateTime GetAdjustedTime()
         {
-            return this.GetUtcNow().Add(this.adjustedTimeOffset);
+            return this.startFrom.Add(this.adjustedTimeOffset);
         }
 
         public long GetAdjustedTimeAsUnixTimestamp()
         {
-            return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            return new DateTimeOffset(this.GetAdjustedTime().AddMinutes(119)).ToUnixTimeSeconds();
         }
 
         public void SetAdjustedTimeOffset(TimeSpan adjustedTimeOffset)

@@ -61,9 +61,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         protected Action<IFullNodeBuilder> Callback;
         public FullNode FullNode { get; set; }
         public bool IsDisposed { get { return this.FullNode.State == FullNodeState.Disposed; } }
+        internal bool createCoinsFast;
 
-        protected NodeRunner(Action<IFullNodeBuilder> callback = null)
+        protected NodeRunner(bool createCoinsFast, Action<IFullNodeBuilder> callback = null)
         {
+            this.createCoinsFast = createCoinsFast;
             this.Callback = callback;
         }
 
@@ -96,8 +98,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisPosRunner : NodeRunner
     {
-        public StratisPosRunner(Action<IFullNodeBuilder> callback = null)
-            : base(callback)
+        public StratisPosRunner(bool createFastCoins, Action<IFullNodeBuilder> callback = null)
+            : base(createFastCoins, callback)
         {
         }
 
@@ -113,7 +115,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = base.BuildFromCallBack(nodeSettings);
             else
-                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new InstantPowBlockDateTimeProvider()).Build();
+            {
+                if (this.createCoinsFast)
+                    fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new FastCoinsDateTimeProvider()).Build();
+                else
+                    fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD().Build();
+            }
 
             return fullNode;
         }
@@ -145,8 +152,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class BitcoinPowRunner : NodeRunner
     {
-        public BitcoinPowRunner(Action<IFullNodeBuilder> callback = null)
-            : base(callback)
+        public BitcoinPowRunner(bool createFastCoins, Action<IFullNodeBuilder> callback = null)
+            : base(createFastCoins, callback)
         {
         }
 
@@ -162,7 +169,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = base.BuildFromCallBack(nodeSettings);
             else
-                fullNode = (FullNode)Build(nodeSettings).UsePowConsensus().AddMining().MockIBD().Build();
+            {
+                if (this.createCoinsFast)
+                    fullNode = (FullNode)Build(nodeSettings).UsePowConsensus().AddMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new FastCoinsDateTimeProvider()).Build();
+                else
+                    fullNode = (FullNode)Build(nodeSettings).UsePowConsensus().AddMining().MockIBD().Build();
+            }
 
             return fullNode;
         }
@@ -170,8 +182,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisPowRunner : NodeRunner
     {
-        public StratisPowRunner(Action<IFullNodeBuilder> callback = null)
-            : base(callback)
+        public StratisPowRunner(bool createFastCoins, Action<IFullNodeBuilder> callback = null)
+            : base(createFastCoins, callback)
         {
         }
 
@@ -187,7 +199,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = BuildFromCallBack(nodeSettings);
             else
-                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new InstantPowBlockDateTimeProvider()).Build();
+            {
+                if (this.createCoinsFast)
+                    fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new FastCoinsDateTimeProvider()).Build();
+                else
+                    fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddMining().MockIBD().Build();
+            }
 
             return fullNode;
         }

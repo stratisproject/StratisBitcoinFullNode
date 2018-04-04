@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var nodeGenerateCoins = builder.CreateStratisPowNode();
+                var nodeGenerateCoins = builder.CreateCoinsFast().CreateStratisPowNode();
                 nodeGenerateCoins.StartAsync().GetAwaiter().GetResult();
                 nodeGenerateCoins.NotInIBD();
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(nodeGenerateCoins));
 
                 // Create a Proof-Of-Stake node
-                var nodeProofOfStake = builder.CreateStratisPosNode();
+                var nodeProofOfStake = builder.CreateCoinsFast().CreateStratisPosNode();
                 nodeProofOfStake.StartAsync().GetAwaiter().GetResult();
                 nodeProofOfStake.NotInIBD();
 

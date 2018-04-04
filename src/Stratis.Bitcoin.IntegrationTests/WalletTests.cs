@@ -94,10 +94,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         [Fact]
         public void WalletCanSendOneTransactionWithManyOutputs()
-        { 
+        {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode();
+                CoreNode stratisSender = builder.CreateCoinsFast().CreateStratisPowNode();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode();
 
                 builder.StartAll();
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
-                
+
                 Assert.Equal(Money.COIN * 150 * 50, stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
 
                 // Sync both nodes.
@@ -129,18 +129,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .GetUnusedAddresses(new WalletAccountReference("mywallet", "account 0"), 50);
 
                 List<Recipient> recipients = recevierAddresses.Select(address => new Recipient
-                    {
-                        ScriptPubKey = address.ScriptPubKey,
-                        Amount = Money.COIN
-                    })
+                {
+                    ScriptPubKey = address.ScriptPubKey,
+                    Amount = Money.COIN
+                })
                     .ToList();
 
                 var transactionBuildContext = new TransactionBuildContext(
                     new WalletAccountReference("mywallet", "account 0"), recipients, "123456")
-                    {
-                        FeeType = FeeType.Medium,
-                        MinConfirmations = 101
-                    };
+                {
+                    FeeType = FeeType.Medium,
+                    MinConfirmations = 101
+                };
 
                 Transaction transaction = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
                 Assert.Equal(51, transaction.Outputs.Count);
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any());
 
                 Assert.Equal(Money.COIN * 50, stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
-                Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);  
+                Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // Generate new blocks so the trx is confirmed.
                 stratisSender.GenerateStratisWithMiner(1);
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
 
                 // Confirm trx's have been committed to the block.
-                Assert.Equal(maturity + 52 , stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
+                Assert.Equal(maturity + 52, stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
             }
         }
 
