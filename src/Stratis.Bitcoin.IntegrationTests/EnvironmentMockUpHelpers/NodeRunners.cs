@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
@@ -112,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = base.BuildFromCallBack(nodeSettings);
             else
-                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD().Build();
+                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddPowPosMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new InstantPowBlockDateTimeProvider()).Build();
 
             return fullNode;
         }
@@ -186,7 +187,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             if (this.Callback != null)
                 fullNode = BuildFromCallBack(nodeSettings);
             else
-                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddMining().MockIBD().Build();
+                fullNode = (FullNode)Build(nodeSettings).UsePosConsensus().AddMining().MockIBD().SubstituteDateTimeProviderFor<MiningFeature>(new InstantPowBlockDateTimeProvider()).Build();
 
             return fullNode;
         }
@@ -194,6 +195,30 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public static class FullNodeTestBuilderExtension
     {
+        /// <summary>
+        /// Substitute the <see cref="IDateTimeProvider"/> for a given feature.
+        /// </summary>
+        /// <typeparam name="T">The feature to substitute the provider for.</typeparam>
+        public static IFullNodeBuilder SubstituteDateTimeProviderFor<T>(this IFullNodeBuilder fullNodeBuilder, IDateTimeProvider provider)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                var feature = features.FeatureRegistrations.FirstOrDefault(f => f.FeatureType == typeof(T));
+                if (feature != null)
+                {
+                    feature.FeatureServices(services =>
+                    {
+                        ServiceDescriptor service = services.FirstOrDefault(s => s.ServiceType == typeof(IDateTimeProvider));
+                        if (service != null)
+                            services.Remove(service);
+                        services.AddSingleton(provider);
+                    });
+                }
+            });
+
+            return fullNodeBuilder;
+        }
+
         public static IFullNodeBuilder MockIBD(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>

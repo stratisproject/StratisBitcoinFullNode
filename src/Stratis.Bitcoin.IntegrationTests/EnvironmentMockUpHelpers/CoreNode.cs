@@ -72,7 +72,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.networkPeerFactory = new NetworkPeerFactory(network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
         }
 
-        /// <summary>Get stratis full node if possible.</summary>
         public FullNode FullNode
         {
             get { return this.runner.FullNode; }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
@@ -19,12 +20,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var nodeGenerateCoins = builder.CreateStratisPowNode();
                 nodeGenerateCoins.StartAsync().GetAwaiter().GetResult();
+                nodeGenerateCoins.NotInIBD();
 
                 // Set up wallet to generate coins.
-                var testWallet = CreateTestWallet(nodeGenerateCoins, "password", "mywallet");
+                var powWallet = CreateWallet(nodeGenerateCoins, "password", "mywallet");
 
                 // Generate 2 PoW blocks, the second block will give us the premine of 98 million coins.
-                nodeGenerateCoins.SetDummyMinerSecret(new BitcoinSecret(testWallet.PrivateKey, nodeGenerateCoins.FullNode.Network));
+                nodeGenerateCoins.SetDummyMinerSecret(new BitcoinSecret(powWallet.PrivateKey, nodeGenerateCoins.FullNode.Network));
                 nodeGenerateCoins.GenerateStratisWithMiner(2);
 
                 // Wait for the node to mine the 2 blocks.
@@ -41,21 +43,28 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Create a Proof-Of-Stake node
                 var nodeProofOfStake = builder.CreateStratisPosNode();
                 nodeProofOfStake.StartAsync().GetAwaiter().GetResult();
+                nodeProofOfStake.NotInIBD();
+
+                // Set up a wallet on the proof of stake node to received the coins.
+                var posWallet = CreateWallet(nodeProofOfStake, "password", "mywallet");
 
                 // Wait for the PoS node to sync the 102 blocks from the proof of work node
+                nodeProofOfStake.SetDummyMinerSecret(new BitcoinSecret(posWallet.PrivateKey, nodeProofOfStake.FullNode.Network));
                 nodeProofOfStake.CreateRPCClient().AddNode(nodeGenerateCoins.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodeGenerateCoins, nodeProofOfStake));
 
-                // Set up a wallet on the proof of stake node to received the coins.
-                var posTestWallet = CreateTestWallet(nodeProofOfStake, "password", "mywallet");
-
                 // Send 1 000 000 coins to the Proof-Of-Stake wallet
-                var walletContext = CreateContext(new WalletAccountReference("mywallet", "account 0"), "password", posTestWallet.Address.ScriptPubKey, Money.COIN * 1000000, FeeType.Medium, 101);
+                var walletContext = CreateContext(
+                    new WalletAccountReference("mywallet", "account 0"),
+                    "password",
+                    posWallet.Address.ScriptPubKey,
+                    Money.COIN * 1000000,
+                    FeeType.Medium,
+                    101);
                 walletContext.OverrideFeeRate = new FeeRate(Money.Satoshis(20000));
 
                 // Broadcast the transaction from the PoW node
-                nodeProofOfStake.SetDummyMinerSecret(new BitcoinSecret(posTestWallet.PrivateKey, nodeProofOfStake.FullNode.Network));
-                var sendTransaction = nodeGenerateCoins.FullNode.WalletTransactionHandler().BuildTransaction(walletContext);
+                var sendTransaction = CreateSendTransaction(nodeGenerateCoins, powWallet, powWallet.Address.ScriptPubKey, posWallet.Address.ScriptPubKey);
                 nodeGenerateCoins.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(sendTransaction.ToHex()));
 
                 // Wait for the coins to arrive
@@ -90,7 +99,32 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private TestWallet CreateTestWallet(CoreNode node, string walletPassword, string walletName)
+        private Transaction CreateSendTransaction(CoreNode node, TestWallet senderWallet, Script sender, Script receiver)
+        {
+            var unspent = node.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet");
+            var coins = new List<Coin>();
+
+            var blockTimestamp = unspent.OrderBy(u => u.Transaction.CreationTime).Select(ts => ts.Transaction.CreationTime).First();
+            var transaction = new Transaction
+            {
+                Time = (uint)blockTimestamp.ToUnixTimeSeconds()
+            };
+
+            foreach (var item in unspent.OrderByDescending(a => a.Transaction.Amount))
+            {
+                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+            }
+
+            var coin = coins.First();
+            var txIn = transaction.AddInput(new TxIn(coin.Outpoint, sender));
+            transaction.AddOutput(new TxOut(new Money(9699999999995400), sender));
+            transaction.AddOutput(new TxOut(new Money(100000000000000), receiver));
+            transaction.Sign(senderWallet.PrivateKey, false);
+
+            return transaction;
+        }
+
+        private TestWallet CreateWallet(CoreNode node, string walletPassword, string walletName)
         {
             node.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
             var unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, "account 0"));
