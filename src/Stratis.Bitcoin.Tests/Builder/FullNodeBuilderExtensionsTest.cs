@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseDefaultNodeSettingsConfiguresNodeBuilderWithDefaultSettings()
         {
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
+            var nodeSettings = new NodeSettings(args: new string[] {
+                "-datadir=TestData/FullNodeBuilder/UseNodeSettings",
+                "-conf=TestData/FullNodeBuilder/UseNodeSettingsConfFile"});
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
@@ -60,9 +60,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsUsingTestNetConfiguresNodeBuilderWithTestnetSettings()
         {
-            NodeSettings nodeSettings = NodeSettings.Default(Network.TestNet);
-            nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
+            NodeSettings nodeSettings = new NodeSettings(Network.TestNet, args:new string[] {
+                "-datadir=TestData/FullNodeBuilder/UseNodeSettings",
+                "-conf=TestData/FullNodeBuilder/UseNodeSettingsConfFile" });
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
@@ -77,9 +77,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsUsingRegTestNetConfiguresNodeBuilderWithRegTestNet()
         {
-            NodeSettings nodeSettings = NodeSettings.Default(Network.RegTest);
-            nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
-            nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
+            NodeSettings nodeSettings = new NodeSettings(Network.RegTest, args:new string[] {
+                "-datadir=TestData/FullNodeBuilder/UseNodeSettings",
+                "-conf=TestData/FullNodeBuilder/UseNodeSettingsConfFile" });
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 

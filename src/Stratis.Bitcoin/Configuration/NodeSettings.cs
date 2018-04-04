@@ -120,10 +120,10 @@ namespace Stratis.Bitcoin.Configuration
         public DataFolder DataFolder { get; set; }
 
         /// <summary>Path to the data directory.</summary>
-        public string DataDir { get; set; }
+        public string DataDir { get; private set; }
 
         /// <summary>Path to the configuration file.</summary>
-        public string ConfigurationFile { get; set; }
+        public string ConfigurationFile { get; private set; }
 
         /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
         public bool RequireStandard { get; set; }
