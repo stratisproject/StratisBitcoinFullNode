@@ -1,0 +1,84 @@
+{
+  "enigma": {
+    "ChainName": "enigma",
+    "CoinName": "Enigma",
+    "CoinType": 12345,
+    "MainNet": {
+      "NetworkName": "SidechainMain",
+      "Time": 1510170000,
+      "Nonce": 2500000,
+      "MessageStart": 7846846,
+      "AddressPrefix": 45,
+      "Port": 36000,
+      "RpcPort": 36100,
+      "ApiPort": 36200,
+      "CoinSymbol": "Enigma",
+      "GenesisHashHex": "03ca8b76093da3e9132a6f1002ce9e95468ae538f10ea5eb23c594265e3bcbea"
+    },
+    "TestNet": {
+      "NetworkName": "SidechainTest",
+      "Time": 1510170001,
+      "Nonce": 2500001,
+      "MessageStart": 7846847,
+      "AddressPrefix": 46,
+      "Port": 36001,
+      "RpcPort": 36101,
+      "ApiPort": 36201,
+      "CoinSymbol": "tEnigma",
+      "GenesisHashHex": "6ea951942c42d3e92fc08a13567ff6974a0eb5f9cbdc331b58356990edab9d6f"
+    },
+    "RegTest": {
+      "NetworkName": "SidechainRegTest",
+      "Time": 1510170002,
+      "Nonce": 2500002,
+      "MessageStart": 7846848,
+      "AddressPrefix": 47,
+      "Port": 36002,
+      "RpcPort": 36102,
+      "ApiPort": 36202,
+      "CoinSymbol": "rEnigma",
+      "GenesisHashHex": "d82276367430662e95e40f704ddde6b00fb07921c3bd51dd00e17d0d933a12ab"
+    }
+  },
+  "mystery": {
+    "ChainName": "mystery",
+    "CoinName": "enigmaCoin",
+    "CoinType": 12345,
+    "MainNet": {
+      "NetworkName": "SidechainMain",
+      "Time": 1510170010,
+      "Nonce": 2500010,
+      "MessageStart": 7846856,
+      "AddressPrefix": 55,
+      "Port": 36010,
+      "RpcPort": 36110,
+      "ApiPort": 36210,
+      "CoinSymbol": "EGA10",
+      "GenesisHashHex": "03ca8b76093da3e9132a6f1002ce9e95468ae538f10ea5eb23c594265e3bcbea"
+    },
+    "TestNet": {
+      "NetworkName": "SidechainTest",
+      "Time": 1510170011,
+      "Nonce": 2500011,
+      "MessageStart": 7846857,
+      "AddressPrefix": 56,
+      "Port": 36011,
+      "RpcPort": 36111,
+      "ApiPort": 36211,
+      "CoinSymbol": "EGA11",
+      "GenesisHashHex": "6ea951942c42d3e92fc08a13567ff6974a0eb5f9cbdc331b58356990edab9d6f"
+    },
+    "RegTest": {
+      "NetworkName": "SidechainRegTest",
+      "Time": 1510170012,
+      "Nonce": 2500012,
+      "MessageStart": 7846858,
+      "AddressPrefix": 57,
+      "Port": 36012,
+      "RpcPort": 36112,
+      "ApiPort": 36212,
+      "CoinSymbol": "EGA12",
+      "GenesisHashHex": "d82276367430662e95e40f704ddde6b00fb07921c3bd51dd00e17d0d933a12ab"
+    }
+  }
+}

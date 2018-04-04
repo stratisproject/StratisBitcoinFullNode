@@ -1,1 +1,1 @@
-git clone -b sidechain http://github.com/carlton355/StratisBitcoinFullNode
+git clone -b sidechain http://github.com/monsieurleberre/StratisBitcoinFullNode
