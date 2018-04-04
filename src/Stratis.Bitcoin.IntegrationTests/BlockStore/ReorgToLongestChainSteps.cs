@@ -23,10 +23,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string AccountZero = "account 0";
         private const string WalletZero = "wallet 0";
         private const string WalletPassword = "123456";
-        private const string SelfishSimon = "Selfish";
-        private const string Bob = "B";
-        private const string Charlie = "C";
-        private const string Dave = "D";
+        private const string SelfishSimon = "Selfish Miner Simon";
+        private const string Bob = "Bob";
+        private const string Charlie = "Charlie";
+        private const string Dave = "Dave";
 
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.nodeGroupBuilder.Dispose();
         }
 
-        private void four_miners_including_selfish_simon()
+        private void selfish_simon_and_three_other_miners()
         {
             this.nodes = this.nodeGroupBuilder
                 .StratisPowNode(SelfishSimon).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.sharedSteps.MineBlocks(1, this.nodes[Dave], AccountZero, WalletZero, WalletPassword);
         }
 
-        private void selfish_simon_disconnects_and_mines_10_blocks()
+        private void selfish_simon_disconnects_and_secretly_mines_10_blocks()
         {
             this.nodes[SelfishSimon].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Bob].Endpoint);
             this.nodes[SelfishSimon].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Charlie].Endpoint);
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.sharedSteps.WaitForBlockStoreToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
 
-        private void dave_confirms_it_ensures_tx_present()
+        private void dave_confirms_transaction_is_present()
         {
             var transaction = this.nodes[Dave].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result;
             transaction.Should().NotBeNull();
