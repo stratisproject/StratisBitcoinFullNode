@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// This gets called when the Transaction's Time gets set.
+        /// This gets called when the Transaction's time gets set.
         /// </summary>
         public long GetTime()
         {
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// This gets called when we set the Block Header's time.
+        /// This gets called when the Block Header's time gets set.
         /// </summary>
         public DateTimeOffset GetTimeOffset()
         {
@@ -42,6 +42,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.startFrom.Add(this.adjustedTimeOffset);
         }
 
+        /// <summary>
+        /// This gets called when the coin stake block gets created.
+        /// </summary>
         public long GetAdjustedTimeAsUnixTimestamp()
         {
             return new DateTimeOffset(this.GetAdjustedTime().AddMinutes(119)).ToUnixTimeSeconds();
