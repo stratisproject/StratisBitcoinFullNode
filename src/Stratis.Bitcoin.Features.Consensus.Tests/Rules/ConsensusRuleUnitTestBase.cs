@@ -73,6 +73,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             return chain;
         }
+
+        protected static ConcurrentChain MineChainWithHeight(int blockAmount, Network network)
+        {
+            var chain = new ConcurrentChain(network);
+            var prevBlockHash = chain.Genesis.HashBlock;
+            for (var i = 0; i < blockAmount; i++)
+            {
+                var block = TestRulesContextFactory.MineBlock(network, chain);
+                chain.SetTip(block.Header);
+                prevBlockHash = block.GetHash();
+            }
+
+            return chain;
+        }
     }
 
 
