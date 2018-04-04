@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="5.1.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0-preview-20180307-01" />
+    <PackageReference Include="NStratis" Version="1.0.468" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.0.468" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.0.468" />
+    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common" Version="1.0.453" />
+    <PackageReference Include="xunit" Version="2.4.0-beta.1.build3958" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0-beta.1.build3958" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.FederatedPeg\Stratis.FederatedPeg.csproj" />
+  </ItemGroup>
+
+</Project>
