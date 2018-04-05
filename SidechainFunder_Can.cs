@@ -8,9 +8,13 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.FederatedPeg.Features.MainchainGeneratorServices;
+using Stratis.FederatedPeg.Features.MainchainRuntime;
+using Stratis.FederatedPeg.Features.MainchainRuntime.Models;
 using Stratis.FederatedPeg.Features.SidechainGeneratorServices;
 using Stratis.FederatedPeg.IntegrationTests.Helpers;
 using Stratis.Sidechains.Features.BlockchainGeneration;
@@ -162,6 +166,9 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechainNode_GeneratorRole.Start();
                 sidechainNode_Member1_Wallet.Start();
 
+                // Let our two sidechain nodes sync together.
+                await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechainNode_GeneratorRole, sidechainNode_Member1_Wallet));
+
                 // Create a wallet and add our multi-sig.
                 await ApiCalls.CreateGeneralPurposeWallet(sidechainNode_Member1_Wallet.ApiPort, "multisig_wallet", "password");
                 var account_member1 = fedFolder.ImportPrivateKeyToWallet(sidechainNode_Member1_Wallet, "multisig_wallet", "password", "member1", "pass1", 2, 3, SidechainNetwork.SidechainRegTest);
@@ -189,6 +196,10 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 account_member1.MultiSigAddresses.First().Address.Should()
                     .Be(memberFolderManager.ReadAddress(Chain.Sidechain));
 
+                // Read the new multi-sig addresses.
+                string multiSigAddress_Mainchain = memberFolderManager.ReadAddress(Chain.Mainchain);
+                string multiSigAddress_Sidechain = memberFolderManager.ReadAddress(Chain.Sidechain);
+
                 // Check we got the right balance in the multi-sig after the premine.
                 var amounts = account_member1.GetSpendableAmount(true);
                 amounts.ConfirmedAmount.Should().Be(new Money(98000008, MoneyUnit.BTC));
@@ -198,6 +209,131 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 // At this stage we no longer need our Generator role nodes.
                 mainchainNode_GeneratorRole.Kill();
                 sidechainNode_GeneratorRole.Kill();
+
+                //
+                // Act as Sidechain Funder
+                //
+
+                // UCFund:  The actor navigates to his Sidechain wallet and issues the Receive command.
+                //          The wallet displays a Sidechain Destination Address which he can copy. 
+
+                // This step will be UI but we can simulate it with just the backend code that the UI will use.
+                string sidechainWallet = "sidechain_wallet";
+                string mnemonic = await ApiCalls.Mnemonic(sidechainNode_Member1_Wallet.ApiPort);
+                string create_mnemonic = await ApiCalls.Create(sidechainNode_Member1_Wallet.ApiPort, mnemonic, sidechainWallet,
+                    sidechainNode_Member1_Wallet.FullNode.DataFolder.WalletPath);
+                create_mnemonic.Should().Be(mnemonic);
+                //and gets an address. we'll use this as the sidechain destination address where he wants to send his funds
+                string addressSidechain = await ApiCalls.UnusedAddress(sidechainNode_Member1_Wallet.ApiPort, sidechainWallet);
+
+                // USFund:  The actor navigates to his Mainchain wallet and issues the command to Send Funds
+                //          to Sidechain.  The actor views the name of the chain and therefore can verify
+                //          that he is sending to the correct chain. The actor enters the Sidechain
+                //          Destination Address that he copied in the step above.  He then also enters the
+                //          Multi-Sig Federation Address that he obtained previously.
+
+                //start mainchain
+                //we are now acting as a Sidechain Funder.
+                var mainchain_SidechainFunder1 = nodeBuilder.CreateStratisPosNode(false, fullNodeBuilder =>
+                {
+                    fullNodeBuilder
+                        .UsePosConsensus()
+                        .UseBlockStore()
+                        .UseMempool()
+                        .UseWallet()
+                        .AddPowPosMining()
+                        .AddMainchainRuntime()
+                        .UseApi()
+                        .AddRPC();
+                }, agent: "MainchainSidechainFunder1 ");
+
+                //start a second mainchain
+                var mainchain_SidechainFunder2 = nodeBuilder.CreateStratisPosNode(false, fullNodeBuilder =>
+                {
+                    fullNodeBuilder
+                        .UsePosConsensus()
+                        .UseBlockStore()
+                        .UseMempool()
+                        .UseWallet()
+                        .AddPowPosMining()
+                        .AddMainchainRuntime()
+                        .UseApi()
+                        .AddRPC();
+                }, agent: "MainchainSidechainFunder2 ");
+
+                //join our nodes together and startup
+                mainchain_SidechainFunder1.ConfigParameters.Add("addnode", $"127.0.0.1:{mainchain_SidechainFunder2.ProtocolPort}");
+                mainchain_SidechainFunder2.ConfigParameters.Add("addnode", $"127.0.0.1:{mainchain_SidechainFunder1.ProtocolPort}");
+                mainchain_SidechainFunder1.Start();
+                mainchain_SidechainFunder2.Start();
+
+                //mine some strat mainchain coins
+                string mainchainWallet = "mainchain_wallet";
+                mnemonic = await ApiCalls.Mnemonic(mainchain_SidechainFunder1.ApiPort);
+                create_mnemonic = await ApiCalls.Create(mainchain_SidechainFunder1.ApiPort, mnemonic, mainchainWallet,
+                    mainchain_SidechainFunder1.FullNode.DataFolder.WalletPath);
+                create_mnemonic.Should().Be(mnemonic);
+                //our source address
+                string addressMainchain = await ApiCalls.UnusedAddress(mainchain_SidechainFunder1.ApiPort, mainchainWallet);
+
+                //put some strat in the source address
+                var powMinting = mainchain_SidechainFunder1.FullNode.NodeService<IPowMining>();
+                var bitcoinAddress = new BitcoinPubKeyAddress(addressMainchain, Network.StratisRegTest);
+                powMinting.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 50UL, int.MaxValue);
+
+                //sync our mainchain nodes
+                await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_SidechainFunder1, mainchain_SidechainFunder2));
+
+                #region Experimental Code
+                // The following code is experimental while we are waiting for a general OP_RETURN feature
+                // to be added to the library.
+
+                //send funds
+                //this construct extends the normal functionality of the BuildTransaction wallet method to add an OP_RETURN
+                //with our extra data <sidechain name>|<sidechain addess>
+                var sendFundsToSidechainRequest = new SendFundsToSidechainRequest
+                {
+                    AccountName = "account 0",
+                    AllowUnconfirmed = false,
+                    Amount = "3600",
+                    DestinationAddress = multiSigAddress_Mainchain,
+                    FeeAmount = "0.001",
+                    FeeType = "low",
+                    Password = "1234",
+                    ShuffleOutputs = true,
+                    WalletName = "mainchain_wallet",
+
+                    SidechainDestinationAddress = addressSidechain,
+                    SidechainName = "enigma"
+                };
+                var walletBuildTransactionModel = await ApiCalls
+                    .BuildTransaction(mainchain_SidechainFunder1.ApiPort, sendFundsToSidechainRequest).ConfigureAwait(false);
+
+                // UCFund:  The actor issues the command to Send the transaction and the wallet 
+                //          confirms and broadcasts the transaction in the normal manner.
+
+                //this is currently hacked and only broadcasts the transaction. it does not add our transaction to the wallet.
+                var sendTransactionRequest = new SendTransactionRequest
+                {
+                    Hex = walletBuildTransactionModel.Hex
+                };
+                await ApiCalls.SendTransaction(mainchain_SidechainFunder1.ApiPort, sendTransactionRequest);
+
+                await Task.Delay(5000);
+
+                //sync our node to distrubute the mempool
+                await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_SidechainFunder1, mainchain_SidechainFunder2));
+
+                //generate a block to include our transaction
+                powMinting.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 1UL, int.MaxValue);
+
+                //sync nodes
+                //at this point our transaction has made its way into a block
+                await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_SidechainFunder1, mainchain_SidechainFunder2));
+
+                await Task.Delay(5000);
+
+                #endregion Experimental Code
 
                 // This test is a work in progress.
                 // More coming soon.

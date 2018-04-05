@@ -84,10 +84,6 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
             var publicKeys = (from f in federation.Members orderby f.PublicKeySideChain.ToHex() select f.PublicKeySideChain).ToArray();
             multiSigAddress.Create(new Key(Encoders.Hex.DecodeData(privateKeyDecryptString)), publicKeys, m, network);
 
-            string hex1 = publicKeys[0].ToHex();
-            string hex2 = publicKeys[1].ToHex();
-            string hex3 = publicKeys[2].ToHex();
-
             account.ImportMultiSigAddress(multiSigAddress);
 
             return account;
