@@ -51,6 +51,7 @@ namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices
         ///<inheritdoc/>
         public void MinePremine(string address, ulong numberOfBlocks)
         {
+            //ToDo: before we do this should we check the height is zero?
             // We mine the blocks and the block rewards are directed into the multi-sig.
             var bitcoinAddress = BitcoinAddress.Create(address, this.network);
             this.powMining.GenerateBlocks(
