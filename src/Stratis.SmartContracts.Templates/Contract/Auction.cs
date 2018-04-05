@@ -18,11 +18,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<ulong>("AuctionEndBlock");
+            return PersistentState.GetObject<ulong>("EndBlock");
         }
         set
         {
-            PersistentState.SetObject<ulong>("AuctionEndBlock", value);
+            PersistentState.SetObject<ulong>("EndBlock", value);
         }
     }
 
@@ -54,11 +54,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<bool>("Hasended");
+            return PersistentState.GetObject<bool>("HasEnded");
         }
         set
         {
-            PersistentState.SetObject<bool>("Hasended", value);
+            PersistentState.SetObject<bool>("HasEnded", value);
         }
     }
 

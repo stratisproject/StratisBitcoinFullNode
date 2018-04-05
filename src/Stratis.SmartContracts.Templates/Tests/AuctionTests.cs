@@ -43,7 +43,7 @@ namespace $safeprojectname$
         }
 
         [TestMethod]
-        public void TestMethod()
+        public void TestConstruction()
         {
             const ulong duration = 20;
             var contract = new Auction(smartContractState, duration);
@@ -53,7 +53,7 @@ namespace $safeprojectname$
         }
 
         [TestMethod]
-        public void TestBalance()
+        public void TestBidding()
         {
             const ulong duration = 20;
             var contract = new Auction(smartContractState, duration);
