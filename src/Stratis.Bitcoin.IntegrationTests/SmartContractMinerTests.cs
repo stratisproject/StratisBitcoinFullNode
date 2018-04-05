@@ -31,7 +31,6 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
@@ -608,6 +607,46 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.Equal(200, pblocktemplate.Block.Transactions[2].Outputs[1].Value);
         }
 
+        /// <summary>
+        /// Should deploy 2 contracts, invoke a method on one, get the value from it, and persist it
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_InvokeContract_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            // This uses a lot of gas
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CountContract.cs").Compilation, gasPrice, gasLimit);
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress = tx.GetNewContractAddress();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+
+            context.mempool.Clear();
+
+            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CallContract.cs").Compilation, gasPrice, gasLimit);
+            tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress2 = tx.GetNewContractAddress();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 1000;
+            string[] testMethodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToAddress(context.network)),
+            };
+
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "Tester", gasPrice, gasLimit, testMethodParameters);
+            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            Assert.True(Convert.ToBoolean(context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"))[0]));
+        }
 
         [Fact]
         public async Task SmartContracts_TransferBetweenContracts_WithException_Async()
