@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Ge
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.GeneralPurposeWallet.Tests", "Stratis.Bitcoin.Features.GeneralPurposeWallet.Tests\Stratis.Bitcoin.Features.GeneralPurposeWallet.Tests.csproj", "{6A92CD51-4195-44EA-96F3-ECA25E90842D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.SidechainGeneratorServices", "Stratis.FederatedPeg.Features.SidechainGeneratorServices\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj", "{96E904B8-D74F-426E-8DC0-5243989CA462}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{6A92CD51-4195-44EA-96F3-ECA25E90842D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6A92CD51-4195-44EA-96F3-ECA25E90842D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A92CD51-4195-44EA-96F3-ECA25E90842D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96E904B8-D74F-426E-8DC0-5243989CA462}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96E904B8-D74F-426E-8DC0-5243989CA462}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96E904B8-D74F-426E-8DC0-5243989CA462}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96E904B8-D74F-426E-8DC0-5243989CA462}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,7 +57,7 @@ Global
 		SolutionGuid = {3AFD64E3-699D-4C30-A995-07298E3E9B15}
 	EndGlobalSection
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 3
+		SccNumberOfProjects = 4
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://stratisplatformuk.visualstudio.com/
 		SccProjectUniqueName0 = FedKeyPairGen\\FedKeyPairGen.csproj
@@ -69,5 +75,10 @@ Global
 		SccAuxPath2 = https://stratisplatformuk.visualstudio.com
 		SccLocalPath2 = Stratis.FederatedPeg.Tests
 		SccProvider2 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName3 = Stratis.FederatedPeg.Features.SidechainGeneratorServices\\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj
+		SccProjectName3 = Stratis.FederatedPeg.Features.SidechainGeneratorServices
+		SccAuxPath3 = https://stratisplatformuk.visualstudio.com
+		SccLocalPath3 = Stratis.FederatedPeg.Features.SidechainGeneratorServices
+		SccProvider3 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 	EndGlobalSection
 EndGlobal
