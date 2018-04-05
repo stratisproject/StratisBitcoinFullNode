@@ -119,25 +119,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
 
         /// <summary>
-        /// Gets a collection of addresses containing transactions for this coin.
+        /// Gets the history of transactions contained in an account.
+        /// If no account name is specified, history will be returned for all accounts in the wallet.
         /// </summary>
         /// <param name="walletName">The wallet name.</param>
+        /// <param name="accountName">The account name.</param>
         /// <returns>Collection of address history and transaction pairs.</returns>
-        IEnumerable<FlatHistory> GetHistory(string walletName);
+        IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null);
 
         /// <summary>
-        /// Gets a collection of addresses containing transactions for this coin.
+        /// Gets the history of the transactions in addresses contained in this account.
         /// </summary>
-        /// <param name="wallet">The wallet to get history from.</param>
-        /// <returns></returns>
-        IEnumerable<FlatHistory> GetHistory(Wallet wallet);
+        /// <param name="account">The account for which to get history.</param>
+        /// <returns>The history for this account.</returns>
+        AccountHistory GetHistory(HdAccount account);
 
         /// <summary>
-        /// Gets the balances of this wallet's accounts.
+        /// Gets the balance of transactions contained in an account.
+        /// If no account name is specified, balances will be returned for all accounts in the wallet.
         /// </summary>
         /// <param name="walletName">The wallet name.</param>
+        /// <param name="accountName">The account name.</param>
         /// <returns>Collection of account balances.</returns>
-        IEnumerable<AccountBalance> GetBalances(string walletName);
+        IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null);
 
         /// <summary>
         /// Gets some general information about a wallet.
