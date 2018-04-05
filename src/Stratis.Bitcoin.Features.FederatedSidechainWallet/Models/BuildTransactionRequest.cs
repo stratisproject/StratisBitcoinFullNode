@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.FederatedSidechainWallet.Models
 {
-    public class BuildTransactioRequest : Wallet.Models.BuildTransactionRequest
+    public class BuildTransactionRequest : Wallet.Models.BuildTransactionRequest
     {
         [Required(AllowEmptyStrings = false, ErrorMessage = "A sidechain identifier must be specified")]
         public string SidechainIdentifier { get; set; }

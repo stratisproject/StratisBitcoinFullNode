@@ -110,7 +110,8 @@ namespace Stratis.Bitcoin.Features.FederatedSidechainWallet
             var isBaseVerified = context.TransactionBuilder.Verify(tx, out errors);
             var sidechainErrors = new List<TransactionPolicyError>(errors);
 
-            var sidechainVerifies = tx.Outputs.Count() <= 3;
+            var sidechainVerifies = tx.Outputs.Count() <= 3
+                                       && isBaseVerified;
 
             if (!sidechainVerifies)
             {
