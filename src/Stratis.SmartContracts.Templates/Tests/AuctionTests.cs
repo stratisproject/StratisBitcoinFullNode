@@ -47,9 +47,9 @@ namespace $safeprojectname$
         {
             const ulong duration = 20;
             var contract = new Auction(smartContractState, duration);
-            Assert.Equal(TestAddress, smartContractState.PersistentState.GetObject<Address>("Owner"));
-            Assert.False(smartContractState.PersistentState.GetObject<bool>("HasEnded"));
-            Assert.Equal(duration + smartContractState.Block.Number, smartContractState.PersistentState.GetObject<ulong>("EndBlock"));
+            Assert.AreEqual(TestAddress, smartContractState.PersistentState.GetObject<Address>("Owner"));
+            Assert.IsFalse(smartContractState.PersistentState.GetObject<bool>("HasEnded"));
+            Assert.AreEqual(duration + smartContractState.Block.Number, smartContractState.PersistentState.GetObject<ulong>("EndBlock"));
         }
 
         [TestMethod]
@@ -58,16 +58,16 @@ namespace $safeprojectname$
             const ulong duration = 20;
             var contract = new Auction(smartContractState, duration);
 
-            ((TestMessage)smartContractState.Message).Value = 100;
-            Assert.Null(smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
-            Assert.Equal(0uL, smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
+            Assert.IsNull(smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
+            Assert.AreEqual(0uL, smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
 
+            ((TestMessage)smartContractState.Message).Value = 100;
             contract.Bid();
-            Assert.NotNull(smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
-            Assert.Equal(100uL, smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
+            Assert.IsNotNull(smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
+            Assert.AreEqual(100uL, smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
 
             ((TestMessage)smartContractState.Message).Value = 90;
-            Assert.ThrowsAny<Exception>(() => contract.Bid());
+            Assert.ThrowsException<Exception>(() => contract.Bid());
     }
     }
 
