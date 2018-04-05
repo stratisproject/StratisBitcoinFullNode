@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet
 {
     /// <inheritdoc />
     public class TransactionBuildContext : Wallet.TransactionBuildContext

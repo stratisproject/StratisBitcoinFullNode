@@ -87,9 +87,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Dn
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisDnsD", "Stratis.StratisDnsD\Stratis.StratisDnsD.csproj", "{978482B2-AE17-421E-AD6F-ED9667C6B8A1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.SidechainWallet", "Stratis.Bitcoin.Features.SidechainWallet\Stratis.Bitcoin.Features.SidechainWallet.csproj", "{071DE3A1-CBF3-4236-A231-11976AEC1FE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.FederatedSidechainWallet", "Stratis.Bitcoin.Features.FederatedSidechainWallet\Stratis.Bitcoin.Features.FederatedSidechainWallet.csproj", "{071DE3A1-CBF3-4236-A231-11976AEC1FE1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.SidechainWallet.Tests", "Stratis.Bitcoin.Features.SidechainWallet.Tests\Stratis.Bitcoin.Features.SidechainWallet.Tests.csproj", "{ED318F85-7F31-4654-87D1-8A3A26D0B9E5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.FederatedSidechainWallet.Tests", "Stratis.Bitcoin.Features.FederatedSidechainWallet.Tests\Stratis.Bitcoin.Features.FederatedSidechainWallet.Tests.csproj", "{ED318F85-7F31-4654-87D1-8A3A26D0B9E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

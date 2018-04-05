@@ -1,34 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Security;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-
-using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.Features.SidechainWallet.Interfaces;
-using Stratis.Bitcoin.Features.SidechainWallet.Models;
+using Stratis.Bitcoin.Features.FederatedSidechainWallet.Interfaces;
+using Stratis.Bitcoin.Features.FederatedSidechainWallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet.Controllers
 {
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
     [Route("api/[controller]")]
-    public class SidechainWalletController : Controller
+    public class FederatedSidechainWalletController : Controller
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
         private readonly Network network;
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
-        public SidechainWalletController(
+        public FederatedSidechainWalletController(
             ILoggerFactory loggerFactory,
             IWalletTransactionHandler walletTransactionHandler,
             Network network)
@@ -45,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
         /// <returns>All the details of the transaction, including the hex used to execute it.</returns>
         [Route("build-sidechain-transaction")]
         [HttpPost]
-        public IActionResult BuildSidechainTransaction([FromBody] BuildSidechainTransactionRequest request)
+        public IActionResult BuildSidechainTransaction([FromBody] BuildTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -62,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
 
                 var transactionResult = this.walletTransactionHandler.BuildCrossChainTransaction(context, this.network);
 
-                var model = new WalletBuildTransactionModel
+                var model = new Wallet.Models.WalletBuildTransactionModel
                 {
                     Hex = transactionResult.ToHex(),
                     Fee = context.TransactionFee,

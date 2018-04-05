@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet.Interfaces
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet.Interfaces
 {
     /// <inheritdoc />
     public interface IWalletTransactionHandler : Wallet.Interfaces.IWalletTransactionHandler

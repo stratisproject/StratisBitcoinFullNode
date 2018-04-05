@@ -6,9 +6,9 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Features.Wallet.Validations;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet.Models
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet.Models
 {
-    public class BuildSidechainTransactionRequest : BuildTransactionRequest
+    public class BuildTransactioRequest : Wallet.Models.BuildTransactionRequest
     {
         [Required(AllowEmptyStrings = false, ErrorMessage = "A sidechain identifier must be specified")]
         public string SidechainIdentifier { get; set; }

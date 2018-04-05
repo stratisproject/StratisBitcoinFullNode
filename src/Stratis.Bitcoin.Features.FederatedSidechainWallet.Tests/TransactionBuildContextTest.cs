@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using FluentAssertions;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet.Tests
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet.Tests
 {
     public class TransactionBuildContextTest
     {

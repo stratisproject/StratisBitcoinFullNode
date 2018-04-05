@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet.Tests
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet.Tests
 {
     public class TransactionBuilderTests
     {

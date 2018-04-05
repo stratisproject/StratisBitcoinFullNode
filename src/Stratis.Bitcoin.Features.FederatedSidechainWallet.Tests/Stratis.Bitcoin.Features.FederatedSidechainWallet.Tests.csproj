@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.SidechainWallet\Stratis.Bitcoin.Features.SidechainWallet.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.FederatedSidechainWallet\Stratis.Bitcoin.Features.FederatedSidechainWallet.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj" />
   </ItemGroup>
 

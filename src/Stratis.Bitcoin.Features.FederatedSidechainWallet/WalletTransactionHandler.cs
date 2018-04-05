@@ -7,10 +7,10 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using IWalletTransactionHandler = Stratis.Bitcoin.Features.SidechainWallet.Interfaces.IWalletTransactionHandler;
+using IWalletTransactionHandler = Stratis.Bitcoin.Features.FederatedSidechainWallet.Interfaces.IWalletTransactionHandler;
 using Stratis.Bitcoin.Features.Wallet;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet
 {
     /// <inheritdoc />
     public class WalletTransactionHandler : Wallet.WalletTransactionHandler, IWalletTransactionHandler

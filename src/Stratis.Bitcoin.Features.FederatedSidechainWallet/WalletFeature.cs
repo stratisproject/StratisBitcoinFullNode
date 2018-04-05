@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -15,12 +12,9 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Signals;
 
-namespace Stratis.Bitcoin.Features.SidechainWallet
+namespace Stratis.Bitcoin.Features.FederatedSidechainWallet
 {
     /// <inheritdoc />
     public class WalletFeature : Wallet.WalletFeature
@@ -34,16 +28,16 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static class FullNodeBuilderSidechainWalletExtension
+    public static class FullNodeBuilderFederatedSidechainWalletExtension
     {
-        public static IFullNodeBuilder UseSidechainWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
+        public static IFullNodeBuilder UseFederatedSidechainWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<WalletFeature>("sidechain-wallet");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                .AddFeature<SidechainWallet.WalletFeature>()
+                .AddFeature<FederatedSidechainWallet.WalletFeature>()
                 .DependOn<Wallet.WalletFeature>()
                 .DependOn<MempoolFeature>()
                 .DependOn<BlockStoreFeature>()
@@ -51,10 +45,10 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
-                    services.AddSingleton<SidechainWallet.Interfaces.IWalletTransactionHandler, SidechainWallet.WalletTransactionHandler>();
+                    services.AddSingleton<FederatedSidechainWallet.Interfaces.IWalletTransactionHandler, FederatedSidechainWallet.WalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, WalletManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<SidechainWallet.Controllers.SidechainWalletController>();
+                    services.AddSingleton<FederatedSidechainWallet.Controllers.FederatedSidechainWalletController>();
                     services.AddSingleton<WalletRPCController>();
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();

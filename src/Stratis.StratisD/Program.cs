@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.SidechainWallet;
+using Stratis.Bitcoin.Features.FederatedSidechainWallet;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisD
@@ -40,7 +40,7 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()
-                    .UseSidechainWallet()
+                    .UseFederatedSidechainWallet()
                     .AddPowPosMining()
                     .UseApi()
                     .AddRPC();
