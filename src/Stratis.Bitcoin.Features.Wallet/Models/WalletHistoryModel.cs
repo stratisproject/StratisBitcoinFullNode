@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
 
         [JsonProperty(PropertyName = "history")]
-        public List<AccountHistoryModel> AccountsHistoryModel { get; set; }
+        public ICollection<AccountHistoryModel> AccountsHistoryModel { get; set; }
     }
 
     public class AccountHistoryModel
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public CoinType CoinType { get; set; }
 
         [JsonProperty(PropertyName = "transactionsHistory")]
-        public List<TransactionItemModel> TransactionsHistory { get; set; }
+        public ICollection<TransactionItemModel> TransactionsHistory { get; set; }
     }
 
     public class TransactionItemModel
