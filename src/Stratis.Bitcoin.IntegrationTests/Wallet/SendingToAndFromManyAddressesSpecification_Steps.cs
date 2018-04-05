@@ -11,19 +11,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
     using System.Linq;
     using Stratis.Bitcoin.Features.Wallet.Controllers;
     using Stratis.Bitcoin.Features.Wallet.Models;
-    using System;
     using FluentAssertions;
+    using Stratis.Bitcoin.IntegrationTests.Builders;
 
     public partial class SendingToAndFromManyAddressesSpecification : BddSpecification
     {
-        private NodeBuilder nodeBuilder;
+        private SharedSteps sharedSteps;
         private const string WalletName = "mywallet";
         private const string WalletPassword = "123456";
         private const string WalletAccountName = "account 0";
-        private CoreNode nodeOne;
-        private CoreNode nodeTwo;
+        private IDictionary<string, CoreNode> nodes;
+        private NodeGroupBuilder nodeGroupBuilder;
+        private const string NodeOne = "one";
+        private const string NodeTwo = "two";
         private long stratisReceiverTotalAmount;
-        private Key keySender;
         private TransactionBuildContext transactionBuildContext;
         private int CoinBaseMaturity;
 
@@ -32,52 +33,44 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void BeforeTest()
         {
-            this.nodeBuilder = NodeBuilder.Create();
+            this.sharedSteps = new SharedSteps();
+            this.nodeGroupBuilder = new NodeGroupBuilder();
         }
 
         protected override void AfterTest()
         {
-            this.nodeBuilder.Dispose();
+            this.nodeGroupBuilder.Dispose();
         }
 
-        private void funds_in_a_single_address_on_node1_wallet()
+        private void two_connected_nodes()
         {
-            this.nodeOne = this.nodeBuilder.CreateStratisPowNode();
-            this.nodeTwo = this.nodeBuilder.CreateStratisPowNode();
-
-            this.nodeBuilder.StartAll();
-            this.nodeOne.NotInIBD();
-            this.nodeTwo.NotInIBD();
-
-            this.nodeOne.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName);
-            this.nodeTwo.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName);
-
-            HdAddress addrSender = this.nodeOne.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
-            Wallet walletSender = this.nodeOne.FullNode.WalletManager().GetWalletByName(WalletName);
-            this.keySender = walletSender.GetExtendedPrivateKeyForAddress(WalletPassword, addrSender).PrivateKey;
+            this.nodes = this.nodeGroupBuilder
+                .StratisPowNode(NodeOne).Start().NotInIBD().WithWallet(WalletName, WalletPassword)
+                .StratisPowNode(NodeTwo).Start().NotInIBD().WithWallet(WalletName, WalletPassword)
+                .WithConnections()
+                    .Connect(NodeOne, NodeTwo)
+                    .AndNoMoreConnections()
+                .Build();
         }
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()
         {
             // Mine block
-            this.nodeOne.SetDummyMinerSecret(new BitcoinSecret(this.keySender, this.nodeOne.FullNode.Network));
-            this.CoinBaseMaturity = (int)this.nodeOne.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
-            this.nodeOne.GenerateStratisWithMiner(this.CoinBaseMaturity + 51);
+            this.CoinBaseMaturity = (int)this.nodes[NodeOne].FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
 
-            // Wait for block repo for block sync to work.
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodeOne));
-
-            this.nodeOne.FullNode.WalletManager().
-                GetSpendableTransactionsInWallet("mywallet").
-                Sum(s => s.Transaction.Amount).
-                Should().Be(Money.COIN * 150 * 50);
+            this.sharedSteps.MineBlocks(this.CoinBaseMaturity + 50
+                , this.nodes[NodeOne]
+                , WalletAccountName
+                , WalletName
+                , WalletPassword);
 
             // Sync both nodes.
-            this.nodeOne.CreateRPCClient().AddNode(this.nodeTwo.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeTwo, this.nodeOne));
+            this.nodes[NodeOne].CreateRPCClient().AddNode(this.nodes[NodeTwo].Endpoint, true);
+
+            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[NodeTwo], this.nodes[NodeOne]);
 
             // Get 50 unused addresses from the receiver.
-            IEnumerable<HdAddress> recevierAddresses = this.nodeTwo.FullNode.WalletManager()
+            IEnumerable<HdAddress> recevierAddresses = this.nodes[NodeTwo].FullNode.WalletManager()
                 .GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
 
             List<Recipient> recipients = recevierAddresses.Select(address => new Recipient
@@ -86,61 +79,60 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, WalletAccountName), recipients, WalletPassword)
-            {
-                FeeType = FeeType.Medium,
-                MinConfirmations = 101
-            };
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletName
+                , WalletAccountName
+                , WalletPassword
+                , recipients
+                , FeeType.Medium
+                , 101);
 
-            Transaction transaction = this.nodeOne.FullNode.WalletTransactionHandler().
+            Transaction transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().
                 BuildTransaction(this.transactionBuildContext);
 
             transaction.Outputs.Count.Should().Be(51);
 
             // Broadcast to the other node.
-            this.nodeOne.FullNode.NodeService<WalletController>().
+            this.nodes[NodeOne].FullNode.NodeService<WalletController>().
                 SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-            // Wait for the trx's to arrive.
-            TestHelper.WaitLoop(() => this.nodeTwo.CreateRPCClient().GetRawMempool().Length > 0);
-            TestHelper.WaitLoop(() => this.nodeTwo.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
+            // Wait for the transactions to arrive.
+            TestHelper.WaitLoop(() => this.nodes[NodeTwo].CreateRPCClient().GetRawMempool().Length > 0);
+            TestHelper.WaitLoop(() => this.nodes[NodeTwo].FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
         }
 
         private void node2_receives_the_funds()
         {
-            this.stratisReceiverTotalAmount = this.nodeTwo.FullNode.WalletManager().
+            this.stratisReceiverTotalAmount = this.nodes[NodeTwo].FullNode.WalletManager().
                 GetSpendableTransactionsInWallet(WalletName).
                 Sum(s => s.Transaction.Amount);
 
             this.stratisReceiverTotalAmount.Should().Be(5000000000);
 
-            this.nodeTwo.FullNode.WalletManager().
+            this.nodes[NodeTwo].FullNode.WalletManager().
                 GetSpendableTransactionsInWallet(WalletName).
                 First().Transaction.BlockHeight.
                 Should().BeNull();
 
-            this.nodeTwo.FullNode.WalletManager().
+            this.nodes[NodeTwo].FullNode.WalletManager().
                 GetSpendableTransactionsInWallet(WalletName).
                 Count().Should().Be(50);
 
-            // Generate new blocks so the trx is confirmed.
-            this.nodeOne.GenerateStratisWithMiner(1);
+            this.nodes[NodeOne].GenerateStratisWithMiner(1);
 
-            // Wait for block repo for block sync to work.
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodeOne));
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeTwo, this.nodeOne));
+            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[NodeOne]);
+            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[NodeTwo], this.nodes[NodeOne]);
 
-            // Confirm trx's have been committed to the block.
-            this.nodeTwo.FullNode.WalletManager().
-                GetSpendableTransactionsInWallet("mywallet").
+            // Confirm transactions have been committed to the block.
+            this.nodes[NodeTwo].FullNode.WalletManager().
+                GetSpendableTransactionsInWallet(WalletName).
                 First().Transaction.BlockHeight.
-                Should().Be(this.CoinBaseMaturity + 52);       
+                Should().Be(this.CoinBaseMaturity + 51);
         }
 
         private void node2_sends_funds_to_node1_FROM_fifty_addresses()
         {
             // Send coins to the receiver.
-            var sendto = this.nodeOne.FullNode.WalletManager()
+            var sendto = this.nodes[NodeOne].FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
             this.transactionBuildContext = new TransactionBuildContext(
@@ -155,42 +147,41 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 }.ToList(), WalletPassword);
 
             // Check receiver has the correct inputs.
-            var trx = this.nodeTwo.FullNode.WalletTransactionHandler()
-                .BuildTransaction(this.transactionBuildContext);
+            var trx = this.nodes[NodeTwo].FullNode.WalletTransactionHandler()
+                        .BuildTransaction(this.transactionBuildContext);
 
             trx.Inputs.Count.Should().Be(50);
 
             // Broadcast.
-            this.nodeTwo.FullNode.NodeService<WalletController>()
+            this.nodes[NodeTwo].FullNode.NodeService<WalletController>()
                 .SendTransaction(new SendTransactionRequest(trx.ToHex()));
 
-            // Wait for the trx to arrive.
-            TestHelper.WaitLoop(() =>
-                this.nodeOne.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
+            // Wait for the transaction to arrive.
+            TestHelper.WaitLoop(() => this.nodes[NodeOne].FullNode.WalletManager()
+                                        .GetSpendableTransactionsInWallet(WalletName).Any());
         }
 
         private void node1_receives_the_funds()
         {
-            this.nodeOne.FullNode.WalletManager().
-                GetSpendableTransactionsInWallet(WalletName).
-                Sum(s => s.Transaction.Amount).Should().Be(747500000000);
+            this.nodes[NodeOne].FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(WalletName)
+                .Sum(s => s.Transaction.Amount).Should().Be(745000000000);
 
-            this.nodeTwo.FullNode.WalletManager().
-                GetSpendableTransactionsInWallet(WalletName).
-                Count().Should().Be(1);
+            this.nodes[NodeTwo].FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(WalletName)
+                .Count().Should().Be(1);
 
-            // wait for block repo for block sync to work.
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodeOne));
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeOne, this.nodeTwo));
+            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[NodeOne]);
+            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[NodeTwo], this.nodes[NodeOne]);
 
-            TestHelper.WaitLoop(() => 3 == this.nodeOne.FullNode.WalletManager().
-                    GetSpendableTransactionsInWallet(WalletName).
-                    First().Transaction.BlockHeight);
+            TestHelper.WaitLoop(() => 3 == this.nodes[NodeOne].FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(WalletName)
+                .First().Transaction.BlockHeight);
         }
 
         private void funds_across_fifty_addresses_on_node2_wallet()
         {
-            funds_in_a_single_address_on_node1_wallet();
+            two_connected_nodes();
             node1_sends_funds_to_node2_TO_fifty_addresses();
             node2_receives_the_funds();
         }

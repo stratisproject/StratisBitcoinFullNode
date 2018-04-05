@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void sending_from_one_address_to_fifty_addresses()
         {
-            Given(funds_in_a_single_address_on_node1_wallet);
+            Given(two_connected_nodes);
             When(node1_sends_funds_to_node2_TO_fifty_addresses);
             Then(node2_receives_the_funds);
         }

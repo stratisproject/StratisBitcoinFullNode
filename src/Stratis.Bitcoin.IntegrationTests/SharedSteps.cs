@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
@@ -8,10 +11,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SharedSteps
     {
-        public static TransactionBuildContext CreateTransactionBuildContext(string sendingWalletName, string sendingAccountName, string sendingPassword, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        public static TransactionBuildContext CreateTransactionBuildContext(string sendingWalletName
+            , string sendingAccountName
+            , string sendingPassword
+            , ICollection<Recipient> recipients
+            , FeeType feeType
+            , int minConfirmations)
         {
             return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName),
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), sendingPassword)
+                recipients.ToList(), sendingPassword)
             {
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
@@ -22,32 +30,30 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.WaitForBlockStoreToSync(node);
 
-            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
+            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
-            var balanceBeforeMining = node.FullNode.WalletManager()
+            Money balanceBeforeMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            var wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
-            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
+            Features.Wallet.Wallet wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
+            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
 
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
 
             node.GenerateStratisWithMiner(blockCount);
 
-            var balanceAfterMining = node.FullNode.WalletManager()
+            Money balanceAfterMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            var balanceIncrease = balanceAfterMining - balanceBeforeMining;
+            Money balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
             this.WaitForBlockStoreToSync(node);
-
-            var rewardCoinCount = blockCount * Money.COIN * 50;
-            
-            balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
+          
+            balanceIncrease.Should().Be(CalculatReward(blockCount, node) + expectedFees);
         }
 
         public void WaitForBlockStoreToSync(params CoreNode[] nodes)
@@ -60,8 +66,31 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             for (int i = 1; i < nodes.Length; i++)
             {
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i-1], nodes[i]));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i - 1], nodes[i]));
             }
+        }
+
+        private Money CalculatReward(int blockCount, CoreNode node)
+        {
+            // The reward fee below the SubsidyHalvingInterval (150 blocks) is different above.
+            // This function will compute the total based on both lower or higher bands.
+
+            var consensusValidator = node.FullNode.NodeService<IPowConsensusValidator>() as PowConsensusValidator;
+
+            Money reward;
+            int subsidyHalvingInterval = consensusValidator.ConsensusParams.SubsidyHalvingInterval;
+
+            if (blockCount < subsidyHalvingInterval)
+            {
+                reward = consensusValidator.GetProofOfWorkReward(blockCount) * blockCount;
+            }
+            else
+            {
+                reward = (consensusValidator.GetProofOfWorkReward(subsidyHalvingInterval - 1) * subsidyHalvingInterval)
+                            + (consensusValidator.GetProofOfWorkReward(blockCount) * (blockCount - (subsidyHalvingInterval + 1)));
+            }
+
+            return reward;
         }
     }
 }

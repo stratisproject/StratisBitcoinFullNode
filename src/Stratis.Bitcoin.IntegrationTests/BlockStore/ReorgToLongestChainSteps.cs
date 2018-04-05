@@ -83,7 +83,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             var nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.nodes[Charlie]);
 
-            var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletZero, AccountZero, WalletPassword, nodeCReceivingAddress.ScriptPubKey, Money.COIN * 1, FeeType.Medium, minConfirmations: 1);
+            var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletZero
+                , AccountZero
+                , WalletPassword
+                , new[] { new Recipient { Amount = Money.COIN * 1, ScriptPubKey = nodeCReceivingAddress.ScriptPubKey } }
+                , FeeType.Medium, 101);
 
             this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
