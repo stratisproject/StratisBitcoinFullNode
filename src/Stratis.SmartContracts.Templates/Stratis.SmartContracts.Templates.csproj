@@ -58,7 +58,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Contract\Contract.cs" />
+    <None Include="Contract\Auction.cs" />
     <None Include="Contract\Stratis.SmartContract.Contract.csproj" />
   </ItemGroup>
   <ItemGroup>
