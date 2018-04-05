@@ -42,7 +42,7 @@ namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices
             // Load the federation members from the specified folder.
             // Checks N matches member count also.
             var memberFolderManager = new MemberFolderManager(folder);
-            var federation = memberFolderManager.LoadFederation(multiSigN, multiSigM);
+            var federation = memberFolderManager.LoadFederation(multiSigM, multiSigN);
 
             // Generate the ScriptPubKey and address files for the sidechain.
             memberFolderManager.OutputScriptPubKeyAndAddress(federation, this.network);

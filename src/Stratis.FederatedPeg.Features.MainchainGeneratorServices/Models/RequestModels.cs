@@ -22,11 +22,11 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices.Models
         [Required(ErrorMessage = "The ApiPort the sidechain uses is required.")]
         public int ApiPortForSidechain  { get; set; }
 
-        [Required(ErrorMessage = "The multi-sig N value is required.")]
-        public int MultiSigN { get; set; }
-
         [Required(ErrorMessage = "The multi-sig M value is required.")]
         public int MultiSigM { get; set; }
+
+        [Required(ErrorMessage = "The multi-sig N value is required.")]
+        public int MultiSigN { get; set; }
 
         [Required(ErrorMessage = "The path to the local folder where the federation keys are stored is required.")]
         public string FolderFedMemberKeys { get; set; }
@@ -39,14 +39,14 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices.Models
     /// </summary>
     public class OutputScriptPubKeyAndAddressRequest : RequestModel
     {
-        [Required(ErrorMessage = "The multi-sig N value is required.")]
-        public int MultiSigN { get; set; }
-
         [Required(ErrorMessage = "The multi-sig M value is required.")]
         public int MultiSigM { get; set; }
 
+        [Required(ErrorMessage = "The multi-sig N value is required.")]
+        public int MultiSigN { get; set; }
+
         [Required(ErrorMessage = "The path to the local folder where the federation keys are stored is required.")]
-        public string FolderFedMemberKeys { get; set; }
+        public string FederationFolder { get; set; }
     }
 
     /// <summary>

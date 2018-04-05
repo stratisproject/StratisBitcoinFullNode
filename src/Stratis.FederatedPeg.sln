@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Featur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.MainchainGeneratorServices", "Stratis.FederatedPeg.Features.MainchainGeneratorServices\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj", "{BBBF2523-1429-463D-A136-5F136F83F050}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests", "Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj", "{7E7F4CEF-67DA-42FA-BE9E-C32582CA21CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{BBBF2523-1429-463D-A136-5F136F83F050}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBBF2523-1429-463D-A136-5F136F83F050}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBBF2523-1429-463D-A136-5F136F83F050}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E7F4CEF-67DA-42FA-BE9E-C32582CA21CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E7F4CEF-67DA-42FA-BE9E-C32582CA21CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E7F4CEF-67DA-42FA-BE9E-C32582CA21CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E7F4CEF-67DA-42FA-BE9E-C32582CA21CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -63,7 +69,7 @@ Global
 		SolutionGuid = {3AFD64E3-699D-4C30-A995-07298E3E9B15}
 	EndGlobalSection
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 5
+		SccNumberOfProjects = 6
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://stratisplatformuk.visualstudio.com/
 		SccProjectUniqueName0 = FedKeyPairGen\\FedKeyPairGen.csproj
@@ -91,5 +97,10 @@ Global
 		SccAuxPath4 = https://stratisplatformuk.visualstudio.com
 		SccLocalPath4 = Stratis.FederatedPeg.Features.MainchainGeneratorServices
 		SccProvider4 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName5 = Stratis.FederatedPeg.IntegrationTests\\Stratis.FederatedPeg.IntegrationTests.csproj
+		SccProjectName5 = Stratis.FederatedPeg.IntegrationTests
+		SccAuxPath5 = https://stratisplatformuk.visualstudio.com
+		SccLocalPath5 = Stratis.FederatedPeg.IntegrationTests
+		SccProvider5 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 	EndGlobalSection
 EndGlobal

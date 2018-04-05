@@ -38,7 +38,7 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices
         }
 
         ///<inheritdoc/>
-        public async Task InitSidechain(string sidechainName, int apiPortForSidechain, int multiSigN, int multiSigM, string folderFedMemberKey)
+        public async Task InitSidechain(string sidechainName, int apiPortForSidechain, int multiSigM, int multiSigN, string folderFedMemberKey)
         {
             // Connect to the sidechain node.
             // Get the sidechain name to ensure we are communicating with the correct chain.
@@ -49,13 +49,13 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices
             // Load the fed members from the folder.
             // Checks N matches member count also.
             var memberFolderManager = new MemberFolderManager(folderFedMemberKey);
-            var federation = memberFolderManager.LoadFederation(multiSigN, multiSigM);
+            var federation = memberFolderManager.LoadFederation(multiSigM, multiSigN);
 
             // Generate the redeem script and address files for mainchain.
             memberFolderManager.OutputScriptPubKeyAndAddress(federation, this.network);
             
             // Call into sidechain to generate the sidechain ScriptPubKey and Address.
-            await this.OutputScriptPubKeyAndAddress(apiPortForSidechain, folderFedMemberKey, multiSigN, multiSigM);
+            await this.OutputScriptPubKeyAndAddress(apiPortForSidechain, folderFedMemberKey, multiSigM, multiSigN);
 
             // Ask the sidechain to mine the pre-mine into the sidechain multi-sig.
             var address = memberFolderManager.ReadAddress(Chain.Sidechain);
@@ -80,11 +80,11 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices
         }
 
         // Client method to generate the redeem and address on the sidechain.
-        private async Task OutputScriptPubKeyAndAddress(int apiPortForSidechain, string folder, int multiSigN, int multiSigM)
+        private async Task OutputScriptPubKeyAndAddress(int apiPortForSidechain, string folder, int multiSigM, int multiSigN)
         {
             var outputScriptPubKeyAndAddressRequest = new OutputScriptPubKeyAndAddressRequest()
             {
-                FolderFedMemberKeys = folder,
+                FederationFolder = folder,
                 MultiSigM = multiSigM,
                 MultiSigN = multiSigN
             };
@@ -95,7 +95,7 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/SidechainGeneratorServices/output-scriptpubkeyandAddress");
+                    $"http://localhost:{apiPortForSidechain}/api/SidechainGeneratorServices/output-scriptpubkeyandaddress");
                 var request = new JsonContent(outputScriptPubKeyAndAddressRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
             }

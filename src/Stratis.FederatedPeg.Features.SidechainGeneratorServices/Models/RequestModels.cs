@@ -16,11 +16,11 @@ namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices.Models
     /// </summary>
     public class OutputScriptPubKeyAndAddressRequest : RequestModel
     {
-        [Required(ErrorMessage = "The multi-sig N value is required.")]
-        public int MultiSigN { get; set; }
+        [Required(ErrorMessage = "The multi-sig M value is required.")]
+        public int MultiSigM { get; set; }
 
         [Required(ErrorMessage = "The multi-sig N value is required.")]
-        public int MultiSigM { get; set; }
+        public int MultiSigN { get; set; }
 
         [Required(ErrorMessage = "The path to the local folder where the federation keys are stored is required.")]
         public string FederationFolder { get; set; }
