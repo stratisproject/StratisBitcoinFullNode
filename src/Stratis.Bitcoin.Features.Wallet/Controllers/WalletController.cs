@@ -27,7 +27,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly IWalletManager walletManager;
 
         private readonly IWalletTransactionHandler walletTransactionHandler;
-        public IWalletTransactionHandler WalletTransactionHandler => this.walletTransactionHandler;
 
         private readonly IWalletSyncManager walletSyncManager;
 

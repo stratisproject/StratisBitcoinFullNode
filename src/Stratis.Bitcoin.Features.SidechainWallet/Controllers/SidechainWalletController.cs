@@ -8,13 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
+
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Features.SidechainWallet.Interfaces;
 using Stratis.Bitcoin.Features.SidechainWallet.Models;
-using Stratis.Bitcoin.Features.SidechainWallet;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -63,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet.Controllers
                 var standardContext = Wallet.Controllers.WalletController.CreateTransactionBuildContext(request, this.network);
                 var context = new TransactionBuildContext(standardContext, request.SidechainIdentifier);
 
-                var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+                var transactionResult = this.walletTransactionHandler.BuildCrossChainTransaction(context, this.network);
 
                 var model = new WalletBuildTransactionModel
                 {

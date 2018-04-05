@@ -13,9 +13,9 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -44,14 +44,14 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
             {
                 features
                 .AddFeature<SidechainWallet.WalletFeature>()
-                //.DependOn<Wallet.WalletFeature>()
+                .DependOn<Wallet.WalletFeature>()
                 .DependOn<MempoolFeature>()
                 .DependOn<BlockStoreFeature>()
                 .DependOn<RPCFeature>()
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
-                    services.AddSingleton<IWalletTransactionHandler, SidechainWallet.WalletTransactionHandler>();
+                    services.AddSingleton<SidechainWallet.Interfaces.IWalletTransactionHandler, SidechainWallet.WalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, WalletManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                     services.AddSingleton<SidechainWallet.Controllers.SidechainWalletController>();

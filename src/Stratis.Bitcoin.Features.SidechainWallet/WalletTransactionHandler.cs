@@ -8,6 +8,7 @@ using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using IWalletTransactionHandler = Stratis.Bitcoin.Features.SidechainWallet.Interfaces.IWalletTransactionHandler;
+using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.Features.SidechainWallet
 {
@@ -19,27 +20,11 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
             : base(loggerFactory, walletManager, walletFeePolicy, network)
         {
             this.Network = network;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        private readonly ILogger logger;
         public Network Network { get; }
-
-        public Transaction BuildTransaction(TransactionBuildContext context)
-        {
-            this.InitializeTransactionBuilder(context);
-
-            if (context.Shuffle)
-            {
-                context.TransactionBuilder.Shuffle();
-            }
-
-            // build transaction
-            context.Transaction = BuildCrossChainTransaction(context, this.Network);
-
-            if(!Verify(context, out TransactionPolicyError[] errors))
-                LogAndThrowWalletException(errors);
-            
-            return context.Transaction;
-        }
 
         public Transaction BuildCrossChainTransaction(TransactionBuildContext context, Network network)
         {
@@ -48,12 +33,28 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
 
         public Transaction BuildCrossChainTransaction(TransactionBuildContext context, Network network, SigHash sigHash)
         {
+            this.InitializeTransactionBuilder(context);
+
+            if (context.Shuffle)
+            {
+                context.TransactionBuilder.Shuffle();
+            }
+
             var buildingContext = context.TransactionBuilder.BuildTransaction(false, sigHash);
             context.Transaction = FromStandardTransactionToCrossChainTransaction(context, network);
 
             if (context.Sign)
             {
                 context.TransactionBuilder.SignTransactionInPlace(context.Transaction, sigHash);
+            }
+
+            if (!Verify(context, out TransactionPolicyError[] errors))
+            {
+                var errorMessages = string.Join(" - ", errors.Select(s => s.ToString()));
+                var errorMessage = string.Format("Could not build the transaction. Details: {0}", errorMessages);
+                var exception = new WalletException(errorMessage);
+                this.logger.LogError(errorMessage);
+                throw exception;
             }
             return context.Transaction;
         }
@@ -108,7 +109,9 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
             var tx = context.Transaction;
             var isBaseVerified = context.TransactionBuilder.Verify(tx, out errors);
             var sidechainErrors = new List<TransactionPolicyError>(errors);
-            var sidechainVerifies = tx.Outputs.Count() == 3;
+
+            var sidechainVerifies = tx.Outputs.Count() <= 3;
+
             if (!sidechainVerifies)
             {
                 sidechainErrors.Add(new TransactionPolicyError("Cross chains transaction can only have 3 outputs"));

@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly CoinType coinType;
 
-        protected readonly ILogger logger;
+        private readonly ILogger logger;
 
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
@@ -69,11 +69,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
                 return;
-            this.LogAndThrowWalletException(errors);
-        }
-
-        protected void LogAndThrowWalletException(TransactionPolicyError[] errors)
-        {
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
             throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");

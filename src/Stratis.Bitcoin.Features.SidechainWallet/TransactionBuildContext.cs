@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SidechainWallet
             this.SidechainIdentifier = sidechainIdentifier;
             this.Sign = standardContext.Sign;
             this.Transaction = standardContext.Transaction;
-            //this.TransactionBuilder = (TransactionBuilder)standardContext.TransactionBuilder;
+            this.TransactionBuilder = standardContext.TransactionBuilder;
             this.TransactionFee = standardContext.TransactionFee;
             this.UnspentOutputs = standardContext.UnspentOutputs;
         }
