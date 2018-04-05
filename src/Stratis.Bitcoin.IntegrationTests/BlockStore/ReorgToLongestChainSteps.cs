@@ -17,13 +17,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private SharedSteps sharedSteps;
         private Transaction shorterChainTransaction;
         private Money shortChainTransactionFee;
-        private int selfishBlockHeight;
+        private int jingsBlockHeight;
         private IDictionary<string, CoreNode> nodes;
         private NodeGroupBuilder nodeGroupBuilder;
         private const string AccountZero = "account 0";
         private const string WalletZero = "wallet 0";
         private const string WalletPassword = "123456";
-        private const string SelfishSimon = "Selfish Miner Simon";
+        private const string JingTheFastMiner = "Jing";
         private const string Bob = "Bob";
         private const string Charlie = "Charlie";
         private const string Dave = "Dave";
@@ -43,15 +43,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.nodeGroupBuilder.Dispose();
         }
 
-        private void selfish_simon_and_three_other_miners()
+        private void four_miners()
         {
             this.nodes = this.nodeGroupBuilder
-                .StratisPowNode(SelfishSimon).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
+                .StratisPowNode(JingTheFastMiner).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
                 .StratisPowNode(Bob).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
                 .StratisPowNode(Charlie).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
                 .StratisPowNode(Dave).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
                 .WithConnections()
-                    .Connect(SelfishSimon, Bob)
+                    .Connect(JingTheFastMiner, Bob)
                     .Connect(Bob, Charlie)
                     .Connect(Charlie, Dave)
                     .AndNoMoreConnections()
@@ -60,23 +60,23 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void each_mine_a_block()
         {
-            this.sharedSteps.MineBlocks(1, this.nodes[SelfishSimon], AccountZero, WalletZero, WalletPassword);
+            this.sharedSteps.MineBlocks(1, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
             this.sharedSteps.MineBlocks(1, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
             this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword);
             this.sharedSteps.MineBlocks(1, this.nodes[Dave], AccountZero, WalletZero, WalletPassword);
         }
 
-        private void selfish_simon_disconnects_and_secretly_mines_10_blocks()
+        private void jing_loses_connection_to_others_but_carries_on_mining()
         {
-            this.nodes[SelfishSimon].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Bob].Endpoint);
-            this.nodes[SelfishSimon].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Charlie].Endpoint);
-            this.nodes[SelfishSimon].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Dave].Endpoint);
+            this.nodes[JingTheFastMiner].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Bob].Endpoint);
+            this.nodes[JingTheFastMiner].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Charlie].Endpoint);
+            this.nodes[JingTheFastMiner].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Dave].Endpoint);
 
-            TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(this.nodes[SelfishSimon]));
+            TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(this.nodes[JingTheFastMiner]));
 
-            this.sharedSteps.MineBlocks(10, this.nodes[SelfishSimon], AccountZero, WalletZero, WalletPassword);
+            this.sharedSteps.MineBlocks(1, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
 
-            this.selfishBlockHeight = this.nodes[SelfishSimon].FullNode.Chain.Height;
+            this.jingsBlockHeight = this.nodes[JingTheFastMiner].FullNode.Chain.Height;
         }
 
         private void bob_creates_a_transaction_and_broadcasts()
@@ -111,20 +111,20 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
 
-        private void selfish_simon_reconnects_and_broadcasts_his_longer_chain()
+        private void jings_connection_comes_back()
         {
-            this.nodes[SelfishSimon].CreateRPCClient().AddNode(this.nodes[Bob].Endpoint);
-            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[SelfishSimon], this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
+            this.nodes[JingTheFastMiner].CreateRPCClient().AddNode(this.nodes[Bob].Endpoint);
+            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[JingTheFastMiner], this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
          
-        private void bob_charlie_and_dave_reorg_to_selfish_simons_longest_chain()
+        private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
         {
-            TestHelper.WaitLoop(() => this.nodes[Bob].FullNode.Chain.Height == this.selfishBlockHeight);
-            this.nodes[Bob].FullNode.Chain.Height.Should().Be(this.selfishBlockHeight);
-            TestHelper.WaitLoop(() => this.nodes[Charlie].FullNode.Chain.Height == this.selfishBlockHeight);
-            this.nodes[Charlie].FullNode.Chain.Height.Should().Be(this.selfishBlockHeight);
-            TestHelper.WaitLoop(() => this.nodes[Dave].FullNode.Chain.Height == this.selfishBlockHeight);
-            this.nodes[Dave].FullNode.Chain.Height.Should().Be(this.selfishBlockHeight);
+            TestHelper.WaitLoop(() => this.nodes[Bob].FullNode.Chain.Height == this.jingsBlockHeight);
+            this.nodes[Bob].FullNode.Chain.Height.Should().Be(this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.nodes[Charlie].FullNode.Chain.Height == this.jingsBlockHeight);
+            this.nodes[Charlie].FullNode.Chain.Height.Should().Be(this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.nodes[Dave].FullNode.Chain.Height == this.jingsBlockHeight);
+            this.nodes[Dave].FullNode.Chain.Height.Should().Be(this.jingsBlockHeight);
         }
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
@@ -146,10 +146,17 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             this.sharedSteps.MineBlocks(coinbaseMaturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
 
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[SelfishSimon]));
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[JingTheFastMiner]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Bob]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Charlie]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Dave]));
+        }
+
+        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
+        {
+            this.sharedSteps.MineBlocks(5, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
+
+            this.jingsBlockHeight = this.nodes[JingTheFastMiner].FullNode.Chain.Height;
         }
     }
 }
