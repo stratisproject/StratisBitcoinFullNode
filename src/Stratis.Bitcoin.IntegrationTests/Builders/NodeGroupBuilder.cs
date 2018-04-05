@@ -9,9 +9,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
     {
         private readonly NodeBuilder nodeBuilder;
 
-        private Dictionary<string, CoreNode> nodes;
-
-        private bool sync;
+        private readonly Dictionary<string, CoreNode> nodes;
 
         public NodeGroupBuilder()
         {
@@ -26,8 +24,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
 
         public IDictionary<string, CoreNode> Build()
         {
-            CoreNode previousNode = null;
-
             return this.nodes;
         }
 

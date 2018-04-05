@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
         public NodeGroupBuilder AndNoMoreConnections()
         {
             if (this.parentNodeGroupBuilder == null)
-                throw new NotSupportedException("pass parent builder into contructor if you need to return to that builder to continue building.");
+                throw new NotSupportedException("Pass parent builder into constructor if you need to return to that builder to continue building.");
 
             return this.parentNodeGroupBuilder;
         }
