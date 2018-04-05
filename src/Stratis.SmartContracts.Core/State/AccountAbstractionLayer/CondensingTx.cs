@@ -218,7 +218,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             }
 
             // Lastly update the funds to be distributed based on the transfers that have taken place.
-            foreach (TransferInfo transfer in this.transfers)
+            foreach (TransferInfo transfer in this.transfers.Where(x => x.Value > 0))
             {
                 if (this.txBalances.ContainsKey(transfer.To))
                     this.txBalances[transfer.To] += transfer.Value;
