@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -9,10 +9,8 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit;
-using System;
-using Stratis.Bitcoin.Utilities;
-using System.Text;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -35,8 +33,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateBitcoinPowNode();
+                var stratisReceiver = builder.CreateBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -96,10 +94,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         [Fact]
         public void WalletCanSendOneTransactionWithManyOutputs()
-        { 
+        {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode();
+                CoreNode stratisSender = builder.CreateCoinsFast().CreateStratisPowNode();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode();
 
                 builder.StartAll();
@@ -119,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
-                
+
                 Assert.Equal(Money.COIN * 150 * 50, stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
 
                 // Sync both nodes.
@@ -131,18 +129,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .GetUnusedAddresses(new WalletAccountReference("mywallet", "account 0"), 50);
 
                 List<Recipient> recipients = recevierAddresses.Select(address => new Recipient
-                    {
-                        ScriptPubKey = address.ScriptPubKey,
-                        Amount = Money.COIN
-                    })
+                {
+                    ScriptPubKey = address.ScriptPubKey,
+                    Amount = Money.COIN
+                })
                     .ToList();
 
                 var transactionBuildContext = new TransactionBuildContext(
                     new WalletAccountReference("mywallet", "account 0"), recipients, "123456")
-                    {
-                        FeeType = FeeType.Medium,
-                        MinConfirmations = 101
-                    };
+                {
+                    FeeType = FeeType.Medium,
+                    MinConfirmations = 101
+                };
 
                 Transaction transaction = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
                 Assert.Equal(51, transaction.Outputs.Count);
@@ -155,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any());
 
                 Assert.Equal(Money.COIN * 50, stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
-                Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);  
+                Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // Generate new blocks so the trx is confirmed.
                 stratisSender.GenerateStratisWithMiner(1);
@@ -165,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
 
                 // Confirm trx's have been committed to the block.
-                Assert.Equal(maturity + 52 , stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
+                Assert.Equal(maturity + 52, stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
             }
         }
 
@@ -174,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode();
+                CoreNode stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
 
                 // Move a wallet file to the right folder and restart the wallet manager to take it into account.
@@ -203,9 +201,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateBitcoinPowNode();
+                var stratisReceiver = builder.CreateBitcoinPowNode();
+                var stratisReorg = builder.CreateBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -356,9 +354,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateBitcoinPowNode();
+                var stratisReceiver = builder.CreateBitcoinPowNode();
+                var stratisReorg = builder.CreateBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -418,9 +416,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = builder.CreateBitcoinPowNode();
+                var stratisReceiver = builder.CreateBitcoinPowNode();
+                var stratisReorg = builder.CreateBitcoinPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -478,7 +476,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisminer = builder.CreateStratisPowNode();
+                var stratisminer = builder.CreateBitcoinPowNode();
 
                 builder.StartAll();
                 stratisminer.NotInIBD();
@@ -509,7 +507,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNodeSync = builder.CreateBitcoinPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -530,7 +528,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // stop the node it will persist the chain with the reset tip
                 stratisNodeSync.FullNode.Dispose();
 
-                var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
+                var newNodeInstance = builder.CloneBitcoinPowNode(stratisNodeSync);
 
                 // load the node, this should hit the block store recover code
                 newNodeInstance.Start();

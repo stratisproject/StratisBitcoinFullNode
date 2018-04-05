@@ -13,7 +13,6 @@ using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -210,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-					});
+                    });
             });
 
             return fullNodeBuilder;
@@ -241,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-					});
+                    });
             });
 
             return fullNodeBuilder;

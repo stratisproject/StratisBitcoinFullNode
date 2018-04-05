@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (var dir = TestDirectory.Create())
             {
-                IFullNode fullNode = StratisBitcoinPosRunner.BuildStakingNode(dir.FolderName);
+                IFullNode fullNode = StratisPosRunner.BuildStakingNode(dir.FolderName);
                 var fullNodeRunTask = fullNode.RunAsync();
 
                 INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (var dir = TestDirectory.Create())
             {
-                IFullNode fullNode = StratisBitcoinPosRunner.BuildStakingNode(dir.FolderName, false);
+                IFullNode fullNode = StratisPosRunner.BuildStakingNode(dir.FolderName, false);
                 var node = fullNode as FullNode;
 
                 var fullNodeRunTask = fullNode.RunAsync();

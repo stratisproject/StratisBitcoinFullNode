@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(version: "0.15.1"))
             {
-                CoreNode coreNode = builder.CreateNode(false);
+                CoreNode coreNode = builder.CreateBitcoinCoreNode();
 
                 coreNode.ConfigParameters.AddOrReplace("debug", "1");
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");
                 coreNode.Start();
 
-                CoreNode stratisNode = builder.CreateStratisPowNode(true, fullNodeBuilder =>
+                CoreNode stratisNode = builder.CreateBitcoinPowNode(true, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UsePowConsensus()

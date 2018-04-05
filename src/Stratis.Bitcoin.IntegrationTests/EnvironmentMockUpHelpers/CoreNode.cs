@@ -12,7 +12,6 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -73,16 +72,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.networkPeerFactory = new NetworkPeerFactory(network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
         }
 
-        /// <summary>Get stratis full node if possible.</summary>
         public FullNode FullNode
         {
-            get
-            {
-                if (this.runner is StratisBitcoinPosRunner)
-                    return ((StratisBitcoinPosRunner)this.runner).FullNode;
-
-                return ((StratisBitcoinPowRunner)this.runner).FullNode;
-            }
+            get { return this.runner.FullNode; }
         }
 
         private void CleanFolder()
@@ -90,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             NodeBuilder.CleanupTestFolder(this.Folder);
         }
 
-        public void Sync(CoreNode node, bool keepConnection = false)
+        public void SyncFrom(CoreNode node, bool keepConnection = false)
         {
             var rpc = this.CreateRPCClient();
             var rpc1 = node.CreateRPCClient();
@@ -112,7 +104,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            // not in IBD
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
@@ -154,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             File.WriteAllText(this.Config, config.ToString());
             lock (this.lockObject)
             {
-                this.runner.Start(this.DataFolder);
+                this.runner.OnStart(this.DataFolder);
                 this.State = CoreNodeState.Starting;
             }
             while (true)
@@ -504,7 +495,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            var fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            var fullNode = (this.runner as BitcoinPowRunner).FullNode;
             var state = new MempoolValidationState(true);
 
             return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
@@ -518,7 +509,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         [Obsolete("Please use GenerateStratisWithMiner instead.")]
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
-            var fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            var fullNode = (this.runner as BitcoinPowRunner).FullNode;
             BitcoinSecret dest = this.MinerSecret;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;

@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
             {
                 this.logger.LogTrace("()");
-                
+
                 try
                 {
                     await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
@@ -476,7 +476,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Prevent mining if not fully synced.
-                if (this.initialBlockDownloadState.IsInitialBlockDownload() || 
+                if (this.initialBlockDownloadState.IsInitialBlockDownload() ||
                     this.consensusLoop.Tip != this.chain.Tip)
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started...");
@@ -520,7 +520,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
                     TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
-                    uint256 hashBock = this.chain.GetBlock((int) set.Height)?.HashBlock;
+                    uint256 hashBock = this.chain.GetBlock((int)set.Height)?.HashBlock;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBock != null))
                     {
