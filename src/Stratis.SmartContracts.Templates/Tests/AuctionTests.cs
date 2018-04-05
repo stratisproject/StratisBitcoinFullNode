@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Stratis.SmartContracts;
+using System.Collections.Generic;
 
 namespace $safeprojectname$
 {
