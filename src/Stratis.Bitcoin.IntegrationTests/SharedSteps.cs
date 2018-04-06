@@ -2,10 +2,9 @@
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.WaitForBlockStoreToSync(node);
           
-            balanceIncrease.Should().Be(CalculatReward(blockCount, node) + expectedFees);
+            balanceIncrease.Should().Be(node.CalculateProofOfWorkReward(blockCount) + expectedFees);
         }
 
         public void WaitForBlockStoreToSync(params CoreNode[] nodes)
@@ -68,29 +67,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i - 1], nodes[i]));
             }
-        }
-
-        private Money CalculatReward(int blockCount, CoreNode node)
-        {
-            // The reward fee below the SubsidyHalvingInterval (150 blocks) is different above.
-            // This function will compute the total based on both lower or higher bands.
-
-            var consensusValidator = node.FullNode.NodeService<IPowConsensusValidator>() as PowConsensusValidator;
-
-            Money reward;
-            int subsidyHalvingInterval = consensusValidator.ConsensusParams.SubsidyHalvingInterval;
-
-            if (blockCount < subsidyHalvingInterval)
-            {
-                reward = consensusValidator.GetProofOfWorkReward(blockCount) * blockCount;
-            }
-            else
-            {
-                reward = (consensusValidator.GetProofOfWorkReward(subsidyHalvingInterval - 1) * subsidyHalvingInterval)
-                            + (consensusValidator.GetProofOfWorkReward(blockCount) * (blockCount - (subsidyHalvingInterval + 1)));
-            }
-
-            return reward;
         }
     }
 }
