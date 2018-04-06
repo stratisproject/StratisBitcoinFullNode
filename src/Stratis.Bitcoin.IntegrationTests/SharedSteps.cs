@@ -29,26 +29,26 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.WaitForBlockStoreToSync(node);
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
+            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
-            Money balanceBeforeMining = node.FullNode.WalletManager()
+            var balanceBeforeMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
             Features.Wallet.Wallet wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
+            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
 
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
 
             node.GenerateStratisWithMiner(blockCount);
 
-            Money balanceAfterMining = node.FullNode.WalletManager()
+            var balanceAfterMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            Money balanceIncrease = balanceAfterMining - balanceBeforeMining;
+            var balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
             this.WaitForBlockStoreToSync(node);
           
