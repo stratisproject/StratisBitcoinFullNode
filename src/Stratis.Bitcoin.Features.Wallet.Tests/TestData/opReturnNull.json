@@ -1,0 +1,10 @@
+﻿{
+  "feeAmount": "0.0008",
+  "password": "abcd",
+  "walletName": "theWallet",
+  "accountName": "account 0",
+  "destinationAddress": "TL5piWp7xzJ1Uag5uTkkzJBUvG68n2dQBY",
+  "amount": "1.3",
+  "allowUnconfirmed": true,
+  "shuffleOutputs": true
+}

@@ -617,7 +617,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                request.Password)
+                request.Password, request.OpReturnData)
             {
                 TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                 MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
@@ -662,7 +662,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Outputs = new List<TransactionOutputModel>()
                 };
 
-                foreach (var output in transaction.Outputs)
+                foreach (var output in transaction.Outputs.Where(txOut => !txOut.ScriptPubKey.IsUnspendable))
                 {
                     model.Outputs.Add(new TransactionOutputModel
                     {
