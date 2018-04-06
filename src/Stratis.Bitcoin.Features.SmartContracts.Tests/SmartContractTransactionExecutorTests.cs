@@ -134,8 +134,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
-            var toAddress = new uint160(1);
-
             //Call smart contract and add to transaction-------------
             var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
             var transaction = new Transaction();
@@ -151,13 +149,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             deserializedCreate.Sender = senderAddress;
             //-------------------------------------------------------
 
-            this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
             var validator = new SmartContractValidator(new ISmartContractValidator[] { new SmartContractDeterminismValidator() });
 
             var executor = SmartContractExecutor.Initialize(deserializedCreate, this.decompiler, this.gasInjector, this.network, this.stateRepository, validator, this.keyEncodingStrategy, new Money(10000));
             ISmartContractExecutionResult result = executor.Execute(0, deserializedCreate.GetNewContractAddress());
 
-            var address1 = result.NewContractAddress;
+            uint160 address1 = result.NewContractAddress;
 
             // Create contract 2
 
@@ -183,13 +180,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             deserializedCreate.Sender = senderAddress;
             //-------------------------------------------------------
 
-            this.stateRepository.SetCode(new uint160(1), contractExecutionCode);
             validator = new SmartContractValidator(new ISmartContractValidator[] { new SmartContractDeterminismValidator() });
 
             executor = SmartContractExecutor.Initialize(deserializedCreate, this.decompiler, this.gasInjector, this.network, this.stateRepository, validator, this.keyEncodingStrategy, new Money(10000));
             result = executor.Execute(0, deserializedCreate.GetNewContractAddress());
 
-            var address2 = result.NewContractAddress;
+            uint160 address2 = result.NewContractAddress;
 
             // Invoke infinite loop
 
