@@ -1,16 +1,7 @@
 ﻿using Stratis.SmartContracts;
 
-public class SimpleAuction : SmartContract
+public class Auction : SmartContract
 {
-    public SimpleAuction(ISmartContractState smartContractState, ulong biddingBlocks)
-        : base(smartContractState)
-    {
-        Owner = Message.Sender;
-        AuctionEndBlock = Block.Number + biddingBlocks;
-        HasEnded = false;
-        PendingReturns = PersistentState.GetMapping<ulong>("PendingReturns");
-    }
-
     public Address Owner
     {
         get
@@ -23,15 +14,15 @@ public class SimpleAuction : SmartContract
         }
     }
 
-    public ulong AuctionEndBlock
+    public ulong EndBlock
     {
         get
         {
-            return PersistentState.GetObject<ulong>("AuctionEndBlock");
+            return PersistentState.GetObject<ulong>("EndBlock");
         }
         set
         {
-            PersistentState.SetObject<ulong>("AuctionEndBlock", value);
+            PersistentState.SetObject<ulong>("EndBlock", value);
         }
     }
 
@@ -59,8 +50,6 @@ public class SimpleAuction : SmartContract
         }
     }
 
-    public ISmartContractMapping<ulong> PendingReturns { get; set; }
-
     public bool HasEnded
     {
         get
@@ -73,13 +62,29 @@ public class SimpleAuction : SmartContract
         }
     }
 
+    public ISmartContractMapping<ulong> ReturnBalances
+    {
+        get
+        {
+            return PersistentState.GetMapping<ulong>("ReturnBalances");
+        }
+    }
+
+    public Auction(ISmartContractState smartContractState, ulong durationBlocks)
+    : base(smartContractState)
+    {
+        Owner = Message.Sender;
+        EndBlock = Block.Number + durationBlocks;
+        HasEnded = false;
+    }
+
     public void Bid()
     {
-        Assert(Block.Number < AuctionEndBlock);
+        Assert(Block.Number < EndBlock);
         Assert(Message.Value > HighestBid);
         if (HighestBid > 0)
         {
-            PendingReturns[HighestBidder] = HighestBid;
+            ReturnBalances[HighestBidder] = HighestBid;
         }
         HighestBidder = Message.Sender;
         HighestBid = Message.Value;
@@ -87,21 +92,20 @@ public class SimpleAuction : SmartContract
 
     public bool Withdraw()
     {
-        ulong amount = PendingReturns[Message.Sender];
+        ulong amount = ReturnBalances[Message.Sender];
         Assert(amount > 0);
-        PendingReturns[Message.Sender] = 0;
+        ReturnBalances[Message.Sender] = 0;
         ITransferResult transferResult = TransferFunds(Message.Sender, amount);
         if (!transferResult.Success)
-            PendingReturns[Message.Sender] = amount;
+            ReturnBalances[Message.Sender] = amount;
         return transferResult.Success;
     }
 
     public void AuctionEnd()
     {
-        Assert(Block.Number >= AuctionEndBlock);
+        Assert(Block.Number >= EndBlock);
         Assert(!HasEnded);
         HasEnded = true;
         TransferFunds(Owner, HighestBid);
     }
-
 }

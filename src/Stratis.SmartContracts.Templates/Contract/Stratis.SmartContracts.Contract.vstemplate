@@ -18,7 +18,7 @@
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="Stratis.SmartContract.Contract.csproj" File="Stratis.SmartContract.Contract.csproj" ReplaceParameters="true">
-      <ProjectItem ReplaceParameters="true" TargetFileName="Contract.cs">Contract.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="Auction.cs">Auction.cs</ProjectItem>
     </Project>
   </TemplateContent>
   <WizardExtension>
