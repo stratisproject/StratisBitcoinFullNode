@@ -221,6 +221,8 @@ namespace Stratis.SmartContracts.Core
 
             if (!this.Result.Revert)
             {
+                this.Result.NewContractAddress = newContractAddress;
+
                 // To start with, no value transfers on create. Can call other contracts but send 0 only.
                 this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
                 this.stateSnapshot.Commit();
