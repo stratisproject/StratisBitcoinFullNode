@@ -1,4 +1,6 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
@@ -7,30 +9,29 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
 {
     public static class CoreNodeExtensions
     {
-        /// <summary>
-        /// Calculates the proof of work reward fee taking into account the halving subsidy.
-        /// </summary>
-        /// <param name="blockCount">Count of blocks minded.</param>
-        /// <returns>A <see cref="Money"/> reward.</returns>
-        /// <remarks>This will compute the total based on both lower or higher bands.</remarks>
         public static Money CalculateProofOfWorkReward(this CoreNode node, int blockCount)
         {
             var consensusValidator = node.FullNode.NodeService<IPowConsensusValidator>() as PowConsensusValidator;
 
-            Money reward;
-            int subsidyHalvingInterval = consensusValidator.ConsensusParams.SubsidyHalvingInterval;
+            var groupedRewardsBySubsidyHalving = Enumerable.Range(0, blockCount)
+                .GroupBy(consensusValidator.ConsensusParams.SubsidyHalvingInterval - 1);
 
-            if (blockCount < subsidyHalvingInterval)
+            var rewardsPerGroup = new List<Money>();
+
+            foreach(var groupedReward in groupedRewardsBySubsidyHalving)
             {
-                reward = consensusValidator.GetProofOfWorkReward(blockCount) * blockCount;
-            }
-            else
-            {
-                reward = (consensusValidator.GetProofOfWorkReward(subsidyHalvingInterval - 1) * subsidyHalvingInterval)
-                            + (consensusValidator.GetProofOfWorkReward(blockCount) * (blockCount - (subsidyHalvingInterval + 1)));
+                rewardsPerGroup.Add(groupedReward.Count() * consensusValidator.GetProofOfWorkReward(groupedReward.Min() + 1));
             }
 
-            return reward;
+            return rewardsPerGroup.Sum();
+        }
+
+        private static IEnumerable<IGrouping<int, TSource>> GroupBy<TSource> (this IEnumerable<TSource> source, int itemsPerGroup)
+        {
+            return source.Zip(Enumerable.Range(0, source.Count()),
+                              (s, r) => new { Group = r / itemsPerGroup, Item = s })
+                         .GroupBy(i => i.Group, g => g.Item)
+                         .ToList();
         }
     }
 }
