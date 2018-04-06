@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.sharedSteps.WaitForBlockStoreToSync(this.nodes[NodeTwo], this.nodes[NodeOne]);
 
-            // Get 50 unused addresses from the receiver.
+            // Get 50 unused addresses from node two.
             IEnumerable<HdAddress> recevierAddresses = this.nodes[NodeTwo].FullNode.WalletManager()
                 .GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
 
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             transaction.Outputs.Count.Should().Be(51);
 
-            // Broadcast to the other node.
+            // Broadcast transaction to node two.
             this.nodes[NodeOne].FullNode.NodeService<WalletController>().
                 SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
@@ -131,8 +131,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node2_sends_funds_to_node1_FROM_fifty_addresses()
         {
-            // Send coins to the receiver.
-            var sendto = this.nodes[NodeOne].FullNode.WalletManager()
+            // Send coins to the node one.
+            HdAddress sendto = this.nodes[NodeOne].FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
             this.transactionBuildContext = new TransactionBuildContext(
@@ -146,15 +146,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     }
                 }.ToList(), WalletPassword);
 
-            // Check receiver has the correct inputs.
-            var trx = this.nodes[NodeTwo].FullNode.WalletTransactionHandler()
+            // Check node two has the correct inputs.
+            Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler()
                         .BuildTransaction(this.transactionBuildContext);
 
-            trx.Inputs.Count.Should().Be(50);
+            transaction.Inputs.Count.Should().Be(50);
 
             // Broadcast.
             this.nodes[NodeTwo].FullNode.NodeService<WalletController>()
-                .SendTransaction(new SendTransactionRequest(trx.ToHex()));
+                .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
             // Wait for the transaction to arrive.
             TestHelper.WaitLoop(() => this.nodes[NodeOne].FullNode.WalletManager()
