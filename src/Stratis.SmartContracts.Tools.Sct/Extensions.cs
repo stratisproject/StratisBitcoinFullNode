@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.SmartContracts.Tools.Validation
+namespace Stratis.SmartContracts.Tools.Sct
 {
     // Borrowed from Stratis.SmartContracts.Util
     public static class Extensions

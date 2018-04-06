@@ -1,4 +1,4 @@
-﻿namespace Stratis.SmartContracts.Tools.Validation.Report
+﻿namespace Stratis.SmartContracts.Tools.Sct.Report
 {
     /// <summary>
     /// The most basic compositional element of a report. Elements 

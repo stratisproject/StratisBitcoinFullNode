@@ -2,56 +2,33 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using Mono.Options;
+using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.Tools.Validation.Report;
-using Stratis.SmartContracts.Tools.Validation.Report.Sections;
+using Stratis.SmartContracts.Tools.Sct.Report;
+using Stratis.SmartContracts.Tools.Sct.Report.Sections;
 
-namespace Stratis.SmartContracts.Tools.Validation
+namespace Stratis.SmartContracts.Tools.Sct.Validation
 {
-    class Program
+    [Command(Description = "Validates smart contracts for structure and determinism")]
+    [HelpOption]
+    class Validator
     {
-        static void Main(string[] args)
+        [Argument(0, Description = "The paths of the files to validate", 
+            Name = "[FILES]")]
+        public List<string> InputFiles { get; }
+
+        [Option("-sb|--showbytes", CommandOptionType.NoValue,
+            Description = "Show contract compilation bytes")]
+        public bool ShowBytes { get; }
+
+        private int OnExecute(CommandLineApplication app)
         {
-            var inputFiles = new List<string>();
-            var showHelp = false;
-            var showVersion = false;
-            var showContractBytes = false;
-
-            var options = new OptionSet
+            if (!this.InputFiles.Any())
             {
-                { "i|input=", n => inputFiles.Add(n) },
-                { "sb|showbytes", b => showContractBytes = b != null },
-                { "v|version", v =>  showVersion = v != null },
-                { "h|help", h => showHelp = h != null }
-            };
-
-            List<string> extra;
-
-            try
-            {
-                extra = options.Parse(args);
-
-                if (args == null || !args.Any() || extra.Any() || showHelp)
-                {
-                    ShowHelp(options);
-                    return;
-                }
-
-                if (showVersion)
-                {
-                    ShowVersion();
-                    return;
-                }
-            }
-            catch (OptionException)
-            {
-                Console.WriteLine("Error parsing command line args");
-                return;
+                app.ShowHelp();
+                return 1;
             }
 
             Console.WriteLine("Smart Contract Validator");
@@ -63,7 +40,7 @@ namespace Stratis.SmartContracts.Tools.Validation
 
             var reportData = new List<ValidationReportData>();
 
-            foreach (string file in inputFiles)
+            foreach (string file in this.InputFiles)
             {
                 if (!File.Exists(file))
                 {
@@ -155,7 +132,7 @@ namespace Stratis.SmartContracts.Tools.Validation
             reportStructure.Add(new FormatSection());
             reportStructure.Add(new DeterminismSection());
 
-            if (showContractBytes)
+            if (this.ShowBytes)
                 reportStructure.Add(new ByteCodeSection());
 
             reportStructure.Add(new FooterSection());
@@ -166,28 +143,8 @@ namespace Stratis.SmartContracts.Tools.Validation
             {
                 renderer.Render(reportStructure, data);
             }
-        }
 
-        private static void ShowVersion()
-        {
-            Console.WriteLine("v0.0.1");
-        }
-
-        private static void ShowHelp(OptionSet options)
-        {
-            var builder = new StringBuilder();
-
-            builder.AppendLine("Validates a C# Smart Contract for execution on the Stratis Platform.");
-            builder.AppendLine("Usage:");
-            builder.AppendLine(" dotnet run <Stratis.SmartContracts.Tools.Validation.dll> [-i <path>] [-sb] [-v] [-h]");
-            builder.AppendLine();
-            builder.AppendLine("Command line arguments:");
-            builder.AppendLine("-i/input=<Path>           An input file. Can be specified multiple times.");
-            builder.AppendLine("-sb/showbytes             Show contract compilation bytes.");
-            builder.AppendLine("-v/version                Displays the current version.");
-            builder.AppendLine("-h/help                   Show this help.");
-
-            Console.Write(builder.ToString());
+            return 1;
         }
     }
 }

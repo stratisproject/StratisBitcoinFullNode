@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Stratis.SmartContracts.Tools.Validation.Report.Elements;
+using Stratis.SmartContracts.Tools.Sct.Report.Elements;
 
-namespace Stratis.SmartContracts.Tools.Validation.Report
+namespace Stratis.SmartContracts.Tools.Sct.Report
 {
     /// <summary>
     /// Renders report sections to a <see cref="T:System.IO.TextWriter" /> stream.

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Stratis.SmartContracts.Core.ContractValidation;
 
-namespace Stratis.SmartContracts.Tools.Validation.Report
+namespace Stratis.SmartContracts.Tools.Sct.Report
 {
     /// <summary>
     /// Defines the structure of the data contained in a smart contract validation report.

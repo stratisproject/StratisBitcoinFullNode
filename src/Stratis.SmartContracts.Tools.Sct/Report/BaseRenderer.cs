@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using Stratis.SmartContracts.Tools.Validation.Report.Elements;
+using Stratis.SmartContracts.Tools.Sct.Report.Elements;
 
-namespace Stratis.SmartContracts.Tools.Validation.Report
+namespace Stratis.SmartContracts.Tools.Sct.Report
 {
     /// <summary>
     /// Defines the concrete element types that must be implemented 

@@ -1,4 +1,4 @@
-﻿namespace Stratis.SmartContracts.Tools.Validation.Report.Elements
+﻿namespace Stratis.SmartContracts.Tools.Sct.Report.Elements
 {
     /// <summary>
     /// Represents a report element containing text.

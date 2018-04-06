@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Stratis.SmartContracts.Tools.Validation.Report
+namespace Stratis.SmartContracts.Tools.Sct.Report
 {
     /// <summary>
     /// A grouping of related elements in a report.
