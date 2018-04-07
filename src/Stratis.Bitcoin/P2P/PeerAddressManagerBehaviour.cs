@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.P2P
         public int PeersToDiscover { get; set; }
 
         /// <summary>
-        /// Flat to make sure <see cref="GetAddrPayload"/> is only sent once.
+        /// Flag to make sure <see cref="GetAddrPayload"/> is only sent once.
         /// </summary>
         private bool SentAddress;
 
