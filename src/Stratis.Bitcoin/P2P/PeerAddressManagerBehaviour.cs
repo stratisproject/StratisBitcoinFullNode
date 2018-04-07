@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
+    /// Behavior implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
     /// Subscribes to state change events from <see cref="INetworkPeer"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
@@ -36,6 +36,11 @@ namespace Stratis.Bitcoin.P2P
         /// <see cref="PeerDiscovery"/> stops finding new ones.
         /// </summary>
         public int PeersToDiscover { get; set; }
+
+        /// <summary>
+        /// Flat to make sure <see cref="GetAddrPayload"/> is only sent once.
+        /// </summary>
+        private bool SentAddress;
 
         public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
@@ -66,11 +71,12 @@ namespace Stratis.Bitcoin.P2P
             {
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    if (message.Message.Payload is GetAddrPayload)
+                    if ((message.Message.Payload is GetAddrPayload) && (!this.SentAddress))
                     {
                         var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.Endpoint).ToArray();
                         var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
+                        this.SentAddress = true;
                     }
 
                     if (message.Message.Payload is PingPayload ping || message.Message.Payload is PongPayload pong)
