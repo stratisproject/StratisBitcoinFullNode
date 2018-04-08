@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_HeaderTimestampSameAsFutureDriftLimit_WithoutReducedDrift_ThrowsBlockTimestampTooFarConsensusErrorAsync()
+        public async Task RunAsync_HeaderTimestampSameAsFutureDriftLimit_WithoutReducedDrift_DoesNotThrowExceptionAsync()
         {
             var ruleContext = new RuleContext()
             {
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_HeaderTimestampSameAsFutureDriftLimit_WithReducedDrift_ThrowsBlockTimestampTooFarConsensusErrorAsync()
+        public async Task RunAsync_HeaderTimestampSameAsFutureDriftLimit_WithReducedDrift_DoesNotThrowExceptionAsync()
         {
             var ruleContext = new RuleContext()
             {
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_HeaderTimestampBelowFutureDriftLimit_WithoutReducedDrift_ThrowsBlockTimestampTooFarConsensusErrorAsync()
+        public async Task RunAsync_HeaderTimestampBelowFutureDriftLimit_WithoutReducedDrift_DoesNotThrowExceptionAsync()
         {
             var ruleContext = new RuleContext()
             {
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_HeaderTimestampBelowFutureDriftLimit_WithReducedDrift_ThrowsBlockTimestampTooFarConsensusErrorAsync()
+        public async Task RunAsync_HeaderTimestampBelowFutureDriftLimit_WithReducedDrift_DoesNotThrowExceptionAsync()
         {
             var ruleContext = new RuleContext()
             {
