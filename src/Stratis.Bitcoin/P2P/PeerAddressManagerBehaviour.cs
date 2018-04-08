@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Behavior implementation that encapsulates <see cref="IPeerAddressManager"/>.
+    /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
     /// Subscribes to state change events from <see cref="INetworkPeer"/> and relays connection and handshake attempts to
     /// the <see cref="IPeerAddressManager"/> instance.
