@@ -41,10 +41,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
+        /// <param name="agentVersion">The nodes user agent version that will be shared with peers.</param>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
-            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
+            string agent = "StratisBitcoin", string agentVersion = null, string[] args = null, bool loadConfiguration = true)
         {
             this.Agent = agent;
+            this.AgentVersion = agentVersion;
             this.Network = innerNetwork;
             this.ProtocolVersion = protocolVersion;
 
@@ -150,6 +152,9 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
         public string Agent { get; set; }
+
+        /// <summary>The node's user agent version that will be shared with peers in the version handshake. If not supplied, the assembly version of Stratis.Bitcoin class library will be used.</summary>
+        public string AgentVersion { get; set; }
 
         /// <summary>Minimum transaction fee for network.</summary>
         public FeeRate MinTxFeeRate { get; set; }
