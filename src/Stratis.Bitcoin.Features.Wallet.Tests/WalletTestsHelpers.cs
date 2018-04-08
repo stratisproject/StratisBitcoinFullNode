@@ -402,7 +402,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         {
                             BlockHeight = height,
                             Amount = new Money(new Random().Next(500000, 1000000)),
-                            SpendingDetails = new SpendingDetails()
+                            SpendingDetails = new SpendingDetails(),
+                            Id = new uint256()
                         }
                     }
                 };
