@@ -19,22 +19,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    ChainedBlock = this.concurrentChain.Tip
-                },
-                CheckPow = false,
-                Consensus = this.network.Consensus
-            };
-            ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
+            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.Tip;
+            this.ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
+            this.ruleContext.CheckPow = false;
+            this.ruleContext.Consensus = this.network.Consensus;
 
-            var rule = this.consensusRules.RegisterRule<CalculateWorkRule>();
+            await this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext);
 
-            await rule.RunAsync(ruleContext);
-
-            Assert.Equal(0.465, ruleContext.NextWorkRequired.Difficulty);
+            Assert.Equal(0.465, this.ruleContext.NextWorkRequired.Difficulty);
         }
 
         [Fact]
@@ -44,52 +36,35 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    ChainedBlock = this.concurrentChain.Tip
-                },
-                CheckPow = true,
-                Consensus = this.network.Consensus
-            };
-            ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
+            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.Tip;
+            this.ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
+            this.ruleContext.CheckPow = true;
+            this.ruleContext.Consensus = this.network.Consensus;
 
-            var rule = this.consensusRules.RegisterRule<CalculateWorkRule>();
+            await this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext);
 
-            await rule.RunAsync(ruleContext);
-
-            Assert.Equal(0.465, ruleContext.NextWorkRequired.Difficulty);
+            Assert.Equal(0.465, this.ruleContext.NextWorkRequired.Difficulty);
         }
 
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
+            this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
-                var ruleContext = new RuleContext()
-                {                   
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new NBitcoin.Block()
-                        {
-                            Transactions = new List<NBitcoin.Transaction>()
+                Block = new Block()
+                {
+                    Transactions = new List<Transaction>()
                         {
                             new NBitcoin.Transaction()
                         }
-                        },
-                        ChainedBlock = this.concurrentChain.GetBlock(4)
-                    },
-                    CheckPow = true
-                };
+                },
+                ChainedBlock = this.concurrentChain.GetBlock(4)
+            };
+            this.ruleContext.CheckPow = true;
 
-                var rule = this.consensusRules.RegisterRule<CalculateWorkRule>();
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext));
 
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.HighHash.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.HighHash.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }
     }
 }

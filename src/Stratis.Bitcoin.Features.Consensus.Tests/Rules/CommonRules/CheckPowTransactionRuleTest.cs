@@ -22,202 +22,148 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void CheckTransaction_NoInputs_ThrowsBadTransactionNoInputConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {                
-                var transaction = new Transaction();
-                transaction.Inputs.Clear();
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            var transaction = new Transaction();
+            transaction.Inputs.Clear();
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionNoInput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNoInput.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNoInput, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_NoOutputs_ThrowsBadTransactionNoOutputConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
-                transaction.Outputs.Clear();
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
+            transaction.Outputs.Clear();
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionNoOutput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNoOutput.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNoOutput, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_TransactionOverSized_ThrowsBadTransactionOversizeConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn());
-                transaction = GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness);
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn());
+            transaction = GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness);
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionOversize.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionOversize.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionOversize, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_TxOutNegativeValue_ThrowsBadTransactionNegativeOutputConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn());
-                transaction.Outputs.Add(new TxOut(new Money(-1), (IDestination)null));
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn());
+            transaction.Outputs.Add(new TxOut(new Money(-1), (IDestination)null));
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionNegativeOutput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNegativeOutput.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNegativeOutput, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_TxOutValueAboveMaxMoney_ThrowsBadTransactionTooLargeOutputConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn());
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney + 1), (IDestination)null));
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn());
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney + 1), (IDestination)null));
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionTooLargeOutput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionTooLargeOutput.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionTooLargeOutput, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_TotalTxOutValueAboveMaxMoney_ThrowsBadTransactionTooLargeTotalOutputConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn());
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-                transaction.Outputs.Add(new TxOut(new Money((this.options.MaxMoney / 2) + 1), (IDestination)null));
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn());
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money((this.options.MaxMoney / 2) + 1), (IDestination)null));
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionTooLargeTotalOutput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionTooLargeTotalOutput.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionTooLargeTotalOutput, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_DuplicateTxInOutPoint_ThrowsBadTransactionDuplicateInputsConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(1500), 15)));
-                transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(1500), 15)));
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(1500), 15)));
+            transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(1500), 15)));
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionDuplicateInputs.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionDuplicateInputs.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionDuplicateInputs, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_CoinBaseTransactionWithBadCoinBaseSizeSmaller_ThrowsBadCoinbaseSizeConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 1).Select(c => (byte)c).ToArray())));
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-                Assert.True(transaction.IsCoinBase);
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 1).Select(c => (byte)c).ToArray())));
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            Assert.True(transaction.IsCoinBase);
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadCoinbaseSize.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadCoinbaseSize.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadCoinbaseSize, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_CoinBaseTransactionWithBadCoinBaseSizeLarger_ThrowsBadCoinbaseSizeConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 101).Select(c => (byte)c).ToArray())));
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-                Assert.True(transaction.IsCoinBase);
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 101).Select(c => (byte)c).ToArray())));
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            Assert.True(transaction.IsCoinBase);
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadCoinbaseSize.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadCoinbaseSize.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadCoinbaseSize, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_NonCoinBaseTransaction_WithTxInNullPrevout_ThrowsBadTransactionNullPrevoutConsensusErrorsException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
-            {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(15), 1)));
-                transaction.Inputs.Add(new TxIn(new OutPoint()));
-                transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-                Assert.False(transaction.IsCoinBase);
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(15), 1)));
+            transaction.Inputs.Add(new TxIn(new OutPoint()));
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            Assert.False(transaction.IsCoinBase);
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-                rule.CheckTransaction(this.options, transaction);
-            });
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction));
 
-            Assert.Equal(ConsensusErrors.BadTransactionNullPrevout.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNullPrevout.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNullPrevout, exception.ConsensusError);
         }
 
         [Fact]
         public void CheckTransaction_ZeroMoneyTxOut_DoesNotThrowException()
         {
-
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
             transaction.Outputs.Add(new TxOut(new Money(0), (IDestination)null));
 
-            var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-            rule.CheckTransaction(this.options, transaction);
+            this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction);
         }
 
         [Fact]
         public void CheckTransaction_MaxMoneyTxOut_DoesNotThrowException()
         {
-
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney), (IDestination)null));
 
-            var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-            rule.CheckTransaction(this.options, transaction);
+            this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction);
         }
 
         [Fact]
@@ -228,8 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
 
-            var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-            rule.CheckTransaction(this.options, transaction);
+            this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction);
         }
 
         [Fact]
@@ -240,8 +185,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
-            var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-            rule.CheckTransaction(this.options, transaction);
+            this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction);
         }
 
         [Fact]
@@ -252,8 +196,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
-            var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-            rule.CheckTransaction(this.options, transaction);
+            this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.options, transaction);
         }
 
         [Fact]
@@ -262,56 +205,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));            
+            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
 
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = new Block()
-                },
-                Consensus = this.network.Consensus
-            };
-
-            ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-            ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.Consensus = this.network.Consensus;
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
             var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
 
-            await rule.RunAsync(ruleContext);
+            await rule.RunAsync(this.ruleContext);
         }
 
         [Fact]
         public async Task RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var validTransaction = new Transaction();
-                validTransaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
-                validTransaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-                validTransaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            var validTransaction = new Transaction();
+            validTransaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
+            validTransaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            validTransaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
 
-                var invalidTransaction = new Transaction();
+            var invalidTransaction = new Transaction();
 
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new Block()
-                    },
-                    Consensus = this.network.Consensus
-                };                
+            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.Consensus = this.network.Consensus;
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(validTransaction);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(invalidTransaction);
 
-                ruleContext.BlockValidationContext.Block.Transactions.Add(validTransaction);
-                ruleContext.BlockValidationContext.Block.Transactions.Add(invalidTransaction);
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
 
-                var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
-
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadTransactionNoInput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNoInput.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNoInput, exception.ConsensusError);
         }
 
         private Transaction GenerateTransactionWithWeight(Transaction transaction, int weight, NetworkOptions options)

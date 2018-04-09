@@ -12,119 +12,73 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         public TransactionLocktimeActivationRuleTest() : base()
         {
-
+            this.ruleContext.BlockValidationContext.Block = new Block();
         }
 
         [Fact]
         public async Task RunAsync_DoesNotHaveBIP113Flag_TransactionNotFinal_ThrowsBadTransactionNonFinalConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    Flags = new Base.Deployments.DeploymentFlags(),
-                    BestBlock = new ContextBlockInformation()
-                    {
-                        Height = 12,
-                    },
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new NBitcoin.Block()
-                    },
-                };
+            this.ruleContext.Flags = new Base.Deployments.DeploymentFlags();
+            this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 12, };
 
-                var transaction = new Transaction();
-                transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
-                transaction.Inputs.Add(new TxIn() { Sequence = 15 });
-                ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
-                ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            var transaction = new Transaction();
+            transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
+            transaction.Inputs.Add(new TxIn() { Sequence = 15 });
+            this.ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
+            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
-                var rule = this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>();
-                return rule.RunAsync(ruleContext);
-            });
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
 
-            Assert.Equal(ConsensusErrors.BadTransactionNonFinal.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNonFinal.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNonFinal, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_HasBIP113Flag_TransactionNotFinal_ThrowsBadTransactionNonFinalConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
+            this.ruleContext.Flags = new Base.Deployments.DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.MedianTimePast };
+            this.ruleContext.BestBlock = new ContextBlockInformation()
             {
-                var ruleContext = new RuleContext()
-                {
-                    Flags = new Base.Deployments.DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.MedianTimePast },
-                    BestBlock = new ContextBlockInformation()
-                    {
-                        Height = 12,
-                        MedianTimePast = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc))
-                    },
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new NBitcoin.Block()
-                    },
-                };
+                Height = 12,
+                MedianTimePast = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+            };
 
-                var transaction = new Transaction();
-                transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
-                transaction.Inputs.Add(new TxIn() { Sequence = 15 });
-                ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
+            var transaction = new Transaction();
+            transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
+            transaction.Inputs.Add(new TxIn() { Sequence = 15 });
+            this.ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
 
-                var rule = this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>();
-                return rule.RunAsync(ruleContext);
-            });
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
 
-            Assert.Equal(ConsensusErrors.BadTransactionNonFinal.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionNonFinal.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadTransactionNonFinal, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_DoesNotHaveBIP113Flag_TransactionFinal_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
-            {
-                Flags = new Base.Deployments.DeploymentFlags(),
-                BestBlock = new ContextBlockInformation()
-                {
-                    Height = 12,
-                },
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = new NBitcoin.Block()
-                },
-            };
+            this.ruleContext.Flags = new Base.Deployments.DeploymentFlags();
+            this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 12, };
 
             var transaction = new Transaction();
-            ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
-            ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            this.ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
+            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
-            var rule = this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>();
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext);
         }
 
         [Fact]
         public async Task RunAsync_HasBIP113Flag_TransactionFinal_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
+            this.ruleContext.Flags = new Base.Deployments.DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.MedianTimePast };
+            this.ruleContext.BestBlock = new ContextBlockInformation()
             {
-                Flags = new Base.Deployments.DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.MedianTimePast },
-                BestBlock = new ContextBlockInformation()
-                {
-                    Height = 12,
-                    MedianTimePast = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc))
-                },
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = new NBitcoin.Block()
-                },
+                Height = 12,
+                MedianTimePast = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc))
             };
 
             var transaction = new Transaction();
-            ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
+            this.ruleContext.BlockValidationContext.Block.AddTransaction(transaction);
 
-            var rule = this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>();
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext);
         }
     }
 }

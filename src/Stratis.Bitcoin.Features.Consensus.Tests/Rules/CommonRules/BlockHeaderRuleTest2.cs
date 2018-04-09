@@ -28,24 +28,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = this.concurrentChain.GetBlock(3).HashBlock; // invalid
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = block
-                    },
-                    ConsensusTip = this.concurrentChain.Tip
-                };
+            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
+            
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext));
 
-                var rule = this.consensusRules.RegisterRule<BlockHeaderRule>();
-
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.InvalidPrevTip.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.InvalidPrevTip.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.InvalidPrevTip, exception.ConsensusError);
         }
 
         [Fact]
@@ -59,20 +47,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = block
-                },
-                ConsensusTip = tip
-            };
+            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ConsensusTip = tip;
+            
+            await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
-            var rule = this.consensusRules.RegisterRule<BlockHeaderRule>();
-
-            await rule.RunAsync(ruleContext);
-
-            var chainedBlock = ruleContext.BlockValidationContext.ChainedBlock;
+            var chainedBlock = this.ruleContext.BlockValidationContext.ChainedBlock;
             Assert.IsType<ChainedBlock>(chainedBlock);
 
             Assert.Equal(block.Header.GetHash(), chainedBlock.HashBlock);
@@ -93,29 +73,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = block
-                },
-                ConsensusTip = tip
-            };
+            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ConsensusTip = tip;
 
             this.dateTimeProvider.Setup(d => d.GetTimeOffset())
                 .Returns(new DateTimeOffset(new DateTime(2017, 1, 1, 1, 1, 1)))
                 .Verifiable();
 
-            var rule = this.consensusRules.RegisterRule<BlockHeaderRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
             this.dateTimeProvider.Verify();
-            var chainedBlock = ruleContext.BlockValidationContext.ChainedBlock;
-            Assert.Equal(new DateTimeOffset(new DateTime(2017, 1, 1, 1, 1, 1)), ruleContext.Time);
-            Assert.Equal(chainedBlock.Previous.GetMedianTimePast(), ruleContext.BestBlock.MedianTimePast);
-            Assert.Equal(tip.Height, ruleContext.BestBlock.Height);
-            Assert.Equal(tip.Header.GetHash(), ruleContext.BestBlock.Header.GetHash());
+            var chainedBlock = this.ruleContext.BlockValidationContext.ChainedBlock;
+            Assert.Equal(new DateTimeOffset(new DateTime(2017, 1, 1, 1, 1, 1)), this.ruleContext.Time);
+            Assert.Equal(chainedBlock.Previous.GetMedianTimePast(), this.ruleContext.BestBlock.MedianTimePast);
+            Assert.Equal(tip.Height, this.ruleContext.BestBlock.Height);
+            Assert.Equal(tip.Header.GetHash(), this.ruleContext.BestBlock.Header.GetHash());
         }
 
         [Fact]
@@ -130,25 +102,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(5));
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
+            
+            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
 
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = block
-                },
-                ConsensusTip = this.concurrentChain.Tip
-            };
+            await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
-            var rule = this.consensusRules.RegisterRule<BlockHeaderRule>();
-
-            await rule.RunAsync(ruleContext);
-
-            Assert.NotNull(ruleContext.Flags);
-            Assert.True(ruleContext.Flags.EnforceBIP30);
-            Assert.False(ruleContext.Flags.EnforceBIP34);
-            Assert.Equal(LockTimeFlags.None, ruleContext.Flags.LockTimeFlags);
-            Assert.Equal(ScriptVerify.Mandatory, ruleContext.Flags.ScriptFlags);
+            Assert.NotNull(this.ruleContext.Flags);
+            Assert.True(this.ruleContext.Flags.EnforceBIP30);
+            Assert.False(this.ruleContext.Flags.EnforceBIP34);
+            Assert.Equal(LockTimeFlags.None, this.ruleContext.Flags.LockTimeFlags);
+            Assert.Equal(ScriptVerify.Mandatory, this.ruleContext.Flags.ScriptFlags);
         }
     }
 }

@@ -29,8 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.True(transaction.IsCoinBase);
             Assert.True(transaction.Outputs.All(t => t.IsEmpty));
 
-            var rule = this.consensusRules.RegisterRule<CheckPosTransactionRule>();
-            rule.CheckTransaction(transaction);
+            this.consensusRules.RegisterRule<CheckPosTransactionRule>().CheckTransaction(transaction);
         }
 
         [Fact]
@@ -48,8 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.True(transaction.IsCoinStake);
             Assert.True(transaction.Outputs.All(t => t.IsEmpty));
 
-            var rule = this.consensusRules.RegisterRule<CheckPosTransactionRule>();
-            rule.CheckTransaction(transaction);
+            this.consensusRules.RegisterRule<CheckPosTransactionRule>().CheckTransaction(transaction);
         }
 
         [Fact]
@@ -65,33 +63,27 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.False(transaction.Outputs[0].IsEmpty);
 
-            var rule = this.consensusRules.RegisterRule<CheckPosTransactionRule>();
-            rule.CheckTransaction(transaction);
+            this.consensusRules.RegisterRule<CheckPosTransactionRule>().CheckTransaction(transaction);
         }
 
         [Fact]
         public void CheckTransaction_TxOutsArePartiallyEmpty_TransactionNotCoinBaseOrCoinStake_ThrowsBadTransactionEmptyOutputConsensusErrorException()
         {
-            var exception = Assert.Throws<ConsensusErrorException>(() =>
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn()
             {
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn()
-                {
-                    PrevOut = new OutPoint(new uint256(15), 1),
-                    ScriptSig = new Script()
-                });
-                transaction.Outputs.Add(new TxOut(new Money(150), (IDestination)null));
-                transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
-
-                Assert.False(transaction.IsCoinBase);
-                Assert.False(transaction.IsCoinStake);
-
-                var rule = this.consensusRules.RegisterRule<CheckPosTransactionRule>();
-                rule.CheckTransaction(transaction);
+                PrevOut = new OutPoint(new uint256(15), 1),
+                ScriptSig = new Script()
             });
+            transaction.Outputs.Add(new TxOut(new Money(150), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
 
-            Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput.Message, exception.ConsensusError.Message);
+            Assert.False(transaction.IsCoinBase);
+            Assert.False(transaction.IsCoinStake);
+
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPosTransactionRule>().CheckTransaction(transaction));
+
+            Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput, exception.ConsensusError);
         }
 
         [Fact]
@@ -119,57 +111,42 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
             ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var rule = this.consensusRules.RegisterRule<CheckPosTransactionRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<CheckPosTransactionRule>().RunAsync(ruleContext);
         }
 
         [Fact]
         public async Task RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
+            var validTransaction = new Transaction();
+            validTransaction.Inputs.Add(new TxIn()
             {
-                var validTransaction = new Transaction();
-                validTransaction.Inputs.Add(new TxIn()
-                {
-                    PrevOut = new OutPoint(),
-                    ScriptSig = new Script()
-                });
-                validTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
-
-                Assert.True(validTransaction.IsCoinBase);
-                Assert.True(validTransaction.Outputs.All(t => t.IsEmpty));
-
-                var invalidTransaction = new Transaction();
-                invalidTransaction.Inputs.Add(new TxIn()
-                {
-                    PrevOut = new OutPoint(new uint256(15), 1),
-                    ScriptSig = new Script()
-                });
-                invalidTransaction.Outputs.Add(new TxOut(new Money(150), (IDestination)null));
-                invalidTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
-
-                Assert.False(invalidTransaction.IsCoinBase);
-                Assert.False(invalidTransaction.IsCoinStake);
-
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new Block()
-                    }
-                };
-
-                ruleContext.BlockValidationContext.Block.Transactions.Add(validTransaction);
-                ruleContext.BlockValidationContext.Block.Transactions.Add(invalidTransaction);
-
-                var rule = this.consensusRules.RegisterRule<CheckPosTransactionRule>();
-
-                return rule.RunAsync(ruleContext);
+                PrevOut = new OutPoint(),
+                ScriptSig = new Script()
             });
+            validTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
 
-            Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput.Message, exception.ConsensusError.Message);
+            Assert.True(validTransaction.IsCoinBase);
+            Assert.True(validTransaction.Outputs.All(t => t.IsEmpty));
+
+            var invalidTransaction = new Transaction();
+            invalidTransaction.Inputs.Add(new TxIn()
+            {
+                PrevOut = new OutPoint(new uint256(15), 1),
+                ScriptSig = new Script()
+            });
+            invalidTransaction.Outputs.Add(new TxOut(new Money(150), (IDestination)null));
+            invalidTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
+
+            Assert.False(invalidTransaction.IsCoinBase);
+            Assert.False(invalidTransaction.IsCoinStake);
+
+            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(validTransaction);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(invalidTransaction);
+
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPosTransactionRule>().RunAsync(this.ruleContext));
+
+            Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput, exception.ConsensusError);
         }
     }
 }

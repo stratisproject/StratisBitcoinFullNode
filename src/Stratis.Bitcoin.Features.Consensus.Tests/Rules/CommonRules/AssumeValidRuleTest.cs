@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public void Initialize_CheckpointsRuleNotInConsensusRules_ThrowExceptions()
+        public void Initialize_CheckpointsRuleNotInConsensusRules_ThrowException()
         {
             Assert.Throws<Exception>(() =>
             {
@@ -38,7 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             var rule = this.consensusRules.RegisterRule<AssumeValidRule>();
 
-            Assert.True(rule.RunAsync(new RuleContext() { SkipValidation = true }).GetAwaiter().IsCompleted);
+            this.ruleContext.SkipValidation = true;
+            Assert.True(rule.RunAsync(this.ruleContext).GetAwaiter().IsCompleted);
         }
 
         [Fact]
@@ -48,10 +49,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules.RegisterRule<CheckpointsRule>();
 
             var rule = this.consensusRules.RegisterRule<AssumeValidRule>();
-            var ruleContext = new RuleContext() { SkipValidation = false };
+            this.ruleContext.SkipValidation = false;
 
-            Assert.True(rule.RunAsync(ruleContext).GetAwaiter().IsCompleted);
-            Assert.False(ruleContext.SkipValidation);
+            Assert.True(rule.RunAsync(this.ruleContext).GetAwaiter().IsCompleted);
+            Assert.False(this.ruleContext.SkipValidation);
         }
 
         [Fact]
@@ -61,10 +62,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules.RegisterRule<CheckpointsRule>();
 
             var rule = this.consensusRules.RegisterRule<AssumeValidRule>();
-            var ruleContext = new RuleContext() { SkipValidation = false };
+            this.ruleContext.SkipValidation = false;
 
-            Assert.True(rule.RunAsync(ruleContext).GetAwaiter().IsCompleted);
-            Assert.False(ruleContext.SkipValidation);
+            Assert.True(rule.RunAsync(this.ruleContext).GetAwaiter().IsCompleted);
+            Assert.False(this.ruleContext.SkipValidation);
         }
 
         [Fact]
@@ -77,17 +78,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules.RegisterRule<CheckpointsRule>();
 
             var rule = this.consensusRules.RegisterRule<AssumeValidRule>();
-            var ruleContext = new RuleContext()
-            {
-                SkipValidation = false,
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    ChainedBlock = this.concurrentChain.GetBlock(5)
-                }
-            };
+            this.ruleContext.SkipValidation = false;
+            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(5);
 
-            Assert.True(rule.RunAsync(ruleContext).GetAwaiter().IsCompleted);
-            Assert.True(ruleContext.SkipValidation);
+            Assert.True(rule.RunAsync(this.ruleContext).GetAwaiter().IsCompleted);
+            Assert.True(this.ruleContext.SkipValidation);
         }
 
         [Fact]
@@ -100,17 +95,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules.RegisterRule<CheckpointsRule>();
 
             var rule = this.consensusRules.RegisterRule<AssumeValidRule>();
-            var ruleContext = new RuleContext()
-            {
-                SkipValidation = false,
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    ChainedBlock = this.concurrentChain.GetBlock(10)
-                }
-            };
+            this.ruleContext.SkipValidation = false;
+            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(10);
 
-            Assert.True(rule.RunAsync(ruleContext).GetAwaiter().IsCompleted);
-            Assert.True(ruleContext.SkipValidation);
+            Assert.True(rule.RunAsync(this.ruleContext).GetAwaiter().IsCompleted);
+            Assert.True(this.ruleContext.SkipValidation);
         }
 
         [Fact]
@@ -123,17 +112,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules.RegisterRule<CheckpointsRule>();
 
             var rule = this.consensusRules.RegisterRule<AssumeValidRule>();
-            var ruleContext = new RuleContext()
-            {
-                SkipValidation = false,
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    ChainedBlock = this.concurrentChain.GetBlock(10)
-                }
-            };
+            this.ruleContext.SkipValidation = false;
+            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(10);
 
-            Assert.True(rule.RunAsync(ruleContext).GetAwaiter().IsCompleted);
-            Assert.False(ruleContext.SkipValidation);
+            Assert.True(rule.RunAsync(this.ruleContext).GetAwaiter().IsCompleted);
+            Assert.False(this.ruleContext.SkipValidation);
         }
     }
 }

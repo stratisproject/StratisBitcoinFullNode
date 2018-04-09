@@ -17,210 +17,110 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public BlockSizeRuleTest() : base()
         {
             this.options = this.network.Consensus.Option<PowConsensusOptions>();
+            this.ruleContext.Consensus = this.network.Consensus;
         }
 
         [Fact]
         public async Task RunAsync_BadBlockWeight_ThrowsBadBlockWeightConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) + 1, this.network.Consensus.NetworkOptions)
-                    },
-                    Consensus = this.network.Consensus,
-                };
+            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) + 1, this.network.Consensus.NetworkOptions);
 
-                var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadBlockWeight.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadBlockWeight.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadBlockWeight, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_ZeroTransactions_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new Block()
-                    },
-                    Consensus = this.network.Consensus,
-                };
+            this.ruleContext.BlockValidationContext.Block = new Block();
 
-                var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadBlockLength.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadBlockLength.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadBlockLength, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_TransactionCountAboveMaxBlockBaseSize_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
+            this.ruleContext.BlockValidationContext.Block = new Block();
+
+            for (var i = 0; i < this.options.MaxBlockBaseSize + 1; i++)
             {
+                this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+            }
 
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new Block()
-                    },
-                    Consensus = this.network.Consensus,
-                };
+            int blockWeight = this.CalculateBlockWeight(this.ruleContext.BlockValidationContext.Block, this.network.Consensus.NetworkOptions);
 
-                for (var i = 0; i < this.options.MaxBlockBaseSize + 1; i++)
-                {
-                    ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
-                }
+            // increase max block weight to be able to hit this if statement
+            this.options.MaxBlockWeight = (blockWeight * 4) + 100;
 
-                int blockWeight = this.CalculateBlockWeight(ruleContext.BlockValidationContext.Block, this.network.Consensus.NetworkOptions);
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
-                // increase max block weight to be able to hit this if statement
-                this.options.MaxBlockWeight = (blockWeight * 4) + 100;
-
-                var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadBlockLength.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadBlockLength.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadBlockLength, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_BlockSizeAboveMaxBlockBaseSize_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
+            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize + 1, this.network.Consensus.NetworkOptions);
+            int blockWeight = this.CalculateBlockWeight(this.ruleContext.BlockValidationContext.Block, this.network.Consensus.NetworkOptions);
 
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize + 1, this.network.Consensus.NetworkOptions)
-                    },
-                    Consensus = this.network.Consensus,
-                };
+            // increase max block weight to be able to hit this if statement
+            this.options.MaxBlockWeight = (blockWeight * 4) + 1;
 
-                int blockWeight = this.CalculateBlockWeight(ruleContext.BlockValidationContext.Block, this.network.Consensus.NetworkOptions);
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
-                // increase max block weight to be able to hit this if statement
-                this.options.MaxBlockWeight = (blockWeight * 4) + 1;
-
-                var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadBlockLength.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadBlockLength.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadBlockLength, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_AtBlockWeight_BelowMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = GenerateBlockWithWeight(this.options.MaxBlockWeight / this.options.WitnessScaleFactor, this.network.Consensus.NetworkOptions)
-                },
-                Consensus = this.network.Consensus
-            };
+            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockWeight / this.options.WitnessScaleFactor, this.network.Consensus.NetworkOptions);
             this.options.MaxBlockBaseSize = this.options.MaxBlockWeight + 1000;
 
-            var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
         }
 
         [Fact]
         public async Task RunAsync_BelowBlockWeight_BelowMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) - 1, this.network.Consensus.NetworkOptions)
-                },
-                Consensus = this.network.Consensus
-            };
+            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) - 1, this.network.Consensus.NetworkOptions);
             this.options.MaxBlockBaseSize = this.options.MaxBlockWeight + 1000;
 
-            var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
         }
 
         [Fact]
         public async Task TaskAsync_TransactionCountBelowLimit_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = new Block()
-                },
-                Consensus = this.network.Consensus,
-            };
+            this.ruleContext.BlockValidationContext.Block = new Block();
 
             for (var i = 0; i < 10; i++)
             {
-                ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+                this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
             }
 
-            var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
         }
-
 
         [Fact]
         public async Task RunAsync_BlockAtMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize, this.network.Consensus.NetworkOptions)
-                },
-                Consensus = this.network.Consensus
-            };
+            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize, this.network.Consensus.NetworkOptions);
             this.options.MaxBlockWeight = (this.options.MaxBlockBaseSize * 4) + 1000;
 
-            var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
         }
 
         [Fact]
         public async Task RunAsync_BlockBelowMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize - 1, this.network.Consensus.NetworkOptions)
-                },
-                Consensus = this.network.Consensus
-            };
+            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize - 1, this.network.Consensus.NetworkOptions);
             this.options.MaxBlockWeight = (this.options.MaxBlockBaseSize * 4) + 1000;
 
-            var rule = this.consensusRules.RegisterRule<BlockSizeRule>();
-
-            await rule.RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
         }
 
         private Block GenerateBlockWithWeight(int weight, NetworkOptions options)

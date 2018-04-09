@@ -17,103 +17,59 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockWithoutTransactions_ThrowsBadCoinbaseMissingConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new NBitcoin.Block()
-                    }
-                };
+            this.ruleContext.BlockValidationContext.Block = new Block();
 
-                var rule = this.consensusRules.RegisterRule<EnsureCoinbaseRule>();
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
 
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadCoinbaseMissing.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadCoinbaseMissing.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadCoinbaseMissing, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_FirstTransactionIsNotCoinbase_ThrowsBadCoinbaseMissingConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new NBitcoin.Block()
-                    }
-                };
+            this.ruleContext.BlockValidationContext.Block = new Block();
 
-                var transaction = new Transaction();
-                Assert.False(transaction.IsCoinBase);
-                ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            var transaction = new Transaction();
+            Assert.False(transaction.IsCoinBase);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-                var rule = this.consensusRules.RegisterRule<EnsureCoinbaseRule>();
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
 
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadCoinbaseMissing.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadCoinbaseMissing.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.BadCoinbaseMissing, exception.ConsensusError);
         }
 
         [Fact]
         public async Task RunAsync_MultipleCoinsBaseTransactions_ThrowsBadMultipleCoinbaseConsensusErrorExceptionAsync()
         {
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() =>
-            {
-                var ruleContext = new RuleContext()
-                {
-                    BlockValidationContext = new BlockValidationContext()
-                    {
-                        Block = new NBitcoin.Block()
-                    }
-                };
-
-                var transaction = new Transaction();
-                transaction.Inputs.Add(new TxIn(new OutPoint(), new Script()));
-                transaction.Outputs.Add(new TxOut(new Money(3), (IDestination)null));
-
-                Assert.True(transaction.IsCoinBase);
-                ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-                ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-
-                var rule = this.consensusRules.RegisterRule<EnsureCoinbaseRule>();
-
-                return rule.RunAsync(ruleContext);
-            });
-
-            Assert.Equal(ConsensusErrors.BadMultipleCoinbase.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.BadMultipleCoinbase.Message, exception.ConsensusError.Message);
-        }
-
-        [Fact]
-        public async Task RunAsync_SingleCoinBaseTransaction_DoesNotThrowExceptionAsync()
-        {
-            var ruleContext = new RuleContext()
-            {
-                BlockValidationContext = new BlockValidationContext()
-                {
-                    Block = new NBitcoin.Block()
-                }
-            };
+            this.ruleContext.BlockValidationContext.Block = new Block();
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), new Script()));
             transaction.Outputs.Add(new TxOut(new Money(3), (IDestination)null));
 
             Assert.True(transaction.IsCoinBase);
-            ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-            ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var rule = this.consensusRules.RegisterRule<EnsureCoinbaseRule>();
+            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
 
-            await rule.RunAsync(ruleContext);
+            Assert.Equal(ConsensusErrors.BadMultipleCoinbase, exception.ConsensusError);
+        }
+
+        [Fact]
+        public async Task RunAsync_SingleCoinBaseTransaction_DoesNotThrowExceptionAsync()
+        {
+            this.ruleContext.BlockValidationContext.Block = new Block();
+
+            var transaction = new Transaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(), new Script()));
+            transaction.Outputs.Add(new TxOut(new Money(3), (IDestination)null));
+
+            Assert.True(transaction.IsCoinBase);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+
+            await this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(ruleContext);
         }
     }
 }

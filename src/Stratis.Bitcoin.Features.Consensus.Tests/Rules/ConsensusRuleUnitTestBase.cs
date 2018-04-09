@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected T consensusRules;
+        protected RuleContext ruleContext;
 
         protected ConsensusRuleUnitTestBase()
         {
@@ -47,6 +48,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration = new Mock<IRuleRegistration>();
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
+
+            this.ruleContext = new RuleContext()
+            {
+                BlockValidationContext = new BlockValidationContext()
+            };
         }
 
         public virtual T InitializeConsensusRules()
