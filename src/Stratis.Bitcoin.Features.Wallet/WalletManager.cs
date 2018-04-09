@@ -433,10 +433,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-                List<HdAddress> unusedAddresses = isChange ? 
-                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() : 
+                List<HdAddress> unusedAddresses = isChange ?
+                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() :
                     account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
-                
+
                 int diff = unusedAddresses.Count - count;
                 List<HdAddress> newAddresses = new List<HdAddress>();
                 if (diff < 0)
@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return addresses;
         }
-        
+
         /// <inheritdoc />
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {
@@ -533,7 +533,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
                 }
-                
+
                 foreach (var account in accounts)
                 {
                     (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
@@ -783,7 +783,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), hash, nameof(blockHeight), blockHeight);
-            
+
             bool foundReceivingTrx = false, foundSendingTrx = false;
 
             lock (this.lockObject)
@@ -1010,7 +1010,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
-                this.RemoveInputKeysLookupLock(spentTransaction);
             }
             else // If this spending transaction is being confirmed in a block.
             {
@@ -1227,9 +1226,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (address.Pubkey != null)
                             this.keysLookup[address.Pubkey] = address;
 
-                        foreach (var unspentTransaction in address.UnspentTransactions())
+                        foreach (var transaction in address.Transactions)
                         {
-                            this.outpointLookup[new OutPoint(unspentTransaction.Id, unspentTransaction.Index)] = unspentTransaction;
+                            this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
                         }
                     }
                 }
@@ -1267,20 +1266,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
-            }
-        }
-
-        /// <summary>
-        /// Remove from the list of unspent outputs kept in memory.
-        /// </summary>
-        private void RemoveInputKeysLookupLock(TransactionData transactionData)
-        {
-            Guard.NotNull(transactionData, nameof(transactionData));
-            Guard.NotNull(transactionData.SpendingDetails, nameof(transactionData.SpendingDetails));
-            
-            lock (this.lockObject)
-            {
-                this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
             }
         }
 
