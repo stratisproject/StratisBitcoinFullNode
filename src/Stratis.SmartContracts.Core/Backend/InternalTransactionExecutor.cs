@@ -1,4 +1,6 @@
-﻿using NBitcoin;
+﻿using System.IO;
+using NBitcoin;
+using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 
@@ -18,6 +20,17 @@ namespace Stratis.SmartContracts.Core.Backend
             this.keyEncodingStrategy = keyEncodingStrategy;
         }
 
+        private static byte[] AddGasToContractExecutionCode(SmartContractDecompilation decompilation)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                var gasInjector = new SmartContractGasInjector();
+                gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+                decompilation.ModuleDefinition.Write(memoryStream);
+                return memoryStream.ToArray();
+            }
+        }
+
         ///<inheritdoc/>
         public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
@@ -28,6 +41,7 @@ namespace Stratis.SmartContracts.Core.Backend
 
             // Discern whether this is a contract or an ordinary address.
             byte[] contractCode = this.constractStateRepository.GetCode(addressTo.ToUint160(this.network));
+
             if (contractCode == null || contractCode.Length == 0)
             {
                 // If it is not a contract, just record the transfer and return.
@@ -51,10 +65,15 @@ namespace Stratis.SmartContracts.Core.Backend
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, 0, contractDetails.MethodParameters);
 
+            var decompiler = new SmartContractDecompiler();
+
+            var gasInjectedContractCode =
+                AddGasToContractExecutionCode(decompiler.GetModuleDefinition(contractCode));
+
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
 
             ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
-                contractCode,
+                gasInjectedContractCode,
                 contractDetails.ContractTypeName,
                 contractDetails.ContractMethodName,
                 newContext,
