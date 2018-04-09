@@ -9,15 +9,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class BlockHeaderPosContextualRule : PosConsensusRule
     {
-        /// <summary>
-        /// Context-dependent validity checks.
-        /// </summary>
-        /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
-        /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
-        /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
+        /// <inheritdoc />
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
-        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
+        /// <exception cref="ConsensusErrors.BlockTimestampTooEarly"> Thrown if the block timestamp is before the previous block timestamp.</exception>
+        /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown if the coinstake timestamp is invalid.</exception>
+        /// <exception cref="ConsensusErrors.ProofOfWorkTooHigh">The block's height is higher than the last allowed PoW block.</exception>
         public override Task RunAsync(RuleContext context)
         {
             ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
@@ -32,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.Stake.BlockStake.IsProofOfWork() && (chainedBlock.Height > this.Parent.ConsensusParams.LastPOWBlock))
             {
                 this.Logger.LogTrace("(-)[POW_TOO_HIGH]");
-                ConsensusErrors.ProofOfWorkTooHeigh.Throw();
+                ConsensusErrors.ProofOfWorkTooHigh.Throw();
             }
 
             // Check coinbase timestamp.

@@ -81,11 +81,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             try
             {
-                this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler().BuildTransaction(
-                    CreateTransactionBuildContext(new WalletAccountReference(SendingWalletName, AccountName), WalletPassword, sendtoAddress.ScriptPubKey,
-                        Money.COIN * 1, FeeType.Medium, 101));
+                this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
+                    .BuildTransaction(SharedSteps.CreateTransactionBuildContext(SendingWalletName, AccountName, WalletPassword, sendtoAddress.ScriptPubKey, Money.COIN * 1, FeeType.Medium, 101));
 
-                this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));
+                this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
+                    .SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));
             }
             catch (Exception exception)
             {
@@ -108,16 +108,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             var tx = this.sendingStratisBitcoinNode.FullNode.MempoolManager().GetTransaction(this.lastTransaction.GetHash()).GetAwaiter().GetResult();
             tx.GetHash().Should().Be(this.lastTransaction.GetHash());
             this.caughtException.Should().BeNull();
-        }
-
-        public static TransactionBuildContext CreateTransactionBuildContext(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
-        {
-            return new TransactionBuildContext(accountReference,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
-            {
-                MinConfirmations = minConfirmations,
-                FeeType = feeType
-            };
         }
 
         private void MineBlocks(int blockCount, CoreNode node)
