@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 return rule.RunAsync(ruleContext);
             });
 
-            Assert.Equal(ConsensusErrors.ProofOfWorkTooHeigh.Code, exception.ConsensusError.Code);
-            Assert.Equal(ConsensusErrors.ProofOfWorkTooHeigh.Message, exception.ConsensusError.Message);
+            Assert.Equal(ConsensusErrors.ProofOfWorkTooHigh.Code, exception.ConsensusError.Code);
+            Assert.Equal(ConsensusErrors.ProofOfWorkTooHigh.Message, exception.ConsensusError.Message);
         }
 
         [Fact]
