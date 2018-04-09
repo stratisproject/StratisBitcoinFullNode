@@ -9,11 +9,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
 {
     public static class CoreNodeExtensions
     {
-        public static Money CalculateProofOfWorkReward(this CoreNode node, int blockCount)
+        public static Money CalculateProofOfWorkReward(this CoreNode node, int blocksMined)
         {
             var consensusValidator = node.FullNode.NodeService<IPowConsensusValidator>() as PowConsensusValidator;
 
-            var groupedRewardsBySubsidyHalving = Enumerable.Range(0, blockCount)
+            var groupedRewardsBySubsidyHalving = Enumerable.Range(node.FullNode.Chain.Height - blocksMined, blocksMined)
                 .GroupBy(consensusValidator.ConsensusParams.SubsidyHalvingInterval - 1);
 
             var rewardsPerGroup = new List<Money>();
@@ -26,10 +26,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
             return rewardsPerGroup.Sum();
         }
 
-        private static IEnumerable<IGrouping<int, TSource>> GroupBy<TSource> (this IEnumerable<TSource> source, int itemsPerGroup)
+        private static IEnumerable<IGrouping<int, TItems>> GroupBy<TItems> (this IEnumerable<TItems> items, int itemsPerGroup)
         {
-            return source.Zip(Enumerable.Range(0, source.Count()),
-                              (s, r) => new { Group = r / itemsPerGroup, Item = s })
+            return items.Zip(Enumerable.Range(0, items.Count()), (value, index) => new { Group = index / itemsPerGroup, Item = value })
                          .GroupBy(i => i.Group, g => g.Item)
                          .ToList();
         }
