@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
+namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockHeaderRuleTest
     {
