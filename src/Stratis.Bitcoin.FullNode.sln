@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
@@ -79,7 +79,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBitcoin", "NBitcoin\NBitco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBitcoin.Tests", "NBitcoin.Tests\NBitcoin.Tests.csproj", "{D97693D7-6A83-4143-83D8-621AC545D961}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Miner.Tests", "Stratis.Bitcoin.Features.Miner.Tests\Stratis.Bitcoin.Features.Miner.Tests.csproj", "{59F274B7-0FC5-4AD6-A8AE-27BF6F15CC12}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.Miner.Tests", "Stratis.Bitcoin.Features.Miner.Tests\Stratis.Bitcoin.Features.Miner.Tests.csproj", "{59F274B7-0FC5-4AD6-A8AE-27BF6F15CC12}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Dns", "Stratis.Bitcoin.Features.Dns\Stratis.Bitcoin.Features.Dns.csproj", "{6181B889-81B0-4A1E-A29F-E20DCD8BFC1F}"
 EndProject

@@ -33,7 +33,7 @@ namespace Stratis.StratisD
 
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
-                var builder = new FullNodeBuilder()
+                var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UsePosConsensus()
                     .UseBlockStore()
@@ -41,9 +41,8 @@ namespace Stratis.StratisD
                     .UseWallet()
                     .AddPowPosMining()
                     .UseApi()
-                    .AddRPC();
-                
-                var node = builder.Build();
+                    .AddRPC()
+                    .Build();
 
                 if (node != null)
                     await node.RunAsync();

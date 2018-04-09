@@ -604,7 +604,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                TransactionBuildContext context = CreateTransactionBuildContext(request, this.network);
+                var destination = BitcoinAddress.Create(request.DestinationAddress, network).ScriptPubKey;
+                var context = new TransactionBuildContext(
+                    new WalletAccountReference(request.WalletName, request.AccountName),
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
+                    request.Password, request.OpReturnData)
+                {
+                    TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
+                };
+
+                if (!string.IsNullOrEmpty(request.FeeType))
+                {
+                    context.FeeType = FeeParser.Parse(request.FeeType);
+                }
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
@@ -622,27 +636,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-        }
-
-        public static TransactionBuildContext CreateTransactionBuildContext(BuildTransactionRequest request, Network network)
-        {
-            var destination = BitcoinAddress.Create(request.DestinationAddress, network).ScriptPubKey;
-            var context = new TransactionBuildContext(
-                new WalletAccountReference(request.WalletName, request.AccountName),
-                new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                request.Password, request.OpReturnData)
-            {
-                TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
-                MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
-            };
-
-            if (!string.IsNullOrEmpty(request.FeeType))
-            {
-                context.FeeType = FeeParser.Parse(request.FeeType);
-            }
-
-            return context;
         }
 
         /// <summary>
@@ -963,7 +956,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>
-        public static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
+        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
         {
             List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
             return ErrorHelpers.BuildErrorResponse(
