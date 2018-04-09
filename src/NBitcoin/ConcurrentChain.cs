@@ -140,6 +140,25 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// Sets the tip of this chain to the tip of another chain if it's chainwork is greater.
+        /// </summary>
+        /// <param name="block">Tip to set.</param>
+        /// <returns><c>true</c> if the tip was set; <c>false</c> otherwise.</returns>
+        public bool SetTipIfChainworkIsGreater(ChainedBlock block)
+        {
+            using (this.lockObject.LockWrite())
+            {
+                if ((this.tip == null) || (block.ChainWork > this.tip.ChainWork))
+                {
+                    this.SetTipLocked(block);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private ChainedBlock SetTipLocked(ChainedBlock block)
         {
             int height = this.Tip == null ? -1 : this.Tip.Height;

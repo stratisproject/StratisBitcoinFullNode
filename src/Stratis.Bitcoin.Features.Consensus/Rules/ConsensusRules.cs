@@ -47,6 +47,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
         {
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(checkpoints, nameof(checkpoints));
+
             this.Network = network;
             this.DateTimeProvider = dateTimeProvider;
             this.Chain = chain;
@@ -65,6 +73,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public ConsensusRules Register(IRuleRegistration ruleRegistration)
         {
+            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
+
             foreach (var consensusRule in ruleRegistration.GetRules())
             {
                 consensusRule.Parent = this;
