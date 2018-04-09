@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Flag to make sure <see cref="GetAddrPayload"/> is only sent once.
         /// </summary>
-        private bool SentAddress;
+        private bool sentAddress;
 
         public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
@@ -71,12 +71,12 @@ namespace Stratis.Bitcoin.P2P
             {
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    if ((message.Message.Payload is GetAddrPayload) && (!this.SentAddress))
+                    if ((message.Message.Payload is GetAddrPayload) && (!this.sentAddress))
                     {
                         var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.Endpoint).ToArray();
                         var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
-                        this.SentAddress = true;
+                        this.sentAddress = true;
                     }
 
                     if (message.Message.Payload is PingPayload ping || message.Message.Payload is PongPayload pong)
