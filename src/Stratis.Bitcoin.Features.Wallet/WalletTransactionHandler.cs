@@ -233,12 +233,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void FindChangeAddress(TransactionBuildContext context)
         {
-            Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType)
-                .GetAccountByName(context.AccountReference.AccountName);
-
-            // get address to send the change to
-            context.ChangeAddress = this.walletManager.GetOrCreateChangeAddress(account);
+            // Get an address to send the change to.
+            context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
         }
 

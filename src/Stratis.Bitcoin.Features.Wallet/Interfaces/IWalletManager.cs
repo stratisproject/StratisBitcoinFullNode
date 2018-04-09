@@ -102,21 +102,46 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <returns>An unused address or a newly created address, in Base58 format.</returns>
         HdAddress GetUnusedAddress(WalletAccountReference accountReference);
 
-        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count);
+        /// <summary>
+        /// Gets the first change address that contains no transaction.
+        /// </summary>
+        /// <param name="accountReference">The name of the wallet and account.</param>
+        /// <returns>An unused change address or a newly created change address, in Base58 format.</returns>
+        HdAddress GetUnusedChangeAddress(WalletAccountReference accountReference);
 
         /// <summary>
-        /// Gets a collection of addresses containing transactions for this coin.
+        /// Gets a collection of unused receiving or change addresses.
+        /// </summary>
+        /// <param name="accountReference">The name of the wallet and account.</param>
+        /// <param name="count">The number of addresses to create.</param>
+        /// <param name="isChange">A value indicating whether or not the addresses to get should be receiving or change addresses.</param>
+        /// <returns>A list of unused addresses. New addresses will be created as necessary.</returns>
+        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
+
+        /// <summary>
+        /// Gets the history of transactions contained in an account.
+        /// If no account name is specified, history will be returned for all accounts in the wallet.
         /// </summary>
         /// <param name="walletName">The wallet name.</param>
+        /// <param name="accountName">The account name.</param>
         /// <returns>Collection of address history and transaction pairs.</returns>
-        IEnumerable<FlatHistory> GetHistory(string walletName);
+        IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null);
 
         /// <summary>
-        /// Gets a collection of addresses containing transactions for this coin.
+        /// Gets the history of the transactions in addresses contained in this account.
         /// </summary>
-        /// <param name="wallet">The wallet to get history from.</param>
-        /// <returns></returns>
-        IEnumerable<FlatHistory> GetHistory(Wallet wallet);
+        /// <param name="account">The account for which to get history.</param>
+        /// <returns>The history for this account.</returns>
+        AccountHistory GetHistory(HdAccount account);
+
+        /// <summary>
+        /// Gets the balance of transactions contained in an account.
+        /// If no account name is specified, balances will be returned for all accounts in the wallet.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <param name="accountName">The account name.</param>
+        /// <returns>Collection of account balances.</returns>
+        IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null);
 
         /// <summary>
         /// Gets some general information about a wallet.
@@ -157,7 +182,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="blockHeight">The height of the block this transaction came from. Null if it was not a transaction included in a block.</param>
         /// <param name="block">The block in which this transaction was included.</param>
         /// <param name="isPropagated">Transaction propagation state.</param>
-        void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
+        /// <returns>A value indicating whether this transaction affects the wallet.</returns>
+        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
 
         /// <summary>
         /// Saves the wallet into the file system.
@@ -207,14 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         ICollection<uint256> GetFirstWalletBlockLocator();
-
-        /// <summary>
-        /// Gets a change address or create one if all change addresses are used.
-        /// </summary>
-        /// <param name="account">The account to create the change address.</param>
-        /// <returns>The new HD address.</returns>
-        HdAddress GetOrCreateChangeAddress(HdAccount account);
-
+        
         /// <summary>
         /// Gets the list of the wallet filenames, along with the folder in which they're contained.
         /// </summary>
@@ -245,5 +264,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         DateTimeOffset GetOldestWalletCreationTime();
+
+        /// <summary>
+        /// Removes the specified transactions from the wallet and persist it.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <param name="transactionsIds">The IDs of trandactions to remove.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
+
+        /// <summary>
+        /// Removes all the transactions from the wallet and persist it.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
     }
 }

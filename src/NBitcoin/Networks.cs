@@ -468,12 +468,19 @@ namespace NBitcoin
 
                 .AddDNSSeeds(new[]
                 {
-                    new DNSSeedData("testnode1.stratisplatform.com", "testnode1.stratisplatform.com"),
-                    new DNSSeedData("testnode2.stratis.cloud", "testnode2.stratis.cloud"),
-                    new DNSSeedData("testnode3.stratisplatform.com", "testnode3.stratisplatform.com")
+                    new DNSSeedData("testnet1.stratisplatform.com", "testnet1.stratisplatform.com"),
+                    new DNSSeedData("testnet2.stratisplatform.com", "testnet2.stratisplatform.com"),
+                    new DNSSeedData("testnet3.stratisplatform.com", "testnet3.stratisplatform.com"),
+                    new DNSSeedData("testnet4.stratisplatform.com", "testnet4.stratisplatform.com")
                 });
 
-                builder.AddSeeds(new[] { new NetworkAddress(IPAddress.Parse("51.141.28.47"), builder.Port) }); // the c# testnet node
+            builder.AddSeeds(new[]
+            {
+                new NetworkAddress(IPAddress.Parse("51.140.231.125"), builder.Port), // danger cloud node
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
+                new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
+            }); 
 
             return builder.BuildAndRegister();
         }

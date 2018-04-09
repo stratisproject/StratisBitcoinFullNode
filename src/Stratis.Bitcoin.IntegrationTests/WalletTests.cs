@@ -11,6 +11,8 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Xunit;
 using System;
+using Stratis.Bitcoin.Utilities;
+using System.Text;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -89,6 +91,81 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
 
                 TestHelper.WaitLoop(() => maturity + 6 == stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
+            }
+        }
+
+        [Fact]
+        public void WalletCanSendOneTransactionWithManyOutputs()
+        { 
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode stratisSender = builder.CreateStratisPowNode();
+                CoreNode stratisReceiver = builder.CreateStratisPowNode();
+
+                builder.StartAll();
+                stratisSender.NotInIBD();
+                stratisReceiver.NotInIBD();
+
+                stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+                stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+
+                HdAddress addr = stratisSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
+                Wallet wallet = stratisSender.FullNode.WalletManager().GetWalletByName("mywallet");
+                Key key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
+
+                stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
+                int maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+                stratisSender.GenerateStratisWithMiner(maturity + 51);
+
+                // Wait for block repo for block sync to work.
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                
+                Assert.Equal(Money.COIN * 150 * 50, stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
+
+                // Sync both nodes.
+                stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+
+                // Get 50 unused addresses from the receiver.
+                IEnumerable<HdAddress> recevierAddresses = stratisReceiver.FullNode.WalletManager()
+                    .GetUnusedAddresses(new WalletAccountReference("mywallet", "account 0"), 50);
+
+                List<Recipient> recipients = recevierAddresses.Select(address => new Recipient
+                    {
+                        ScriptPubKey = address.ScriptPubKey,
+                        Amount = Money.COIN
+                    })
+                    .ToList();
+
+                var transactionBuildContext = new TransactionBuildContext(
+                    new WalletAccountReference("mywallet", "account 0"), recipients, "123456")
+                    {
+                        FeeType = FeeType.Medium,
+                        MinConfirmations = 101
+                    };
+
+                Transaction transaction = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+                Assert.Equal(51, transaction.Outputs.Count);
+
+                // Broadcast to the other node.
+                stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+
+                // Wait for the trx's to arrive.
+                TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
+                TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any());
+
+                Assert.Equal(Money.COIN * 50, stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount));
+                Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);  
+
+                // Generate new blocks so the trx is confirmed.
+                stratisSender.GenerateStratisWithMiner(1);
+
+                // Wait for block repo for block sync to work.
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+
+                // Confirm trx's have been committed to the block.
+                Assert.Equal(maturity + 52 , stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
             }
         }
 
@@ -202,6 +279,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // remove the reorg node
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
                 var forkblock = stratisReceiver.FullNode.Chain.Tip;
 
                 // send more coins to the wallet
@@ -305,6 +383,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // remove the reorg node
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains
                 // ================================================
@@ -363,9 +442,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
 
-                // remove the reorg node
+                // remove the reorg node and wait for node to be disconnected
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains
                 // ================================================

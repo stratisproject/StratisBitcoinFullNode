@@ -6,11 +6,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// Check that the previous block hash is correct.
-    /// </summary>
+    /// </summary>  
     [ValidationRule(CanSkipValidation = false)]
     public class BlockHeaderRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>
         public override Task RunAsync(RuleContext context)
         {
             // Check that the current block has not been reorged.

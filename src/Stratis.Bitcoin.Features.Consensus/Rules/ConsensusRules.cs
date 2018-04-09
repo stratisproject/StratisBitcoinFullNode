@@ -62,6 +62,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
         {
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(checkpoints, nameof(checkpoints));
+
             this.Network = network;
             this.DateTimeProvider = dateTimeProvider;
             this.Chain = chain;
@@ -84,6 +92,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public ConsensusRules Register(IRuleRegistration ruleRegistration)
         {
+            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
+
             foreach (var consensusRule in ruleRegistration.GetRules())
             {
                 consensusRule.Parent = this;
@@ -195,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class PosConsensusRules : PowConsensusRules
     {
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        public StakeChain StakeChain { get; }
+        public IStakeChain StakeChain { get; }
 
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         public IStakeValidator StakeValidator { get; }
@@ -203,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller, StakeChain stakeChain, IStakeValidator stakeValidator) 
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller, IStakeChain stakeChain, IStakeValidator stakeValidator) 
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {
             this.StakeChain = stakeChain;

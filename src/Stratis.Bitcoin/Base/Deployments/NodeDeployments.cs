@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base.Deployments
 {
@@ -14,6 +15,9 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public NodeDeployments(Network network, ConcurrentChain chain)
         {
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(chain, nameof(chain));
+
             this.network = network;
             this.chain = chain;
             this.BIP9 = new ThresholdConditionCache(network.Consensus);
@@ -21,6 +25,8 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public virtual DeploymentFlags GetFlags(ChainedBlock block)
         {
+            Guard.NotNull(block, nameof(block));
+
             lock (this.BIP9)
             {
                 ThresholdState[] states = this.BIP9.GetStates(block.Previous);

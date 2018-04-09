@@ -62,6 +62,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
+        /// <summary>Indicates the dns and seed nodes were attempted.</summary>
+        private bool isSeedAndDnsAttempted;
+
         public PeerDiscovery(
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory,
@@ -117,23 +120,42 @@ namespace Stratis.Bitcoin.P2P
             this.logger.LogTrace("()");
 
             var peersToDiscover = new List<IPEndPoint>();
-            peersToDiscover.AddRange(this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).Select(p => p.Endpoint));
+            var foundPeers = this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).ToList();
+            peersToDiscover.AddRange(foundPeers.Select(p => p.Endpoint));
 
             if (peersToDiscover.Count == 0)
             {
+                // On normal circumstances the dns seeds are attempted only once per node lifetime.
+                if (this.isSeedAndDnsAttempted)
+                {
+                    this.logger.LogTrace("(-)[DNS_ATTEMPTED]");
+                    return;
+                }
+
                 this.AddDNSSeedNodes(peersToDiscover);
                 this.AddSeedNodes(peersToDiscover);
+                this.isSeedAndDnsAttempted = true;
 
-                peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
                 if (peersToDiscover.Count == 0)
                 {
                     this.logger.LogTrace("(-)[NO_ADDRESSES]");
                     return;
                 }
+
+                peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
             }
-
-            this.logger.LogTrace("{0} addresses are selected for discovery.", peersToDiscover.Count);
-
+            else
+            {
+                // If all attempts have failed then attempt the dns seeds again.
+                if (!this.isSeedAndDnsAttempted && foundPeers.All(peer => peer.Attempted))
+                {
+                    peersToDiscover.Clear();
+                    this.AddDNSSeedNodes(peersToDiscover);
+                    this.AddSeedNodes(peersToDiscover);
+                    this.isSeedAndDnsAttempted = true;
+                }
+            }
+            
             await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
                 using (CancellationTokenSource connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))

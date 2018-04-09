@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         LookaheadBlockPuller Puller { get; }
 
         /// <summary>Information holding POS data chained.</summary>
-        StakeChain StakeChain { get; }
+        IStakeChain StakeChain { get; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedBlock Tip { get; }

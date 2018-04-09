@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="proofOfStake">Specifies what kind of block we are looking for: <c>true</c> for PoS or <c>false</c> for PoW.</param>
         /// <returns>Last block in the chain that satisfies provided requirements.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="startChainedBlock"/> is <c>null</c>.</exception>
-        ChainedBlock GetLastPowPosChainedBlock(StakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake);
+        ChainedBlock GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake);
 
         /// <summary>
         /// Calculates the difficulty target for the next block.
@@ -74,6 +74,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// And the <c>N</c> determines how strongly will the deviation of the last block time affect the difficulty.
         /// </para>
         /// </remarks>
-        Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake);
+        Target GetNextTargetRequired(IStakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake);
     }
 }

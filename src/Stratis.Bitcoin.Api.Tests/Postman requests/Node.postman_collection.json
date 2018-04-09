@@ -2,6 +2,7 @@
 	"info": {
 		"name": "Node",
 		"_postman_id": "c3852998-54dd-4c7c-2831-61a8336b2f1f",
+		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -29,6 +30,29 @@
 						"shutdown"
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "Node status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:38221/api/node/status",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "38221",
+					"path": [
+						"api",
+						"node",
+						"status"
+					]
+				},
+				"description": ""
 			},
 			"response": []
 		}
