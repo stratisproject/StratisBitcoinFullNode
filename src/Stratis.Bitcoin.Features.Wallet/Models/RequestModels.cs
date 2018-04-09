@@ -141,18 +141,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
     public class BuildTransactionRequest : TxFeeEstimateRequest
     {
-        private const int MaxOpReturnLength = 32;
-
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
 
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
-        [StringLength(MaxOpReturnLength,
-            // translates as "OpReturnData cannot exceed 32 characters"
-            ErrorMessage = "{0} cannot exceed {1} characters.",
-            MinimumLength = 0)]
         public string OpReturnData { get; set; }
     }
 
