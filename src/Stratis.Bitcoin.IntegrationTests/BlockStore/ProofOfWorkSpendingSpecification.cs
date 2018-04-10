@@ -1,5 +1,6 @@
 ﻿using Stratis.Bitcoin.IntegrationTests.TestFramework;
 using Xunit;
+// ReSharper disable ArrangeThisQualifier
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {

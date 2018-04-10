@@ -85,6 +85,9 @@ namespace Stratis.Bitcoin.Base
 
         public bool InvalidHeaderReceived { get; private set; }
 
+        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
+        private readonly BestChainSelector bestChainSelector;
+
         /// <summary>
         /// Initializes an instanse of the object.
         /// </summary>
@@ -92,7 +95,8 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
+        /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
+        public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, BestChainSelector bestChainSelector, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
 
@@ -100,6 +104,7 @@ namespace Stratis.Bitcoin.Base
             this.chain = chain;
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
+            this.bestChainSelector = bestChainSelector;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
 
             this.AutoSync = true;
@@ -146,6 +151,8 @@ namespace Stratis.Bitcoin.Base
 
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+            
+            this.bestChainSelector.RemoveAvailableTip(this.AttachedPeer.Connection.Id);
 
             this.logger.LogTrace("(-)");
         }
@@ -361,40 +368,9 @@ namespace Stratis.Bitcoin.Base
             if (pendingTipBefore != this.pendingTip)
                 this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
-            if ((this.pendingTip != null) && (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork))
-            {
-                // Long reorganization protection on POS networks.
-                bool reorgPrevented = false;
-                uint maxReorgLength = this.chainState.MaxReorgLength;
-                if (maxReorgLength != 0)
-                {
-                    Network network = peer.Network;
-                    ChainedBlock consensusTip = this.chainState.ConsensusTip;
-                    if ((network != null) && (consensusTip != null))
-                    {
-                        ChainedBlock fork = this.pendingTip.FindFork(consensusTip);
-                        if ((fork != null) && (fork != consensusTip))
-                        {
-                            int reorgLength = consensusTip.Height - fork.Height;
-                            if (reorgLength > maxReorgLength)
-                            {
-                                this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                                this.InvalidHeaderReceived = true;
-                                reorgPrevented = true;
-                            }
-                            else this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
-                        }
-                    }
-                }
-
-                // Switch to better chain.
-                if (!reorgPrevented)
-                {
-                    this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", this.pendingTip, this.pendingTip.ChainWork);
-                    this.Chain.SetTip(this.pendingTip);
-                }
-            }
-
+            if ((this.pendingTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip))
+                this.InvalidHeaderReceived = true;
+            
             ChainedBlock chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
             if (chainedPendingTip != null)
             {
@@ -494,7 +470,7 @@ namespace Stratis.Bitcoin.Base
 
         public override object Clone()
         {
-            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.loggerFactory)
+            var clone = new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory)
             {
                 CanSync = this.CanSync,
                 CanRespondToGetHeaders = this.CanRespondToGetHeaders,

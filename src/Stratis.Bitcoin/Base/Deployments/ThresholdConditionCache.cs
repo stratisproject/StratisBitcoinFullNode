@@ -29,8 +29,7 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         private Consensus consensus;
 
-        private
-        Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
+        private Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
 
         public ThresholdConditionCache(Consensus consensus)
         {

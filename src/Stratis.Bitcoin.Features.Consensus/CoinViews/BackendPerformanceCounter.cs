@@ -81,6 +81,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dateTimeProvider"></param>
         public BackendPerformanceCounter(IDateTimeProvider dateTimeProvider)
         {
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+
             this.dateTimeProvider = dateTimeProvider;
             this.start = this.dateTimeProvider.GetUtcNow();
         }
