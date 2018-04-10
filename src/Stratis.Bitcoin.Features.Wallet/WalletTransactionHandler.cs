@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        protected void InitializeTransactionBuilder(TransactionBuildContext context)
+        private void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
@@ -370,13 +370,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
         /// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
         public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients,
-            string walletPassword = null, string opReturnData = null)
+            string walletPassword = "", string opReturnData = null)
         {
             Guard.NotNull(recipients, nameof(recipients));
 
             this.AccountReference = accountReference;
             this.Recipients = recipients;
-            this.WalletPassword = walletPassword ?? string.Empty;
+            this.WalletPassword = walletPassword;
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
