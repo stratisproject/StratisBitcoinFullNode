@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 
@@ -19,16 +18,6 @@ namespace Stratis.SmartContracts.Core.Backend
             this.constractStateRepository = constractStateRepository;
             this.network = network;
             this.keyEncodingStrategy = keyEncodingStrategy;
-        }
-
-        private static byte[] AddGasToContractExecutionCode(SmartContractDecompilation decompilation)
-        {
-            using (var memoryStream = new MemoryStream())
-            {
-                SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
-                decompilation.ModuleDefinition.Write(memoryStream);
-                return memoryStream.ToArray();
-            }
         }
 
         ///<inheritdoc/>
@@ -65,14 +54,10 @@ namespace Stratis.SmartContracts.Core.Backend
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, 0, contractDetails.MethodParameters);
 
-            var gasInjectedContractCode =
-                AddGasToContractExecutionCode(SmartContractDecompiler.GetModuleDefinition(contractCode));
-
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
 
             ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
-                gasInjectedContractCode,
-                contractDetails.ContractTypeName,
+                contractCode,
                 contractDetails.ContractMethodName,
                 newContext,
                 smartContractState.GasMeter,

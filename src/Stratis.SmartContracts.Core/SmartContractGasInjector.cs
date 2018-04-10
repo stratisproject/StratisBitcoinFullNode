@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -41,8 +42,40 @@ namespace Stratis.SmartContracts.Core
             OpCodes.Callvirt
         };
 
-        public static void AddGasCalculationToContract(TypeDefinition contractType, TypeDefinition baseType)
+        public static TypeDefinition GetContractType(ModuleDefinition moduleDefinition)
         {
+            return moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+        }
+
+        public static TypeDefinition GetContractBaseType(TypeDefinition typeDefinition)
+        {
+            return typeDefinition.BaseType.Resolve();
+        }
+
+        public static byte[] AddGasCalculationToContract(byte[] byteCode)
+        {
+            using (ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(byteCode)))
+            {
+                return AddGasCalculationToContract(moduleDefinition);
+            }
+        }
+
+        private static byte[] AddGasCalculationToContract(ModuleDefinition moduleDefinition)
+        {
+            TypeDefinition contractType = GetContractType(moduleDefinition);
+
+            using (var memoryStream = new MemoryStream())
+            {
+                AddGasCalculationToContract(contractType);
+                moduleDefinition.Write(memoryStream);
+                return memoryStream.ToArray();
+            }
+        }
+
+        private static void AddGasCalculationToContract(TypeDefinition contractType)
+        {
+            TypeDefinition baseType = GetContractBaseType(contractType);
+
             // Get gas spend method
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
             MethodReference gasMethodReference = contractType.Module.ImportReference(gasMethod);

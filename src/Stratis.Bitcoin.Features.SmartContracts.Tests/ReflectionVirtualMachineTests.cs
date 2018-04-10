@@ -1,14 +1,11 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 using Block = Stratis.SmartContracts.Core.Block;
 
@@ -55,60 +52,47 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
-            //and get the module definition
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
             //-------------------------------------------------------
+            
+            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractStateRepository stateRepository = repository.StartTracking();
 
-            SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+            var gasMeter = new GasMeter(deserializedCall.GasLimit);
 
-            byte[] gasAwareExecutionCode;
-            using (var ms = new MemoryStream())
-            {
-                decompilation.ModuleDefinition.Write(ms);
-                gasAwareExecutionCode = ms.ToArray();
+            var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
+            var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
 
-                var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-                IContractStateRepository stateRepository = repository.StartTracking();
+            var vm = new ReflectionVirtualMachine(persistentState);
 
-                var gasMeter = new GasMeter(deserializedCall.GasLimit);
+            var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
 
-                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
+            var context = new SmartContractExecutionContext(
+                            new Block(1, new Address("2")),
+                            new Message(
+                                new Address(deserializedCall.ContractAddress.ToString()),
+                                new Address(sender),
+                                deserializedCall.TxOutValue,
+                                deserializedCall.GasLimit
+                                ),
+                            deserializedCall.GasPrice
+                        );
 
-                var vm = new ReflectionVirtualMachine(persistentState);
+            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
 
-                var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                contractExecutionCode,
+                "StoreData",
+                context,
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
 
-                var context = new SmartContractExecutionContext(
-                                new Block(1, new Address("2")),
-                                new Message(
-                                    new Address(deserializedCall.ContractAddress.ToString()),
-                                    new Address(sender),
-                                    deserializedCall.TxOutValue,
-                                    deserializedCall.GasLimit
-                                    ),
-                                deserializedCall.GasPrice
-                            );
+            stateRepository.Commit();
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
-
-
-                ISmartContractExecutionResult result = vm.ExecuteMethod(
-                    gasAwareExecutionCode,
-                    "StorageTest",
-                    "StoreData",
-                    context,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
-
-                stateRepository.Commit();
-
-                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
-                Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
-            }
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
         }
 
         [Fact]
@@ -134,59 +118,47 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
-            //and get the module definition
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
             //-------------------------------------------------------
 
-            SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractStateRepository track = repository.StartTracking();
 
-            byte[] gasAwareExecutionCode;
-            using (var ms = new MemoryStream())
-            {
-                decompilation.ModuleDefinition.Write(ms);
-                gasAwareExecutionCode = ms.ToArray();
+            var gasMeter = new GasMeter(deserializedCall.GasLimit);
 
-                var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-                IContractStateRepository track = repository.StartTracking();
+            var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
+            var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
 
-                var gasMeter = new GasMeter(deserializedCall.GasLimit);
+            var vm = new ReflectionVirtualMachine(persistentState);
+            var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
-                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-                var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
+            var context = new SmartContractExecutionContext(
+                            new Block(1, new Address("2")),
+                            new Message(
+                                deserializedCall.ContractAddress.ToAddress(this.network),
+                                new Address(sender),
+                                deserializedCall.TxOutValue,
+                                deserializedCall.GasLimit
+                                ),
+                            deserializedCall.GasPrice,
+                            deserializedCall.MethodParameters
+                        );
 
-                var vm = new ReflectionVirtualMachine(persistentState);
-                var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
-
-                var context = new SmartContractExecutionContext(
-                                new Block(1, new Address("2")),
-                                new Message(
-                                    deserializedCall.ContractAddress.ToAddress(this.network),
-                                    new Address(sender),
-                                    deserializedCall.TxOutValue,
-                                    deserializedCall.GasLimit
-                                    ),
-                                deserializedCall.GasPrice,
-                                deserializedCall.MethodParameters
-                            );
-
-                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
+            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
                 
-                ISmartContractExecutionResult result = vm.ExecuteMethod(
-                    gasAwareExecutionCode,
-                    "StorageTestWithParameters",
-                    "StoreData",
-                    context,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                contractExecutionCode,
+                "StoreData",
+                context,
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
 
-                track.Commit();
+            track.Commit();
 
-                Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
-                Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
-            }
+            Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
+            Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
         }
         
         [Fact]
@@ -213,56 +185,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
-            //and get the module definition
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
             //-------------------------------------------------------
 
-            SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractStateRepository track = repository.StartTracking();
 
-            byte[] gasAwareExecutionCode;
-            using (var ms = new MemoryStream())
-            {
-                decompilation.ModuleDefinition.Write(ms);
-                gasAwareExecutionCode = ms.ToArray();
+            var gasMeter = new GasMeter(deserializedCall.GasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
+            var persistentState = new PersistentState(repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
 
-                var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-                IContractStateRepository track = repository.StartTracking();
+            var context = new SmartContractExecutionContext(
+                            new Block(1, TestAddress),
+                            new Message(
+                                TestAddress,
+                                TestAddress,
+                                deserializedCall.TxOutValue,
+                                deserializedCall.GasLimit
+                                ),
+                            deserializedCall.GasPrice,
+                            deserializedCall.MethodParameters
+                        );
 
-                var gasMeter = new GasMeter(deserializedCall.GasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
-                var persistentState = new PersistentState(repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-                var vm = new ReflectionVirtualMachine(persistentState);
-                var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
+            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, new BasicKeyEncodingStrategy());
+            Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
 
-                var context = new SmartContractExecutionContext(
-                                new Block(1, TestAddress),
-                                new Message(
-                                    TestAddress,
-                                    TestAddress,
-                                    deserializedCall.TxOutValue,
-                                    deserializedCall.GasLimit
-                                    ),
-                                deserializedCall.GasPrice,
-                                deserializedCall.MethodParameters
-                            );
+            ISmartContractExecutionResult result = vm.Create(
+                contractExecutionCode,
+                context,
+                gasMeter,
+                internalTransactionExecutor,
+                getBalance);
 
-                var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, new BasicKeyEncodingStrategy());
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
+            track.Commit();
 
-                ISmartContractExecutionResult result = vm.Create(
-                    gasAwareExecutionCode,
-                    "SimpleAuction",
-                    context,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
-
-                track.Commit();
-
-                Assert.Equal(6, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("AuctionEndBlock")), 0));
-                Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("Owner")));
-            }
+            Assert.Equal(6, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("AuctionEndBlock")), 0));
+            Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("Owner")));
         }
     }
 }

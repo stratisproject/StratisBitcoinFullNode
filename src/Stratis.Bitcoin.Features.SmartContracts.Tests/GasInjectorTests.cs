@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Mono.Cecil;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -87,12 +86,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private readonly Network network = Network.SmartContractsRegTest;
 
-        // TODO: Right now the gas injector is only taking into account the instructions
-        // in the user-defined methods. Calls to System methods aren't increasing the instructions.
-        // Need to work this out somehow. Averages?
-
-        // ALSO, write tests to check the different branches of code
-
         [Fact]
         public void TestGasInjector()
         {
@@ -103,47 +96,42 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var resolver = new DefaultAssemblyResolver();
             resolver.AddSearchDirectory(AppContext.BaseDirectory);
-            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes),
-                new ReaderParameters {AssemblyResolver = resolver});
-            TypeDefinition contractType = moduleDefinition.GetType(ContractName);
-            TypeDefinition baseType = contractType.BaseType.Resolve();
-            MethodDefinition testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
-            MethodDefinition constructorMethod = contractType.Methods.FirstOrDefault(x => x.Name.Contains("ctor"));
-            int aimGasAmount =
-                testMethod.Body.Instructions
-                    .Count; // + constructorMethod.Body.Instructions.Count; // Have to figure out ctor gas metering
+            int aimGasAmount;
 
-            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
-
-            using (var mem = new MemoryStream())
+            using (ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(
+                new MemoryStream(originalAssemblyBytes),
+                new ReaderParameters {AssemblyResolver = resolver}))
             {
-                moduleDefinition.Write(mem);
-                byte[] injectedAssemblyBytes = mem.ToArray();
-
-                var gasLimit = (Gas) 500000;
-                var gasMeter = new GasMeter(gasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-                var persistentState = new PersistentState(this.repository, persistenceStrategy,
-                    TestAddress.ToUint160(this.network), this.network);
-                var vm = new ReflectionVirtualMachine(persistentState);
-
-                var executionContext = new SmartContractExecutionContext(
-                    new Block(0, TestAddress),
-                    new Message(TestAddress, TestAddress, 0, (Gas) 500000), 1, new object[] {1});
-
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
-                ISmartContractExecutionResult result = vm.ExecuteMethod(
-                    injectedAssemblyBytes,
-                    ContractName,
-                    MethodName,
-                    executionContext,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
-                Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));
+                TypeDefinition contractType = moduleDefinition.GetType(ContractName);
+                MethodDefinition testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
+                aimGasAmount =
+                    testMethod?.Body?.Instructions?
+                        .Count ?? 10000000;
             }
+
+            var gasLimit = (Gas) 500000;
+            var gasMeter = new GasMeter(gasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy,
+                TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
+
+            var executionContext = new SmartContractExecutionContext(
+                new Block(0, TestAddress),
+                new Message(TestAddress, TestAddress, 0, (Gas) 500000), 1, new object[] {1});
+
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
+            ulong GetBalance() => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
+
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                originalAssemblyBytes,
+                MethodName,
+                executionContext,
+                gasMeter,
+                internalTransactionExecutor,
+                GetBalance);
+
+            Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));            
         }
 
         [Fact]
@@ -154,44 +142,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var resolver = new DefaultAssemblyResolver();
-            resolver.AddSearchDirectory(AppContext.BaseDirectory);
-            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
-            TypeDefinition contractType = moduleDefinition.GetType("OutOfGasTest");
-            TypeDefinition baseType = contractType.BaseType.Resolve();
+            var gasLimit = (Gas)500000;
+            var gasMeter = new GasMeter(gasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
 
-            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
+            var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1);
 
-            using (var mem = new MemoryStream())
-            {
-                moduleDefinition.Write(mem);
-                byte[] injectedAssemblyBytes = mem.ToArray();
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
+            ulong GetBalance() => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
-                var gasLimit = (Gas)500000;
-                var gasMeter = new GasMeter(gasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-                var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-                var vm = new ReflectionVirtualMachine(persistentState);
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                originalAssemblyBytes,
+                "UseAllGas",
+                executionContext,
+                gasMeter,
+                internalTransactionExecutor,
+                GetBalance);
 
-                var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1);
-
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
-                ISmartContractExecutionResult result = vm.ExecuteMethod(
-                    injectedAssemblyBytes,
-                    "OutOfGasTest",
-                    "UseAllGas",
-                    executionContext,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
-
-                Assert.NotNull(result.Exception);
-                Assert.Equal((Gas)0, gasMeter.GasAvailable);
-                Assert.Equal(gasLimit, result.GasConsumed);
-                Assert.Equal(gasLimit, gasMeter.GasConsumed);
-            }
+            Assert.NotNull(result.Exception);
+            Assert.Equal((Gas)0, gasMeter.GasAvailable);
+            Assert.Equal(gasLimit, result.GasConsumed);
+            Assert.Equal(gasLimit, gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -203,43 +176,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var resolver = new DefaultAssemblyResolver();
-            resolver.AddSearchDirectory(AppContext.BaseDirectory);
-            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
-            TypeDefinition contractType = moduleDefinition.GetType(ContractName);
-            TypeDefinition baseType = contractType.BaseType.Resolve();
+            var gasLimit = (Gas)500000;
+            var gasMeter = new GasMeter(gasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
 
-            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
+            var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1);
 
-            using (var mem = new MemoryStream())
-            {
-                moduleDefinition.Write(mem);
-                byte[] injectedAssemblyBytes = mem.ToArray();
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, new BasicKeyEncodingStrategy());
+            ulong GetBalance() => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
-                var gasLimit = (Gas)500000;
-                var gasMeter = new GasMeter(gasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
-                var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-                var vm = new ReflectionVirtualMachine(persistentState);
+            ISmartContractExecutionResult result = vm.Create(
+                originalAssemblyBytes,                    
+                executionContext,
+                gasMeter,
+                internalTransactionExecutor,
+                GetBalance);
 
-                var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1);
-
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, new BasicKeyEncodingStrategy());
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
-                ISmartContractExecutionResult result = vm.Create(
-                    injectedAssemblyBytes,
-                    ContractName,                    
-                    executionContext,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
-
-                // Constructor: 10
-                // Property setter: 7
-                // Storage: 15
-                Assert.Equal((Gas) 32, result.GasConsumed);
-            }
+            // Constructor: 10
+            // Property setter: 7
+            // Storage: 15
+            Assert.Equal((Gas) 32, result.GasConsumed);            
         }
 
         [Fact]
@@ -251,43 +209,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var resolver = new DefaultAssemblyResolver();
-            resolver.AddSearchDirectory(AppContext.BaseDirectory);
-            ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
-            TypeDefinition contractType = moduleDefinition.GetType(ContractName);
-            TypeDefinition baseType = contractType.BaseType.Resolve();
+            var gasLimit = (Gas)500000;
+            var gasMeter = new GasMeter(gasLimit);
+            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
+            var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var vm = new ReflectionVirtualMachine(persistentState);
 
-            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
+            var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1, new []{ "Tset Owner"});
 
-            using (var mem = new MemoryStream())
-            {
-                moduleDefinition.Write(mem);
-                byte[] injectedAssemblyBytes = mem.ToArray();
+            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, new BasicKeyEncodingStrategy());
+            ulong GetBalance() => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
 
-                var gasLimit = (Gas)500000;
-                var gasMeter = new GasMeter(gasLimit);
-                var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
-                var persistentState = new PersistentState(this.repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-                var vm = new ReflectionVirtualMachine(persistentState);
+            ISmartContractExecutionResult result = vm.Create(
+                originalAssemblyBytes,
+                executionContext,
+                gasMeter,
+                internalTransactionExecutor,
+                GetBalance);
 
-                var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), 1, new []{ "Tset Owner"});
-
-                var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, new BasicKeyEncodingStrategy());
-                Func<ulong> getBalance = () => repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
-                ISmartContractExecutionResult result = vm.Create(
-                    injectedAssemblyBytes,
-                    ContractName,
-                    executionContext,
-                    gasMeter,
-                    internalTransactionExecutor,
-                    getBalance);
-
-                // Constructor: 10
-                // Property setter: 7
-                // Storage: 15
-                Assert.Equal((Gas)32, result.GasConsumed);
-            }
+            // Constructor: 10
+            // Property setter: 7
+            // Storage: 15
+            Assert.Equal((Gas)32, result.GasConsumed);
         }
     }
 }

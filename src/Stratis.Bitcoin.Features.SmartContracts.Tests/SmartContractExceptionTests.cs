@@ -56,7 +56,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
-                "ThrowExceptionContract",
                 "ThrowException",
                 context,
                 gasMeter,

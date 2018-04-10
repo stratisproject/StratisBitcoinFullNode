@@ -1,5 +1,8 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.Lifecycle;
@@ -22,18 +25,15 @@ namespace Stratis.SmartContracts.Core.Backend
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public ISmartContractExecutionResult Create(
-            byte[] contractCode, 
-            string contractTypeName,
-            ISmartContractExecutionContext context, 
-            IGasMeter gasMeter, 
+        public ISmartContractExecutionResult Create(byte[] contractCode,
+            ISmartContractExecutionContext context,
+            IGasMeter gasMeter,
             IInternalTransactionExecutor internalTxExecutor,
             Func<ulong> getBalance)
         {
-            ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
+            byte[] gasInjectedCode = InjectGasMeasurement(contractCode);
 
-            var contractAssembly = Assembly.Load(contractCode);
-            Type contractType = contractAssembly.GetType(contractTypeName);
+            Type contractType = Load(gasInjectedCode);
 
             var contractState = new SmartContractState(
                 context.Block,
@@ -47,6 +47,8 @@ namespace Stratis.SmartContracts.Core.Backend
             // Invoke the constructor of the provided contract code
             LifecycleResult result = SmartContractConstructor
                 .Construct(contractType, contractState, context.Parameters);
+
+            ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
 
             executionResult.GasConsumed = gasMeter.GasConsumed;
 
@@ -64,9 +66,7 @@ namespace Stratis.SmartContracts.Core.Backend
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public ISmartContractExecutionResult ExecuteMethod(
-            byte[] contractCode,
-            string contractTypeName,
+        public ISmartContractExecutionResult ExecuteMethod(byte[] contractCode,
             string contractMethodName,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
@@ -77,8 +77,12 @@ namespace Stratis.SmartContracts.Core.Backend
             if (contractMethodName == null)
                 return executionResult;
 
-            var contractAssembly = Assembly.Load(contractCode);
-            Type contractType = contractAssembly.GetType(contractTypeName);
+            byte[] gasInjectedCode = InjectGasMeasurement(contractCode);
+
+            Type contractType = Load(gasInjectedCode);
+
+            if (contractType == null)
+                return executionResult;
 
             var contractState = new SmartContractState(
                 context.Block,
@@ -134,6 +138,24 @@ namespace Stratis.SmartContracts.Core.Backend
             }
 
             return executionResult;
+        }
+
+        private static byte[] InjectGasMeasurement(byte[] byteCode)
+        {
+            return SmartContractGasInjector.AddGasCalculationToContract(byteCode);
+        }
+
+        /// <summary>
+        /// Loads the Assembly bytecode into the current AppDomain
+        /// </summary>
+        /// <param name="byteCode"></param>
+        /// <returns></returns>
+        private static Type Load(byte[] byteCode)
+        {
+            Assembly contractAssembly = Assembly.Load(byteCode);
+
+            // The contract should always be the only exported type
+            return contractAssembly.ExportedTypes.FirstOrDefault();
         }
     }
 }

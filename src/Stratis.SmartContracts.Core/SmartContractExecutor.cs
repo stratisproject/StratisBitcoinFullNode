@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.Backend;
@@ -74,19 +72,7 @@ namespace Stratis.SmartContracts.Core
             return this.Result;
         }
 
-        protected byte[] AddGasToContractExecutionCode(SmartContractDecompilation decompilation)
-        {
-            byte[] stream = null;
-            using (var memoryStream = new MemoryStream())
-            {
-                SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
-                decompilation.ModuleDefinition.Write(memoryStream);
-                stream = memoryStream.ToArray();
-            }
-            return stream;
-        }
-
-        protected ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, SmartContractDecompilation decompilation, string methodName)
+        protected ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
         {
             ulong getBalance() => this.stateSnapshot.GetCurrentBalance(contractAddress);
 
@@ -104,14 +90,12 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
                 );
 
-            byte[] contractCodeWithGas = AddGasToContractExecutionCode(decompilation);
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(this.stateSnapshot, persistenceStrategy, contractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
             ISmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCodeWithGas,
-                decompilation.ContractType.Name,
+                contractCode,
                 methodName,
                 executionContext,
                 this.gasMeter,
@@ -193,15 +177,13 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
-            byte[] contractCodeWithGas = AddGasToContractExecutionCode(decompilation);
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(this.stateSnapshot, persistenceStrategy, newContractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
 
             this.Result = vm.Create(
-                contractCodeWithGas.ToArray(),
-                decompilation.ContractType.Name,
+                this.carrier.ContractExecutionCode,
                 executionContext,
                 this.gasMeter,
                 new InternalTransactionExecutor(this.stateSnapshot, this.network, new BasicKeyEncodingStrategy()),
@@ -240,13 +222,10 @@ namespace Stratis.SmartContracts.Core
                 this.Result = SmartContractExecutionResult.ContractDoesNotExist(this.carrier);
                 return;
             }
-
-            // Decompile the byte code.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode);
-            
+          
             // Execute the call to the contract.
             this.stateSnapshot.CurrentCarrier = this.carrier;
-            this.Result = base.CreateContextAndExecute(this.carrier.ContractAddress, decompilation, this.carrier.MethodName);
+            this.Result = base.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
 
             if (this.Result.Revert)
                 this.RevertExecution();
