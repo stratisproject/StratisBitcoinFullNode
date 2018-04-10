@@ -16,12 +16,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletTransactionHandlerTest : LogsTestBase
     {
+        public readonly string CostlyOpReturnData;
+
         public WalletTransactionHandlerTest()
         {
             // These tests use Network.Main.
             // Ensure that these static flags have the expected values.
             Transaction.TimeStamp = false;
             Block.BlockSignature = false;
+
+            // adding this data to the transaction output should increase the fee
+            // 83 is the max size for the OP_RETURN script => 80 is the max for the content of the script
+            byte[] maxQuantityOfBytes = Enumerable.Range(0, 80).Select(Convert.ToByte).ToArray();
+            this.CostlyOpReturnData = Encoding.UTF8.GetString(maxQuantityOfBytes);
         }
 
         [Fact]
@@ -538,52 +545,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void EstimateFeeWithLowFeeMatchesBuildTxLowFee()
         {
-            var dataFolder = CreateDataFolder(this);
-
-            Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
-            var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
-            var spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-            var destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
-
-            HdAddress address = new HdAddress
-            {
-                Index = 0,
-                HdPath = $"m/44'/0'/0'/0/0",
-                Address = spendingKeys.Address.ToString(),
-                Pubkey = spendingKeys.PubKey.ScriptPubKey,
-                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
-            };
-
-            ConcurrentChain chain = new ConcurrentChain(wallet.Network);
-            WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
-            TransactionData addressTransaction = address.Transactions.First();
-
-            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
-            {
-                Index = 0,
-                Name = "account1",
-                HdPath = "m/44'/0'/0'",
-                ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress> { address },
-                InternalAddresses = new List<HdAddress>()
-            });
-
-            var walletFeePolicy = new Mock<IWalletFeePolicy>();
-            walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
-                .Returns(new FeeRate(20000));
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object, 
-                dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
-            WalletTransactionHandler walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, Network.Main);
-
-            walletManager.Wallets.Add(wallet);
-
-            WalletAccountReference walletReference = new WalletAccountReference
-            {
-                AccountName = "account1",
-                WalletName = "myWallet1"
-            };
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
 
             // Context to build requires password in order to sign transaction.
             TransactionBuildContext buildContext = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
@@ -594,6 +556,50 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Money fee = walletTransactionHandler.EstimateFee(estimateContext);
 
             Assert.Equal(fee, buildContext.TransactionFee);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="WalletTransactionHandler.EstimateFee(TransactionBuildContext)"/> method by
+        /// comparing it's fee calculation with the transaction fee computed for the same tx in the
+        /// <see cref="WalletTransactionHandler.BuildTransaction(TransactionBuildContext)"/> method.
+        /// </summary>
+        [Fact]
+        public void EstimateFee_WithLowFee_Matches_BuildTransaction_WithLowFee_With_Long_OpReturnData_added()
+        {
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
+
+            // Context to build requires password in order to sign transaction.
+            TransactionBuildContext buildContext = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            walletTransactionHandler.BuildTransaction(buildContext);
+
+            // Context for estimate does not need password.
+            TransactionBuildContext estimateContext = CreateContext(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            Money feeEstimate = walletTransactionHandler.EstimateFee(estimateContext);
+
+            feeEstimate.Should().Be(buildContext.TransactionFee);
+        }
+
+        /// <summary>
+        /// Currently the fee match because of imprecisions when estimating fees
+        /// https://github.com/stratisproject/StratisBitcoinFullNode/issues/1283
+        /// Once this is fixed, that test should be changed from "Should_Equal" to "Should_Not_Equal"
+        /// </summary>
+        [Fact]
+        public void EstimateFee_Without_OpReturnData_Should_Equal_Estimate_Fee_With_Costly_OpReturnData()
+        {
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
+
+            // Context with OpReturnData
+            var estimateContextWithOpReturn = CreateContext(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            var feeEstimateWithOpReturn = walletTransactionHandler.EstimateFee(estimateContextWithOpReturn);
+
+            // Context without OpReturnData
+            var estimateContextWithoutOpReturn = CreateContext(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
+            var feeEstimateWithoutOpReturn = walletTransactionHandler.EstimateFee(estimateContextWithoutOpReturn);
+
+            // uncomment this line when issue 1283 is fixed
+            // feeEstimateWithOpReturn.Should().NotBe(feeEstimateWithoutOpReturn);
+            feeEstimateWithOpReturn.Should().Be(feeEstimateWithoutOpReturn);
         }
 
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,

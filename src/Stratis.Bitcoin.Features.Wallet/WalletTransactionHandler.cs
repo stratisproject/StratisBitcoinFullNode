@@ -58,14 +58,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 context.TransactionBuilder.Shuffle();
             }
 
-            // add extra output to the transaction if there is anything in OpReturn
-            if (!string.IsNullOrEmpty(context.OpReturnData))
-            {
-                byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
-                var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-                context.TransactionBuilder.Then().Send(opReturnScript, Money.Zero);
-            }
-
             // build transaction
             context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
@@ -199,6 +191,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AddSecrets(context);
             this.FindChangeAddress(context);
             this.AddFee(context);
+            this.AddOpReturnOutput(context);
         }
 
         /// <summary>
@@ -351,6 +344,20 @@ namespace Stratis.Bitcoin.Features.Wallet
             context.TransactionBuilder.SendFees(fee);
             context.TransactionFee = fee;
         }
+
+        /// <summary>
+        /// Add extra unspendable output to the transaction if there is anything in OpReturnData
+        /// </summary>
+        /// <param name="context">The context associated with the current transaction being built.</param>
+        private void AddOpReturnOutput(TransactionBuildContext context)
+        {
+
+            if (string.IsNullOrEmpty(context.OpReturnData)) return;
+            byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+            context.TransactionBuilder.Then().Send(opReturnScript, Money.Zero);
+        }
+
     }
 
     public class TransactionBuildContext
