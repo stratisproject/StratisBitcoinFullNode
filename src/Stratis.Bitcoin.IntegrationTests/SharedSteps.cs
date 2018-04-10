@@ -46,8 +46,25 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.WaitForBlockStoreToSync(node);
 
             var rewardCoinCount = blockCount * Money.COIN * 50;
-            
+
             balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
+        }
+
+        public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
+        {
+            this.WaitForBlockStoreToSync(node);
+
+            var unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
+            var wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+
+            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            node.GenerateStratisWithMiner(2);
+
+            this.WaitForBlockStoreToSync(node);
+
+            var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
+            spendable.Sum(s => s.Transaction.Amount).Should().Be(Money.COIN * 98000004);
         }
 
         public void WaitForBlockStoreToSync(params CoreNode[] nodes)
@@ -60,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             for (int i = 1; i < nodes.Length; i++)
             {
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i-1], nodes[i]));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i - 1], nodes[i]));
             }
         }
     }

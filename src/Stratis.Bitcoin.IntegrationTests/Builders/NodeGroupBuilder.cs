@@ -8,7 +8,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
     public class NodeGroupBuilder : IDisposable
     {
         private readonly NodeBuilder nodeBuilder;
-
         private readonly Dictionary<string, CoreNode> nodes;
 
         public NodeGroupBuilder()
@@ -30,6 +29,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
         public NodeGroupBuilder StratisPowNode(string nodeName)
         {
             this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowNode());
+            return this;
+        }
+
+        public NodeGroupBuilder CreateStratisPowMiningNode(string nodeName)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowMiningNode());
+            return this;
+        }
+
+        public NodeGroupBuilder CreateStratisPosNode(string nodeName)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode());
+            return this;
+        }
+
+        public NodeGroupBuilder MineCoinsFast()
+        {
+            this.nodes.Last().Value.MineCoinsFast = true;
             return this;
         }
 

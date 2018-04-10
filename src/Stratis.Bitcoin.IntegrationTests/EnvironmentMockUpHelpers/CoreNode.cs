@@ -12,7 +12,6 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -37,6 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
+        public bool MineCoinsFast { get; set; }
 
         public string Folder { get; }
 
@@ -78,10 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         {
             get
             {
-                if (this.runner is StratisBitcoinPosRunner)
-                    return ((StratisBitcoinPosRunner)this.runner).FullNode;
-
-                return ((StratisBitcoinPowRunner)this.runner).FullNode;
+                return this.runner.FullNode;
             }
         }
 
@@ -112,7 +109,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            // not in IBD
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
@@ -154,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             File.WriteAllText(this.Config, config.ToString());
             lock (this.lockObject)
             {
-                this.runner.Start(this.DataFolder);
+                this.runner.Start(this.DataFolder, this.MineCoinsFast);
                 this.State = CoreNodeState.Starting;
             }
             while (true)

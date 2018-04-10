@@ -70,11 +70,13 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public interface INodeRunner
     {
+        FullNode FullNode { get; set; }
+
         bool IsDisposed { get; }
 
         void Kill();
 
-        void Start(string dataDir);
+        void Start(string dataDir, bool mineCoinsFast);
     }
 
     public class NodeConfigParameters : Dictionary<string, string>
@@ -132,7 +134,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 try
                 {
-                    Directory.Delete(folder, true);
+                    if (Directory.Exists(folder))
+                        Directory.Delete(folder, true);
                     return true;
                 }
                 catch (DirectoryNotFoundException)
@@ -195,8 +198,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     return bitcoind;
                 var zip = string.Format("TestData/bitcoin-{0}-win32.zip", version);
                 string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
-                HttpClient client = new HttpClient();
-                client.Timeout = TimeSpan.FromMinutes(10.0);
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromMinutes(10.0)
+                };
+
                 var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
                 File.WriteAllBytes(zip, data);
                 ZipFile.ExtractToDirectory(zip, new FileInfo(zip).Directory.FullName);
@@ -213,8 +219,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     : string.Format("TestData/bitcoin-{0}-osx64.tar.gz", version);
 
                 string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
-                HttpClient client = new HttpClient();
-                client.Timeout = TimeSpan.FromMinutes(10.0);
+
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromMinutes(10.0)
+                };
+
                 var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
                 File.WriteAllBytes(zip, data);
                 Process.Start("tar", "-zxvf " + zip + " -C TestData");
@@ -242,10 +252,30 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return node;
         }
 
+        public CoreNode CreateStratisPowMiningNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        {
+            string child = this.CreateNewEmptyFolder();
+            var node = new CoreNode(child, new StratisProofOfWorkMiningNode(callback), this, Network.RegTest, configfile: "stratis.conf");
+            this.Nodes.Add(node);
+            if (start)
+                node.Start();
+            return node;
+        }
+
         public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = this.CreateNewEmptyFolder();
             var node = new CoreNode(child, new StratisBitcoinPosRunner(callback), this, Network.RegTest, configfile: "stratis.conf");
+            this.Nodes.Add(node);
+            if (start)
+                node.Start();
+            return node;
+        }
+
+        public CoreNode CreateStratisPosApiNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        {
+            string child = this.CreateNewEmptyFolder();
+            var node = new CoreNode(child, new StratisPosApiRunner(callback), this, Network.RegTest, configfile: "stratis.conf");
             this.Nodes.Add(node);
             if (start)
                 node.Start();
