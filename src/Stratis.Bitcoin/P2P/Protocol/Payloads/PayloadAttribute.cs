@@ -22,6 +22,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         /// <param name="commandName"></param>
         public PayloadAttribute(string commandName)
         {
+            if (commandName.Length > 12)
+                throw new ArgumentException("Protocol violation: command name is limited to 12 characters.");
+            
             this.Name = commandName;
         }
     }
