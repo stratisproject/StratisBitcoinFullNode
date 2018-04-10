@@ -13,24 +13,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
         {
             var consensusValidator = node.FullNode.NodeService<IPowConsensusValidator>() as PowConsensusValidator;
 
-            var groupedRewardsBySubsidyHalving = Enumerable.Range(node.FullNode.Chain.Height - blocksMined, blocksMined)
-                .GroupBy(consensusValidator.ConsensusParams.SubsidyHalvingInterval - 1);
+            var startBlock = node.FullNode.Chain.Height - blocksMined + 1;
+
+            var groupedRewards = Enumerable.Range(startBlock, blocksMined)
+                .Partition(consensusValidator.ConsensusParams.SubsidyHalvingInterval);
 
             var rewardsPerGroup = new List<Money>();
 
-            foreach(var groupedReward in groupedRewardsBySubsidyHalving)
-            {
-                rewardsPerGroup.Add(groupedReward.Count() * consensusValidator.GetProofOfWorkReward(groupedReward.Min() + 1));
+            foreach(var groupedReward in groupedRewards)
+            { 
+                rewardsPerGroup.Add(groupedReward.Count() * consensusValidator.GetProofOfWorkReward(groupedReward.First()));
             }
 
             return rewardsPerGroup.Sum();
         }
-
-        private static IEnumerable<IGrouping<int, TItems>> GroupBy<TItems> (this IEnumerable<TItems> items, int itemsPerGroup)
+        public static Money WalletBalance(this CoreNode node, string walletName)
         {
-            return items.Zip(Enumerable.Range(0, items.Count()), (value, index) => new { Group = index / itemsPerGroup, Item = value })
-                         .GroupBy(i => i.Group, g => g.Item)
-                         .ToList();
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
+        }
+
+        public static int? WalletHeight(this CoreNode node, string walletName)
+        {
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).First().Transaction.BlockHeight;
+        }
+
+        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
+        {
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
         }
     }
 }
