@@ -704,12 +704,12 @@ namespace Stratis.Bitcoin.Features.Miner
             // Mark coinstake transaction.
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            long balance = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, long.MaxValue).Sum(b => b.TxOut.Value);
+            long balance = this.GetMatureBalance(utxoStakeDescriptions).Satoshi;
             if (balance <= this.targetReserveBalance)
             {
                 this.rpcGetStakingInfoModel.Staking = false;
 
-                this.logger.LogTrace("Total balance of UTXOs that are suitable for staking is {0}, which is less than or equal to reserve balance {1}.", balance, this.targetReserveBalance);
+                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is less than or equal to reserve balance {1}.", balance, this.targetReserveBalance);
                 this.logger.LogTrace("(-)[BELOW_RESERVE]:false");
                 return false;
             }
@@ -991,7 +991,26 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
-        
+
+        /// <inheritdoc/>
+        public Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions)
+        {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count);
+
+            var money = new Money(0);
+            foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions)
+            {
+                // Must wait until coinbase is safely deep enough in the chain before valuing it.
+                if ((utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake) && (this.GetBlocksCountToMaturity(utxoStakeDescription) > 0))
+                    continue;
+
+                money += utxoStakeDescription.TxOut.Value;
+            }
+
+            this.logger.LogTrace("(-):{0}", money);
+            return money;
+        }
+
         /// <summary>
         /// Selects UTXOs that are suitable for staking.
         /// <para>
@@ -1059,7 +1078,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="utxoStakeDescription">The UTXO stake description.</param>
         /// <returns>How many blocks are left till UTXO is considered mature for staking.</returns>
         private int GetBlocksCountToMaturity(UtxoStakeDescription utxoStakeDescription)
-        {            
+        {
             if (!(utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake))
                 return 0;
 
