@@ -221,6 +221,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         }
 
+        [Fact]
+        public void BuildTransaction_When_OpReturnData_Is_Too_Long_Should_Fail_With_Helpful_Messafe()
+        {
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
+
+            var eightyOneBytes = Encoding.UTF8.GetBytes(this.CostlyOpReturnData).Concat(Convert.ToByte(1));
+            var tooLongOpReturnString = Encoding.UTF8.GetString(eightyOneBytes);
+
+            var context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, tooLongOpReturnString);
+            new Action(() => walletTransactionHandler.BuildTransaction(context))
+                .Should().Throw<ArgumentOutOfRangeException>()
+                .And.Message.Should().Contain(" maximum size of 83");         
+
+        }
+
         private (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address)
             destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler,
             WalletAccountReference walletReference) SetupWallet()
