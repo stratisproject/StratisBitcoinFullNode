@@ -17,22 +17,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private static readonly ConstructorParamValidator ConstructorParamValidator = new ConstructorParamValidator();
 
-        private static readonly SmartContractDecompiler Decompiler = new SmartContractDecompiler();
-
         private static readonly byte[] SingleConstructorCompilation = 
             SmartContractCompiler.CompileFile("SmartContracts/SingleConstructor.cs").Compilation;
 
-        private static readonly SmartContractDecompilation SingleConstructorDecompilation = Decompiler.GetModuleDefinition(SingleConstructorCompilation);
+        private static readonly SmartContractDecompilation SingleConstructorDecompilation = SmartContractDecompiler.GetModuleDefinition(SingleConstructorCompilation);
 
         private static readonly byte[] MultipleConstructorCompilation =
             SmartContractCompiler.CompileFile("SmartContracts/MultipleConstructor.cs").Compilation;
 
-        private static readonly SmartContractDecompilation MultipleConstructorDecompilation = Decompiler.GetModuleDefinition(MultipleConstructorCompilation);
+        private static readonly SmartContractDecompilation MultipleConstructorDecompilation = SmartContractDecompiler.GetModuleDefinition(MultipleConstructorCompilation);
 
         private static readonly byte[] InvalidParamCompilation =
             SmartContractCompiler.CompileFile("SmartContracts/InvalidParam.cs").Compilation;
 
-        private static readonly SmartContractDecompilation InvalidParamDecompilation = Decompiler.GetModuleDefinition(InvalidParamCompilation);
+        private static readonly SmartContractDecompilation InvalidParamDecompilation = SmartContractDecompiler.GetModuleDefinition(InvalidParamCompilation);
 
         [Fact]
         public void SmartContract_ValidateFormat_HasSingleConstructorSuccess()

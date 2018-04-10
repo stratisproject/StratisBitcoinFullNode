@@ -158,7 +158,6 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
         {
             var determinismValidator = new SmartContractDeterminismValidator();
             var formatValidator = new SmartContractFormatValidator();
-            var decompiler = new SmartContractDecompiler();
 
             console.WriteLine($"Compiling...");
             compilationResult = SmartContractCompiler.Compile(source);
@@ -174,7 +173,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
 
             console.WriteLine("Building ModuleDefinition");
 
-            SmartContractDecompilation decompilation = decompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
 
             console.WriteLine("ModuleDefinition built successfully");
 

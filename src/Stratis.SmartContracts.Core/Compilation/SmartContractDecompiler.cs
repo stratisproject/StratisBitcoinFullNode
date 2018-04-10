@@ -2,16 +2,16 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Compilation
 {
-    public class SmartContractDecompiler
+    public static class SmartContractDecompiler
     {
         /// <summary>
         /// 
         /// </summary>
         /// <remarks>TODO: Ensure that AppContext.BaseDirectory is robust here.</remarks>
         /// <remarks>TODO: Fix using in MemoryStream.</remarks>
-        public SmartContractDecompilation GetModuleDefinition(byte[] bytes, IAssemblyResolver assemblyResolver = null)
+        public static SmartContractDecompilation GetModuleDefinition(byte[] bytes, IAssemblyResolver assemblyResolver = null)
         {
             IAssemblyResolver resolver = assemblyResolver ?? new DefaultAssemblyResolver();
             var result = new SmartContractDecompilation

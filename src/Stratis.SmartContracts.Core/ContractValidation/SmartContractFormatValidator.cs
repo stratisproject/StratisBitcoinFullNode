@@ -18,16 +18,14 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
             this.errors = new List<SmartContractValidationError>();
-            this.ValidateLimitedAssemblyReferences(decompilation.ModuleDefinition);
-            this.ValidateClassLimitations(decompilation.ModuleDefinition);
-            this.ValidateConstructor(decompilation.ModuleDefinition);
+            this.ValidateLimitedAssemblyReferences(decompilation.ModuleDefinition.AssemblyReferences);
+            this.ValidateClassLimitations(decompilation.ModuleDefinition.Types);
+            this.ValidateConstructor(decompilation.ContractType);
             return new SmartContractValidationResult(this.errors);
         }
 
-        private void ValidateConstructor(ModuleDefinition moduleDefinition)
+        private void ValidateConstructor(TypeDefinition contractType)
         {
-            TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
-
             if (contractType == null)
             {
                 // Already check earlier for multiple exported types
@@ -41,9 +39,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             this.errors.AddRange(constructorParamValidator.Validate(contractType));
         }
 
-        public void ValidateLimitedAssemblyReferences(ModuleDefinition moduleDefinition)
+        public void ValidateLimitedAssemblyReferences(IEnumerable<AssemblyNameReference> assemblyReferences)
         {
-            foreach (AssemblyNameReference assemblyReference in moduleDefinition.AssemblyReferences)
+            foreach (AssemblyNameReference assemblyReference in assemblyReferences)
             {
                 if (!AllowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
                     this.errors.Add(new SmartContractValidationError("Assembly " + assemblyReference.FullName + " is not allowed."));
@@ -54,17 +52,17 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <summary>
         /// For version 1, only allow a single class, which must inherit from compiledsmartcontract.
         /// </summary>
-        public void ValidateClassLimitations(ModuleDefinition moduleDefinition)
+        public void ValidateClassLimitations(IEnumerable<TypeDefinition> typeDefinitions)
         {
-            var nonModuleTypes = moduleDefinition.Types.Where(x => x.FullName != "<Module>").ToList();
+            typeDefinitions = typeDefinitions.Where(x => x.FullName != "<Module>").ToList();
 
-            if (nonModuleTypes.Count != 1)
+            if (typeDefinitions.Count() != 1)
             {
                 this.errors.Add(new SmartContractValidationError("Only the compilation of a single class is allowed."));
                 return;
             }
 
-            TypeDefinition nonModuleType = nonModuleTypes.FirstOrDefault();
+            TypeDefinition nonModuleType = typeDefinitions.FirstOrDefault();
 
             if (nonModuleType.Namespace != "")
                 this.errors.Add(new SmartContractValidationError("Class must not have a namespace."));
@@ -74,7 +72,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 this.errors.Add(new SmartContractValidationError("Only the compilation of a single class is allowed. Includes inner types."));
 
             // TODO: Again, can check be more robust?
-            if (typeof(SmartContract).FullName != nonModuleTypes.FirstOrDefault().BaseType.FullName)
+            if (typeof(SmartContract).FullName != typeDefinitions.FirstOrDefault().BaseType.FullName)
                 this.errors.Add(new SmartContractValidationError("Contract must implement the SmartContract class."));
         }
 

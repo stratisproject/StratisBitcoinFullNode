@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using NBitcoin;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
@@ -24,8 +25,7 @@ namespace Stratis.SmartContracts.Core.Backend
         {
             using (var memoryStream = new MemoryStream())
             {
-                var gasInjector = new SmartContractGasInjector();
-                gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+                SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
                 decompilation.ModuleDefinition.Write(memoryStream);
                 return memoryStream.ToArray();
             }
@@ -65,10 +65,8 @@ namespace Stratis.SmartContracts.Core.Backend
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, 0, contractDetails.MethodParameters);
 
-            var decompiler = new SmartContractDecompiler();
-
             var gasInjectedContractCode =
-                AddGasToContractExecutionCode(decompiler.GetModuleDefinition(contractCode));
+                AddGasToContractExecutionCode(SmartContractDecompiler.GetModuleDefinition(contractCode));
 
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
 

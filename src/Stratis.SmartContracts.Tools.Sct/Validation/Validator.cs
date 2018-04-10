@@ -36,8 +36,6 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
             var determinismValidator = new SmartContractDeterminismValidator();
             var formatValidator = new SmartContractFormatValidator();
 
-            var decompiler = new SmartContractDecompiler();
-
             var reportData = new List<ValidationReportData>();
 
             foreach (string file in this.InputFiles)
@@ -100,7 +98,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
 
                 Console.WriteLine("Building ModuleDefinition");
 
-                SmartContractDecompilation decompilation = decompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+                SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
 
                 Console.WriteLine("ModuleDefinition built successfully");
 

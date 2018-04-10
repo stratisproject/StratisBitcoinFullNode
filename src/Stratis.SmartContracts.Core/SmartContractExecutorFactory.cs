@@ -9,21 +9,14 @@ namespace Stratis.SmartContracts.Core
     /// </summary>
     public class SmartContractExecutorFactory
     {
-        private SmartContractDecompiler decompiler;
-        private ISmartContractGasInjector gasInjector;
         private SmartContractValidator validator;
         private Network network;
         private IKeyEncodingStrategy keyEncodingStrategy;
 
-        public SmartContractExecutorFactory(
-            SmartContractDecompiler decompiler,
-            ISmartContractGasInjector gasInjector,
-            SmartContractValidator validator,
+        public SmartContractExecutorFactory(SmartContractValidator validator,
             IKeyEncodingStrategy keyEncodingStrategy,
             Network network)
         {
-            this.decompiler = decompiler;
-            this.gasInjector = gasInjector;
             this.validator = validator;
             this.network = network;
             this.keyEncodingStrategy = keyEncodingStrategy;
@@ -40,7 +33,7 @@ namespace Stratis.SmartContracts.Core
             Money mempoolFee,
             IContractStateRepository stateRepository)
         {
-            return SmartContractExecutor.Initialize(carrier, this.decompiler, this.gasInjector, this.network, stateRepository, this.validator, this.keyEncodingStrategy, mempoolFee);
+            return SmartContractExecutor.Initialize(carrier, this.network, stateRepository, this.validator, this.keyEncodingStrategy, mempoolFee);
         }
     }
 }

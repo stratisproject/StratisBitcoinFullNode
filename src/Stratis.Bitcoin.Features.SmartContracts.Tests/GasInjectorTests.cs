@@ -83,8 +83,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private readonly IKeyEncodingStrategy keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
 
-        private readonly ISmartContractGasInjector spendGasInjector = new SmartContractGasInjector();
-
         private readonly ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
 
         private readonly Network network = Network.SmartContractsRegTest;
@@ -115,7 +113,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 testMethod.Body.Instructions
                     .Count; // + constructorMethod.Body.Instructions.Count; // Have to figure out ctor gas metering
 
-            this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
 
             using (var mem = new MemoryStream())
             {
@@ -162,7 +160,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TypeDefinition contractType = moduleDefinition.GetType("OutOfGasTest");
             TypeDefinition baseType = contractType.BaseType.Resolve();
 
-            this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
 
             using (var mem = new MemoryStream())
             {
@@ -210,8 +208,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(originalAssemblyBytes), new ReaderParameters { AssemblyResolver = resolver });
             TypeDefinition contractType = moduleDefinition.GetType(ContractName);
             TypeDefinition baseType = contractType.BaseType.Resolve();
-            
-            this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+
+            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
 
             using (var mem = new MemoryStream())
             {
@@ -259,7 +257,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TypeDefinition contractType = moduleDefinition.GetType(ContractName);
             TypeDefinition baseType = contractType.BaseType.Resolve();
 
-            this.spendGasInjector.AddGasCalculationToContract(contractType, baseType);
+            SmartContractGasInjector.AddGasCalculationToContract(contractType, baseType);
 
             using (var mem = new MemoryStream())
             {

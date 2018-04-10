@@ -2,7 +2,7 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace Stratis.SmartContracts.Core
+namespace Stratis.SmartContracts.Core.Compilation
 {
     /// <summary>
     /// The result of a Smart Contract compilation.

@@ -16,8 +16,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class ReflectionVirtualMachineTests
     {
-        private readonly SmartContractDecompiler decompiler;
-        private readonly ISmartContractGasInjector gasInjector;
         private readonly Gas gasLimit;
         private readonly IGasMeter gasMeter;
         private readonly Network network;
@@ -29,8 +27,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public ReflectionVirtualMachineTests()
         {
-            this.decompiler = new SmartContractDecompiler();
-            this.gasInjector = new SmartContractGasInjector();
             this.network = Network.SmartContractsRegTest;
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.gasLimit = (Gas)10000;
@@ -61,10 +57,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //Deserialize the contract from the transaction----------
             //and get the module definition
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
-            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
             //-------------------------------------------------------
 
-            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+            SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
             byte[] gasAwareExecutionCode;
             using (var ms = new MemoryStream())
@@ -140,10 +136,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //Deserialize the contract from the transaction----------
             //and get the module definition
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
-            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
             //-------------------------------------------------------
 
-            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+            SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
             byte[] gasAwareExecutionCode;
             using (var ms = new MemoryStream())
@@ -219,10 +215,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //Deserialize the contract from the transaction----------
             //and get the module definition
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
-            SmartContractDecompilation decompilation = this.decompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode); // Note that this is skipping validation and when on-chain, 
             //-------------------------------------------------------
 
-            this.gasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
+            SmartContractGasInjector.AddGasCalculationToContract(decompilation.ContractType, decompilation.BaseType);
 
             byte[] gasAwareExecutionCode;
             using (var ms = new MemoryStream())

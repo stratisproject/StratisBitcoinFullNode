@@ -6,7 +6,7 @@ using Stratis.SmartContracts.Core.Backend;
 
 namespace Stratis.SmartContracts.Core
 {
-    public class SmartContractGasInjector : ISmartContractGasInjector
+    public static class SmartContractGasInjector
     {
         private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(System.UInt64)";
 
@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts.Core
             OpCodes.Callvirt
         };
 
-        public void AddGasCalculationToContract(TypeDefinition contractType, TypeDefinition baseType)
+        public static void AddGasCalculationToContract(TypeDefinition contractType, TypeDefinition baseType)
         {
             // Get gas spend method
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
@@ -49,11 +49,11 @@ namespace Stratis.SmartContracts.Core
 
             foreach (MethodDefinition method in contractType.Methods)
             {
-                this.InjectSpendGasMethod(method, gasMethodReference);
+                InjectSpendGasMethod(method, gasMethodReference);
             }
         }
 
-        private void InjectSpendGasMethod(MethodDefinition methodDefinition, MethodReference gasMethod)
+        private static void InjectSpendGasMethod(MethodDefinition methodDefinition, MethodReference gasMethod)
         {
             int position = 0;
             List<Instruction> branches = methodDefinition.Body.Instructions.Where(x => BranchingOps.Contains(x.OpCode)).ToList();

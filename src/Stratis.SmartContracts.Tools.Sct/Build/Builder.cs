@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Tools.Sct.Deployment;
 
 namespace Stratis.SmartContracts.Tools.Sct.Build

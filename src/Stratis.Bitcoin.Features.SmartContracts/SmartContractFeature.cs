@@ -49,14 +49,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<SmartContractDecompiler>();
                         SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
-                        services.AddSingleton<ISmartContractGasInjector, SmartContractGasInjector>();
                         services.AddSingleton<SmartContractExecutorFactory>();
 
                         services.AddSingleton<DBreezeContractStateStore>();

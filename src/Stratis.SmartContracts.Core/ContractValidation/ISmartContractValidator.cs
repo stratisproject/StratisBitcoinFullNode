@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Stratis.SmartContracts.Core.Compilation;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
