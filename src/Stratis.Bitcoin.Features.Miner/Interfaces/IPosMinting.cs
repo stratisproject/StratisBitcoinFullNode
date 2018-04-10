@@ -36,24 +36,18 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// Calculates staking difficulty for a specific block.
         /// </summary>
         /// <param name="block">Block at which to calculate the difficulty.</param>
-        /// <returns>The staking difficulty. If there is no block to determine the staking difficulty the value 1.0 is returned.</returns>
+        /// <returns>Staking difficulty.</returns>
         /// <remarks>
-        /// The algorithm combines multiple exponential and simple moving averages to smooth difficulty readjustments.
-        /// It has a fixed 24-block difficulty adjustment window for which it determines the average difficulty during the block window 
-        /// using a linear adjustment (directly scaling by the ratio of actual and target time).
-        /// The algorithm then uses the block header bits to calculate a maximum shift that allows the difficulty to shift either up or down. 
-        /// It can shift in either direction to the same fixed factor.
-        /// The algorithm was ported from <see cref="https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16"/>
-        /// which in turn was ported from darkcoin and/or bitcoin <see cref="https://github.com/bitcoin/bitcoin/blob/0.15/src/rpc/blockchain.cpp#L49"/>.
-        /// Additional information on general difficulty calculations: <see cref="https://en.bitcoin.it/wiki/Difficulty"/> and 
-        /// for some description regarding possible adjustments to make <see cref="http://web.archive.org/web/20180209161330/https://github.com/zcash/zcash/issues/147#issuecomment-202829008"/>.
+        /// The actual idea behind the calculation is a mystery. It was simply ported from
+        /// <see cref="https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16"/>.
+        /// </remarks>
         double GetDifficulty(ChainedBlock block);
 
         /// <summary>
         /// Constructs model for RPC "getstakinginfo" call.
         /// </summary>
         /// <returns>Staking information RPC response.</returns>
-        Models.GetStakingInfoModel GetStakingInfoModel();
+        Models.GetStakingInfoModel GetGetStakingInfoModel();
 
         /// <summary>
         /// Calculates the total balance from all UTXOs in the wallet that are mature.

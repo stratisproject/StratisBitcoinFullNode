@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void GetStakingInfo_WithPosMinting_ReturnsPosMintingStakingInfoModel()
         {
-            this.posMinting.Setup(p => p.GetStakingInfoModel())
+            this.posMinting.Setup(p => p.GetGetStakingInfoModel())
                 .Returns(new GetStakingInfoModel()
                 {
                     Enabled = true,
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void GetStakingInfo_UnexpectedException_ReturnsBadRequest()
         {
-            this.posMinting.Setup(p => p.GetStakingInfoModel())
+            this.posMinting.Setup(p => p.GetGetStakingInfoModel())
               .Throws(new InvalidOperationException("Unable to get model"));
 
             var result = this.controller.GetStakingInfo();

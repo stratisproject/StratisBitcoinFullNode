@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             asyncLoop.Run();
 
-            var model = this.posMinting.GetStakingInfoModel();
+            var model = this.posMinting.GetGetStakingInfoModel();
             Assert.Equal("Mining error.", model.Errors);
         }
 
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             asyncLoop.Run();
 
-            var model = this.posMinting.GetStakingInfoModel();
+            var model = this.posMinting.GetGetStakingInfoModel();
             Assert.Equal("Consensus error.", model.Errors);
         }
 
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.True(stakingLoopToken.IsCancellationRequested);
             asyncLoop.Verify(a => a.Dispose());
-            var model = this.posMinting.GetStakingInfoModel();
+            var model = this.posMinting.GetGetStakingInfoModel();
             Assert.Null(model.Errors);
             Assert.False(model.Enabled);
         }

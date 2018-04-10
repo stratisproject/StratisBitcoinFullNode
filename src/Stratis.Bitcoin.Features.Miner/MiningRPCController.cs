@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 throw new NotImplementedException();
             }
 
-            GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetStakingInfoModel() : new GetStakingInfoModel();
+            GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
 
             this.logger.LogTrace("(-):{0}", model);
             return model;
