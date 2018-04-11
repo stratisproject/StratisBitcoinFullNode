@@ -23,9 +23,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private int coinbaseMaturity;
         private Exception caughtException;
         private Transaction lastTransaction;
-        private int totalMinedBlocks;
+        private SharedSteps sharedSteps;
 
-        // NOTE: This constructor is allows test steps names to be logged
         public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
         }
@@ -33,6 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         protected override void BeforeTest()
         {
             this.nodeBuilder = NodeBuilder.Create();
+            this.sharedSteps = new SharedSteps();
         }
 
         protected override void AfterTest()
@@ -50,7 +50,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.receivingStratisBitcoinNode.NotInIBD();
 
             this.sendingStratisBitcoinNode.CreateRPCClient().AddNode(this.receivingStratisBitcoinNode.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.receivingStratisBitcoinNode, this.sendingStratisBitcoinNode));
+
+            this.sharedSteps.WaitForBlockStoreToSync(this.receivingStratisBitcoinNode, this.sendingStratisBitcoinNode);
 
             this.sendingStratisBitcoinNode.FullNode.WalletManager().CreateWallet(WalletPassword, SendingWalletName);
             this.receivingStratisBitcoinNode.FullNode.WalletManager().CreateWallet(WalletPassword, ReceivingWalletName);
@@ -61,17 +62,18 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_block_is_mined_creating_spendable_coins()
         {
-            this.MineBlocks(1, this.sendingStratisBitcoinNode);
+            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
         }
 
         private void more_blocks_mined_to_just_BEFORE_maturity_of_original_block()
         {
-            this.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode);
+            this.sharedSteps.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
         }
 
         private void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
         {
-            this.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode);
+            this.sharedSteps.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
+
         }
 
         private void spending_the_coins_from_original_block()
@@ -110,33 +112,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.caughtException.Should().BeNull();
         }
 
-        private void MineBlocks(int blockCount, CoreNode node)
-        {
-            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(SendingWalletName, AccountName));
-            var wallet = node.FullNode.WalletManager().GetWalletByName(SendingWalletName);
-            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(WalletPassword, address).PrivateKey;
-
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
-
-            node.GenerateStratisWithMiner(blockCount);
-            this.totalMinedBlocks = this.totalMinedBlocks + blockCount;
-
-            this.sendingStratisBitcoinNode.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(SendingWalletName)
-                .Sum(s => s.Transaction.Amount)
-                .Should().Be(Money.COIN * this.totalMinedBlocks * 50);
-
-            WaitForBlockStoreToSync(node);
-        }
-
         private void ResetCaughtException()
         {
             this.caughtException = null;
-        }
-
-        private void WaitForBlockStoreToSync(CoreNode node)
-        {
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
         }
     }
 }
