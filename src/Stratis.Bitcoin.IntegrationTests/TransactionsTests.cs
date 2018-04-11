@@ -28,22 +28,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             And(the_transaction_should_appear_in_the_blockchain);
         }
 
-        private void the_transaction_should_appear_in_the_blockchain()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void the_transaction_should_get_confirmed()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void no_error_should_happen()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void the_transaction_is_broadcasted()
+        #region steps
+        private void a_node_running()
         {
             throw new NotImplementedException();
         }
@@ -53,10 +39,26 @@ namespace Stratis.Bitcoin.IntegrationTests
             throw new NotImplementedException();
         }
 
-        private void a_node_running()
+        private void the_transaction_is_broadcasted()
         {
             throw new NotImplementedException();
         }
+
+        private void no_error_should_happen()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void the_transaction_should_get_confirmed()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void the_transaction_should_appear_in_the_blockchain()
+        {
+            throw new NotImplementedException();
+        } 
+        #endregion
 
         protected override void AfterTest()
         {
