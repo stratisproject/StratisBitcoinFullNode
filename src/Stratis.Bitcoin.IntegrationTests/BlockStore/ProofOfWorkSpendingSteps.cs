@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.Builders;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Xunit.Abstractions;
 
@@ -17,13 +18,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string ReceivingWalletName = "receiving wallet";
         private const string WalletPassword = "123456";
         private const string AccountName = "account 0";
-        private NodeBuilder nodeBuilder;
         private CoreNode sendingStratisBitcoinNode;
         private CoreNode receivingStratisBitcoinNode;
         private int coinbaseMaturity;
         private Exception caughtException;
         private Transaction lastTransaction;
         private SharedSteps sharedSteps;
+        private NodeGroupBuilder nodeGroupBuilder;
 
         public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -31,30 +32,29 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.nodeBuilder = NodeBuilder.Create();
+            this.nodeGroupBuilder = new NodeGroupBuilder();
             this.sharedSteps = new SharedSteps();
         }
 
         protected override void AfterTest()
         {
-            this.nodeBuilder.Dispose();
+            this.nodeGroupBuilder.Dispose();
         }
 
         private void a_sending_and_receiving_stratis_bitcoin_node_and_wallet()
         {
-            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode();
-            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode();
+            var nodeGroup = this.nodeGroupBuilder
+                .StratisPowNode("sending").Start().NotInIBD()
+                .WithWallet(SendingWalletName, WalletPassword)
+                .StratisPowNode("receiving").Start().NotInIBD()
+                .WithWallet(ReceivingWalletName, WalletPassword)
+                .WithConnections()
+                .Connect("sending", "receiving")
+                .AndNoMoreConnections()
+                .Build();
 
-            this.nodeBuilder.StartAll();
-            this.sendingStratisBitcoinNode.NotInIBD();
-            this.receivingStratisBitcoinNode.NotInIBD();
-
-            this.sendingStratisBitcoinNode.CreateRPCClient().AddNode(this.receivingStratisBitcoinNode.Endpoint, true);
-
-            this.sharedSteps.WaitForBlockStoreToSync(this.receivingStratisBitcoinNode, this.sendingStratisBitcoinNode);
-
-            this.sendingStratisBitcoinNode.FullNode.WalletManager().CreateWallet(WalletPassword, SendingWalletName);
-            this.receivingStratisBitcoinNode.FullNode.WalletManager().CreateWallet(WalletPassword, ReceivingWalletName);
+            this.sendingStratisBitcoinNode = nodeGroup["sending"];
+            this.receivingStratisBitcoinNode = nodeGroup["receiving"];
 
             this.coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode
                 .Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
