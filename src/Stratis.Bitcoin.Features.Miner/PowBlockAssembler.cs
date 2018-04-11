@@ -30,9 +30,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
         public bool IsProofOfStake = false;
-    }
-
-;
+    };
 
     public class BlockTemplate
     {
@@ -180,13 +178,13 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Script scriptPubKeyIn;
 
         public PowBlockAssembler(
-            IConsensusLoop consensusLoop,
-            Network network,
-            MempoolSchedulerLock mempoolLock,
-            ITxMempool mempool,
-            IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
+            IConsensusLoop consensusLoop,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
+            ITxMempool mempool,
+            MempoolSchedulerLock mempoolLock,
+            Network network,
             AssemblerOptions options = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowBlockAssembler(chain.Tip, this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object,
+                    this.txMempool.Object, new MempoolSchedulerLock(), this.network);
 
                 var blockTemplate = powBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
 
@@ -107,8 +107,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowBlockAssembler(chain.Tip, this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object,
+                    this.txMempool.Object, new MempoolSchedulerLock(), this.network);
 
                 var blockTemplate = powBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
 
@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
               ChainedBlock chainTip,
               ILoggerFactory loggerFactory,
               AssemblerOptions options = null) :
-                base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
+                base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
             {
                 base.pblock = this.pblocktemplate.Block;
             }
