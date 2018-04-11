@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasLimit = (Gas) 100;
             var gasMeter = new GasMeter(gasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(this.repository, persistenceStrategy,
+            var persistentState = new PersistentState(persistenceStrategy,
                 TestAddress.ToUint160(this.network), this.network);
             var vm = new ReflectionVirtualMachine(persistentState);
 

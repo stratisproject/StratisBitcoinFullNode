@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter, this.keyEncodingStrategy);
-            this.persistentState = new PersistentState(this.state, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            this.persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasMeter = new GasMeter(deserializedCall.GasLimit);
 
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.ContractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
 
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasMeter = new GasMeter(deserializedCall.GasLimit);
 
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(repository, persistenceStrategy, deserializedCall.ContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.ContractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
             var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasMeter = new GasMeter(deserializedCall.GasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
-            var persistentState = new PersistentState(repository, persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+            var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var vm = new ReflectionVirtualMachine(persistentState);
 
             var context = new SmartContractExecutionContext(

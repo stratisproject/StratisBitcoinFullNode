@@ -7,8 +7,6 @@ namespace Stratis.SmartContracts.Core
 {
     public class PersistentState : IPersistentState
     {
-        public IContractStateRepository StateDb { get; private set; }
-
         public uint160 ContractAddress { get; }
         private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
         private readonly IPersistenceStrategy persistenceStrategy;
@@ -18,12 +16,11 @@ namespace Stratis.SmartContracts.Core
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
         /// a slice of state for a particular contract address.
         /// </summary>
-        /// <param name="stateDb"></param>
         /// <param name="persistenceStrategy"></param>
         /// <param name="contractAddress"></param>
-        public PersistentState(IContractStateRepository stateDb, IPersistenceStrategy persistenceStrategy, uint160 contractAddress, Network network)
+        /// <param name="network"></param>
+        public PersistentState(IPersistenceStrategy persistenceStrategy, uint160 contractAddress, Network network)
         {
-            this.StateDb = stateDb;
             this.persistenceStrategy = persistenceStrategy;
             this.ContractAddress = contractAddress;
             this.network = network;

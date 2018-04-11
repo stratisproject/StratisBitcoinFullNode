@@ -91,7 +91,7 @@ namespace Stratis.SmartContracts.Core
                 );
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(this.stateSnapshot, persistenceStrategy, contractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
             ISmartContractExecutionResult result = vm.ExecuteMethod(
@@ -178,7 +178,7 @@ namespace Stratis.SmartContracts.Core
             );
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, new BasicKeyEncodingStrategy());
-            var persistentState = new PersistentState(this.stateSnapshot, persistenceStrategy, newContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
 
             var vm = new ReflectionVirtualMachine(persistentState);
 

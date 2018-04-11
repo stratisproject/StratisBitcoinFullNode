@@ -48,7 +48,7 @@ namespace Stratis.SmartContracts.Core.Backend
         {
             IContractStateRepository track = this.constractStateRepository.StartTracking();
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
-            IPersistentState newPersistentState = new PersistentState(track, persistenceStrategy, addressTo.ToUint160(this.network), this.network);
+            IPersistentState newPersistentState = new PersistentState(persistenceStrategy, addressTo.ToUint160(this.network), this.network);
 
             var newMessage = new Message(addressTo, smartContractState.Message.ContractAddress, amountToTransfer, (Gas)(smartContractState.Message.GasLimit - smartContractState.GasMeter.GasConsumed));
 

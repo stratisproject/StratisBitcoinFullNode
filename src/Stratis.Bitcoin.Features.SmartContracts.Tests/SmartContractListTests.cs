@@ -27,7 +27,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(state);
 
             var persistentState = new PersistentState(
-                state,
                 persistenceStrategy,
                 uint160.One,
                 this.network);
@@ -51,7 +50,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(state);
 
             var persistentState = new PersistentState(
-                state,
                 persistenceStrategy,
                 uint160.One,
                 this.network);
@@ -78,7 +76,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(state);
 
             var persistentState = new PersistentState(
-                state,
                 persistenceStrategy,
                 uint160.One,
                 this.network);
@@ -118,7 +115,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractStateRepository state = root.StartTracking();
             IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(state);
             var persistentState = new PersistentState(
-                state,
                 persistenceStrategy,
                 uint160.One,
                 this.network);
@@ -155,7 +151,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractStateRepository state = root.StartTracking();
             IPersistenceStrategy persistenceStrategy = new PersistenceStrategy(state);
             var persistentState = new PersistentState(
-                state,
                 persistenceStrategy,
                 uint160.One,
                 this.network);

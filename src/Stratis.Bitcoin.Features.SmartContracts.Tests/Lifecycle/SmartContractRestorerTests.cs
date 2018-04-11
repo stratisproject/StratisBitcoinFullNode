@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Lifecycle
         private readonly ISmartContractState State = new SmartContractState(
             new Block(0, new Address()),
             new Message(new Address(), new Address(), 0, (Gas)0),
-            new PersistentState(null, null, 0, null),
+            new PersistentState(null, 0, null),
             new GasMeter((Gas)1000),
             new InternalTransactionExecutor(null, null, new BasicKeyEncodingStrategy()),
             new InternalHashHelper(),
