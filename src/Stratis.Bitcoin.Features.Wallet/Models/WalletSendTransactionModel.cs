@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// <summary>
         /// The output address in Base58.
         /// </summary>
-        [JsonProperty(PropertyName = "address")]
+        [JsonProperty(PropertyName = "address", NullValueHandling = NullValueHandling.Ignore)]
         public string Address { get; set; }
 
         /// <summary>
@@ -38,5 +38,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "amount")]
         public Money Amount { get; set; }
+
+        /// <summary>
+        /// The amount associated with the output.
+        /// </summary>
+        [JsonProperty(PropertyName = "opReturnData", NullValueHandling = NullValueHandling.Ignore)]
+        public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// The amount associated with the output.
+        /// </summary>
+        [JsonProperty(PropertyName = "isOpReturn", NullValueHandling = NullValueHandling.Ignore)]
+        public bool IsOpReturn => !string.IsNullOrWhiteSpace(this.OpReturnData);
     }
 }

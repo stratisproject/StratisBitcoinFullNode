@@ -91,6 +91,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
                 new List<Recipient>() { new Recipient() {Amount = Money.COIN * 10, ScriptPubKey = this.receiverAddress.ScriptPubKey}},
                 this.password, this.opReturnContent) {MinConfirmations = 2};
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+
+            this.transaction.Outputs.Single(t => t.ScriptPubKey.IsUnspendable).Value.Should().Be(Money.Zero);
         }
 
         private void the_transaction_is_broadcasted()

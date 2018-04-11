@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -676,6 +677,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Amount = output.Value,
                     });
                 }
+
+                // if we find an OP_RETURN in the outputs, we add its content to the model
+                var unspendableOutput = transaction.Outputs.SingleOrDefault(txOut => txOut.ScriptPubKey.IsUnspendable);
+                if (unspendableOutput != null) model.Outputs.Add(new TransactionOutputModel()
+                {
+                    Amount = unspendableOutput.Value,
+                    OpReturnData = Encoding.UTF8.GetString(unspendableOutput.ScriptPubKey.ToOps().Last().PushData)
+                });
 
                 this.walletManager.ProcessTransaction(transaction, null, null, false);
 

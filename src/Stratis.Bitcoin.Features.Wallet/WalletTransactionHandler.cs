@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
                 return context.Transaction;
+
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
             throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
@@ -346,13 +347,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Add extra unspendable output to the transaction if there is anything in OpReturnData
+        /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddOpReturnOutput(TransactionBuildContext context)
         {
-
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
+
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
             var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Then().Send(opReturnScript, Money.Zero);
@@ -386,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// The wallet account to use for building a transaction
+        /// The wallet account to use for building a transaction.
         /// </summary>
         public WalletAccountReference AccountReference { get; set; }
 
@@ -455,7 +456,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public List<OutPoint> SelectedInputs { get; set; }
 
         /// <summary>
-        /// If false, allows unselected inputs, but requires all selected inputs be used
+        /// If false, allows unselected inputs, but requires all selected inputs be used.
         /// </summary>
         public bool AllowOtherInputs { get; set; }
 
@@ -475,13 +476,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool Shuffle { get; set; }
         
         /// <summary>
-        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value
+        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
         public string OpReturnData { get; set; }
     }
 
     /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>
+    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>.
     /// </summary>
     public class Recipient
     {
