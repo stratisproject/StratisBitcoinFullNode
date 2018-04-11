@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         private void mine_coins_to_maturity()
         {
             this.nodes[PowMiner].GenerateStratisWithMiner(100);
-            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[PowMiner]);
+            this.sharedSteps.WaitForNodeToSync(this.nodes[PowMiner]);
         }
 
         private void a_proof_of_stake_node_with_wallet()
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             this.nodeGroupBuilder.WithConnections().Connect(PowMiner, PosStaker);
         }
 
-        private void create_tx_to_send_million_coins_from_pow_wallet_to_pos_node_wallet()
+        private void sends_a_million_coins_from_pow_wallet_to_pos_wallet()
         {
             var context = SharedSteps.CreateTransactionBuildContext(
                 PowWallet,
@@ -110,12 +110,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
             context.OverrideFeeRate = new FeeRate(Money.Satoshis(20000));
 
-            var sendTransaction = CreateSendTransaction();
-            this.nodes[PowMiner].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(sendTransaction.ToHex()));
-        }
-
-        private Transaction CreateSendTransaction()
-        {
             var unspent = this.nodes[PowMiner].FullNode.WalletManager().GetSpendableTransactionsInWallet(PowWallet);
             var coins = new List<Coin>();
 
@@ -136,26 +130,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             transaction.AddOutput(new TxOut(new Money(100000000000000), this.posReceiverAddress.ScriptPubKey));
             transaction.Sign(this.powSenderPrivateKey, new[] { coin });
 
-            return transaction;
+            this.nodes[PowMiner].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
         }
 
         private void pow_wallet_broadcasts_tx_of_million_coins_and_pos_wallet_receives()
         {
-            // Wait for the coins to arrive
             TestHelper.WaitLoop(() => this.nodes[PosStaker].CreateRPCClient().GetRawMempool().Length > 0);
             TestHelper.WaitLoop(() => this.nodes[PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(PosWallet).Any());
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[PosStaker]));
 
-            // Ensure that the wallet on the proof-of-stake node reflects the coins sent (1 000 000)
+            this.sharedSteps.WaitForNodeToSync(this.nodes[PosStaker]);
+
             var received = this.nodes[PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(PosWallet);
             received.Sum(s => s.Transaction.Amount).Should().Be(Money.COIN * 1000000);
         }
 
-        private void pos_node_mines_a_further_ten_blocks()
+        private void pos_node_mines_ten_blocks_more_ensuring_they_can_be_staked()
         {
-            // Ensure coin maturity to stake the coins by mining
-            // the coins on the proof stake node 10 times.
-            // This is equal to the blocks incrementing their confirmation count by 10.
             this.nodes[PosStaker].GenerateStratisWithMiner(10);
         }
 

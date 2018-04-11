@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
         {
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodeToSync(node);
 
             var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodeToSync(node);
 
             var rewardCoinCount = blockCount * Money.COIN * 50;
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
         {
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodeToSync(node);
 
             var unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
             var wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
@@ -61,13 +61,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
             node.GenerateStratisWithMiner(2);
 
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodeToSync(node);
 
             var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
             spendable.Sum(s => s.Transaction.Amount).Should().Be(Money.COIN * 98000004);
         }
 
-        public void WaitForBlockStoreToSync(params CoreNode[] nodes)
+        public void WaitForNodeToSync(params CoreNode[] nodes)
         {
             if (nodes.Length == 1)
             {

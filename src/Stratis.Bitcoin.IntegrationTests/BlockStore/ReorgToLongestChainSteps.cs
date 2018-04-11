@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void charlie_mines_this_block()
         {
             this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword, this.shortChainTransactionFee.Satoshi);
-            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
+            this.sharedSteps.WaitForNodeToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
 
         private void dave_confirms_transaction_is_present()
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void jings_connection_comes_back()
         {
             this.nodes[JingTheFastMiner].CreateRPCClient().AddNode(this.nodes[Bob].Endpoint);
-            this.sharedSteps.WaitForBlockStoreToSync(this.nodes[JingTheFastMiner], this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
+            this.sharedSteps.WaitForNodeToSync(this.nodes[JingTheFastMiner], this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
          
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()

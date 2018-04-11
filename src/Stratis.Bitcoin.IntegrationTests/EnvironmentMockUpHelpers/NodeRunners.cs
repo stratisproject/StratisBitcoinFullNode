@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     .MockIBD();
 
                 if (this.mineCoinsFast)
-                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new FastCoinsDateTimeProvider());
+                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider());
 
                 node = (FullNode)builder.Build();
             }
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     .AddRPC();
 
                 if (this.mineCoinsFast)
-                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new FastCoinsDateTimeProvider());
+                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider());
 
                 node = (FullNode)builder.Build();
             }
@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     .MockIBD();
 
                 if (this.mineCoinsFast)
-                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new FastCoinsDateTimeProvider());
+                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider());
 
                 node = (FullNode)builder.Build();
             }
