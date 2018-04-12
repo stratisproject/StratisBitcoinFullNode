@@ -10,8 +10,7 @@ public class CallInfiniteLoopContract : SmartContract
     {
         ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
-            ContractMethodName = "Loop",
-            ContractTypeName = "InfiniteLoop"
+            ContractMethodName = "Loop"
         });
 
         return result.Success;

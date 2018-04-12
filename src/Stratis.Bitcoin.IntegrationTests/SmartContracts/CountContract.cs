@@ -36,8 +36,7 @@ public class CountContract : SmartContract
     {
         ITransferResult result = TransferFunds(new Address(Message.Sender), 0, new TransferFundsToContract
         {
-            ContractMethodName = "Asserter",
-            ContractTypeName = "CallContract"
+            ContractMethodName = "Asserter"
         });
         SaveWorked = (bool)result.ReturnValue;
         return (bool)result.ReturnValue;

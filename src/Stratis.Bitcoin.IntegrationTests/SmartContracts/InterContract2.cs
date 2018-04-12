@@ -8,8 +8,7 @@ public class InterContract2 : SmartContract
     {
         ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
-            ContractMethodName = "ReturnInt",
-            ContractTypeName = "InterContract1"
+            ContractMethodName = "ReturnInt"
         });
 
         return (int) result.ReturnValue;
@@ -19,8 +18,7 @@ public class InterContract2 : SmartContract
     {
         ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
-            ContractMethodName = "ThrowException",
-            ContractTypeName = "InterContract1"
+            ContractMethodName = "ThrowException"
         });
 
         return result.Success;

@@ -12,11 +12,6 @@
         public string ContractMethodName { get; set; }
 
         /// <summary>
-        /// The name of the contract assembly.
-        /// </summary>
-        public string ContractTypeName { get; set; }
-
-        /// <summary>
         /// If required, the method parameters that will be passed to the <see cref="ContractMethodName"/>.
         /// </summary>
         public object[] MethodParameters { get; set; }

@@ -24,8 +24,7 @@ public class CallContract : SmartContract
 
         ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
-            ContractMethodName = "IncrementCount",
-            ContractTypeName = "CountContract"
+            ContractMethodName = "IncrementCount"
         });
 
         return result.Success;
@@ -35,8 +34,7 @@ public class CallContract : SmartContract
     {
         ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
         {
-            ContractMethodName = "get_Count",
-            ContractTypeName = "CountContract"
+            ContractMethodName = "get_Count"
         });
 
         if (result.Success)
@@ -50,8 +48,7 @@ public class CallContract : SmartContract
         Test = "Not Initial!";
         ITransferResult result = TransferFunds(new Address(addressString), 0, new TransferFundsToContract
         {
-            ContractMethodName = "Callback",
-            ContractTypeName = "CountContract"
+            ContractMethodName = "Callback"
         });
         return (bool)result.ReturnValue;
     }
