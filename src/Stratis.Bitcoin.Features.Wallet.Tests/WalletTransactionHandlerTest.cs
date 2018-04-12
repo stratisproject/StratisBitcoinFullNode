@@ -595,12 +595,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         /// <summary>
-        /// Currently the fee match because of imprecisions when estimating fees
-        /// https://github.com/stratisproject/StratisBitcoinFullNode/issues/1283
-        /// Once this is fixed, that test should be changed from "Should_Equal" to "Should_Not_Equal"
+        /// Make sure that if you add data to the transaction in an OP_RETURN the estimated fee increases
         /// </summary>
         [Fact]
-        public void EstimateFee_Without_OpReturnData_Should_Equal_Estimate_Fee_With_Costly_OpReturnData()
+        public void EstimateFee_Without_OpReturnData_Should_Be_Less_Than_Estimate_Fee_With_Costly_OpReturnData()
         {
             var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
 
@@ -612,10 +610,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var estimateContextWithoutOpReturn = CreateContext(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
             var feeEstimateWithoutOpReturn = walletTransactionHandler.EstimateFee(estimateContextWithoutOpReturn);
 
-            // uncomment this line when issue 1283 is fixed
-            // feeEstimateWithOpReturn.Should().NotBe(feeEstimateWithoutOpReturn);
-            feeEstimateWithOpReturn.Should().Be(feeEstimateWithoutOpReturn);
+            feeEstimateWithOpReturn.Should().NotBe(feeEstimateWithoutOpReturn);
+            feeEstimateWithoutOpReturn.Satoshi.Should().BeLessThan(feeEstimateWithOpReturn.Satoshi);
         }
+
+        /// <summary>
+        /// Make sure that if you add data to the transaction in an OP_RETURN the actual fee increases
+        /// </summary>
+        [Fact]
+        public void Actual_Fee_Without_OpReturnData_Should_Be_Less_Than_Actual_Fee_With_Costly_OpReturnData()
+        {
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
+
+            // Context with OpReturnData
+            var contextWithOpReturn = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            walletTransactionHandler.BuildTransaction(contextWithOpReturn);
+            
+            // Context without OpReturnData
+            var contextWithoutOpReturn = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
+            walletTransactionHandler.BuildTransaction(contextWithoutOpReturn);
+
+            contextWithoutOpReturn.TransactionFee.Should().NotBe(contextWithOpReturn.TransactionFee);
+            contextWithoutOpReturn.TransactionFee.Satoshi.Should().BeLessThan(contextWithOpReturn.TransactionFee.Satoshi);
+        }
+
 
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations, string opReturnData = null)

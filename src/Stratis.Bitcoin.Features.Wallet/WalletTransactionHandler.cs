@@ -188,11 +188,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             context.TransactionBuilder = new TransactionBuilder();
 
             this.AddRecipients(context);
+            this.AddOpReturnOutput(context);
             this.AddCoins(context);
             this.AddSecrets(context);
             this.FindChangeAddress(context);
             this.AddFee(context);
-            this.AddOpReturnOutput(context);
         }
 
         /// <summary>
@@ -356,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
             var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-            context.TransactionBuilder.Then().Send(opReturnScript, Money.Zero);
+            context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
 
     }
