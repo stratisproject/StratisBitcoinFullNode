@@ -520,7 +520,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
                     TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
-                    uint256 hashBock = this.chain.GetBlock((int) set.Height)?.HashBlock;
+                    uint256 hashBock = set != null ? this.chain.GetBlock((int) set.Height)?.HashBlock : null;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBock != null))
                     {
