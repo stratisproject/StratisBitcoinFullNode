@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.LightWallet.Tests
