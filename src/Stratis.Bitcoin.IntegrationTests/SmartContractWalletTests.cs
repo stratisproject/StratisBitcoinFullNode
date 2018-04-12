@@ -15,7 +15,6 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
@@ -142,7 +141,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a token contract
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)1000;
+                Gas gasLimit = (Gas)2000;
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 

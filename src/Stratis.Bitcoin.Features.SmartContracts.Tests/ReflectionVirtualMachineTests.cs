@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //Deserialize the contract from the transaction----------
             var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
             //-------------------------------------------------------
-            
+
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository stateRepository = repository.StartTracking();
 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
             Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
-                
+
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
@@ -160,13 +160,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
             Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
         }
-        
+
         [Fact]
         public void VM_CreateContract_WithParameters()
         {
             //Get the contract execution code------------------------
             SmartContractCompilationResult compilationResult =
-                SmartContractCompiler.CompileFile("SmartContracts/SimpleAuction.cs");
+                SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
 
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             track.Commit();
 
-            Assert.Equal(6, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("AuctionEndBlock")), 0));
+            Assert.Equal(6, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("EndBlock")), 0));
             Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("Owner")));
         }
     }
