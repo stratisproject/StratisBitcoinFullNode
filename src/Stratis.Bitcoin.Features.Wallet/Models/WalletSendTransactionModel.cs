@@ -40,15 +40,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public Money Amount { get; set; }
 
         /// <summary>
-        /// The amount associated with the output.
+        /// The data encoded in the OP_RETURN script
         /// </summary>
         [JsonProperty(PropertyName = "opReturnData", NullValueHandling = NullValueHandling.Ignore)]
         public string OpReturnData { get; set; }
-
-        /// <summary>
-        /// The amount associated with the output.
-        /// </summary>
-        [JsonProperty(PropertyName = "isOpReturn", NullValueHandling = NullValueHandling.Ignore)]
-        public bool IsOpReturn => !string.IsNullOrWhiteSpace(this.OpReturnData);
     }
 }
