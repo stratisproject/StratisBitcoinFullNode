@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Core.Backend
             IInternalTransactionExecutor internalTxExecutor,
             Func<ulong> getBalance)
         {
-            byte[] gasInjectedCode = InjectGasMeasurement(contractCode);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(contractCode);
 
             Type contractType = Load(gasInjectedCode);
 
@@ -74,11 +74,12 @@ namespace Stratis.SmartContracts.Core.Backend
             Func<ulong> getBalance)
         {
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
+            
             if (contractMethodName == null)
                 return executionResult;
 
-            byte[] gasInjectedCode = InjectGasMeasurement(contractCode);
-
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractCode, contractMethodName);
+            
             Type contractType = Load(gasInjectedCode);
 
             if (contractType == null)
@@ -138,11 +139,6 @@ namespace Stratis.SmartContracts.Core.Backend
             }
 
             return executionResult;
-        }
-
-        private static byte[] InjectGasMeasurement(byte[] byteCode)
-        {
-            return SmartContractGasInjector.AddGasCalculationToContract(byteCode);
         }
 
         /// <summary>
