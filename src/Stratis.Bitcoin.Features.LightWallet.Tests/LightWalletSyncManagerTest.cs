@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
-using Stratis.Bitcoin.Features.Wallet.Tests;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
