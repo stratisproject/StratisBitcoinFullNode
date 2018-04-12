@@ -18,7 +18,6 @@ namespace Stratis.SmartContracts.Core.State
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         public List<TransferInfo> Transfers { get; private set; }
-        public SmartContractCarrier CurrentCarrier { get; set; }
 
         protected ContractStateRepository() { }
 
@@ -115,8 +114,7 @@ namespace Stratis.SmartContracts.Core.State
             var stateRepository = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
             {
                 parent = this,
-                Transfers = new List<TransferInfo>(this.Transfers),
-                CurrentCarrier = this.CurrentCarrier
+                Transfers = new List<TransferInfo>(this.Transfers)
             };
 
             return stateRepository;
@@ -178,9 +176,7 @@ namespace Stratis.SmartContracts.Core.State
         public ulong GetCurrentBalance(uint160 address)
         {
             ulong ret = 0;
-            if (this.CurrentCarrier?.ContractAddress == address)
-                ret += this.CurrentCarrier.TxOutValue;
-
+            
             ContractUnspentOutput unspent = this.GetUnspent(address);
             if (unspent != null)
                 ret += unspent.Value;

@@ -74,7 +74,7 @@ namespace Stratis.SmartContracts.Core
 
         protected ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
         {
-            ulong getBalance() => this.stateSnapshot.GetCurrentBalance(contractAddress);
+            ulong getBalance() => this.stateSnapshot.GetCurrentBalance(contractAddress) + this.carrier.TxOutValue;
 
             var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
             var executionContext = new SmartContractExecutionContext
@@ -161,6 +161,7 @@ namespace Stratis.SmartContracts.Core
                 return;
             }
 
+            // Amount/TxOutValue should always be zero when creating a contract, so we do not need to add it to GetBalance
             ulong getBalance() => this.stateSnapshot.GetCurrentBalance(newContractAddress);
 
             var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
@@ -224,7 +225,6 @@ namespace Stratis.SmartContracts.Core
             }
           
             // Execute the call to the contract.
-            this.stateSnapshot.CurrentCarrier = this.carrier;
             this.Result = base.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
 
             if (this.Result.Revert)
