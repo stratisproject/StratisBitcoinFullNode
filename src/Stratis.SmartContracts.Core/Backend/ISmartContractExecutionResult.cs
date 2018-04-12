@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -34,6 +35,11 @@ namespace Stratis.SmartContracts.Core.Backend
         /// The condensing transaction produced by the contract execution.
         /// </summary>
         Transaction InternalTransaction { get; set; }
+
+        /// <summary>
+        /// The internal transfers produced by the contract execution
+        /// </summary>
+        IList<TransferInfo> InternalTransfers { get; set; }
 
         /// <summary>
         /// After a contract is executed internally, we will need to merge the results.

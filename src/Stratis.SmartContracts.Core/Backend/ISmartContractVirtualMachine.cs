@@ -1,4 +1,5 @@
 ﻿using System;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -6,15 +7,11 @@ namespace Stratis.SmartContracts.Core.Backend
     {
         ISmartContractExecutionResult Create(byte[] contractCode,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter,
-            IInternalTransactionExecutor internalTxExecutor,
-            Func<ulong> getBalance);
+            IGasMeter gasMeter);
 
         ISmartContractExecutionResult ExecuteMethod(byte[] contractCode,
             string methodName,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter,
-            IInternalTransactionExecutor internalTxExecutor,
-            Func<ulong> getBalance);
+            IGasMeter gasMeter);
     }
 }

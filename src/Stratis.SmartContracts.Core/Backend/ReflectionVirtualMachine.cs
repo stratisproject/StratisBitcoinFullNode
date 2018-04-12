@@ -6,6 +6,7 @@ using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.Lifecycle;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -16,10 +17,15 @@ namespace Stratis.SmartContracts.Core.Backend
     {
         public static int VmVersion = 1;
         private readonly IPersistentState persistentState;
+        private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
+        private readonly IContractStateRepository repository;
 
-        public ReflectionVirtualMachine(IPersistentState persistentState)
+        public ReflectionVirtualMachine(IPersistentState persistentState,
+            InternalTransactionExecutorFactory internalTransactionExecutorFactory, IContractStateRepository repository)
         {
             this.persistentState = persistentState;
+            this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
+            this.repository = repository;
         }
 
         /// <summary>
@@ -27,22 +33,27 @@ namespace Stratis.SmartContracts.Core.Backend
         /// </summary>
         public ISmartContractExecutionResult Create(byte[] contractCode,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter,
-            IInternalTransactionExecutor internalTxExecutor,
-            Func<ulong> getBalance)
+            IGasMeter gasMeter)
         {
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(contractCode);
 
             Type contractType = Load(gasInjectedCode);
+
+            var internalTransferList = new InternalTransferList();
+
+            IInternalTransactionExecutor internalTransactionExecutor =
+                this.internalTransactionExecutorFactory.Create(this.repository, internalTransferList);
+            
+            var balanceState = new BalanceState(this.repository, context.Message.Value, internalTransferList);
 
             var contractState = new SmartContractState(
                 context.Block,
                 context.Message,
                 this.persistentState,
                 gasMeter,
-                internalTxExecutor,
+                internalTransactionExecutor,
                 new InternalHashHelper(),
-                getBalance);
+                () => balanceState.GetBalance(context.ContractAddress));
 
             // Invoke the constructor of the provided contract code
             LifecycleResult result = SmartContractConstructor
@@ -60,6 +71,8 @@ namespace Stratis.SmartContracts.Core.Backend
 
             executionResult.Return = result.Object;
 
+            executionResult.InternalTransfers = internalTransferList.Transfers;
+
             return executionResult;
         }
 
@@ -69,9 +82,7 @@ namespace Stratis.SmartContracts.Core.Backend
         public ISmartContractExecutionResult ExecuteMethod(byte[] contractCode,
             string contractMethodName,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter,
-            IInternalTransactionExecutor internalTxExecutor,
-            Func<ulong> getBalance)
+            IGasMeter gasMeter)
         {
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
             
@@ -85,14 +96,21 @@ namespace Stratis.SmartContracts.Core.Backend
             if (contractType == null)
                 return executionResult;
 
+            var internalTransferList = new InternalTransferList();
+
+            IInternalTransactionExecutor internalTransactionExecutor =
+                this.internalTransactionExecutorFactory.Create(this.repository, internalTransferList);
+
+            var balanceState = new BalanceState(this.repository, context.Message.Value, internalTransferList);
+
             var contractState = new SmartContractState(
                 context.Block,
                 context.Message,
                 this.persistentState,
                 gasMeter,
-                internalTxExecutor,
+                internalTransactionExecutor,
                 new InternalHashHelper(),
-                getBalance);
+                () => balanceState.GetBalance(context.ContractAddress));
 
             LifecycleResult result = SmartContractRestorer.Restore(contractType, contractState);
 
@@ -116,6 +134,8 @@ namespace Stratis.SmartContracts.Core.Backend
                 }
 
                 executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
+
+                executionResult.InternalTransfers = internalTransferList.Transfers;
             }
             catch (ArgumentException argumentException)
             {

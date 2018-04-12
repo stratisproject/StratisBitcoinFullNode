@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NBitcoin;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -25,6 +26,8 @@ namespace Stratis.SmartContracts.Core.Backend
 
         /// <inheritdoc/>
         public Transaction InternalTransaction { get; set; }
+
+        public IList<TransferInfo> InternalTransfers { get; set; }
 
         /// <inheritdoc/>
         public uint160 NewContractAddress { get; set; }

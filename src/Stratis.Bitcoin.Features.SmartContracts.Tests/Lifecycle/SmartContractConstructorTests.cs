@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Lifecycle
             new Message(new Address(), new Address(), 0, (Gas) 0),
             new PersistentState(null, 0, null),
             new GasMeter((Gas) 1000),
-            new InternalTransactionExecutor(null, null, new BasicKeyEncodingStrategy()),
+            new InternalTransactionExecutor(null, null, new BasicKeyEncodingStrategy(), null),
             new InternalHashHelper(),
             () => 10000);
 

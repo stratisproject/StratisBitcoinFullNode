@@ -4,7 +4,12 @@ using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Core.State
 {
-    public interface IContractStateRepository
+    public interface IBalanceRepository
+    {
+        ulong GetCurrentBalance(uint160 address);
+    }
+
+    public interface IContractStateRepository : IBalanceRepository
     {
         AccountState CreateAccount(uint160 addr);
         bool IsExist(uint160 addr);
@@ -21,14 +26,11 @@ namespace Stratis.SmartContracts.Core.State
         void Rollback();
         ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot);
 
-        #region Account Abstraction Layer
+        #region Account Abstraction Layer        
 
-        List<TransferInfo> Transfers { get; }
-        void TransferBalance(uint160 from, uint160 to, ulong value);
         ContractUnspentOutput GetUnspent(uint160 address);
         void SetUnspent(uint160 address, ContractUnspentOutput vin);
         byte[] GetUnspentHash(uint160 address);
-        ulong GetCurrentBalance(uint160 address);
 
         #endregion
     }

@@ -42,25 +42,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy,
                 TestAddress.ToUint160(this.network), this.network);
-            var vm = new ReflectionVirtualMachine(persistentState);
+            var internalTxExecutorFactory =
+                new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy);
+            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, this.repository);
 
             var context = new SmartContractExecutionContext(
                 new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, gasLimit),
+                TestAddress.ToUint160(this.network),
                 1,
                 new object[] { }
             );
-
-            var internalTransactionExecutor = new InternalTransactionExecutor(this.repository, this.network, this.keyEncodingStrategy);
-            Func<ulong> getBalance = () => this.repository.GetCurrentBalance(TestAddress.ToUint160(this.network));
-
+            
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowException",
                 context,
-                gasMeter,
-                internalTransactionExecutor,
-                getBalance);
+                gasMeter);
 
             Assert.Equal(typeof(Exception), result.Exception.GetType());
         }

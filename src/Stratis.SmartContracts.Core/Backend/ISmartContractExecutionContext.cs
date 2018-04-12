@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.Core.Backend
+﻿using NBitcoin;
+
+namespace Stratis.SmartContracts.Core.Backend
 {
     /// <summary>
     /// Defines how execution context for smart contract executor should be constructed.
@@ -21,5 +23,7 @@
         /// These are the method parameters to be injected into the method call by the <see cref="SmartContractExecutor"/>.
         /// </summary>
         object[] Parameters { get; }
+
+        uint160 ContractAddress { get; set; }
     }
 }

@@ -63,7 +63,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, deserializedCall.ContractAddress, this.network);
 
-            var vm = new ReflectionVirtualMachine(persistentState);
+            var internalTxExecutorFactory =
+                new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy);
+            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, repository);
 
             var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
 
@@ -75,19 +77,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.TxOutValue,
                                 deserializedCall.GasLimit
                                 ),
+                            TestAddress.ToUint160(this.network),
                             deserializedCall.GasPrice
                         );
-
-            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
-
+            
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
                 context,
-                gasMeter,
-                internalTransactionExecutor,
-                getBalance);
+                gasMeter);
 
             stateRepository.Commit();
 
@@ -129,7 +127,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, deserializedCall.ContractAddress, this.network);
 
-            var vm = new ReflectionVirtualMachine(persistentState);
+            var internalTxExecutorFactory =
+                new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy);
+            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, repository);
+            
             var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
             var context = new SmartContractExecutionContext(
@@ -140,20 +141,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.TxOutValue,
                                 deserializedCall.GasLimit
                                 ),
+                            deserializedCall.ContractAddress,
                             deserializedCall.GasPrice,
                             deserializedCall.MethodParameters
                         );
-
-            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, this.keyEncodingStrategy);
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
                 context,
-                gasMeter,
-                internalTransactionExecutor,
-                getBalance);
+                gasMeter);
 
             track.Commit();
 
@@ -194,7 +191,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasMeter = new GasMeter(deserializedCall.GasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-            var vm = new ReflectionVirtualMachine(persistentState);
+            var internalTxExecutorFactory =
+                new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy);
+            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, repository);
 
             var context = new SmartContractExecutionContext(
                             new Block(1, TestAddress),
@@ -204,19 +203,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 deserializedCall.TxOutValue,
                                 deserializedCall.GasLimit
                                 ),
+                            TestAddress.ToUint160(this.network),
                             deserializedCall.GasPrice,
                             deserializedCall.MethodParameters
                         );
-
-            var internalTransactionExecutor = new InternalTransactionExecutor(repository, this.network, new BasicKeyEncodingStrategy());
-            Func<ulong> getBalance = () => repository.GetCurrentBalance(deserializedCall.ContractAddress);
-
+            
             ISmartContractExecutionResult result = vm.Create(
                 contractExecutionCode,
                 context,
-                gasMeter,
-                internalTransactionExecutor,
-                getBalance);
+                gasMeter);
 
             track.Commit();
 

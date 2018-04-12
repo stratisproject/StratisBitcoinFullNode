@@ -17,8 +17,7 @@ namespace Stratis.SmartContracts.Core.State
         public ISource<byte[], ContractUnspentOutput> vinCache;
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
-        public List<TransferInfo> Transfers { get; private set; }
-
+        
         protected ContractStateRepository() { }
 
         public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
@@ -34,7 +33,6 @@ namespace Stratis.SmartContracts.Core.State
             this.codeCache = codeCache;
             this.storageCache = storageCache;
             this.vinCache = vinCache;
-            this.Transfers = new List<TransferInfo>();
         }
 
         public AccountState CreateAccount(uint160 addr)
@@ -113,8 +111,7 @@ namespace Stratis.SmartContracts.Core.State
 
             var stateRepository = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
             {
-                parent = this,
-                Transfers = new List<TransferInfo>(this.Transfers)
+                parent = this
             };
 
             return stateRepository;
@@ -130,9 +127,6 @@ namespace Stratis.SmartContracts.Core.State
 
         public virtual void Commit()
         {
-            if (this.parent != null)
-                this.parent.Transfers.AddRange(this.Transfers.Where(x => !this.parent.Transfers.Contains(x)));
-
             ContractStateRepository parentSync = this.parent == null ? this : this.parent;
             lock (parentSync)
             {
@@ -155,16 +149,6 @@ namespace Stratis.SmartContracts.Core.State
 
         #region Account Abstraction Layer
 
-        public void TransferBalance(uint160 from, uint160 to, ulong value)
-        {
-            this.Transfers.Add(new TransferInfo
-            {
-                From = from,
-                To = to,
-                Value = value
-            });
-        }
-
         /// <summary>
         /// Gets the balance for a contract.
         /// Balance = UTXO the contract currently owns, + all the funds it has received, - all the funds it has sent.
@@ -180,16 +164,6 @@ namespace Stratis.SmartContracts.Core.State
             ContractUnspentOutput unspent = this.GetUnspent(address);
             if (unspent != null)
                 ret += unspent.Value;
-
-            foreach (TransferInfo transfer in this.Transfers.Where(x => x.To == address))
-            {
-                ret += transfer.Value;
-            }
-
-            foreach (TransferInfo transfer in this.Transfers.Where(x => x.From == address))
-            {
-                ret -= transfer.Value;
-            }
 
             return ret;
         }

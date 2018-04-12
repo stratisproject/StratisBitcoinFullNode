@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Utilities;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -19,7 +20,9 @@ namespace Stratis.SmartContracts.Core.Backend
         /// <inheritdoc/>
         public object[] Parameters { get; private set; }
 
-        public SmartContractExecutionContext(IBlock block, IMessage message, ulong gasPrice, object[] methodParameters = null)
+        public uint160 ContractAddress { get; set; }
+
+        public SmartContractExecutionContext(IBlock block, IMessage message, uint160 contractAdddress, ulong gasPrice, object[] methodParameters = null)
         {
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(message, nameof(message));
@@ -27,6 +30,7 @@ namespace Stratis.SmartContracts.Core.Backend
             this.Block = block;
             this.Message = message;
             this.GasPrice = gasPrice;
+            this.ContractAddress = contractAdddress;
 
             if (methodParameters != null && methodParameters.Length > 0)
                 this.Parameters = methodParameters;

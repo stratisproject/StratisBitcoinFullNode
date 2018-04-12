@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Core.Backend
 {
@@ -12,12 +14,18 @@ namespace Stratis.SmartContracts.Core.Backend
         private readonly IContractStateRepository constractStateRepository;
         private readonly Network network;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly InternalTransferList internalTransferList;
 
-        public InternalTransactionExecutor(IContractStateRepository constractStateRepository, Network network, IKeyEncodingStrategy keyEncodingStrategy)
+        public InternalTransactionExecutor(
+            IContractStateRepository constractStateRepository, 
+            Network network, 
+            IKeyEncodingStrategy keyEncodingStrategy,
+            InternalTransferList internalTransferList)
         {
             this.constractStateRepository = constractStateRepository;
             this.network = network;
             this.keyEncodingStrategy = keyEncodingStrategy;
+            this.internalTransferList = internalTransferList;
         }
 
         ///<inheritdoc/>
@@ -34,7 +42,13 @@ namespace Stratis.SmartContracts.Core.Backend
             if (contractCode == null || contractCode.Length == 0)
             {
                 // If it is not a contract, just record the transfer and return.
-                this.constractStateRepository.TransferBalance(smartContractState.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amountToTransfer);
+                this.internalTransferList.Add(new TransferInfo
+                {
+                    From = smartContractState.Message.ContractAddress.ToUint160(this.network),
+                    To = addressTo.ToUint160(this.network),
+                    Value = amountToTransfer
+                });
+
                 return TransferResult.Empty();
             }
 
@@ -52,17 +66,15 @@ namespace Stratis.SmartContracts.Core.Backend
 
             var newMessage = new Message(addressTo, smartContractState.Message.ContractAddress, amountToTransfer, (Gas)(smartContractState.Message.GasLimit - smartContractState.GasMeter.GasConsumed));
 
-            ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, 0, contractDetails.MethodParameters);
+            ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
-            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState);
+            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState, new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy), track);
 
             ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
                 contractCode,
                 contractDetails.ContractMethodName,
                 newContext,
-                smartContractState.GasMeter,
-                this,
-                smartContractState.GetBalance);
+                smartContractState.GasMeter);
 
             smartContractState.GasMeter.Spend(executionResult.GasConsumed);
 
@@ -74,8 +86,13 @@ namespace Stratis.SmartContracts.Core.Backend
 
             track.Commit();
 
-            this.constractStateRepository.TransferBalance(smartContractState.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amountToTransfer);
-
+            this.internalTransferList.Add(new TransferInfo
+            {
+                From = smartContractState.Message.ContractAddress.ToUint160(this.network),
+                To = addressTo.ToUint160(this.network),
+                Value = amountToTransfer
+            });
+            
             return TransferResult.Transferred(executionResult.Return);
         }
     }

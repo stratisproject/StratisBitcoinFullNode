@@ -72,39 +72,6 @@ namespace Stratis.SmartContracts.Core
             return this.Result;
         }
 
-        protected ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
-        {
-            ulong getBalance() => this.stateSnapshot.GetCurrentBalance(contractAddress) + this.carrier.TxOutValue;
-
-            var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
-            var executionContext = new SmartContractExecutionContext
-                (
-                block,
-                new Message(
-                    contractAddress.ToAddress(this.network),
-                    this.carrier.Sender.ToAddress(this.network),
-                    this.carrier.TxOutValue,
-                    this.carrier.GasLimit
-                    ),
-                this.carrier.GasPrice,
-                this.carrier.MethodParameters
-                );
-
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
-
-            var vm = new ReflectionVirtualMachine(persistentState);
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
-                contractCode,
-                methodName,
-                executionContext,
-                this.gasMeter,
-                new InternalTransactionExecutor(this.stateSnapshot, this.network, this.keyEncodingStrategy),
-                getBalance);
-
-            return result;
-        }
-
         /// <summary>
         /// Any logic that should happen before we start contract execution and/or validation
         /// happens here.
@@ -161,9 +128,6 @@ namespace Stratis.SmartContracts.Core
                 return;
             }
 
-            // Amount/TxOutValue should always be zero when creating a contract, so we do not need to add it to GetBalance
-            ulong getBalance() => this.stateSnapshot.GetCurrentBalance(newContractAddress);
-
             var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
             var executionContext = new SmartContractExecutionContext
             (
@@ -174,6 +138,7 @@ namespace Stratis.SmartContracts.Core
                     this.carrier.TxOutValue,
                     this.carrier.GasLimit
                 ),
+                newContractAddress,
                 this.carrier.GasPrice,
                 this.carrier.MethodParameters
             );
@@ -181,14 +146,14 @@ namespace Stratis.SmartContracts.Core
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
 
-            var vm = new ReflectionVirtualMachine(persistentState);
+            // TODO push TXExecutorFactory to DI
+            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy), this.stateSnapshot);
 
+            // Push internal tx executor and getbalance down into VM
             this.Result = vm.Create(
                 this.carrier.ContractExecutionCode,
                 executionContext,
-                this.gasMeter,
-                new InternalTransactionExecutor(this.stateSnapshot, this.network, new BasicKeyEncodingStrategy()),
-                getBalance);
+                this.gasMeter);
 
             if (!this.Result.Revert)
             {
@@ -225,13 +190,44 @@ namespace Stratis.SmartContracts.Core
             }
           
             // Execute the call to the contract.
-            this.Result = base.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
+            this.Result = this.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
 
             if (this.Result.Revert)
                 this.RevertExecution();
             else
-                this.CommitExecution();
+                this.CommitExecution(this.Result.InternalTransfers);
         }
+
+        private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
+        {
+            var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
+            var executionContext = new SmartContractExecutionContext
+            (
+                block,
+                new Message(
+                    contractAddress.ToAddress(this.network),
+                    this.carrier.Sender.ToAddress(this.network),
+                    this.carrier.TxOutValue,
+                    this.carrier.GasLimit
+                ),
+                contractAddress,
+                this.carrier.GasPrice,
+                this.carrier.MethodParameters
+            );
+
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
+            var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
+
+            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy), this.stateSnapshot);
+            ISmartContractExecutionResult result = vm.ExecuteMethod(
+                contractCode,
+                methodName,
+                executionContext,
+                this.gasMeter);
+
+            return result;
+        }
+
 
         /// <summary>
         /// Contract execution completed successfully, commit state.
@@ -239,16 +235,15 @@ namespace Stratis.SmartContracts.Core
         /// We need to append a condensing transaction to the block if funds are moved.
         /// </para>
         /// </summary>
-        private void CommitExecution()
+        /// <param name="transfers"></param>
+        private void CommitExecution(IList<TransferInfo> transfers)
         {
-            IList<TransferInfo> transfers = this.stateSnapshot.Transfers;
-            if (transfers.Any() || this.carrier.TxOutValue > 0)
+            if (transfers != null && transfers.Any() || this.carrier.TxOutValue > 0)
             {
                 var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
                 this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
-            this.stateSnapshot.Transfers.Clear();
             this.stateSnapshot.Commit();
         }
 
