@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet;
+using PaymentDetails = Stratis.Bitcoin.Features.Wallet.PaymentDetails;
 
-namespace Stratis.Bitcoin.Features.Wallet.Tests
+namespace Stratis.Tests.Common
 {
     /// <summary>
     /// Helper class containing a bunch of methods used for testing the wallet functionality.

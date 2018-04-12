@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests

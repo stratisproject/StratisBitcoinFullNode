@@ -16,6 +16,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
