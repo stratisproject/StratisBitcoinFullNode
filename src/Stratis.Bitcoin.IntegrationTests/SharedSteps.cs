@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.WaitForBlockStoreToSync(node);
           
-            balanceIncrease.Should().Be(node.CalculateProofOfWorkReward(blockCount) + expectedFees);
+            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount) + expectedFees);
         }
 
         public void WaitForBlockStoreToSync(params CoreNode[] nodes)

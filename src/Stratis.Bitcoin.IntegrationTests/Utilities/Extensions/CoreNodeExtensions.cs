@@ -10,23 +10,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
 {
     public static class CoreNodeExtensions
     {
-        public static Money CalculateProofOfWorkReward(this CoreNode node, int blocksMined)
+        public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
-            var consensusValidator = node.FullNode.NodeService<IPowConsensusValidator>() as PowConsensusValidator;
+            var powValidator = node.FullNode.NodeService<IPowConsensusValidator>();
+            var halvingInterval = powValidator.ConsensusParams.SubsidyHalvingInterval;
+            var startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
-            var startBlock = node.FullNode.Chain.Height - blocksMined + 1;
-
-            var groupedRewards = Enumerable.Range(startBlock, blocksMined)
-                .Partition(consensusValidator.ConsensusParams.SubsidyHalvingInterval);
-
-            var rewardsPerGroup = new List<Money>();
-
-            foreach(var groupedReward in groupedRewards)
-            { 
-                rewardsPerGroup.Add(groupedReward.Count() * consensusValidator.GetProofOfWorkReward(groupedReward.First()));
-            }
-
-            return rewardsPerGroup.Sum();
+            return Enumerable.Range(startBlock, numberOfBlocks)
+                .Partition(halvingInterval)
+                .Sum(p => powValidator.GetProofOfWorkReward(p.First()) * p.Count());
         }
 
         public static Money WalletBalance(this CoreNode node, string walletName)
