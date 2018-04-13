@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Tests;
+using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Api.Tests

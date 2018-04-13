@@ -4,6 +4,7 @@ using DBreeze;
 using NBitcoin;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests

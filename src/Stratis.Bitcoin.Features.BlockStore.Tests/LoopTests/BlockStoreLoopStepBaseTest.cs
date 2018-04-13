@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Tests.Common;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {

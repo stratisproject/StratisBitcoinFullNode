@@ -7,7 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Tests.Common
 {
     public class TestBase
     {
