@@ -122,13 +122,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
                 .Should().Be(this.transferAmount);
         }
 
-        private void the_transaction_should_appear_in_the_blockchain()
+        private async Task the_transaction_should_appear_in_the_blockchain()
         {
-            Task<Block> findBlockTask = this.senderNode.FullNode.BlockStoreManager().BlockRepository
+            var block = await this.senderNode.FullNode.BlockStoreManager().BlockRepository
                 .GetAsync(this.blockWithOpReturnId);
-            findBlockTask.Wait();
-            var block = findBlockTask.Result;
-
+            
             var transactionFromBlock = block.Transactions
                 .Single(t => t.ToHex() == this.transaction.ToHex());
 
