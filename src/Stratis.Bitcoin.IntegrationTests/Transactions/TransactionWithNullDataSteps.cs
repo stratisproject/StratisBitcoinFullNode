@@ -128,8 +128,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
                 .GetAsync(this.blockWithOpReturnId);
             findBlockTask.Wait();
             var block = findBlockTask.Result;
+
             var transactionFromBlock = block.Transactions
                 .Single(t => t.ToHex() == this.transaction.ToHex());
+
             var opReturnOutputFromBlock = transactionFromBlock.Outputs.Single(t => t.ScriptPubKey.IsUnspendable);
             opReturnOutputFromBlock.Value.Satoshi.Should().Be(0);
             var ops = opReturnOutputFromBlock.ScriptPubKey.ToOps().ToList();
