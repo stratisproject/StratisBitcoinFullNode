@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
@@ -27,52 +28,52 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         protected abstract void BeforeTest();
         protected abstract void AfterTest();
 
-        public void Given(Action action)
+        public void Given(Action step)
         {
-            this.RunStep(action, "Given");
+            this.RunStep(step);
         }
         public void Given(Func<Task> step, CancellationToken ct = default(CancellationToken))
         {
-            this.RunStep(step, "Given", ct);
+            this.RunStep(step, ct);
         }
 
-        public void When(Action action)
+        public void When(Action step)
         {
-            this.RunStep(action, "When");
+            this.RunStep(step);
         }
 
         public void When(Func<Task> step, CancellationToken ct = default(CancellationToken))
         {
-            this.RunStep(step, "When", ct);
+            this.RunStep(step, ct);
         }
 
-        public void Then(Action action)
+        public void Then(Action step)
         {
-            this.RunStep(action, "Then");
+            this.RunStep(step);
         }
 
         public void Then(Func<Task> step, CancellationToken ct = default(CancellationToken))
         {
-            this.RunStep(step, "Then", ct);
+            this.RunStep(step, ct);
         }
 
-        public void And(Action action)
+        public void And(Action step)
         {
-            this.RunStep(action, "And");
+            this.RunStep(step);
         }
 
         public void And(Func<Task> step, CancellationToken ct = default(CancellationToken))
         {
-            this.RunStep(step, "And", ct);
+            this.RunStep(step, ct);
         }
 
-        private void RunStep(Action action, string stepType)
+        private void RunStep(Action step, [CallerMemberName] string stepType = null)
         {
-            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {action.Method.Name.Replace("_", " ")}");
-            action.Invoke();
+            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {step.Method.Name.Replace("_", " ")}");
+            step.Invoke();
         }
 
-        private void RunStep(Func<Task> step, string stepType, CancellationToken ct = default(CancellationToken))
+        private void RunStep(Func<Task> step, CancellationToken ct = default(CancellationToken), [CallerMemberName] string stepType = null)
         {
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {step.Method.Name.Replace("_", " ")}");
 
