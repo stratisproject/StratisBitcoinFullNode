@@ -677,14 +677,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Amount = output.Value,
                     });
                 }
-
-                // if we find an OP_RETURN in the outputs, we add its content to the model
-                var unspendableOutput = transaction.Outputs.SingleOrDefault(txOut => txOut.ScriptPubKey.IsUnspendable);
-                if (unspendableOutput != null) model.Outputs.Add(new TransactionOutputModel()
-                {
-                    Amount = unspendableOutput.Value,
-                    OpReturnData = Encoding.UTF8.GetString(unspendableOutput.ScriptPubKey.ToOps().Last().PushData)
-                });
+                
+                AddOpReturnOutputIfNeeded(transaction, model);
 
                 this.walletManager.ProcessTransaction(transaction, null, null, false);
 
@@ -697,6 +691,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+        private static void AddOpReturnOutputIfNeeded(Transaction transaction, WalletSendTransactionModel model)
+        {
+            var unspendableOutput = transaction.Outputs.SingleOrDefault(txOut => txOut.ScriptPubKey.IsUnspendable);
+            if (unspendableOutput == null) return;
+
+            model.Outputs.Add(new TransactionOutputModel()
+            {
+                Amount = unspendableOutput.Value,
+                OpReturnData = Encoding.UTF8.GetString(unspendableOutput.ScriptPubKey.ToOps().Last().PushData)
+            });
         }
 
         /// <summary>

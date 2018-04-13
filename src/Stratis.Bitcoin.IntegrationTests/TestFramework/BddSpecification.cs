@@ -69,13 +69,13 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
 
         private void RunStep(Action step, [CallerMemberName] string stepType = null)
         {
-            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {step.Method.Name.Replace("_", " ")}");
+            OuputStepDetails(step.Method.Name, stepType);
             step.Invoke();
         }
 
         private void RunStep(Func<Task> step, CancellationToken ct = default(CancellationToken), [CallerMemberName] string stepType = null)
         {
-            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {step.Method.Name.Replace("_", " ")}");
+            OuputStepDetails(step.Method.Name, stepType);
 
             try
             {
@@ -84,8 +84,13 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             }
             catch (AggregateException ex)
             {
-                foreach(var innerException in ex.InnerExceptions) { throw innerException; }
+                foreach (var innerException in ex.InnerExceptions) { throw innerException; }
             };
+        }
+
+        private void OuputStepDetails(string stepRawName, string stepType)
+        {
+            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
         }
     }
 }
