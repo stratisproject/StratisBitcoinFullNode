@@ -317,11 +317,14 @@ namespace Stratis.Bitcoin.Configuration
 
                 StringBuilder builder = new StringBuilder();
 
-                foreach (var featureRegistration in features)
+                if (features != null)
                 {
-                    MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("GetDefaultConfiguration", BindingFlags.Public | BindingFlags.Static);
+                    foreach (var featureRegistration in features)
+                    {
+                        MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("GetDefaultConfiguration", BindingFlags.Public | BindingFlags.Static);
 
-                    getDefaultConfiguration?.Invoke(null, new object[] { builder });
+                        getDefaultConfiguration?.Invoke(null, new object[] { builder });
+                    }
                 }
 
                 File.WriteAllText(configFilePath, builder.ToString());
