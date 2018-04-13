@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -24,27 +23,27 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosMintingTest : LogsTestBase, IDisposable
     {
         private PosMinting posMinting;
-        private bool initialBlockSignature;
-        private bool initialTimestamp;
-        private Mock<IPosConsensusValidator> consensusValidator;
-        private Mock<IConsensusLoop> consensusLoop;
+        private readonly bool initialBlockSignature;
+        private readonly bool initialTimestamp;
+        private readonly Mock<IPosConsensusValidator> consensusValidator;
+        private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
-        private Network network;
-        private Mock<IConnectionManager> connectionManager;
-        private Mock<IDateTimeProvider> dateTimeProvider;
-        private Mock<IAssemblerFactory> assemblerFactory;
-        private Mock<IInitialBlockDownloadState> initialBlockDownloadState;
-        private Mock<INodeLifetime> nodeLifetime;
-        private TestCoinView coinView;
-        private Mock<IStakeChain> stakeChain;
-        private List<uint256> powBlocks;
-        private Mock<IStakeValidator> stakeValidator;
-        private MempoolSchedulerLock mempoolSchedulerLock;
-        private Mock<ITxMempool> txMempool;
-        private Mock<IWalletManager> walletManager;
-        private Mock<IAsyncLoopFactory> asyncLoopFactory;
-        private Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
-        private CancellationTokenSource cancellationTokenSource;
+        private readonly Network network;
+        private readonly Mock<IConnectionManager> connectionManager;
+        private readonly Mock<IDateTimeProvider> dateTimeProvider;
+        private readonly Mock<IAssemblerFactory> assemblerFactory;
+        private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
+        private readonly Mock<INodeLifetime> nodeLifetime;
+        private readonly TestCoinView coinView;
+        private readonly Mock<IStakeChain> stakeChain;
+        private readonly List<uint256> powBlocks;
+        private readonly Mock<IStakeValidator> stakeValidator;
+        private readonly MempoolSchedulerLock mempoolSchedulerLock;
+        private readonly Mock<ITxMempool> txMempool;
+        private readonly Mock<IWalletManager> walletManager;
+        private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
+        private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
+        private readonly CancellationTokenSource cancellationTokenSource;
 
         public PosMintingTest()
         {
@@ -80,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.nodeLifetime.Setup(n => n.ApplicationStopping)
                 .Returns(this.cancellationTokenSource.Token);
 
-            this.posMinting = InitializePosMinting();
+            this.posMinting = this.InitializePosMinting();
         }       
 
         public void Dispose()
@@ -424,7 +423,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 {
                     var blockStake = new BlockStake();
 
-                    if (!powBlocks.Contains(callbackBlockId))
+                    if (!this.powBlocks.Contains(callbackBlockId))
                     {
                         blockStake.Flags = BlockFlag.BLOCK_PROOF_OF_STAKE;
                     }
