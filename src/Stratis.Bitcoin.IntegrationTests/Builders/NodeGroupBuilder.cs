@@ -33,6 +33,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
             return this;
         }
 
+        public NodeGroupBuilder StratisPosNode(string nodeName)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode());
+            return this;
+        }
+
         public NodeGroupBuilder NotInIBD()
         {
             this.nodes.Last().Value.NotInIBD();
