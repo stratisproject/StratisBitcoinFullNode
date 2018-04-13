@@ -3,6 +3,7 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
@@ -27,6 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
 
             return rewardsPerGroup.Sum();
         }
+
         public static Money WalletBalance(this CoreNode node, string walletName)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
@@ -40,6 +42,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Utilities.Extensions
         public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
+        }
+
+        public static Money GetFee(this CoreNode node, TransactionBuildContext transactionBuildContext)
+        {
+            return node.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
         }
     }
 }

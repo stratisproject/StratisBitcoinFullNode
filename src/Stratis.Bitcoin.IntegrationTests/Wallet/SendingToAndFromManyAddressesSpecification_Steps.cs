@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Returns 50 outputs, including one extra output for change.
             transaction.Outputs.Count.Should().Be(UnspentTransactionOutputs + 1);
 
-            this.transactionFee = GetFee(this.nodes[NodeOne]);
+            this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildContext);
 
             this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
         }
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
-            this.transactionFee = GetFee(this.nodes[NodeTwo]);
+            this.transactionFee = this.transactionFee = this.nodes[NodeTwo].GetFee(this.transactionBuildContext);
 
             transaction.Inputs.Count.Should().Be(50);
 
@@ -149,11 +149,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             two_connected_nodes();
             node1_sends_funds_to_node2_TO_fifty_addresses();
             node2_receives_the_funds();
-        }
-
-        private Money GetFee(CoreNode node)
-        {
-            return node.FullNode.WalletTransactionHandler().EstimateFee(this.transactionBuildContext);
         }
     }
 }
