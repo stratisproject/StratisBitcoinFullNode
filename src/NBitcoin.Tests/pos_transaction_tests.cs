@@ -337,6 +337,7 @@ namespace NBitcoin.Tests
             //Scenario 1 : Carla knows aliceBobCoins so she can calculate how much coin she need to complete the transaction
             //Carla fills and signs
             txBuilder = new TransactionBuilder();
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             var carlaSigned = txBuilder
                 .AddCoins(aliceBobCoins)
                 .Then()
@@ -363,6 +364,7 @@ namespace NBitcoin.Tests
             //Scenario 2 : Carla is told by Bob to complete 0.05 BTC
             //Carla fills and signs
             txBuilder = new TransactionBuilder();
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             carlaSigned = txBuilder
                 .AddKeys(carlaKey)
                 .AddCoins(carlaCoins)
