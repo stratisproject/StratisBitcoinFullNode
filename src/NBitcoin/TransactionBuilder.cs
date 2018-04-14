@@ -38,70 +38,86 @@ namespace NBitcoin
         {
             _Rand = new Random(seed);
         }
+
+        /// <summary>
+        /// Select all coins belonging to same scriptPubKey together to protect privacy. (Default: true)
+        /// </summary>
+        public bool GroupByScriptPubKey
+        {
+            get; set;
+        } = true;
+
         #region ICoinSelector Members
 
         public IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target)
         {
             var zero = target.Sub(target);
-            var targetCoin = coins
-                            .FirstOrDefault(c => c.Amount.CompareTo(target) == 0);
-            //If any of your UTXO² matches the Target¹ it will be used.
-            if(targetCoin != null)
-                return new[] { targetCoin };
 
             List<ICoin> result = new List<ICoin>();
             IMoney total = zero;
 
-            if(target.CompareTo(zero) == 0)
+            if (target.CompareTo(zero) == 0)
                 return result;
 
-            var orderedCoins = coins.OrderBy(s => s.Amount).ToArray();
+            var orderedCoinGroups = coins.GroupBy(c => GroupByScriptPubKey ? c.TxOut.ScriptPubKey : new Key().ScriptPubKey)
+                                    .Select(scriptPubKeyCoins => new
+                                    {
+                                        Amount = scriptPubKeyCoins.Select(c => c.Amount).Sum(zero),
+                                        Coins = scriptPubKeyCoins.ToList()
+                                    }).OrderBy(c => c.Amount);
 
-            foreach(var coin in orderedCoins)
+
+            var targetCoin = orderedCoinGroups
+                            .FirstOrDefault(c => c.Amount.CompareTo(target) == 0);
+            //If any of your UTXO² matches the Target¹ it will be used.
+            if (targetCoin != null)
+                return targetCoin.Coins;
+
+            foreach (var coinGroup in orderedCoinGroups)
             {
-                if(coin.Amount.CompareTo(target) == -1 && total.CompareTo(target) == -1)
+                if (coinGroup.Amount.CompareTo(target) == -1 && total.CompareTo(target) == -1)
                 {
-                    total = total.Add(coin.Amount);
-                    result.Add(coin);
+                    total = total.Add(coinGroup.Amount);
+                    result.AddRange(coinGroup.Coins);
                     //If the "sum of all your UTXO smaller than the Target" happens to match the Target, they will be used. (This is the case if you sweep a complete wallet.)
-                    if(total.CompareTo(target) == 0)
+                    if (total.CompareTo(target) == 0)
                         return result;
 
                 }
                 else
                 {
-                    if(total.CompareTo(target) == -1 && coin.Amount.CompareTo(target) == 1)
+                    if (total.CompareTo(target) == -1 && coinGroup.Amount.CompareTo(target) == 1)
                     {
                         //If the "sum of all your UTXO smaller than the Target" doesn't surpass the target, the smallest UTXO greater than your Target will be used.
-                        return new[] { coin };
+                        return coinGroup.Coins;
                     }
                     else
                     {
-                        //                        Else Bitcoin Core does 1000 rounds of randomly combining unspent transaction outputs until their sum is greater than or equal to the Target. If it happens to find an exact match, it stops early and uses that.
+                        //						Else Bitcoin Core does 1000 rounds of randomly combining unspent transaction outputs until their sum is greater than or equal to the Target. If it happens to find an exact match, it stops early and uses that.
                         //Otherwise it finally settles for the minimum of
                         //the smallest UTXO greater than the Target
                         //the smallest combination of UTXO it discovered in Step 4.
-                        var allCoins = orderedCoins.ToArray();
+                        var allCoins = orderedCoinGroups.ToArray();
                         IMoney minTotal = null;
-                        for(int _ = 0; _ < 1000; _++)
+                        for (int _ = 0; _ < 1000; _++)
                         {
                             var selection = new List<ICoin>();
                             Utils.Shuffle(allCoins, _Rand);
                             total = zero;
-                            for(int i = 0; i < allCoins.Length; i++)
+                            for (int i = 0; i < allCoins.Length; i++)
                             {
-                                selection.Add(allCoins[i]);
+                                selection.AddRange(allCoins[i].Coins);
                                 total = total.Add(allCoins[i].Amount);
-                                if(total.CompareTo(target) == 0)
+                                if (total.CompareTo(target) == 0)
                                     return selection;
-                                if(total.CompareTo(target) == 1)
+                                if (total.CompareTo(target) == 1)
                                     break;
                             }
-                            if(total.CompareTo(target) == -1)
+                            if (total.CompareTo(target) == -1)
                             {
                                 return null;
                             }
-                            if(minTotal == null || total.CompareTo(minTotal) == -1)
+                            if (minTotal == null || total.CompareTo(minTotal) == -1)
                             {
                                 minTotal = total;
                             }
@@ -109,7 +125,7 @@ namespace NBitcoin
                     }
                 }
             }
-            if(total.CompareTo(target) == -1)
+            if (total.CompareTo(target) == -1)
                 return null;
             return result;
         }
