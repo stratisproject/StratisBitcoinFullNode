@@ -151,13 +151,22 @@ namespace NBitcoin
             return HashX13.Instance.Hash(this.ToBytes());
         }
 
-        /// <summary>
-        /// If called, <see cref="GetHash"/> becomes cached, only use if you believe the instance will
-        /// not be modified after calculation. Calling it a second type invalidate the cache.
-        /// </summary>
+        [Obsolete("Call PrecomputeHash(true, true) instead")]
         public void CacheHashes()
         {
-            this.hashes = new uint256[1];
+            PrecomputeHash(true, true);
+        }
+
+        /// <summary>
+        /// Precompute the block header hash so that later calls to GetHash() will returns the precomputed hash
+        /// </summary>
+        /// <param name="invalidateExisting">If true, the previous precomputed hash is thrown away, else it is reused</param>
+        /// <param name="lazily">If true, the hash will be calculated and cached at the first call to GetHash(), else it will be immediately</param>
+        public void PrecomputeHash(bool invalidateExisting, bool lazily)
+        {
+            this.hashes = invalidateExisting ? new uint256[1] : this.hashes ?? new uint256[1];
+            if (!lazily && this.hashes[0] == null)
+                this.hashes[0] = GetHash();
         }
 
         public bool CheckProofOfWork(Consensus consensus)
