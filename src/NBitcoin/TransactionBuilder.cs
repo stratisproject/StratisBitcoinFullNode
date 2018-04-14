@@ -247,11 +247,11 @@ namespace NBitcoin
                 foreach(Op op in ops)
                 {
                     uint256 h = Hashes.Hash256(op.PushData);
- 	                PubKey real;
- 	                if(this._DummyToRealKey.TryGetValue(h, out real))
- 		                result.Add(Op.GetPushOp(real.ToBytes()));
- 	                else
- 		                result.Add(op);
+                    PubKey real;
+                    if(this._DummyToRealKey.TryGetValue(h, out real))
+                        result.Add(Op.GetPushOp(real.ToBytes()));
+                    else
+                        result.Add(op);
                 }
                 return new Script(result.ToArray());
             }
@@ -538,12 +538,30 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Will transform transfers below Dust, so the transaction get correctly relayed by the network.
+        /// If true, it will remove any TxOut below Dust, so the transaction get correctly relayed by the network. (Default: true)
         /// </summary>
         public bool DustPrevention
         {
             get;
             set;
+        }
+
+        /// <summary>
+        /// If true, the TransactionBuilder will not select coins whose fee to spend is higher than its value. (Default: true)
+        /// The cost of spending a coin is based on the <see cref="FilterUneconomicalCoinsRate"/>.
+        /// </summary>
+        public bool FilterUneconomicalCoins
+        {
+            get; set;
+        } = true;
+
+        /// <summary>
+        /// If <see cref="FilterUneconomicalCoins"/> is true, this rate is used to know if an output is economical.
+        /// This property is set automatically when calling <see cref="SendEstimatedFees(FeeRate)"/> or <see cref="SendEstimatedFeesSplit(FeeRate)"/>.
+        /// </summary>
+        public FeeRate FilterUneconomicalCoinsRate
+        {
+            get; set;
         }
 
         /// <summary>
@@ -931,6 +949,7 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SendEstimatedFees(FeeRate feeRate)
         {
+            this.FilterUneconomicalCoinsRate = feeRate;
             var fee = EstimateFees(feeRate);
             SendFees(fee);
             return this;
@@ -943,6 +962,7 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SendEstimatedFeesSplit(FeeRate feeRate)
         {
+            this.FilterUneconomicalCoinsRate = feeRate;
             var fee = EstimateFees(feeRate);
             SendFeesSplit(fee);
             return this;
@@ -1064,7 +1084,7 @@ namespace NBitcoin
                 ctx.ChangeAmount = Money.Zero;
                 ctx.CoverOnly = group.CoverOnly;
                 ctx.ChangeType = ChangeType.Uncolored;
-                BuildTransaction(ctx, group, group.Builders, group.Coins.Values.OfType<Coin>(), Money.Zero);
+                BuildTransaction(ctx, group, group.Builders, group.Coins.Values.OfType<Coin>().Where(IsEconomical), Money.Zero);
             }
             ctx.Finish();
 
@@ -1073,6 +1093,19 @@ namespace NBitcoin
                 SignTransactionInPlace(ctx.Transaction, sigHash);
             }
             return ctx.Transaction;
+        }
+
+        private bool IsEconomical(Coin c)
+        {
+            if (!this.FilterUneconomicalCoins || this.FilterUneconomicalCoinsRate == null)
+                return true;
+
+            int witSize = 0;
+            int baseSize = 0;
+            EstimateScriptSigSize(c, ref witSize, ref baseSize);
+            var vSize = witSize / Transaction.WITNESS_SCALE_FACTOR + baseSize;
+
+            return c.Amount >= this.FilterUneconomicalCoinsRate.GetFee(vSize);
         }
 
         private IEnumerable<ICoin> BuildTransaction(
@@ -1381,70 +1414,69 @@ namespace NBitcoin
         /// <returns></returns>
         public int EstimateSize(Transaction tx, bool virtualSize)
         {
-            if(tx == null)
+            if (tx == null)
                 throw new ArgumentNullException("tx");
             var clone = tx.Clone();
             clone.Inputs.Clear();
             var baseSize = clone.GetSerializedSize();
 
-            int vSize = 0;
-            int size = baseSize;
-            if(tx.HasWitness)
-                vSize += 2;
-            foreach(var txin in tx.Inputs.AsIndexedInputs())
+            int witSize = 0;
+            if (tx.HasWitness)
+                witSize += 2;
+            foreach (var txin in tx.Inputs.AsIndexedInputs())
             {
                 var coin = FindSignableCoin(txin) ?? FindCoin(txin.PrevOut);
-                if(coin == null)
+                if (coin == null)
                     throw CoinNotFound(txin);
-                EstimateScriptSigSize(coin, ref vSize, ref size);
-                size += 41;
+                EstimateScriptSigSize(coin, ref witSize, ref baseSize);
+                baseSize += 41;
             }
 
-            return (virtualSize ? vSize / Transaction.WITNESS_SCALE_FACTOR + size : vSize + size);
+            return (virtualSize ? witSize / Transaction.WITNESS_SCALE_FACTOR + baseSize : witSize + baseSize);
         }
 
-        private void EstimateScriptSigSize(ICoin coin, ref int vSize, ref int size)
+        private void EstimateScriptSigSize(ICoin coin, ref int witSize, ref int baseSize)
         {
-            if(coin is IColoredCoin)
+            if (coin is IColoredCoin)
                 coin = ((IColoredCoin)coin).Bearer;
 
-            if(coin is ScriptCoin)
+            if (coin is ScriptCoin)
             {
                 var scriptCoin = (ScriptCoin)coin;
                 var p2sh = scriptCoin.GetP2SHRedeem();
-                if(p2sh != null)
+                if (p2sh != null)
                 {
                     coin = new Coin(scriptCoin.Outpoint, new TxOut(scriptCoin.Amount, p2sh));
-                    size += new Script(Op.GetPushOp(p2sh.ToBytes(true))).Length;
-                    if(scriptCoin.RedeemType == RedeemType.WitnessV0)
+                    baseSize += new Script(Op.GetPushOp(p2sh.ToBytes(true))).Length;
+                    if (scriptCoin.RedeemType == RedeemType.WitnessV0)
                     {
                         coin = new ScriptCoin(coin, scriptCoin.Redeem);
                     }
                 }
 
-                if(scriptCoin.RedeemType == RedeemType.WitnessV0)
+                if (scriptCoin.RedeemType == RedeemType.WitnessV0)
                 {
-                    vSize += new Script(Op.GetPushOp(scriptCoin.Redeem.ToBytes(true))).Length;
+                    witSize += new Script(Op.GetPushOp(scriptCoin.Redeem.ToBytes(true))).Length;
                 }
             }
 
             var scriptPubkey = coin.GetScriptCode();
             var scriptSigSize = -1;
-            foreach(var extension in Extensions)
+            foreach (var extension in Extensions)
             {
-                if(extension.CanEstimateScriptSigSize(scriptPubkey))
+                if (extension.CanEstimateScriptSigSize(scriptPubkey))
                 {
                     scriptSigSize = extension.EstimateScriptSigSize(scriptPubkey);
                     break;
                 }
             }
 
-            if(scriptSigSize == -1)
+            if (scriptSigSize == -1)
                 scriptSigSize += coin.TxOut.ScriptPubKey.Length; //Using heurestic to approximate size of unknown scriptPubKey
-            if(coin.GetHashVersion() == HashVersion.Witness)
-                vSize += scriptSigSize + 1; //Account for the push
-            if(coin.GetHashVersion() == HashVersion.Original)
-                size += scriptSigSize;
+            if (coin.GetHashVersion() == HashVersion.Witness)
+                witSize += scriptSigSize + 1; //Account for the push
+            if (coin.GetHashVersion() == HashVersion.Original)
+                baseSize += scriptSigSize;
         }
 
         /// <summary>
