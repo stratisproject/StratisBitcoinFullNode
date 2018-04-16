@@ -35,7 +35,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Dns\Stratis.Bitcoin.Features.Dns.csproj" />
-    <ProjectReference Include="..\Stratis.Tests.Common\Stratis.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

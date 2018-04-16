@@ -37,8 +37,9 @@
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Tests.Common\Stratis.Bitcoin.Tests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Tests.Wallet.Common\Stratis.Bitcoin.Tests.Wallet.Common.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Tests.Common\Stratis.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

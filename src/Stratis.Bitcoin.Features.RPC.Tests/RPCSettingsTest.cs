@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Tests.Common;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests

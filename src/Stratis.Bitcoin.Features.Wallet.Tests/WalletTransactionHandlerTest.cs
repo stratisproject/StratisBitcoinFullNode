@@ -5,9 +5,9 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Tests.Common;
-using Stratis.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests

@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Moq;
 using System.Threading.Tasks;
-using Stratis.Tests.Common;
+using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {

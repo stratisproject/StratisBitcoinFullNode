@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities

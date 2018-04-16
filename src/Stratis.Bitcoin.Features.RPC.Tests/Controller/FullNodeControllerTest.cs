@@ -16,9 +16,9 @@ using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Tests.Common;
-using Stratis.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller

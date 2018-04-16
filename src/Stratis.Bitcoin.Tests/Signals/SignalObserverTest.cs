@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Signals;
-using Stratis.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Common.Logging;
 
 namespace Stratis.Bitcoin.Tests.Signals
 {

@@ -9,8 +9,8 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests

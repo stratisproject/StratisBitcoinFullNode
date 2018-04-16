@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DBreeze;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Tests.Common;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base

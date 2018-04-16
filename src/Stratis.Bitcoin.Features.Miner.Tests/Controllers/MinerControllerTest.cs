@@ -9,9 +9,9 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.Tests.Common;
-using Stratis.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers

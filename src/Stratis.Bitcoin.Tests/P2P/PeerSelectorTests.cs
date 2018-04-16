@@ -8,9 +8,9 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P

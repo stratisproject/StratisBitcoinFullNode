@@ -5,8 +5,8 @@ using DBreeze;
 using DBreeze.DataTypes;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities

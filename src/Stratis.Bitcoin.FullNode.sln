@@ -87,7 +87,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Dn
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisDnsD", "Stratis.StratisDnsD\Stratis.StratisDnsD.csproj", "{978482B2-AE17-421E-AD6F-ED9667C6B8A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Tests.Common", "Stratis.Tests.Common\Stratis.Tests.Common.csproj", "{DD0009AA-FE18-4202-8307-F35B200FF901}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Tests.Wallet.Common", "Stratis.Bitcoin.Tests.Wallet.Common\Stratis.Bitcoin.Tests.Wallet.Common.csproj", "{A52CC0A6-D860-418C-8B08-8A1388D96D71}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Tests.Common", "Stratis.Bitcoin.Tests.Common\Stratis.Bitcoin.Tests.Common.csproj", "{2B3B9594-5074-48CE-BFC5-DA02B56C16CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -223,10 +225,14 @@ Global
 		{978482B2-AE17-421E-AD6F-ED9667C6B8A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{978482B2-AE17-421E-AD6F-ED9667C6B8A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{978482B2-AE17-421E-AD6F-ED9667C6B8A1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD0009AA-FE18-4202-8307-F35B200FF901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD0009AA-FE18-4202-8307-F35B200FF901}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD0009AA-FE18-4202-8307-F35B200FF901}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DD0009AA-FE18-4202-8307-F35B200FF901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A52CC0A6-D860-418C-8B08-8A1388D96D71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A52CC0A6-D860-418C-8B08-8A1388D96D71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A52CC0A6-D860-418C-8B08-8A1388D96D71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A52CC0A6-D860-418C-8B08-8A1388D96D71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B3B9594-5074-48CE-BFC5-DA02B56C16CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B3B9594-5074-48CE-BFC5-DA02B56C16CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B3B9594-5074-48CE-BFC5-DA02B56C16CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B3B9594-5074-48CE-BFC5-DA02B56C16CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -258,7 +264,8 @@ Global
 		{59F274B7-0FC5-4AD6-A8AE-27BF6F15CC12} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{6181B889-81B0-4A1E-A29F-E20DCD8BFC1F} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{CB7A2800-8E98-4CD5-A88A-832E03AF7ABF} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
-		{DD0009AA-FE18-4202-8307-F35B200FF901} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
+		{A52CC0A6-D860-418C-8B08-8A1388D96D71} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
+		{2B3B9594-5074-48CE-BFC5-DA02B56C16CA} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}

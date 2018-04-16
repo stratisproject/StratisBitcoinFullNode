@@ -5,13 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="5.2.0" />
-    <PackageReference Include="Moq" Version="4.8.2" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
 </Project>

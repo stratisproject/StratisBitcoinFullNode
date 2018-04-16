@@ -40,7 +40,6 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.MemoryPool\Stratis.Bitcoin.Features.MemoryPool.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Tests.Common\Stratis.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
