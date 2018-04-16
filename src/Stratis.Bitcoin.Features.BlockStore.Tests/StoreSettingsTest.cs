@@ -1,6 +1,5 @@
 ﻿using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
