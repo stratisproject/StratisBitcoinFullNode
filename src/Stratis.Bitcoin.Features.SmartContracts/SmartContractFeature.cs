@@ -37,6 +37,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
     }
 
+    public class ReflectionVirtualMachineFeature : FullNodeFeature
+    {
+        private readonly ILogger logger;
+
+        public ReflectionVirtualMachineFeature(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        public override void Initialize()
+        {
+            this.logger.LogInformation("Reflection Virtual Machine Injected.");
+        }
+    }
+
     public static partial class IFullNodeBuilderExtensions
     {
         public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
@@ -49,25 +64,38 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
+                        // Contract state
+                        services.AddSingleton<DBreezeContractStateStore>();
+                        services.AddSingleton<NoDeleteContractStateSource>();
+                        services.AddSingleton<ContractStateRepositoryRoot>();
+                        // Consensus and mining overrides
+                        services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
+                        services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
+                        // Controller for API
+                        services.AddSingleton<SmartContractsController>();
+                        // Add rules -> These could be VM specific though!
+                        AddSmartContractRulesToExistingRules(services);
+                    });
+            });
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder UseReflectionVirtualMachine(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<ReflectionVirtualMachineFeature>()
+                    .FeatureServices(services =>
+                    {
                         SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
-                        services.AddSingleton<SmartContractExecutorFactory>();
-
-                        services.AddSingleton<DBreezeContractStateStore>();
-                        services.AddSingleton<NoDeleteContractStateSource>();
-                        services.AddSingleton<ContractStateRepositoryRoot>();
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
-
-                        services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
-                        services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
-
-                        services.AddSingleton<SmartContractsController>();
-
-                        AddSmartContractRulesToExistingRules(services);
+                        services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
                     });
             });
             return fullNodeBuilder;

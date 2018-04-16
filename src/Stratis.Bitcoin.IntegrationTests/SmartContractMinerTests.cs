@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public ContractStateRepositoryRoot stateRoot;
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
-            public SmartContractExecutorFactory executorFactory;
+            public ReflectionSmartContractExecutorFactory executorFactory;
 
             private bool useCheckpoints = true;
             public Key privateKey;
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     new SmartContractDeterminismValidator()
                 });
 
-                this.executorFactory = new SmartContractExecutorFactory(this.validator, this.keyEncodingStrategy, this.network);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.validator, this.keyEncodingStrategy, this.network);
                 SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());

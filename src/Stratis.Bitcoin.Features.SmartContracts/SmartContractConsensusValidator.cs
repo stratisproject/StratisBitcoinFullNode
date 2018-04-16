@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
-        private SmartContractExecutorFactory executorFactory;
+        private ISmartContractExecutorFactory executorFactory;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private uint refundCounter;
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            SmartContractExecutorFactory executorFactory)
+            ISmartContractExecutorFactory executorFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
             uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            SmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
 
             ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
 

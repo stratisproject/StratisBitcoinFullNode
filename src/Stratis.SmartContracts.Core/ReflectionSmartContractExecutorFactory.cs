@@ -7,13 +7,13 @@ namespace Stratis.SmartContracts.Core
     /// <summary>
     /// Spawns SmartContractExecutor instances
     /// </summary>
-    public class SmartContractExecutorFactory
+    public class ReflectionSmartContractExecutorFactory : ISmartContractExecutorFactory
     {
         private SmartContractValidator validator;
         private Network network;
         private IKeyEncodingStrategy keyEncodingStrategy;
 
-        public SmartContractExecutorFactory(SmartContractValidator validator,
+        public ReflectionSmartContractExecutorFactory(SmartContractValidator validator,
             IKeyEncodingStrategy keyEncodingStrategy,
             Network network)
         {
@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Core
         /// After the contract has been executed, it will process any fees and/or refunds.
         /// </para>
         /// </summary>
-        public SmartContractExecutor CreateExecutor(
+        public ISmartContractExecutor CreateExecutor(
             SmartContractCarrier carrier,
             Money mempoolFee,
             IContractStateRepository stateRepository)

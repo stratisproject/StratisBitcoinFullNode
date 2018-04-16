@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Core
     /// <summary>
     /// Executes the smart contract code, be it a OP_CREATECONTRACT or OP_CALLCONTRACT
     /// </summary>
-    public abstract class SmartContractExecutor
+    public abstract class SmartContractExecutor : ISmartContractExecutor
     {
         protected readonly SmartContractCarrier carrier;
         protected readonly IGasMeter gasMeter;

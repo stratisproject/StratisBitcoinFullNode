@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private readonly ContractStateRepositoryRoot stateRoot;
 
-        private readonly SmartContractExecutorFactory executorFactory;
+        private readonly ISmartContractExecutorFactory executorFactory;
 
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
             IKeyEncodingStrategy keyEncodingStrategy,
-            SmartContractExecutorFactory executorFactory,
+            ISmartContractExecutorFactory executorFactory,
             CoinView coinView,
             IStakeChain stakeChain = null)
         {

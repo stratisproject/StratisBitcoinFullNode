@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private ContractStateRepositoryRoot stateRoot;
         private ContractStateRepositoryRoot stateSnapshot;
 
-        private SmartContractExecutorFactory executorFactory;
+        private ISmartContractExecutorFactory executorFactory;
 
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            SmartContractExecutorFactory executorFactory,
+            ISmartContractExecutorFactory executorFactory,
             CoinView coinView,
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
             carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
-            SmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
             ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
 
             // Add fee from the execution result to the block.
