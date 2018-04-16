@@ -41,8 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Api
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var posNode = builder.CreateStratisPosApiNode();
-                posNode.Start();
+                var posNode = builder.CreateStratisPosApiNode(start: true);
 
                 var walletManager = posNode.FullNode.NodeService<IWalletManager>() as WalletManager;
                 walletManager.CreateWallet("testapi", "testapi");
@@ -68,28 +67,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Api
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var posNode = builder.CreateStratisPosApiNode();
-                posNode.Start();
-
-                var apiURI = posNode.FullNode.NodeService<ApiSettings>().ApiUri;
+                var posNode = builder.CreateStratisPosApiNode(start: true);
 
                 using (var httpClient = new HttpClient())
                 {
                     var walletManager = posNode.FullNode.NodeService<IWalletManager>() as WalletManager;
 
-                    // create the wallet
                     var model = new StartStakingRequest { Name = "apitest", Password = "123456" };
-                    var mnemonic = walletManager.CreateWallet(model.Password, model.Name);
+                    walletManager.CreateWallet(model.Password, model.Name);
 
                     var content = new StringContent(model.ToString(), Encoding.UTF8, "application/json");
+                    var apiURI = posNode.FullNode.NodeService<ApiSettings>().ApiUri;
                     var response = httpClient.PostAsync(apiURI + "api/miner/startstaking", content).GetAwaiter().GetResult();
                     Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
 
                     var responseText = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                     Assert.Equal("", responseText);
 
-                    MiningRPCController controller = posNode.FullNode.NodeService<MiningRPCController>();
-                    GetStakingInfoModel info = controller.GetStakingInfo();
+                    var info = posNode.FullNode.NodeService<MiningRPCController>().GetStakingInfo();
 
                     Assert.NotNull(info);
                     Assert.True(info.Enabled);
@@ -106,16 +101,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Api
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var posNode = builder.CreateStratisPosApiNode();
-                posNode.Start();
-
-                var apiURI = posNode.FullNode.NodeService<ApiSettings>().ApiUri;
+                var posNode = builder.CreateStratisPosApiNode(start: true);
 
                 using (var httpClient = new HttpClient())
                 {
                     httpClient.DefaultRequestHeaders.Accept.Clear();
                     httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+                    var apiURI = posNode.FullNode.NodeService<ApiSettings>().ApiUri;
                     var response = httpClient.GetStringAsync(apiURI + "api/rpc/callbyname?methodName=getblockhash&height=0").GetAwaiter().GetResult();
                     Assert.Equal("\"93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f\"", response);
                 }
@@ -130,16 +123,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Api
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var posNode = builder.CreateStratisPosApiNode();
-                posNode.Start();
-
-                var apiURI = posNode.FullNode.NodeService<ApiSettings>().ApiUri;
+                var posNode = builder.CreateStratisPosApiNode(start: true);
 
                 using (var httpClient = new HttpClient())
                 {
                     httpClient.DefaultRequestHeaders.Accept.Clear();
                     httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+                    var apiURI = posNode.FullNode.NodeService<ApiSettings>().ApiUri;
                     var response = httpClient.GetStringAsync(apiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
                     Assert.StartsWith("[{\"", response);
                 }

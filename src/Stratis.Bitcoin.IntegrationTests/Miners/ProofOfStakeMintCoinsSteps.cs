@@ -28,12 +28,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         private Key posReceiverPrivateKey;
 
         private const string PowWallet = "powwallet";
-        private const string PowWalletAccount = "account 0";
         private const string PowWalletPassword = "password";
 
         private const string PosWallet = "poswallet";
-        private const string PosWalletAccount = "account 0";
         private const string PosWalletPassword = "password";
+
+        private const string WalletAccount = "account 0";
 
         public ProofOfStakeMintCoinsSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -60,14 +60,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                     .WithWallet(PowWallet, PowWalletPassword)
                     .Build();
 
-            this.powSenderAddress = this.nodes[PowMiner].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(PowWallet, PowWalletAccount));
+            this.powSenderAddress = this.nodes[PowMiner].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(PowWallet, WalletAccount));
             var wallet = this.nodes[PowMiner].FullNode.WalletManager().GetWalletByName(PowWallet);
             this.powSenderPrivateKey = wallet.GetExtendedPrivateKeyForAddress(PowWalletPassword, this.powSenderAddress).PrivateKey;
         }
 
         private void it_mines_genesis_and_premine_blocks()
         {
-            this.sharedSteps.MinePremineBlocks(this.nodes[PowMiner], PowWallet, PowWalletAccount, PowWalletPassword);
+            this.sharedSteps.MinePremineBlocks(this.nodes[PowMiner], PowWallet, WalletAccount, PowWalletPassword);
         }
 
         private void mine_coins_to_maturity()
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
         private void it_syncs_with_proof_work_node()
         {
-            this.posReceiverAddress = this.nodes[PosStaker].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(PosWallet, PosWalletAccount));
+            this.posReceiverAddress = this.nodes[PosStaker].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(PosWallet, WalletAccount));
             var wallet = this.nodes[PosStaker].FullNode.WalletManager().GetWalletByName(PosWallet);
             this.posReceiverPrivateKey = wallet.GetExtendedPrivateKeyForAddress(PosWalletPassword, this.posReceiverAddress).PrivateKey;
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             var context = SharedSteps.CreateTransactionBuildContext(
                 PowWallet,
-                PowWalletAccount,
+                WalletAccount,
                 PowWalletPassword,
                 this.posReceiverAddress.ScriptPubKey,
                 Money.COIN * 1000000,
