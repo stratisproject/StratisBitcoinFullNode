@@ -111,6 +111,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public override void LoadConfiguration()
         {
             this.walletSettings.Load(this.nodeSettings);
+            this.walletSettings.IsLightWallet = true;
         }
 
         /// <summary>
