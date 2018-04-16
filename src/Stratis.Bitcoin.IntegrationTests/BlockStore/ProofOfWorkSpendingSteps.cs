@@ -81,12 +81,20 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             try
             {
+                var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                    SendingWalletName,
+                    AccountName,
+                    WalletPassword,
+                    new[] {
+                        new Recipient {
+                            Amount = Money.COIN * 1,
+                            ScriptPubKey = sendtoAddress.ScriptPubKey
+                        }
+                    },
+                    FeeType.Medium, 101);
+
                 this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
-                    .BuildTransaction(SharedSteps.CreateTransactionBuildContext(SendingWalletName
-                        , AccountName
-                        , WalletPassword
-                        , new[] { new Recipient { Amount = Money.COIN * 1, ScriptPubKey = sendtoAddress.ScriptPubKey } } 
-                        , FeeType.Medium, 101));
+                    .BuildTransaction(transactionBuildContext);
 
                 this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
                     .SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));

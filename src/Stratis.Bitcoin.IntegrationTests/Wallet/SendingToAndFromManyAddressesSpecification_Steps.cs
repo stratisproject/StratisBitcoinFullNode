@@ -64,8 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.Mine100Coins(this.nodes[NodeOne]);
 
-            var nodeTwoAddresses = this.nodes[NodeTwo].FullNode.WalletManager()
-                .GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
+            var nodeTwoAddresses = this.nodes[NodeTwo].FullNode.WalletManager().GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
 
             var nodeTwoRecipients = nodeTwoAddresses.Select(address => new Recipient
             {
@@ -73,8 +72,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletName, WalletAccountName, WalletPassword,
-                nodeTwoRecipients, FeeType.Medium,101);
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
 
             var transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
@@ -110,8 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node2_sends_funds_to_node1_FROM_fifty_addresses()
         {
-            var sendToNodeOne = this.nodes[NodeOne].FullNode.WalletManager()
-                .GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
+            var sendToNodeOne = this.nodes[NodeOne].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
             this.transactionBuildContext = new TransactionBuildContext(
                 new WalletAccountReference(WalletName, WalletAccountName),
@@ -124,7 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     }
                 }.ToList(), WalletPassword);
 
-            Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
+            var transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
             this.transactionFee = this.transactionFee = this.nodes[NodeTwo].GetFee(this.transactionBuildContext);
 

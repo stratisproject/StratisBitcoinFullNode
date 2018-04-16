@@ -83,11 +83,17 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             var nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.nodes[Charlie]);
 
-            var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletZero
-                , AccountZero
-                , WalletPassword
-                , new[] { new Recipient { Amount = Money.COIN * 1, ScriptPubKey = nodeCReceivingAddress.ScriptPubKey } }
-                , FeeType.Medium, 101);
+            var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                WalletZero,
+                AccountZero,
+                WalletPassword
+                , new[] {
+                    new Recipient {
+                        Amount = Money.COIN * 1,
+                        ScriptPubKey = nodeCReceivingAddress.ScriptPubKey
+                    }
+                },
+                FeeType.Medium, 101);
 
             this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
@@ -120,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.nodes[JingTheFastMiner].CreateRPCClient().AddNode(this.nodes[Bob].Endpoint);
             this.sharedSteps.WaitForBlockStoreToSync(this.nodes[JingTheFastMiner], this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
-         
+
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
         {
             TestHelper.WaitLoop(() => this.nodes[Bob].FullNode.Chain.Height == this.jingsBlockHeight);
