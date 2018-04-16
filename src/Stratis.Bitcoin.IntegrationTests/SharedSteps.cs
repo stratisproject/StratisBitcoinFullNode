@@ -10,12 +10,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SharedSteps
     {
-        public static TransactionBuildContext CreateTransactionBuildContext(string sendingWalletName
-            , string sendingAccountName
-            , string sendingPassword
-            , ICollection<Recipient> recipients
-            , FeeType feeType
-            , int minConfirmations)
+        public static TransactionBuildContext CreateTransactionBuildContext(
+            string sendingWalletName, 
+            string sendingAccountName, 
+            string sendingPassword, 
+            ICollection<Recipient> recipients, 
+            FeeType feeType, 
+            int minConfirmations)
         {
             return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName),
                 recipients.ToList(), sendingPassword)
