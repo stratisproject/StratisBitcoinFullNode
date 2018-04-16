@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 
-namespace Stratis.Bitcoin.Tests.Logging
+namespace Stratis.Bitcoin.Tests.Common.Logging
 {
     public class LogsTestBase : TestBase
     {

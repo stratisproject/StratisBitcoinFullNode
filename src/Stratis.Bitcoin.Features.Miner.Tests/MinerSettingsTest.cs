@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests

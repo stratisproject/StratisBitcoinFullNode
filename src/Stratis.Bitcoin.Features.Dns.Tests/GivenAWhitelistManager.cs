@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new WhitelistManager(null, null, null, null, null, null); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dateTimeProvider");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dateTimeProvider");
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new WhitelistManager(dateTimeProvider, null, null, null, null, null); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, null, null, null, null); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("peerAddressManager");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("peerAddressManager");
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, null, null, null); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dnsServer");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dnsServer");
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, null, dnsSettings); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("connectionSettings");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("connectionSettings");
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, null, dnsSettings); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("connectionSettings");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("connectionSettings");
         }
 
         [Fact]
