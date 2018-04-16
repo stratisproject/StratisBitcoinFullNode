@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DeserializerWithCoinsDeserializesObject()
         {
-            var network = Network.RegTest;
+            var network = Network.StratisRegTest;
             var genesis = network.GetGenesis();
             var coins = new Coins(genesis.Transactions[0], 0);
 
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DeserializerWithBlockHeaderDeserializesObject()
         {
-            var network = Network.RegTest;
+            var network = Network.StratisRegTest;
             var genesis = network.GetGenesis();
             var blockHeader = genesis.Header;
 
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DeserializerWithRewindDataDeserializesObject()
         {
-            Network network = Network.RegTest;
+            Network network = Network.StratisRegTest;
             Block genesis = network.GetGenesis();
             var rewindData = new RewindData(genesis.GetHash());
 
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DeserializerWithBlockDeserializesObject()
         {
-            Network network = Network.RegTest;
+            Network network = Network.StratisRegTest;
             Block block = network.GetGenesis();
 
             var result = (Block)this.dbreezeSerializer.Deserializer(block.ToBytes(), typeof(Block));
