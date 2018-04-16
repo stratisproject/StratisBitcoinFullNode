@@ -47,7 +47,7 @@ General testing rules:
 	* Call method under test
 	* NewLine
 	* Assert Result
-7. DRY (don't repeat yourself). If you do the same initialization in each test mode that to the test class constructor. That code is then called before every test is called.
+7. DRY (don't repeat yourself). If you do the same initialization in each test move that to the test class constructor. This code is then called before every test.
 8. Test getters and setters only if they contain complex logic that you want to prove with a test.
 9. Do not test for null reference exceptions on called methods. Add a Guard.NotNull instead. 
    These are generally coding mistakes that can be taken out when code reviewing and testing this does not add much value.
