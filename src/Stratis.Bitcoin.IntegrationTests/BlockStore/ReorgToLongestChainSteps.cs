@@ -86,8 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
                 WalletZero,
                 AccountZero,
-                WalletPassword
-                , new[] {
+                WalletPassword, new[] {
                     new Recipient {
                         Amount = Money.COIN * 1,
                         ScriptPubKey = nodeCReceivingAddress.ScriptPubKey
