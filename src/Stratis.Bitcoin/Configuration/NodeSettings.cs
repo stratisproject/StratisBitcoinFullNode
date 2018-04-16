@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Configuration
                 {
                     foreach (var featureRegistration in features)
                     {
-                        MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("GetDefaultConfiguration", BindingFlags.Public | BindingFlags.Static);
+                        MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
 
                         getDefaultConfiguration?.Invoke(null, new object[] { builder });
                     }
