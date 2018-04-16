@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet;
+using PaymentDetails = Stratis.Bitcoin.Features.Wallet.PaymentDetails;
 
-namespace Stratis.Bitcoin.Features.Wallet.Tests
+namespace Stratis.Bitcoin.Tests.Wallet.Common
 {
     /// <summary>
     /// Helper class containing a bunch of methods used for testing the wallet functionality.
@@ -122,9 +124,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
         }
 
-        public static Wallet CreateWallet(string name)
+        public static Features.Wallet.Wallet CreateWallet(string name)
         {
-            return new Wallet
+            return new Features.Wallet.Wallet
             {
                 Name = name,
                 AccountsRoot = new List<AccountRoot>(),
@@ -132,17 +134,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
         }
 
-        public static Wallet GenerateBlankWallet(string name, string password)
+        public static Features.Wallet.Wallet GenerateBlankWallet(string name, string password)
         {
             return GenerateBlankWalletWithExtKey(name, password).wallet;
         }
 
-        public static (Wallet wallet, ExtKey key) GenerateBlankWalletWithExtKey(string name, string password)
+        public static (Features.Wallet.Wallet wallet, ExtKey key) GenerateBlankWalletWithExtKey(string name, string password)
         {
             Mnemonic mnemonic = new Mnemonic("grass industry beef stereo soap employ million leader frequent salmon crumble banana");
             ExtKey extendedKey = mnemonic.DeriveExtKey(password);
 
-            Wallet walletFile = new Wallet
+            Features.Wallet.Wallet walletFile = new Features.Wallet.Wallet
             {
                 Name = name,
                 EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Network.Main).ToWif(),
@@ -170,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return block;
         }
 
-        public static Transaction SetupValidTransaction(Wallet wallet, string password, HdAddress spendingAddress, PubKey destinationPubKey, HdAddress changeAddress, Money amount, Money fee)
+        public static Transaction SetupValidTransaction(Features.Wallet.Wallet wallet, string password, HdAddress spendingAddress, PubKey destinationPubKey, HdAddress changeAddress, Money amount, Money fee)
         {
             var spendingTransaction = spendingAddress.Transactions.ElementAt(0);
             Coin coin = new Coin(spendingTransaction.Id, (uint)spendingTransaction.Index, spendingTransaction.Amount, spendingTransaction.ScriptPubKey);
@@ -253,14 +255,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return addresses;
         }
 
-        public static (ExtKey ExtKey, string ExtPubKey) GenerateAccountKeys(Wallet wallet, string password, string keyPath)
+        public static (ExtKey ExtKey, string ExtPubKey) GenerateAccountKeys(Features.Wallet.Wallet wallet, string password, string keyPath)
         {
             var accountExtKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, password, wallet.Network), wallet.ChainCode);
             var accountExtendedPubKey = accountExtKey.Derive(new KeyPath(keyPath)).Neuter().ToString(wallet.Network);
             return (accountExtKey, accountExtendedPubKey);
         }
 
-        public static (PubKey PubKey, BitcoinPubKeyAddress Address) GenerateAddressKeys(Wallet wallet, string accountExtendedPubKey, string keyPath)
+        public static (PubKey PubKey, BitcoinPubKeyAddress Address) GenerateAddressKeys(Features.Wallet.Wallet wallet, string accountExtendedPubKey, string keyPath)
         {
             var addressPubKey = ExtPubKey.Parse(accountExtendedPubKey).Derive(new KeyPath(keyPath)).PubKey;
             var address = addressPubKey.GetAddress(wallet.Network);
@@ -402,7 +404,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         {
                             BlockHeight = height,
                             Amount = new Money(new Random().Next(500000, 1000000)),
-                            SpendingDetails = new SpendingDetails()
+                            SpendingDetails = new SpendingDetails(),
+                            Id = new uint256()
                         }
                     }
                 };

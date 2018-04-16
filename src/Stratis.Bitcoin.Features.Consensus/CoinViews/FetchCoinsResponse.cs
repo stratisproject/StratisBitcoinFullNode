@@ -10,10 +10,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     public class FetchCoinsResponse
     {
         /// <summary>Hash of the block header for which <see cref="UnspentOutputs"/> is related.</summary>
-        public uint256 BlockHash { get; set; }
+        public uint256 BlockHash { get; private set; }
 
         /// <summary>Unspent outputs of the requested transactions.</summary>
-        public UnspentOutputs[] UnspentOutputs { get; set; }
+        public UnspentOutputs[] UnspentOutputs { get; private set; }
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -22,6 +22,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="blockHash">Block hash of the coinview's current tip.</param>
         public FetchCoinsResponse(UnspentOutputs[] unspent, uint256 blockHash)
         {
+            Guard.NotNull(unspent, nameof(unspent));
+            Guard.NotNull(blockHash, nameof(blockHash));
+
             this.BlockHash = blockHash;
             this.UnspentOutputs = unspent;
         }

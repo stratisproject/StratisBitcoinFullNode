@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 
 namespace Stratis.Bitcoin.Base
 {
@@ -100,6 +101,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
+        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
+        private readonly BestChainSelector bestChainSelector;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -116,6 +120,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
+        /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
@@ -131,7 +136,8 @@ namespace Stratis.Bitcoin.Base
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            BestChainSelector bestChainSelector)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -140,6 +146,7 @@ namespace Stratis.Bitcoin.Base
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
+            this.bestChainSelector = bestChainSelector;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -174,7 +181,7 @@ namespace Stratis.Bitcoin.Base
 
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
-            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);
@@ -316,6 +323,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
                     services.AddSingleton<ConnectionManagerSettings>();
                     services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
+                    services.AddSingleton<BestChainSelector>();
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
