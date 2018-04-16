@@ -12,8 +12,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Dns.Tests
