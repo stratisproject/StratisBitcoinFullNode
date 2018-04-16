@@ -79,8 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
 
             try
             {
-                var task = step.Invoke();
-                Task.Run(() => task).Wait();
+                Task.Run(step, ct).Wait(ct);
             }
             catch (AggregateException ex)
             {

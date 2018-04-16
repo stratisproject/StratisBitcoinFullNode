@@ -112,6 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         {
             this.blockWithOpReturnId = this.senderNode.GenerateStratisWithMiner(1).Single();
             this.senderNode.GenerateStratisWithMiner(1);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.senderNode, this.receiverNode));
         }
 
@@ -125,8 +126,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private async Task the_transaction_should_appear_in_the_blockchain()
         {
             var block = await this.senderNode.FullNode.BlockStoreManager().BlockRepository
-                .GetAsync(this.blockWithOpReturnId);
-            
+                    .GetAsync(this.blockWithOpReturnId);
+
             var transactionFromBlock = block.Transactions
                 .Single(t => t.ToHex() == this.transaction.ToHex());
 
