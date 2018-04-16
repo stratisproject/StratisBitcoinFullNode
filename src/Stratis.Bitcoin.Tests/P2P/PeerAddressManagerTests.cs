@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
