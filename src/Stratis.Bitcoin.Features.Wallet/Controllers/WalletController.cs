@@ -669,16 +669,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Outputs = new List<TransactionOutputModel>()
                 };
 
-                foreach (var output in transaction.Outputs.Where(txOut => !txOut.ScriptPubKey.IsUnspendable))
+                foreach (var output in transaction.Outputs)
                 {
+                    var isUnspendable = output.ScriptPubKey.IsUnspendable;
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
                         Amount = output.Value,
+                        OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
                 }
-                
-                AddOpReturnOutputIfNeeded(transaction, model);
 
                 this.walletManager.ProcessTransaction(transaction, null, null, false);
 
@@ -691,18 +691,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-        }
-
-        private static void AddOpReturnOutputIfNeeded(Transaction transaction, WalletSendTransactionModel model)
-        {
-            var unspendableOutput = transaction.Outputs.SingleOrDefault(txOut => txOut.ScriptPubKey.IsUnspendable);
-            if (unspendableOutput == null) return;
-
-            model.Outputs.Add(new TransactionOutputModel()
-            {
-                Amount = unspendableOutput.Value,
-                OpReturnData = Encoding.UTF8.GetString(unspendableOutput.ScriptPubKey.ToOps().Last().PushData)
-            });
         }
 
         /// <summary>
