@@ -9,7 +9,8 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 using Xunit;
@@ -812,8 +813,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
-
+            var result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
+            
             Assert.Equal(alice.GetAddress().ToString(), result.Address);
         }
 
@@ -839,8 +840,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ExternalAddresses = new List<HdAddress>()
             });
             walletManager.Wallets.Add(wallet);
-
-            var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
+            
+            var result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
 
             Assert.NotNull(result.Address);
         }
@@ -916,22 +917,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetHistory("myWallet");
+            var result = walletManager.GetHistory("myWallet").ToList();
 
-            Assert.Equal(2, result.Count());
-            var address = result.ElementAt(0);
-            Assert.Equal("myUsedExternalAddress", address.Address.Address);
-            address = result.ElementAt(1);
-            Assert.Equal("myUsedInternalAddress", address.Address.Address);
+            Assert.NotEmpty(result);
+            Assert.Single(result);
+            var accountHistory = result.ElementAt(0);
+            Assert.NotNull(accountHistory.Account);
+            Assert.Equal("myAccount", accountHistory.Account.Name);
+            Assert.NotEmpty(accountHistory.History);
+            Assert.Equal(2, accountHistory.History.Count());
+
+            var historyAddress = accountHistory.History.ElementAt(0);
+            Assert.Equal("myUsedExternalAddress", historyAddress.Address.Address);
+            historyAddress = accountHistory.History.ElementAt(1);
+            Assert.Equal("myUsedInternalAddress", historyAddress.Address.Address);
         }
 
         [Fact]
-        public void GetHistoryByWalletWithExistingWalletReturnsAllAddressesWithTransactions()
+        public void GetHistoryByAccountWithExistingAccountReturnsAllAddressesWithTransactions()
         {
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             var wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+
+            HdAccount account = new HdAccount
             {
                 Index = 0,
                 Name = "myAccount",
@@ -941,30 +950,39 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     WalletTestsHelpers.CreateAddressWithEmptyTransaction(0, "myUsedExternalAddress"),
                     WalletTestsHelpers.CreateAddressWithoutTransaction(1, "myUnusedExternalAddress"),
                 },
-                InternalAddresses = new List<HdAddress> {
+                InternalAddresses = new List<HdAddress>
+                {
                     WalletTestsHelpers.CreateAddressWithEmptyTransaction(0, "myUsedInternalAddress"),
                     WalletTestsHelpers.CreateAddressWithoutTransaction(1, "myUnusedInternalAddress"),
                 },
                 ExtendedPubKey = "blabla"
-            });
+            };
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(account);
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetHistory(wallet);
+            var accountHistory = walletManager.GetHistory(account);
 
-            Assert.Equal(2, result.Count());
-            var address = result.ElementAt(0);
-            Assert.Equal("myUsedExternalAddress", address.Address.Address);
-            address = result.ElementAt(1);
-            Assert.Equal("myUsedInternalAddress", address.Address.Address);
+            Assert.NotNull(accountHistory);
+            Assert.NotNull(accountHistory.Account);
+            Assert.Equal("myAccount", accountHistory.Account.Name);
+            Assert.NotEmpty(accountHistory.History);
+            Assert.Equal(2, accountHistory.History.Count());
+
+            var historyAddress = accountHistory.History.ElementAt(0);
+            Assert.Equal("myUsedExternalAddress", historyAddress.Address.Address);
+            historyAddress = accountHistory.History.ElementAt(1);
+            Assert.Equal("myUsedInternalAddress", historyAddress.Address.Address);
         }
 
         [Fact]
-        public void GetHistoryByWalletWithoutHavingAddressesWithTransactionsReturnsEmptyList()
+        public void GetHistoryByAccountWithoutHavingAddressesWithTransactionsReturnsEmptyList()
         {
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             var wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+
+            HdAccount account = new HdAccount
             {
                 Index = 0,
                 Name = "myAccount",
@@ -972,12 +990,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ExternalAddresses = new List<HdAddress>(),
                 InternalAddresses = new List<HdAddress>(),
                 ExtendedPubKey = "blabla"
-            });
+            };
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(account);
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetHistory(wallet);
+            var result = walletManager.GetHistory(account);
 
-            Assert.Empty(result);
+            Assert.NotNull(result.Account);
+            Assert.Equal("myAccount", result.Account.Name);
+            Assert.Empty(result.History);
         }
 
         [Fact]

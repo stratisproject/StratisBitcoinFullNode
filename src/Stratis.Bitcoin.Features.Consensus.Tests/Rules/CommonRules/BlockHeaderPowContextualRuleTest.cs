@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
+namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockHeaderPowContextualRuleTest
     {

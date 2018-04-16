@@ -5,7 +5,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
-using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;

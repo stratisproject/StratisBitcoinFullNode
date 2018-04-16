@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PosFutureDriftRule : PosConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;

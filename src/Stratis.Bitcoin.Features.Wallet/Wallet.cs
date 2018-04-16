@@ -599,7 +599,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             var addresses = isChange ? this.InternalAddresses : this.ExternalAddresses;
 
-            // Get the index of the last address that contains transactions.
+            // Get the index of the last address.
             int firstNewAddressIndex = 0;
             if (addresses.Any())
             {

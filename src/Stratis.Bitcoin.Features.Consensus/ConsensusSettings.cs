@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -34,8 +35,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>These consensus config settings.</returns>
         public ConsensusSettings Load(NodeSettings nodeSettings)
         {
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
-
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
 
@@ -48,6 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid);
             }
 
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
             logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
             logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
 
@@ -58,6 +60,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
+            Guard.NotNull(network, nameof(network));
+
             var builder = new StringBuilder();
 
             builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
