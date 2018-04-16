@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications;
@@ -57,6 +59,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly BroadcasterBehavior broadcasterBehavior;
 
+        private readonly NodeSettings nodeSettings;
+
+        private readonly WalletSettings walletSettings;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="LightWalletFeature"/> class.
         /// </summary>
@@ -70,6 +76,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        /// <param name="nodeSettings">The settings for the node.</param>
+        /// <param name="walletSettings">The settings for the wallet.</param>
         public LightWalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
@@ -80,7 +88,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
             INodeLifetime nodeLifetime,
             IWalletFeePolicy walletFeePolicy,
             BroadcasterBehavior broadcasterBehavior,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings,
+            WalletSettings walletSettings)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -93,6 +103,23 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.broadcasterBehavior = broadcasterBehavior;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.nodeSettings = nodeSettings;
+            this.walletSettings = walletSettings;
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.walletSettings.Load(this.nodeSettings);
+        }
+
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            WalletSettings.PrintHelp(network);
         }
 
         /// <inheritdoc />
@@ -185,7 +212,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// </summary>
     public static class FullNodeBuilderLightWalletExtension
     {
-        public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -206,6 +233,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();
+                        services.AddSingleton<WalletSettings>(new WalletSettings(setup));
                     });
             });
 
