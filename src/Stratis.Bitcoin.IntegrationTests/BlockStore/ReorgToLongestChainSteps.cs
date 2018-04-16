@@ -93,7 +93,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                         ScriptPubKey = nodeCReceivingAddress.ScriptPubKey
                     }
                 },
-                FeeType.Medium, 101);
+                FeeType.Medium
+                , 1);
 
             this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);

@@ -18,8 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             FeeType feeType, 
             int minConfirmations)
         {
-            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName),
-                recipients.ToList(), sendingPassword)
+            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName), recipients.ToList(), sendingPassword)
             {
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
@@ -37,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            Features.Wallet.Wallet wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
+            var wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
             var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
 
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));

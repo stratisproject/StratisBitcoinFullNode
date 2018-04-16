@@ -119,7 +119,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         Amount = this.nodeTwoBalance - Money.COIN,
                         ScriptPubKey = sendToNodeOne.ScriptPubKey
                     }
-                }.ToList(), WalletPassword);
+                }.ToList(), 
+                WalletPassword);
 
             var transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
