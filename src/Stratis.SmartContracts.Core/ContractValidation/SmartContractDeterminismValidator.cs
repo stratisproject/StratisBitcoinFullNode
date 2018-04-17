@@ -6,10 +6,7 @@ using Stratis.SmartContracts.Core.Compilation;
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
     /// <summary>
-    /// TODO: Before this is ever close to being used in a test or production environment, 
-    /// ensure that NO P/INVOKE OR INTEROP or other outside calls can be made.
-    /// Also check there is no way around these rules, including recursion, funky namespaces,
-    /// partial classes and extension methods, attributes
+    /// Checks for non-deterministic properties inside smart contracts by validating them at the bytecode level.
     /// </summary>
     public class SmartContractDeterminismValidator : ISmartContractValidator
     {
@@ -23,6 +20,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "System.String System.SR::GetResourceString(System.String,System.String)"
         };
 
+        /// <summary>
+        /// Types we deem safe and so allow all available methods.
+        /// </summary>
         private static readonly HashSet<string> GreenLightTypes = new HashSet<string>
         {
             "System.Boolean",
