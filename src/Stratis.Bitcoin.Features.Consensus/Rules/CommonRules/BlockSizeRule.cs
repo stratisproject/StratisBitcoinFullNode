@@ -5,9 +5,16 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <summary>
+    /// This rule will validate the block size and weight.
+    /// </summary>        
     public class BlockSizeRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadBlockWeight">The block weight is higher than the max block weight.</exception>
+        /// <exception cref="ConsensusErrors.BadBlockLength">The block length is larger than the allowed max block base size.</exception>
+        /// <exception cref="ConsensusErrors.BadBlockLength">The amount of transactions inside the block is higher than the allowed max block base size.</exception>
+        /// <exception cref="ConsensusErrors.BadBlockLength">The block does not contain any transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
             var options = context.Consensus.Option<PowConsensusOptions>();

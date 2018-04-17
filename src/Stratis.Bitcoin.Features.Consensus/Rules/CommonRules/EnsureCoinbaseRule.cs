@@ -4,9 +4,14 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <summary>
+    /// Ensures a block follows the coinbase rules.
+    /// </summary>
     public class EnsureCoinbaseRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadCoinbaseMissing">The coinbase transaction is missing in the block.</exception>
+        /// <exception cref="ConsensusErrors.BadMultipleCoinbase">The block contains multiple coinbase transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;

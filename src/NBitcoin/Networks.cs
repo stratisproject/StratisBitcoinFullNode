@@ -103,7 +103,7 @@ namespace NBitcoin
 
             consensus.CoinType = 0;
 
-            consensus.DefaultAssumeValid = new uint256("0x00000000000000000086a2362d78ffb4e41dc0b8775ff3c278bd994a5162348a"); // 499610
+            consensus.DefaultAssumeValid = new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"); // 518180
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -201,7 +201,7 @@ namespace NBitcoin
 
             network.consensus.CoinType = 1;
 
-            network.consensus.DefaultAssumeValid = new uint256("0x000000003ccfe92231efee04df6621e7bb3f7f513588054e19f78d626b951f59"); // 1235126
+            network.consensus.DefaultAssumeValid = new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"); // 1292762
 
             network.magic = 0x0709110B;
 
@@ -350,7 +350,7 @@ namespace NBitcoin
 
             consensus.CoinType = 105;
 
-            consensus.DefaultAssumeValid = new uint256("0x8c2cf95f9ca72e13c8c4cdf15c2d7cc49993946fb49be4be147e106d502f1869"); // 642930
+            consensus.DefaultAssumeValid = new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"); // 795970
 
             Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
@@ -451,7 +451,7 @@ namespace NBitcoin
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
-            consensus.DefaultAssumeValid = new uint256("0x12ae16993ce7f0836678f225b2f4b38154fa923bd1888f7490051ddaf4e9b7fa"); // 218810
+            consensus.DefaultAssumeValid = new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"); // 372652
 
             var builder = new NetworkBuilder()
                 .SetName("StratisTest")

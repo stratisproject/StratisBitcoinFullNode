@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class CheckPosTransactionRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErros.BadTransactionEmptyOutput">The transaction output is empty.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(null, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings().Load(nodeSettings), dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("client");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("client");
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, null, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings().Load(nodeSettings), dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("masterFile");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("masterFile");
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, masterFile, null, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings().Load(nodeSettings), dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("asyncLoopFactory");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("asyncLoopFactory");
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, null, loggerFactory, dateTimeProvider, new DnsSettings().Load(nodeSettings), dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, null, dateTimeProvider, new DnsSettings().Load(nodeSettings), dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, null, new DnsSettings().Load(nodeSettings), dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dateTimeProvider");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dateTimeProvider");
         }
 
         [Fact]
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, null, dataFolder); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dnsSettings");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dnsSettings");
         }
 
         [Fact]
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings().Load(nodeSettings), null); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dataFolders");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dataFolders");
         }
 
         [Fact]
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             // Assert.
             server.Should().NotBeNull();
-            func.ShouldThrow<SocketException>();
+            func.Should().Throw<SocketException>();
             server.Metrics.DnsServerFailureCountSinceStart.Should().Be(1);
             server.Metrics.CurrentSnapshot.DnsServerFailureCountSinceLastPeriod.Should().Be(1);
         }

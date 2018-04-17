@@ -76,12 +76,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
+
+        public string AccountName { get; set; }
     }
 
     public class WalletBalanceRequest : RequestModel
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
+
+        public string AccountName { get; set; }
     }
 
     /// <summary>
@@ -125,6 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string DestinationAddress { get; set; }
 
         [Required(ErrorMessage = "An amount is required.")]
+        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
         public string Amount { get; set; }
 
         public string FeeType { get; set; }

@@ -81,7 +81,9 @@ dotnet build
 To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
 To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
 
-See more details [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
+Getting Started Guide
+-----------
+More details on getting started are available [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
 
 Development
 -----------
