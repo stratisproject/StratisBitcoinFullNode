@@ -110,13 +110,16 @@ namespace Stratis.Bitcoin.Configuration.Logging
             logSettings = settings;
             folder = dataFolder;
 
+            // If the supplied LogPath is relative, we'll append the current directory to ensure logs will be located same as other files written with FileStorage.cs
+            var path = Path.IsPathRooted(folder.LogPath) ? string.Empty : Directory.GetCurrentDirectory();
+
             // If we use "debug*" targets, which are defined in "NLog.config", make sure they log into the correct log folder in data directory.
             List<Target> debugTargets = LogManager.Configuration.AllTargets.Where(t => (t.Name != null) && t.Name.StartsWith("debug")).ToList();
             foreach (Target debugTarget in debugTargets)
             {
                 FileTarget debugFileTarget = debugTarget is AsyncTargetWrapper ? (FileTarget)((debugTarget as AsyncTargetWrapper).WrappedTarget) : (FileTarget)debugTarget;
                 string currentFile = debugFileTarget.FileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
-                debugFileTarget.FileName = Path.Combine(folder.LogPath, Path.GetFileName(currentFile));
+                debugFileTarget.FileName = Path.Combine(path, folder.LogPath, Path.GetFileName(currentFile));
             }
 
             // Remove rule that forbids logging before the logging is initialized.
@@ -135,8 +138,8 @@ namespace Stratis.Bitcoin.Configuration.Logging
             var mainTarget = new FileTarget
             {
                 Name = "main",
-                FileName = Path.Combine(folder.LogPath, "node.txt"),
-                ArchiveFileName = Path.Combine(folder.LogPath, "node-${date:universalTime=true:format=yyyy-MM-dd}.txt"),
+                FileName = Path.Combine(path, folder.LogPath, "node.txt"),
+                ArchiveFileName = Path.Combine(path, folder.LogPath, "node-${date:universalTime=true:format=yyyy-MM-dd}.txt"),
                 ArchiveNumbering = ArchiveNumberingMode.Sequence,
                 ArchiveEvery = FileArchivePeriod.Day,
                 MaxArchiveFiles = 7,
