@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
     public partial class RetrieveFromBlockStoreSpecification : BddSpecification
     {
         [Fact]
-        public void A_block_can_be_retrieved_by_its_uint256_identifier()
+        public void A_block_can_be_retrieved_by_its_identifier_and_a_fake_block_cannot_be_retrieved()
         {
             Given(a_pow_node_running);
             And(a_miner_validating_blocks);
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         [Fact]
-        public void A_transaction_can_be_retrieved_by_its_uint256_identifier()
+        public void A_transaction_can_be_retrieved_by_its_identifier_and_a_fake_transaction_cannot_be_retrieved()
         {
             Given(a_pow_node_running);
             And(a_pow_node_to_transact_with);

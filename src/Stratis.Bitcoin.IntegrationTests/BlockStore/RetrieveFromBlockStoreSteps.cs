@@ -34,8 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private uint256 blockWithTransactionId;
         private Transaction retrievedTransaction;
         private uint256 madeUpTransactionId;
-        private Transaction wontRetrieveTransaction
-            ;
+        private Transaction wontRetrieveTransaction;
 
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
