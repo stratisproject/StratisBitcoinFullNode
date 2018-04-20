@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
-using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsFeature(null, whitelistManager, loggerFactory, nodeLifetime, dnsSettings, nodeSettings, dataFolder, asyncLoopFactory); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dnsServer");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dnsServer");
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsFeature(dnsServer, null, loggerFactory, nodeLifetime, new DnsSettings().Load(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("whitelistManager");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("whitelistManager");
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, null, nodeLifetime, new DnsSettings().Load(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, null, new DnsSettings().Load(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, new DnsSettings().Load(nodeSettings), null, dataFolder, asyncLoopFactory); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("nodeSettings");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("nodeSettings");
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, dnsSettings, nodeSettings, null, asyncLoopFactory); };
 
             // Act and Assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("dataFolder");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dataFolder");
         }
 
         [Fact]

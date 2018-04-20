@@ -515,15 +515,15 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
                     TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
-                    uint256 hashBock = this.chain.GetBlock((int)set.Height)?.HashBlock;
+                    uint256 hashBlock = set != null ? this.chain.GetBlock((int) set.Height)?.HashBlock : null;
 
-                    if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBock != null))
+                    if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBlock != null))
                     {
                         var utxoStakeDescription = new UtxoStakeDescription();
                         utxoStakeDescription.TxOut = utxo;
                         utxoStakeDescription.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
                         utxoStakeDescription.Address = infoTransaction.Address;
-                        utxoStakeDescription.HashBlock = hashBock;
+                        utxoStakeDescription.HashBlock = hashBlock;
                         utxoStakeDescription.UtxoSet = set;
                         utxoStakeDescription.Secret = walletSecret; // Temporary.
                         utxoStakeDescriptions.Add(utxoStakeDescription);

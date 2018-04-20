@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
         {
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodesToSync(node);
 
             var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
@@ -43,25 +43,20 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodesToSync(node);
 
             var rewardCoinCount = blockCount * Money.COIN * 50;
             
             balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
         }
 
-        public void WaitForBlockStoreToSync(params CoreNode[] nodes)
+        public void WaitForNodesToSync(params CoreNode[] nodes)
         {
-            if (nodes.Length == 1)
-            {
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(nodes[0]));
-                return;
-            }
+            nodes.ToList().ForEach(n => 
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(n)));
 
-            for (int i = 1; i < nodes.Length; i++)
-            {
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i-1], nodes[i]));
-            }
+            nodes.Skip(1).ToList().ForEach(
+                n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes.First(), n)));
         }
     }
 }
