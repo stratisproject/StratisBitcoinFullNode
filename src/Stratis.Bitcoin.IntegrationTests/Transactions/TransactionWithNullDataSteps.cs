@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.TestFramework;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Transactions
@@ -20,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private NodeBuilder builder;
         private CoreNode senderNode;
         private CoreNode receiverNode;
-        private Wallet sendingWallet;
+        private Features.Wallet.Wallet sendingWallet;
         private HdAddress senderAddress;
         private HdAddress receiverAddress;
         private WalletAccountReference sendingWalletAccountReference;
