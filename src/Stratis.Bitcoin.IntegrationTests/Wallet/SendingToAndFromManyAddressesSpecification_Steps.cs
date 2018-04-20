@@ -1,20 +1,19 @@
-﻿using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+﻿using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
+using FluentAssertions;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.Builders;
+using Stratis.Bitcoin.IntegrationTests.Utilities.Extensions;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.TestFramework;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    using Stratis.Bitcoin.Features.Consensus;
-    using Stratis.Bitcoin.Features.Wallet;
-    using NBitcoin;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Stratis.Bitcoin.Features.Wallet.Controllers;
-    using Stratis.Bitcoin.Features.Wallet.Models;
-    using FluentAssertions;
-    using Stratis.Bitcoin.IntegrationTests.Builders;
-    using Stratis.Bitcoin.IntegrationTests.Utilities.Extensions;
-
     public partial class SendingToAndFromManyAddressesSpecification : BddSpecification
     {
         private SharedSteps sharedSteps;
