@@ -69,16 +69,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void WaitForNodeToSync(params CoreNode[] nodes)
         {
-            if (nodes.Length == 1)
-            {
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(nodes[0]));
-                return;
-            }
+            nodes.ToList().ForEach(n => 
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(n)));
 
-            for (int i = 1; i < nodes.Length; i++)
-            {
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i - 1], nodes[i]));
-            }
+            nodes.Skip(1).ToList().ForEach(
+                n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes.First(), n)));
         }
     }
 }
