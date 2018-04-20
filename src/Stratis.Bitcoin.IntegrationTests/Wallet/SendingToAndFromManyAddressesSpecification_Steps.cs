@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             var transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
-            this.transactionFee = this.transactionFee = this.nodes[NodeTwo].GetFee(this.transactionBuildContext);
+            this.transactionFee = this.nodes[NodeTwo].GetFee(this.transactionBuildContext);
 
             transaction.Inputs.Count.Should().Be(50);
 
