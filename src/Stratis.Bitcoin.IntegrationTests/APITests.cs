@@ -15,26 +15,37 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.TestFramework;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class APITests : IDisposable, IClassFixture<ApiTestsFixture>
+    public class APITests : BddSpecification
     {
-        private static HttpClient client = null;
-        private ApiTestsFixture apiTestsFixture;
-
-        public APITests(ApiTestsFixture apiTestsFixture)
+        public APITests(ITestOutputHelper output) : base(output)
         {
-            this.apiTestsFixture = apiTestsFixture;
+        }
+
+        private static HttpClient client = null;
+
+        private ApiTestsFixture apiTestsFixture;
+        private Uri apiURI;
+        private string response;
+
+        protected override void BeforeTest()
+        {
+            this.apiTestsFixture = new ApiTestsFixture();
 
             // These tests use Network.Stratis.
             // Ensure that these static flags have the expected value.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
+            //Transaction.TimeStamp = true;
+            //Block.BlockSignature = true;
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
         }
 
-        public void Dispose()
+        protected override void AfterTest()
         {
             // This is needed here because of the fact that the Stratis network, when initialized, sets the
             // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
@@ -52,35 +63,35 @@ namespace Stratis.Bitcoin.IntegrationTests
                 client = null;
             }
         }
-
-        /// <summary>
-        /// Tests whether the Wallet API method "general-info" can be called and returns a non-empty JSON-formatted string result.
-        /// </summary>
+        
         [Fact]
-        public void CanGetGeneralInfoViaAPI()
+        public void get_general_info_returns_non_empty_json()
         {
+            Given(a_node);
+            When(getting_general_info);
+            Then(wallet_file_path_is_returned);
+        }
 
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
+        private void a_node()
+        {
+            var node = this.apiTestsFixture.stratisPowNode.FullNode;
+            this.apiURI = node.NodeService<ApiSettings>().ApiUri;
+        }
 
-            try
+        private void getting_general_info()
+        {
+            using (client = new HttpClient())
             {
-                var fullNode = this.apiTestsFixture.stratisPowNode.FullNode;
-                var apiURI = fullNode.NodeService<ApiSettings>().ApiUri;
-
-                using (client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                    var response = client.GetStringAsync(apiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
-                    Assert.StartsWith("{\"walletFilePath\":\"", response);
-                }
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                this.response = client.GetStringAsync(this.apiURI + "api/wallet/general-info?name=test").Result;
             }
-            finally
-            {
-                this.Dispose();
-            }
+        }
+
+        private void wallet_file_path_is_returned()
+        {
+            //NOCHECKIN - kinda lame test....
+            Assert.StartsWith("{\"walletFilePath\":\"", this.response);
         }
 
         /// <summary>
