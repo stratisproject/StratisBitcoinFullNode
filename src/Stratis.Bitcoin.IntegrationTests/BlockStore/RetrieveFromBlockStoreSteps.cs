@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http.Features;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
@@ -15,6 +16,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public partial class RetrieveFromBlockStoreSpecification : BddSpecification
     {
+        private readonly SharedSteps sharedSteps;
+
         private NodeBuilder builder;
         private CoreNode node;
         private List<uint256> blockIds;
@@ -22,10 +25,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private string password = "P@ssw0rd";
         private WalletAccountReference miningWalletAccountReference;
         private HdAddress minerAddress;
-        private Wallet miningWallet;
+        private Features.Wallet.Wallet miningWallet;
         private Key key;
         private int maturity;
-        private uint256 madeUpBlockId;
+        private uint256 wrongBlockId;
         private IEnumerable<uint256> retrievedBlockHashes;
         private CoreNode transactionNode;
         private readonly Money transferAmount = Money.COIN * 2;
@@ -33,14 +36,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private HdAddress receiverAddress;
         private uint256 blockWithTransactionId;
         private Transaction retrievedTransaction;
-        private uint256 madeUpTransactionId;
+        private uint256 wrongTransactionId;
         private Transaction wontRetrieveTransaction;
-
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
 
+
         public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output)
         {
+            this.sharedSteps = new SharedSteps();
         }
 
         protected override void BeforeTest()
@@ -67,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode.NotInIBD();
 
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.node, this.transactionNode));
+            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
 
             this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
             this.receiverAddress = this.transactionNode.FullNode.WalletManager()
@@ -96,27 +100,26 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.some_real_blocks_with_a_uint256_identifier();
         }
 
-        private void a_made_up_block_id()
+        private void a_wrong_block_id()
         {
-            this.madeUpBlockId = new uint256(3141592653589793238);
-            this.blockIds.Should().NotContain(this.madeUpBlockId, "it would corrupt the test");
+            this.wrongBlockId = new uint256(3141592653589793238);
+            this.blockIds.Should().NotContain(this.wrongBlockId, "it would corrupt the test");
         }
 
-        private void a_made_up_transaction_id()
+        private void a_wrong_transaction_id()
         {
-            this.madeUpTransactionId = new uint256(314159265358979323);
-            this.transaction.GetHash().Should().NotBe(this.madeUpTransactionId, "it would corrupt the test");
+            this.wrongTransactionId = new uint256(314159265358979323);
+            this.transaction.GetHash().Should().NotBe(this.wrongTransactionId, "it would corrupt the test");
         }
 
         public void the_node_is_synced()
         {
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.node));
+            this.sharedSteps.WaitForNodesToSync(this.node);
         }
 
         public void the_nodes_are_synced()
         {
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.node));
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.node, this.transactionNode));
+            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
         }
 
         public void a_real_transaction()
@@ -136,13 +139,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.blockWithTransactionId = this.node.GenerateStratisWithMiner(1).Single();
             this.node.GenerateStratisWithMiner(1);
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.node));
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.node, this.transactionNode));
+            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
         }
 
         public async Task trying_to_retrieve_the_blocks_from_the_blockstore()
         {
-            this.retrievedBlocks = this.blockIds.Concat(new [] {this.madeUpBlockId})
+            this.retrievedBlocks = this.blockIds.Concat(new [] {this.wrongBlockId})
                 .Select(async id =>
                     await this.node.FullNode.BlockStoreManager().BlockRepository
                         .GetAsync(id)).Select(b => b.Result).ToList();
@@ -159,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedTransaction = await this.node.FullNode.BlockStoreManager().BlockRepository
                 .GetTrxAsync(this.transaction.GetHash());
             this.wontRetrieveTransaction = await this.node.FullNode.BlockStoreManager().BlockRepository
-                .GetTrxAsync(this.madeUpTransactionId);
+                .GetTrxAsync(this.wrongTransactionId);
         }
 
         public async Task trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
@@ -167,7 +169,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedBlockId = await this.node.FullNode.BlockStoreManager().BlockRepository
                 .GetTrxBlockIdAsync(this.transaction.GetHash());
             this.wontRetrieveBlockId = await this.node.FullNode.BlockStoreManager().BlockRepository
-                .GetTrxAsync(this.madeUpTransactionId);
+                .GetTrxAsync(this.wrongTransactionId);
         }
 
         public void real_blocks_should_be_retrieved()
@@ -175,9 +177,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedBlockHashes.Should().BeEquivalentTo(this.blockIds);
         }
 
-        private void made_up_blocks_should_not_be_retrieved()
+        private void the_wrong_block_id_should_return_null()
         {
-            this.retrievedBlockHashes.Should().NotContain(this.madeUpBlockId);
+            this.retrievedBlockHashes.Should().NotContain(this.wrongBlockId);
         }
 
         private void the_real_transaction_should_be_retrieved()
@@ -190,7 +192,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             
         }
 
-        private void the_made_up_transaction_should_not_be_retrieved()
+        private void the_wrong_transaction_id_should_return_null()
         {
             this.wontRetrieveTransaction.Should().BeNull();
         }
@@ -201,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedBlockId.Should().Be(this.blockWithTransactionId);
         }
 
-        private void the_block_with_the_made_up_transaction_should_not_be_retrieved()
+        private void the_block_with_the_wrong_id_should_return_null()
         {
             this.wontRetrieveBlockId.Should().BeNull();
         }
