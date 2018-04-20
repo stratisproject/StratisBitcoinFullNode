@@ -1,17 +1,24 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SharedSteps
     {
-        public static TransactionBuildContext CreateTransactionBuildContext(string sendingWalletName, string sendingAccountName, string sendingPassword, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        public static TransactionBuildContext CreateTransactionBuildContext(
+            string sendingWalletName, 
+            string sendingAccountName, 
+            string sendingPassword, 
+            ICollection<Recipient> recipients, 
+            FeeType feeType, 
+            int minConfirmations)
         {
-            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName),
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), sendingPassword)
+            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName), recipients.ToList(), sendingPassword)
             {
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
