@@ -13,9 +13,14 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletSettings
     {
         /// <summary>
-        /// Enable the node to stake.
+        /// A value indicating whether the transactions hex representations should be saved in the wallet file.
         /// </summary>
-        public bool SaveTransactionHex { get; private set; }
+        public bool SaveTransactionHex { get; set; }
+
+        /// <summary>
+        /// A value indicating whether the wallet being run is the light wallet or the full wallet.
+        /// </summary>
+        public bool IsLightWallet { get; set; }
 
         /// <summary>
         /// A callback allow changing the default settings.
@@ -60,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             var defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
-            builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file.");
+            builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: false.");
             defaults.Logger.LogInformation(builder.ToString());
         }
     }
