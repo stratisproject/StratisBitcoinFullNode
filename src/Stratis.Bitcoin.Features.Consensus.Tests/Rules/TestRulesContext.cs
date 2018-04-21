@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -38,6 +40,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             rule.Initialize();
             return rule;
         }
+    }
+
+    /// <summary>
+    /// Test consensus rules for unit tests.
+    /// </summary>
+    public class TestConsensusRules : ConsensusRules
+    {        
+        private Mock<IRuleRegistration> ruleRegistration;
+
+        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        {
+            this.ruleRegistration = new Mock<IRuleRegistration>();
+        }
+
+        public T RegisterRule<T>() where T : ConsensusRule, new()
+        {
+            T rule = new T();
+            this.ruleRegistration.Setup(r => r.GetRules())
+                .Returns(new List<ConsensusRule>() { rule });
+
+            this.Register(this.ruleRegistration.Object);
+            return rule;
+        }       
     }
 
     /// <summary>

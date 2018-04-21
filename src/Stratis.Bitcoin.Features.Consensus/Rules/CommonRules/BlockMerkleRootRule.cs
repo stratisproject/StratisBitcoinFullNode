@@ -18,10 +18,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
     /// of transactions in a block without affecting the merkle root of a block,
     /// while still invalidating it.
-    /// </remarks>
+    /// </remarks>    
     public class BlockMerkleRootRule : ConsensusRule
-    {        
+    {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
         public override Task RunAsync(RuleContext context)
         {
             if (context.CheckMerkleRoot)
@@ -46,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Calculates merkle root for block's trasnactions.
+        /// Calculates merkle root for block's transactions.
         /// </summary>
         /// <param name="block">Block which transactions are used for calculation.</param>
         /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>

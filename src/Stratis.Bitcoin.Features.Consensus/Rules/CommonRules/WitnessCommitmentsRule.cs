@@ -9,9 +9,15 @@ using Stratis.Bitcoin.Base.Deployments;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <summary>
+    /// A rule that validates witness commitments.
+    /// </summary>
     public class WitnessCommitmentsRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadWitnessNonceSize">The witness nonce size is invalid.</exception>
+        /// <exception cref="ConsensusErrors.BadWitnessMerkleMatch">The witness merkle commitment does not match the computed commitment.</exception>
+        /// <exception cref="ConsensusErrors.UnexpectedWitness">The block does not expect witness transactions but contains a witness transaction.</exception>
         public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;

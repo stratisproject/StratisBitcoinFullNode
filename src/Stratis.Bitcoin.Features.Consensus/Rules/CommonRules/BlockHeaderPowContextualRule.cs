@@ -11,16 +11,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class BlockHeaderPowContextualRule : ConsensusRule
     {
-        /// <summary>
-        /// Context-dependent validity checks.
-        /// </summary>
+        /// <inheritdoc />
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of work is incorrect.</exception>
         /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
-        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
-        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
