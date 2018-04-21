@@ -138,10 +138,10 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>List of paths to important files and folders.</summary>
         public DataFolder DataFolder { get; set; }
 
-        /// <summary>Path to the data directory.</summary>
+        /// <summary>Path to the data directory. This value is read-only and is set in the constructor's args.</summary>
         public string DataDir { get; private set; }
 
-        /// <summary>Path to the configuration file.</summary>
+        /// <summary>Path to the configuration file. This value is read-only and is set in the constructor's args.</summary>
         public string ConfigurationFile { get; private set; }
 
         /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
