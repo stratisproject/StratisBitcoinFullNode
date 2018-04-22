@@ -558,7 +558,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             AddressBalance balance = new AddressBalance
             {
-                Address = address
+                Address = address,
+                CoinType = this.coinType
             };
 
             lock (this.lockObject)

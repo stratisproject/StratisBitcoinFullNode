@@ -16,6 +16,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string Address { get; set; }
 
         /// <summary>
+        /// The coin type of this balance.
+        /// </summary>
+        public CoinType CoinType { get; set; }
+
+        /// <summary>
         /// The balance of confirmed transactions.
         /// </summary>
         public Money AmountConfirmed { get; set; }
