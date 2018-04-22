@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class ReceivedByAddressRequest : RequestModel
     {
-        [Required(ErrorMessage = "The address is missing")]
+        [Required(ErrorMessage = "An address is required.")]
         public string Address { get; set; }
     }
 
