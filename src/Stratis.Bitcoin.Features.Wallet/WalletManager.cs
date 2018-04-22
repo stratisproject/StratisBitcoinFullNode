@@ -551,6 +551,47 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public AddressBalance GetAddressBalance(string address)
+        {
+            Guard.NotEmpty(address, nameof(address));
+            this.logger.LogTrace("({0}:'{1}')", nameof(address), address);
+
+            AddressBalance balance = new AddressBalance
+            {
+                Address = address
+            };
+
+            lock (this.lockObject)
+            {
+                foreach (var wallet in this.Wallets)
+                {
+                    if (!wallet.ContainsAddress(new HdAddress { Address = address }))
+                        continue;
+
+
+                    HdAddress hdAddress = wallet.AccountsRoot
+                        .SelectMany(ac => ac.Accounts)
+                        .SelectMany(i => i.InternalAddresses)
+                        .SingleOrDefault(ad => ad.Address == address) ??
+                        wallet.AccountsRoot
+                            .SelectMany(ac => ac.Accounts)
+                            .SelectMany(e => e.ExternalAddresses)
+                            .SingleOrDefault(ad => ad.Address == address);
+
+                    if (hdAddress == null)
+                        continue;
+
+                    (Money AmountConfirmed, Money AmountUnconfirmed) result = hdAddress.GetSpendableAmount();
+
+                    balance.AmountConfirmed = result.AmountConfirmed;
+                    balance.AmountUnconfirmed = result.AmountUnconfirmed;
+                }
+            }
+
+            return balance;
+        }
+
+        /// <inheritdoc />
         public Wallet GetWallet(string walletName)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
