@@ -71,6 +71,8 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new MethodInstructionValidator()
         };
 
+        public const string NonDeterministicMethodReference = "Non-deterministic method reference.";
+
         /// <inheritdoc/>
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
@@ -99,11 +101,12 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
                 if (result.Any())
                 {
-                    errors.Add(SmartContractValidationError.NonDeterministic(userMethod));
+                    errors.Add(NonDeterministicError(userMethod));
                     visited[userMethod.FullName] = result.ToList();
                 }
             }
         }
+
 
         /// <summary>
         /// Validates all methods referenced inside of a user method.
@@ -133,7 +136,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 IEnumerable<SmartContractValidationError> result = validator.Validate(referencedMethod);
                 if (result.Any())
                 {
-                    errors.Add(SmartContractValidationError.NonDeterministic(userMethod, referencedMethod));
+                    errors.Add(NonDeterministicError(userMethod, referencedMethod));
                     visited[referencedMethod.FullName] = result.ToList();
                 }
             }
@@ -171,6 +174,25 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 visited.Add(method.FullName, new List<SmartContractValidationError>());
                 return true;
             }
+        }
+
+        /// <summary>
+        /// Returns an error when a method is non-deterministic.
+        /// </summary>
+        public static SmartContractValidationError NonDeterministicError(MethodDefinition userMethod)
+        {
+            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"Use of {userMethod.FullName} is not deterministic.");
+        }
+
+        /// <summary>
+        /// Returns an error when a referenced method is non-deterministic in a containing method.
+        /// <para>I.e. if in method A, method B is referenced and it is non-deterministic, use this method.</para>
+        /// </summary>
+        /// <param name="userMethod">The containing method.</param>
+        /// <param name="referencedMethod">The method that is non-deterministic in the containing method.</param>
+        public static SmartContractValidationError NonDeterministicError(MethodDefinition userMethod, MethodDefinition referencedMethod)
+        {
+            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"Use of {referencedMethod.FullName} is not deterministic.");
         }
     }
 }
