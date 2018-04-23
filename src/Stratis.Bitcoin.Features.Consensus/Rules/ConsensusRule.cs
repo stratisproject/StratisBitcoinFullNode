@@ -52,6 +52,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         public ConsensusRuleDescriptor(ConsensusRule rule)
         {
+            Guard.NotNull(rule, nameof(rule));
+
             this.Rule = rule;
             this.Attributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 

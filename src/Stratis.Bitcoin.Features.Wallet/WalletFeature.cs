@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -42,6 +43,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly BroadcasterBehavior broadcasterBehavior;
 
+        private readonly NodeSettings nodeSettings;
+
+        private readonly WalletSettings walletSettings;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
         /// </summary>
@@ -51,13 +56,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chain">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
+        /// <param name="nodeSettings">The settings for the node.</param>
+        /// <param name="walletSettings">The settings for the wallet.</param>
         public WalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             Signals.Signals signals,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
-            BroadcasterBehavior broadcasterBehavior)
+            BroadcasterBehavior broadcasterBehavior,
+            NodeSettings nodeSettings,
+            WalletSettings walletSettings)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -65,6 +74,23 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.chain = chain;
             this.connectionManager = connectionManager;
             this.broadcasterBehavior = broadcasterBehavior;
+            this.nodeSettings = nodeSettings;
+            this.walletSettings = walletSettings;
+        }
+
+        /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.walletSettings.Load(this.nodeSettings);
+        }
+
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            WalletSettings.PrintHelp(network);
         }
 
         /// <inheritdoc />
@@ -131,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public static class FullNodeBuilderWalletExtension
     {
-        public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<WalletFeature>("wallet");
 
@@ -152,6 +178,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<WalletRPCController>();
                         services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
+                        services.AddSingleton<WalletSettings>(new WalletSettings(setup));
                     });
             });
 

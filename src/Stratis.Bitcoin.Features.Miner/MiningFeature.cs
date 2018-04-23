@@ -38,14 +38,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>POS staker.</summary>
         private readonly IPosMinting posMinting;
 
-        /// <summary>Manager providing operations on wallets.</summary>
-        private readonly IWalletManager walletManager;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
-        /// <summary>POS staking loop.</summary>
-        private IAsyncLoop posLoop;
 
         /// <summary>POW mining loop.</summary>
         private IAsyncLoop powLoop;
@@ -63,7 +57,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="powMining">POW miner.</param>
         /// <param name="posMinting">POS staker.</param>
-        /// <param name="walletManager">Manager providing operations on wallets.</param>
         public MiningFeature(
             Network network,
             MinerSettings minerSettings,
@@ -71,8 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             IPowMining powMining,
-            IPosMinting posMinting = null,
-            IWalletManager walletManager = null)
+            IPosMinting posMinting = null)
         {
             this.network = network;
             this.minerSettings = minerSettings;
@@ -80,7 +72,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.powMining = powMining;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.posMinting = posMinting;
-            this.walletManager = walletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -106,7 +97,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="walletPassword">The password of the wallet.</param>
         public void StartStaking(string walletName, string walletPassword)
         {
-            // Prevent mining if the system time is not in sync with that of other members on the network.
             if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
             {
                 var errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
@@ -119,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posLoop = this.posMinting.Stake(new PosMinting.WalletSecret
+                this.posMinting.Stake(new PosMinting.WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName
@@ -138,8 +128,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         public void StopStaking()
         {
-            this.posMinting.StopStake();
-            this.posLoop = null;
+            this.posMinting?.StopStake();
             this.logger.LogInformation("Staking stopped.");
         }
 
@@ -148,15 +137,15 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (this.minerSettings.Mine)
             {
-                string minto = this.minerSettings.MineAddress;
-                // if (string.IsNullOrEmpty(minto)) ;
+                string mineToAddress = this.minerSettings.MineAddress;
+                // if (string.IsNullOrEmpty(mineToAddress)) ;
                 //    TODO: get an address from the wallet.
 
-                if (!string.IsNullOrEmpty(minto))
+                if (!string.IsNullOrEmpty(mineToAddress))
                 {
                     this.logger.LogInformation("Mining enabled.");
 
-                    this.powLoop = this.powMining.Mine(BitcoinAddress.Create(minto, this.network).ScriptPubKey);
+                    this.powLoop = this.powMining.Mine(BitcoinAddress.Create(mineToAddress, this.network).ScriptPubKey);
                 }
             }
 
@@ -170,9 +159,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public override void Dispose()
         {
             this.powLoop?.Dispose();
-            this.posMinting?.StopStake();
-            this.posLoop?.Dispose();
-            this.posLoop = null;
+            this.StopStaking();
         }
 
         /// <inheritdoc />
@@ -223,7 +210,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-	                    services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
 					});
             });
 
@@ -254,9 +240,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<IAssemblerFactory, PosAssemblerFactory>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
-                        services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
-                        services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
 					});
             });
 

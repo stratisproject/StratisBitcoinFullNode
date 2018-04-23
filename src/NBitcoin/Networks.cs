@@ -26,6 +26,12 @@ namespace NBitcoin
             Block.BlockSignature = saveSig;
         }
 
+        /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
+        public const int BitcoinMaxTimeOffsetSeconds = 70 * 60;
+
+        /// <summary> Stratis maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
+        public const int StratisMaxTimeOffsetSeconds = 25 * 60;
+
         /// <summary> Bitcoin default value for the maximum tip age in seconds to consider the node in initial block download (24 hours). </summary>
         public const int BitcoinDefaultMaxTipAgeInSeconds = 24 * 60 * 60;
 
@@ -90,7 +96,7 @@ namespace NBitcoin
 
             consensus.CoinType = 0;
 
-            consensus.DefaultAssumeValid = new uint256("0x00000000000000000086a2362d78ffb4e41dc0b8775ff3c278bd994a5162348a"); // 499610
+            consensus.DefaultAssumeValid = new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"); // 518180
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -144,6 +150,7 @@ namespace NBitcoin
                 network.fixedSeeds.Add(addr);
             }
 
+            network.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
             network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
@@ -187,7 +194,7 @@ namespace NBitcoin
 
             network.consensus.CoinType = 1;
 
-            network.consensus.DefaultAssumeValid = new uint256("0x000000003ccfe92231efee04df6621e7bb3f7f513588054e19f78d626b951f59"); // 1235126
+            network.consensus.DefaultAssumeValid = new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"); // 1292762
 
             network.magic = 0x0709110B;
 
@@ -221,6 +228,7 @@ namespace NBitcoin
             network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
+            network.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
             network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
@@ -286,6 +294,7 @@ namespace NBitcoin
             network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
+            network.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
             network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
@@ -334,7 +343,7 @@ namespace NBitcoin
 
             consensus.CoinType = 105;
 
-            consensus.DefaultAssumeValid = new uint256("0x8c2cf95f9ca72e13c8c4cdf15c2d7cc49993946fb49be4be147e106d502f1869"); // 642930
+            consensus.DefaultAssumeValid = new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"); // 795970
 
             Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
@@ -362,6 +371,7 @@ namespace NBitcoin
                 .SetPort(16178)
                 .SetRPCPort(16174)
                 .SetTxFees(10000, 60000, 10000)
+                .SetMaxTimeOffsetSeconds(StratisMaxTimeOffsetSeconds)
                 .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
 
                 .AddDNSSeeds(new[]
@@ -434,7 +444,7 @@ namespace NBitcoin
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
-            consensus.DefaultAssumeValid = new uint256("0x12ae16993ce7f0836678f225b2f4b38154fa923bd1888f7490051ddaf4e9b7fa"); // 218810
+            consensus.DefaultAssumeValid = new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"); // 372652
 
             var builder = new NetworkBuilder()
                 .SetName("StratisTest")
@@ -445,6 +455,7 @@ namespace NBitcoin
                 .SetGenesis(genesis)
                 .SetPort(26178)
                 .SetRPCPort(26174)
+                .SetMaxTimeOffsetSeconds(StratisMaxTimeOffsetSeconds)
                 .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
                 .SetTxFees(10000, 60000, 10000)
                 .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
@@ -457,12 +468,19 @@ namespace NBitcoin
 
                 .AddDNSSeeds(new[]
                 {
-                    new DNSSeedData("testnode1.stratisplatform.com", "testnode1.stratisplatform.com"),
-                    new DNSSeedData("testnode2.stratis.cloud", "testnode2.stratis.cloud"),
-                    new DNSSeedData("testnode3.stratisplatform.com", "testnode3.stratisplatform.com")
+                    new DNSSeedData("testnet1.stratisplatform.com", "testnet1.stratisplatform.com"),
+                    new DNSSeedData("testnet2.stratisplatform.com", "testnet2.stratisplatform.com"),
+                    new DNSSeedData("testnet3.stratisplatform.com", "testnet3.stratisplatform.com"),
+                    new DNSSeedData("testnet4.stratisplatform.com", "testnet4.stratisplatform.com")
                 });
 
-                builder.AddSeeds(new[] { new NetworkAddress(IPAddress.Parse("51.141.28.47"), builder.Port) }); // the c# testnet node
+            builder.AddSeeds(new[]
+            {
+                new NetworkAddress(IPAddress.Parse("51.140.231.125"), builder.Port), // danger cloud node
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
+                new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
+            }); 
 
             return builder.BuildAndRegister();
         }
@@ -509,6 +527,7 @@ namespace NBitcoin
                 .SetGenesis(genesis)
                 .SetPort(18444)
                 .SetRPCPort(18442)
+                .SetMaxTimeOffsetSeconds(StratisMaxTimeOffsetSeconds)
                 .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
                 .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
                 .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })

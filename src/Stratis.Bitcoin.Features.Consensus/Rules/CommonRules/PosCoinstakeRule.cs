@@ -11,6 +11,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PosCoinstakeRule : PosConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadStakeBlock">The coinbase output (first transaction) is not empty.</exception>
+        /// <exception cref="ConsensusErrors.BadStakeBlock">The second transaction is not a coinstake transaction.</exception>
+        /// <exception cref="ConsensusErrors.BadMultipleCoinstake">There are multiple coinstake tranasctions in the block.</exception>
+        /// <exception cref="ConsensusErrors.BlockTimeBeforeTrx">The block contains a transaction with a timestamp after the block timestamp.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
