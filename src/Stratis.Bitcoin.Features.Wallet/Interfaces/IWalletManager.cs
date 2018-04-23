@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Gets the balance of transactions for this specific address.
         /// </summary>
         /// <param name="address">The address to get the balance from.</param>
-        /// <returns></returns>
+        /// <returns>The address balance for an address.</returns>
         AddressBalance GetAddressBalance(string address);
 
         /// <summary>

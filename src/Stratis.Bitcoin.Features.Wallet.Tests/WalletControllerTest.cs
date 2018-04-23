@@ -1310,7 +1310,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void GetAddressBalanceWithInvalidValidModelStateReturnsBadRequest()
+        public void GetAddressBalanceWithInvalidModelStateReturnsBadRequest()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 

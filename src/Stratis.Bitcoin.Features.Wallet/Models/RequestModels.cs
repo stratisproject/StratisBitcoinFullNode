@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// Model object to use as input to the Api request for getting the balance for an address
+    /// Model object to use as input to the Api request for getting the balance for an address.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class ReceivedByAddressRequest : RequestModel

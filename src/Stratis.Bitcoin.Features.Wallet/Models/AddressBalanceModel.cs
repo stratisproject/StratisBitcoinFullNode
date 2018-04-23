@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models

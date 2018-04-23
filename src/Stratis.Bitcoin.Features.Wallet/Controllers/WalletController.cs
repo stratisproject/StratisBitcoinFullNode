@@ -518,14 +518,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Gets the balance for an address.
         /// </summary>
         /// <param name="request">The request parameters.</param>
-        /// <returns>The balance for an address</returns>
+        /// <returns>The address balance for an address.</returns>
         [Route("received-by-address")]
         [HttpGet]
         public IActionResult GetReceivedByAddress([FromQuery] ReceivedByAddressRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
-            //Checks the request is valid
+            // Checks the request is valid
             if (!this.ModelState.IsValid)
             {
                 return BuildErrorResponse(this.ModelState);
@@ -533,7 +533,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                var balanceResult = this.walletManager.GetAddressBalance(request.Address);
+                AddressBalance balanceResult = this.walletManager.GetAddressBalance(request.Address);
                 return this.Json(new AddressBalanceModel
                 {
                     CoinType = this.coinType,

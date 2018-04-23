@@ -536,13 +536,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 
                 foreach (var account in accounts)
                 {
-                    (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
 
                     balances.Add(new AccountBalance
                     {
                         Account = account,
-                        AmountConfirmed = result.AmountConfirmed,
-                        AmountUnconfirmed = result.AmountUnconfirmed
+                        AmountConfirmed = result.amountConfirmed,
+                        AmountUnconfirmed = result.amountUnconfirmed
                     });
                 }
             }
@@ -566,8 +566,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (var wallet in this.Wallets)
                 {
-                    if (!wallet.ContainsAddress(new HdAddress { Address = address }))
-                        continue;
+                    if (!wallet.ContainsAddress(new HdAddress { Address = address })) continue;
 
 
                     HdAddress hdAddress = wallet.AccountsRoot
@@ -582,10 +581,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (hdAddress == null)
                         continue;
 
-                    (Money AmountConfirmed, Money AmountUnconfirmed) result = hdAddress.GetSpendableAmount();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
 
-                    balance.AmountConfirmed = result.AmountConfirmed;
-                    balance.AmountUnconfirmed = result.AmountUnconfirmed;
+                    balance.AmountConfirmed = result.amountConfirmed;
+                    balance.AmountUnconfirmed = result.amountUnconfirmed;
                 }
             }
 
