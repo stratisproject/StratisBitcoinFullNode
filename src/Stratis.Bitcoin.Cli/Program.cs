@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Cli
                     // Process RPC call.
                     try
                     {
-                        var options = optionList.ToArray();
+                        var options = optionList.Append("-server").ToArray();
 
                         NodeSettings nodeSettings = new NodeSettings(network, args:options);
 
