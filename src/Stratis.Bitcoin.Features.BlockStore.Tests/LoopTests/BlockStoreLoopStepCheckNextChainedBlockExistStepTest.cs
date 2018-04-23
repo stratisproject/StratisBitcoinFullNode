@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 Assert.Null(fluent.Loop.StoreTip);
 
                 var nextChainedBlock = block04;
-                var checkExistsStep = new CheckNextChainedBlockExistStep(fluent.Loop, this.loggerFactory);
+                var checkExistsStep = new CheckNextChainedBlockExistStep(fluent.Loop, this.LoggerFactory.Object);
                 checkExistsStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 var options = NetworkOptions.TemporaryOptions;

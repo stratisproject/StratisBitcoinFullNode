@@ -37,9 +37,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.LoggerFactory.Object, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.LoggerFactory.Object);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // Block[5] through Block[9] should be in the DownloadStack
@@ -73,9 +73,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[45].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.LoggerFactory.Object, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.LoggerFactory.Object);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // Block[45] through Block[50] should be in the DownloadStack
@@ -122,9 +122,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.LoggerFactory.Object, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.LoggerFactory.Object);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain Block[1]
@@ -159,9 +159,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.LoggerFactory.Object, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.LoggerFactory.Object);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain Block[1]
@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[2].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.LoggerFactory.Object, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.LoggerFactory.Object);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain nextChainedBlock

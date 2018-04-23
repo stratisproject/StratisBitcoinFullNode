@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 //Reorganise (delete) blocks from the block repository that is not found
                 var nextChainedBlock = block10;
-                var reorganiseStep = new ReorganiseBlockRepositoryStep(fluent.Loop, this.loggerFactory);
+                var reorganiseStep = new ReorganiseBlockRepositoryStep(fluent.Loop, this.LoggerFactory.Object);
                 reorganiseStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());

@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     /// <summary>
     /// Base test class for all the BlockStoreLoop tests.
     /// </summary>
-    public class BlockStoreLoopStepBaseTest : TestBase
+    public class BlockStoreLoopStepBaseTest : LogsTestBase
     {
         internal void AddBlockToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
         {
