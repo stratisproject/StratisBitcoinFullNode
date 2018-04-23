@@ -50,7 +50,7 @@ namespace NBitcoin.RPC
             var strWriter = new StringWriter();
             var jsonWriter = new JsonTextWriter(strWriter);
             jsonWriter.Formatting = Formatting.Indented;
-
+            
             jsonWriter.WriteStartObject();
             WriteTransaction(jsonWriter, transaction);
             jsonWriter.WriteEndObject();

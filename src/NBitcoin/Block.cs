@@ -6,6 +6,7 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace NBitcoin
@@ -223,7 +224,7 @@ namespace NBitcoin
         private BlockHeader header = new BlockHeader();
 
         // network and disk
-        private List<Transaction> transactions = new List<Transaction>();
+        private List<Transaction> transactions = new List<Transaction>();     
         public List<Transaction> Transactions { get { return this.transactions; } set { this.transactions = value; } }
 
         public MerkleNode GetMerkleRoot()
@@ -411,14 +412,14 @@ namespace NBitcoin
         {
             var formatter = new BlockExplorerFormatter();
             JObject block = JObject.Parse(json);
-            JArray txs = (JArray)block["tx"];
+            JArray txs = (JArray)block[JsonSerialisation.TransactionPropertyName];
             Block blk = new Block();
-            blk.Header.Bits = new Target((uint)block["bits"]);
-            blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);
-            blk.Header.Nonce = (uint)block["nonce"];
-            blk.Header.Version = (int)block["ver"];
-            blk.Header.HashPrevBlock = uint256.Parse((string)block["prev_block"]);
-            blk.Header.HashMerkleRoot = uint256.Parse((string)block["mrkl_root"]);
+            blk.Header.Bits = new Target((uint)block[JsonSerialisation.BitsPropertyName]);
+            blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block[JsonSerialisation.TimePropertyName]);
+            blk.Header.Nonce = (uint)block[JsonSerialisation.NoncePropertyName];
+            blk.Header.Version = (int)block[JsonSerialisation.VersionPropertyName];
+            blk.Header.HashPrevBlock = uint256.Parse((string)block[JsonSerialisation.PrevBlockPropertyName]);
+            blk.Header.HashMerkleRoot = uint256.Parse((string)block[JsonSerialisation.MrklRootPropertyName]);
 
             foreach (JToken tx in txs)
             {
@@ -426,6 +427,23 @@ namespace NBitcoin
             }
 
             return blk;
+        }
+
+        public string ToJson(bool indented = false)
+        {
+            var strWriter = new StringWriter();
+            var jsonWriter = new JsonTextWriter(strWriter);
+            jsonWriter.Formatting = indented ? Formatting.Indented : Formatting.None;
+
+            jsonWriter.WriteStartObject();
+
+            JsonSerialisation.WriteHeaderFields(jsonWriter, this.Header);
+            JsonSerialisation.WriteTransactions(jsonWriter, this.Transactions);
+
+            jsonWriter.WriteEndObject();
+            jsonWriter.Flush();
+
+            return strWriter.ToString();
         }
 
         public static Block Parse(string hex)
@@ -441,6 +459,44 @@ namespace NBitcoin
         public MerkleBlock Filter(BloomFilter filter)
         {
             return new MerkleBlock(this, filter);
+        }
+    }
+
+    public class JsonSerialisation
+    {
+        public const string BitsPropertyName = "bits";
+        public const string TimePropertyName = "time";
+        public const string NoncePropertyName = "nonce";
+        public const string VersionPropertyName = "ver";
+        public const string PrevBlockPropertyName = "prev_block";
+        public const string MrklRootPropertyName = "mrkl_root";
+        public const string TransactionPropertyName = "tx";
+
+        public static void WritePropertyValue(JsonTextWriter jsonTextWriter, string propertyName, object propertyValue)
+        {
+            jsonTextWriter.WritePropertyName(propertyName);
+            jsonTextWriter.WriteValue(propertyValue);
+        }
+
+        public static void WriteHeaderFields(JsonTextWriter jsonWriter, BlockHeader header)
+        {
+            WritePropertyValue(jsonWriter, BitsPropertyName, header.Bits.ToCompact());
+            WritePropertyValue(jsonWriter, TimePropertyName, Utils.DateTimeToUnixTime(header.BlockTime));
+            WritePropertyValue(jsonWriter, NoncePropertyName, header.Nonce);
+            WritePropertyValue(jsonWriter, VersionPropertyName, header.Version);
+            WritePropertyValue(jsonWriter, PrevBlockPropertyName, header.HashPrevBlock.ToString());
+            WritePropertyValue(jsonWriter, MrklRootPropertyName, header.HashMerkleRoot.ToString());
+        }
+
+        public static void WriteTransactions(JsonTextWriter jsonWriter, IEnumerable<Transaction> transactions)
+        {
+            jsonWriter.WritePropertyName(TransactionPropertyName);
+            jsonWriter.WriteStartArray();
+            foreach (Transaction tx in transactions)
+            {
+                jsonWriter.WriteValue(tx.GetHash().ToString());
+            }
+            jsonWriter.WriteEndArray();
         }
     }
 }
