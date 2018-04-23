@@ -19,6 +19,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         [Fact]
+        public void GetLastCheckPointHeight_WithoutConsensusSettings_ReturnsZero()
+        {
+            var checkpoints = new Checkpoints();
+
+            var result = checkpoints.GetLastCheckpointHeight();
+
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
         public void GetLastCheckPointHeight_SettingsDisabledCheckpoints_DoesNotLoadCheckpoints()
         {
             var checkpoints = new Checkpoints(Network.Main, new ConsensusSettings() { UseCheckpoints = false });
@@ -101,6 +111,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             result = checkpoints.GetLastCheckpointHeight();
             Assert.Equal(491800, result);
+        }
+
+        [Fact]
+        public void GetCheckPoint_WithoutConsensusSettings_ReturnsNull()
+        {
+            var checkpoints = new Checkpoints();
+
+            var result = checkpoints.GetCheckpoint(11111);
+        
+            Assert.Null(result);
         }
 
         [Fact]
@@ -192,6 +212,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var checkpoints = new Checkpoints(Network.Main, new ConsensusSettings() { UseCheckpoints = true });
 
             var result = checkpoints.CheckHardened(11112, new uint256("0x7d61c139a471821caa6b7635a4636e90afcfe5e195040aecbc1ad7d24924db1e"));
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void CheckHardened_WithoutConsensusSettings_ReturnsTrue()
+        {
+            var checkpoints = new Checkpoints();
+
+            var result = checkpoints.CheckHardened(11111, new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d"));
 
             Assert.True(result);
         }
