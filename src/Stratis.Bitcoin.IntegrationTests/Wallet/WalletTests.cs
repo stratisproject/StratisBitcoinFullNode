@@ -5,6 +5,7 @@ using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -13,8 +14,6 @@ using System;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    using Stratis.Bitcoin.Features.Wallet;
-
     public class WalletTests : IDisposable
     {
         private bool initialBlockSignature;
