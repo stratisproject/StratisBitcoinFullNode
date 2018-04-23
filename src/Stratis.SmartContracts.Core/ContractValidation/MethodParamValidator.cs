@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.SmartContracts.Core.Serialization;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
@@ -15,7 +13,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public static readonly string ErrorType = "Invalid Method Param Type";
 
         // See SmartContractCarrierDataType
-        public static readonly IEnumerable<string> AllowedTypes = new []
+        public static readonly IEnumerable<string> AllowedTypes = new[]
         {
             typeof(bool).FullName,
             typeof(byte).FullName,
@@ -29,24 +27,24 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             typeof(Address).FullName
         };
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition methodDef)
         {
-            if (!method.HasParameters)
+            if (!methodDef.HasParameters)
                 return Enumerable.Empty<SmartContractValidationError>();
 
             // Constructor is allowed to have other params
-            if (method.IsConstructor)
+            if (methodDef.IsConstructor)
                 return Enumerable.Empty<SmartContractValidationError>();
 
-            return method.Parameters
+            return methodDef.Parameters
                 .Where(param => !AllowedTypes.Contains(param.ParameterType.FullName))
-                .Select(m => 
+                .Select(paramDef =>
                     new SmartContractValidationError(
-                        m.Name,
-                        method.FullName,
+                        paramDef.Name,
+                        methodDef.FullName,
                         ErrorType,
-                        $"{method.FullName} is invalid [{ErrorType} {m.ParameterType.FullName}]"
-                    ));            
+                        $"{methodDef.FullName} is invalid [{ErrorType} {paramDef.ParameterType.FullName}]"
+                    ));
         }
     }
 }

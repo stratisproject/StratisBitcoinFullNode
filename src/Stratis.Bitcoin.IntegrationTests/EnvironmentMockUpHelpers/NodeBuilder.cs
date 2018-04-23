@@ -132,12 +132,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 try
                 {
-                    Directory.Delete(folder, true);
-                    return true;
-                }
-                catch (DirectoryNotFoundException)
-                {
-                    return true;
+                    if (Directory.Exists(folder))
+                    {
+                        Directory.Delete(folder, true);
+                        return true;
+                    }
                 }
                 catch (Exception)
                 {

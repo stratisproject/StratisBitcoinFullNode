@@ -28,13 +28,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
             if (constructors.Count > 1)
             {
-                return new []
+                return new[]
                 {
                     new SmartContractValidationError(SingleConstructorError)
                 };
             }
-            
+
             return Enumerable.Empty<SmartContractValidationError>();
-        }        
+        }
     }
 }
