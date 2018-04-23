@@ -106,6 +106,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public bool AllowUnconfirmed { get; set; }
     }
 
+    /// <summary>
+    /// Model object to use as input to the Api request for getting the balance for an address.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
+    public class ReceivedByAddressRequest : RequestModel
+    {
+        [Required(ErrorMessage = "An address is required.")]
+        public string Address { get; set; }
+    }
+
     public class WalletName : RequestModel
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
@@ -146,6 +156,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        public string OpReturnData { get; set; }
     }
 
     public class SendTransactionRequest : RequestModel

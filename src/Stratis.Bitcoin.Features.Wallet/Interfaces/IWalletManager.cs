@@ -144,6 +144,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null);
 
         /// <summary>
+        /// Gets the balance of transactions for this specific address.
+        /// </summary>
+        /// <param name="address">The address to get the balance from.</param>
+        /// <returns>The address balance for an address.</returns>
+        AddressBalance GetAddressBalance(string address);
+
+        /// <summary>
         /// Gets some general information about a wallet.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
