@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Block.BlockSignature = true;
 
             this.consensusValidator = new Mock<IPosConsensusValidator>();
-            this.consensusLoop = new Mock<IConsensusLoop>();            
+            this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
             this.chain = new ConcurrentChain(this.network);
             this.connectionManager = new Mock<IConnectionManager>();
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(this.cancellationTokenSource.Token);
 
             this.posMinting = this.InitializePosMinting();
-        }       
+        }
 
         public void Dispose()
         {
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.chain = GenerateChainWithBlockTimeAndHeight(73, this.network, 60, 0x1df88f6f);
             // the following non-pos blocks should be excluded.
             AddBlockToChainWithBlockTimeAndDifficulty(this.chain, 3, 60, 0x12345678);
-            
+
             foreach (int blockHeight in new int[] { 74, 75, 76 })
             {
                 var blockHash = this.chain.GetBlock(blockHeight).HashBlock;

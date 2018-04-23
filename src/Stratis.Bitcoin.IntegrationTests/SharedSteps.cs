@@ -2,20 +2,20 @@
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SharedSteps
     {
         public static TransactionBuildContext CreateTransactionBuildContext(
-            string sendingWalletName, 
-            string sendingAccountName, 
-            string sendingPassword, 
-            ICollection<Recipient> recipients, 
-            FeeType feeType, 
+            string sendingWalletName,
+            string sendingAccountName,
+            string sendingPassword,
+            ICollection<Recipient> recipients,
+            FeeType feeType,
             int minConfirmations)
         {
             return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName), recipients.ToList(), sendingPassword)
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
         {
-            this.WaitForNodesToSync(node);
+            this.WaitForNodeToSync(node);
 
             var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
@@ -50,16 +50,34 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
-            this.WaitForNodesToSync(node);
+            this.WaitForNodeToSync(node);
 
             var rewardCoinCount = blockCount * Money.COIN * 50;
-            
+
             balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
         }
 
-        public void WaitForNodesToSync(params CoreNode[] nodes)
+        public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
         {
-            nodes.ToList().ForEach(n => 
+            this.WaitForNodeToSync(node);
+
+            var unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
+            var wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+
+            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            node.GenerateStratisWithMiner(2);
+
+            this.WaitForNodeToSync(node);
+
+            var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
+            var amountShouldBe = node.FullNode.Network.Consensus.Option<PosConsensusOptions>().PremineReward + node.FullNode.Network.Consensus.Option<PosConsensusOptions>().ProofOfWorkReward;
+            spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
+        }
+
+        public void WaitForNodeToSync(params CoreNode[] nodes)
+        {
+            nodes.ToList().ForEach(n =>
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(n)));
 
             nodes.Skip(1).ToList().ForEach(
