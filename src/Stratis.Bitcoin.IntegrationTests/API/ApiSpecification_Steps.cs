@@ -57,6 +57,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 this.httpClient.Dispose();
                 this.httpClient = null;
             }
+
+            this.apiTestsFixture.Dispose();
         }
 
         private void a_proof_of_work_node_api()
