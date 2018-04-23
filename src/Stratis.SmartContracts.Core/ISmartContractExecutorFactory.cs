@@ -6,7 +6,7 @@ namespace Stratis.SmartContracts.Core
     public interface ISmartContractExecutorFactory
     {
         ISmartContractExecutor CreateExecutor(
-            SmartContractCarrier carrier,
+            ISmartContractCarrier carrier,
             Money mempoolFee,
             IContractStateRepository stateRepository);
     }

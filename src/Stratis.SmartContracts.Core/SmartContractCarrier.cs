@@ -22,9 +22,9 @@ namespace Stratis.SmartContracts.Core
     /// <item><see cref="GasPrice"/></item>
     /// <item><see cref="GasLimit"/></item>
     /// </list>
-    /// </para>111
+    /// </para>
     /// </summary>
-    public sealed class SmartContractCarrier
+    public sealed class SmartContractCarrier : ISmartContractCarrier
     {
         /// <summary>This is the contract's address.</summary>
         public uint160 ContractAddress { get; set; }
@@ -155,8 +155,9 @@ namespace Stratis.SmartContracts.Core
         /// <summary> 
         /// Deserializes the smart contract execution code and other related information.
         /// </summary>
-        public static SmartContractCarrier Deserialize(Transaction transaction, TxOut smartContractTxOut)
+        public static SmartContractCarrier Deserialize(Transaction transaction)
         {
+            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(x => x.ScriptPubKey.IsSmartContractExec);
             byte[] smartContractBytes = smartContractTxOut.ScriptPubKey.ToBytes();
 
             var byteCursor = 0;

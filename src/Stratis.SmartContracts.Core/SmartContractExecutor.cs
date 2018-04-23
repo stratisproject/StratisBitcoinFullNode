@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Core
     /// </summary>
     public abstract class SmartContractExecutor : ISmartContractExecutor
     {
-        protected readonly SmartContractCarrier carrier;
+        protected readonly ISmartContractCarrier carrier;
         protected readonly IGasMeter gasMeter;
         protected readonly Network network;
         protected readonly IContractStateRepository stateSnapshot;
@@ -28,7 +28,8 @@ namespace Stratis.SmartContracts.Core
 
         internal ISmartContractExecutionResult Result { get; set; }
 
-        protected SmartContractExecutor(SmartContractCarrier carrier,
+        protected SmartContractExecutor(
+            ISmartContractCarrier carrier,
             Network network,
             IContractStateRepository stateSnapshot,
             SmartContractValidator validator,
@@ -47,7 +48,7 @@ namespace Stratis.SmartContracts.Core
         /// <summary>
         /// Returns the correct SmartContractExecutor based on the carrier opcode.
         /// </summary>
-        public static SmartContractExecutor Initialize(SmartContractCarrier carrier,
+        public static SmartContractExecutor Initialize(ISmartContractCarrier carrier,
             Network network,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
@@ -98,7 +99,8 @@ namespace Stratis.SmartContracts.Core
 
     public sealed class CreateSmartContract : SmartContractExecutor
     {
-        public CreateSmartContract(SmartContractCarrier carrier,
+        public CreateSmartContract(
+            ISmartContractCarrier carrier,
             Network network,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,

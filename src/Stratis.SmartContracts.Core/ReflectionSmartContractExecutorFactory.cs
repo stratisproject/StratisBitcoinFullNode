@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.Core
         /// </para>
         /// </summary>
         public ISmartContractExecutor CreateExecutor(
-            SmartContractCarrier carrier,
+            ISmartContractCarrier carrier,
             Money mempoolFee,
             IContractStateRepository stateRepository)
         {

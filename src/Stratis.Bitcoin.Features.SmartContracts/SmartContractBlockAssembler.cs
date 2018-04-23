@@ -24,6 +24,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private ISmartContractExecutorFactory executorFactory;
 
+        private ISmartContractCarrierSerializer carrierSerializer;
+
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
 
@@ -95,7 +97,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
         private void AddContractToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
         {
-            var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
+            ISmartContractCarrier carrier = this.carrierSerializer.Deserialize(mempoolEntry.Transaction);
             carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
