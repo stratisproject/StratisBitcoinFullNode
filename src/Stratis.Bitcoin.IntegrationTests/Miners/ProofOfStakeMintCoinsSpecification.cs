@@ -19,5 +19,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             When(pos_node_starts_staking);
             Then(pos_node_wallet_has_earned_coins_through_staking);
         }
+
+        [Fact]
+        public void Staking_wallet_fails_when_trying_to_spend_rewards_before_maturity()
+        {
+            Given(a_staking_wallet_minting_coins);
+            When(it_creates_a_transaction_to_spend);
+            Then(it_is_rejected_because_of_no_spendable_coins);
+        }
     }
 }

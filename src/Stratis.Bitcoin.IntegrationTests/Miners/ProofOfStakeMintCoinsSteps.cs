@@ -29,6 +29,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         private HdAddress posReceiverAddress;
         private Key posReceiverPrivateKey;
 
+        private Transaction lastTransaction;
+        private TransactionBuildContext transactionBuildContext;
+    
         private const string PowWallet = "powwallet";
         private const string PowWalletPassword = "password";
 
@@ -174,6 +177,59 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 var staked = this.nodes[PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(PosWallet).Sum(s => s.Transaction.Amount);
                 return staked > Money.COIN * 1000000;
             });
+        }
+
+        private void a_staking_wallet_minting_coins()
+        {
+            a_proof_of_work_node_with_wallet();
+            it_mines_genesis_and_premine_blocks();
+            mine_coins_to_maturity();
+            a_proof_of_stake_node_with_wallet();
+            it_syncs_with_proof_work_node();
+            sends_a_million_coins_from_pow_wallet_to_pos_wallet();
+            pow_wallet_broadcasts_tx_of_million_coins_and_pos_wallet_receives();
+            pos_node_mines_ten_blocks_more_ensuring_they_can_be_staked();
+            pos_node_starts_staking();
+            pos_node_wallet_has_earned_coins_through_staking();
+        }
+
+        private void it_creates_a_transaction_to_spend()
+        {
+            this.powSenderAddress = this.nodes[PowMiner].FullNode.WalletManager()
+                .GetUnusedAddress(new WalletAccountReference(PowWallet, WalletAccount));
+
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                    PosWallet, 
+                    WalletAccount, 
+                    PosWalletPassword, 
+                    new List<Recipient>() { new Recipient { Amount = Money.COIN * 100, ScriptPubKey = this.powSenderAddress.ScriptPubKey } }, 
+                    FeeType.Medium, 
+                    10);
+
+            this.transactionBuildContext.OverrideFeeRate = new FeeRate(Money.Satoshis(20000));
+        }
+
+        private void it_is_rejected_because_of_no_spendable_coins()
+        {
+            try
+            {
+                this.lastTransaction = this.nodes[PosStaker].FullNode.WalletTransactionHandler()
+                    .BuildTransaction(SharedSteps.CreateTransactionBuildContext(
+                        PosWallet, 
+                        WalletAccount, 
+                        PosWalletPassword, 
+                        new List<Recipient>() { new Recipient { Amount = Money.COIN * 100, ScriptPubKey = this.powSenderAddress.ScriptPubKey } },
+                        FeeType.Medium, 
+                        10));
+
+                this.nodes[PosStaker].FullNode.NodeService<WalletController>()
+                   .SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));
+            }
+            catch (Exception exception)
+            {
+                exception.Should().BeOfType<WalletException>();
+                exception.Message.Should().Be("No spendable transactions found.");
+            }
         }
     }
 }
