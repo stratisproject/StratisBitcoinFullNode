@@ -73,14 +73,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         /// <summary>
-        /// Copies the test wallet into data folder for node if it isnt' already present.
+        /// Copies the test wallet into data folder for node (replaced it if already present).
         /// </summary>
         /// <param name="path">The path of the folder to move the wallet to.</param>
         public void InitializeTestWallet(string path)
         {
-            string testWalletPath = Path.Combine(path, "test.wallet.json");
-            if (!File.Exists(testWalletPath))
-                File.Copy("Data/test.wallet.json", testWalletPath);
+            File.Copy("Data/test.wallet.json", Path.Combine(path, "test.wallet.json"), true);
         }
     }
 }
