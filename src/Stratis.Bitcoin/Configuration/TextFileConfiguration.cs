@@ -118,9 +118,9 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
+        /// Retrieves all values of a specific argument name (where the name excludes the dash prefix).
         /// </summary>
-        /// <param name="key">Name of the argument.</param>
+        /// <param name="key">Name of the argument (excluding the dash prefix).</param>
         /// <returns>Values for the specified argument.</returns>
         public string[] GetAll(string key)
         {
