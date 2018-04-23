@@ -27,8 +27,11 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class TextFileConfiguration
     {
-        /// <summary>Application command line arguments as a mapping of argument name to list of its values.</summary>
-        private readonly Dictionary<string, List<string>> args;
+        /// <summary>Maintains a list of arguments based on multi-value assumption.</summary>
+        private readonly Dictionary<string, List<string>> multiArgs = new Dictionary<string, List<string>>();
+
+        /// <summary>Maintains a list of arguments based on single-value assumption.</summary>
+        private readonly Dictionary<string, string> args = new Dictionary<string, string>();
 
         /// <summary>
         /// Initializes the instance of the object using command line arguments.
@@ -37,7 +40,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <remarks>Command line arguments are expected to come in form of Name=Value, where Name can be prefixed with '-'.</remarks>
         public TextFileConfiguration(string[] args)
         {
-            this.args = new Dictionary<string, List<string>>();
             foreach (string arg in args)
             {
                 // Split on the FIRST "=".
@@ -56,7 +58,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="data">Contents of the configuration file to parse and extract arguments from.</param>
         public TextFileConfiguration(string data)
         {
-            this.args = new Dictionary<string, List<string>>();
             int lineNumber = 0;
             // Process all lines, even if empty.
             foreach (var l in data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
@@ -88,12 +89,17 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="value">Argument value.</param>
         private void Add(string key, string value)
         {
-            if (!this.args.TryGetValue(key, out var list))
+            if (key.StartsWith("-"))
+                key = key.Substring(1);
+
+            if (!this.multiArgs.TryGetValue(key, out var list))
             {
                 list = new List<string>();
-                this.args.Add(key, list);
+                this.multiArgs.Add(key, list);
             }
             list.Add(value);
+
+            this.args[key] = value;
         }
 
         /// <summary>
@@ -102,7 +108,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="destination">Target instance to merge current instance into.</param>
         public void MergeInto(TextFileConfiguration destination)
         {
-            foreach (var kv in this.args)
+            foreach (var kv in this.multiArgs)
             {
                 foreach (var v in kv.Value)
                     destination.Add(kv.Key, v);
@@ -117,14 +123,10 @@ namespace Stratis.Bitcoin.Configuration
         public string[] GetAll(string key)
         {
             // Get the values without the - prefix.
-            if (!this.args.TryGetValue(key, out var values))
+            if (!this.multiArgs.TryGetValue(key, out var values))
                 values = new List<string>();
 
-            // Get the values with the - prefix.
-            if (!this.args.TryGetValue($"-{key}", out var dashValues))
-                dashValues = new List<string>();
-
-            return values.Concat(dashValues).ToArray();
+            return values.ToArray();
         }
 
         /// <summary>
@@ -136,16 +138,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Value of the argument or a default value if no value was set.</returns>
         public T GetOrDefault<T>(string key, T defaultValue)
         {
-            if (!this.args.TryGetValue(key, out var values))
-                if (!this.args.TryGetValue($"-{key}", out values))
+            if (!this.args.TryGetValue(key, out var value))
                     return defaultValue;
-
-            if (values.Count != 1)
-                throw new ConfigurationException($"Duplicate value for key {key}.");
-
+            
             try
             {
-                return this.ConvertValue<T>(values[0]);
+                return this.ConvertValue<T>(value);
             }
             catch (FormatException)
             {
