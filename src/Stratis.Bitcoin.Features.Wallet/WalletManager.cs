@@ -568,18 +568,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     if (!wallet.ContainsAddress(new HdAddress { Address = address })) continue;
 
-
-                    HdAddress hdAddress = wallet.AccountsRoot
-                        .SelectMany(ac => ac.Accounts)
-                        .SelectMany(i => i.InternalAddresses)
-                        .SingleOrDefault(ad => ad.Address == address) ??
-                        wallet.AccountsRoot
-                            .SelectMany(ac => ac.Accounts)
-                            .SelectMany(e => e.ExternalAddresses)
-                            .SingleOrDefault(ad => ad.Address == address);
-
-                    if (hdAddress == null)
-                        continue;
+                    HdAddress hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
 
                     (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
 
