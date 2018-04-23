@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
@@ -46,6 +47,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
+                this.dateTimeProvider.Setup(d => d.GetAdjustedTime())
+                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc));
                 var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
@@ -69,6 +72,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal(2, blockTemplate.Block.Transactions.Count);
 
                 var resultingTransaction = blockTemplate.Block.Transactions[0];
+                Assert.Equal((uint)new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp(), resultingTransaction.Time);
                 Assert.NotEmpty(resultingTransaction.Inputs);
                 Assert.NotEmpty(resultingTransaction.Outputs);
                 Assert.True(resultingTransaction.IsCoinBase);
@@ -100,6 +104,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
+                this.dateTimeProvider.Setup(d => d.GetAdjustedTime())
+                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc));
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
 
@@ -187,17 +193,20 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
+                this.dateTimeProvider.Setup(d => d.GetAdjustedTime())
+                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc));
 
                 var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
 
                 var result = powBlockAssembler.CreateCoinBase(chain.Tip, this.key.ScriptPubKey);
-
+                
                 Assert.NotEmpty(result.Block.Transactions);
                 Assert.Equal(-1, result.TxSigOpsCost[0]);
                 Assert.Equal(new Money(-1), result.VTxFees[0]);
 
                 var resultingTransaction = result.Block.Transactions[0];
+                Assert.Equal((uint)new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp(), resultingTransaction.Time);
                 Assert.True(resultingTransaction.IsCoinBase);
                 Assert.False(resultingTransaction.IsCoinStake);
                 Assert.Equal(Money.Zero, resultingTransaction.TotalOut);
