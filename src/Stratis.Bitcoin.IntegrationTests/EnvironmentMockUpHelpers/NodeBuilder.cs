@@ -128,25 +128,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <param name="folder">The folder to remove.</param>
         public static void CleanupTestFolder(string folder)
         {
-            try
-            {
-                if (Directory.Exists(folder))
-                    Directory.Delete(folder, true);
-            }
-            catch (Exception)
-            {
-            }
-
-            for (int retry = 0; retry < 2; retry++)
-            {
-                foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
-                {
-                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
-                        bitcoind.Kill();
-                }
-
-                Thread.Sleep(1000);
-            }
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
         }
 
         public static NodeBuilder Create([CallerMemberName] string caller = null, string version = "0.13.1")
@@ -299,6 +282,17 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 node.Kill();
             foreach (var disposable in this.disposables)
                 disposable.Dispose();
+
+            for (int retry = 0; retry < 2; retry++)
+            {
+                foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
+                {
+                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
+                        bitcoind.Kill();
+                }
+
+                Thread.Sleep(1000);
+            }
         }
 
         internal void AddDisposable(IDisposable group)
