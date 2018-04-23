@@ -564,7 +564,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                foreach (var wallet in this.Wallets)
+                foreach (Wallet wallet in this.Wallets)
                 {
                     if (!wallet.ContainsAddress(new HdAddress { Address = address })) continue;
 
@@ -585,6 +585,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     balance.AmountConfirmed = result.amountConfirmed;
                     balance.AmountUnconfirmed = result.amountUnconfirmed;
+
+                    break;
                 }
             }
 
