@@ -4,6 +4,9 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not reference a method with a known forbidden return type
+    /// </summary>
     public class ReferencedMethodReturnTypeValidator : IMethodDefinitionValidator
     {
         public static readonly string ErrorType = "Invalid Return Type in Referenced Method";

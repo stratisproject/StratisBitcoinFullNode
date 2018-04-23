@@ -5,7 +5,7 @@ using Mono.Cecil;
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
     /// <summary>
-    /// Validate that parameters to methods used in Smart Contracts are of types that are currently supported in the
+    /// Validate that a <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
     /// <see cref="MethodParameterSerializer"/>
     /// </summary>
     public class MethodParamValidator : IMethodDefinitionValidator

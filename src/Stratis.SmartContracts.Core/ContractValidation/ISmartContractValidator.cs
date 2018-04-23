@@ -16,6 +16,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         SmartContractValidationResult Validate(SmartContractDecompilation decompilation);
     }
 
+    public interface ITypeDefinitionValidator
+    {
+        IEnumerable<SmartContractValidationError> Validate(TypeDefinition type);
+    }
+
+    public interface IModuleDefinitionValidator
+    {
+        IEnumerable<SmartContractValidationError> Validate(ModuleDefinition module);
+    }
+
     public interface IMethodDefinitionValidator
     {
         IEnumerable<SmartContractValidationError> Validate(MethodDefinition method);

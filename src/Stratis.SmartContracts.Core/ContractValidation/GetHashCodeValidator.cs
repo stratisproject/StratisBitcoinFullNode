@@ -5,6 +5,9 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not <see cref="object.GetHashCode"/>
+    /// </summary>
     public class GetHashCodeValidator : IMethodDefinitionValidator
     {
         public static readonly string ErrorType = "Known Non-Deterministic Method";
