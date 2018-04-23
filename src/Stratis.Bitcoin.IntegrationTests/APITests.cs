@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -39,10 +38,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // These tests use Network.Stratis.
             // Ensure that these static flags have the expected value.
-            //Transaction.TimeStamp = true;
-            //Block.BlockSignature = true;
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         protected override void AfterTest()
@@ -53,7 +50,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,
             // the execution path is different and the bitcoin transaction tests are failing.
             // Here we're resetting the TimeStamp after every test so it doesn't cause any trouble.
-
             Transaction.TimeStamp = false;
             Block.BlockSignature = false;
 
@@ -67,13 +63,15 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void get_general_info_returns_non_empty_json()
         {
-            Given(a_node);
+            Given(a_proof_of_work_node_api);
             When(getting_general_info);
-            Then(wallet_file_path_is_returned);
+            Then(data_starting_with_wallet_file_path_is_returned);
         }
 
-        private void a_node()
+        private void a_proof_of_work_node_api()
         {
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
             var node = this.apiTestsFixture.stratisPowNode.FullNode;
             this.apiURI = node.NodeService<ApiSettings>().ApiUri;
         }
@@ -88,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private void wallet_file_path_is_returned()
+        private void data_starting_with_wallet_file_path_is_returned()
         {
             //NOCHECKIN - kinda lame test....
             Assert.StartsWith("{\"walletFilePath\":\"", this.response);
