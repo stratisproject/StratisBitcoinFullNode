@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Configuration
         /// Gets typed value for a specific argument or a default value.
         /// </summary>
         /// <typeparam name="T">Type of the argument value.</typeparam>
-        /// <param name="key">Name of the argument</param>
+        /// <param name="key">Name of the argument.</param>
         /// <param name="defaultValue">Default value to return if no argument value is defined.</param>
         /// <returns>Value of the argument or a default value if no value was set.</returns>
         public T GetOrDefault<T>(string key, T defaultValue)
