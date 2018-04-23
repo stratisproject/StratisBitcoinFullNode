@@ -126,39 +126,27 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// Deletes test folders. Stops "bitcoind" if required.
         /// </summary>
         /// <param name="folder">The folder to remove.</param>
-        /// <param name="tryKill">If set to true will try to stop "bitcoind" if running.</param>
-        /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
-        public static bool CleanupTestFolder(string folder, bool tryKill = true)
+        public static void CleanupTestFolder(string folder)
         {
-            for (int retry = 0; retry < 2; retry++)
+            try
             {
-                try
-                {
-                    if (Directory.Exists(folder))
-                        Directory.Delete(folder, true);
-                    return true;
-                }
-                catch (DirectoryNotFoundException)
-                {
-                    return true;
-                }
-                catch (Exception)
-                {
-                }
-
-                if (tryKill)
-                {
-                    tryKill = false;
-
-                    foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
-                        if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
-                            bitcoind.Kill();
-
-                    Thread.Sleep(1000);
-                }
+                if (Directory.Exists(folder))
+                    Directory.Delete(folder, true);
+            }
+            catch (Exception)
+            {
             }
 
-            return false;
+            for (int retry = 0; retry < 2; retry++)
+            {
+                foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
+                {
+                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
+                        bitcoind.Kill();
+                }
+
+                Thread.Sleep(1000);
+            }
         }
 
         public static NodeBuilder Create([CallerMemberName] string caller = null, string version = "0.13.1")
