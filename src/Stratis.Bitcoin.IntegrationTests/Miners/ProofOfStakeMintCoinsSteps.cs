@@ -37,7 +37,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
         private const string WalletAccount = "account 0";
 
-        public ProofOfStakeMintCoinsSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
+        private bool initialBlockSignature;
+        private bool initialTimeStamp;
+
+        public ProofOfStakeMintCoinsSpecification(ITestOutputHelper outputHelper)
+            : base(outputHelper)
         {
         }
 
@@ -45,11 +49,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             this.sharedSteps = new SharedSteps();
             this.nodeGroupBuilder = new NodeGroupBuilder();
+
+            this.initialBlockSignature = Transaction.TimeStamp;
+            this.initialTimeStamp = Block.BlockSignature;
+
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         protected override void AfterTest()
         {
             this.nodeGroupBuilder.Dispose();
+
+            Transaction.TimeStamp = this.initialBlockSignature;
+            Block.BlockSignature = this.initialBlockSignature;
         }
 
         private void a_proof_of_work_node_with_wallet()
