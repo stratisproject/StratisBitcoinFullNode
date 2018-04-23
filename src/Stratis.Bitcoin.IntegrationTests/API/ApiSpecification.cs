@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public void startstaking_starts_Staking()
+        public void startstaking_enables_staking_but_nothing_staked()
         {
             Given(a_proof_of_stake_node_api);
             And(a_wallet);
