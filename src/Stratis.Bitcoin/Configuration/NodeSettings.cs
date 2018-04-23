@@ -215,10 +215,10 @@ namespace Stratis.Bitcoin.Configuration
                 this.ConfigurationFile = this.CreateDefaultConfigurationFile(features);
             }
 
-            var consoleConfig = new TextFileConfiguration(args);
-            var config = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            var config = new TextFileConfiguration(args);
             this.ConfigReader = config;
-            consoleConfig.MergeInto(config);
+            fileConfig.MergeInto(config);
 
             if (!Directory.Exists(this.DataFolder.CoinViewPath))
                 Directory.CreateDirectory(this.DataFolder.CoinViewPath);
