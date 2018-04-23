@@ -27,6 +27,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private static readonly SmartContractDecompilation MultipleConstructorDecompilation = SmartContractDecompiler.GetModuleDefinition(MultipleConstructorCompilation);
 
+        private static readonly byte[] AsyncVoidCompilation =
+            SmartContractCompiler.CompileFile("SmartContracts/AsyncVoid.cs").Compilation;
+
+        private static readonly SmartContractDecompilation AsyncVoidDecompilation = SmartContractDecompiler.GetModuleDefinition(AsyncVoidCompilation);
+        
+        private static readonly byte[] AsyncTaskCompilation =
+            SmartContractCompiler.CompileFile("SmartContracts/AsyncTask.cs").Compilation;
+
+        private static readonly SmartContractDecompilation AsyncTaskDecompilation = SmartContractDecompiler.GetModuleDefinition(AsyncTaskCompilation);
+
+        private static readonly byte[] AsyncGenericTaskCompilation =
+            SmartContractCompiler.CompileFile("SmartContracts/AsyncGenericTask.cs").Compilation;
+
+        private static readonly SmartContractDecompilation AsyncGenericTaskDecompilation = SmartContractDecompiler.GetModuleDefinition(AsyncGenericTaskCompilation);
+
         private static readonly byte[] InvalidParamCompilation =
             SmartContractCompiler.CompileFile("SmartContracts/InvalidParam.cs").Compilation;
 
@@ -66,6 +81,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Single(validationResult.Errors);
             Assert.False(validationResult.IsValid);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_AsyncVoid()
+        {
+            var validator = new AsyncValidator();
+            TypeDefinition type = AsyncVoidDecompilation.ContractType;
+
+            IEnumerable<SmartContractValidationError> validationResult = validator.Validate(type);
+
+            Assert.Single(validationResult);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_AsyncTask()
+        {
+            var validator = new AsyncValidator();
+            TypeDefinition type = AsyncTaskDecompilation.ContractType;
+
+            IEnumerable<SmartContractValidationError> validationResult = validator.Validate(type);
+
+            Assert.Single(validationResult);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_AsyncGenericTask()
+        {
+            var validator = new AsyncValidator();
+            TypeDefinition type = AsyncGenericTaskDecompilation.ContractType;
+
+            IEnumerable<SmartContractValidationError> validationResult = validator.Validate(type);
+
+            Assert.Single(validationResult);
         }
     }
 }

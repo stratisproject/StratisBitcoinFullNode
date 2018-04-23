@@ -6,9 +6,9 @@ using Mono.Cecil.Rocks;
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
     /// <summary>
-    /// Validates that a type contains only a single constructor
+    /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> contains only a single constructor
     /// </summary>
-    public class SingleConstructorValidator
+    public class SingleConstructorValidator : ITypeDefinitionValidator
     {
         public const string MissingConstructorError = "Contract must define a constructor";
 
@@ -28,13 +28,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
             if (constructors.Count > 1)
             {
-                return new []
+                return new[]
                 {
                     new SmartContractValidationError(SingleConstructorError)
                 };
             }
-            
+
             return Enumerable.Empty<SmartContractValidationError>();
-        }        
+        }
     }
 }

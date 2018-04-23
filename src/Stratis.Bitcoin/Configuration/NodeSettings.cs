@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NLog.Extensions.Logging;
+using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
@@ -105,6 +108,22 @@ namespace Stratis.Bitcoin.Configuration
                 this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : scRegTest ? Network.SmartContractsRegTest : Network.Main;
             }
 
+            // Setting the data directory.
+            if (this.DataDir == null)
+            {
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
+            }
+            else
+            {
+                // Create the data directories if they don't exist.
+                string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
+                Directory.CreateDirectory(directoryPath);
+                this.DataDir = directoryPath;
+                this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
+            }
+
+            this.DataFolder = new DataFolder(this.DataDir);
+
             // Load configuration from .ctor?
             if (loadConfiguration)
                 this.LoadConfiguration();
@@ -125,11 +144,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>List of paths to important files and folders.</summary>
         public DataFolder DataFolder { get; set; }
 
-        /// <summary>Path to the data directory.</summary>
-        public string DataDir { get; set; }
+        /// <summary>Path to the data directory. This value is read-only and is set in the constructor's args.</summary>
+        public string DataDir { get; private set; }
 
-        /// <summary>Path to the configuration file.</summary>
-        public string ConfigurationFile { get; set; }
+        /// <summary>Path to the configuration file. This value is read-only and is set in the constructor's args.</summary>
+        public string ConfigurationFile { get; private set; }
 
         /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
         public bool RequireStandard { get; set; }
@@ -187,7 +206,7 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadConfiguration()
+        public NodeSettings LoadConfiguration(List<IFeatureRegistration> features = null)
         {
             // Configuration already loaded?
             if (this.ConfigReader != null)
@@ -196,24 +215,10 @@ namespace Stratis.Bitcoin.Configuration
             // Get the arguments set previously
             var args = this.LoadArgs;
 
-            // Setting the data directory.
-            if (this.DataDir == null)
-            {
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
-            }
-            else
-            {
-                // Create the data directories if they don't exist.
-                string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
-                Directory.CreateDirectory(directoryPath);
-                this.DataDir = directoryPath;
-                this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
-            }
-
             // If no configuration file path is passed in the args, load the default file.
             if (this.ConfigurationFile == null)
             {
-                this.ConfigurationFile = this.CreateDefaultConfigurationFile();
+                this.ConfigurationFile = this.CreateDefaultConfigurationFile(features);
             }
 
             var consoleConfig = new TextFileConfiguration(args);
@@ -221,7 +226,6 @@ namespace Stratis.Bitcoin.Configuration
             this.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
-            this.DataFolder = new DataFolder(this.DataDir);
             if (!Directory.Exists(this.DataFolder.CoinViewPath))
                 Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
@@ -307,7 +311,7 @@ namespace Stratis.Bitcoin.Configuration
         /// Creates a default configuration file if no configuration file is found.
         /// </summary>
         /// <returns>Path to the configuration file.</returns>
-        private string CreateDefaultConfigurationFile()
+        private string CreateDefaultConfigurationFile(List<IFeatureRegistration> features = null)
         {
             string configFilePath = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
             this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
@@ -318,13 +322,17 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Creating configuration file...");
 
                 StringBuilder builder = new StringBuilder();
-                builder.AppendLine("####RPC Settings####");
-                builder.AppendLine("#Activate RPC Server (default: 0)");
-                builder.AppendLine("#server=0");
-                builder.AppendLine("#Where the RPC Server binds (default: 127.0.0.1 and ::1)");
-                builder.AppendLine("#rpcbind=127.0.0.1");
-                builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
-                builder.AppendLine("#rpcallowip=127.0.0.1");
+
+                if (features != null)
+                {
+                    foreach (var featureRegistration in features)
+                    {
+                        MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
+
+                        getDefaultConfiguration?.Invoke(null, new object[] { builder });
+                    }
+                }
+
                 File.WriteAllText(configFilePath, builder.ToString());
             }
             return configFilePath;

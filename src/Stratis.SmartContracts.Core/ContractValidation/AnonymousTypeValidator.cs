@@ -4,6 +4,9 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not contain any FieldReferences to anonymous types
+    /// </summary>
     public class AnonymousTypeValidator : IMethodDefinitionValidator
     {
         public static readonly string ErrorType = "Use Of Anonymous Type";

@@ -5,6 +5,9 @@ using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not contain any invalid opcodes or field references
+    /// </summary>
     public class MethodInstructionValidator : IMethodDefinitionValidator
     {
         /// <summary>

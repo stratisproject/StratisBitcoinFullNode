@@ -4,6 +4,9 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not declared in a blacklisted Type
+    /// </summary>
     public class MethodAllowedTypeValidator : IMethodDefinitionValidator
     {
         public static string ErrorType = "Known Non-Deterministic Method";
