@@ -2,9 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using FluentAssertions;
-using NBitcoin;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.IntegrationTests.TestFramework;
@@ -55,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.fullNode = this.apiTestsFixture.stratisStakeNode.FullNode;
             this.apiUri = this.fullNode.NodeService<ApiSettings>().ApiUri;
 
-            Assert.NotNull(this.fullNode.NodeService<IPosMinting>(true));
+            this.fullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
         }
 
         private void a_wallet()
@@ -75,16 +73,19 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void data_starting_with_wallet_file_path_is_returned()
         {
             // TODO BEFORE PR APPROVAL: improve this check - change method name to information_about_the_wallet_is_returned and implement
-            Assert.StartsWith("{\"walletFilePath\":\"", this.response);
+            this.response.Should().StartWith("{\"walletFilePath\":\"");
         }
 
         private void staking_is_started()
         {
             var content = new StringContent(this.model.ToString(), Encoding.UTF8, "application/json");
             var response = this.httpClient.PostAsync(this.apiUri + "api/miner/startstaking", content).Result;
-            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+
             var responseText = response.Content.ReadAsStringAsync().Result;
-            Assert.Equal(string.Empty, responseText);
+
+            responseText.Should().BeEmpty();
         }
 
         private void calling_rpc_getblockhash_via_callbyname()
@@ -100,16 +101,17 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
             this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            this.response = this.httpClient.GetStringAsync(this.apiUri + "api/rpc/listmethods").GetAwaiter().GetResult();
+            this.response = this.httpClient.GetStringAsync(this.apiUri + "api/rpc/listmethods").Result;
         }
 
         private void staking_is_enabled_but_nothing_is_staked()
         {
-            MiningRPCController controller = this.fullNode.NodeService<MiningRPCController>();
-            GetStakingInfoModel info = controller.GetStakingInfo();
-            Assert.NotNull(info);
-            Assert.True(info.Enabled);
-            Assert.False(info.Staking);
+            var miningRpcController = this.fullNode.NodeService<MiningRPCController>();
+            var stakingInfo = miningRpcController.GetStakingInfo();
+
+            stakingInfo.Should().NotBeNull();
+            stakingInfo.Enabled.Should().BeTrue();
+            stakingInfo.Staking.Should().BeFalse();
         }
 
         private void the_blockhash_is_returned()
