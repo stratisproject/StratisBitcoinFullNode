@@ -16,55 +16,36 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
-    public partial class ApiSpecification : BddSpecification
+    public partial class ApiSpecification : BddSpecification, IClassFixture<ApiTestsFixture>
     {
-        private HttpClient httpClient = null;
-        private ApiTestsFixture apiTestsFixture;
+        private HttpClient httpClient;
+        private readonly ApiTestsFixture apiTestsFixture;
         private Uri apiUri;
         private string response;
         private FullNode fullNode;
         private StartStakingRequest model;
 
-        public ApiSpecification(ITestOutputHelper output) : base(output)
+        public ApiSpecification(ITestOutputHelper output, ApiTestsFixture apiTestsFixture) : base(output)
         {
+            this.apiTestsFixture = apiTestsFixture;
         }
 
         protected override void BeforeTest()
         {
-            this.apiTestsFixture = new ApiTestsFixture();
-
-            // These tests use Network.Stratis.
-            // Ensure that these static flags have the expected value.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             this.httpClient = new HttpClient();
         }
 
         protected override void AfterTest()
         {
-            // This is needed here because of the fact that the Stratis network, when initialized, sets the
-            // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
-            // for proof-of-stake to work.
-            // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,
-            // the execution path is different and the bitcoin transaction tests are failing.
-            // Here we're resetting the TimeStamp after every test so it doesn't cause any trouble.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-
             if (this.httpClient != null)
             {
                 this.httpClient.Dispose();
                 this.httpClient = null;
             }
-
-            this.apiTestsFixture.Dispose();
         }
 
         private void a_proof_of_work_node_api()
         {
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
             var node = this.apiTestsFixture.stratisPowNode.FullNode;
             this.apiUri = node.NodeService<ApiSettings>().ApiUri;
         }

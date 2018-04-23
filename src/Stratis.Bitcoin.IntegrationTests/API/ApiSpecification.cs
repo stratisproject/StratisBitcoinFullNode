@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
     public partial class ApiSpecification
     {
         [Fact]
-        public void get_general_info_returns_non_empty_json()
+        public void getgeneralinfo_returns_non_empty_json()
         {
             Given(a_proof_of_work_node_api);
             When(getting_general_info);
