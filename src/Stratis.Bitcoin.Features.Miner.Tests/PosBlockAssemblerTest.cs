@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
 {
-    public class PosBlockAssemblerTest : LogsTestBase
+    public class PosBlockAssemblerTest : LogsTestBase, IDisposable
     {
         private Mock<IConsensusLoop> consensusLoop;
         private Mock<ITxMempool> txMempool;
@@ -40,8 +40,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.network = Network.StratisTest;
             this.key = new Key();
 
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+
             SetupValidator();
             SetupConsensusLoop();
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = false;
+            Transaction.TimeStamp = false;
         }
 
         [Fact]
