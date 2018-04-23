@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-        public void Start(string dataDir, bool mineCoinsFast)
+        public void Start(string dataDir)
         {
             this.process = Process.Start(new FileInfo(this.bitcoinD).FullName, $"-conf=bitcoin.conf -datadir={dataDir} -debug=net");
         }
@@ -51,7 +51,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
     {
         private Action<IFullNodeBuilder> callback;
         public FullNode FullNode { get; set; }
-        private bool mineCoinsFast;
 
         public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
         {
@@ -68,11 +67,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.FullNode?.Dispose();
         }
 
-        public void Start(string dataDir, bool mineCoinsFast)
+        public void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false);
-
-            this.mineCoinsFast = mineCoinsFast;
 
             var node = BuildFullNode(nodeSettings, this.callback);
 
@@ -94,20 +91,17 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
             else
             {
-                var builder = new FullNodeBuilder()
-                    .UseNodeSettings(args)
-                    .UsePosConsensus()
-                    .UseBlockStore()
-                    .UseMempool()
-                    .UseWallet()
-                    .AddPowPosMining()
-                    .AddRPC()
-                    .MockIBD();
-
-                if (this.mineCoinsFast)
-                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider());
-
-                node = (FullNode)builder.Build();
+                node = (FullNode)new FullNodeBuilder()
+                        .UseNodeSettings(args)
+                        .UsePosConsensus()
+                        .UseBlockStore()
+                        .UseMempool()
+                        .UseWallet()
+                        .AddPowPosMining()
+                        .AddRPC()
+                        .MockIBD()
+                        .SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider())
+                        .Build();
             }
 
             return node;
@@ -142,7 +136,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
     {
         private Action<IFullNodeBuilder> callback;
         public FullNode FullNode { get; set; }
-        private bool mineCoinsFast;
 
         public StratisPosApiRunner(Action<IFullNodeBuilder> callback = null)
         {
@@ -159,11 +152,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.FullNode?.Dispose();
         }
 
-        public void Start(string dataDir, bool mineCoinsFast)
+        public void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false);
-
-            this.mineCoinsFast = mineCoinsFast;
 
             var node = BuildFullNode(nodeSettings, this.callback);
 
@@ -183,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
             else
             {
-                var builder = new FullNodeBuilder()
+                node = (FullNode)new FullNodeBuilder()
                     .UseNodeSettings(args)
                     .UsePosConsensus()
                     .UseBlockStore()
@@ -191,12 +182,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     .AddPowPosMining()
                     .UseWallet()
                     .UseApi()
-                    .AddRPC();
-
-                if (this.mineCoinsFast)
-                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider());
-
-                node = (FullNode)builder.Build();
+                    .AddRPC()
+                    .Build();
             }
 
             return node;
@@ -207,7 +194,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
     {
         private Action<IFullNodeBuilder> callback;
         public FullNode FullNode { get; set; }
-        private bool mineCoinsFast;
 
         public StratisBitcoinPowRunner(Action<IFullNodeBuilder> callback = null) : base()
         {
@@ -224,11 +210,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.FullNode?.Dispose();
         }
 
-        public void Start(string dataDir, bool mineCoinsFast)
+        public void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir }, loadConfiguration: false);
-
-            this.mineCoinsFast = mineCoinsFast;
 
             var node = BuildFullNode(nodeSettings, this.callback);
 
@@ -268,7 +252,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
     {
         private Action<IFullNodeBuilder> callback;
         public FullNode FullNode { get; set; }
-        private bool mineCoinsFast;
 
         public StratisProofOfWorkMiningNode(Action<IFullNodeBuilder> callback = null) : base()
         {
@@ -285,11 +268,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.FullNode?.Dispose();
         }
 
-        public void Start(string dataDir, bool mineCoinsFast)
+        public void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false);
-
-            this.mineCoinsFast = mineCoinsFast;
 
             var node = BuildFullNode(nodeSettings, this.callback);
 
@@ -309,7 +290,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
             else
             {
-                var builder = new FullNodeBuilder()
+                node = (FullNode)new FullNodeBuilder()
                     .UseNodeSettings(args)
                     .UsePosConsensus()
                     .UseBlockStore()
@@ -317,12 +298,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     .AddMining()
                     .UseWallet()
                     .AddRPC()
-                    .MockIBD();
-
-                if (this.mineCoinsFast)
-                    builder.SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider());
-
-                node = (FullNode)builder.Build();
+                    .MockIBD()
+                    .SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider())
+                    .Build();
             }
 
             return node;

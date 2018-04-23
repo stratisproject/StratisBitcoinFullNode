@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -54,7 +56,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             this.nodes = this.nodeGroupBuilder
                     .CreateStratisPowMiningNode(PowMiner)
-                    .MineCoinsFast()
                     .Start()
                     .NotInIBD()
                     .WithWallet(PowWallet, PowWalletPassword)
@@ -80,7 +81,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             this.nodeGroupBuilder
                     .CreateStratisPosNode(PosStaker)
-                    .MineCoinsFast()
                     .Start()
                     .NotInIBD()
                     .WithWallet(PosWallet, PosWalletPassword)
@@ -103,8 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 PowWallet,
                 WalletAccount,
                 PowWalletPassword,
-                this.posReceiverAddress.ScriptPubKey,
-                Money.COIN * 1000000,
+                new List<Recipient>() { new Recipient { Amount = Money.COIN * 1000000, ScriptPubKey = this.posReceiverAddress.ScriptPubKey } },
                 FeeType.Medium,
                 101);
 
@@ -146,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
         private void pos_node_mines_ten_blocks_more_ensuring_they_can_be_staked()
         {
-            this.nodes[PosStaker].GenerateStratisWithMiner(10);
+            this.nodes[PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[PosStaker].FullNode.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity));
         }
 
         private void pos_node_starts_staking()

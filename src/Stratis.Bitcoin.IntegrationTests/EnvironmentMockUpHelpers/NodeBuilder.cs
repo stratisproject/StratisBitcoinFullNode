@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         void Kill();
 
-        void Start(string dataDir, bool mineCoinsFast);
+        void Start(string dataDir);
     }
 
     public class NodeConfigParameters : Dictionary<string, string>

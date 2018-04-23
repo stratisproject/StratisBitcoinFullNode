@@ -44,12 +44,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
             return this;
         }
 
-        public NodeGroupBuilder MineCoinsFast()
-        {
-            this.nodes.Last().Value.MineCoinsFast = true;
-            return this;
-        }
-
         public NodeGroupBuilder NotInIBD()
         {
             this.nodes.Last().Value.NotInIBD();

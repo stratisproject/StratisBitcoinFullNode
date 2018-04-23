@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
-        public bool MineCoinsFast { get; set; }
 
         public string Folder { get; }
 
@@ -150,7 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             File.WriteAllText(this.Config, config.ToString());
             lock (this.lockObject)
             {
-                this.runner.Start(this.DataFolder, this.MineCoinsFast);
+                this.runner.Start(this.DataFolder);
                 this.State = CoreNodeState.Starting;
             }
             while (true)

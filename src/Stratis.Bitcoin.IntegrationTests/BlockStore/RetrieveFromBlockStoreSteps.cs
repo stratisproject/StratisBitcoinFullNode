@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http.Features;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
@@ -71,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode.NotInIBD();
 
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
-            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
+            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
 
             this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
             this.receiverAddress = this.transactionNode.FullNode.WalletManager()
@@ -114,12 +113,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         public void the_node_is_synced()
         {
-            this.sharedSteps.WaitForNodesToSync(this.node);
+            this.sharedSteps.WaitForNodeToSync(this.node);
         }
 
         public void the_nodes_are_synced()
         {
-            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
+            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
         public void a_real_transaction()
@@ -128,7 +127,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     this.miningWalletAccountReference,
                     new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
                     this.password)
-                { MinConfirmations = 2 };
+            { MinConfirmations = 2 };
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.node.FullNode.NodeService<WalletController>()
@@ -139,12 +138,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.blockWithTransactionId = this.node.GenerateStratisWithMiner(1).Single();
             this.node.GenerateStratisWithMiner(1);
-            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
+            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
         public async Task trying_to_retrieve_the_blocks_from_the_blockstore()
         {
-            this.retrievedBlocks = this.blockIds.Concat(new [] {this.wrongBlockId})
+            this.retrievedBlocks = this.blockIds.Concat(new[] { this.wrongBlockId })
                 .Select(async id =>
                     await this.node.FullNode.BlockStoreManager().BlockRepository
                         .GetAsync(id)).Select(b => b.Result).ToList();
@@ -189,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedTransaction.Outputs.Should()
                 .Contain(t => t.Value == this.transferAmount.Satoshi
                               && t.ScriptPubKey.GetDestinationAddress(this.node.FullNode.Network).ScriptPubKey == this.receiverAddress.ScriptPubKey);
-            
+
         }
 
         private void the_wrong_transaction_id_should_return_null()
