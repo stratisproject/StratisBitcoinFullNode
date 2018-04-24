@@ -460,43 +460,43 @@ namespace NBitcoin
         {
             return new MerkleBlock(this, filter);
         }
-    }
 
-    public class JsonSerialisation
-    {
-        public const string BitsPropertyName = "bits";
-        public const string TimePropertyName = "time";
-        public const string NoncePropertyName = "nonce";
-        public const string VersionPropertyName = "ver";
-        public const string PrevBlockPropertyName = "prev_block";
-        public const string MrklRootPropertyName = "mrkl_root";
-        public const string TransactionPropertyName = "tx";
-
-        public static void WritePropertyValue(JsonTextWriter jsonTextWriter, string propertyName, object propertyValue)
+        public class JsonSerialisation
         {
-            jsonTextWriter.WritePropertyName(propertyName);
-            jsonTextWriter.WriteValue(propertyValue);
-        }
+            public const string BitsPropertyName = "bits";
+            public const string TimePropertyName = "time";
+            public const string NoncePropertyName = "nonce";
+            public const string VersionPropertyName = "ver";
+            public const string PrevBlockPropertyName = "prev_block";
+            public const string MrklRootPropertyName = "mrkl_root";
+            public const string TransactionPropertyName = "tx";
 
-        public static void WriteHeaderFields(JsonTextWriter jsonWriter, BlockHeader header)
-        {
-            WritePropertyValue(jsonWriter, BitsPropertyName, header.Bits.ToCompact());
-            WritePropertyValue(jsonWriter, TimePropertyName, Utils.DateTimeToUnixTime(header.BlockTime));
-            WritePropertyValue(jsonWriter, NoncePropertyName, header.Nonce);
-            WritePropertyValue(jsonWriter, VersionPropertyName, header.Version);
-            WritePropertyValue(jsonWriter, PrevBlockPropertyName, header.HashPrevBlock.ToString());
-            WritePropertyValue(jsonWriter, MrklRootPropertyName, header.HashMerkleRoot.ToString());
-        }
-
-        public static void WriteTransactions(JsonTextWriter jsonWriter, IEnumerable<Transaction> transactions)
-        {
-            jsonWriter.WritePropertyName(TransactionPropertyName);
-            jsonWriter.WriteStartArray();
-            foreach (Transaction tx in transactions)
+            public static void WritePropertyValue(JsonTextWriter jsonTextWriter, string propertyName, object propertyValue)
             {
-                jsonWriter.WriteValue(tx.GetHash().ToString());
+                jsonTextWriter.WritePropertyName(propertyName);
+                jsonTextWriter.WriteValue(propertyValue);
             }
-            jsonWriter.WriteEndArray();
+
+            public static void WriteHeaderFields(JsonTextWriter jsonWriter, BlockHeader header)
+            {
+                WritePropertyValue(jsonWriter, BitsPropertyName, header.Bits.ToCompact());
+                WritePropertyValue(jsonWriter, TimePropertyName, Utils.DateTimeToUnixTime(header.BlockTime));
+                WritePropertyValue(jsonWriter, NoncePropertyName, header.Nonce);
+                WritePropertyValue(jsonWriter, VersionPropertyName, header.Version);
+                WritePropertyValue(jsonWriter, PrevBlockPropertyName, header.HashPrevBlock.ToString());
+                WritePropertyValue(jsonWriter, MrklRootPropertyName, header.HashMerkleRoot.ToString());
+            }
+
+            public static void WriteTransactions(JsonTextWriter jsonWriter, IEnumerable<Transaction> transactions)
+            {
+                jsonWriter.WritePropertyName(TransactionPropertyName);
+                jsonWriter.WriteStartArray();
+                foreach (Transaction tx in transactions)
+                {
+                    jsonWriter.WriteValue(tx.GetHash().ToString());
+                }
+                jsonWriter.WriteEndArray();
+            }
         }
     }
 }
