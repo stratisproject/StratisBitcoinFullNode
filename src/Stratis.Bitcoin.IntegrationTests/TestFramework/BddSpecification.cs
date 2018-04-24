@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.TestFramework
@@ -11,16 +12,24 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         private readonly ITestOutputHelper output;
         private readonly DateTime startOfTestTime;
 
+        // Note: these values are only here temporarily until static flags removed
+        private bool initialBlockSignature;
+        private bool initialTimeStamp;
+
         protected BddSpecification(ITestOutputHelper output)
         {
             this.output = output;
             this.startOfTestTime = DateTime.UtcNow;
+
+            this.StoreStaticFlagPreTestValues();
             this.BeforeTest();
         }
 
         public void Dispose()
         {
             this.AfterTest();
+            this.RestoreStaticFlagValues();
+
             var endOfTestTime = DateTime.UtcNow;
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
         }
@@ -90,6 +99,20 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         private void OuputStepDetails(string stepRawName, string stepType)
         {
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
+        }
+
+        // Note: this is only here temporarily until static flags removed
+        private void StoreStaticFlagPreTestValues()
+        {
+            this.initialBlockSignature = Transaction.TimeStamp;
+            this.initialTimeStamp = Block.BlockSignature;
+        }
+
+        // Note: this is only here temporarily until static flags removed
+        private void RestoreStaticFlagValues()
+        {
+            Transaction.TimeStamp = this.initialBlockSignature;
+            Block.BlockSignature = this.initialTimeStamp;
         }
     }
 }
