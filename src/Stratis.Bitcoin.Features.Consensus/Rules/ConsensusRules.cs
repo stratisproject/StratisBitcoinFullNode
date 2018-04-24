@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (var ruleDescriptor in this.executionRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.executionRules)
                 {
                     await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
@@ -159,11 +159,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (var ruleDescriptor in this.validationRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.validationRules)
                 {
                     if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                     {
-                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext?.BestBlock?.Height);
+                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.BestBlock?.Height);
                     }
                     else
                     {

@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// This method try to load from cache the UTXO of the next block in a background task.
+        /// This method tries to load from cache the UTXO of the next block in a background task.
         /// </summary>
         /// <param name="flags">Information about activated features.</param>
         private async void TryPrefetchAsync(DeploymentFlags flags)
@@ -49,8 +49,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc/>
-        public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
+        /// <summary>
+        /// The transactions identifiers that need to be fetched from store. 
+        /// </summary>
+        /// <param name="block">The block with the transactions.</param>
+        /// <param name="enforceBIP30">Whether to enforce look up of the transaction id itself and not only the reference to previous transaction id.</param>
+        /// <returns>A list of transaction ids to fetch from store</returns>
+        private uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
             this.Logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(NetworkOptions.TemporaryOptions), nameof(enforceBIP30), enforceBIP30);
 
@@ -59,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 if (enforceBIP30)
                 {
-                    var txId = tx.GetHash();
+                    uint256 txId = tx.GetHash();
                     ids.Add(txId);
                 }
 

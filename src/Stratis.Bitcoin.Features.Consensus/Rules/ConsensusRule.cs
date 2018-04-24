@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     }
 
     /// <summary>
-    /// Rules that provide easy access to the <see cref="StakeChain"/> which is the store for a PoS system.
+    /// Rules that provide easy access to the <see cref="IStakeChain"/> which is the store for a PoS system.
     /// </summary>
     public abstract class StakeStoreConsensusRule : ConsensusRule
     {
