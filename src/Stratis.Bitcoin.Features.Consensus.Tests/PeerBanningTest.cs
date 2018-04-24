@@ -25,8 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerDiconnected_ThePeerGetsBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerDiconnected_ThePeerGetsBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
@@ -45,8 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
@@ -70,8 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
@@ -94,8 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
@@ -117,9 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async));
-            Directory.CreateDirectory(dataDir);
-
+            string dataDir = GetTestDirectoryPath(this);
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
@@ -144,8 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public async Task PeerBanning_AddingBannedPeerToAddressManagerStoreAsync()
         {
             // Arrange 
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.PeerBanning_AddingBannedPeerToAddressManagerStoreAsync));
-            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
@@ -166,8 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public async Task PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync()
         {
             // Arrange 
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync));
-            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
@@ -191,8 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public async Task PeerBanning_ResettingExpiredBannedPeerAsync()
         {
             // Arrange 
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.PeerBanning_ResettingExpiredBannedPeerAsync));
-            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
