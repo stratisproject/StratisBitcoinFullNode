@@ -5,7 +5,7 @@
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -connect=51.140.231.125"
+      "commandLineArgs": "-testnet"
     },
     "Stratis.StratisD Test with RPC": {
       "commandName": "Project",
