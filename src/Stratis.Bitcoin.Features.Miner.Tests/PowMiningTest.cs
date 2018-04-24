@@ -42,6 +42,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             SetupBlockAssembler();
 
             this.powMining = new PowMining(this.consensusLoop.Object, this.chain, this.network, this.assemblerFactory.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.LoggerFactory.Object);
+
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         [Fact]
