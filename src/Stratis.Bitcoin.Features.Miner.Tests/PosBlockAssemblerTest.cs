@@ -105,8 +105,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(new PosConsensusOptions(), () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
-                this.dateTimeProvider.Setup(d => d.GetAdjustedTime())
-                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc));
+                this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
+                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
                 var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PosConsensusOptions, txFee, transaction);
@@ -171,8 +171,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
-                this.dateTimeProvider.Setup(d => d.GetAdjustedTime())
-                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc));
+                this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
+                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
                 this.consensusLoop.Setup(c => c.Tip)
                     .Returns(chain.GetBlock(5));
 
@@ -265,8 +265,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(new PosConsensusOptions(), () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
-                this.dateTimeProvider.Setup(d => d.GetAdjustedTime())
-                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc));
+                this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
+                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
                                                  this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, chain.Tip, this.LoggerFactory.Object);
