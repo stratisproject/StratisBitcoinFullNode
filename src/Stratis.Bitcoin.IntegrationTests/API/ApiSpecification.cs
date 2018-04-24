@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(getting_general_info);
-            Then(this.general_information_about_the_wallet_and_node_is_returned);
+            Then(general_information_about_the_wallet_and_node_is_returned);
         }
 
         [Fact]
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(calling_rpc_listmethods);
-            Then(this.a_full_list_of_available_commands_is_returned);
+            Then(a_full_list_of_available_commands_is_returned);
         }
     }
 }
