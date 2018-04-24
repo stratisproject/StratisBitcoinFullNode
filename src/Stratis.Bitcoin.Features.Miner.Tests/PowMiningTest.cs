@@ -28,9 +28,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PowMiningTestFixture fixture;
         private ConcurrentChain chain;
         private PowMining powMining;
+        private readonly bool initialBlockSignature;
+        private readonly bool initialTimestamp;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
+            this.initialBlockSignature = Block.BlockSignature;
+            this.initialTimestamp = Transaction.TimeStamp;
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.fixture = fixture;
@@ -45,6 +52,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = this.initialBlockSignature;
+            Transaction.TimeStamp = this.initialTimestamp;
         }
 
         [Fact]
