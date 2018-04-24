@@ -571,12 +571,16 @@ namespace NBitcoin
             }
         }
 
-        // TODO: Is this allowed?
         public bool IsSmartContractExec
         {
             get
             {
-                return ToOps().Any(x => x.Code == OpcodeType.OP_CALLCONTRACT || x.Code == OpcodeType.OP_CREATECONTRACT);
+                Op firstOp = ToOps().FirstOrDefault();
+
+                if (firstOp == null)
+                    return false;
+
+                return firstOp.Code == OpcodeType.OP_CALLCONTRACT || firstOp.Code == OpcodeType.OP_CREATECONTRACT;
             }
         }
 

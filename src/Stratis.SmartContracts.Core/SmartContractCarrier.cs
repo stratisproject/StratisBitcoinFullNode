@@ -158,14 +158,15 @@ namespace Stratis.SmartContracts.Core
         public static SmartContractCarrier Deserialize(Transaction transaction, TxOut smartContractTxOut)
         {
             byte[] smartContractBytes = smartContractTxOut.ScriptPubKey.ToBytes();
-
+            byte opcode = smartContractBytes[0];
             var byteCursor = 0;
             var takeLength = 0;
+            smartContractBytes = smartContractBytes.Skip(1).ToArray();
 
             var carrier = new SmartContractCarrier(new MethodParameterSerializer())
             {
-                VmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength),
-                OpCodeType = (OpcodeType)Deserialize<short>(smartContractBytes, ref byteCursor, ref takeLength)
+                OpCodeType = (OpcodeType) opcode,
+                VmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength)
             };
 
             if (carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT)
@@ -235,8 +236,8 @@ namespace Stratis.SmartContracts.Core
         public byte[] Serialize()
         {
             var bytes = new List<byte>();
+            bytes.Add((byte) this.OpCodeType);
             bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.VmVersion)));
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes((byte)this.OpCodeType)));
 
             if (this.OpCodeType == OpcodeType.OP_CALLCONTRACT)
             {
