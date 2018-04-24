@@ -575,8 +575,12 @@ namespace NBitcoin
         {
             get
             {
-                OpcodeType firstOp = ToOps().FirstOrDefault().Code;
-                return firstOp == OpcodeType.OP_CALLCONTRACT || firstOp == OpcodeType.OP_CREATECONTRACT;
+                Op firstOp = ToOps().FirstOrDefault();
+
+                if (firstOp == null)
+                    return false;
+
+                return firstOp.Code == OpcodeType.OP_CALLCONTRACT || firstOp.Code == OpcodeType.OP_CREATECONTRACT;
             }
         }
 
