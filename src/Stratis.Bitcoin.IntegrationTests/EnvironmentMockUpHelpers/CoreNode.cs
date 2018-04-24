@@ -12,7 +12,6 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -78,10 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         {
             get
             {
-                if (this.runner is StratisBitcoinPosRunner)
-                    return ((StratisBitcoinPosRunner)this.runner).FullNode;
-
-                return ((StratisBitcoinPowRunner)this.runner).FullNode;
+                return this.runner.FullNode;
             }
         }
 
@@ -112,7 +108,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            // not in IBD
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 

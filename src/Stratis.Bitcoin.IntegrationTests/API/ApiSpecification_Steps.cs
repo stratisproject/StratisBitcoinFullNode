@@ -6,31 +6,35 @@ using FluentAssertions;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.IntegrationTests.TestFramework;
-using Xunit;
 using Xunit.Abstractions;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Builders;
+using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
-    public partial class ApiSpecification : BddSpecification, IClassFixture<ApiTestsFixture>
+    public partial class ApiSpecification : BddSpecification
     {
+        private const string JsonContentType = "application/json";
         private HttpClient httpClient;
-        private readonly ApiTestsFixture apiTestsFixture;
         private Uri apiUri;
         private string response;
-        private FullNode fullNode;
-        private StartStakingRequest model;
+        private NodeBuilder nodeBuilder;
+        private NodeGroupBuilder nodeGroupBuilder;
+        private CoreNode posApiNode;
 
-        public ApiSpecification(ITestOutputHelper output, ApiTestsFixture apiTestsFixture) : base(output)
+        public ApiSpecification(ITestOutputHelper output) : base(output)
         {
-            this.apiTestsFixture = apiTestsFixture;
         }
 
         protected override void BeforeTest()
         {
             this.httpClient = new HttpClient();
+            this.nodeBuilder = NodeBuilder.Create();
+            this.nodeGroupBuilder = new NodeGroupBuilder();
         }
 
         protected override void AfterTest()
@@ -40,34 +44,33 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 this.httpClient.Dispose();
                 this.httpClient = null;
             }
-        }
 
-        private void a_proof_of_work_node_api()
-        {
-            var node = this.apiTestsFixture.stratisPowNode.FullNode;
-            this.apiUri = node.NodeService<ApiSettings>().ApiUri;
+            this.nodeBuilder.Dispose();
+            this.nodeGroupBuilder.Dispose();
         }
 
         private void a_proof_of_stake_node_api()
         {
-            this.fullNode = this.apiTestsFixture.stratisStakeNode.FullNode;
-            this.apiUri = this.fullNode.NodeService<ApiSettings>().ApiUri;
+            // TODO BEFORE PR APPROVAL: Perhaps the nodegroup builder below instead
+            //this.nodeGroupBuilder.CreateStratisPosApiNode("testapi").Start()
+            //    .WithWallet("testapi", "testapi").Build();
 
-            this.fullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
+            this.posApiNode = this.nodeBuilder.CreateStratisPosApiNode(start: true);
+            this.posApiNode.FullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
+            this.apiUri = this.posApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
         }
 
         private void a_wallet()
         {
-            var walletManager = this.fullNode.NodeService<IWalletManager>();
-            this.model = new StartStakingRequest { Name = "apitest", Password = "123456" };
-            walletManager.CreateWallet(this.model.Password, this.model.Name);
+            var walletManager = this.posApiNode.FullNode.NodeService<IWalletManager>() as WalletManager;
+            walletManager.CreateWallet("testapi", "testapi");
         }
 
         private void getting_general_info()
         {
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            this.response = this.httpClient.GetStringAsync(this.apiUri + "api/wallet/general-info?name=test").Result;
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
+            this.response = this.httpClient.GetStringAsync(this.apiUri + "api/wallet/general-info?name=testapi").GetAwaiter().GetResult();
         }
 
         private void data_starting_with_wallet_file_path_is_returned()
@@ -78,12 +81,14 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void staking_is_started()
         {
-            var content = new StringContent(this.model.ToString(), Encoding.UTF8, "application/json");
-            var response = this.httpClient.PostAsync(this.apiUri + "api/miner/startstaking", content).Result;
+            var stakingRequest = new StartStakingRequest() { Name = "testapi", Password = "testapi"};
 
-            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+            var content = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
+            var stakingResponse = this.httpClient.PostAsync(this.apiUri + "api/miner/startstaking", content).GetAwaiter().GetResult();
 
-            var responseText = response.Content.ReadAsStringAsync().Result;
+            stakingResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+
+            var responseText = stakingResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
             responseText.Should().BeEmpty();
         }
@@ -91,22 +96,22 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void calling_rpc_getblockhash_via_callbyname()
         {
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
 
             this.response = this.httpClient.GetStringAsync(this.apiUri + "api/rpc/callbyname?methodName=getblockhash&height=0")
-                .Result;
+                .GetAwaiter().GetResult();
         }
 
         private void calling_rpc_listmethods()
         {
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            this.response = this.httpClient.GetStringAsync(this.apiUri + "api/rpc/listmethods").Result;
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
+            this.response = this.httpClient.GetStringAsync(this.apiUri + "api/rpc/listmethods").GetAwaiter().GetResult();
         }
 
         private void staking_is_enabled_but_nothing_is_staked()
         {
-            var miningRpcController = this.fullNode.NodeService<MiningRPCController>();
+            var miningRpcController = this.posApiNode.FullNode.NodeService<MiningRPCController>();
             var stakingInfo = miningRpcController.GetStakingInfo();
 
             stakingInfo.Should().NotBeNull();
@@ -116,7 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_blockhash_is_returned()
         {
-            this.response.Should().Be("\"0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206\"");
+            this.response.Should().Be("\"93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f\"");
         }
 
         private void non_empty_list_returned()
