@@ -138,22 +138,22 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.response);
 
             commands.Count.Should().Be(16);
-            commands.Any(x => x.Command == "stop").Should().BeTrue();
-            commands.Any(x => x.Command == "getrawtransaction <txid> [<verbose>]").Should().BeTrue();
-            commands.Any(x => x.Command == "gettxout <txid> <vout> [<includemempool>]").Should().BeTrue();
-            commands.Any(x => x.Command == "getblockcount").Should().BeTrue();
-            commands.Any(x => x.Command == "getinfo").Should().BeTrue();
-            commands.Any(x => x.Command == "getblockheader <hash> [<isjsonformat>]").Should().BeTrue();
-            commands.Any(x => x.Command == "validateaddress <address>").Should().BeTrue();
-            commands.Any(x => x.Command == "addnode <endpointstr> <command>").Should().BeTrue();
-            commands.Any(x => x.Command == "getpeerinfo").Should().BeTrue();
-            commands.Any(x => x.Command == "getbestblockhash").Should().BeTrue();
-            commands.Any(x => x.Command == "getblockhash <height>").Should().BeTrue();
-            commands.Any(x => x.Command == "getrawmempool").Should().BeTrue();
-            commands.Any(x => x.Command == "generate <blockcount>").Should().BeTrue();
-            commands.Any(x => x.Command == "startstaking <walletname> <walletpassword>").Should().BeTrue();
-            commands.Any(x => x.Command == "getstakinginfo [<isjsonformat>]").Should().BeTrue();
-            commands.Any(x => x.Command == "sendtoaddress <bitcoinaddress> <amount>").Should().BeTrue();
+            commands.Should().Contain(x => x.Command == "stop");
+            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
+            commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
+            commands.Should().Contain(x => x.Command == "getblockcount");
+            commands.Should().Contain(x => x.Command == "getinfo");
+            commands.Should().Contain(x => x.Command == "getblockheader <hash> [<isjsonformat>]");
+            commands.Should().Contain(x => x.Command == "validateaddress <address>");
+            commands.Should().Contain(x => x.Command == "addnode <endpointstr> <command>");
+            commands.Should().Contain(x => x.Command == "getpeerinfo");
+            commands.Should().Contain(x => x.Command == "getbestblockhash");
+            commands.Should().Contain(x => x.Command == "getblockhash <height>");
+            commands.Should().Contain(x => x.Command == "getrawmempool");
+            commands.Should().Contain(x => x.Command == "generate <blockcount>");
+            commands.Should().Contain(x => x.Command == "startstaking <walletname> <walletpassword>");
+            commands.Should().Contain(x => x.Command == "getstakinginfo [<isjsonformat>]");
+            commands.Should().Contain(x => x.Command == "sendtoaddress <bitcoinaddress> <amount>");
         }
     }
 }
