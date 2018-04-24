@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat() is not deterministic.", result.Errors.First().Message);
         }
 
@@ -70,9 +70,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat1() is not deterministic.", result.Errors.First().Message);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.Skip(1).Take(1).First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.Skip(1).Take(1).First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat2() is not deterministic.", result.Errors.Skip(1).Take(1).First().Message);
         }
 
@@ -114,9 +114,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat1() is not deterministic.", result.Errors.First().Message);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.Skip(1).Take(1).First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.Skip(1).Take(1).First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat3() is not deterministic.", result.Errors.Skip(1).Take(1).First().Message);
         }
 
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat1() is not deterministic.", result.Errors.First().Message);
         }
 
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat1() is not deterministic.", result.Errors.First().Message);
         }
 
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestFloat1() is not deterministic.", result.Errors.First().Message);
         }
 
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal(SmartContractValidationError.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
             Assert.Equal("Use of System.Void MessageTest::MessageTestValid1() is not deterministic.", result.Errors.First().Message);
         }
     }
