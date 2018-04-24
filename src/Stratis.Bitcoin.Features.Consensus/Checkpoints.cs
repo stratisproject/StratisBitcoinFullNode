@@ -136,9 +136,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Checkpoints for the specific instance of the class and its network.</summary>
         private readonly Dictionary<int, CheckpointInfo> networkSpecificCheckpoints;
 
-        /// <summary>Empty list of checkpoints for the specific instance of the class in case the use of checkpoints is disabled in the consensus settings.</summary>
-        private readonly Dictionary<int, CheckpointInfo> emptyCheckpoints = new Dictionary<int, CheckpointInfo>();
-
         /// <summary>Consensus settings for the full node.</summary>
         private ConsensusSettings ConsensusSettings { get; }
 
@@ -196,10 +193,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private Dictionary<int, CheckpointInfo> GetCheckpoints()
         {
-            if (this.ConsensusSettings == null)
-                return this.emptyCheckpoints;
+            if (this.ConsensusSettings == null || !this.ConsensusSettings.UseCheckpoints)
+                return new Dictionary<int, CheckpointInfo>();
 
-            return this.ConsensusSettings.UseCheckpoints ? this.networkSpecificCheckpoints : this.emptyCheckpoints;
+            return this.networkSpecificCheckpoints;
         }
     }
 }
