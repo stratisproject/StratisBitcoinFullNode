@@ -12,9 +12,9 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Tests;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IAssemblerFactory> assemblerFactory;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
         private readonly Mock<INodeLifetime> nodeLifetime;
-        private readonly TestCoinView coinView;
+        private readonly Mock<CoinView> coinView;
         private readonly Mock<IStakeChain> stakeChain;
         private readonly List<uint256> powBlocks;
         private readonly Mock<IStakeValidator> stakeValidator;
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Block.BlockSignature = true;
 
             this.consensusValidator = new Mock<IPosConsensusValidator>();
-            this.consensusLoop = new Mock<IConsensusLoop>();            
+            this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
             this.chain = new ConcurrentChain(this.network);
             this.connectionManager = new Mock<IConnectionManager>();
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.assemblerFactory = new Mock<IAssemblerFactory>();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             this.nodeLifetime = new Mock<INodeLifetime>();
-            this.coinView = new TestCoinView();
+            this.coinView = new Mock<CoinView>(); ;
             this.stakeChain = new Mock<IStakeChain>();
             this.powBlocks = new List<uint256>();
             this.SetupStakeChain();
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(this.cancellationTokenSource.Token);
 
             this.posMinting = this.InitializePosMinting();
-        }       
+        }
 
         public void Dispose()
         {
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.chain = GenerateChainWithBlockTimeAndHeight(73, this.network, 60, 0x1df88f6f);
             // the following non-pos blocks should be excluded.
             AddBlockToChainWithBlockTimeAndDifficulty(this.chain, 3, 60, 0x12345678);
-            
+
             foreach (int blockHeight in new int[] { 74, 75, 76 })
             {
                 var blockHash = this.chain.GetBlock(blockHeight).HashBlock;
@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             return new PosMinting(this.consensusLoop.Object, this.chain, this.network, this.connectionManager.Object,
                 this.dateTimeProvider.Object, this.assemblerFactory.Object,
-                this.initialBlockDownloadState.Object, this.nodeLifetime.Object, this.coinView, this.stakeChain.Object,
+                this.initialBlockDownloadState.Object, this.nodeLifetime.Object, this.coinView.Object, this.stakeChain.Object,
                 this.stakeValidator.Object, this.mempoolSchedulerLock, this.txMempool.Object,
                 this.walletManager.Object, this.asyncLoopFactory.Object, this.timeSyncBehaviorState.Object, this.LoggerFactory.Object);
         }
@@ -448,28 +448,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             blockHeader.Bits = new Target(bits);
             var chainedBlock = new ChainedBlock(blockHeader, blockHeader.GetHash(), 46367);
             return chainedBlock;
-        }
-
-        private class TestCoinView : CoinView
-        {
-            public TestCoinView() : base()
-            {
-            }
-
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override Task<uint256> Rewind()
-            {
-                throw new NotImplementedException();
-            }
-
-            public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
-            {
-                throw new NotImplementedException();
-            }
-        }
+        }            
     }
-}
+  }
