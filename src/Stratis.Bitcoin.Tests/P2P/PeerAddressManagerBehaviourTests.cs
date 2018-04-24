@@ -8,6 +8,7 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManagerBehaviourTests"));
+            var peerFolder = CreateDataFolder(this);
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory, new SelfEndpointTracker());
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
@@ -71,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
-            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManagerBehaviourTests"));
+            var peerFolder = CreateDataFolder(this);
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.loggerFactory, new SelfEndpointTracker());
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 

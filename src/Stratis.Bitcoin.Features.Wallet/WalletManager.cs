@@ -536,18 +536,49 @@ namespace Stratis.Bitcoin.Features.Wallet
                 
                 foreach (var account in accounts)
                 {
-                    (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
 
                     balances.Add(new AccountBalance
                     {
                         Account = account,
-                        AmountConfirmed = result.AmountConfirmed,
-                        AmountUnconfirmed = result.AmountUnconfirmed
+                        AmountConfirmed = result.amountConfirmed,
+                        AmountUnconfirmed = result.amountUnconfirmed
                     });
                 }
             }
 
             return balances;
+        }
+
+        /// <inheritdoc />
+        public AddressBalance GetAddressBalance(string address)
+        {
+            Guard.NotEmpty(address, nameof(address));
+            this.logger.LogTrace("({0}:'{1}')", nameof(address), address);
+
+            AddressBalance balance = new AddressBalance
+            {
+                Address = address,
+                CoinType = this.coinType
+            };
+
+            lock (this.lockObject)
+            {
+                foreach (Wallet wallet in this.Wallets)
+                {
+                    HdAddress hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
+                    if (hdAddress == null) continue;
+
+                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
+
+                    balance.AmountConfirmed = result.amountConfirmed;
+                    balance.AmountUnconfirmed = result.amountUnconfirmed;
+
+                    break;
+                }
+            }
+
+            return balance;
         }
 
         /// <inheritdoc />
@@ -1010,7 +1041,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
-                this.RemoveInputKeysLookupLock(spentTransaction);
             }
             else // If this spending transaction is being confirmed in a block.
             {
@@ -1227,9 +1257,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (address.Pubkey != null)
                             this.keysLookup[address.Pubkey] = address;
 
-                        foreach (var unspentTransaction in address.UnspentTransactions())
+                        foreach (var transaction in address.Transactions)
                         {
-                            this.outpointLookup[new OutPoint(unspentTransaction.Id, unspentTransaction.Index)] = unspentTransaction;
+                            this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
                         }
                     }
                 }
@@ -1269,21 +1299,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
             }
         }
-
-        /// <summary>
-        /// Remove from the list of unspent outputs kept in memory.
-        /// </summary>
-        private void RemoveInputKeysLookupLock(TransactionData transactionData)
-        {
-            Guard.NotNull(transactionData, nameof(transactionData));
-            Guard.NotNull(transactionData.SpendingDetails, nameof(transactionData.SpendingDetails));
-            
-            lock (this.lockObject)
-            {
-                this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
-            }
-        }
-
+        
         /// <inheritdoc />
         public IEnumerable<string> GetWalletsNames()
         {

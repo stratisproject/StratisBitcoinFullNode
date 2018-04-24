@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Xunit.Sdk;
@@ -71,17 +71,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var testChainContext = new TestChainContext() { Network = network };
 
             testChainContext.NodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={dataDir}" });
-
-            if (dataDir != null)
-            {
-                testChainContext.NodeSettings.DataDir = dataDir;
-            }
-
             testChainContext.ConnectionSettings = new ConnectionManagerSettings();
             testChainContext.ConnectionSettings.Load(testChainContext.NodeSettings);
-
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
+
             network.Consensus.Options = new PowConsensusOptions();
 
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(testChainContext.NodeSettings);

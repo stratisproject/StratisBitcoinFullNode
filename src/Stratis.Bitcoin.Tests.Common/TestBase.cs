@@ -7,7 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.Tests.Common
 {
     public class TestBase
     {
@@ -23,13 +23,7 @@ namespace Stratis.Bitcoin.Tests
             DBreezeSerializer serializer = new DBreezeSerializer();
             serializer.Initialize();
         }
-
-        public static DataFolder AssureEmptyDirAsDataFolder(string dir)
-        {
-            var dataFolder = new DataFolder(new NodeSettings(args:new string[] { $"-datadir={AssureEmptyDir(dir)}" }).DataDir);
-            return dataFolder;
-        }
-
+        
         public static string AssureEmptyDir(string dir)
         {
             if (Directory.Exists(dir))
@@ -49,7 +43,8 @@ namespace Stratis.Bitcoin.Tests
         public static DataFolder CreateDataFolder(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
             string directoryPath = GetTestDirectoryPath(caller, callingMethod);
-            return AssureEmptyDirAsDataFolder(directoryPath);
+            var dataFolder = new DataFolder(new NodeSettings(args: new string[] { $"-datadir={AssureEmptyDir(directoryPath)}" }).DataDir);
+            return dataFolder;
         }
 
         /// <summary>

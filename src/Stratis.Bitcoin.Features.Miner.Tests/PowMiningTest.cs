@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -28,9 +28,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PowMiningTestFixture fixture;
         private ConcurrentChain chain;
         private PowMining powMining;
+        private readonly bool initialBlockSignature;
+        private readonly bool initialTimestamp;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
+            this.initialBlockSignature = Block.BlockSignature;
+            this.initialTimestamp = Transaction.TimeStamp;
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.fixture = fixture;
@@ -42,6 +49,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             SetupBlockAssembler();
 
             this.powMining = new PowMining(this.consensusLoop.Object, this.chain, this.network, this.assemblerFactory.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.LoggerFactory.Object);
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = this.initialBlockSignature;
+            Transaction.TimeStamp = this.initialTimestamp;
         }
 
         [Fact]
