@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(15);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 15 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();

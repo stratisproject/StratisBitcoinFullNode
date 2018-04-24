@@ -41,12 +41,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
         public BlockStoreLoop Loop { get; private set; }
 
-        internal FluentBlockStoreLoop()
+        internal FluentBlockStoreLoop(DataFolder dataFolder)
         {
             this.ConfigureLogger();
 
+            this.dataFolder = dataFolder;
             this.BlockRepository = new BlockRepositoryInMemory();
-            this.dataFolder = TestBase.AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "BlockStore"));
 
             this.ConfigureConnectionManager();
 
@@ -76,9 +76,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             return this;
         }
 
-        internal FluentBlockStoreLoop WithConcreteRepository(string dataFolder)
+        internal FluentBlockStoreLoop WithConcreteRepository()
         {
-            this.dataFolder = TestBase.AssureEmptyDirAsDataFolder(dataFolder);
             this.BlockRepository = new BlockRepository(Network.Main, this.dataFolder, DateTimeProvider.Default, this.loggerFactory.Object);
             return this;
         }
@@ -93,7 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             this.connectionManager = new Mock<IConnectionManager>();
             this.connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
-            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
+            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.AddressManagerFilePath}" }));
             this.connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
         }
 
@@ -111,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     null,
                     chain,
                     this.chainState.Object,
-                    new StoreSettings(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
+                    new StoreSettings(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.AddressManagerFilePath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
                     this.initialBlockDownloadState,

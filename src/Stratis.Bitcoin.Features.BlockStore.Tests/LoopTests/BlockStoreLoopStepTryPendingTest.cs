@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(15);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(15);
 
-            using (var fluent = new FluentBlockStoreLoop().AsIBD())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)).AsIBD())
             {
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(2500, true);
 
-            using (var fluent = new FluentBlockStoreLoop().AsIBD())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)).AsIBD())
             {
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(15);
 
-            using (var fluent = new FluentBlockStoreLoop().AsIBD())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)).AsIBD())
             {
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();

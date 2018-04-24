@@ -19,13 +19,7 @@ namespace Stratis.Bitcoin.Tests.Common
             DBreezeSerializer serializer = new DBreezeSerializer();
             serializer.Initialize();
         }
-
-        public static DataFolder AssureEmptyDirAsDataFolder(string dir)
-        {
-            var dataFolder = new DataFolder(new NodeSettings(args:new string[] { $"-datadir={AssureEmptyDir(dir)}" }).DataDir);
-            return dataFolder;
-        }
-
+        
         public static string AssureEmptyDir(string dir)
         {
             if (Directory.Exists(dir))
@@ -45,7 +39,8 @@ namespace Stratis.Bitcoin.Tests.Common
         public static DataFolder CreateDataFolder(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
             string directoryPath = GetTestDirectoryPath(caller, callingMethod);
-            return AssureEmptyDirAsDataFolder(directoryPath);
+            var dataFolder = new DataFolder(new NodeSettings(args: new string[] { $"-datadir={AssureEmptyDir(directoryPath)}" }).DataDir);
+            return dataFolder;
         }
 
         /// <summary>
