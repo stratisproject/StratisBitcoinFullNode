@@ -536,18 +536,49 @@ namespace Stratis.Bitcoin.Features.Wallet
                 
                 foreach (var account in accounts)
                 {
-                    (Money AmountConfirmed, Money AmountUnconfirmed) result = account.GetSpendableAmount();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
 
                     balances.Add(new AccountBalance
                     {
                         Account = account,
-                        AmountConfirmed = result.AmountConfirmed,
-                        AmountUnconfirmed = result.AmountUnconfirmed
+                        AmountConfirmed = result.amountConfirmed,
+                        AmountUnconfirmed = result.amountUnconfirmed
                     });
                 }
             }
 
             return balances;
+        }
+
+        /// <inheritdoc />
+        public AddressBalance GetAddressBalance(string address)
+        {
+            Guard.NotEmpty(address, nameof(address));
+            this.logger.LogTrace("({0}:'{1}')", nameof(address), address);
+
+            AddressBalance balance = new AddressBalance
+            {
+                Address = address,
+                CoinType = this.coinType
+            };
+
+            lock (this.lockObject)
+            {
+                foreach (Wallet wallet in this.Wallets)
+                {
+                    HdAddress hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
+                    if (hdAddress == null) continue;
+
+                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
+
+                    balance.AmountConfirmed = result.amountConfirmed;
+                    balance.AmountUnconfirmed = result.amountUnconfirmed;
+
+                    break;
+                }
+            }
+
+            return balance;
         }
 
         /// <inheritdoc />

@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>A manager providing operations on wallets.</summary>
-        private readonly WalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
         /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
         private readonly IPosConsensusValidator posConsensusValidator;
@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="consensusLoop">Consumes incoming blocks, validates and executes them.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="connection">Provider of information about the node's connection to it's network peers.</param>
+        /// <param name="connectionManager">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
         /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="stakeValidator">Provides functionality for checking validity of PoS blocks.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempool">Memory pool of pending transactions.</param>
-        /// <param name="wallet">A manager providing operations on wallets.</param>
+        /// <param name="walletManager">A manager providing operations on wallets.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
-            IConnectionManager connection,
+            IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IStakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
-            IWalletManager wallet,
+            IWalletManager walletManager,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory)
@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.consensusLoop = consensusLoop;
             this.chain = chain;
             this.network = network;
-            this.connection = connection;
+            this.connection = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.nodeLifetime = nodeLifetime;
@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.mempoolLock = mempoolLock;
             this.mempool = mempool;
             this.asyncLoopFactory = asyncLoopFactory;
-            this.walletManager = wallet as WalletManager;
+            this.walletManager = walletManager;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -1130,15 +1130,18 @@ namespace Stratis.Bitcoin.Features.Miner
                 block = this.stakeValidator.GetLastPowPosChainedBlock(this.stakeChain, tip, false);
             }
 
+            // calculate the current shift value.
             uint shift = (block.Header.Bits >> 24) & 0xFF;
             double diff = (double)0x0000FFFF / (double)(block.Header.Bits & 0x00FFFFFF);
 
+            // shift the difficulty up.
             while (shift < 29)
             {
                 diff *= 256.0;
                 shift++;
             }
 
+            // shift the difficulty down.
             while (shift > 29)
             {
                 diff /= 256.0;
@@ -1168,7 +1171,7 @@ namespace Stratis.Bitcoin.Features.Miner
             while ((block != null) && (stakesHandled < interval))
             {
                 BlockStake blockStake = this.stakeChain.Get(block.HashBlock);
-                if (blockStake.IsProofOfStake())
+                if (blockStake != null && blockStake.IsProofOfStake())
                 {
                     if (prevStakeBlock != null)
                     {

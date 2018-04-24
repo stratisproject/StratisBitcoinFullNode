@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(10);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(55);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 45 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(45).Last().GetHash(), blocks.Take(45).ToList()).GetAwaiter().GetResult();
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(3);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 2 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(1).Last().GetHash(), blocks.Take(1).ToList()).GetAwaiter().GetResult();
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(3);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 3 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var blocks = this.CreateBlocks(3);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop(CreateDataFolder(this)))
             {
                 // Push 2 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(2).Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();

@@ -28,9 +28,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Network network;
         private Mock<INodeLifetime> nodeLifetime;
         private PowMining powMining;
+        private readonly bool initialBlockSignature;
+        private readonly bool initialTimestamp;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
+            this.initialBlockSignature = Block.BlockSignature;
+            this.initialTimestamp = Transaction.TimeStamp;
+
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
+
             this.fixture = fixture;
             this.network = fixture.Network;
             this.initialNetworkOptions = this.network.Consensus.Options;
@@ -55,6 +63,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.blockAssembler = new Mock<PowBlockAssembler>(this.chain.Tip, this.consensusLoop.Object, DateTimeProvider.Default, this.loggerFactory, this.mempool.Object, mempoolLock, this.network);
             this.powMining = new PowMining(this.asyncLoopFactory.Object, this.consensusLoop.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, mempoolLock, this.network, this.nodeLifetime.Object, this.loggerFactory);
+        }
+
+        public void Dispose()
+        {
+            Block.BlockSignature = this.initialBlockSignature;
+            Transaction.TimeStamp = this.initialTimestamp;
+
+            this.network.Consensus.Options = this.initialNetworkOptions;
         }
 
         [Fact]
@@ -509,11 +525,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Block.BlockSignature = blockSignature;
                 Transaction.TimeStamp = timestamp;
             }
-        }
-
-        public void Dispose()
-        {
-            this.network.Consensus.Options = this.initialNetworkOptions;
         }
     }
 
