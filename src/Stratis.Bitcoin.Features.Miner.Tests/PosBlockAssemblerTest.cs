@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -64,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 posBlockAssembler.TestBlockValidity();
 
-                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>(), false), Times.Exactly(0));
+                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
             });
         }
 
@@ -194,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 var blockTemplate = posBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
 
-                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>(), false), Times.Exactly(0));
+                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
                 Assert.Null(this.callbackRuleContext);
                 this.stakeValidator.Verify();
             });
@@ -466,8 +465,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>(), false))
-                .Callback<RuleContext, bool>((c, b) =>
+            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>()))
+                .Callback<RuleContext>(c =>
                 {
                     this.callbackRuleContext = c;
                 }).Verifiable();

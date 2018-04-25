@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
-    public class BlockHeaderPosContextualRule : PosConsensusRule
+    public class BlockHeaderPosContextualRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
