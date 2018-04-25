@@ -160,8 +160,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            nodeSettings.DataDir = @"C:\";
+            NodeSettings nodeSettings = new NodeSettings(args: new string[] { $"-datadir=C:\\" });
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings().Load(nodeSettings), null); };
 
             // Act and Assert.

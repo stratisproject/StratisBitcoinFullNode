@@ -6,9 +6,9 @@ using Mono.Cecil.Rocks;
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
     /// <summary>
-    /// Validates a constructor's first param is of type <see cref="ISmartContractState"/>
+    /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/>'s constructor has a first param of type <see cref="ISmartContractState"/>
     /// </summary>
-    public class ConstructorParamValidator
+    public class ConstructorParamValidator : ITypeDefinitionValidator
     {
         public const string InvalidParamError = "The first constructor argument must be an ISmartContractState object";
 

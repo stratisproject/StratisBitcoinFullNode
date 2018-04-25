@@ -61,12 +61,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             Directory.CreateDirectory(dataDir);
 
             testRulesContext.NodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" });
-
-            if (dataDir != null)
-            {
-                testRulesContext.NodeSettings.DataDir = dataDir;
-            }
-
             testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;

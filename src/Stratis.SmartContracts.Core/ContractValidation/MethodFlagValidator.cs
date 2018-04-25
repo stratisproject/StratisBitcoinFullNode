@@ -4,6 +4,9 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not native
+    /// </summary>
     public class NativeMethodFlagValidator : IMethodDefinitionValidator
     {
         public static string ErrorType = "Native Flag Set";
@@ -29,6 +32,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         }
     }
 
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not PInvokeImpl
+    /// </summary>
     public class PInvokeImplFlagValidator : IMethodDefinitionValidator
     {
         public static string ErrorType = "PInvokeImpl Flag Set";
@@ -54,6 +60,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         }
     }
 
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not unmanaged
+    /// </summary>
     public class UnmanagedFlagValidator : IMethodDefinitionValidator
     {
         public static string ErrorType = "Unmanaged Flag Set";
@@ -79,6 +88,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         }
     }
 
+    /// <summary>
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not an internal call
+    /// </summary>
     public class InternalFlagValidator : IMethodDefinitionValidator
     {
         public static string ErrorType = "Internal Flag Set";

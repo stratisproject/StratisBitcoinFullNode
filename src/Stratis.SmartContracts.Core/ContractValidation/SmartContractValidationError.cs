@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.Core.ContractValidation
+﻿using Mono.Cecil;
+
+namespace Stratis.SmartContracts.Core.ContractValidation
 {
     public class SmartContractValidationError
     {
@@ -13,6 +15,14 @@
         public SmartContractValidationError(string message)
         {
             this.Message = message;
+        }
+
+        public SmartContractValidationError(MethodDefinition methodDefinition, string errorType, string message)
+            : this(message)
+        {
+            this.MethodFullName = methodDefinition.FullName;
+            this.MethodName = methodDefinition.Name;
+            this.ErrorType = errorType;
         }
 
         public SmartContractValidationError(string methodName, string methodFullName, string errorType, string message)

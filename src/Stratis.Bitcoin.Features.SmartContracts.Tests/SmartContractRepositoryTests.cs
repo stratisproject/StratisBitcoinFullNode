@@ -57,7 +57,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(horseCode, repository.GetCode(horse));
         }
 
-
         [Fact]
         public void Test4()
         {
@@ -95,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Test20()
         {
-            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[],byte[]>(new MemoryDictionarySource());
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
             byte[] root = repository.Root;
 
@@ -189,7 +188,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void CommitAndRollbackTest()
+        public void Repository_CommitAndRollbackTest()
         {
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
@@ -222,7 +221,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void CommitPushesToUnderlyingSource()
+        public void Repository_CommitPushesToUnderlyingSource()
         {
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
             ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);

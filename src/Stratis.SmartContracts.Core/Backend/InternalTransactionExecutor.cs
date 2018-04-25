@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using NBitcoin;
-using Stratis.SmartContracts.Core.Compilation;
+﻿using NBitcoin;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -11,18 +8,18 @@ namespace Stratis.SmartContracts.Core.Backend
     ///<inheritdoc/>
     public sealed class InternalTransactionExecutor : IInternalTransactionExecutor
     {
-        private readonly IContractStateRepository constractStateRepository;
+        private readonly IContractStateRepository contractStateRepository;
         private readonly Network network;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly InternalTransferList internalTransferList;
 
         public InternalTransactionExecutor(
-            IContractStateRepository constractStateRepository, 
+            IContractStateRepository contractStateRepository, 
             Network network, 
             IKeyEncodingStrategy keyEncodingStrategy,
             InternalTransferList internalTransferList)
         {
-            this.constractStateRepository = constractStateRepository;
+            this.contractStateRepository = contractStateRepository;
             this.network = network;
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.internalTransferList = internalTransferList;
@@ -37,7 +34,7 @@ namespace Stratis.SmartContracts.Core.Backend
                 throw new InsufficientBalanceException();
 
             // Discern whether this is a contract or an ordinary address.
-            byte[] contractCode = this.constractStateRepository.GetCode(addressTo.ToUint160(this.network));
+            byte[] contractCode = this.contractStateRepository.GetCode(addressTo.ToUint160(this.network));
 
             if (contractCode == null || contractCode.Length == 0)
             {
@@ -60,7 +57,7 @@ namespace Stratis.SmartContracts.Core.Backend
         /// </summary>
         private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
-            IContractStateRepository track = this.constractStateRepository.StartTracking();
+            IContractStateRepository track = this.contractStateRepository.StartTracking();
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
             IPersistentState newPersistentState = new PersistentState(persistenceStrategy, addressTo.ToUint160(this.network), this.network);
 
