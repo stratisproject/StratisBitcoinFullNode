@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
     public partial class ApiSpecification
     {
         [Fact]
-        public void getgeneralinfo_returns_json_starting_with_wallet_path()
+        public void Getgeneralinfo_returns_json_starting_with_wallet_path()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(getting_general_info);
@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public void startstaking_enables_staking_but_nothing_staked()
+        public void Startstaking_enables_staking_but_nothing_staked()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(staking_is_started);
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public void getblockhash_via_rpc_callbyname_returns_the_blockhash()
+        public void Getblockhash_via_rpc_callbyname_returns_the_blockhash()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(calling_rpc_getblockhash_via_callbyname);
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public void listmethods_via_rpc_returns_non_empty_list()
+        public void Listmethods_via_rpc_returns_non_empty_list()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(calling_rpc_listmethods);
