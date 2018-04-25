@@ -549,8 +549,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // TODO: Execute failure cases for CheckAncestors
             // - conflicting spend transaction
 
-            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalseAsync));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
@@ -558,7 +557,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
             TransactionBuilder txBuilder = new TransactionBuilder();
 
-            //Create Coin from first txn on chain
+            //Create Coin from first tx on chain
             var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(miner.PubKey));
 
             //Send 10 to Bob and return the rest as change to miner
@@ -572,7 +571,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolValidationState state = new MempoolValidationState(false);
 
             //Mempool should accept it, there's nothing wrong
-            Assert.True(await validator.AcceptToMemoryPool(state, originalTx), $"Transaction: {nameof(originalTx)} failed mempool validation.");
+            Assert.True(await validator.AcceptToMemoryPool(state, originalTx).ConfigureAwait(false), $"Transaction: {nameof(originalTx)} failed mempool validation.");
 
             //Create second transaction spending the same coin
             Transaction conflictingTx = txBuilder
@@ -584,7 +583,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                .BuildTransaction(true);
 
             //Mempool should reject the second transaction
-            Assert.False(await validator.AcceptToMemoryPool(state, conflictingTx), $"Transaction: {nameof(conflictingTx)} should have failed mempool validation.");
+            Assert.False(await validator.AcceptToMemoryPool(state, conflictingTx).ConfigureAwait(false), $"Transaction: {nameof(conflictingTx)} should have failed mempool validation.");
 
             Directory.Delete(dataDir, true);
         }
