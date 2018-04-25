@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             block.AddTransaction(coinbase);
             block.Header.Nonce = 0;
             block.UpdateMerkleRoot();
-            block.Header.CacheHashes();
+            block.Header.PrecomputeHash();
 
             chain.SetTip(block.Header);
 
@@ -502,7 +502,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 block.AddTransaction(coinbase);
                 block.Header.Nonce = 0;
                 block.UpdateMerkleRoot();
-                block.Header.CacheHashes();
+                block.Header.PrecomputeHash();
 
                 chain.SetTip(block.Header);
 

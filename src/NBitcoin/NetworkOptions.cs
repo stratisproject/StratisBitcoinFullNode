@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NBitcoin
+﻿namespace NBitcoin
 {
     /// <summary>
     /// The current use-case for this class is to provide option-dependent serialization.
@@ -25,8 +23,8 @@ namespace NBitcoin
         {
             get
             {
-                if (this.isProofOfStake != Block.BlockSignature)
-                    throw new InvalidOperationException($"IsProofOfStake { this.isProofOfStake } mismatches expected value { Block.BlockSignature }");
+                //if (this.isProofOfStake != Block.BlockSignature)
+                //    throw new InvalidOperationException($"IsProofOfStake { this.isProofOfStake } mismatches expected value { Block.BlockSignature }");
 
                 return this.isProofOfStake;
             }

@@ -145,7 +145,7 @@ namespace NBitcoin
 
         public int SubsidyHalvingInterval { get; set; }
 
-        public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
+        //public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
 
         public int MajorityEnforceBlockUpgrade { get; set; }
 
@@ -197,6 +197,11 @@ namespace NBitcoin
         /// <summary>The default hash to use for assuming valid blocks.</summary>
         public uint256 DefaultAssumeValid { get; set; }
 
+        /// <summary>
+        /// A factory that enables overloading base types.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory { get; set; }
+
         public virtual Consensus Clone()
         {
             return new Consensus
@@ -215,13 +220,13 @@ namespace NBitcoin
                 RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
                 SubsidyHalvingInterval = this.SubsidyHalvingInterval,
                 MinimumChainWork = this.MinimumChainWork,
-                GetPoWHash = this.GetPoWHash,
                 CoinType = this.CoinType,
                 LitecoinWorkCalculation = this.LitecoinWorkCalculation,
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
+                ConsensusFactory = this.ConsensusFactory,
                 NetworkOptions = this.NetworkOptions.Clone()
             };
         }
@@ -232,8 +237,8 @@ namespace NBitcoin
         private uint magic;
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
+        private readonly List<DNSSeedData> seeds;
+        private readonly List<NetworkAddress> fixedSeeds;
         private Block genesis;
         private Consensus consensus = new Consensus();
 
@@ -247,7 +252,8 @@ namespace NBitcoin
 
         private Network()
         {
-            this.genesis = new Block();
+            this.seeds = new List<DNSSeedData>();
+            this.fixedSeeds = new List<NetworkAddress>();
         }
 
         public PubKey AlertPubKey
@@ -316,8 +322,7 @@ namespace NBitcoin
 
         public uint Magic => this.magic;
 
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer =
-            new ConcurrentDictionary<string, Network>();
+        static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
         internal static Network Register(NetworkBuilder builder)
         {

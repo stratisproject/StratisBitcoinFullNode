@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block.UpdateMerkleRoot();
                 while (!block.CheckProofOfWork(this.network.Consensus))
                     block.Header.Nonce = ++nonce;
-                block.Header.CacheHashes();
+                block.Header.PrecomputeHash();
                 blocks.Add(block);
                 this.transactions.Clear();
                 this.Chain.SetTip(block.Header);

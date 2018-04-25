@@ -14,16 +14,13 @@ namespace NBitcoin
         {
             // initialize the networks
             bool saveTS = Transaction.TimeStamp;
-            bool saveSig = Block.BlockSignature;
             Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
 
             Network main = Network.Main;
             Network testNet = Network.TestNet;
             Network regTest = Network.RegTest;
 
             Transaction.TimeStamp = saveTS;
-            Block.BlockSignature = saveSig;
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
@@ -308,13 +305,11 @@ namespace NBitcoin
 
         private static Network InitStratisMain()
         {
-            Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
             var consensus = new Consensus();
 
             consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
-            consensus.GetPoWHash = (n, h) => Crypto.HashX13.Instance.Hash(h.ToBytes(options:n)); 
 
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
@@ -346,7 +341,7 @@ namespace NBitcoin
             consensus.DefaultAssumeValid = new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"); // 795970
 
             Block genesis = CreateStratisGenesisBlock(1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
-            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
+            consensus.HashGenesisBlock = genesis.GetHash();
 
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -420,7 +415,6 @@ namespace NBitcoin
 
         private static Network InitStratisTest()
         {
-            Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
             var consensus = Network.StratisMain.Consensus.Clone();
@@ -440,7 +434,7 @@ namespace NBitcoin
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
+            consensus.HashGenesisBlock = genesis.GetHash();
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
@@ -492,7 +486,6 @@ namespace NBitcoin
             if (net != null)
                 return net;
 
-            Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
             var consensus = Network.StratisTest.Consensus.Clone();
@@ -512,7 +505,7 @@ namespace NBitcoin
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = genesis.GetHash(consensus.NetworkOptions);
+            consensus.HashGenesisBlock = genesis.GetHash();
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
 

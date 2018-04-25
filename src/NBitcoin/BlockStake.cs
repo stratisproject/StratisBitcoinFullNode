@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using NBitcoin.Crypto;
 
 namespace NBitcoin
 {
@@ -118,6 +118,7 @@ namespace NBitcoin
         /// Check PoW and that the blocks connect correctly
         /// </summary>
         /// <param name="network">The network being used</param>
+        /// <param name="chainedBlock">The chain representing a block header.</param>
         /// <returns>True if PoW is correct</returns>
         public static bool Validate(Network network, ChainedBlock chainedBlock)
         {
@@ -128,13 +129,49 @@ namespace NBitcoin
             var heightCorrect = chainedBlock.Height == 0 || chainedBlock.Height == chainedBlock.Previous.Height + 1;
             var genesisCorrect = chainedBlock.Height != 0 || chainedBlock.HashBlock == network.GetGenesis().GetHash();
             var hashPrevCorrect = chainedBlock.Height == 0 || chainedBlock.Header.HashPrevBlock == chainedBlock.Previous.HashBlock;
-            var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash(network.NetworkOptions);
+            var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash();
 
             return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
         }
     }
 
-    public partial class Block
+    public class PosBlockHeader : BlockHeader
+    {
+        /// <summary>Current header version.</summary>
+        public override int CurrentVersion => 7;
+
+        public override uint256 GetHash()
+        {
+            uint256 hash = null;
+            uint256[] innerHashes = this.hashes;
+
+            if (innerHashes != null)
+                hash = innerHashes[0];
+
+            if (hash != null)
+                return hash;
+
+            if (this.version > 6)
+                hash = Hashes.Hash256(this.ToBytes());
+            else
+                hash = this.GetPoWHash();
+
+            innerHashes = this.hashes;
+            if (innerHashes != null)
+            {
+                innerHashes[0] = hash;
+            }
+
+            return hash;
+        }
+
+        public override uint256 GetPoWHash()
+        {
+            return HashX13.Instance.Hash(this.ToBytes());
+        }
+    }
+
+    public class PosBlock : Block
     {
         public static bool BlockSignature = false;
 
@@ -145,6 +182,12 @@ namespace NBitcoin
         {
             get { return this.blockSignature; }
             set { this.blockSignature = value; }
+        }
+
+        public override void ReadWrite(BitcoinStream stream)
+        {
+            base.ReadWrite(stream);
+            stream.ReadWrite(ref this.blockSignature);
         }
     }
 }
