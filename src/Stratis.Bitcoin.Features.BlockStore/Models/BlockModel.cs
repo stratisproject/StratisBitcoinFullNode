@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
 using NBitcoin;
-using NBitcoin.RPC;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Models
 {
-    public class Block
+    public class BlockModel
     {
         public string Hash { get; set; }
         public int Size { get; set; }
@@ -21,9 +17,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
         public string PreviousBlockHash { get; set; }
         public uint Nonce { get; set; }
 
-        public static implicit operator Block(NBitcoin.Block block)
+        public static implicit operator BlockModel(Block block)
         {
-            var blockModel = new Block()
+            var blockModel = new BlockModel()
             {
                 Hash = block.GetHash().ToString(),
                 Size = block.ToBytes().Length,
@@ -42,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
 
     internal static class BlockExtension
     {
-        public static Block ToBlockModel(this NBitcoin.Block block)
+        public static BlockModel ToBlockModel(this Block block)
         {
             return block;
         }

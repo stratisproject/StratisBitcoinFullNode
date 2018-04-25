@@ -41,7 +41,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private const string InvalidHash = "This hash is no good";
 
-        #region Validation
         [Fact]
         public void GetBlock_With_null_Hash_IsInvalid()
         {
@@ -77,7 +76,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var validationContext = new ValidationContext(requestWithNoHash);
             Validator.TryValidateObject(requestWithNoHash, validationContext, null, true).Should().BeTrue();
         }
-        #endregion
 
         [Fact]
         public void Get_Block_When_Hash_Is_Not_Found_Should_Return_Not_Found_Object_Result()
@@ -125,9 +123,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             response.Result.Should().BeOfType<JsonResult>();
             var result = (JsonResult)response.Result;
 
-            result.Value.Should().BeOfType<Models.Block>();
-            ((Models.Block) result.Value).Hash.Should().Be(ValidHash);
-            ((Models.Block) result.Value).MerkleRoot.Should()
+            result.Value.Should().BeOfType<Models.BlockModel>();
+            ((Models.BlockModel) result.Value).Hash.Should().Be(ValidHash);
+            ((Models.BlockModel) result.Value).MerkleRoot.Should()
                 .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
         }
 
