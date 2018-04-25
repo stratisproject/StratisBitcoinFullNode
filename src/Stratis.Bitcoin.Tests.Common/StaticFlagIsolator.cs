@@ -11,8 +11,13 @@ namespace Stratis.Bitcoin.Tests.Common
     /// </summary>
     public class StaticFlagIsolator : IDisposable
     {
+        private readonly bool previousTimeStamp;
+        private readonly bool previousBlockSignature;
         public StaticFlagIsolator(Network network)
         {
+            this.previousBlockSignature = Block.BlockSignature;
+            this.previousTimeStamp = Transaction.TimeStamp;
+
             var isStratisNetwork = network == Network.StratisTest 
                                     || network == Network.StratisMain
                                     || network == Network.StratisRegTest;
@@ -23,8 +28,8 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public void Dispose()
         {
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
+            Transaction.TimeStamp = this.previousTimeStamp;
+            Block.BlockSignature = this.previousBlockSignature;
         }
     }
 }
