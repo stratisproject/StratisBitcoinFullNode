@@ -17,30 +17,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
         public string PreviousBlockHash { get; set; }
         public uint Nonce { get; set; }
 
-        public static implicit operator BlockModel(Block block)
+        public  BlockModel(Block block)
         {
-            var blockModel = new BlockModel()
-            {
-                Hash = block.GetHash().ToString(),
-                Size = block.ToBytes().Length,
-                Version = block.Header.Version,
-                Bits = block.Header.Bits.ToString(),
-                Time = block.Header.BlockTime,
-                Nonce = block.Header.Nonce,
-                PreviousBlockHash = block.Header.HashPrevBlock.ToString(),
-                MerkleRoot = block.Header.HashMerkleRoot.ToString(),
-                Difficulty = block.Header.Bits.Difficulty,
-                Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray()
-            };
-            return blockModel;
+            this.Hash = block.GetHash().ToString();
+            this.Size = block.ToBytes().Length;
+            this.Version = block.Header.Version;
+            this.Bits = block.Header.Bits.ToCompact().ToString("x8");
+            this.Time = block.Header.BlockTime;
+            this.Nonce = block.Header.Nonce;
+            this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
+            this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
+            this.Difficulty = block.Header.Bits.Difficulty;
+            this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
         }
     }
 
-    internal static class BlockExtension
-    {
-        public static BlockModel ToBlockModel(this Block block)
-        {
-            return block;
-        }
-    }
+    
 }

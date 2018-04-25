@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {

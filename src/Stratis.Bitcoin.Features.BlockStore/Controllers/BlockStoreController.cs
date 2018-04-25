@@ -2,19 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.RPC;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore.Models;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
@@ -50,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 var block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
                 if(block == null) return new NotFoundObjectResult("Block not found");
                 return query.OutputJson 
-                    ? this.Json(block.ToBlockModel())
+                    ? this.Json(new BlockModel(block))
                     : this.Json(block);
             } 
             catch (Exception e)
