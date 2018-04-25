@@ -44,7 +44,7 @@ namespace NBitcoin.RPC
             writer.WritePropertyName(name);
             writer.WriteValue(value);
         }
-        
+
         public string ToString(Transaction transaction)
         {
             var strWriter = new StringWriter();
@@ -57,7 +57,7 @@ namespace NBitcoin.RPC
 
             jsonWriter.Flush();
             return strWriter.ToString();
-        }     
+        }
     }
 }
 #endif
