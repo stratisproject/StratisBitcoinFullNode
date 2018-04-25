@@ -20,53 +20,30 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     /// <summary>
-    /// Controller providing operations on a wallet.
+    /// Controller providing operations on a blockstore.
     /// </summary>
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
         private readonly IBlockStoreCache blockStoreCache;
-
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
-
-        private readonly IConnectionManager connectionManager;
-
-        private readonly ConcurrentChain chain;
-
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Provider of date time functionality.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        public BlockStoreController(
-            ILoggerFactory loggerFactory,
-            IBlockStoreCache blockStoreCache,
-            IConnectionManager connectionManager,
-            Network network,
-            ConcurrentChain chain,
-            IBroadcasterManager broadcasterManager,
-            IDateTimeProvider dateTimeProvider)
+        public BlockStoreController(ILoggerFactory loggerFactory, IBlockStoreCache blockStoreCache)
         {
-            this.blockStoreCache = blockStoreCache;
-            this.connectionManager = connectionManager;
-            this.network = network;
-            this.chain = chain;
+            this.blockStoreCache = blockStoreCache;         
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.dateTimeProvider = dateTimeProvider;
         }
 
         [Route("block")]
         [HttpGet]
-        public async Task<IActionResult> GetBlockAsync([FromQuery] ObjectByHashRequest query)
+        public async Task<IActionResult> GetBlockAsync([FromQuery] SearchByHashRequest query)
         {
             if (!this.ModelState.IsValid)
             {
                 return BuildErrorResponse(this.ModelState);
             }
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(ObjectByHashRequest.Hash), query.Hash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(SearchByHashRequest.Hash), query.Hash);
 
             try
             {

@@ -9,7 +9,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
     {
         public bool OutputJson { get; set; }
     }
-    public class ObjectByHashRequest : RequestBase
+
+    public class SearchByHashRequest : RequestBase
     {
         [Required(AllowEmptyStrings = false)]
         public string Hash { get; set; }

@@ -1,22 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Net.Mime;
-using System.Reflection;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 using Block = NBitcoin.Block;
@@ -44,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlock_With_null_Hash_IsInvalid()
         {
-            var requestWithNoHash = new BlockStore.Models.ObjectByHashRequest()
+            var requestWithNoHash = new SearchByHashRequest()
             {
                 Hash = null,
                 OutputJson = true
@@ -56,7 +47,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlock_With_empty_Hash_IsInvalid()
         {
-            var requestWithNoHash = new BlockStore.Models.ObjectByHashRequest()
+            var requestWithNoHash = new SearchByHashRequest()
             {
                 Hash = "",
                 OutputJson = false
@@ -68,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlock_With_good_Hash_IsValid()
         {
-            var requestWithNoHash = new BlockStore.Models.ObjectByHashRequest()
+            var requestWithNoHash = new SearchByHashRequest()
             {
                 Hash = "some good hash",
                 OutputJson = true
@@ -85,11 +76,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
                 .Returns(Task.FromResult((Block)null));
 
-            var response = controller.GetBlockAsync(new ObjectByHashRequest()
-                { Hash = ValidHash, OutputJson = true});
+            var response = controller.GetBlockAsync(new SearchByHashRequest()
+            { Hash = ValidHash, OutputJson = true });
 
             response.Result.Should().BeOfType<NotFoundObjectResult>();
-            var notFoundObjectResult = (NotFoundObjectResult) response.Result;
+            var notFoundObjectResult = (NotFoundObjectResult)response.Result;
             notFoundObjectResult.StatusCode.Should().Be(404);
             notFoundObjectResult.Value.Should().Be("Block not found");
         }
@@ -99,8 +90,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             var (cache, controller) = GetControllerAndCache();
 
-            var response = controller.GetBlockAsync(new ObjectByHashRequest()
-                { Hash = InvalidHash, OutputJson = true });
+            var response = controller.GetBlockAsync(new SearchByHashRequest()
+            { Hash = InvalidHash, OutputJson = true });
 
             response.Result.Should().BeOfType<ErrorResult>();
             var notFoundObjectResult = (ErrorResult)response.Result;
@@ -112,53 +103,53 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_JsonOuput()
         {
-            var (cache, controller) = GetControllerAndCache();
+            using (new StaticFlagIsolator(Network.StratisTest))
+            {
+                var (cache, controller) = GetControllerAndCache();
 
-            cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex)));
+                cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
+                    .Returns(Task.FromResult(Block.Parse(BlockAsHex)));
 
-            var response = controller.GetBlockAsync(new ObjectByHashRequest()
-                { Hash = ValidHash, OutputJson = true });
+                var response = controller.GetBlockAsync(new SearchByHashRequest()
+                    {Hash = ValidHash, OutputJson = true});
 
-            response.Result.Should().BeOfType<JsonResult>();
-            var result = (JsonResult)response.Result;
+                response.Result.Should().BeOfType<JsonResult>();
+                var result = (JsonResult) response.Result;
 
-            result.Value.Should().BeOfType<Models.BlockModel>();
-            ((Models.BlockModel) result.Value).Hash.Should().Be(ValidHash);
-            ((Models.BlockModel) result.Value).MerkleRoot.Should()
-                .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
+                result.Value.Should().BeOfType<Models.BlockModel>();
+                ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
+                ((BlockModel) result.Value).MerkleRoot.Should()
+                    .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
+            }
         }
 
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_RawOuput()
         {
-            var (cache, controller) = GetControllerAndCache();
+            using (new StaticFlagIsolator(Network.StratisTest))
+            {
+                var (cache, controller) = GetControllerAndCache();
 
-            cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex)));
+                cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
+                    .Returns(Task.FromResult(Block.Parse(BlockAsHex)));
 
-            var response = controller.GetBlockAsync(new ObjectByHashRequest()
+                var response = controller.GetBlockAsync(new SearchByHashRequest()
                 { Hash = ValidHash, OutputJson = false });
 
-            response.Result.Should().BeOfType<JsonResult>();
-            var result = (JsonResult)response.Result;
-            ((Block)(result.Value)).ToHex().Should().Be(BlockAsHex);
+                response.Result.Should().BeOfType<JsonResult>();
+                var result = (JsonResult)response.Result;
+                ((Block)(result.Value)).ToHex().Should().Be(BlockAsHex); 
+            }
         }
 
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
-            var connectionManager = Mock.Of<IConnectionManager>();
-            var network = Network.StratisTest;
-            var chain = new ConcurrentChain();
-            var broadcastManager = Mock.Of<IBroadcasterManager>();
-            var dateTimeProvider = Mock.Of<IDateTimeProvider>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, cache.Object, connectionManager, 
-                network, chain, broadcastManager, dateTimeProvider);
+            var controller = new BlockStoreController(logger.Object, cache.Object);
 
             return (cache, controller);
         }
