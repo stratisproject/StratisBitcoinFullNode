@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.TestFramework
 {
+    [DebuggerStepThrough()]
     public abstract class BddSpecification : IDisposable
     {
         private readonly ITestOutputHelper output;

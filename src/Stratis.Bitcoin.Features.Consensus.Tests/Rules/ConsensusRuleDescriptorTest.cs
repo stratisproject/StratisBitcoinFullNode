@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Xunit;
@@ -59,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             Assert.True(descriptor.Attributes[0] is MempoolRuleAttribute);
             Assert.True(descriptor.Attributes[1] is ExecutionRuleAttribute);
 
-            Assert.True(descriptor.CanSkipValidation);
+            Assert.False(descriptor.CanSkipValidation);
         }
 
         [MempoolRule]

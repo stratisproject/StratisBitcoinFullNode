@@ -427,8 +427,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>(), false))
-                .Callback<RuleContext, bool>((c, b) =>
+            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>()))
+                .Callback<RuleContext>(c =>
                 {
                     this.callbackRuleContext = c;
                 }).Verifiable();
