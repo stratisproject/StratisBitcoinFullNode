@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return false;
             }
 
-            bool verifyRes = new PubKey(data).Verify(block.GetHash(this.Parent.ConsensusParams.NetworkOptions), new ECDSASignature(block.BlockSignatur.Signature));
+            bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
             this.Logger.LogTrace("(-):{0}", verifyRes);
             return verifyRes;
         }

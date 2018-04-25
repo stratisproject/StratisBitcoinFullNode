@@ -7,12 +7,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockHeaderRuleTest
     {
-        public BlockHeaderRuleTest()
-        {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-        }
-
         [Fact]
         public async Task BlockReceived_IsNextBlock_ValidationSucessAsync()
         {
