@@ -13,25 +13,10 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Api
 {
-    public class APITests : IDisposable
+    public class APITests 
     {
         private bool initialBlockSignature;
         private bool initialTimeStamp;
-
-        public APITests()
-        {
-            this.initialBlockSignature = Transaction.TimeStamp;
-            this.initialTimeStamp = Block.BlockSignature;
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-        }
-
-        public void Dispose()
-        {
-            Transaction.TimeStamp = this.initialBlockSignature;
-            Block.BlockSignature = this.initialBlockSignature;
-        }
 
         /// <summary>
         /// Tests whether the Wallet API method "general-info" can be called and returns a non-empty JSON-formatted string result.

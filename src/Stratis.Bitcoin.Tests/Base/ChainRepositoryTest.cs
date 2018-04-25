@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 {
                     if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
                         break;
-                    tip = new ChainedBlock(row.Value, row.Value.GetHash(Network.StratisRegTest.NetworkOptions), tip);
+                    tip = new ChainedBlock(row.Value, row.Value.GetHash(), tip);
                 }
                 Assert.Equal(tip, chain.Tip);
             }

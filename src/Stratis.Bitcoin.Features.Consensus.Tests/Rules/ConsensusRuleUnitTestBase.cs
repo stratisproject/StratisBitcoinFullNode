@@ -29,8 +29,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public ConsensusRuleUnitTestBase()
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
             this.network = Network.TestNet;
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))

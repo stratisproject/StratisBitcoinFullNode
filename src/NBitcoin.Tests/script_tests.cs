@@ -16,14 +16,6 @@ namespace NBitcoin.Tests
 {
     public class script_tests
     {
-        public script_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         static Dictionary<string, OpcodeType> mapOpNames = new Dictionary<string, OpcodeType>();
         public static Script ParseScript(string s)
         {

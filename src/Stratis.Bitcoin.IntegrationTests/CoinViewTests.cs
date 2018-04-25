@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var header = previous.Header.Clone();
             header.HashPrevBlock = previous.HashBlock;
-            return new ChainedBlock(header, header.GetHash(network.NetworkOptions), previous);
+            return new ChainedBlock(header, header.GetHash(), previous);
         }
 
         [Fact]

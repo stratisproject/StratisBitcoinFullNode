@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
         public RpcTests(RpcTestFixtureStratis RpcTestFixture)
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-
             this.rpcTestFixture = RpcTestFixture;
         }
 
@@ -143,7 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
             // Assert header hash matches genesis hash.
-            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash(Network.RegTest.NetworkOptions));
+            Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
         }
 
         /// <summary>

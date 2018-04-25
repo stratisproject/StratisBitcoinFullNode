@@ -1113,8 +1113,6 @@ namespace NBitcoin
     //https://en.bitcoin.it/wiki/Protocol_specification
     public class Transaction : IBitcoinSerializable
     {
-        public static bool TimeStamp = false;
-
         public bool RBF
         {
             get

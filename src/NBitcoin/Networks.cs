@@ -13,14 +13,9 @@ namespace NBitcoin
         static Network()
         {
             // initialize the networks
-            bool saveTS = Transaction.TimeStamp;
-            Transaction.TimeStamp = false;
-
             Network main = Network.Main;
             Network testNet = Network.TestNet;
             Network regTest = Network.RegTest;
-
-            Transaction.TimeStamp = saveTS;
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
@@ -305,8 +300,6 @@ namespace NBitcoin
 
         private static Network InitStratisMain()
         {
-            Transaction.TimeStamp = true;
-
             var consensus = new Consensus();
 
             consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
@@ -415,8 +408,6 @@ namespace NBitcoin
 
         private static Network InitStratisTest()
         {
-            Transaction.TimeStamp = true;
-
             var consensus = Network.StratisMain.Consensus.Clone();
             consensus.PowLimit = new Target(uint256.Parse("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
@@ -485,8 +476,6 @@ namespace NBitcoin
             var net = Network.GetNetwork("StratisRegTest");
             if (net != null)
                 return net;
-
-            Transaction.TimeStamp = true;
 
             var consensus = Network.StratisTest.Consensus.Clone();
             consensus.PowLimit = new Target(uint256.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));

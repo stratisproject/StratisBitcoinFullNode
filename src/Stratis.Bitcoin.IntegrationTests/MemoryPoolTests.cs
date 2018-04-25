@@ -13,12 +13,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class MemoryPoolTests
     {
-        public MemoryPoolTests()
-        {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-        }
-
         public class DateTimeProviderSet : DateTimeProvider
         {
             public long time;

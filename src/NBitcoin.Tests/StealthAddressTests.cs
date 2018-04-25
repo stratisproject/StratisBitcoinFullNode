@@ -9,14 +9,6 @@ namespace NBitcoin.Tests
     //https://en.bitcoin.it/wiki/Sx/Stealth
     public class StealthAddressTests
     {
-        public StealthAddressTests()
-        {
-            // These tests should be using the Bitcoin network.
-            // Set these expected values accordingly.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         //https://wiki.unsystem.net/index.php/DarkWallet/Stealth#Bitfield_value

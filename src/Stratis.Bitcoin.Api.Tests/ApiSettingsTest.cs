@@ -13,14 +13,6 @@ namespace Stratis.Bitcoin.Api.Tests
     /// </summary>
     public class ApiSettingsTest : TestBase
     {
-        public ApiSettingsTest()
-        {
-            // These flags are being set on an individual test case basis.
-            // Assume the default values for the static flags.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         /// <summary>
         /// Tests that if no API settings are passed and we're on the bitcoin network, the defaults settings are used.
         /// </summary>
@@ -51,8 +43,6 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnStratisNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
             Network network = Network.StratisMain;
             NodeSettings nodeSettings = new NodeSettings(network, loadConfiguration:false);
 
@@ -123,8 +113,6 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenApiUriIsProvided_AndGivenStratisNetwork_ThenApiUriIsUsedWithDefaultStratisApiPort()
         {
             // Arrange.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
             string customApiUri = "http://0.0.0.0";
             Network network = Network.StratisMain;
             NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" }, loadConfiguration:false);
@@ -241,8 +229,6 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisMainnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
             NodeSettings nodeSettings = NodeSettings.Default(Network.StratisMain);
 
             // Act.
@@ -264,8 +250,6 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
             NodeSettings nodeSettings = NodeSettings.Default(Network.StratisTest);
 
             // Act.

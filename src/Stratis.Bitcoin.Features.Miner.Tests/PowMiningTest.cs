@@ -33,9 +33,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
-            this.initialBlockSignature = Block.BlockSignature;
-            this.initialTimestamp = Transaction.TimeStamp;
-
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.fixture = fixture;
@@ -47,15 +44,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             SetupBlockAssembler();
 
             this.powMining = new PowMining(this.consensusLoop.Object, this.chain, this.network, this.assemblerFactory.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.LoggerFactory.Object);
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
-            Transaction.TimeStamp = this.initialTimestamp;
         }
 
         [Fact]
@@ -512,7 +500,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private BlockTemplate CreateBlockTemplate(Block block)
         {
             BlockTemplate blockTemplate = new BlockTemplate();
-            blockTemplate.Block = new Block(block.Header);
+            blockTemplate.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             blockTemplate.Block.Transactions = block.Transactions;
             return blockTemplate;
         }
@@ -520,22 +508,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private void ExecuteUsingNonProofOfStakeSettings(Action action)
         {
             var isProofOfStake = this.network.NetworkOptions.IsProofOfStake;
-            var blockSignature = Block.BlockSignature;
-            var timestamp = Transaction.TimeStamp;
 
             try
             {
                 this.network.NetworkOptions.IsProofOfStake = false;
-                Block.BlockSignature = false;
-                Transaction.TimeStamp = false;
 
                 action();
             }
             finally
             {
                 this.network.NetworkOptions.IsProofOfStake = isProofOfStake;
-                Block.BlockSignature = blockSignature;
-                Transaction.TimeStamp = timestamp;
             }
         }
     }
@@ -562,14 +544,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.reserveScript = new ReserveScript(this.key.ScriptPubKey);
 
             var isProofOfStake = this.network.NetworkOptions.IsProofOfStake;
-            var blockSignature = Block.BlockSignature;
-            var timestamp = Transaction.TimeStamp;
 
             try
             {
                 this.network.NetworkOptions.IsProofOfStake = false;
-                Block.BlockSignature = false;
-                Transaction.TimeStamp = false;
                 this.block1 = PrepareValidBlock(this.chain.Tip, 1, this.key.ScriptPubKey);
                 this.chainedBlock1 = new ChainedBlock(this.block1.Header, this.block1.GetHash(), this.chain.Tip);
                 this.block2 = PrepareValidBlock(this.chainedBlock1, 2, this.key.ScriptPubKey);
@@ -578,8 +556,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             finally
             {
                 this.network.NetworkOptions.IsProofOfStake = isProofOfStake;
-                Block.BlockSignature = blockSignature;
-                Transaction.TimeStamp = timestamp;
             }
         }
 

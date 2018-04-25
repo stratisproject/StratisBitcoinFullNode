@@ -18,14 +18,6 @@ namespace NBitcoin.Tests
 {
     public class pos_transaction_tests
     {
-        public pos_transaction_tests()
-        {
-            // These tests should be using the Stratis network.
-            // Set these expected values accordingly.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-        }
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanParseOutpoint()
@@ -77,10 +69,10 @@ namespace NBitcoin.Tests
             if (chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, b.Header.GetHash(Network.StratisMain.NetworkOptions), chain.Tip);
+                return new ChainedBlock(b.Header, b.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, b.Header.GetHash(Network.StratisMain.NetworkOptions), 0);
+                return new ChainedBlock(b.Header, b.Header.GetHash(), 0);
         }
 
         [Fact]
@@ -1862,7 +1854,6 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseWitTransaction()
         {
-            Transaction.TimeStamp = true;
             var hex = "01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000";
             Transaction tx = new Transaction(hex);
             var bytes = tx.ToBytes();
@@ -1914,7 +1905,6 @@ namespace NBitcoin.Tests
         //http://brainwallet.org/#tx
         public void CanParseTransaction()
         {
-            Transaction.TimeStamp = true;
             var tests = TestCase.read_json(TestDataLocations.DataFolder(@"can_parse_transaction.json"));
 
             foreach (var test in tests.Select(t => t.GetDynamic(0)))

@@ -18,14 +18,6 @@ namespace NBitcoin.Tests
 {
     public class transaction_tests
     {
-        public transaction_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanParseOutpoint()

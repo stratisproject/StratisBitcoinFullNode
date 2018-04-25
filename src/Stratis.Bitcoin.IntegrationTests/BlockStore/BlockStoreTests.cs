@@ -21,11 +21,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         /// </summary>
         public BlockStoreTests()
         {
-            // These tests use Network.Main.
-            // Ensure that these static flags have the expected values.
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-
             this.loggerFactory = new LoggerFactory();
             DBreezeSerializer serializer = new DBreezeSerializer();
             serializer.Initialize();
