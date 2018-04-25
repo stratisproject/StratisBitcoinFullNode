@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
         private ISmartContractExecutorFactory executorFactory;
+        private ISmartContractCarrierSerializer carrierSerializer;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private uint refundCounter;
@@ -33,7 +34,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            ISmartContractExecutorFactory executorFactory)
+            ISmartContractExecutorFactory executorFactory,
+            ISmartContractCarrierSerializer carrierSerializer)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;

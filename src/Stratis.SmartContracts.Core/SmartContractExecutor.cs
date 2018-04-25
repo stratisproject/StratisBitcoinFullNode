@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Core
     /// </summary>
     public abstract class SmartContractExecutor : ISmartContractExecutor
     {
-        protected readonly ISmartContractCarrier carrier;
+        protected readonly SmartContractCarrier carrier;
         protected readonly IGasMeter gasMeter;
         protected readonly Network network;
         protected readonly IContractStateRepository stateSnapshot;
@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Core
             IKeyEncodingStrategy keyEncodingStrategy,
             Money mempoolFee)
         {
-            this.carrier = carrier;
+            this.carrier = carrier as SmartContractCarrier;
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.validator = validator;
@@ -170,7 +170,7 @@ namespace Stratis.SmartContracts.Core
 
     public sealed class CallSmartContract : SmartContractExecutor
     {
-        public CallSmartContract(SmartContractCarrier carrier,
+        public CallSmartContract(ISmartContractCarrier carrier,
             Network network,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
