@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.TestFramework
@@ -14,23 +15,21 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         private readonly ITestOutputHelper output;
         private readonly DateTime startOfTestTime;
 
-        // Note: these values are only here temporarily until static flags removed
-        private bool initialBlockSignature;
-        private bool initialTimeStamp;
+        private readonly StaticFlagIsolator staticFlagIsolator;
 
         protected BddSpecification(ITestOutputHelper output)
         {
             this.output = output;
             this.startOfTestTime = DateTime.UtcNow;
 
-            this.StoreStaticFlagPreTestValues();
+            this.staticFlagIsolator = new StaticFlagIsolator(Network.RegTest);
             this.BeforeTest();
         }
 
         public void Dispose()
         {
             this.AfterTest();
-            this.RestoreStaticFlagValues();
+            this.staticFlagIsolator.Dispose();
 
             var endOfTestTime = DateTime.UtcNow;
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
@@ -43,9 +42,9 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         {
             this.RunStep(step);
         }
-        public void Given(Func<Task> step, CancellationToken ct = default(CancellationToken))
+        public void Given(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.RunStep(step, ct);
+            this.RunStep(step, cancellationToken);
         }
 
         public void When(Action step)
@@ -53,9 +52,9 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             this.RunStep(step);
         }
 
-        public void When(Func<Task> step, CancellationToken ct = default(CancellationToken))
+        public void When(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.RunStep(step, ct);
+            this.RunStep(step, cancellationToken);
         }
 
         public void Then(Action step)
@@ -63,9 +62,9 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             this.RunStep(step);
         }
 
-        public void Then(Func<Task> step, CancellationToken ct = default(CancellationToken))
+        public void Then(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.RunStep(step, ct);
+            this.RunStep(step, cancellationToken);
         }
 
         public void And(Action step)
@@ -73,9 +72,9 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             this.RunStep(step);
         }
 
-        public void And(Func<Task> step, CancellationToken ct = default(CancellationToken))
+        public void And(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.RunStep(step, ct);
+            this.RunStep(step, cancellationToken);
         }
 
         private void RunStep(Action step, [CallerMemberName] string stepType = null)
@@ -84,13 +83,13 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             step.Invoke();
         }
 
-        private void RunStep(Func<Task> step, CancellationToken ct = default(CancellationToken), [CallerMemberName] string stepType = null)
+        private void RunStep(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken), [CallerMemberName] string stepType = null)
         {
             OuputStepDetails(step.Method.Name, stepType);
 
             try
             {
-                Task.Run(step, ct).Wait(ct);
+                Task.Run(step, cancellationToken).Wait(cancellationToken);
             }
             catch (AggregateException ex)
             {
@@ -101,20 +100,6 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         private void OuputStepDetails(string stepRawName, string stepType)
         {
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
-        }
-
-        // Note: this is only here temporarily until static flags removed
-        private void StoreStaticFlagPreTestValues()
-        {
-            this.initialBlockSignature = Transaction.TimeStamp;
-            this.initialTimeStamp = Block.BlockSignature;
-        }
-
-        // Note: this is only here temporarily until static flags removed
-        private void RestoreStaticFlagValues()
-        {
-            Transaction.TimeStamp = this.initialBlockSignature;
-            Block.BlockSignature = this.initialTimeStamp;
         }
     }
 }
