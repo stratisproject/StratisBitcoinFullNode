@@ -57,7 +57,8 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new GetHashCodeValidator(),
             new MethodInstructionValidator(),
             new AnonymousTypeValidator(),
-            new MethodParamValidator()
+            new MethodParamValidator(),
+            new NewObjectTypeValidator()
         };
 
         private static readonly IEnumerable<IMethodDefinitionValidator> NonUserMethodValidators = new List<IMethodDefinitionValidator>

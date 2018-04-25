@@ -652,6 +652,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region TaskAwaiter
+
+        [Fact]
+        public void Validate_Determinism_TaskAwaiter()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString,
+                    "var r = new System.Runtime.CompilerServices.TaskAwaiter();")
+                .Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.False(result.IsValid);
+        }
+
+        #endregion
+
         [Fact]
         public void Validate_Determinism_ExtensionMethods()
         {
