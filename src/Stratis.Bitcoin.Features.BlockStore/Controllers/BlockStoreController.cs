@@ -73,9 +73,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 var block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
                 if(block == null) return new NotFoundObjectResult("Block not found");
                 return query.OutputJson 
-                    ? this.Json(new Models.Block(){Hash = block.GetHash().ToString()})
+                    ? this.Json(block.ToBlockModel())
                     : this.Json(block);
-            }
+            } 
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
