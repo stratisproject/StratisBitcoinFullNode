@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -10,15 +11,13 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using Moq;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {
-    public sealed class PeerConnectorTests : TestBase
+    public sealed class PeerConnectorTests : LogsTestBase
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly ExtendedLoggerFactory extendedLoggerFactory;
@@ -274,7 +273,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             var connectionManager = new ConnectionManager(
                 DateTimeProvider.Default,
-                this.loggerFactory,
+                this.LoggerFactory.Object,
                 this.network,
                 this.networkPeerFactory,
                 nodeSettings,

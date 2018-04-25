@@ -38,6 +38,9 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
         public RpcTests(RpcTestFixtureStratis RpcTestFixture)
         {
+            Block.BlockSignature = false;
+            Transaction.TimeStamp = false;
+
             this.rpcTestFixture = RpcTestFixture;
         }
 

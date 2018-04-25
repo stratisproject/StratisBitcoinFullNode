@@ -35,8 +35,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.initialBlockSignature = Block.BlockSignature;
             this.initialTimestamp = Transaction.TimeStamp;
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
 
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
@@ -49,6 +47,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             SetupBlockAssembler();
 
             this.powMining = new PowMining(this.consensusLoop.Object, this.chain, this.network, this.assemblerFactory.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.LoggerFactory.Object);
+
+            Transaction.TimeStamp = true;
+            Block.BlockSignature = true;
         }
 
         public void Dispose()
