@@ -11,9 +11,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
-        [Required(ErrorMessage = "An amount is required.")]
-        public string Amount { get; set; }
-
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
 

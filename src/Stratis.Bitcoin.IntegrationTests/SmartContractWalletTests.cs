@@ -274,7 +274,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     AccountName = AccountName,
                     GasLimit = "10000",
                     GasPrice = "1",
-                    Amount = "0",
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "30000",
                     Password = Password,

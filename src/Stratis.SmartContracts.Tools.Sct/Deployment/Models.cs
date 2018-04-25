@@ -5,8 +5,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
     internal class BuildCreateContractTransactionRequest
     {
         public string WalletName { get; set; }        
-        public string AccountName { get; set; }        
-        public string Amount { get; set; }
+        public string AccountName { get; set; }
         public string FeeAmount { get; set; }
         public string Password { get; set; }
         public string ContractCode { get; set; }

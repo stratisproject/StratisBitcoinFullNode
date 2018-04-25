@@ -38,10 +38,6 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
         [Required]
         public string AccountName { get; }
 
-        [Option("-amount|--amount", CommandOptionType.SingleValue, Description = "Amount")]
-        [Required]
-        public string Amount { get; }
-
         [Option("-fee|--feeamount", CommandOptionType.SingleValue, Description = "Fee amount")]
         [Required]
         public string FeeAmount { get; }
@@ -110,7 +106,6 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             var model = new BuildCreateContractTransactionRequest();
             model.ContractCode = compilation.ToHexString();
             model.AccountName = this.AccountName;
-            model.Amount = this.Amount;
             model.FeeAmount = this.FeeAmount;
             model.GasPrice = this.GasPrice;
             model.GasLimit = this.GasLimit;

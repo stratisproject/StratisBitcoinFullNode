@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
-                new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
+                new[] { new Recipient { Amount = 0, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
                 request.Password)
             {
                 TransactionFee = totalFee,
