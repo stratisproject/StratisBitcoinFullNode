@@ -54,6 +54,14 @@ cd Stratis.BitcoinD
 dotnet run -testnet
 ```  
 
+### Advanced options
+
+You can get a list of command line arguments to pass to the node with the -help command line argument. For example:
+```
+cd Stratis.StratisD
+dotnet run -help
+```  
+
 ### Script
 We have a nifty little script that can execute all the previous commands for you, including starting the node.  
 You just need to edit the file and specify whether you want to run a Stratis or a Bitcoin node, on MainNet or Testnet.  
@@ -67,3 +75,13 @@ Two containers are available [here](https://hub.docker.com/u/stratisplatform/)
 
 - stratis-node: Run on the Bitcoin Main or Test networks
 - stratis-node-sim: Join our simulation network
+
+Swagger Endpoints
+-------------------
+
+Once the node is running, a Swagger interface (web UI for testing an API) is available.
+
+* For Bitcoin: http://localhost:37220/swagger/
+* For Stratis: http://localhost:37221/swagger/
+* For Bitcoin Testnet: http://localhost:38220/swagger/
+* For Stratis Testnet: http://localhost:38221/swagger/

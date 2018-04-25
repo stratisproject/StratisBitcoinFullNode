@@ -42,3 +42,7 @@ dotnet nuget push "src\Stratis.Bitcoin.Features.Wallet\bin\Release\*.nupkg" --so
 rm "src\Stratis.Bitcoin.Features.WatchOnlyWallet\bin\release\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.Features.WatchOnlyWallet --configuration Release  
 dotnet nuget push "src\Stratis.Bitcoin.Features.WatchOnlyWallet\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+
+rm "src\Stratis.Bitcoin.Features.Dns\bin\release\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Dns --configuration Release  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Dns\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"

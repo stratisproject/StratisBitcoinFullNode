@@ -10,11 +10,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki
-    /// </remarks>    
-    /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
+    /// </remarks>        
     public class CoinbaseHeighRule : ConsensusRule
     {
         /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
         public override Task RunAsync(RuleContext context)
         {
             int nHeight = context.BestBlock?.Height + 1 ?? 0;

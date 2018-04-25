@@ -275,10 +275,14 @@ namespace NBitcoin.Tests
         [Fact]
         public void RawTransactionIsConformsToRPC()
         {
+            if (noClient) return;
+
             using (var builder = NodeBuilderStratis.Create())
             {
-                RPCClient rpc = builder.CreateNode().CreateRPCClient();
+                CoreNodeStratis node = builder.CreateNode();
                 builder.StartAll();
+
+                RPCClient rpc = node.CreateRPCClient();
                 var tx = Transaction.Parse("01000000ac55a957010000000000000000000000000000000000000000000000000000000000000000ffffffff0401320103ffffffff010084d717000000001976a9143ac0dad2ad42e35fcd745d7511d47c24ad6580b588ac00000000");
 
                 Transaction tx2 = rpc.GetRawTransaction(uint256.Parse("a6783a0933942d37dcb5fb923ddd343522036de23fbc658f2ad2a9f1428ca19d"));

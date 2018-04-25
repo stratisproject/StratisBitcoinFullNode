@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { masterFile.Load(null); };
 
             // Act and assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("stream");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("stream");
         }
 
         [Fact]
@@ -559,7 +559,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             Action a = () => { masterFile.Save(null); };
 
             // Act and assert.
-            a.ShouldThrow<ArgumentNullException>().Which.Message.Should().Contain("stream");
+            a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("stream");
         }
 
         private IList<IResourceRecord> WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(IResourceRecord testResourceRecord, Question question)

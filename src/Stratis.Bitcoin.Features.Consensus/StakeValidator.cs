@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
-        private readonly StakeChain stakeChain;
+        private readonly IStakeChain stakeChain;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="chain">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public ChainedBlock GetLastPowPosChainedBlock(StakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake)
+        public ChainedBlock GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake)
         {
             Guard.Assert(startChainedBlock != null);
 
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
+        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedBlock), chainedBlock, nameof(proofOfStake), proofOfStake);
 
@@ -162,8 +162,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
                 ConsensusErrors.ReadTxPrevFailed.Throw();
 
-            ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
+            if (prevUtxo == null)
+            {
+                this.logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
+                ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
 
             // Verify signature.
             if (!this.VerifySignature(prevUtxo, transaction, 0, ScriptVerify.None))
@@ -179,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            this.CheckStakeKernelHash(context, prevChainedBlock, headerBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, txIn.PrevOut, transaction.Time);
+            this.CheckStakeKernelHash(context, headerBits, prevBlockStake, prevUtxo, txIn.PrevOut, transaction.Time);
 
             this.logger.LogTrace("(-)[OK]");
         }
@@ -236,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadStakeBlock.Throw();
             }
 
-            this.CheckStakeKernelHash(context, prevChainedBlock, headerBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, prevout, (uint)transactionTime);
+            this.CheckStakeKernelHash(context, headerBits, prevBlockStake, prevUtxo, prevout, (uint)transactionTime);
         }
 
         /// <summary>
@@ -324,9 +328,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Checks that the stake kernel hash satisfies the target difficulty.
         /// </summary>
         /// <param name="context">Staking context.</param>
-        /// <param name="prevChainedBlock">Previous chained block.</param>
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
-        /// <param name="prevBlockTime">The previous block time.</param>
         /// <param name="prevBlockStake">Information about previous staked block.</param>
         /// <param name="stakingCoins">Coins that participate in staking.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
@@ -351,13 +353,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </remarks>
         /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
         /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
-        private void CheckStakeKernelHash(ContextStakeInformation context, ChainedBlock prevChainedBlock, uint headerBits, uint prevBlockTime,
-            BlockStake prevBlockStake, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime)
+        private void CheckStakeKernelHash(ContextStakeInformation context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
+            OutPoint prevout, uint transactionTime)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}',{15}:{16})",
-                nameof(prevChainedBlock), prevChainedBlock.HashBlock, prevChainedBlock.Height, nameof(headerBits), headerBits, nameof(prevBlockTime), prevBlockTime,
-                nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(stakingCoins), stakingCoins.TransactionId, stakingCoins.Height,
-                nameof(prevout), prevout, nameof(transactionTime), transactionTime);
+            this.logger.LogTrace("({0}:{1:X},{2}.{3}:'{4}',{5}:'{6}/{7}',{8}:'{9}',{10}:{11})",
+                nameof(headerBits), headerBits, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(stakingCoins),
+                stakingCoins.TransactionId, stakingCoins.Height, nameof(prevout), prevout, nameof(transactionTime), transactionTime);
 
             if (transactionTime < stakingCoins.Time)
             {

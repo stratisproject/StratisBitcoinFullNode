@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -42,6 +42,12 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             foreach (var connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
                 connectedPeer.Behavior<ChainHeadersBehavior>().TrySyncAsync().GetAwaiter().GetResult();
+        }
+
+        public static bool IsNodeConnected(CoreNode node)
+        {
+            if (node.FullNode.ConnectionManager.ConnectedPeers.Any()) return true;
+            return false;
         }
     }
 }

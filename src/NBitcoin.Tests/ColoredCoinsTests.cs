@@ -93,24 +93,11 @@ namespace NBitcoin.Tests
             }
         }
 
-#if !PORTABLE
-        //[Fact]
-        private void TestFun()
-        {
-            var repo = new NoSqlColoredTransactionRepository(new BlockrTransactionRepository());
-            var colored = ColoredTransaction.FetchColors(uint256.Parse("b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a6"), repo);
-
-            var prismColored = new CoinprismColoredTransactionRepository().Get(uint256.Parse("b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a6"));
-
-            Assert.True(colored.ToBytes().SequenceEqual(prismColored.ToBytes()));
-        }
-#endif
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanParseColoredAddress()
         {
-            var address = new BitcoinPubKeyAddress("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM");
+            var address = new BitcoinPubKeyAddress("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", Network.Main);
             var colored = address.ToColoredAddress();
             Assert.Equal("akB4NBW9UuCmHuepksob6yfZs6naHtRCPNy", colored.ToWif());
             Assert.Equal(address.ScriptPubKey, colored.ScriptPubKey);

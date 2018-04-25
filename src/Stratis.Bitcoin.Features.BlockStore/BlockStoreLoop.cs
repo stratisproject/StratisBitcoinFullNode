@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal void ShutDown()
         {
-            this.asyncLoop.Dispose();
+            this.asyncLoop?.Dispose();
             this.DownloadAndStoreBlocksAsync(CancellationToken.None, true).Wait();
         }
 

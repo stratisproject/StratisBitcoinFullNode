@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -321,6 +322,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Set the coin base with zero money.
             // Once we have the fee we can update the amount.
             this.coinbase = new Transaction();
+            this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
             this.pblock.AddTransaction(this.coinbase);

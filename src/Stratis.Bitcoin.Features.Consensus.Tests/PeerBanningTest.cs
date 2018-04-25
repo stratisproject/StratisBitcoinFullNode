@@ -5,14 +5,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    public class PeerBanningTest
+    public class PeerBanningTest : TestBase
     {
         public PeerBanningTest()
         {
@@ -23,11 +25,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerDiconnected_ThePeerGetsBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerDiconnected_ThePeerGetsBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
+            context.PeerAddressManager.AddPeer(peer, peer.Address.MapToIPv6());
 
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((INetworkPeer)null);
 
@@ -42,11 +44,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
+            context.PeerAddressManager.AddPeer(peerEndPoint, peerEndPoint.Address.MapToIPv6());
 
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
             var peer = new Mock<INetworkPeer>();
@@ -59,14 +61,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var block = blocks.First();
             block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
             await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peerEndPoint });
+
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
 
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
@@ -89,8 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async));
-            Directory.CreateDirectory(dataDir);
+            string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
@@ -112,9 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async()
         {
-            string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async));
-            Directory.CreateDirectory(dataDir);
-
+            string dataDir = GetTestDirectoryPath(this);
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
 
@@ -133,6 +132,79 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             Thread.Sleep(1000);
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        [Fact]
+        public async Task PeerBanning_AddingBannedPeerToAddressManagerStoreAsync()
+        {
+            // Arrange 
+            string dataDir = GetTestDirectoryPath(this);
+
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
+
+            // Act
+            context.PeerBanning.BanPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+
+            // Assert
+            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            Assert.True(peer.BanUntil.HasValue);
+            Assert.NotNull(peer.BanUntil);
+            Assert.NotEmpty(peer.BanReason);
+        }
+
+        [Fact]
+        public async Task PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync()
+        {
+            // Arrange 
+            string dataDir = GetTestDirectoryPath(this);
+
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
+
+            // Act - Ban Peer, save store, clear current Peers, load store
+            context.PeerBanning.BanPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+            context.PeerAddressManager.SavePeers();
+            context.PeerAddressManager.Peers.Clear();
+            context.PeerAddressManager.LoadPeers();
+
+            // Assert
+            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            Assert.NotNull(peer.BanTimeStamp);
+            Assert.NotNull(peer.BanUntil);
+            Assert.NotEmpty(peer.BanReason);
+        }
+
+        [Fact]
+        public async Task PeerBanning_ResettingExpiredBannedPeerAsync()
+        {
+            // Arrange 
+            string dataDir = GetTestDirectoryPath(this);
+
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
+
+            // Act 
+            context.PeerBanning.BanPeer(endpoint, 1, nameof(PeerBanningTest));
+            context.PeerAddressManager.SavePeers();
+
+            // Wait one second for ban to expire.
+            Thread.Sleep(1000);
+
+            context.PeerAddressManager.Peers.Clear();
+            context.PeerAddressManager.LoadPeers();
+
+            // Assert
+            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            Assert.Null(peer.BanTimeStamp);
+            Assert.Null(peer.BanUntil);
+            Assert.Empty(peer.BanReason);
         }
     }
 }

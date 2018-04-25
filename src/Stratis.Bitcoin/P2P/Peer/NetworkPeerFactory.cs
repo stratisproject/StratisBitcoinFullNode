@@ -22,8 +22,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="client">Already connected network client.</param>
         /// <param name="parameters">Parameters of the established connection, or <c>null</c> to use default parameters.</param>
+        /// <param name="networkPeerDisposer">Maintains a list of connected peers and ensures their proper disposal. Or <c>null</c> if case disposal should be handled from user code.</param>
         /// <returns>New network peer that is connected via the established connection.</returns>
-        INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null);
+        INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, NetworkPeerDisposer networkPeerDisposer = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
@@ -32,16 +33,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="myVersion">Version of the protocol that the node supports.</param>
         /// <param name="isRelay">Whether the remote peer should announce relayed transactions or not. See <see cref="VersionPayload.Relay"/> for more information.</param>
         /// <param name="cancellation">Cancallation token that allows to interrupt establishing of the connection.</param>
+        /// <param name="networkPeerDisposer">Maintains a list of connected peers and ensures their proper disposal. Or <c>null</c> if case disposal should be handled from user code.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
-        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken));
+        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken), NetworkPeerDisposer networkPeerDisposer = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
         /// </summary>
         /// <param name="peerEndPoint">Address and port of the counterparty to connect to.</param>
         /// <param name="parameters">Parameters specifying how the connection with the counterparty should be established, or <c>null</c> to use default parameters.</param>
+        /// <param name="networkPeerDisposer">Maintains a list of connected peers and ensures their proper disposal. Or <c>null</c> if case disposal should be handled from user code.</param>
         /// <returns>Network peer connected to the specified counterparty.</returns>
-        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null);
+        Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null, NetworkPeerDisposer networkPeerDisposer = null);
 
         /// <summary>
         /// Creates a new network peer server.
@@ -74,6 +77,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>A provider of network payload messages.</summary>
         private readonly PayloadProvider payloadProvider;
 
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -94,7 +99,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="payloadProvider">A provider of network payload messages.</param>
-        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider)
+        /// <param name="selfEndpointTracker">Tracker for endpoints known to be self.</param>
+        public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider, ISelfEndpointTracker selfEndpointTracker)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -104,20 +110,35 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.payloadProvider = payloadProvider;
+            this.selfEndpointTracker = selfEndpointTracker;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.lastClientId = 0;
         }
 
         /// <inheritdoc/>
-        public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null)
+        public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, NetworkPeerDisposer networkPeerDisposer = null)
         {
             Guard.NotNull(client, nameof(client));
 
-            return new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory);
+            Action<INetworkPeer> onDisconnected = null;
+
+            if (networkPeerDisposer != null)
+                onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
+
+            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
+
+            networkPeerDisposer?.AddPeer(peer);
+
+            return peer;
         }
 
         /// <inheritdoc/>
-        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(string endPoint, ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, bool isRelay = true, CancellationToken cancellation = default(CancellationToken))
+        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(
+            string endPoint, 
+            ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, 
+            bool isRelay = true, 
+            CancellationToken cancellation = default(CancellationToken), 
+            NetworkPeerDisposer networkPeerDisposer = null)
         {
             Guard.NotNull(endPoint, nameof(endPoint));
 
@@ -130,24 +151,36 @@ namespace Stratis.Bitcoin.P2P.Peer
                 Services = NetworkPeerServices.Nothing,
             };
 
-            return await this.CreateConnectedNetworkPeerAsync(ipEndPoint, parameters);
+            return await this.CreateConnectedNetworkPeerAsync(ipEndPoint, parameters, networkPeerDisposer);
         }
 
         /// <inheritdoc/>
-        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(IPEndPoint peerEndPoint, NetworkPeerConnectionParameters parameters = null)
+        public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(
+            IPEndPoint peerEndPoint,
+            NetworkPeerConnectionParameters parameters = null,
+            NetworkPeerDisposer networkPeerDisposer = null)
         {
             Guard.NotNull(peerEndPoint, nameof(peerEndPoint));
 
-            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory);
+            Action<INetworkPeer> onDisconnected = null;
+
+            if (networkPeerDisposer != null)
+                onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
+
+            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
+            
             try
             {
                 await peer.ConnectAsync(peer.ConnectionParameters.ConnectCancellation).ConfigureAwait(false);
+
+                networkPeerDisposer?.AddPeer(peer);
             }
-            catch (Exception e)
+            catch
             {
-                peer.Dispose("Connection failed", e);
+                peer.Dispose();
                 throw;
             }
+
             return peer;
         }
 
@@ -157,7 +190,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(localEndPoint, nameof(localEndPoint));
             Guard.NotNull(externalEndPoint, nameof(externalEndPoint));
 
-            return new NetworkPeerServer(this.network, localEndPoint, externalEndPoint, version, this.dateTimeProvider, this.loggerFactory, this);
+            return new NetworkPeerServer(this.network, localEndPoint, externalEndPoint, version, this.loggerFactory, this);
         }
 
         /// <inheritdoc/>

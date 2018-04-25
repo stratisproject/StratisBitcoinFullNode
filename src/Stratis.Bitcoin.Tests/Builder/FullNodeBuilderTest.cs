@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
@@ -103,7 +104,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
             var dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
-            var nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dataDir}" });
+            var nodeSettings = new NodeSettings(Network.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
             nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
@@ -137,6 +138,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 e.AddSingleton(nodeSettings.LoggerFactory);
                 e.AddSingleton(nodeSettings.Network);
                 e.AddSingleton<FullNode>();
+                e.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             });
 
             this.fullNodeBuilder.ConfigureFeature(e =>
@@ -180,6 +182,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                     e.AddSingleton(nodeSettings.LoggerFactory);
                     e.AddSingleton(nodeSettings.Network);
                     e.AddSingleton<FullNode>();
+                    e.AddSingleton<IDateTimeProvider, DateTimeProvider>();
                 });
 
                 this.fullNodeBuilder.Build();

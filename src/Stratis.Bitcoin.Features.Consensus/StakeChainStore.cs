@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class StakeChainStore : StakeChain
+    public class StakeChainStore : IStakeChain
     {
         // The code to push to DBreezeCoinView can be included in CachedCoinView
         // then when the CachedCoinView flushes all uncommited entreis the stake entries can also
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return stakeItem.BlockStake;
         }
 
-        public override BlockStake Get(uint256 blockid)
+        public virtual BlockStake Get(uint256 blockid)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
 
@@ -159,14 +159,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.logger.LogTrace("(-)");
-        }
-
-        public sealed override void Set(uint256 blockid, BlockStake blockStake)
-        {
-            // TODO: A temporary fix till this methods is fixed in NStratis
-            // this removed the dependency on chain.
-
-            throw new NotImplementedException();
         }
 
         public void Set(ChainedBlock chainedBlock, BlockStake blockStake)

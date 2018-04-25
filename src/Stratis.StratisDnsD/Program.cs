@@ -42,20 +42,20 @@ namespace Stratis.StratisDnsD
             try
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
-                DnsSettings dnsSettings = new DnsSettings().Load(nodeSettings);
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:false);
 
-                // Verify that the DNS host, nameserver and mailbox arguments are set.
-                if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
+                Action<DnsSettings> serviceTest = (s) =>
                 {
-                    throw new ArgumentException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
-                }
+                    if (string.IsNullOrWhiteSpace(s.DnsHostName) || string.IsNullOrWhiteSpace(s.DnsNameServer) || string.IsNullOrWhiteSpace(s.DnsMailBox))
+                        throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+                };
 
                 // Run as a full node with DNS or just a DNS service?
-                if (dnsSettings.DnsFullNode)
+                IFullNode node;
+                if (args.Contains("-dnsfullnode"))
                 {
                     // Build the Dns full node.
-                    IFullNode node = new FullNodeBuilder()
+                    node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
                         .UsePosConsensus()
                         .UseBlockStore()
@@ -64,26 +64,24 @@ namespace Stratis.StratisDnsD
                         .AddPowPosMining()
                         .UseApi()
                         .AddRPC()
-                        .UseDns()
+                        .UseDns(serviceTest)
                         .Build();
-
-                    // Run node.
-                    await node.RunAsync();
                 }
                 else
                 {
                     // Build the Dns node.
-                    IFullNode node = new FullNodeBuilder()
+                    node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
                         .UsePosConsensus()
                         .UseApi()
                         .AddRPC()
-                        .UseDns()
+                        .UseDns(serviceTest)
                         .Build();
-
-                    // Run node.
-                    await node.RunAsync();
                 }
+
+                // Run node.
+                if (node != null)
+                    await node.RunAsync();
             }
             catch (Exception ex)
             {

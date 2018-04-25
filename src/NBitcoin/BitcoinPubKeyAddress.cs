@@ -9,7 +9,7 @@ namespace NBitcoin
     /// </summary>
     public class BitcoinPubKeyAddress : BitcoinAddress, IBase58Data
     {
-        public BitcoinPubKeyAddress(string base58, Network expectedNetwork = null)
+        public BitcoinPubKeyAddress(string base58, Network expectedNetwork)
             : base(Validate(base58, ref expectedNetwork), expectedNetwork)
         {
             var decoded = Encoders.Base58Check.DecodeData(base58);
