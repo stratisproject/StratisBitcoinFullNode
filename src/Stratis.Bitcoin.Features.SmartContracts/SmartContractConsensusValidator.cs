@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.originalStateRoot = stateRoot;
             this.generatedTransaction = null;
             this.executorFactory = executorFactory;
+            this.carrierSerializer = carrierSerializer;
             this.refundCounter = 1;
         }
 
@@ -246,7 +247,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
-            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, smartContractTxOut);
+            var smartContractCarrier = this.carrierSerializer.Deserialize(transaction);
 
             smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 

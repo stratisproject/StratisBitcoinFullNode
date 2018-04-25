@@ -137,7 +137,7 @@ namespace Stratis.SmartContracts.Core
                 new Message(
                     newContractAddress.ToAddress(this.network),
                     this.carrier.Sender.ToAddress(this.network),
-                    this.carrier.TxOutValue,
+                    this.carrier.Value,
                     this.carrier.GasLimit
                 ),
                 newContractAddress,
@@ -209,7 +209,7 @@ namespace Stratis.SmartContracts.Core
                 new Message(
                     contractAddress.ToAddress(this.network),
                     this.carrier.Sender.ToAddress(this.network),
-                    this.carrier.TxOutValue,
+                    this.carrier.Value,
                     this.carrier.GasLimit
                 ),
                 contractAddress,
@@ -240,7 +240,7 @@ namespace Stratis.SmartContracts.Core
         /// <param name="transfers"></param>
         private void CommitExecution(IList<TransferInfo> transfers)
         {
-            if (transfers != null && transfers.Any() || this.carrier.TxOutValue > 0)
+            if (transfers != null && transfers.Any() || this.carrier.Value > 0)
             {
                 var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
                 this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
@@ -254,7 +254,7 @@ namespace Stratis.SmartContracts.Core
         /// </summary>
         private void RevertExecution()
         {
-            if (this.carrier.TxOutValue > 0)
+            if (this.carrier.Value > 0)
             {
                 Transaction tx = new CondensingTx(this.carrier, this.network).CreateRefundTransaction();
                 this.Result.InternalTransaction = tx;

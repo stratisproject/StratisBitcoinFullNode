@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Serialization;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
@@ -15,6 +16,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     [ValidationRule(CanSkipValidation = false)]
     public class OpCreateZeroValueRule : ConsensusRule
     {
+        private readonly ISmartContractCarrierSerializer carrierSerializer;
+
+        public OpCreateZeroValueRule()
+        {
+            // TODO: Obviously this should be injected.
+            this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
+        }
+
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
@@ -34,9 +43,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                 // So throw if null, because we really didn't expect that
                 TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
 
-                var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
+                var carrier = this.carrierSerializer.Deserialize(transaction);
 
-                if (carrier.TxOutValue != 0)
+                if (carrier.Value != 0)
                 {
                     this.Throw();
                 }

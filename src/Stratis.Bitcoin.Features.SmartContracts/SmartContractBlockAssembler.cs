@@ -39,6 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
             ISmartContractExecutorFactory executorFactory,
+            ISmartContractCarrierSerializer carrierSerializer,
             CoinView coinView,
             AssemblerOptions options = null)
             : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
@@ -46,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.coinView = coinView;
             this.stateRoot = stateRoot;
             this.executorFactory = executorFactory;
+            this.carrierSerializer = carrierSerializer;
         }
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)

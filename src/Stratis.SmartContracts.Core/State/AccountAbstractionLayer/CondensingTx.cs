@@ -75,7 +75,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
             //Create refund unspent TxOut--------------------------------------
             Script script = this.CreateScript(this.smartContractCarrier.Sender);
-            var txOut = new TxOut(new Money(this.smartContractCarrier.TxOutValue), script);
+            var txOut = new TxOut(new Money(this.smartContractCarrier.Value), script);
             tx.Outputs.Add(txOut);
             //-----------------------------------------------------------------
 
@@ -181,15 +181,15 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         private void SetupBalances()
         {
             // Add the value of the initial transaction.
-            if (this.smartContractCarrier.TxOutValue > 0)
+            if (this.smartContractCarrier.Value > 0)
             {
                 this.unspents.Add(new ContractUnspentOutput
                 {
                     Hash = this.smartContractCarrier.TransactionHash,
                     Nvout = this.smartContractCarrier.Nvout,
-                    Value = this.smartContractCarrier.TxOutValue
+                    Value = this.smartContractCarrier.Value
                 });
-                this.txBalances[this.smartContractCarrier.ContractAddress] = this.smartContractCarrier.TxOutValue;
+                this.txBalances[this.smartContractCarrier.ContractAddress] = this.smartContractCarrier.Value;
             }
 
             // For each unique address, if it is a contract, get the utxo it currently holds.

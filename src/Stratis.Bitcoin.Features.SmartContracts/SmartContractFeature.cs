@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
                         // Controller for API
                         services.AddSingleton<SmartContractsController>();
-                        // Add rules -> These could be VM specific though!
+                        // Add rules -> These could be VM specific in future though!
                         AddSmartContractRulesToExistingRules(services);
                     });
             });
@@ -96,6 +97,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractValidator>(validator);
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
                         services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
+                        services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
+                        services.AddSingleton<ISmartContractCarrierSerializer, SmartContractCarrierSerializer>();
                     });
             });
             return fullNodeBuilder;

@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
+        private readonly ISmartContractCarrierSerializer carrierSerializer;
+
         private readonly CoinView coinView;
 
         public SmartContractAssemblerFactory(
@@ -50,6 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ContractStateRepositoryRoot stateRoot,
             IKeyEncodingStrategy keyEncodingStrategy,
             ISmartContractExecutorFactory executorFactory,
+            ISmartContractCarrierSerializer carrierSerializer,
             CoinView coinView,
             IStakeChain stakeChain = null)
         {
@@ -61,6 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.stateRoot = stateRoot;
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.executorFactory = executorFactory;
+            this.carrierSerializer = carrierSerializer;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
             this.loggerFactory = loggerFactory;
@@ -79,6 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.loggerFactory,
                 this.stateRoot,
                 this.executorFactory,
+                this.carrierSerializer,
                 this.coinView,
                 options);
         }

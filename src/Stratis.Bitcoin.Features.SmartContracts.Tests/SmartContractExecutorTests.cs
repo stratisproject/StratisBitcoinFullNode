@@ -6,8 +6,8 @@ using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IContractStateRepository state;
         private readonly SmartContractValidator validator;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly SmartContractCarrierSerializer carrierSerializer;
 
         public SmartContractExecutorTests()
         {
@@ -25,6 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
+            this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
         }
 
         [Fact]
@@ -50,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Deserialize the contract from the transaction----------
             //and get the module definition
-            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall, callTxOut);
+            var deserializedCall = (SmartContractCarrier) this.carrierSerializer.Deserialize(transactionCall);
             deserializedCall.Sender = senderAddress;
             //-------------------------------------------------------
 
@@ -92,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Deserialize the contract from the transaction----------
             //and get the module definition
-            var deserializedCreate = SmartContractCarrier.Deserialize(transaction, txOut);
+            var deserializedCreate = (SmartContractCarrier) this.carrierSerializer.Deserialize(transaction);
             deserializedCreate.Sender = senderAddress;
             //-------------------------------------------------------
 
@@ -133,7 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
             var tx = new Transaction();
             TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
-            var deserialized = SmartContractCarrier.Deserialize(tx, txOut);
+            var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
             deserialized.Sender = new uint160(2);
 
             var executor = SmartContractExecutor.Initialize(deserialized, this.network, this.state, this.validator, this.keyEncodingStrategy,  new Money(10000));
@@ -160,7 +162,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractCarrier carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
             var tx = new Transaction();
             TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
-            var deserialized = SmartContractCarrier.Deserialize(tx, txOut);
+            var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
             deserialized.Sender = new uint160(2);
 
             var executor = SmartContractExecutor.Initialize(deserialized, this.network, this.state, this.validator, this.keyEncodingStrategy, new Money(10000));
@@ -186,7 +188,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
             var tx = new Transaction();
             TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
-            var deserialized = SmartContractCarrier.Deserialize(tx, txOut);
+            var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
             deserialized.Sender = new uint160(2);
 
             var executor = SmartContractExecutor.Initialize(deserialized, this.network, this.state, this.validator, this.keyEncodingStrategy, new Money(10000));

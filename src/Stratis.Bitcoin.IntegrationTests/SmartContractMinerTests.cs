@@ -30,6 +30,7 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
 
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 BlockMinFeeRate = blockMinFeeRate
             };
 
-            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.executorFactory, testContext.cachedCoinView, options);
+            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.executorFactory, testContext.carrierSerializer, testContext.cachedCoinView, options);
         }
 
         public class Blockinfo
@@ -136,6 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public ContractStateRepositoryRoot stateRoot;
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
+            public SmartContractCarrierSerializer carrierSerializer;
             public ReflectionSmartContractExecutorFactory executorFactory;
 
             private bool useCheckpoints = true;
@@ -191,7 +193,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
 
                 this.executorFactory = new ReflectionSmartContractExecutorFactory(this.validator, this.keyEncodingStrategy, this.network);
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
+                this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory, this.carrierSerializer);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
@@ -660,7 +663,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress =   ((SmartContractCarrier) context.carrierSerializer.Deserialize(tx)).GetNewContractAddress();
             string newContractAddressString = newContractAddress.ToString();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
@@ -672,7 +675,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress2 = ((SmartContractCarrier)context.carrierSerializer.Deserialize(tx)).GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
             context.mempool.Clear();
