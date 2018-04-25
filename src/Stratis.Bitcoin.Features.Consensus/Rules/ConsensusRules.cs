@@ -103,8 +103,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 
-            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.Attributes.OfType<ValidationRuleAttribute>().Any() || w.Attributes.Count == 0));
-            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.Attributes.OfType<ExecutionRuleAttribute>().Any()));
+            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
+            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ExecutionRuleAttribute>().Any()));
 
             return this;
         }
