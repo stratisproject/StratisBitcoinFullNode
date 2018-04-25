@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using Stratis.SmartContracts;
 
-public class InvalidImplicitAssembly
+public class InvalidImplicitAssembly : SmartContract
 {
-    public InvalidImplicitAssembly(ISmartContractState state)
+    public InvalidImplicitAssembly(ISmartContractState state) : base(state)
     {
     }
 
