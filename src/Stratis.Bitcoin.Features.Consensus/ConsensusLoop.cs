@@ -395,14 +395,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                         return;
                     }
 
-                    if (blockValidationContext.Error == ConsensusErrors.BadTransactionDuplicate)
-                    {
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, BlockValidationContext.BanDurationDefaultBan,
-                            $"Invalid block received: {blockValidationContext.Error.Message}");
-                        this.logger.LogTrace("(-)[BAD_TX_DUP]");
-                        return;
-                    }
-
                     // Set the chain back to ConsensusLoop.Tip.
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
