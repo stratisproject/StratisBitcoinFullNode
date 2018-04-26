@@ -18,6 +18,14 @@ namespace Stratis.Bitcoin.Tests.Common
             this.previousTimeStamp = Transaction.TimeStamp;
         }
 
+        public StaticFlagIsolator(Network network) : this()
+        {
+            var isStratisNetwork = network == Network.StratisTest || network == Network.StratisMain || network == Network.StratisRegTest;
+
+            Transaction.TimeStamp = isStratisNetwork;
+            Block.BlockSignature = isStratisNetwork;
+        }
+
         public void Dispose()
         {
             Transaction.TimeStamp = this.previousTimeStamp;

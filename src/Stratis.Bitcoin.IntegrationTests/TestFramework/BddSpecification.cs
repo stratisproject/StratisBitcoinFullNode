@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         {
             this.RunStep(step);
         }
+
         public void Given(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.RunStep(step, cancellationToken);
