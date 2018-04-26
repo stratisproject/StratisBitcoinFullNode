@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block that we get weight of.</param>
         /// <param name="options">Options for POW networks.</param>
         /// <returns>Block weight.</returns>
-        public long GetBlockWeight(Block block, PowConsensusOptions powOptions, NetworkOptions options)
+        private long GetBlockWeight(Block block, PowConsensusOptions powOptions, NetworkOptions options)
         {
             return GetSize(block, options & ~NetworkOptions.Witness) * (powOptions.WitnessScaleFactor - 1) + GetSize(block, options);
         }
@@ -67,6 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
         public static int GetSize(IBitcoinSerializable data, NetworkOptions options)
         {
+            // TODO: Noticed this is called by CheckPowTransactionRule which is another Consensus rule. Move somewhere usable by both instead of static method here.
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
             data.ReadWrite(bms);
