@@ -30,6 +30,12 @@ namespace NBitcoin
             return this.IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
         }
 
+        /// <summary>
+        /// Represents the parent of this class.
+        /// For simplicity (and migration from NBitcoin) I made this a property however this design can be revised later.
+        /// </summary>
+        public Consensus Consensus { get; set; }
+
         private bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
         {
             bool isAssignable = false;
@@ -215,18 +221,18 @@ namespace NBitcoin
 
         public bool IsSupersetOf(ProtocolCapabilities capabilities)
         {
-            return (!capabilities.SupportCheckSum || SupportCheckSum) &&
-                (!capabilities.SupportCompactBlocks || SupportCompactBlocks) &&
-                (!capabilities.SupportGetBlock || SupportGetBlock) &&
-                (!capabilities.SupportMempoolQuery || SupportMempoolQuery) &&
-                (!capabilities.SupportNodeBloom || SupportNodeBloom) &&
-                (!capabilities.SupportPingPong || SupportPingPong) &&
-                (!capabilities.SupportReject || SupportReject) &&
-                (!capabilities.SupportSendHeaders || SupportSendHeaders) &&
-                (!capabilities.SupportTimeAddress || SupportTimeAddress) &&
-                (!capabilities.SupportWitness || SupportWitness) &&
-                (!capabilities.SupportUserAgent || SupportUserAgent) &&
-                (!capabilities.SupportCheckSum || SupportCheckSum);
+            return (!capabilities.SupportCheckSum || this.SupportCheckSum) &&
+                (!capabilities.SupportCompactBlocks || this.SupportCompactBlocks) &&
+                (!capabilities.SupportGetBlock || this.SupportGetBlock) &&
+                (!capabilities.SupportMempoolQuery || this.SupportMempoolQuery) &&
+                (!capabilities.SupportNodeBloom || this.SupportNodeBloom) &&
+                (!capabilities.SupportPingPong || this.SupportPingPong) &&
+                (!capabilities.SupportReject || this.SupportReject) &&
+                (!capabilities.SupportSendHeaders || this.SupportSendHeaders) &&
+                (!capabilities.SupportTimeAddress || this.SupportTimeAddress) &&
+                (!capabilities.SupportWitness || this.SupportWitness) &&
+                (!capabilities.SupportUserAgent || this.SupportUserAgent) &&
+                (!capabilities.SupportCheckSum || this.SupportCheckSum);
         }
     }
 

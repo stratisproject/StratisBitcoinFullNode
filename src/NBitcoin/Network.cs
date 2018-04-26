@@ -137,6 +137,11 @@ namespace NBitcoin
         {
             this.BuriedDeployments = new BuriedDeploymentsArray(this);
             this.BIP9Deployments = new BIP9DeploymentsArray(this);
+
+            this.ConsensusFactory = new ConsensusFactory()
+            {
+                Consensus = this
+            };
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; }
@@ -681,7 +686,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(options:this.NetworkOptions);
+            return this.genesis.Clone(consensusFactory:this.consensus.ConsensusFactory);
         }
 
         public uint256 GenesisHash => this.consensus.HashGenesisBlock;

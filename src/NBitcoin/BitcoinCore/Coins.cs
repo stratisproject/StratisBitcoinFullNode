@@ -71,12 +71,11 @@ namespace NBitcoin.BitcoinCore
 
         public Coins()
         {
-
         }
 
         public Coins(Transaction tx, int height)
         {
-            if (Transaction.TimeStamp)
+            if (tx is PosTransaction)
             {
                 this.fCoinStake = tx.IsCoinStake;
                 this.nTime = tx.Time;
@@ -159,7 +158,7 @@ namespace NBitcoin.BitcoinCore
                 // coinbase height
                 stream.ReadWriteAsVarInt(ref this.nHeight);
 
-                if (Transaction.TimeStamp)
+                if (stream.ConsensusFactory.Consensus.IsProofOfStake)
                 {
                     stream.ReadWrite(ref this.fCoinStake);
                     stream.ReadWrite(ref this.nTime);
@@ -214,7 +213,7 @@ namespace NBitcoin.BitcoinCore
                 //// coinbase height
                 stream.ReadWriteAsVarInt(ref this.nHeight);
 
-                if (Transaction.TimeStamp)
+                if (stream.ConsensusFactory.Consensus.IsProofOfStake)
                 {
                     stream.ReadWrite(ref this.fCoinStake);
                     stream.ReadWrite(ref this.nTime);
@@ -225,19 +224,19 @@ namespace NBitcoin.BitcoinCore
             }
         }
 
-        public Coins Clone()
-        {
-            return new Coins()
-            {
-                nHeight = this.nHeight,
-                nVersion = this.nVersion,
-                CoinBase = this.CoinBase,
-                Value = this.Value,
-                Outputs = this.Outputs.Select(txout => txout.Clone()).ToList(),
-                fCoinStake = this.fCoinStake,
-                nTime = this.nTime
-            };
-        }
+        //public Coins Clone()
+        //{
+        //    return new Coins()
+        //    {
+        //        nHeight = this.nHeight,
+        //        nVersion = this.nVersion,
+        //        CoinBase = this.CoinBase,
+        //        Value = this.Value,
+        //        Outputs = this.Outputs.Select(txout => txout.Clone()).ToList(),
+        //        fCoinStake = this.fCoinStake,
+        //        nTime = this.nTime
+        //    };
+        //}
 
         // calculate number of bytes for the bitmask, and its number of non-zero bytes
         // each bit in the bitmask represents the availability of one output, but the

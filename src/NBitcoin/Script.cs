@@ -604,15 +604,17 @@ namespace NBitcoin
             return input.GetSignatureHash(coin, nHashType);
         }
 
-        public static uint256 SignatureHash(Script scriptCode, Transaction txTo, int nIn, SigHash nHashType, Money amount = null, HashVersion sigversion = HashVersion.Original)
+        public static uint256 SignatureHash(Script scriptCode, Transaction txTo, int nIn, SigHash nHashType, Money amount = null, HashVersion sigversion = HashVersion.Original, ConsensusFactory consensusFactory = null)
         {
-            return SignatureHash(scriptCode, txTo, nIn, nHashType, amount, sigversion, null);
+            return SignatureHash(scriptCode, txTo, nIn, nHashType, amount, sigversion, null, consensusFactory);
         }
 
         //https://en.bitcoin.it/wiki/OP_CHECKSIG
-        public static uint256 SignatureHash(Script scriptCode, Transaction txTo, int nIn, SigHash nHashType, Money amount, HashVersion sigversion, PrecomputedTransactionData precomputedTransactionData)
+        public static uint256 SignatureHash(Script scriptCode, Transaction txTo, int nIn, SigHash nHashType, Money amount, HashVersion sigversion, PrecomputedTransactionData precomputedTransactionData, ConsensusFactory consensusFactory = null)
         {
-            if(sigversion == HashVersion.Witness)
+            consensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory;
+
+            if (sigversion == HashVersion.Witness)
             {
                 if(amount == null)
                     throw new ArgumentException("The amount of the output being signed must be provided", "amount");
@@ -691,7 +693,7 @@ namespace NBitcoin
             var scriptCopy = new Script(scriptCode._Script);
             scriptCopy.FindAndDelete(OpcodeType.OP_CODESEPARATOR);
 
-            var txCopy = new Transaction(txTo.ToBytes());
+            var txCopy = Transaction.Load(txTo.ToBytes(), consensusFactory);
 
             //Set all TxIn script to empty string
             foreach(var txin in txCopy.Inputs)

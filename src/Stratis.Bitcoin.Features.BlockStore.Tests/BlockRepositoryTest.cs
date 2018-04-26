@@ -110,12 +110,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
         {
             string dir = CreateTestDir(this);
-            var trans = new Transaction();
+            var trans = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             trans.Version = 125;
 
             using (var engine = new DBreezeEngine(dir))
             {
-                var block = new Block();
+                var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
                 block.Header.GetHash();
                 block.Transactions.Add(trans);
 
@@ -213,16 +213,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
             var blockHeader = block.Header;
             blockHeader.Bits = new Target(12);
-            var transaction = new Transaction();
+            var transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Version = 32;
             block.Transactions.Add(transaction);
-            transaction = new Transaction();
+            transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Version = 48;
             block.Transactions.Add(transaction);
             blocks.Add(block);
             
             var block2 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
-            transaction = new Transaction();
+            transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);
             blocks.Add(block2);
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 foreach (var item in blockDict)
                 {
                     var bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
-                    Assert.Equal(bl.Header.GetHash(), new Block(item.Value).Header.GetHash());
+                    Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, Network.Main.Consensus.ConsensusFactory).Header.GetHash());
                 }
 
                 foreach (var item in transDict)
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetAsyncWithExistingBlockReturnsBlock()
         {
             string dir = CreateTestDir(this);
-            var block = new Block();
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void ExistAsyncWithExistingBlockReturnsTrue()
         {
             string dir = CreateTestDir(this);
-            var block = new Block();
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -395,8 +395,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void DeleteAsyncRemovesBlocksAndTransactions()
         {
             string dir = CreateTestDir(this);
-            var block = new Block();
-            block.Transactions.Add(new Transaction());
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            block.Transactions.Add(Network.Main.Consensus.ConsensusFactory.CreateTransaction());
 
             using (var engine = new DBreezeEngine(dir))
             {

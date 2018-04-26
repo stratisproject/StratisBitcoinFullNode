@@ -268,18 +268,20 @@ namespace NBitcoin
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
         public Block()
         {
+            this.header = new BlockHeader();
             this.SetNull();
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
         internal Block(BlockHeader blockHeader)
         {
+            this.header = new BlockHeader();
             this.SetNull();
             this.header = blockHeader;
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        public Block(byte[] bytes, ConsensusFactory consensusFactory)
+        internal Block(byte[] bytes, ConsensusFactory consensusFactory)
         {
             BitcoinStream stream = new BitcoinStream(bytes)
             {
@@ -290,7 +292,7 @@ namespace NBitcoin
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        public Block(byte[] bytes) : this(bytes, Network.Main.Consensus.ConsensusFactory)
+        internal Block(byte[] bytes) : this(bytes, Network.Main.Consensus.ConsensusFactory)
         {
         }
 

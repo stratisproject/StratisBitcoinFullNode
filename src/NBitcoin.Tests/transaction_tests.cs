@@ -2919,7 +2919,7 @@ namespace NBitcoin.Tests
             dummyTransactions[0].Outputs[0].ScriptPubKey = dummyTransactions[0].Outputs[0].ScriptPubKey + key[0].PubKey.ToBytes() + OpcodeType.OP_CHECKSIG;
             dummyTransactions[0].Outputs[1].Value = 50 * Money.CENT;
             dummyTransactions[0].Outputs[1].ScriptPubKey = dummyTransactions[0].Outputs[1].ScriptPubKey + key[1].PubKey.ToBytes() + OpcodeType.OP_CHECKSIG;
-            coinsRet.AddTransaction(dummyTransactions[0], 0);
+            coinsRet.AddTransaction(Network.Main.Consensus, dummyTransactions[0], 0);
 
 
             dummyTransactions[1].Outputs.AddRange(Enumerable.Range(0, 2).Select(_ => new TxOut()));
@@ -2927,7 +2927,7 @@ namespace NBitcoin.Tests
             dummyTransactions[1].Outputs[0].ScriptPubKey = key[2].PubKey.GetAddress(Network.Main).ScriptPubKey;
             dummyTransactions[1].Outputs[1].Value = 22 * Money.CENT;
             dummyTransactions[1].Outputs[1].ScriptPubKey = key[3].PubKey.GetAddress(Network.Main).ScriptPubKey;
-            coinsRet.AddTransaction(dummyTransactions[1], 0);
+            coinsRet.AddTransaction(Network.Main.Consensus, dummyTransactions[1], 0);
 
 
             return dummyTransactions;

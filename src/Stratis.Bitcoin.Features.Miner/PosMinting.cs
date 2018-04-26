@@ -645,7 +645,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             var coinstakeContext = new CoinstakeContext();
-            coinstakeContext.CoinstakeTx = new Transaction();
+            coinstakeContext.CoinstakeTx = this.network.Consensus.ConsensusFactory.CreateTransaction();
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.

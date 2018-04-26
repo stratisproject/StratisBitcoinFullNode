@@ -173,8 +173,10 @@ namespace NBitcoin
             ICoin coin;
             SigHash sigHash;
             IndexedTxIn txIn;
-            public TransactionBuilderSigner(ICoin coin, SigHash sigHash, IndexedTxIn txIn)
+            TransactionBuilder builder;
+            public TransactionBuilderSigner(TransactionBuilder builder, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
+                this.builder = builder;
                 this.coin = coin;
                 this.sigHash = sigHash;
                 this.txIn = txIn;
@@ -183,7 +185,7 @@ namespace NBitcoin
 
             public TransactionSignature Sign(Key key)
             {
-                return txIn.Sign(key, coin, sigHash);
+                return txIn.Sign(key, coin, sigHash, this.builder.ConsensusFactory);
             }
 
             #endregion
@@ -301,7 +303,7 @@ namespace NBitcoin
             public TransactionBuildingContext(TransactionBuilder builder)
             {
                 Builder = builder;
-                Transaction = new Transaction();
+                Transaction = builder.ConsensusFactory.CreateTransaction();
                 AdditionalFees = Money.Zero;
             }
             public TransactionBuilder.BuilderGroup Group
@@ -407,7 +409,7 @@ namespace NBitcoin
             public void RestoreMemento(TransactionBuildingContext memento)
             {
                 _Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
-                Transaction = memento.Transaction.Clone();
+                Transaction = memento.Transaction.Clone(consensusFactory:memento.Builder.ConsensusFactory);
                 AdditionalFees = memento.AdditionalFees;
             }
 
@@ -504,8 +506,21 @@ namespace NBitcoin
                 return _CurrentGroup;
             }
         }
-        public TransactionBuilder()
+        internal TransactionBuilder()
         {
+            this.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
+
+            _Rand = new Random();
+            CoinSelector = new DefaultCoinSelector();
+            StandardTransactionPolicy = new StandardTransactionPolicy();
+            DustPrevention = true;
+            InitExtensions();
+        }
+
+        internal TransactionBuilder(ConsensusFactory consensusFactory)
+        {
+            this.ConsensusFactory = consensusFactory;
+
             _Rand = new Random();
             CoinSelector = new DefaultCoinSelector();
             StandardTransactionPolicy = new StandardTransactionPolicy();
@@ -522,8 +537,21 @@ namespace NBitcoin
         }
 
         internal Random _Rand;
-        public TransactionBuilder(int seed)
+        internal TransactionBuilder(int seed)
         {
+            this.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
+
+            _Rand = new Random(seed);
+            CoinSelector = new DefaultCoinSelector(seed);
+            StandardTransactionPolicy = new StandardTransactionPolicy();
+            DustPrevention = true;
+            InitExtensions();
+        }
+
+        public TransactionBuilder(int seed, ConsensusFactory consensusFactory)
+        {
+            this.ConsensusFactory = consensusFactory;
+
             _Rand = new Random(seed);
             CoinSelector = new DefaultCoinSelector(seed);
             StandardTransactionPolicy = new StandardTransactionPolicy();
@@ -535,6 +563,15 @@ namespace NBitcoin
         {
             get;
             set;
+        }
+
+        /// <summary>
+        /// This field should be mandatory in the constructor.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory
+        {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -1595,7 +1632,7 @@ namespace NBitcoin
         {
             var scriptPubKey = coin.GetScriptCode();
             var keyRepo = new TransactionBuilderKeyRepository(this, ctx);
-            var signer = new TransactionBuilderSigner(coin, ctx.SigHash, txIn);
+            var signer = new TransactionBuilderSigner(this, coin, ctx.SigHash, txIn);
 
             var signer2 = new KnownSignatureSigner(_KnownSignatures, coin, ctx.SigHash, txIn);
 

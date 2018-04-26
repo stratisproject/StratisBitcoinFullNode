@@ -725,15 +725,15 @@ namespace NBitcoin
             return VerifyScript(coin, ScriptVerify.Standard, out error);
         }
 
-        public TransactionSignature Sign(Key key, ICoin coin, SigHash sigHash)
+        public TransactionSignature Sign(Key key, ICoin coin, SigHash sigHash, ConsensusFactory consensusFactory = null)
         {
-            var hash = GetSignatureHash(coin, sigHash);
+            var hash = GetSignatureHash(coin, sigHash, consensusFactory);
             return key.Sign(hash, sigHash);
         }
 
-        public uint256 GetSignatureHash(ICoin coin, SigHash sigHash = SigHash.All)
+        public uint256 GetSignatureHash(ICoin coin, SigHash sigHash = SigHash.All, ConsensusFactory consensusFactory = null)
         {
-            return Script.SignatureHash(coin.GetScriptCode(), Transaction, (int)Index, sigHash, coin.TxOut.Value, coin.GetHashVersion());
+            return Script.SignatureHash(coin.GetScriptCode(), Transaction, (int)Index, sigHash, coin.TxOut.Value, coin.GetHashVersion(), consensusFactory);
         }
 
     }
@@ -1159,16 +1159,42 @@ namespace NBitcoin
             vout = new TxOutList(this);
         }
 
-        public Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        internal Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
             : this()
         {
             this.FromBytes(Encoders.Hex.DecodeData(hex), version);
         }
 
-        public Transaction(byte[] bytes)
+        internal Transaction(byte[] bytes)
             : this()
         {
             this.FromBytes(bytes);
+        }
+
+        public static Transaction Load(string hex, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            if (hex == null)
+                throw new ArgumentNullException(nameof(hex));
+
+            if (consensusFactory == null)
+                throw new ArgumentNullException(nameof(consensusFactory));
+
+            var transaction = consensusFactory.CreateTransaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, consensusFactory);
+            return transaction;
+        }
+
+        public static Transaction Load(byte[] bytes, ConsensusFactory consensusFactory)
+        {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+
+            if (consensusFactory == null)
+                throw new ArgumentNullException(nameof(consensusFactory));
+
+            var transaction = consensusFactory.CreateTransaction();
+            transaction.FromBytes(bytes, consensusFactory: consensusFactory);
+            return transaction;
         }
 
         public Money TotalOut
@@ -1222,7 +1248,7 @@ namespace NBitcoin
                 stream.ReadWrite(ref nVersion);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (this is PosTransaction)
                     stream.ReadWrite(ref this.nTime);
 
                 /* Try to read the vin. In case the dummy is there, this will be read as an empty vector. */
@@ -1276,7 +1302,7 @@ namespace NBitcoin
                 stream.ReadWrite(ref version);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (this is PosTransaction)
                     stream.ReadWrite(ref this.nTime);
 
                 if (witSupported)
@@ -1346,9 +1372,9 @@ namespace NBitcoin
             _Hashes = new uint256[2];
         }
 
-        public Transaction Clone(bool cloneCache)
+        public Transaction Clone(bool cloneCache, ConsensusFactory consensusFactory = null)
         {
-            var clone = BitcoinSerializableExtensions.Clone(this);
+            var clone = BitcoinSerializableExtensions.Clone(this, consensusFactory:consensusFactory);
             if(cloneCache)
                 clone._Hashes = _Hashes.ToArray();
             return clone;

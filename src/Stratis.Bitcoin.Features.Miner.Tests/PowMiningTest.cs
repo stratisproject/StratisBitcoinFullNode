@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -507,17 +503,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void ExecuteUsingNonProofOfStakeSettings(Action action)
         {
-            var isProofOfStake = this.network.NetworkOptions.IsProofOfStake;
-
+            Assert.False(this.network.Consensus.IsProofOfStake);
             try
             {
-                this.network.NetworkOptions.IsProofOfStake = false;
-
                 action();
             }
             finally
             {
-                this.network.NetworkOptions.IsProofOfStake = isProofOfStake;
             }
         }
     }
@@ -543,20 +535,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.key = new Key();
             this.reserveScript = new ReserveScript(this.key.ScriptPubKey);
 
-            var isProofOfStake = this.network.NetworkOptions.IsProofOfStake;
-
-            try
-            {
-                this.network.NetworkOptions.IsProofOfStake = false;
-                this.block1 = PrepareValidBlock(this.chain.Tip, 1, this.key.ScriptPubKey);
-                this.chainedBlock1 = new ChainedBlock(this.block1.Header, this.block1.GetHash(), this.chain.Tip);
-                this.block2 = PrepareValidBlock(this.chainedBlock1, 2, this.key.ScriptPubKey);
-                this.chainedBlock2 = new ChainedBlock(this.block2.Header, this.block2.GetHash(), this.chainedBlock1);
-            }
-            finally
-            {
-                this.network.NetworkOptions.IsProofOfStake = isProofOfStake;
-            }
+            this.block1 = PrepareValidBlock(this.chain.Tip, 1, this.key.ScriptPubKey);
+            this.chainedBlock1 = new ChainedBlock(this.block1.Header, this.block1.GetHash(), this.chain.Tip);
+            this.block2 = PrepareValidBlock(this.chainedBlock1, 2, this.key.ScriptPubKey);
+            this.chainedBlock2 = new ChainedBlock(this.block2.Header, this.block2.GetHash(), this.chainedBlock1);
         }
 
         public Block PrepareValidBlock(ChainedBlock prevBlock, int newHeight, Script ScriptPubKey)

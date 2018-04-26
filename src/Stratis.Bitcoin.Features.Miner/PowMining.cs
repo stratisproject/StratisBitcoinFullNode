@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -127,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.ReserveFullNodeScript);
 
-                if (this.network.NetworkOptions.IsProofOfStake)
+                if (this.network.Consensus.IsProofOfStake)
                 {
                     // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
                     // where it is possible to generate multiple blocks within one second.

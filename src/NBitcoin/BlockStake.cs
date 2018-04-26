@@ -1,5 +1,7 @@
 ﻿using System;
 using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 
 namespace NBitcoin
 {
@@ -135,6 +137,41 @@ namespace NBitcoin
         }
     }
 
+    public class PosTransaction : Transaction
+    {
+        public PosTransaction() : base()
+        {
+        }
+
+        public PosTransaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) : this()
+        {
+            this.FromBytes(Encoders.Hex.DecodeData(hex), version);
+        }
+
+        public PosTransaction(byte[] bytes) : this()
+        {
+            this.FromBytes(bytes);
+        }
+    }
+
+    public class PosConsensusFactory : ConsensusFactory
+    {
+        public override Block CreateBlock()
+        {
+            return new PosBlock(this.CreateBlockHeader());
+        }
+
+        public override BlockHeader CreateBlockHeader()
+        {
+            return new PosBlockHeader();
+        }
+
+        public override Transaction CreateTransaction()
+        {
+            return new PosTransaction();
+        }
+    }
+
     public class PosBlockHeader : BlockHeader
     {
         /// <summary>Current header version.</summary>
@@ -173,10 +210,12 @@ namespace NBitcoin
 
     public class PosBlock : Block
     {
-        public static bool BlockSignature = false;
-
         // block signature - signed by one of the coin base txout[N]'s owner
         private BlockSignature blockSignature = new BlockSignature();
+
+        internal PosBlock(BlockHeader blockHeader) : base(blockHeader)
+        {
+        }
 
         public BlockSignature BlockSignatur
         {
