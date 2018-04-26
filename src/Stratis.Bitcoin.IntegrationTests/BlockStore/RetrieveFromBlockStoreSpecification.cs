@@ -43,6 +43,5 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             And(the_wrong_transaction_id_should_return_null);
             And(the_block_with_the_wrong_id_should_return_null);
         }
-
     }
 }
