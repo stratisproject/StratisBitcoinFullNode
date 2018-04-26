@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Xunit.Sdk;
@@ -71,17 +71,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var testChainContext = new TestChainContext() { Network = network };
 
             testChainContext.NodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={dataDir}" });
-
-            if (dataDir != null)
-            {
-                testChainContext.NodeSettings.DataDir = dataDir;
-            }
-
             testChainContext.ConnectionSettings = new ConnectionManagerSettings();
             testChainContext.ConnectionSettings.Load(testChainContext.NodeSettings);
-
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
+
             network.Consensus.Options = new PowConsensusOptions();
 
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(testChainContext.NodeSettings);
@@ -105,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, testChainContext.LoggerFactory);
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
             NodeDeployments deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
-            ConsensusRules consensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            ConsensusRules consensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
             testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), consensusValidator, new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning, consensusRules);
             await testChainContext.Consensus.StartAsync();
 

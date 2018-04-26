@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
@@ -42,12 +44,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class ConsensusRuleDescriptor
     {
         /// <summary>
-        /// A special validation attribute that will be used by the engine to determine if validation
-        /// whether this rules is a validation rule.
-        /// </summary>
-        private readonly ValidationRuleAttribute validationRuleAttribute;
-
-        /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         public ConsensusRuleDescriptor(ConsensusRule rule)
@@ -55,19 +51,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             Guard.NotNull(rule, nameof(rule));
 
             this.Rule = rule;
-            this.Attributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
+            this.RuleAttributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 
-            this.validationRuleAttribute = this.Attributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
+            var validationRuleAttribute = this.RuleAttributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
+
+            this.CanSkipValidation = validationRuleAttribute?.CanSkipValidation ?? !this.RuleAttributes.Any();
         }
 
         /// <summary>Rules that are strictly validation can be skipped unless the <see cref="ValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
-        public bool CanSkipValidation => this.validationRuleAttribute?.CanSkipValidation ?? true;
+        public bool CanSkipValidation { get; } 
 
         /// <summary>The rule represented by this descriptor.</summary>
         public ConsensusRule Rule { get; }
 
         /// <summary>The collection of <see cref="RuleAttribute"/> that are attached to this rule.</summary>
-        public List<RuleAttribute> Attributes { get; }
+        public List<RuleAttribute> RuleAttributes { get; }
     }
 
     /// <summary>
@@ -107,9 +105,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     }
 
     /// <summary>
-    /// Rules that provide easy access to the <see cref="PosConsensusRules"/> parent.
+    /// Rules that provide easy access to the <see cref="CoinView"/> which is the store for a PoW system.
     /// </summary>
-    public abstract class PosConsensusRule : ConsensusRule
+    public abstract class UtxoStoreConsensusRule : ConsensusRule
+    {
+        /// <summary>Allow access to the POS parent.</summary>
+        protected PowConsensusRules PowParent;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.PowParent = this.Parent as PowConsensusRules;
+
+            Guard.NotNull(this.PowParent, nameof(this.PowParent));
+        }
+    }
+
+    /// <summary>
+    /// Rules that provide easy access to the <see cref="IStakeChain"/> which is the store for a PoS system.
+    /// </summary>
+    public abstract class StakeStoreConsensusRule : ConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRules PosParent;

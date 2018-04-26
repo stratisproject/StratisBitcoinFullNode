@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -514,6 +515,41 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Gets the balance for an address.
+        /// </summary>
+        /// <param name="request">The request parameters.</param>
+        /// <returns>The address balance for an address.</returns>
+        [Route("received-by-address")]
+        [HttpGet]
+        public IActionResult GetReceivedByAddress([FromQuery] ReceivedByAddressRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                AddressBalance balanceResult = this.walletManager.GetAddressBalance(request.Address);
+                return this.Json(new AddressBalanceModel
+                {
+                    CoinType = this.coinType,
+                    Address = balanceResult.Address,
+                    AmountConfirmed = balanceResult.AmountConfirmed,
+                    AmountUnconfirmed = balanceResult.AmountUnconfirmed
+                });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Gets the maximum spendable balance on an account, along with the fee required to spend it.
         /// </summary>
         /// <param name="request">The request parameters.</param>
@@ -608,7 +644,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                    request.Password)
+                    request.Password, request.OpReturnData)
                 {
                     TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
@@ -670,10 +706,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 foreach (var output in transaction.Outputs)
                 {
+                    var isUnspendable = output.ScriptPubKey.IsUnspendable;
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
                         Amount = output.Value,
+                        OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
                 }
 

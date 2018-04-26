@@ -72,23 +72,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
-            if (!context.SkipValidation)
-            {
-                if (flags.EnforceBIP30)
-                {
-                    foreach (Transaction tx in block.Transactions)
-                    {
-                        UnspentOutputs coins = view.AccessCoins(tx.GetHash());
-                        if ((coins != null) && !coins.IsPrunable)
-                        {
-                            this.logger.LogTrace("(-)[BAD_TX_BIP_30]");
-                            ConsensusErrors.BadTransactionBIP30.Throw();
-                        }
-                    }
-                }
-            }
-            else this.logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", index.Height);
-
             long sigOpsCost = 0;
             Money fees = Money.Zero;
             var checkInputs = new List<Task<bool>>();
@@ -98,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
+                    
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
                         int[] prevheights;

@@ -748,6 +748,19 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.Transactions.Where(t => t.IsSpendable());
         }
+
+        /// <summary>
+        /// Get the address total spendable value for both confirmed and unconfirmed UTXO.
+        /// </summary>
+        public (Money confirmedAmount, Money unConfirmedAmount) GetSpendableAmount()
+        {
+            List<TransactionData> allTransactions = this.Transactions.ToList();
+
+            long confirmed = allTransactions.Sum(t => t.SpendableAmount(true));
+            long total = allTransactions.Sum(t => t.SpendableAmount(false));
+
+            return (confirmed, total - confirmed);
+        }
     }
 
     /// <summary>

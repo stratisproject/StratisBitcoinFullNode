@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -52,15 +53,13 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 
         #endregion Mock Features
 
-        #region Tests
-
         /// <summary>
         /// Test no exceptions fired when checking features that exist.
         /// </summary>
         [Fact]
         public void DependencyCheckWithValidDependencies()
         {
-            var builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default());
+            var builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default(Network.StratisRegTest));
 
             builder.ConfigureFeature(features =>
             {
@@ -84,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         [Fact]
         public void DependencyCheckWithInvalidDependenciesThrowsException()
         {
-            var builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default());
+            var builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default(Network.StratisRegTest));
             builder.ConfigureFeature(features =>
             {
                 features
@@ -97,7 +96,5 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 builder.Build();
             });
         }
-
-        #endregion Tests
     }
 }
