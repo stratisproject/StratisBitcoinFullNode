@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Tests.Common
@@ -13,17 +11,11 @@ namespace Stratis.Bitcoin.Tests.Common
     {
         private readonly bool previousTimeStamp;
         private readonly bool previousBlockSignature;
-        public StaticFlagIsolator(Network network)
+
+        public StaticFlagIsolator()
         {
             this.previousBlockSignature = Block.BlockSignature;
             this.previousTimeStamp = Transaction.TimeStamp;
-
-            var isStratisNetwork = network == Network.StratisTest 
-                                    || network == Network.StratisMain
-                                    || network == Network.StratisRegTest;
-            Transaction.TimeStamp = isStratisNetwork;
-            Block.BlockSignature = isStratisNetwork;
-            
         }
 
         public void Dispose()

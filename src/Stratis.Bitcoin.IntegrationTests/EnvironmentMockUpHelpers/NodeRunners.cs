@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                         .AddPowPosMining()
                         .AddRPC()
                         .MockIBD()
-                        .SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider())
+                        .SubstituteDateTimeProviderFor<MiningFeature>()
                         .Build();
             }
 
@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     .UseWallet()
                     .AddRPC()
                     .MockIBD()
-                    .SubstituteDateTimeProviderFor<MiningFeature>(new GenerateCoinsFastDateTimeProvider())
+                    .SubstituteDateTimeProviderFor<MiningFeature>()
                     .Build();
             }
 
