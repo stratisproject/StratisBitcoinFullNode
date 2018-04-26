@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class AssumeValidRuleTest : TestConsensusRulesUnitTestBase
     {
-        public AssumeValidRuleTest() : base()
+        public AssumeValidRuleTest()
         {
         }
 

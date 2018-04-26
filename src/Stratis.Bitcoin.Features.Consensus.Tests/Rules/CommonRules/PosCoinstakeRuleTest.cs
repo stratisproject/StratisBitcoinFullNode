@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class PosCoinstakeRuleTest : TestPosConsensusRulesUnitTestBase
     {
-        public PosCoinstakeRuleTest() : base()
+        public PosCoinstakeRuleTest()
         {
             this.ruleContext.BlockValidationContext.Block = new Block();
         }

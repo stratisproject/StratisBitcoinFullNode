@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private PowConsensusOptions options;
 
-        public CheckPowTransactionRuleTest() : base()
+        public CheckPowTransactionRuleTest()
         {
             this.options = this.network.Consensus.Option<PowConsensusOptions>();
         }

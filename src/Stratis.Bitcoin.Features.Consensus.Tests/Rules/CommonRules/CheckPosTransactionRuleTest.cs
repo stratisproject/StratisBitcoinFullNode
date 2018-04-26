@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CheckPosTransactionRuleTest : TestPosConsensusRulesUnitTestBase
     {
-        public CheckPosTransactionRuleTest() : base()
+        public CheckPosTransactionRuleTest()
         {
         }
 

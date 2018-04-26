@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockHeaderRuleTest2 : TestConsensusRulesUnitTestBase
     {
-        public BlockHeaderRuleTest2() : base()
+        public BlockHeaderRuleTest2()
         {
             this.concurrentChain = GenerateChainWithHeight(5, this.network);
             this.consensusRules = this.InitializeConsensusRules();

@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CoinbaseHeightRuleTest : TestConsensusRulesUnitTestBase
     {
-        public CoinbaseHeightRuleTest() : base()
+        public CoinbaseHeightRuleTest()
         {
         }
 

@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CheckpointsRuleTest : TestConsensusRulesUnitTestBase
     {
-        public CheckpointsRuleTest() : base()
+        public CheckpointsRuleTest()
         {
             this.concurrentChain = GenerateChainWithHeight(5, this.network);
             this.consensusRules = this.InitializeConsensusRules();

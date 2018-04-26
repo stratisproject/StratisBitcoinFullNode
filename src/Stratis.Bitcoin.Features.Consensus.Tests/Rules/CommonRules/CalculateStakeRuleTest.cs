@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CalculateStakeRuleTest : TestPosConsensusRulesUnitTestBase
     {
-        public CalculateStakeRuleTest() : base()
+        public CalculateStakeRuleTest()
         {
             this.concurrentChain = GenerateChainWithHeight(5, this.network);
             this.consensusRules = this.InitializeConsensusRules();

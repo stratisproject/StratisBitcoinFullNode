@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class TransactionLocktimeActivationRuleTest : TestConsensusRulesUnitTestBase
     {
-        public TransactionLocktimeActivationRuleTest() : base()
+        public TransactionLocktimeActivationRuleTest()
         {
             this.ruleContext.BlockValidationContext.Block = new Block();
         }

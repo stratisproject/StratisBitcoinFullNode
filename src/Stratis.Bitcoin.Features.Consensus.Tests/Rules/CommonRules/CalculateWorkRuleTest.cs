@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CalculateWorkRuleTest : TestConsensusRulesUnitTestBase
     {
-        public CalculateWorkRuleTest() : base()
+        public CalculateWorkRuleTest()
         {
         }
 

@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private Key key;
 
-        public PosBlockSignatureRuleTest() : base()
+        public PosBlockSignatureRuleTest()
         {
             this.key = new Key();
         }
