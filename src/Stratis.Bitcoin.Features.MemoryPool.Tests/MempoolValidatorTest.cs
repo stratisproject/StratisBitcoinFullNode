@@ -552,7 +552,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             string dataDir = GetTestDirectoryPath(this);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir).ConfigureAwait(false);
             IMempoolValidator validator = context.MempoolValidator;
             BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
             TransactionBuilder txBuilder = new TransactionBuilder();
