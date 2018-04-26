@@ -19,7 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_HeaderVersionBelowSeven_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(3);
             this.ruleContext.BlockValidationContext.ChainedBlock.Header.Version = 6;
 
@@ -31,7 +30,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkTooHigh_ThrowsProofOfWorkTooHighConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(3);
             this.ruleContext.Stake = new ContextStakeInformation()
             {
@@ -47,7 +45,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimestampTooNew_WithoutReducedDrift_ThrowsTimeTooNewConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -77,7 +74,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimestampTooNew_WithReducedDrift_ThrowsTimeTooNewConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -108,7 +104,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_StakeTimestampInvalid_BlockTimeNotTransactionTime_ThrowsStakeTimeViolationConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -140,7 +135,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_StakeTimestampInvalid_TransactionTimeDoesNotIncludeStakeTimestampMask_ThrowsStakeTimeViolationConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -172,7 +166,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockTimestampTooEarly_ThrowsBlockTimestampTooEarlyConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -208,7 +201,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockTimestampSameAsPrevious_ThrowsBlockTimestampTooEarlyConsensusErrorAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -244,7 +236,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ValidRuleContext_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.SkipValidation = false;
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
