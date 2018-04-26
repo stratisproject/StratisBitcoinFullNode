@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    public class MerkelRootComputationTest
+    public class MerkleRootComputationTest
     {
         [Fact]
         public void MerkleRootComputationNotMutated()
