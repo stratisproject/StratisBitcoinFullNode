@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +14,17 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
     {
         private readonly ITestOutputHelper output;
         private readonly DateTime startOfTestTime;
-
+        
         private readonly StaticFlagIsolator staticFlagIsolator;
+        private ITest currentTest;
+
+        /// <summary>
+        /// This can for instance be used to find the name of the test currently using the
+        /// class by calling this.CurrentTest.DisplayName
+        /// </summary>
+        protected ITest CurrentTest => this.currentTest ?? (this.currentTest = this.output?.GetType()
+                                           .GetField("test", BindingFlags.Instance | BindingFlags.NonPublic)
+                                           .GetValue(this.output) as ITest);
 
         protected BddSpecification(ITestOutputHelper output)
         {
