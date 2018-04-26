@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class PosBlockValidator
     {
-        public static bool IsCanonicalBlockSignature(Block block, bool checkLowS)
+        public static bool IsCanonicalBlockSignature(PosBlock block, bool checkLowS)
         {
             if (BlockStake.IsProofOfWork(block))
                 return block.BlockSignatur.IsEmpty();

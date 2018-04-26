@@ -210,9 +210,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var nextBlockHash = new uint256(1241256);
             var blocks = new List<Block>();
-            var blockHeader = new BlockHeader();
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            var blockHeader = block.Header;
             blockHeader.Bits = new Target(12);
-            var block = new Block(blockHeader);
             var transaction = new Transaction();
             transaction.Version = 32;
             block.Transactions.Add(transaction);
@@ -220,9 +220,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             transaction.Version = 48;
             block.Transactions.Add(transaction);
             blocks.Add(block);
-
-            var blockHeader2 = new BlockHeader();
-            var block2 = new Block(blockHeader2);
+            
+            var block2 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
             transaction = new Transaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);

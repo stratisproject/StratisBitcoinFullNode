@@ -311,20 +311,8 @@ namespace NBitcoin
                 return lastBlock.Header.Bits;
             }
 
-            long pastHeight = 0;
-            if (consensus.LitecoinWorkCalculation)
-            {
-                long blocksToGoBack = consensus.DifficultyAdjustmentInterval - 1;
-                if ((lastBlock.Height + 1) != consensus.DifficultyAdjustmentInterval)
-                    blocksToGoBack = consensus.DifficultyAdjustmentInterval;
-
-                pastHeight = lastBlock.Height - blocksToGoBack;
-            }
-            else
-            {
-                // Go back by what we want to be 14 days worth of blocks.
-                pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
-            }
+            // Go back by what we want to be 14 days worth of blocks.
+            long pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
 
             ChainedBlock firstChainedBlock = this.GetAncestor((int)pastHeight);
             if (firstChainedBlock == null)
@@ -380,7 +368,7 @@ namespace NBitcoin
             if (network == null)
                 throw new ArgumentNullException("network");
 
-            if (network.NetworkOptions.IsProofOfStake)
+            if (network.Consensus.IsProofOfStake)
                 return BlockStake.Validate(network, this);
 
             bool genesisCorrect = (this.Height != 0) || this.HashBlock == network.GetGenesis().GetHash();

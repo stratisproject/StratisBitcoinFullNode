@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -18,8 +19,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             Block block = context.BlockValidationContext.Block;
 
+            if (!(block is PosBlock posBlock))
+            {
+                this.Logger.LogTrace("(-)[INVALID_CAST]");
+                throw new InvalidCastException();
+            }
+
             // Check proof-of-stake block signature.
-            if (!this.CheckBlockSignature(block))
+            if (!this.CheckBlockSignature(posBlock))
             {
                 this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -33,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
-        private bool CheckBlockSignature(Block block)
+        private bool CheckBlockSignature(PosBlock block)
         {
             this.Logger.LogTrace("()");
 

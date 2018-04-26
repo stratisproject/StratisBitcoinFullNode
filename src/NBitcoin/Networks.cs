@@ -302,7 +302,7 @@ namespace NBitcoin
         {
             var consensus = new Consensus();
 
-            consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
+            consensus.NetworkOptions = new NetworkOptions();
 
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
@@ -325,6 +325,7 @@ namespace NBitcoin
             consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, 0);
 
             consensus.LastPOWBlock = 12500;
+            consensus.IsProofOfStake = true;
 
             consensus.ProofOfStakeLimit =   new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
@@ -472,7 +473,6 @@ namespace NBitcoin
 
         private static Network InitStratisRegTest()
         {
-            // TODO: move this to Networks
             var net = Network.GetNetwork("StratisRegTest");
             if (net != null)
                 return net;

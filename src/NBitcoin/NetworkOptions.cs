@@ -19,20 +19,20 @@
         /// <summary>ProofOfStake flags.</summary>
         private bool isProofOfStake = false;
 
-        public bool IsProofOfStake
-        {
-            get
-            {
-                //if (this.isProofOfStake != Block.BlockSignature)
-                //    throw new InvalidOperationException($"IsProofOfStake { this.isProofOfStake } mismatches expected value { Block.BlockSignature }");
+        //public bool IsProofOfStake
+        //{
+        //    get
+        //    {
+        //        //if (this.isProofOfStake != Block.BlockSignature)
+        //        //    throw new InvalidOperationException($"IsProofOfStake { this.isProofOfStake } mismatches expected value { Block.BlockSignature }");
 
-                return this.isProofOfStake;
-            }
-            set
-            {
-                this.isProofOfStake = value;
-            }
-        }
+        //        return this.isProofOfStake;
+        //    }
+        //    set
+        //    {
+        //        this.isProofOfStake = value;
+        //    }
+        //}
 
         //TODO?: Could be used by Block:
         //public virtual SetBlockSpecificFlags(Block block);
@@ -46,7 +46,7 @@
         {
             get
             {
-                return new NetworkOptions() { IsProofOfStake = Transaction.TimeStamp };
+                return new NetworkOptions() ;
             }
         }
 
@@ -81,7 +81,7 @@
         {
             var clone = new NetworkOptions();
             clone.flags = this.flags;
-            clone.IsProofOfStake = this.IsProofOfStake;
+            //clone.IsProofOfStake = this.IsProofOfStake;
             return clone;
         }
 
@@ -156,26 +156,26 @@
             return (uint)left != (uint)right;
         }
 
-        /// <summary>
-        /// Compares two NetworkOptions objects for the equality.
-        /// </summary>
-        /// <param name="left">The left NetworkOptions object.</param>
-        /// <param name="right">The right NetworkOptions object.</param>
-        /// <returns>Returns true iff the two objects are the same.</returns>
-        public override bool Equals(object obj)
-        {
-            return (uint)(obj as NetworkOptions) == (uint)this &&
-                   (obj as NetworkOptions).IsProofOfStake == this.IsProofOfStake;
-        }
+        ///// <summary>
+        ///// Compares two NetworkOptions objects for the equality.
+        ///// </summary>
+        ///// <param name="left">The left NetworkOptions object.</param>
+        ///// <param name="right">The right NetworkOptions object.</param>
+        ///// <returns>Returns true iff the two objects are the same.</returns>
+        //public override bool Equals(object obj)
+        //{
+        //    return (uint)(obj as NetworkOptions) == (uint)this &&
+        //           (obj as NetworkOptions).IsProofOfStake == this.IsProofOfStake;
+        //}
 
-        /// <summary>
-        /// Calculates the hash code of this object.
-        /// </summary>
-        /// <returns>The hash code.</returns>
-        public override int GetHashCode()
-        {
-            return (int)(uint)this ^ this.IsProofOfStake.GetHashCode();
-        }
+        ///// <summary>
+        ///// Calculates the hash code of this object.
+        ///// </summary>
+        ///// <returns>The hash code.</returns>
+        //public override int GetHashCode()
+        //{
+        //    return (int)(uint)this ^ this.IsProofOfStake.GetHashCode();
+        //}
 
         /// <summary>
         /// Swaps two variables.
