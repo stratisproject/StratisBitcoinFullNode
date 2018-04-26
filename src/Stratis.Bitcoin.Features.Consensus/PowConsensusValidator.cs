@@ -81,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
+                    
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
                         int[] prevheights;
