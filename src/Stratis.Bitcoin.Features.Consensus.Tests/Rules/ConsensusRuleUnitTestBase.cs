@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -114,18 +116,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
+        protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
+        protected Mock<CoinView> coinView;
 
         public TestPosConsensusRulesUnitTestBase() : base()
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
-
+            this.lookaheadBlockPuller = new Mock<ILookaheadBlockPuller>();
+            this.coinView = new Mock<CoinView>();
             this.consensusRules = InitializeConsensusRules();
         }
 
         public override TestPosConsensusRules InitializeConsensusRules()
         {
-            return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.stakeChain.Object, this.stakeValidator.Object);
+            return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.lookaheadBlockPuller.Object, this.stakeChain.Object, this.stakeValidator.Object);
         }
     }
 }
