@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
@@ -22,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             this.output = output;
             this.startOfTestTime = DateTime.UtcNow;
 
-            this.staticFlagIsolator = new StaticFlagIsolator(Network.RegTest);
+            this.staticFlagIsolator = new StaticFlagIsolator();
             this.BeforeTest();
         }
 
