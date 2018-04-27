@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -13,40 +12,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
     [ValidationRule(CanSkipValidation = false)]
-    public class GasBudgetRule : ConsensusRule
+    public class GasBudgetRule : ConsensusRule, ISmartContractMempoolRule
     {
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
 
-            IEnumerable<Transaction> smartContractTransactions =
-                block.Transactions.GetSmartContractExecTransactions().ToList();
-
-            if (!smartContractTransactions.Any())
+            foreach(Transaction transaction in block.Transactions)
             {
-                // No smart contract transactions, nothing to validate
-                return Task.CompletedTask;
-            }
-
-            foreach (Transaction transaction in smartContractTransactions)
-            {
-                // The gas budget supplied
-                Money suppliedBudget = transaction.TotalOut;
-
-                // This should never be null as every tx in smartContractTransactions contains a SmartContractOutput
-                // So throw if null, because we really didn't expect that
-                TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-
-                var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
-
-                if (suppliedBudget < new Money(carrier.GasCostBudget))
-                {
-                    // Supplied satoshis are less than the budget we said we had for the contract execution
-                    this.Throw();
-                }
+                CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
+        }
+
+        public void CheckTransaction(Transaction transaction)
+        {
+            if (!transaction.IsSmartContractExecTransaction())
+                return;
+
+            // The gas budget supplied
+            Money suppliedBudget = transaction.TotalOut;
+
+            // This should never be null as every tx in smartContractTransactions contains a SmartContractOutput
+            // So throw if null, because we really didn't expect that
+            TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+
+            var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
+
+            if (suppliedBudget < new Money(carrier.GasCostBudget))
+            {
+                // Supplied satoshis are less than the budget we said we had for the contract execution
+                this.Throw();
+            }
         }
 
         private void Throw()

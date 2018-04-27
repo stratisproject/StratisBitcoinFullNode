@@ -14,24 +14,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <returns></returns>
         public static IEnumerable<Transaction> GetSmartContractExecTransactions(this IEnumerable<Transaction> transactions)
         {
-            return transactions
-                .Where(IsSmartContractExecTransaction);
+            return transactions.Where(x=> x.IsSmartContractExecTransaction());
         }
 
         public static IEnumerable<Transaction> GetSmartContractCreateTransactions(this IEnumerable<Transaction> transactions)
         {
-            return transactions
-                .Where(IsSmartContractCreateTransaction);
+            return transactions.Where(x => x.IsSmartContractCreateTransaction());
         }
 
-        private static bool IsSmartContractExecTransaction(Transaction tx)
+        public static bool IsSmartContractExecTransaction(this Transaction tx)
         {
-            return tx.Outputs.SingleOrDefault(s => s.ScriptPubKey.IsSmartContractExec) != null;
+            return tx.Outputs.Any(s => s.ScriptPubKey.IsSmartContractExec);
         }
 
-        private static bool IsSmartContractCreateTransaction(Transaction tx)
+        public static bool IsSmartContractCreateTransaction(this Transaction tx)
         {
-            return tx.Outputs.SingleOrDefault(s => s.ScriptPubKey.ToOps().Any(op => op.Code == OpcodeType.OP_CREATECONTRACT)) != null;
+            return tx.Outputs.Any(s => s.ScriptPubKey.ToOps().Any(op => op.Code == OpcodeType.OP_CREATECONTRACT));
+        }
+
+        public static bool IsSmartContractSpendTransaction(this Transaction tx)
+        {
+            return tx.Outputs.Any(s => s.ScriptPubKey.IsSmartContractSpend);
         }
     }
 }

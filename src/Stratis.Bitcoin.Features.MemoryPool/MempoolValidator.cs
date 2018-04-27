@@ -535,7 +535,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// These checks don't need to run under the memory pool lock.
         /// </summary>
         /// <param name="context">Current validation context.</param>
-        private void PreMempoolChecks(MempoolValidationContext context)
+        protected virtual void PreMempoolChecks(MempoolValidationContext context)
         {
             // TODO: fix this to use dedicated mempool rules.
             new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.ConsensusOptions, context.Transaction);

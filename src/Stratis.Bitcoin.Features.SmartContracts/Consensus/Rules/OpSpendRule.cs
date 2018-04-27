@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             Block block = context.BlockValidationContext.Block;
 
             IEnumerable<Transaction> opSpendTransactions = block.Transactions.Where(tx =>
-                tx.Inputs.Any(o => o.ScriptSig.ToOps().Any(x => x.Code == OpcodeType.OP_SPEND)));
+                tx.IsSmartContractSpendTransaction());
 
             foreach (Transaction opSpendTransaction in opSpendTransactions)
             {
@@ -31,8 +31,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
                 Transaction previousTransaction = block.Transactions[thisIndex - 1];
 
-                var previousWasOpCall = previousTransaction.Outputs.Any(o =>
-                    o.ScriptPubKey.ToOps().Any(op => op.Code == OpcodeType.OP_CALLCONTRACT));
+                // This previously would only check that the contract was a call. However we also have to check for create as inside the constructor
+                // we could make a call to another contract and that could send funds!
+                var previousWasOpCall = previousTransaction.Outputs.Any(o => o.ScriptPubKey.IsSmartContractExec);
 
                 if (!previousWasOpCall)
                 {
