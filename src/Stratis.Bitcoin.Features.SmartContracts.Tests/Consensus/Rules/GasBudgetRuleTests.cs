@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Xunit;
@@ -18,6 +20,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             Transaction.TimeStamp = false;
         }
 
+        private UnspentOutputSet GetMockOutputSet()
+        {
+            var fakeTxOut = new TxOut();
+            fakeTxOut.Value = 100_000_000;
+
+            var unspentOutputMock = new Mock<UnspentOutputSet>();
+            unspentOutputMock.Setup(x => x.AccessCoins(It.IsAny<uint256>()))
+                .Returns(new UnspentOutputs()
+                {
+                    Outputs = new TxOut[]
+                    {
+                        fakeTxOut
+                    }
+                });
+
+            return unspentOutputMock.Object;
+        }
+
         [Fact]
         public async Task GasBudgetRule_SuccessAsync()
         {
@@ -25,12 +45,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             GasBudgetRule rule = testContext.CreateRule<GasBudgetRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus,
-                testContext.Chain.Tip);
+                testContext.Chain.Tip)
+            {
+                Set = GetMockOutputSet()
+            };
 
             context.BlockValidationContext.Block = new Block();
 
             var gasPriceSatoshis = 20;
-            var gasLimit = 4000000;
+            var gasLimit = 4_000_000;
             var gasBudgetSatoshis = gasPriceSatoshis * gasLimit;
             var relayFeeSatoshis = 10000;
 
@@ -49,8 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var transactionBuilder = new TransactionBuilder();
             transactionBuilder.AddCoins(funding);
-            transactionBuilder.SendFees(relayFeeSatoshis);
-            transactionBuilder.Send(new Script(serialized), gasBudgetSatoshis);
+            transactionBuilder.SendFees(relayFeeSatoshis + gasBudgetSatoshis);
+            transactionBuilder.Send(new Script(serialized), 0);
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
@@ -69,7 +92,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             GasBudgetRule rule = testContext.CreateRule<GasBudgetRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus,
-                testContext.Chain.Tip);
+                testContext.Chain.Tip)
+            {
+                Set = GetMockOutputSet()
+            };
 
             context.BlockValidationContext.Block = new Block();
 
@@ -94,8 +120,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var transactionBuilder = new TransactionBuilder();
             transactionBuilder.AddCoins(funding);
-            transactionBuilder.SendFees(relayFeeSatoshis);
-            transactionBuilder.Send(new Script(serialized), gasBudgetSatoshis);
+            transactionBuilder.SendFees(totalSuppliedSatoshis);
+            transactionBuilder.Send(new Script(serialized), 0);
 
             // Add a change output to the transaction
             transactionBuilder.SetChange(new Script());

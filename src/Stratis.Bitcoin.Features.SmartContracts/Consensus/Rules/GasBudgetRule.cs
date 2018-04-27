@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 using Block = NBitcoin.Block;
 
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     [ValidationRule(CanSkipValidation = false)]
     public class GasBudgetRule : ConsensusRule, ISmartContractMempoolRule
     {
-        public const ulong HardGasLimit = 1_000_000;
+        public const ulong HardGasLimit = 5_000_000;
 
         public override Task RunAsync(RuleContext context)
         {
@@ -22,19 +23,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             foreach(Transaction transaction in block.Transactions)
             {
-                CheckTransaction(transaction);
+                CheckTransaction(transaction, transaction.GetFee(context.Set));
             }
 
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(Transaction transaction)
+        public void CheckTransaction(MempoolValidationContext context)
+        {
+            CheckTransaction(context.Transaction, context.Fees);
+        }
+
+        private void CheckTransaction(Transaction transaction, Money suppliedBudget)
         {
             if (!transaction.IsSmartContractExecTransaction())
                 return;
-
-            // The gas budget supplied
-            Money suppliedBudget = transaction.TotalOut;
 
             // This should never be null as every tx in smartContractTransactions contains a SmartContractOutput
             // So throw if null, because we really didn't expect that

@@ -1,9 +1,9 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public interface ISmartContractMempoolRule
     {
-        void CheckTransaction(Transaction transaction);
+        void CheckTransaction(MempoolValidationContext context);
     }
 }

@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             foreach (ISmartContractMempoolRule rule in txRules)
             {
-                rule.CheckTransaction(context.Transaction);
+                rule.CheckTransaction(context);
             }
             base.PreMempoolChecks(context);
         }

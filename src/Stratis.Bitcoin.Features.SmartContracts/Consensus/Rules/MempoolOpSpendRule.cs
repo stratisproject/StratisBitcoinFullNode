@@ -1,13 +1,13 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
+﻿using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
     public class MempoolOpSpendRule : ISmartContractMempoolRule
     {
-        public void CheckTransaction(Transaction transaction)
+        public void CheckTransaction(MempoolValidationContext context)
         {
-            if (transaction.IsSmartContractSpendTransaction())
+            if (context.Transaction.IsSmartContractSpendTransaction())
                 Throw();
         }
 
