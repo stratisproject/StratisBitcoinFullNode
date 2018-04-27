@@ -16,15 +16,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             this.proofOfStakeSteps = new ProofOfStakeSteps(new Dictionary<string, CoreNode>());
         }
 
-        protected override void BeforeTest()
-        {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;       
-        }
+        protected override void BeforeTest() { }
 
-        protected override void AfterTest()
-        {
-        }
+        protected override void AfterTest() { }
 
         private void a_proof_of_work_node_with_wallet()
         {
