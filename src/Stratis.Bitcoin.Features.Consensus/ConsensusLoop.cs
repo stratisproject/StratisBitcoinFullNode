@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -250,7 +248,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public void Stop()
         {
             this.Puller.Dispose();
-            this.asyncLoop.Dispose();
+            this.asyncLoop?.Dispose();
             this.consensusLock.Dispose();
         }
 
@@ -352,18 +350,16 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
 
-                await this.consensusRules.ExecuteAsync(blockValidationContext);
+                // TODO: Once all code is migrated to rules this can be uncommented and the logic in this method moved to the IConsensusRules.AcceptBlockAsync()
+                // await this.consensusRules.AcceptBlockAsync(blockValidationContext);
 
-                if (blockValidationContext.Error == null)
+                try
                 {
-                    try
-                    {
-                        await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext, true).ConfigureAwait(false);
-                    }
-                    catch (ConsensusErrorException ex)
-                    {
-                        blockValidationContext.Error = ex.ConsensusError;
-                    }
+                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext).ConfigureAwait(false);
+                }
+                catch (ConsensusErrorException ex)
+                {
+                    blockValidationContext.Error = ex.ConsensusError;
                 }
 
                 if (blockValidationContext.Error != null)
@@ -441,19 +437,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void ValidateBlock(RuleContext context, bool skipRules = false)
+        public void ValidateBlock(RuleContext context)
         {
             this.logger.LogTrace("()");
 
-            using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
-            {
-                // TODO: Remove the flag skipRules when all rules where migrated to the ConesnsusRules framework.
-                // The skip rules is here temporary while we run both old and new consensus rules side by side
-                if (!skipRules)
-                {
-                    this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
-                }
-            }
+            this.consensusRules.ValidateAsync(context).GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)[OK]");
         }
@@ -462,26 +450,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        internal async Task ValidateAndExecuteBlockAsync(RuleContext context, bool skipRules = false)
+        internal async Task ValidateAndExecuteBlockAsync(RuleContext context)
         {
             this.logger.LogTrace("()");
 
-            this.ValidateBlock(context, skipRules);
-
-            // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
-            // The UTXO set is stored in the context.
-            this.logger.LogTrace("Loading UTXO set of the new block.");
-            context.Set = new UnspentOutputSet();
-            using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
-            {
-                uint256[] ids = this.GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
-                FetchCoinsResponse coins = await this.UTXOSet.FetchCoinsAsync(ids).ConfigureAwait(false);
-                context.Set.SetCoins(coins.UnspentOutputs);
-            }
-
-            // Attempt to load into the cache the next set of UTXO to be validated.
-            // The task is not awaited so will not stall main validation process.
-            this.TryPrefetchAsync(context.Flags);
+            await this.consensusRules.ValidateAndExecuteAsync(context);
 
             // Validate the UTXO set is correctly spent.
             this.logger.LogTrace("Executing block.");
@@ -509,52 +482,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 await cachedCoinView.FlushAsync(force).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// This method try to load from cache the UTXO of the next block in a background task.
-        /// </summary>
-        /// <param name="flags">Information about activated features.</param>
-        private async void TryPrefetchAsync(DeploymentFlags flags)
-        {
-            this.logger.LogTrace("({0}:{1})", nameof(flags), flags);
-
-            if (this.UTXOSet is CachedCoinView)
-            {
-                Block nextBlock = this.Puller.TryGetLookahead(0);
-                if (nextBlock != null)
-                    await this.UTXOSet.FetchCoinsAsync(this.GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc/>
-        public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(NetworkOptions.TemporaryOptions), nameof(enforceBIP30), enforceBIP30);
-
-            HashSet<uint256> ids = new HashSet<uint256>();
-            foreach (Transaction tx in block.Transactions)
-            {
-                if (enforceBIP30)
-                {
-                    var txId = tx.GetHash();
-                    ids.Add(txId);
-                }
-
-                if (!tx.IsCoinBase)
-                {
-                    foreach (TxIn input in tx.Inputs)
-                    {
-                        ids.Add(input.PrevOut.Hash);
-                    }
-                }
-            }
-
-            uint256[] res = ids.ToArray();
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Length), res.Length);
-            return res;
         }
     }
 }

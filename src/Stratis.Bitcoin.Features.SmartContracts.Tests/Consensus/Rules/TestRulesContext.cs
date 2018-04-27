@@ -1,8 +1,10 @@
 ﻿using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Consensus;
@@ -70,8 +72,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
+            var lookAheadBlockPuller = new Mock<ILookaheadBlockPuller>();
+
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, lookAheadBlockPuller.Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             return testRulesContext;
         }

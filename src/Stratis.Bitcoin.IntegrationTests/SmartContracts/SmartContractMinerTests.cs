@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 NodeDeployments deployments = new NodeDeployments(this.network, this.chain);
-                ConsensusRules consensusRules = new PowConsensusRules(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                ConsensusRules consensusRules = new PowConsensusRules(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints(), this.cachedCoinView, blockPuller).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();
 
@@ -343,7 +343,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             //tx.Sign(new Key[] { context.privateKey }, funds);
 
             context.mempool.AddUnchecked(
-                maliciousTx.GetHash(), 
+                maliciousTx.GetHash(),
                 entry.Fee(entryFee)
                     .Time(context.date.GetTime())
                     .SpendsCoinbase(true)
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             ulong gasPrice = 1;
             Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
-            
+
             SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
             Assert.True(compilationResult.Success);
 
