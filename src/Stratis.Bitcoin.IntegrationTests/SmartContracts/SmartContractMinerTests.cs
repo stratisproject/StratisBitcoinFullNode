@@ -283,8 +283,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             var smartContractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - gasBudget, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 5000000000L - gasBudget, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             byte[] ownerFromStorage = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             byte[] ownerToBytes = context.privateKey.PubKey.GetAddress(context.network).Hash.ToBytes();
@@ -310,8 +310,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             ulong fundsToSend = 5000000000L - gasBudget;
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            BlockTemplate pblocktemplate2 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
 
             context.mempool.Clear();
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             await Assert.ThrowsAsync<ConsensusErrorException>(async () =>
             {
-                await BuildBlockAsync(context);
+                await this.BuildBlockAsync(context);
             });
         }
 
@@ -372,8 +372,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             ulong fundsToSend = 5000000000L - gasBudget;
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            BlockTemplate pblocktemplate2 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs); // There is 1 input to the condensing transaction: the previous callcontract transaction
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             context.mempool.Clear();
 
             SmartContractCarrier transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress, "Test", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate3 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction2, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            BlockTemplate pblocktemplate3 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction2, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
             Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count); // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
@@ -424,8 +424,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             var contractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             ulong fundsToSend = 5000000000L - gasBudget;
 
             var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            BlockTemplate pblocktemplate2 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs); // There is 1 input to the condensing transaction: the previous callcontract transaction
@@ -448,7 +448,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             context.mempool.Clear();
 
             transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate3 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            BlockTemplate pblocktemplate3 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate3.Block.Transactions.Count); // 1 coinbase, 1 contract call, 1 condensingtx with send
             Assert.True(pblocktemplate3.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             Assert.Equal(2, pblocktemplate3.Block.Transactions[2].Inputs.Count); // There are 2 inputs to the condensing transaction: the previous callcontract transaction and the unspent from above
@@ -478,8 +478,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
@@ -488,7 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             ulong fundsToSend = 5000000000L - gasBudget;
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "Test2", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate2 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            BlockTemplate pblocktemplate2 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate2.Block.Transactions.Count);
             Assert.True(pblocktemplate2.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             Assert.Single(pblocktemplate2.Block.Transactions[2].Inputs); // There is 1 input to the condensing transaction: the previous callcontract transaction
@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             context.mempool.Clear();
 
             transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "DoNothing", gasPrice, gasLimit);
-            BlockTemplate pblocktemplate3 = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate3 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), 0, gasBudget);
             Assert.Equal(2, pblocktemplate3.Block.Transactions.Count); // In this case we are sending 0, and doing no transfers, so we don't need a condensing transaction
         }
 
@@ -523,8 +523,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
@@ -533,7 +533,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             ulong fundsToSend = 1000;
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "P2KTest", gasPrice, gasLimit);
-            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[1].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
             Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
             Assert.Equal(pblocktemplate.Block.Transactions[1].GetHash(), pblocktemplate.Block.Transactions[2].Inputs[0].PrevOut.Hash); // Input should be from the call that was just made.
@@ -559,8 +559,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
@@ -570,8 +570,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
-            pblocktemplate = await BuildBlockAsync(context);
+            tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress2 = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
@@ -584,7 +584,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             };
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", gasPrice, gasLimit, testMethodParameters);
-            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("test")));
             Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
             Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
@@ -595,7 +595,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             context.mempool.Clear();
 
             SmartContractCarrier transferTransaction2 = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransfer", gasPrice, gasLimit, testMethodParameters);
-            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction2, context.txFirst[3].GetHash(), 0, gasBudget);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction2, context.txFirst[3].GetHash(), 0, gasBudget);
             Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
             Assert.Equal(2, pblocktemplate.Block.Transactions[2].Inputs.Count);
             Assert.Equal(800, pblocktemplate.Block.Transactions[2].Outputs[0].Value);
@@ -617,16 +617,16 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var gasBudget = gasPrice * gasLimit;
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CountContract.cs").Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
 
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CallContract.cs").Compilation, gasPrice, gasLimit);
-            tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
-            pblocktemplate = await BuildBlockAsync(context);
+            tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress2 = tx.GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
@@ -639,7 +639,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             };
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "Tester", gasPrice, gasLimit, testMethodParameters);
-            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.True(Convert.ToBoolean(context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"))[0]));
         }
 
@@ -658,8 +658,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
             string newContractAddressString = newContractAddress.ToString();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
@@ -670,8 +670,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
-            pblocktemplate = await BuildBlockAsync(context);
+            tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await this.BuildBlockAsync(context);
             uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
@@ -683,7 +683,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToString()),
             };
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "ContractTransferWithFail", gasPrice, gasLimit, testMethodParameters);
-            pblocktemplate = await AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, pblocktemplate.Block.Transactions.Count);
             Assert.Single(pblocktemplate.Block.Transactions[2].Inputs);
             Assert.Equal(pblocktemplate.Block.Transactions[1].GetHash(), pblocktemplate.Block.Transactions[2].Inputs[0].PrevOut.Hash); // Input should be from the call that was just made.
@@ -693,8 +693,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
         {
-            AddTransactionToMempool(context, smartContractCarrier, prevOutHash, value, gasBudget);
-            return await BuildBlockAsync(context);
+            this.AddTransactionToMempool(context, smartContractCarrier, prevOutHash, value, gasBudget);
+            return await this.BuildBlockAsync(context);
         }
 
         private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
