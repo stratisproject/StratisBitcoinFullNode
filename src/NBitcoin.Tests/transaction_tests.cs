@@ -1200,11 +1200,14 @@ namespace NBitcoin.Tests
             var before = input.ToArray();
             var ms = new MemoryStream();
             BitcoinStream bs = new BitcoinStream(ms, true);
+
+            bs.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             var before2 = input;
             roundTrip(bs, ref input);
             Array.Clear(input, 0, input.Length);
             ms.Position = 0;
             bs = new BitcoinStream(ms, false);
+            bs.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             roundTrip(bs, ref input);
             if(!(input is byte[])) //Byte serialization reuse the input array
                 Assert.True(before2 != input);
@@ -1235,6 +1238,7 @@ namespace NBitcoin.Tests
 
             MemoryStream ms = new MemoryStream();
             BitcoinStream stream = new BitcoinStream(ms, true);
+            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             stream.TransactionOptions = NetworkOptions.Witness;
             stream.ReadWrite(before);
 
@@ -1242,6 +1246,7 @@ namespace NBitcoin.Tests
 
             stream = new BitcoinStream(ms, false);
             stream.TransactionOptions = NetworkOptions.Witness;
+            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             stream.ReadWrite(ref after2);
 
             Assert.Equal(after2.GetHash(), after.GetHash());

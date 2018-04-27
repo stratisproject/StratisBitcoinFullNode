@@ -1877,8 +1877,10 @@ namespace NBitcoin
         /// </summary>
         /// <param name="options">Options to keep</param>
         /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(NetworkOptions options)
+        public Transaction WithOptions(NetworkOptions options, ConsensusFactory consensusFactory = null)
         {
+            consensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory;
+
             if(options == NetworkOptions.Witness && HasWitness)
                 return this;
             if(options == NetworkOptions.None && !HasWitness)
@@ -1886,10 +1888,12 @@ namespace NBitcoin
             var instance = new Transaction();
             var ms = new MemoryStream();
             var bms = new BitcoinStream(ms, true);
+            bms.ConsensusFactory = consensusFactory;
             bms.TransactionOptions = options;
             this.ReadWrite(bms);
             ms.Position = 0;
             bms = new BitcoinStream(ms, false);
+            bms.ConsensusFactory = consensusFactory;
             bms.TransactionOptions = options;
             instance.ReadWrite(bms);
             return instance;
