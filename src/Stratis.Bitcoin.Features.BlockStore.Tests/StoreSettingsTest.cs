@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -7,6 +8,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class StoreSettingsTest : TestBase
     {
+        public StoreSettingsTest()
+        {
+            // Ensure that these flags match the Network and NetworkOptions being used
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         [Fact]
         public void CanSpecifyStoreSettings()
         {

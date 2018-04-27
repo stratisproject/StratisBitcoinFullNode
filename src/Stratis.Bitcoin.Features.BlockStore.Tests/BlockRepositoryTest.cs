@@ -10,6 +10,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class BlockRepositoryTest : LogsTestBase
     {
+        public BlockRepositoryTest()
+        {
+            // Ensure that these flags match the Network and NetworkOptions being used
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         [Fact]
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
         {
