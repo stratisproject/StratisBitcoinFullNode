@@ -85,6 +85,30 @@ namespace NBitcoin
         BIP66
     }
 
+    /// <summary>
+    /// Description of checkpointed block.
+    /// </summary>
+    public class CheckpointInfo
+    {
+        /// <summary>Hash of the checkpointed block header.</summary>
+        public uint256 Hash { get; set; }
+
+        /// <summary>Stake modifier V2 value of the checkpointed block.</summary>
+        /// <remarks>Stratis only.</remarks>
+        public uint256 StakeModifierV2 { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <param name="hash">Hash of the checkpointed block header.</param>
+        /// <param name="stakeModifierV2">Stake modifier V2 value of the checkpointed block. Stratis network only.</param>
+        public CheckpointInfo(uint256 hash, uint256 stakeModifierV2 = null)
+        {
+            this.Hash = hash;
+            this.StakeModifierV2 = stakeModifierV2;
+        }
+    }
+
     public class Consensus
     {
         /// <summary>
@@ -131,7 +155,7 @@ namespace NBitcoin
                 get { return this.parameters[(int) index]; }
                 set { this.parameters[(int) index] = value; }
             }
-        }
+        }       
 
         public Consensus()
         {
@@ -234,6 +258,7 @@ namespace NBitcoin
         private PubKey alertPubKey;
         private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
         private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
+        private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
         private Consensus consensus = new Consensus();
 
@@ -292,6 +317,8 @@ namespace NBitcoin
 
         public IEnumerable<DNSSeedData> DNSSeeds => this.seeds;
 
+        public Dictionary<int, CheckpointInfo> Checkpoints => this.checkpoints;
+
         public byte[] MagicBytesArray;
 
         public byte[] MagicBytes
@@ -322,10 +349,10 @@ namespace NBitcoin
         internal static Network Register(NetworkBuilder builder)
         {
             if (builder.Name == null)
-                throw new InvalidOperationException("A network name need to be provided");
+                throw new InvalidOperationException("A network name needs to be provided.");
 
             if (GetNetwork(builder.Name) != null)
-                throw new InvalidOperationException("The network " + builder.Name + " is already registered");
+                throw new InvalidOperationException("The network " + builder.Name + " is already registered.");
 
             Network network = new Network();
             network.Name = builder.Name;
@@ -336,7 +363,8 @@ namespace NBitcoin
             network.DefaultPort = builder.Port;
             network.RPCPort = builder.RPCPort;
             network.genesis = builder.Genesis;
-            network.consensus.HashGenesisBlock = network.genesis.GetHash();
+            if(network.consensus != null && network.genesis != null)
+                network.consensus.HashGenesisBlock = network.genesis.GetHash();
 
             foreach (DNSSeedData seed in builder.Seeds)
             {
@@ -374,6 +402,11 @@ namespace NBitcoin
             network.MinTxFee = builder.MinTxFee;
             network.FallbackFee = builder.FallbackFee;
             network.MinRelayTxFee = builder.MinRelayTxFee;
+
+            foreach (KeyValuePair<int, CheckpointInfo> checkpoint in builder.Checkpoints)
+            {
+                network.checkpoints.Add(checkpoint.Key, checkpoint.Value);
+            }
 
             return network;
         }
