@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void SmartContracts_AddToMempool_Failure_OpCreateZero()
+        public void SmartContracts_AddToMempool_Failure_OpCreateZeroValue()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {

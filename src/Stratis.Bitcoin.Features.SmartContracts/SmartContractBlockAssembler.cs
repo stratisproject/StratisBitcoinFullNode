@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -27,6 +28,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
 
+        private readonly ILogger<SmartContractBlockAssembler> logger;
+
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
             Network network,
@@ -44,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.coinView = coinView;
             this.stateRoot = stateRoot;
             this.executorFactory = executorFactory;
+            this.logger = loggerFactory.CreateLogger<SmartContractBlockAssembler>();
         }
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)
@@ -86,6 +90,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 base.AddToBlock(mempoolEntry);
             else
                 this.AddContractToBlock(mempoolEntry, smartContractTxOut);
+        }
+
+        protected override void TestBlockValidity()
+        {
+            this.logger.LogTrace("()");
+
+            var context = new RuleContext(new BlockValidationContext { Block = this.pblock }, this.network.Consensus, this.consensusLoop.Tip)
+            {
+                CheckPow = false,
+                CheckMerkleRoot = false,
+                Set = 
+            };
+
+            this.consensusLoop.ValidateBlock(context);
+
+            this.logger.LogTrace("(-)");
         }
 
 

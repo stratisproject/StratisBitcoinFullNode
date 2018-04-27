@@ -91,8 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             GasBudgetRule rule = testContext.CreateRule<GasBudgetRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus,
-                testContext.Chain.Tip)
+            var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip)
             {
                 Set = GetMockOutputSet()
             };
