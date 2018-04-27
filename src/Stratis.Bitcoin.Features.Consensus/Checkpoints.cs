@@ -159,12 +159,15 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.ConsensusSettings = consensusSettings;
 
-            if (network.Equals(Network.Main)) this.networkSpecificCheckpoints = bitcoinMainnetCheckpoints;
-            else if (network.Equals(Network.TestNet)) this.networkSpecificCheckpoints = bitcoinTestnetCheckpoints;
-            else if (network.Equals(Network.RegTest)) this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
-            else if (network.Equals(Network.StratisMain)) this.networkSpecificCheckpoints = stratisMainnetCheckpoints;
-            else if (network.Equals(Network.StratisTest)) this.networkSpecificCheckpoints = stratisTestnetCheckpoints;
-            else this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+            this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+
+            //if (network == Network.Main) this.networkSpecificCheckpoints = bitcoinMainnetCheckpoints;
+            //else if (network == Network.TestNet) this.networkSpecificCheckpoints = bitcoinTestnetCheckpoints;
+            //else if (network == Network.RegTest) this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+            //else if (network == Network.StratisMain) this.networkSpecificCheckpoints = stratisMainnetCheckpoints;
+            //else if (network == Network.StratisTest) this.networkSpecificCheckpoints = stratisTestnetCheckpoints;
+            //else if (network == Network.SmartContractsTest) this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+            //else this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
         }
 
         /// <inheritdoc />

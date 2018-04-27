@@ -255,7 +255,7 @@ namespace NBitcoin
                 RootFolderName = BitcoinRootFolderName,
                 DefaultConfigFilename = BitcoinDefaultConfigFilename
             };
-            
+
             network.consensus.SubsidyHalvingInterval = 150;
             network.consensus.MajorityEnforceBlockUpgrade = 750;
             network.consensus.MajorityRejectBlockOutdated = 950;
@@ -321,7 +321,7 @@ namespace NBitcoin
             var consensus = new Consensus();
 
             consensus.NetworkOptions = new NetworkOptions() { IsProofOfStake = true };
-            consensus.GetPoWHash = (n, h) => Crypto.HashX13.Instance.Hash(h.ToBytes(options:n)); 
+            consensus.GetPoWHash = (n, h) => Crypto.HashX13.Instance.Hash(h.ToBytes(options: n));
 
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
@@ -345,7 +345,7 @@ namespace NBitcoin
 
             consensus.LastPOWBlock = 12500;
 
-            consensus.ProofOfStakeLimit =   new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
+            consensus.ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
 
             consensus.CoinType = 105;
@@ -389,18 +389,18 @@ namespace NBitcoin
                     new DNSSeedData("seednode4.stratis.cloud", "seednode4.stratis.cloud")
                 })
 
-                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] {(63)})
-                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] {(125)})
-                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] {(63 + 128)})
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] {0x01, 0x42})
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] {0x01, 0x43})
-                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] {(0x04), (0x88), (0xB2), (0x1E)})
-                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] {(0x04), (0x88), (0xAD), (0xE4)})
-                .SetBase58Bytes(Base58Type.PASSPHRASE_CODE, new byte[] {0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2})
-                .SetBase58Bytes(Base58Type.CONFIRMATION_CODE, new byte[] {0x64, 0x3B, 0xF6, 0xA8, 0x9A})
-                .SetBase58Bytes(Base58Type.STEALTH_ADDRESS, new byte[] {0x2a})
-                .SetBase58Bytes(Base58Type.ASSET_ID, new byte[] {23})
-                .SetBase58Bytes(Base58Type.COLORED_ADDRESS, new byte[] {0x13})
+                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (63) })
+                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (125) })
+                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (63 + 128) })
+                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
+                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
+                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
+                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) })
+                .SetBase58Bytes(Base58Type.PASSPHRASE_CODE, new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 })
+                .SetBase58Bytes(Base58Type.CONFIRMATION_CODE, new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A })
+                .SetBase58Bytes(Base58Type.STEALTH_ADDRESS, new byte[] { 0x2a })
+                .SetBase58Bytes(Base58Type.ASSET_ID, new byte[] { 23 })
+                .SetBase58Bytes(Base58Type.COLORED_ADDRESS, new byte[] { 0x13 })
                 .SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, "bc")
                 .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, "bc");
 
@@ -487,7 +487,7 @@ namespace NBitcoin
                 new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
                 new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
-            }); 
+            });
 
             return builder.BuildAndRegister();
         }
@@ -513,7 +513,7 @@ namespace NBitcoin
             messageStart[1] = 0xf2;
             messageStart[2] = 0xc0;
             messageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(messageStart, 0); 
+            var magic = BitConverter.ToUInt32(messageStart, 0);
 
             var genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1494909211;
@@ -550,7 +550,6 @@ namespace NBitcoin
         /// <summary>
         /// Smart contract test network - took the bitcoin test network and made some adjustments. 
         /// </summary>
-        /// <returns></returns>
         private static Network InitSmartContractsTest()
         {
             Network network = new Network
@@ -601,9 +600,6 @@ namespace NBitcoin
 
             network.fixedSeeds.Clear();
             network.seeds.Clear();
-            //network.seeds.Add(new DNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
-            //network.seeds.Add(new DNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
-            //network.seeds.Add(new DNSSeedData("bitcoin.schildbach.de", "testnet-seed.bitcoin.schildbach.de"));
 
             network.base58Prefixes = Network.Main.base58Prefixes.ToArray();
             network.base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
@@ -633,7 +629,6 @@ namespace NBitcoin
         /// <summary>
         /// Took the 'InitReg' from above and adjusted it slightly (set a static flag + removed the hash check)
         /// </summary>
-        /// <returns></returns>
         private static Network InitSmartContractsRegTest()
         {
             Network network = new Network
