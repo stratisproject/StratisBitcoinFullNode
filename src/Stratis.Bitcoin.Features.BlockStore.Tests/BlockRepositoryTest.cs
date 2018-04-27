@@ -2,13 +2,13 @@
 using System.Linq;
 using DBreeze;
 using NBitcoin;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
-    public class BlockRepositoryTest : TestBase
+    public class BlockRepositoryTest : LogsTestBase
     {
         [Fact]
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private IBlockRepository SetupRepository(Network main, string dir)
         {
-            var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
+            var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.LoggerFactory.Object);
             repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;

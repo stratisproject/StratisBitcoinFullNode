@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Substitute the <see cref="IDateTimeProvider"/> for a given feature.
         /// </summary>
         /// <typeparam name="T">The feature to substitute the provider for.</typeparam>
-        public static IFullNodeBuilder SubstituteDateTimeProviderFor<T>(this IFullNodeBuilder fullNodeBuilder, IDateTimeProvider provider)
+        public static IFullNodeBuilder SubstituteDateTimeProviderFor<T>(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -25,7 +25,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     {
                         ServiceDescriptor service = services.FirstOrDefault(s => s.ServiceType == typeof(IDateTimeProvider));
                         if (service != null)
-                            services.Remove(service); services.AddSingleton(provider);
+                            services.Remove(service);
+
+                        services.AddSingleton<IDateTimeProvider, GenerateCoinsFastDateTimeProvider>();
                     });
                 }
             });

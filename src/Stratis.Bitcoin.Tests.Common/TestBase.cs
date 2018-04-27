@@ -11,15 +11,11 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public class TestBase
     {
-        /// <summary>Factory for creating loggers.</summary>
-        public readonly ILoggerFactory loggerFactory;
-
         /// <summary>
         /// Initializes logger factory for inherited tests.
         /// </summary>
         public TestBase()
-        {
-            this.loggerFactory = new LoggerFactory();
+        {         
             DBreezeSerializer serializer = new DBreezeSerializer();
             serializer.Initialize();
         }

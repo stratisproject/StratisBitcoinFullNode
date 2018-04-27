@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 NodeDeployments deployments = new NodeDeployments(this.network, this.chain);
-                ConsensusRules consensusRules = new PowConsensusRules(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints()).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                ConsensusRules consensusRules = new PowConsensusRules(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints(), this.cachedCoinView, blockPuller).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();
 

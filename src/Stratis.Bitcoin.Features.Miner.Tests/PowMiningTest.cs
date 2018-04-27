@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.consensusLoop.SetupGet(c => c.Tip).Returns(() => { return this.chain.Tip; });
-            this.consensusLoop.SetupGet(c => c.Validator).Returns(new PowConsensusValidator(this.network, new Checkpoints(), DateTimeProvider.Default, this.loggerFactory));
+            this.consensusLoop.SetupGet(c => c.Validator).Returns(new PowConsensusValidator(this.network, new Checkpoints(), DateTimeProvider.Default, this.LoggerFactory.Object));
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());
@@ -61,8 +61,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var mempoolLock = new MempoolSchedulerLock();
 
-            this.blockAssembler = new Mock<PowBlockAssembler>(this.chain.Tip, this.consensusLoop.Object, DateTimeProvider.Default, this.loggerFactory, this.mempool.Object, mempoolLock, this.network);
-            this.powMining = new PowMining(this.asyncLoopFactory.Object, this.consensusLoop.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, mempoolLock, this.network, this.nodeLifetime.Object, this.loggerFactory);
+            this.blockAssembler = new Mock<PowBlockAssembler>(this.chain.Tip, this.consensusLoop.Object, DateTimeProvider.Default, this.LoggerFactory.Object, this.mempool.Object, mempoolLock, this.network);
+            this.powMining = new PowMining(this.asyncLoopFactory.Object, this.consensusLoop.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object);
         }
 
         public void Dispose()
