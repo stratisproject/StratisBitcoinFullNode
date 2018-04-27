@@ -26,6 +26,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string WalletAccountName = "account 0";
         private const string NodeReceiver = "nodereceiver";
 
+        private const decimal OneMillion = 1_000_000;
+
         ITestOutputHelper outputHelper;
 
         public SendingRecentlyStakedCoinsBeforeMaturity(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -52,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PosWallet)
                 .Sum(utxo => utxo.Transaction.Amount)
-                .Should().Be(Money.Coins(1000000));
+                .Should().Be(Money.Coins(OneMillion));
         }
 
         private void a_wallet_sends_staked_coins_before_maturity()
@@ -69,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 AccountName = this.proofOfStakeSteps.WalletAccount,
                 AllowUnconfirmed = true,
-                Amount = new Money(1000000).ToString(),
+                Amount = new Money((int)OneMillion).ToString(),
                 DestinationAddress = GetReceiverUnusedAddressFromWallet(), 
                 FeeType = FeeType.Medium.ToString("D"),
                 Password = this.proofOfStakeSteps.PosWalletPassword,
