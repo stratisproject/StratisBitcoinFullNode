@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace Stratis.SmartContracts.Tools.Sct.Deployment
+namespace Stratis.SmartContracts.Core.Deployment
 {
-    internal class BuildCreateContractTransactionRequest
+    public class BuildCreateContractTransactionRequest
     {
         public string WalletName { get; set; }        
         public string AccountName { get; set; }
@@ -15,19 +15,19 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
         public string[] Parameters { get; set; }
     }
 
-    internal class BuildCreateContractTransactionResponse
+    public class BuildCreateContractTransactionResponse
     {       
         [NetJSON.NetJSONProperty("newContractAddress")]
         public string NewContractAddress { get; set; }
     }
 
-    internal class ErrorResponse
+    public class ErrorResponse
     {
         [NetJSON.NetJSONProperty("errors")]
         public List<ErrorModel> Errors { get; set; }
     }
 
-    internal class ErrorModel
+    public class ErrorModel
     {
         [NetJSON.NetJSONProperty("status")]
         public int Status { get; set; }

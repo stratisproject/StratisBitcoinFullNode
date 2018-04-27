@@ -5,9 +5,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Deployment;
 
 namespace Stratis.SmartContracts.Tools.Sct.Deployment
 {
@@ -114,39 +114,28 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             model.Sender = this.Sender;
             model.Parameters = Params;
 
-            var json = NetJSON.NetJSON.Serialize(model);
+            var deployer = new HttpContractDeployer(client, DeploymentResource);
 
-            HttpResponseMessage response = await client.PostAsync(this.GetDeploymentUri(), new StringContent(json, Encoding.UTF8, "application/json"));
+            DeploymentResult response = await deployer.DeployAsync(this.Node, model);
 
             console.WriteLine("");
 
-            if (response.IsSuccessStatusCode)
+            if (response.Success)
             {
                 console.WriteLine("Deployment Success");
 
-                string successJson = await response.Content.ReadAsStringAsync();
-                BuildCreateContractTransactionResponse successResponse =
-                    NetJSON.NetJSON.Deserialize<BuildCreateContractTransactionResponse>(successJson);
-
                 console.WriteLine($"Contract successfully deployed");
-                console.WriteLine($"Address: {successResponse.NewContractAddress}");
+                console.WriteLine($"Address: {response.ContractAddress}");
 
                 return;
             }
 
-            string errorJson = await response.Content.ReadAsStringAsync();
-            ErrorResponse resp = NetJSON.NetJSON.Deserialize<ErrorResponse>(errorJson);
             console.WriteLine("Deployment Error!");
 
-            foreach (ErrorModel err in resp.Errors)
+            foreach (string err in response.Errors)
             {
-                console.WriteLine(err.Message);
+                console.WriteLine(err);
             }            
-        }
-
-        private Uri GetDeploymentUri()
-        {
-            return new Uri(new Uri(this.Node), DeploymentResource);
         }
 
         public static bool ValidateFile(string fileName, string source, IConsole console, out SmartContractCompilationResult compilationResult)
