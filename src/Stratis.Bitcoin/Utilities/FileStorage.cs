@@ -29,18 +29,36 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Saves an object to a file.
+        /// Saves an object to a file, optionally keeping a backup of it.
         /// </summary>
         /// <param name="toSave">Object to save as a file.</param>
         /// <param name="fileName">Name of the file to be saved.</param>
-        public void SaveToFile(T toSave, string fileName)
+        /// <param name="saveBackupFile">A value indicating whether to save a backup of the file.</param>
+        public void SaveToFile(T toSave, string fileName, bool saveBackupFile = false)
         {
             Guard.NotEmpty(fileName, nameof(fileName));
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
 
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            // If the file does not exist yet, create it.
+            if (!File.Exists(filePath))
+            {
+                File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+
+                if (saveBackupFile)
+                {
+                    File.Copy(filePath, $"{filePath}.bak", true);
+                }
+
+                return;
+            }
+
+            // Replace the file if it already exists. 
+            // This ensures the file does not get corrupted in the event of a crash.
+            string tempFilePath = $"{filePath}.temp";
+            File.WriteAllText(tempFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            File.Replace(tempFilePath, filePath, saveBackupFile ? $"{filePath}.bak" : null);
         }
 
         /// <summary>
