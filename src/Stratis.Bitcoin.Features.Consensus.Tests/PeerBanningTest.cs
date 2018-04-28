@@ -1,12 +1,16 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
@@ -16,33 +20,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     public class PeerBanningTest : TestBase
     {
+        private static readonly Script scriptPubKey;
+
         public PeerBanningTest()
         {
             Block.BlockSignature = false;
             Transaction.TimeStamp = false;
         }
 
-        [Fact]
-        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerDiconnected_ThePeerGetsBanned_Async()
+        static PeerBanningTest()
         {
-            string dataDir = GetTestDirectoryPath(this);
-
-            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
-            var peer = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
-            context.PeerAddressManager.AddPeer(peer, peer.Address.MapToIPv6());
-
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns((INetworkPeer)null);
-
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peer });
-
-            Assert.True(context.PeerBanning.IsBanned(peer));
+            scriptPubKey = new Key().ScriptPubKey;
         }
 
-        [Fact]
-        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async()
+        private async Task<(TestChainContext context, IPEndPoint peerEndPoint)> InitialiseContextAndPeerEndpoint()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -50,88 +41,179 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
             context.PeerAddressManager.AddPeer(peerEndPoint, peerEndPoint.Address.MapToIPv6());
 
-            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory);
-            var peer = new Mock<INetworkPeer>();
-            peer.Setup(p => p.Behavior<ConnectionManagerBehavior>()).Returns(connectionManagerBehavior);
+            return (context, peerEndPoint);
+        }
 
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(peer.Object);
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsABlockWithBadPrevHashAndPeerDisconnected_ThePeerGetsBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndPeerDisconnected_ThePeerGetsBanned_Async(
+                Mine2BlocksAndCreateABlockWithBadPrevHash);
+        }
 
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peerEndPoint });
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsAMutatedBlockAndPeerDisconnected_ThePeerGetsBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndPeerDisconnected_ThePeerGetsBanned_Async(
+                MineAMutatedBlock);
+        }
+
+        private async Task NodeIsSynced_PeerSendsABadBlockAndPeerDisconnected_ThePeerGetsBanned_Async(
+            Func<TestChainContext, Task<Block>> createBadBlock)
+        {
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpoint();
+            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>()))
+                .Returns((INetworkPeer)null);
+
+            var badBlock = await createBadBlock(context);
+            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = badBlock, Peer = peerEndPoint });
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
 
         [Fact]
-        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
+        public async Task NodeIsSynced_PeerSendsABlockWithBadPrevHashAndPeerIsConnected_ThePeerGetsBanned_Async()
         {
-            string dataDir = GetTestDirectoryPath(this);
-
-            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
-            var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
-
-            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var peer = new Mock<INetworkPeer>();
-            peer.Setup(p => p.Behavior<ConnectionManagerBehavior>()).Returns(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(peer.Object);
-
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peerEndPoint });
-
-            Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
-        }
-        
-
-        [Fact]
-        public async Task NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
-        {
-            string dataDir = GetTestDirectoryPath(this);
-
-            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
-            var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
-
-            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
-            var peer = new Mock<INetworkPeer>();
-            peer.Setup(p => p.Behavior<ConnectionManagerBehavior>()).Returns(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(peer.Object);
-
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peerEndPoint, BanDurationSeconds = BlockValidationContext.BanDurationNoBan });
-
-            Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
+            await NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async(
+                Mine2BlocksAndCreateABlockWithBadPrevHash);
         }
 
         [Fact]
-        public async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsBandAndBanIsExpired_ThePeerIsNotBanned_Async()
+        public async Task NodeIsSynced_PeerSendsAMutatedBlockAndPeerIsConnected_ThePeerGetsBanned_Async()
         {
-            string dataDir = GetTestDirectoryPath(this);
-            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
-            var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
+            await NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async(
+                MineAMutatedBlock);
+        }
 
-            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory) { Whitelisted = true };
+        private async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async(
+            Func<TestChainContext, Task<Block>> createBadBlock)
+        {
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpoint();
+
+            MockPeerConnection(context, false);
+
+            var badBlock = await createBadBlock(context);
+            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = badBlock, Peer = peerEndPoint });
+
+            Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        private static void MockPeerConnection(TestChainContext context, bool whiteListedPeer)
+        {
+            var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory)
+                { Whitelisted = whiteListedPeer };
             var peer = new Mock<INetworkPeer>();
             peer.Setup(p => p.Behavior<ConnectionManagerBehavior>()).Returns(connectionManagerBehavior);
-            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(peer.Object);
 
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, new Key().ScriptPubKey);
-            // create a new block that breaks consensus.
-            var block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = block, Peer = peerEndPoint, BanDurationSeconds = 1 }); // ban for 1 second
+            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(peer.Object);
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsABlockWithBadPrevHashAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async(
+                Mine2BlocksAndCreateABlockWithBadPrevHash);
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsAMutatedBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async(
+                MineAMutatedBlock);
+        }
+
+        private async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async(
+            Func<TestChainContext, Task<Block>> createBadBlock)
+        {
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpoint();
+
+            MockPeerConnection(context, true);
+            var badBlock = await createBadBlock(context);
+            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = badBlock, Peer = peerEndPoint });
+
+            Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsABlockWithBadPrevHashAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async(
+                Mine2BlocksAndCreateABlockWithBadPrevHash);
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsAMutatedBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async(
+                MineAMutatedBlock);
+        }
+
+        private async Task NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async(Func<TestChainContext, Task<Block>> createBadBlock)
+        {
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpoint();
+
+            MockPeerConnection(context, false);
+            var badBlock = await createBadBlock(context);
+
+            var blockValidationContext = new BlockValidationContext {
+                Block = badBlock, Peer = peerEndPoint,
+                BanDurationSeconds = BlockValidationContext.BanDurationNoBan
+            }; 
+
+            await context.Consensus.AcceptBlockAsync(blockValidationContext);
+
+            Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsABlockWithBadPrevHashAndPeerIsBannedAndBanIsExpired_ThePeerIsNotBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndPeerIsBannedAndBanIsExpired_ThePeerIsNotBanned_Async(
+                Mine2BlocksAndCreateABlockWithBadPrevHash);
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsAMutatedBlockAndPeerIsBannedAndBanIsExpired_ThePeerIsNotBanned_Async()
+        {
+            await NodeIsSynced_PeerSendsABadBlockAndPeerIsBannedAndBanIsExpired_ThePeerIsNotBanned_Async(
+                MineAMutatedBlock);
+        }
+
+        private async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsBannedAndBanIsExpired_ThePeerIsNotBanned_Async(Func<TestChainContext, Task<Block>> createBadBlock)
+        {
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpoint();
+
+            MockPeerConnection(context, false);
+            var badBlock = await createBadBlock(context);
+
+            var blockValidationContext = new BlockValidationContext {
+                Block = badBlock, Peer = peerEndPoint, BanDurationSeconds = 1,
+            };
+
+            await context.Consensus.AcceptBlockAsync(blockValidationContext);
 
             // wait 1 sec for ban to expire.
             Thread.Sleep(1000);
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        private static async Task<Block> Mine2BlocksAndCreateABlockWithBadPrevHash(TestChainContext context)
+        {
+            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, scriptPubKey);
+            
+            var block = blocks.First();
+            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
+            return block;
+        }
+
+        private static async Task<Block> MineAMutatedBlock(TestChainContext context)
+        {
+            var blocks = await TestChainFactory.MineBlocksAsync(context, 1, scriptPubKey, 
+                mutateLastBlock: true);
+            var block = blocks.Last();
+            
+            return block;
         }
 
         [Fact]

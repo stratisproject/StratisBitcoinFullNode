@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
                 blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
-
+                
                 // TODO: Once all code is migrated to rules this can be uncommented and the logic in this method moved to the IConsensusRules.AcceptBlockAsync()
                 // await this.consensusRules.AcceptBlockAsync(blockValidationContext);
 
@@ -392,6 +392,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.Puller.RequestOptions(NetworkOptions.Witness);
 
                         this.logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
+                        return;
+                    }
+
+                    if (blockValidationContext.Error == ConsensusErrors.BadTransactionDuplicate)
+                    {
+                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
+                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
+                        this.logger.LogTrace("(-)[BAD_TX_DUP]");
                         return;
                     }
 
