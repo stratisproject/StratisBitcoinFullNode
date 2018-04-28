@@ -690,6 +690,20 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.Equal(1000, pblocktemplate.Block.Transactions[2].Outputs[0].Value); // Only txOut should be to contract
         }
 
+        [Fact]
+        public void SmartContract_ReferencingInputInSameBlock()
+        {
+            // TODO: Jordan
+
+            // I have a really strong hunch that the GasBudgetRule will break when there is a smart contract transaction that uses a transaction above it, in the same block, as an input. 
+
+            // This is because it will try to retrieve the PrevOut's value from the context.Set but it won't actually be there as the coinview hasn't been updated with that referenced transaction yet.
+
+            // Write a unit test to check this.
+
+            throw new NotImplementedException();
+        }
+
 
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
         {
