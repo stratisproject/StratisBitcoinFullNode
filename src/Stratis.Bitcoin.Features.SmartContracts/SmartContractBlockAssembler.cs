@@ -99,9 +99,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var context = new RuleContext(new BlockValidationContext { Block = this.pblock }, this.network.Consensus, this.consensusLoop.Tip)
             {
                 CheckPow = false,
-                CheckMerkleRoot = false,
-                Set = 
+                CheckMerkleRoot = false
             };
+
+            context.Set = new UnspentOutputSet();
+
+            uint256[] ids = this.consensusLoop.GetIdsToFetch(context.BlockValidationContext.Block, true); // true for BIP30. No idea actually.
+            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(ids).Result; // RESULT SUCKS. Should we go full async?
+            context.Set.SetCoins(coins.UnspentOutputs);
 
             this.consensusLoop.ValidateBlock(context);
 

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         {
             Block block = context.BlockValidationContext.Block;
 
-            foreach(Transaction transaction in block.Transactions)
+            foreach(Transaction transaction in block.Transactions.Where(x=> !x.IsCoinBase && !x.IsCoinStake))
             {
                 CheckTransaction(transaction, transaction.GetFee(context.Set));
             }

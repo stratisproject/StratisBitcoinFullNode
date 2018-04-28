@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public static bool IsSmartContractSpendTransaction(this Transaction tx)
         {
-            return tx.Outputs.Any(s => s.ScriptPubKey.IsSmartContractSpend);
+            return tx.Inputs.Any(s => s.ScriptSig.IsSmartContractSpend);
         }
     }
 }

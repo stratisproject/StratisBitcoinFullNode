@@ -14,15 +14,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public class SmartContractMempoolValidator : MempoolValidator
     {
         /// <summary>
-        /// These could all be one rule in the future if we add rules in the future that aren't so transaction-centric. Kind of like the CheckPoWTransactionRule
+        /// Can be checked before loading coinview.
         /// </summary>
-        /// 
-        private static readonly List<ISmartContractMempoolRule> txRules = new List<ISmartContractMempoolRule>
+        private static readonly List<ISmartContractMempoolRule> preTxRules = new List<ISmartContractMempoolRule>
         {
-            new GasBudgetRule(),
             new OpCreateZeroValueRule(),
             new MempoolOpSpendRule(),
             new TxOutSmartContractExecRule()
+        };
+
+        /// <summary>
+        /// Rely on coinview to be loaded.
+        /// </summary>
+        private static readonly List<ISmartContractMempoolRule> feeTxRules = new List<ISmartContractMempoolRule>
+        {
+            new GasBudgetRule()
         };
 
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IPowConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings) : base(memPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings)
@@ -31,11 +37,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         protected override void PreMempoolChecks(MempoolValidationContext context)
         {
-            foreach (ISmartContractMempoolRule rule in txRules)
+            base.PreMempoolChecks(context);
+            foreach (ISmartContractMempoolRule rule in preTxRules)
             {
                 rule.CheckTransaction(context);
             }
-            base.PreMempoolChecks(context);
+        }
+
+        protected override void CheckFee(MempoolValidationContext context)
+        {
+            base.CheckFee(context);
+            foreach (ISmartContractMempoolRule rule in feeTxRules)
+            {
+                rule.CheckTransaction(context);
+            }
         }
     }
 }

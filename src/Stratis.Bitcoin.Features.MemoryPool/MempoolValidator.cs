@@ -648,7 +648,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Checks if already in coin view, and missing and unavailable inputs.
         /// </summary>
         /// <param name="context">Validation context.</param>
-        private void CheckMempoolCoinView(MempoolValidationContext context)
+        protected virtual void CheckMempoolCoinView(MempoolValidationContext context)
         {
             Guard.Assert(context.View != null);
 
@@ -683,7 +683,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// and absurdly high fees.
         /// </summary>
         /// <param name="context">Current validation context.</param>
-        private void CheckFee(MempoolValidationContext context)
+        protected virtual void CheckFee(MempoolValidationContext context)
         {
             Money mempoolRejectFee = this.memPool.GetMinFee(this.mempoolSettings.MaxMempool * 1000000).GetFee(context.EntrySize);
             if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
